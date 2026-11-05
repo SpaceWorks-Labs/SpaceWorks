@@ -1,7 +1,7 @@
 import { ErrorBlock, Field, Skeleton } from "../../components/ui";
 import { ApiClientScopePicker } from "./ApiClientScopePicker";
 import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
-import type { ApiClientCreateResponse, ApiClientScopeOption } from "./apiClientsApi";
+import type { ApiClientCreateResponse, ApiClientScopeOption, ApiClientType } from "./apiClientsApi";
 import { splitOrigins } from "./apiClientsApi";
 type Props = {
   canManageMakerspace: boolean;
@@ -14,6 +14,8 @@ type Props = {
   error: Error | null;
   scopeOptions: ApiClientScopeOption[];
   scopes: string[];
+  clientType?: ApiClientType;
+  onClientTypeChange?: (value: ApiClientType) => void;
   scopesLoading: boolean;
   scopesError: Error | null;
   onRetryScopes?: () => void;
@@ -24,6 +26,11 @@ type Props = {
   onSubmit: () => void;
   onDismissSecret: () => void;
 };
+
+const CLIENT_TYPES: { value: ApiClientType; label: string; hint: string }[] = [
+  { value: "server", label: "Our own system", hint: "A script, an ERP or a backend that signs each request." },
+  { value: "peer", label: "Another space", hint: "Their backend reads only your public catalogue, events and stats." },
+];
 
 export function ApiClientCreateCard({
   canManageMakerspace,
@@ -36,6 +43,8 @@ export function ApiClientCreateCard({
   error,
   scopeOptions,
   scopes,
+  clientType = "server",
+  onClientTypeChange,
   scopesLoading,
   scopesError,
   onRetryScopes,
@@ -57,10 +66,22 @@ export function ApiClientCreateCard({
               onChange={(event) => onLabelChange(event.target.value)}
             />
           </Field>
-          <Field label="Allowed browser origins">
+          <fieldset className="grid gap-2">
+            <legend className="font-semibold text-ink">Who will use it?</legend>
+            {CLIENT_TYPES.map((option) => (
+              <label key={option.value} className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-panel p-3 has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input type="radio" name="api-client-type" className="mt-1 h-4 w-4 accent-accent" value={option.value}
+                  checked={clientType === option.value} disabled={isPending}
+                  onChange={() => onClientTypeChange?.(option.value)} />
+                <span className="grid gap-0.5"><span className="font-semibold text-ink">{option.label}</span>
+                  <span className="text-xs text-muted">{option.hint}</span></span>
+              </label>
+            ))}
+          </fieldset>
+          <Field label={clientType === "peer" ? "The other space's web address" : "Allowed browser origins"}>
             <textarea
               className="desk-input min-h-24 w-full"
-              placeholder="Allowed browser origins, one per line. Example: https://lab.example.com"
+              placeholder="One per line. Example: https://lab.example.com"
               value={origins}
               onChange={(event) => onOriginsChange(event.target.value)}
             />

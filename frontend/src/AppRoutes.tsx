@@ -1,4 +1,6 @@
 import { isProgrammePath } from "./features/events/programme/routeNames";
+import { OAuthConsentPage } from "./features/members/apiAccess/OAuthConsentPage";
+import { PersonalApiAccessPage } from "./features/members/apiAccess/PersonalApiAccessPage";
 import { isEventAddonPath } from "./features/events/eventAddons/routeNames";
 import { isCardPath } from "./features/cards/routeNames";
 import { isDonationPath } from "./features/donations/routeNames";
@@ -117,6 +119,10 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     </Routes>;
   } else if (location.pathname === "/account/restore") {
     routes = <Routes><Route path="/account/restore" element={<AccountRestorePage />} /></Routes>;
+  } else if (location.pathname === "/oauth/authorize") {
+    routes = <Routes><Route path="/oauth/authorize" element={<OAuthConsentPage />} /></Routes>;
+  } else if (location.pathname === "/account/api-access") {
+    routes = <Routes><Route path="/account/api-access" element={<PersonalApiAccessPage />} /></Routes>;
   } else if (location.pathname === "/mfa") {
     routes = <Routes><Route path="/mfa" element={<MfaAccountPage />} /></Routes>;
   } else if (location.pathname === "/security/not-me") {

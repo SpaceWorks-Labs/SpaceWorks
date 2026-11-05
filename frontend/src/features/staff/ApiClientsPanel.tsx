@@ -11,9 +11,12 @@ import {
   deleteApiClient,
   requestApiKey,
   rotateApiClient,
+  scopeOptionsForClient,
+  setApiClientActive,
   splitOrigins,
   type ApiClient,
   type ApiClientCreateResponse,
+  type ApiClientType,
   type ApiKeyRequest,
   type ApiSettings,
   type ApiClientScopeCatalog,
@@ -23,6 +26,7 @@ import { ApiClientsAccessSummary } from "./ApiClientsAccessSummary";
 import { SettingsLayout } from "../../components/layouts";
 import { Modal } from "../../components/ui";
 import { ApiClientSecretReveal } from "./ApiClientSecretReveal";
+import { OAuthAppsSection } from "./OAuthAppsSection";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
 
 export function ApiClientsPanel({
@@ -39,6 +43,7 @@ export function ApiClientsPanel({
   const [reason, setReason] = useState("");
   const [origins, setOrigins] = useState("");
   const [scopes, setScopes] = useState<string[]>([]);
+  const [clientType, setClientType] = useState<ApiClientType>("server");
   const [submitted, setSubmitted] = useState(false);
   const [oneTimeSecret, setOneTimeSecret] = useState<ApiClientCreateResponse | null>(null);
   // A rotated secret opens over the list, next to the action, rather than in the create
@@ -65,8 +70,9 @@ export function ApiClientsPanel({
     isSuperadmin,
   );
   const catalog = scopeOptions.data?.results ?? [];
+  const createCatalog = scopeOptionsForClient(catalog, clientType);
   const selectableCreateScopes = scopes.filter((scope) => (
-    catalog.some((option) => option.value === scope && option.grantable)
+    createCatalog.some((option) => option.value === scope && option.grantable)
   ));
   const requestKey = useMutation({
     mutationFn: () => requestApiKey(makerspace.id, label, reason, splitOrigins(origins)),
@@ -84,11 +90,13 @@ export function ApiClientsPanel({
       label,
       splitOrigins(origins),
       selectableCreateScopes,
+      clientType,
     ),
     onSuccess: (created) => {
       setLabel("");
       setOrigins("");
       setScopes([]);
+      setClientType("server");
       setOneTimeSecret(created);
       queryClient.invalidateQueries({ queryKey: apiClientsQueryKey(makerspace.id) });
     },
@@ -103,6 +111,12 @@ export function ApiClientsPanel({
     mutationFn: rotateApiClient,
     onSuccess: (rotated) => {
       setRotatedSecret(rotated);
+      queryClient.invalidateQueries({ queryKey: apiClientsQueryKey(makerspace.id) });
+    },
+  });
+  const setActive = useMutation({
+    mutationFn: ({ clientId, active }: { clientId: number; active: boolean }) => setApiClientActive(clientId, active),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: apiClientsQueryKey(makerspace.id) });
     },
   });
@@ -141,8 +155,10 @@ export function ApiClientsPanel({
             oneTimeSecret={oneTimeSecret}
             isPending={canManageMakerspace ? createClient.isPending : requestKey.isPending}
             error={canManageMakerspace ? createClient.error : requestKey.error}
-            scopeOptions={catalog}
+            scopeOptions={createCatalog}
             scopes={selectableCreateScopes}
+            clientType={clientType}
+            onClientTypeChange={(next) => { setClientType(next); setScopes([]); }}
             scopesLoading={scopeOptions.isLoading}
             scopesError={scopeOptions.error}
             onRetryScopes={() => { void scopeOptions.refetch(); }}
@@ -173,10 +189,14 @@ export function ApiClientsPanel({
             onRetryScopes={() => { void scopeOptions.refetch(); }}
             scopeUpdatePending={updateScopes.isPending}
             scopeUpdateError={updateScopes.error}
+            activePending={setActive.isPending}
+            activeError={setActive.error}
+            onSetActive={(clientId, active) => setActive.mutate({ clientId, active })}
             onDelete={(clientId) => deleteClient.mutate(clientId)}
             onRotate={(clientId) => rotateClient.mutate(clientId)}
             onScopesUpdate={(clientId, nextScopes) => updateScopes.mutate({ clientId, nextScopes })}
           />
-          </>) }, { id: "developer-reference", title: "Developer reference", rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={() => { void settings.refetch(); }} /> }]} />
+          </>) }, ...(canManageMakerspace ? [{ id: "oauth-apps", title: "App connections (OAuth)",
+            rows: <OAuthAppsSection makerspaceId={makerspace.id} /> }] : []), { id: "developer-reference", title: "Developer reference", rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={() => { void settings.refetch(); }} /> }]} />
   </>);
 }

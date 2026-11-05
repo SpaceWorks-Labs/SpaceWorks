@@ -22,6 +22,9 @@ type Props = {
   deleteError: Error | null;
   rotatePending: boolean;
   rotateError: Error | null;
+  activePending?: boolean;
+  activeError?: Error | null;
+  onSetActive?: (clientId: number, active: boolean) => void;
   scopeOptions: ApiClientScopeOption[];
   scopesLoading: boolean;
   scopesError: Error | null;
@@ -46,6 +49,9 @@ export function ApiClientListCard({
   deleteError,
   rotatePending,
   rotateError,
+  activePending = false,
+  activeError = null,
+  onSetActive,
   scopeOptions,
   scopesLoading,
   scopesError,
@@ -56,13 +62,13 @@ export function ApiClientListCard({
   onRotate,
   onScopesUpdate,
 }: Props) {
-  const errors = [scopesError, scopeUpdateError, deleteError, rotateError].filter(Boolean);
+  const errors = [scopesError, scopeUpdateError, deleteError, rotateError, activeError].filter(Boolean);
   return <div className="grid gap-3">
     {canManageMakerspace ? <>
       <QueryContent state={{ status: clientsLoading ? "loading" : clientsError ? "error" : "ready", error: "Couldn't load API clients. Try again.", onRetry }}>
       {clients?.map(client => <ApiClientRow key={client.id} client={client} scopeOptions={scopeOptions}
         scopesLoading={scopesLoading} updatePending={scopeUpdatePending} deletePending={deletePending}
-        rotatePending={rotatePending} updateError={scopeUpdateError} scopesError={scopesError} onRetryScopes={onRetryScopes} onDelete={onDelete} onRotate={onRotate} onScopesUpdate={onScopesUpdate} />)}
+        rotatePending={rotatePending} activePending={activePending} onSetActive={onSetActive} updateError={scopeUpdateError} scopesError={scopesError} onRetryScopes={onRetryScopes} onDelete={onDelete} onRotate={onRotate} onScopesUpdate={onScopesUpdate} />)}
       {!clientsLoading && clients?.length === 0 ? <EmptyState message="No clients yet. The secret appears once, right after you create one." /> : null}
       </QueryContent>
       {errors.map((error, index) => <ErrorBlock key={index} error={error!} />)}
@@ -77,7 +83,13 @@ export function ApiClientListCard({
   </div>;
 }
 
-function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, updateError, scopesError, onRetryScopes, deletePending, rotatePending, onDelete, onRotate, onScopesUpdate }: {
+const CONFIRM = {
+  rotate: { title: "Rotate client secret?", message: "The current secret keeps working for 24 hours. Copy the replacement after rotating.", label: "Rotate secret" },
+  revoke: { title: "Revoke API client?", message: "Tools using this client stop working at once. You can reactivate it later.", label: "Revoke" },
+  delete: { title: "Delete API client?", message: "Tools using this client lose access, and the client is gone for good.", label: "Delete" },
+} as const;
+
+function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, updateError, scopesError, onRetryScopes, deletePending, rotatePending, activePending, onSetActive, onDelete, onRotate, onScopesUpdate }: {
   client: ApiClient;
   scopeOptions: ApiClientScopeOption[];
   scopesLoading: boolean;
@@ -87,12 +99,14 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, upda
   onRetryScopes?: () => void;
   deletePending: boolean;
   rotatePending: boolean;
+  activePending: boolean;
+  onSetActive?: (clientId: number, active: boolean) => void;
   onDelete: (clientId: number) => void;
   onRotate: (clientId: number) => void;
   onScopesUpdate: (clientId: number, scopes: string[]) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [confirm, setConfirm] = useState<"rotate" | "delete" | null>(null);
+  const [confirm, setConfirm] = useState<"rotate" | "delete" | "revoke" | null>(null);
   const [selected, setSelected] = useState<string[]>(client.scopes);
   useEffect(() => setSelected(client.scopes), [client.scopes]);
   const clientScopeOptions = useMemo(
@@ -113,11 +127,15 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, upda
         <span>{client.allowed_origins.length ? client.allowed_origins.join(", ") : "No browser origins configured."}</span>
         <span>Created <RelativeTime date={client.created_at} /> · {client.last_seen_at ? <>Last used <RelativeTime date={client.last_seen_at} /></> : "Never used"}</span></span>}
       right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={client.is_active ? "Active" : "Inactive"} tone={client.is_active ? "success" : "neutral"} />
+        {client.client_type === "peer" ? <StatusPill label="Another space" /> : null}
         <StatusPill label={`${client.scopes.length} scopes`} />
         {hasLegacy ? <StatusPill label="Legacy v1" tone="warn" /> : null}
         <button className="desk-button" onClick={() => setEditing(true)}>Edit scopes</button>
         <OverflowMenu label={`Actions for ${client.label}`} actions={[
           { label: "Rotate secret", onClick: () => setConfirm("rotate"), disabled: rotatePending, confirms: true },
+          ...(onSetActive ? [client.is_active
+            ? { label: "Revoke", onClick: () => setConfirm("revoke"), disabled: activePending, tone: "danger" as const, confirms: true }
+            : { label: "Reactivate", onClick: () => onSetActive(client.id, true), disabled: activePending }] : []),
           { label: "Delete", onClick: () => setConfirm("delete"), disabled: deletePending, tone: "danger", confirms: true },
         ]} /></div>} />
     {editing ? <DetailLayout presentation="drawer" open onClose={() => { setSelected(client.scopes); setEditing(false); }} title={`Scopes for ${client.label}`}
@@ -128,10 +146,15 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, upda
       main={<div className="grid gap-4">{hasLegacy ? <Callout size="card" tone="warn" lead="Legacy v1 access" body="Select explicit replacement scopes and save. Viewing this client never changes its access." /> : null}
         <ApiClientScopePicker options={clientScopeOptions} selected={selected} onChange={setSelected} disabled={updatePending} />
         {updateError || scopesError ? <ErrorBlock error={(updateError ?? scopesError)!} /> : null}</div>} /> : null}
-    <ConfirmDialog open={confirm !== null} title={confirm === "delete" ? "Delete API client?" : "Rotate client secret?"}
-      message={confirm === "delete" ? "Tools using this client will lose access." : "The current secret will stop working. Copy the replacement after rotating."}
-      confirmLabel={confirm === "delete" ? "Delete" : "Rotate secret"} tone={confirm === "delete" ? "danger" : "default"}
-      pending={deletePending || rotatePending} onCancel={() => setConfirm(null)}
-      onConfirm={() => { if (confirm === "delete") onDelete(client.id); else onRotate(client.id); setConfirm(null); }} />
+    <ConfirmDialog open={confirm !== null} title={CONFIRM[confirm ?? "rotate"].title}
+      message={CONFIRM[confirm ?? "rotate"].message}
+      confirmLabel={CONFIRM[confirm ?? "rotate"].label} tone={confirm === "rotate" ? "default" : "danger"}
+      pending={deletePending || rotatePending || activePending} onCancel={() => setConfirm(null)}
+      onConfirm={() => {
+        if (confirm === "delete") onDelete(client.id);
+        else if (confirm === "revoke") onSetActive?.(client.id, false);
+        else onRotate(client.id);
+        setConfirm(null);
+      }} />
   </>;
 }

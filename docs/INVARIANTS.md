@@ -1143,8 +1143,7 @@ reseller's sales line), and no vendor or business contact anywhere in `warranty`
 classified as scoped PII; the registries are self-consistent on that reading. The alternative — a
 `procurement.Vendor` record with `ScopedPiiModelMixin` contact fields, a data migration moving each
 distinct `vendor_contact` value into an encrypted vendor row, and a sweep test over contact-like columns
-— is written up in `docs/plans/2026-09-03-forward-plan/phase-6-money-and-membership.md` ("Vendor record")
-and should be built only if the owner decides vendors can be named individuals. Until then, do not
+— should be built only if the owner decides vendors can be named individuals. Until then, do not
 re-raise the question from a grep for "contact" columns; this entry is the answer.
 
 **Fixed per-makerspace roles (replaces Part L; seven at first, nine since release 2 added Technician and Shop Manager).** `makerspaces/role_catalog.py` defines
@@ -6719,9 +6718,8 @@ procurement (`move_to_printing`); Phase 5A hit it again in three places. Drop th
 and lazy-load; the extra query is free next to the writes the transaction already performs. **This
 is now a recurring trap, not a one-off.**
 
-**Phase 5B (tenant migration) is BUILT on `dev`.** The plan is
-`docs/superpowers/specs/2026-08-16-phase5b-plan-v13.md` (gitignored) — **cumulative and standalone;
-v1–v12 are history only**. Conclusions that cost thirteen review rounds and must not be re-derived:
+**Phase 5B (tenant migration) is BUILT on `dev`.** Conclusions that cost thirteen review rounds and must
+not be re-derived:
 
 **Lane D D1 adds a separate deny-by-default source catalog.** Its literal model and
 concrete-or-M2M field snapshots are checked against `apps.get_models(include_auto_created=True)` and a

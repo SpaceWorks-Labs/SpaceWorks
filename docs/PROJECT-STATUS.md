@@ -232,7 +232,6 @@ is unchanged. `GET /api/v1/metrics/` serves Prometheus text behind `METRICS_TOKE
 (`./scripts/dev.sh test`, `./scripts/dev.sh e2e`), not in Actions. The release workflow builds/publishes
 backend/frontend images, creates the GitHub Release, promotes rolling tags and optionally deploys via
 the self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.
-The forward plan itself is local-only under `docs/plans/2026-09-03-forward-plan/`.
 
 **Search and live updates (phase 1).** Every inventory, machine and event list accepts `?q=` (full-text with
 phrase and exclusion syntax, typo-tolerant on the name) through `apps/inventory/search.py`; the member

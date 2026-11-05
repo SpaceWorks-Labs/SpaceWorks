@@ -74,11 +74,23 @@ export async function staffRequestBlob(
   return await response.blob();
 }
 
+type StaffWriteGuard = (path: string, method: string) => boolean;
+let staffWriteGuard: StaffWriteGuard | null = null;
+
+/** #195: the superadmin console asks before writing in a paused or read-only space (null clears). */
+export function setStaffWriteGuard(guard: StaffWriteGuard | null) {
+  staffWriteGuard = guard;
+}
+
 export async function staffRequest<T>(
   path: string,
   options: RequestInit = {},
   context: SessionContext = currentSessionContext(),
 ): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase();
+  if (staffWriteGuard && !["GET", "HEAD", "OPTIONS"].includes(method) && !staffWriteGuard(path, method)) {
+    throw apiError(409, { detail: "Cancelled. Nothing was changed.", code: "superadmin_write_cancelled" });
+  }
   const response = await staffFetch(path, options, false, context);
 
   if (!response.ok) {

@@ -15,6 +15,7 @@ import { machineTypeSegment, staffTabPath } from "./staffTabs";
 import { visibleRequestTabs } from "./panels/requestTabs";
 import { PlatformNoticeBanners } from "../platformNotices/PlatformNoticeBanners";
 import { PausedSpacePage } from "../platformNotices/PausedSpacePage";
+import { SuperadminSpaceGuard } from "../platformNotices/SuperadminSpaceGuard";
 import { spaceNotice, usePlatformNotices } from "../platformNotices/platformNoticesApi";
 
 type Props = { activeMakerspace?: Makerspace; allowedTabs: readonly string[]; activeTab: string;
@@ -88,7 +89,8 @@ export function StaffShell(props: Props) {
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),
     } : hasGrants ? { name: "Assigned resources", subtitle: "Resource staff", avatar: { kind: "icon", icon: "Calendar", tone: "neutral" }, menu: [], locked: true }
     : undefined;
-  if (pausedNotice?.state === "suspended") {
+  // #195: the superadmin is never shown the paused page; they get the warning banner instead.
+  if (!props.isSuperadmin && pausedNotice?.state === "suspended") {
     const canSwitch = !singleTenantLocked && props.makerspaces.length > (space ? 1 : 0);
     const signOut = { label: "Sign out", onClick: () => void props.signOut() };
     return <PausedSpacePage name={space?.name ?? pausedNotice.name} reason={pausedNotice.reason} primary={canSwitch ? { label: "Switch space", onClick: () => props.setSelected(null) } : signOut}
@@ -104,6 +106,7 @@ export function StaffShell(props: Props) {
       {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
           Both pills share the job-status query keys, so this adds no polling. */}
       {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}
+      <SuperadminSpaceGuard notice={props.isSuperadmin && space ? spaceNotice(notices.data, { id: space.id }) : undefined} />
       <PlatformNoticeBanners data={notices.data} space={space ? { id: space.id } : undefined} />
       {props.children}
     </AppShell>

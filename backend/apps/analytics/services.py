@@ -35,10 +35,6 @@ def _row(scope, *, lock=False):
     return (queryset.select_for_update() if lock else queryset).get()
 
 
-def _audit(actor, action, scope, row, meta):
-    record(actor, action, makerspace=scope.makerspace, target=row, meta={"scope": scope.label, **meta})
-
-
 def summary(scope, row=None):
     row = row or _row(scope)
     available, reason = provisioning.availability()
@@ -53,7 +49,8 @@ def describe(scope, actor):
     """The manager view of the connection (never a secret). Audited as a credentials view."""
     row = _row(scope)
     login_exists = provisioning.login_exists(row.login_role)
-    _audit(actor, "analytics.credentials_viewed", scope, row, {"role": row.login_role or ""})
+    record(actor, "analytics.credentials_viewed", makerspace=scope.makerspace, target=row,
+           meta={"scope": scope.label, "role": row.login_role or ""})
     return {
         **summary(scope, row),
         "metabase_url": row.metabase_url,
@@ -92,9 +89,9 @@ def update(scope, actor, data):
                 row.show_member_details, changed = bool(data["show_member_details"]), [*changed, "show_member_details"]
         if changed:
             row.save()
-            _audit(actor, "analytics.connection_updated", scope, row, {
-                "fields": sorted(changed),
-                **({"show_member_details": row.show_member_details} if "show_member_details" in changed else {}),
+            record(actor, "analytics.connection_updated", makerspace=scope.makerspace, target=row, meta={
+                "scope": scope.label, "fields": sorted(changed),
+                "show_member_details": row.show_member_details if "show_member_details" in changed else None,
             })
     return describe(scope, actor)
 
@@ -137,8 +134,13 @@ def _set_login(scope, actor, *, rotate):
         else:
             row.login_created_at, row.login_rotated_at = now, None
         row.save()
-        _audit(actor, "analytics.login_rotated" if rotate else "analytics.login_created", scope, row,
-               {"role": role, "password_shown": True})
+        # One literal action per branch keeps both under the audit presentation catalogue.
+        if rotate:
+            record(actor, "analytics.login_rotated", makerspace=scope.makerspace, target=row,
+                   meta={"scope": scope.label, "role": role, "password_shown": True})
+        else:
+            record(actor, "analytics.login_created", makerspace=scope.makerspace, target=row,
+                   meta={"scope": scope.label, "role": role, "password_shown": True})
     return _credentials(scope, row, password)
 
 
@@ -169,7 +171,8 @@ def revoke_login(scope, actor):
         row.login_role, row.login_password = "", ""
         row.login_created_at = row.login_rotated_at = None
         row.save()
-        _audit(actor, "analytics.login_revoked", scope, row, {"role": role})
+        record(actor, "analytics.login_revoked", makerspace=scope.makerspace, target=row,
+               meta={"scope": scope.label, "role": role})
 
 
 def embed(scope, actor, dashboard_id):
@@ -179,5 +182,6 @@ def embed(scope, actor, dashboard_id):
     if dashboard_id not in {entry["id"] for entry in row.dashboards or []}:
         raise AnalyticsError("analytics_dashboard_unknown", "That dashboard is not listed for this space.")
     url, expires_at = embedding.dashboard_url(row.metabase_url, row.get_embed_secret(), dashboard_id)
-    _audit(actor, "analytics.dashboard_viewed", scope, row, {"dashboard": dashboard_id})
+    record(actor, "analytics.dashboard_viewed", makerspace=scope.makerspace, target=row,
+           meta={"scope": scope.label, "dashboard": dashboard_id})
     return {"url": url, "expires_at": expires_at}

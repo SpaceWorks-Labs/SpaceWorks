@@ -17,6 +17,7 @@ import { useCardDesignQuery } from "./designerApi";
 import { loadCardFont } from "./fontLoader";
 import { LayerInspector } from "./LayerInspector";
 import { LayerList } from "./LayerList";
+import { undoShortcut } from "./undoHistory";
 import { useCardDesign } from "./useCardDesign";
 
 export function CardDesigner({ designId, canEdit, title }: { designId: number; canEdit: boolean; title?: string }) {
@@ -54,9 +55,8 @@ function DesignerBody({ design, canEdit, title }: { design: CardDesign; canEdit:
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target && (target.closest("input, textarea, select, [contenteditable='true']"))) return;
-      const mod = event.metaKey || event.ctrlKey;
-      if (mod && event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) working.redo(); else working.undo(); }
-      else if (mod && event.key.toLowerCase() === "y") { event.preventDefault(); working.redo(); }
+      const shortcut = undoShortcut(event);
+      if (shortcut) { event.preventDefault(); if (shortcut === "redo") working.redo(); else working.undo(); }
       else if ((event.key === "Delete" || event.key === "Backspace") && selected && !selected.locked && canEdit) {
         event.preventDefault(); remove(selected.id);
       } else if (event.key === "Escape") setSelectedId(null);

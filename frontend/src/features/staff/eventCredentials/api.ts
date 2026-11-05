@@ -4,7 +4,8 @@ import { sessionScope } from "../eventProgramme/sessionScope";
 import type { PrintAccepted, PrintDetail } from "../../../generated/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
-import type { LayerDocument, LegacyDocument, Stock } from "./layout";
+import type { LayerDocument, LegacyDocument } from "./layout";
+import type { DesignStock as Stock } from "./badgeStocks";
 
 export type DesignInput = { parameters: LayerDocument; artwork_id: number | null };
 export type CertificateDesign = { id: number | null; parameters: LayerDocument | LegacyDocument; artwork_id: number | null; event_version: number };

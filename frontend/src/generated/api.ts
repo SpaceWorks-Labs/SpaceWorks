@@ -9602,6 +9602,13 @@ export type GalleryEntryReadPage = {
   "next": string | null;
   "previous": string | null;
   "results": Array<GalleryEntryRead>;
+  "filters": Array<GalleryFieldFilter>;
+};
+
+export type GalleryFieldFilter = {
+  "key": string;
+  "label": string;
+  "choices": Array<string>;
 };
 
 export type GalleryGrantInput = {

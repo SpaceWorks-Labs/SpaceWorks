@@ -4884,10 +4884,11 @@ Load-bearing details that carried over unchanged:
 
 ### Events programme integration contract (2026-10-18)
 
-Checkpoint `f1ef7736` adds the programme schema/mounts and generated API, not completed
-runtime acceptance. Keep `events.hackathons`, `events.mentoring`, `events.mentor_rounds`,
-`events.volunteering`, `events.project_gallery` and event hackathon config OFF until the
-[closure ledger](events/integration-status.md) and [AO evidence](events/acceptance.md) pass.
+Checkpoint `f1ef7736` added the programme schema, mounts and generated API. `events.hackathons`,
+`events.mentoring`, `events.mentor_rounds`, `events.volunteering` and `events.project_gallery` are
+ordinary per-space switches, off for a new space, that a Space Manager may turn on (`events.mentoring`
+no longer needs hackathons). Release 2's final flow audit records the runtime evidence in the
+[closure ledger](events/integration-status.md) and the [AO evidence](events/acceptance.md).
 The rules here are binding; a rule's presence does not claim every adapter is installed.
 
 - **One admission writer and real hard capacity.** A application lifecycle calls the

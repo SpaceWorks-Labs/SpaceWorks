@@ -2,8 +2,11 @@
 
 GF4, `lane/events-g2`, 2026-10-18. The six EV2/EV3 handoffs are reconciled in this
 worktree. This is authored integration, without PostgreSQL, storage or browser
-acceptance. **Keep all five programme capabilities and per-event hackathon config
-off.** Account Saved details and UI delight controls also default off. Generated
+acceptance. It is the 2026-10-18 snapshot. Since then the five programme capabilities
+(`events.hackathons`, `events.mentoring`, `events.mentor_rounds`, `events.volunteering`,
+`events.project_gallery`) ship as ordinary per-space switches, off for a new space, that a Space
+Manager may turn on; `events.mentoring` no longer needs hackathons. Account Saved details and UI
+delight controls also default off. Release 2's final flow audit records the runtime evidence. Generated
 OpenAPI/client files and the catalogue digest remain unchanged.
 
 Paths below are relative to `backend/apps/`; test paths are relative to `backend/`.

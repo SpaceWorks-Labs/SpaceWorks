@@ -6,7 +6,9 @@ TypeScript and 52-file/211-test frontend verification passed. Python compilation
 source-only checks do not establish PostgreSQL/provider/physical-print acceptance.
 Existing backend tests below are exact rerun targets, not passing outcomes. Full files,
 local evidence and unresolved code dependencies are in the GF4 scratchpad report and
-[integration closure](integration-status.md). Programme capabilities remain OFF.
+[integration closure](integration-status.md). The programme capabilities are ordinary per-space
+switches: off for a new space, and a Space Manager may turn them on. Release 2 records the runtime and
+browser evidence for each AO in its final flow audit; a row below without that evidence is still open.
 
 Path shorthand: **E**=`backend/apps/events/`; **T**=`backend/tests/events/programme/`;
 **U**=`frontend/src/`. Route suffixes under **A**=`/api/v1/admin/events/{event_id}/`,

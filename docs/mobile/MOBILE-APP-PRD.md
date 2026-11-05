@@ -150,7 +150,7 @@ update:
   `refresh_token_staff_<slug>` browser cookies, payload `staff_makerspace`.
 - Tokens: `kind` is `person` or `platform`; no token carries `makerspace`. Payload: `kind`,
   `is_platform`, `has_staff_role`, `has_elevated_authority`, `staff_roles`, `mfa_grace_ends_at`
-  (item 10); `account_kind` survives one release as a deprecated alias.
+  (item 10). The `account_kind` alias was removed from the payload in release 2; read `kind`.
 - Staff grants are step-ups on the person (item 6): `POST /auth/device/staff-grant`.
 - Every device grant was revoked at the cutover, member grants included (#66): every user signs
   in again; an old refresh gets 401 `session_revoked`.
@@ -158,6 +158,12 @@ update:
   `-resend`, `-preview`, `-confirm`, `-cancel` (U-C ships them; the route names are fixed).
 - `MIN_NATIVE_APP_VERSION_IOS` / `_ANDROID` (x.y.z, numeric per platform): 426
   `native_app_update_required` at device login, the staff step-up and refresh; send `app_version`.
+- Remembered devices: every completed device sign-in returns `device_trust`. Store it and send it back
+  in the `X-Device-Trust` header on later sign-ins so the unusual-sign-in check knows the device. A
+  remembered device never skips the second factor; staff still pass it at every sign-in.
+- Event-role desks (judge, mentor, volunteer, crew) open natively through an event grant
+  (`POST /auth/device/event-grant`, `session_authority: "native_event"`); see "Event-role desks
+  natively" near the end of this document.
 
 ### Watch-friendly notifications
 
@@ -342,10 +348,11 @@ categories.
    `has_elevated_authority`, `staff_roles:[{makerspace:{id,slug,name},roles:[{id,slug,name}],actions}]`
    (what THIS session may use: none on a member grant, the fixed makerspace on a staff grant),
    `makerspaces` (one entry per space with `actions` and `tracks: ["community","staff"]`),
-   `superadmin_actions`, `mfa_grace_ends_at` and `session_authority` (`member` | `native_staff`).
+   `superadmin_actions`, `mfa_grace_ends_at`, `event_grants` and `session_authority` (`member` |
+   `native_staff` | `native_event`).
    Drive the switcher and staff-tool visibility from it, and refetch on app foreground. Show staff
    tools only when `session_authority` is `native_staff` and the action is listed. `account_kind`
-   is a deprecated alias for one release; `staff_makerspace` is gone. Use `has_staff_role` to offer
+   and `staff_makerspace` are gone. Use `has_staff_role` to offer
    the step-up. Refresh never changes grant authority or the fixed staff makerspace.
 11. On staff screens, `X-Makerspace-Id` is **mandatory** and must equal any makerspace
     id in the URL. Without it, staff calls are refused.

@@ -2,6 +2,13 @@ import { DataTable, type DataTableColumn } from "../../components/ui";
 import type { OverviewSpace, PlatformOverview } from "./platformOverviewApi";
 
 type ModuleRow = PlatformOverview["modules"][number];
+const SHOWN = 5;
+
+/** The first few space names, then a count, so a large platform keeps one readable line per module. */
+function spaceList(ids: number[], spaces: Map<number, OverviewSpace>) {
+  const names = ids.slice(0, SHOWN).map(id => spaces.get(id)?.name ?? `#${id}`).join(", ");
+  return ids.length > SHOWN ? `${names} and ${ids.length - SHOWN} more` : names;
+}
 
 /** Which spaces have which module on, plus the blocks hidden because their module is off everywhere. */
 export function OverviewModulesSection({ data, spaces }: { data: PlatformOverview; spaces: Map<number, OverviewSpace> }) {
@@ -10,7 +17,7 @@ export function OverviewModulesSection({ data, spaces }: { data: PlatformOvervie
     { key: "on_in", header: "On in", phone: "detail", className: "tabular-nums", render: row => row.on_in.toLocaleString() },
     { key: "off_in", header: "Off in", phone: "detail", className: "tabular-nums", render: row => row.off_in.toLocaleString() },
     { key: "spaces", header: "Spaces with it on", phone: "detail", render: row => row.space_ids.length
-      ? row.space_ids.map(id => spaces.get(id)?.name ?? `#${id}`).join(", ") : <span className="text-muted">None</span> },
+      ? spaceList(row.space_ids, spaces) : <span className="text-muted">None</span> },
   ];
   return <div className="grid min-w-0 gap-4">
     {data.hidden_blocks.length ? <ul className="grid gap-2" aria-label="Sections with their module off in every space">

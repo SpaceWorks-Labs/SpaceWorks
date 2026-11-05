@@ -65,11 +65,14 @@ export function PlatformOverviewPage() {
   return <DashboardLayout width="wide"
     header={{ eyebrow: "Platform", title: "Platform overview",
       subtitle: "Every space's totals combined, with each space's own numbers beside them. Counts and money only; no member names." }}
-    state={{ status: result.isLoading ? "loading" : result.error && !data ? "error" : "ready",
-      error: result.error ? eventErrorText(result.error) : undefined, onRetry: () => { void result.refetch(); } }}
+    state={{ status: result.isLoading ? "loading" : "ready" }}
     progress={<div className="grid gap-3">
       <PlatformOverviewControls query={query} onChange={setQuery} ready={Boolean(data) && !computing}
         excludedCount={data ? data.excluded_count : null} onRefresh={() => void refresh()} refreshing={refreshing} />
+      {result.error && !data ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ink">
+        <span>{eventErrorText(result.error)}</span>
+        <button type="button" className="desk-button min-h-11" onClick={() => { void result.refetch(); }}>Try again</button>
+      </div> : null}
       <p role="status" className="text-sm text-muted">
         {!overviewReady(query) ? "Choose a start and an end date to see a custom period."
           : computing ? "Working out the totals. Large platforms can take a minute; this page updates by itself."

@@ -8,8 +8,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0066_l21a_participation'),
-        ('makerspaces', '0119_l3_member_cards'),
+        ('events', '0069_l21b_guards_and_options'),
+        ('makerspaces', '0127_help_centre_default_on'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

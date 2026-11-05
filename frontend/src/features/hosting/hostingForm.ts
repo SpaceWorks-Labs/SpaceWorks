@@ -3,7 +3,7 @@ import type * as Api from "../../generated/api";
 import type { HostingRequestBody } from "./hostingApi";
 
 /** Every field as the text the input holds; `expected_members` is converted to a number on submit. */
-export type HostingFormValue = Required<Api.HostingRequestSubmit> & { expected_members: string };
+export type HostingFormValue = Omit<Required<Api.HostingRequestSubmit>, "expected_members"> & { expected_members: string };
 export type HostingFormKey = keyof HostingFormValue;
 
 export const EMPTY_HOSTING_FORM: HostingFormValue = {

@@ -228,6 +228,13 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   that gate**: `member_may_see_own_charges` admits a live, unrestricted account that owns a
   charge here and holds no membership, so an account-only loan borrower can read their own debt;
   a REVOKED member is still refused.
+- **A paused (suspended) or read-only space is refused in ONE place** (#185): `space_controls.write_policy`,
+  called from the source gate's single `_assert_gate_state`, which every tenant write already passes. Never
+  add a per-view or per-task check. Money a payer already sent still settles in every state, and a new
+  fan-out sweep is skipped in read-only unless its operation is listed in `READ_ONLY_OPERATIONS`. The
+  managed-hosting limiter (`MANAGED_PLANS_ENABLED`, #187A) is off by default and must change nothing while
+  off: every hook checks the switch before any query. See **Superadmin space controls** in
+  `docs/INVARIANTS.md`.
 - Evidence photo **rows** and QR scan records are **immutable**; audit logs are **append-only**. Evidence retention may delete every final and staging object version only after the configured window, but it does not update or delete the retained `EvidencePhoto` row.
 - **Attached evidence is never deleted.** The only photo UPDATE is the one-way `consumption_state → consumed` mark (`evidence/consumption.py`) every consuming workflow makes in its attachment transaction; legacy and imported rows are `legacy_unknown` and never eligible. Abandoned-upload cleanup (deployment switch **and** tenant opt-in, both default off) may delete only an old `unconsumed` presign with no inbound FK and no consumption audit, through an exact-ID GUC the trigger re-checks against a permanent, FK-free `EvidenceAbandonedUploadReceipt`. Receipts can never be deleted, reserve their object key against tenant-import reuse, and keep re-deleting both keys every 360 minutes (720 after a failure) across source `MIGRATED_OUT` and tenant purge. The staging/final-key rule above is unchanged.
 - **The public card check (`/verify/c/<token>`) never shows the desk QR or any holder extra**, shows

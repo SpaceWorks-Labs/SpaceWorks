@@ -46,7 +46,7 @@ export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspac
         <AnalyticsPanel key="platform-analytics" scope={{ kind: "platform" }} />
       ) : null}
       {activeTab === "platform" ? (
-        <PlatformSettingsPanel platformHosting={Boolean(activeMakerspace.platform_hosting)} />
+        <PlatformSettingsPanel platformHosting={Boolean(activeMakerspace.platform_hosting)} unavailableApps={activeMakerspace.unavailable_apps ?? []} />
       ) : null}
       {activeTab === "users" && canManageMakerspace ? (
         <Users makerspaces={makerspaces} isSuperadmin={isSuperadmin} currentUser={currentUser} onAuthRefresh={onAuthRefresh} />

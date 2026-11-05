@@ -246,8 +246,8 @@ semantics and is deliberately not emulated on Windows.
 
 > The frontend container's nginx proxies `/api/`, `/static/`, and the docs routes to the backend.
 > The **single published port (80)** serves the public app, the React staff console at `/admin`,
-> and Swagger. The Django control plane is mounted at `/control/` on the backend and is **not
-> exposed** on the public port unless you opt in — see
+> and Swagger. The Django control plane is mounted at `/control/` on the backend and is **server-only by
+> default**: the public port answers 404 for it unless you opt in — see
 > [Reaching the control plane](#reaching-the-control-plane).
 
 ## First Run
@@ -487,7 +487,7 @@ Always-on protections (any transport): `django-axes` locks out brute-force admin
 (`AXES_FAILURE_LIMIT`, keyed by ip+username), a scoped throttle limits the JWT login endpoint, the
 public submit endpoint has its own anti-spam throttle + a honeypot, and a Content-Security-Policy is
 sent on every response. The Django control plane at `/control/` is restricted to active
-superusers only and is not served on the public port unless you opt in (next section).
+superusers only and is server-only by default: the public port answers 404 unless you opt in (next section).
 
 Secrets (`SECRET_KEY`, `API_CLIENT_ENC_KEY`, makerspace Telegram bot tokens, makerspace SMTP
 passwords) live only in the backend. `API_CLIENT_ENC_KEY` is the Fernet key that encrypts the
@@ -496,19 +496,55 @@ previously stored tokens/passwords can no longer be decrypted.
 
 ## Reaching the control plane
 
-The Django control plane (`/control/`, with its MFA step at `/mfa/control/`) is for superadmins only and is
-**off the public port by default**. A plain SSH tunnel to the backend container does not work once HTTPS is
-on: the backend publishes no port, and Django answers a plain-HTTP request with a redirect to
-`https://localhost:8000/…`, where nothing listens for TLS. There are two supported, opt-in routes.
+The Django control plane (`/control/`, with its MFA step at `/mfa/control/` and its re-authentication
+step at `/mfa/reauth/`) is the superadmin's **server-side power tool and fallback**. Day-to-day platform
+work happens in the **web superadmin console** (`/admin` → Platform), which offers every operation the
+control plane has except the few that need the server by design: platform key rotation with the private
+key, whole-platform restore, recovery commands, platform provider credentials entered once at setup, and
+repair of plumbing rows no workflow owns. The control plane's home page lists what needs attention and
+says, for each item, where the web console handles it.
+
+**By default the control plane is server-only** (`CONTROL_PLANE_PROXY=false`). It answers only:
+
+- on the server itself (a loopback request with no proxy in between), or
+- through the **SSH tunnel** listener below.
+
+Everywhere else, including the website's own address, `/control/` answers **404**: no login page, no hint
+that a console exists. Django enforces this itself as well as the proxies, so a misrouted proxy or an
+exposed backend port does not open it either. Superadmin-only access, MFA, re-authentication and the
+django-axes lockout apply behind this, unchanged.
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `CONTROL_PLANE_PROXY` | `false` | `true` serves `/control/` and `/mfa/control/` on the site's own address through the bundled proxy (Caddy with automatic HTTPS, or the website nginx). |
-| `CONTROL_PLANE_ALLOW_CIDRS` | empty (anyone) | Space-separated addresses/CIDRs, e.g. `203.0.113.7 10.8.0.0/16`. Everyone else gets 403. |
-| `CONTROL_PLANE_TUNNEL_PORT` | empty (off) | Automatic HTTPS only: a `127.0.0.1`-only HTTPS port that serves nothing but the control plane, for an SSH tunnel. |
+| `CONTROL_PLANE_TUNNEL_PORT` | empty (off) | Automatic HTTPS only: a `127.0.0.1`-only HTTPS port that serves nothing but the control plane, for an SSH tunnel. The recommended way in. |
+| `CONTROL_PLANE_PROXY` | `false` | `true` also serves `/control/` on the site's own address through the bundled proxy (Caddy with automatic HTTPS, or the website nginx). Opt-in; see "Through the website" below. |
+| `CONTROL_PLANE_ALLOW_CIDRS` | empty (anyone) | With `CONTROL_PLANE_PROXY=true` only: space-separated addresses/CIDRs, e.g. `203.0.113.7 10.8.0.0/16`. Everyone else gets 403. |
 
-`setup.sh` asks about these on a fresh install. On an existing install, rerun the one-line installer and
-choose **6) Turn web access to the control plane on or off**, or run `bash scripts/control-plane-settings.sh`
+A plain SSH tunnel to the backend container does not work once HTTPS is on: the backend publishes no port,
+and Django answers a plain-HTTP request with a redirect to `https://localhost:8000/…`, where nothing
+listens for TLS. Use the tunnel listener instead.
+
+**SSH tunnel (`CONTROL_PLANE_TUNNEL_PORT`, automatic HTTPS only), recommended.** Caddy listens on
+`127.0.0.1:<port>` of the server with its own internal certificate and serves only the control plane, so
+nothing is reachable from the network. It needs Docker Engine 28 or newer (older engines let neighbouring
+hosts reach `127.0.0.1`-published ports); the wrapper refuses to start it otherwise. From your computer:
+
+```bash
+ssh -N -L 8443:127.0.0.1:<port> you@your-server
+```
+
+Then open `https://localhost:8443/control/` and accept the certificate warning once (or trust Caddy's root,
+`/data/caddy/pki/authorities/local/root.crt` in the `caddy_data` volume). Use `localhost`, not
+`127.0.0.1`: the certificate and `ALLOWED_HOSTS` (setup writes `localhost`) are for that name. Real TLS end to
+end means Secure cookies, the HTTPS redirect and CSRF behave exactly as on the public domain; Caddy strips
+`Strict-Transport-Security` here so your browser does not pin `localhost` to HTTPS. TLS ends at Caddy; the hop
+to Django is plain HTTP on the private Compose network. The tunnel site marks its requests with an internal
+header (`X-SpaceWorks-Control-Tunnel`) that Django believes only while the tunnel overlay is selected and
+only from a private Compose-network peer; the public sites never forward it. **If you put your own reverse
+proxy in front of the backend, strip `X-SpaceWorks-Control-Tunnel` from client requests there.**
+
+`setup.sh` asks about these settings on a fresh install. On an existing install, rerun the one-line installer
+and choose **6) Turn web access to the control plane on or off**, or run `bash scripts/control-plane-settings.sh`
 in the install directory. It shows the current values, asks the same questions, then runs:
 
 ```bash
@@ -533,40 +569,29 @@ run it again; the database is not touched. Updates keep these settings, because 
 apply an edited `.env` with this script before the next update, or the updater refuses the changed file.
 This script is for these proxy settings; credential rotation and topology changes have their own procedures.
 
-**Through the website (`CONTROL_PLANE_PROXY=true`).** Open `https://<your-domain>/control/`. Nothing extra is
-needed for DNS, certificates, `ALLOWED_HOSTS` or `CSRF_TRUSTED_ORIGINS`: it is the same host. Set
+**Through the website (`CONTROL_PLANE_PROXY=true`, opt-in).** Open `https://<your-domain>/control/`. Nothing
+extra is needed for DNS, certificates, `ALLOWED_HOSTS` or `CSRF_TRUSTED_ORIGINS`: it is the same host. Set
 `CONTROL_PLANE_ALLOW_CIDRS` to your own address or VPN range wherever you can. The allowlist uses the address
 the proxy itself sees, so:
 
 - it works with automatic HTTPS (Caddy) and with the plain-HTTP website on a published port;
 - behind your own reverse proxy every client looks like that proxy, so leave it empty and restrict
-  `/control/` and `/mfa/control/` in your proxy instead;
+  `/control/`, `/mfa/control/` and `/mfa/reauth/` in your proxy instead;
 - Docker's userland proxy (for example IPv6 clients on hosts without ip6tables) makes every client look like
   the bridge gateway. Allowing a proxy, bridge or gateway address admits everyone behind it.
 
 Know what you are exposing: superadmin sign-in is protected by django-axes lockout, and by a TOTP challenge
 when the superadmin has enrolled an authenticator or platform policy requires one — an unenrolled
 superadmin's password alone signs in. `/control/` also shares an origin with the website, so a script bug in
-the website could act on an open control-plane session. Enrol MFA, use the allowlist, or prefer the tunnel.
-Plain HTTP is for loopback trials on this computer only. Use HTTPS for LAN access, including
-the control plane; authentication cookies and browser security depend on a secure origin.
-API-only installs support this route only with automatic HTTPS.
+the website could act on an open control-plane session. Prefer the tunnel; if you keep this route, enrol MFA
+and use the allowlist. Plain HTTP is for loopback trials on this computer only. Use HTTPS for LAN access,
+including the control plane; authentication cookies and browser security depend on a secure origin.
+API-only installs support this route only with automatic HTTPS. Installs that already use this route keep it
+on update; nothing switches it off for you.
 
-**SSH tunnel (`CONTROL_PLANE_TUNNEL_PORT`, automatic HTTPS only).** Caddy listens on `127.0.0.1:<port>` of
-the server with its own internal certificate and serves only the control plane, so nothing is reachable from
-the network. It needs Docker Engine 28 or newer (older engines let neighbouring hosts reach
-`127.0.0.1`-published ports); the wrapper refuses to start it otherwise. From your computer:
-
-```bash
-ssh -N -L 8443:127.0.0.1:<port> you@your-server
-```
-
-Then open `https://localhost:8443/control/` and accept the certificate warning once (or trust Caddy's root,
-`/data/caddy/pki/authorities/local/root.crt` in the `caddy_data` volume). Use `localhost`, not
-`127.0.0.1`: the certificate and `ALLOWED_HOSTS` (setup writes `localhost`) are for that name. Real TLS end to
-end means Secure cookies, the HTTPS redirect and CSRF behave exactly as on the public domain; Caddy strips
-`Strict-Transport-Security` here so your browser does not pin `localhost` to HTTPS. TLS ends at Caddy; the hop
-to Django is plain HTTP on the private Compose network.
+**Development stack.** `docker-compose.dev.yml` sets `CONTROL_PLANE_PROXY=true` for the backend, because
+Docker Desktop hands the container the bridge gateway rather than a loopback address; `/control/` stays on
+`http://localhost:8000/control/` there.
 
 ## Operating your spaces (superadmin controls)
 

@@ -23,6 +23,11 @@ class MessagingSecrets(models.Model):
 
 
 class PlatformWhatsAppSettings(MessagingSecrets, models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "platform WhatsApp settings"
+        verbose_name_plural = "platform WhatsApp settings"
+
     is_enabled = models.BooleanField(default=False)
     app_id = models.CharField(max_length=64, blank=True)
     phone_number_id = models.CharField(max_length=64, blank=True)

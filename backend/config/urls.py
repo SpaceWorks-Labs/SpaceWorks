@@ -83,6 +83,7 @@ urlpatterns = [
     path("", include("apps.makerspaces.website_urls")),
     *separable("events", "", "apps.events.urls_embed"),  # release 2 L1: framable event card
     path("mfa/control/", control_mfa, name="control-mfa"),
+    *separable("tenant_migration", "", "apps.tenant_migration.urls_selfhost_download"),  # #190
     path(
         "api/v1/backups/download/<uuid:archive_id>/<str:token>",
         BackupArchiveDownloadView.as_view(),

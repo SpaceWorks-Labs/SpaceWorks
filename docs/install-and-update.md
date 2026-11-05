@@ -251,6 +251,14 @@ with `--all-makerspaces`; non-interactive updates refuse to guess. `--modules` r
 area menu, while `--modules-only`, `--areas=inventory,machines,...`, `--all-modules`, `--without=a,b`,
 `--confirm-removals` and `--no-module-changes` support explicit operator and automation flows.
 
+**Upgrading to 0.11.0: the control plane.** `/control/` is now server-only by default, enforced by Django as
+well as the proxies: with `CONTROL_PLANE_PROXY=false` the website answers 404 for it, and it opens only on
+the server and through the SSH tunnel (`CONTROL_PLANE_TUNNEL_PORT`). Nothing is migrated: an install that
+set `CONTROL_PLANE_PROXY=true` keeps its website route and allowlist exactly as before. We recommend the
+tunnel, or at least an allowlist plus MFA; see [Reaching the control plane](self-hosting.md#reaching-the-control-plane).
+Everyday platform work (IP rules, account disable and two-step reset, request queues, restore drills,
+self-host moves) is in the web superadmin console under Platform settings.
+
 Turning an area off hides its surfaces and calls `uninstall_module`; it does **not** delete rows.
 `purge_module_data` is a separate destructive command and is never called by setup or update. See
 [Choosing modules](choosing-modules.md) for the areas, the per-module commands and purging.

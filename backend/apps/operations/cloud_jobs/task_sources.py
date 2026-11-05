@@ -67,7 +67,7 @@ TASK_SOURCES = {
     **{A + "backup." + name: platform(_RECOVERY) for name in (
         "tasks.cleanup_expired_restore_rollbacks_task", "tasks.purge_expired_backup_archives_task",
         "tasks.push_offsite_backups_task", "tasks.reconcile_backup_artifacts_task", "tasks.reencrypt_archives_task",
-        "tasks.run_restore_drill_task", "tasks.scheduled_deployment_backup_task", "tasks.scheduled_space_backups_task",
+        "tasks.run_restore_drill_task", "tasks.run_restore_drill_now_task", "tasks.scheduled_deployment_backup_task", "tasks.scheduled_space_backups_task",
         "tasks_space_restore.resume_space_restores_task")},
     **{A + "tenant_migration.tasks." + name: platform(_MIGRATION) for name in (
         "cleanup_abandoned_import_objects_task", "cleanup_expired_import_jobs_task",

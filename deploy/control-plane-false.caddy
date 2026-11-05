@@ -1,1 +1,6 @@
-# The public control-plane route is disabled by default.
+# The public control-plane route is disabled by default (#189/#191): the website answers
+# 404 for the control plane instead of handing the path to the single-page app.
+@control_plane path /control /control/* /mfa/control/* /mfa/reauth /mfa/reauth/*
+handle @control_plane {
+    respond 404
+}

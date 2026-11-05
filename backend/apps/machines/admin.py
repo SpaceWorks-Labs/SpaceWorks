@@ -29,7 +29,7 @@ from config.admin_access import SuperuserOnlyModelAdmin
 
 @admin.register(MachineType)
 class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    list_display = ("id", "slug", "name", "makerspace", "is_builtin", "managing_action")
+    list_display = ("name", "slug", "makerspace", "is_builtin", "managing_action")
     list_filter = ("is_builtin", "makerspace")
     search_fields = ("slug", "name", "makerspace__name")
     raw_id_fields = ("makerspace",)
@@ -55,7 +55,7 @@ class MachineTypeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 @admin.register(Machine)
 class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     list_display = (
-        'id', 'name', 'makerspace', 'machine_type', 'status', 'is_public', 'is_active'
+        'name', 'makerspace', 'machine_type', 'status', 'is_public', 'is_active'
     )
     list_filter = ('status', 'is_public', 'is_active', 'makerspace', 'machine_type')
     search_fields = ("name", "location", "makerspace__name")
@@ -178,14 +178,14 @@ class MachineConsumableAdmin(_ReadOnlyMachineChildAdmin):
 
 @admin.register(ServiceBucket)
 class ServiceBucketAdmin(_ReadOnlyMachineChildAdmin):
-    list_display = ("id", "machine", "name", "is_active", "created_at")
+    list_display = ("name", "machine", "is_active", "created_at")
     list_filter = ("is_active", "machine")
     search_fields = ("machine__name", "name")
 
 
 @admin.register(ServiceQueue)
 class ServiceQueueAdmin(_ReadOnlyMachineChildAdmin):
-    list_display = ("id", "name", "makerspace", "machine_type", "is_active", "allocation_policy")
+    list_display = ("name", "makerspace", "machine_type", "is_active", "allocation_policy")
     list_filter = ("is_active", "allocation_policy", "machine_type")
     search_fields = ("name", "makerspace__name")
 
@@ -193,7 +193,7 @@ class ServiceQueueAdmin(_ReadOnlyMachineChildAdmin):
 @admin.register(MachineConsumablePool)
 class MachineConsumablePoolAdmin(_ReadOnlyMachineChildAdmin):
     list_display = (
-        "id", "label", "makerspace", "machine", "machine_type", "remaining_grams",
+        "label", "makerspace", "machine", "machine_type", "remaining_grams",
         "is_active", "is_public",
     )
     list_filter = ("is_active", "is_public", "material", "machine_type")
@@ -212,7 +212,7 @@ class MachineConsumableAdjustmentAdmin(_ReadOnlyMachineChildAdmin):
 
 @admin.register(MachineServiceRequest)
 class MachineServiceRequestAdmin(PiiMaskingAdminMixin, _ReadOnlyMachineChildAdmin):
-    list_display = ("id", "title", "bucket", "assigned_machine", "status", "created_at")
+    list_display = ("title", "bucket", "assigned_machine", "status", "created_at")
     list_filter = ("status", "assigned_machine", "bucket__machine")
     search_fields = ("title", "requester_name", "contact_email")
     raw_id_fields = ("bucket", "requester", "assigned_machine")

@@ -48,6 +48,7 @@ class StockTransferAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     # must never fall through to Django's normal ORM save path.
     list_display = ("id", "makerspace", "source_container", "destination_container", "status", "created_at")
     list_filter = ("status", "makerspace")
+    search_fields = ("makerspace__name",)
     readonly_fields = (
         "makerspace",
         "source_container",
@@ -145,6 +146,7 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     actions = ["complete_selected", "approve_selected", "apply_adjustments_selected"]
     list_display = ("id", "makerspace", "container", "status", "started_at", "approved_at")
     list_filter = ("status", "makerspace")
+    search_fields = ("makerspace__name",)
     inlines = (StocktakeLineInline,)
 
     def get_urls(self):
@@ -234,6 +236,7 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 class InventoryAdjustmentAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     list_display = ("id", "makerspace", "product", "asset", "delta_available", "delta_damaged", "delta_lost", "created_at")
     list_filter = ("makerspace",)
+    search_fields = ("product__name", "makerspace__name")
 
     def has_add_permission(self, request):
         return False

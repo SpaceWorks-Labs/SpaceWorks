@@ -57,6 +57,7 @@ class PlatformPushSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdm
 class PushDeviceAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     list_display = ("id", "makerspace", "user", "provider", "environment", "active", "updated_at")
     list_filter = ("provider", "environment", "active")
+    search_fields = ("user__username", "makerspace__name")
     readonly_fields = (
         "user", "makerspace", "device_grant", "provider", "environment",
         "active", "invalidated_at", "created_at", "updated_at",

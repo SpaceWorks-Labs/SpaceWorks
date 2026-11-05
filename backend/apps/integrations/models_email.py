@@ -62,6 +62,11 @@ class EmailTemplate(models.Model):
         return f"{self.makerspace}:{self.stream}/{self.audience}/{self.key}"
 
 class PlatformEmailSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "platform email settings"
+        verbose_name_plural = "platform email settings"
+
     # Blank preserves the legacy environment/SMTP contract until migration/writes.
     email_provider = models.CharField(max_length=16, blank=True, choices=[
         ("", "Environment / legacy"), ("smtp", "SMTP"), ("resend", "Resend"),

@@ -65,3 +65,5 @@ def route_exemption(route, name):
 # hosting-invoice provider callbacks.
 PUBLIC_ROUTES |= {"public-makerspace-availability"}
 PROVIDER_ONLY_ROUTES |= {"managed-hosting-stripe-webhook", "managed-hosting-razorpay-webhook"}
+# r2-control-restructure (#190): the one-use move-export download link (signed, five minutes).
+NON_ACCOUNT_ROUTES |= {"selfhost-move-download"}

@@ -27,6 +27,7 @@ class DisclosureClosureApprovalAdmin(ReadOnlyMigrationAdmin):
         "id", "makerspace", "closure_digest", "approved_by", "approved_at", "revoked_at",
     )
     list_filter = ("makerspace", "approved_at", "revoked_at")
+    search_fields = ("makerspace__name",)
     readonly_fields = tuple(field.name for field in DisclosureClosureApproval._meta.fields)
 
 
@@ -43,6 +44,7 @@ class TenantDumpCaptureAdmin(ReadOnlyMigrationAdmin):
         "id", "makerspace", "status", "source_postgres_major", "created_at", "published_at",
     )
     list_filter = ("status", "source_encryption_mode", "created_at")
+    search_fields = ("makerspace__name",)
     readonly_fields = tuple(field.name for field in TenantDumpCapture._meta.fields)
 
     def resolve_hidden_lookup(self):

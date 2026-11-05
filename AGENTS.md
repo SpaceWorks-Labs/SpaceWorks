@@ -430,6 +430,12 @@ mandatory for every staff role** (an authenticator or a passkey, a platform rule
 per-space switch) — staff routes go through `staff_identity.require_staff_mfa`, see **Login security** in
 `docs/INVARIANTS.md`.
 
+`/control/` is **server-only by default** (#189/#191): `config/control_plane_access.py` answers 404 to all but
+loopback and the SSH tunnel unless `CONTROL_PLANE_PROXY=true`. **A new admin model needs a line in
+`config/control_catalog_entries*.py`** (its sidebar section, plain title and help), and **a new `/control/`
+write, action or admin page needs a row in `config/control_parity_entries*.py`** naming its web console path
+or why it is host-only (#190). Both are pinned by local tests that derive the required set from the live admin.
+
 The project lives under the **SpaceWorks-Labs** GitHub organization (renamed from SpaceWorks-HQ, #107):
 the repository is `SpaceWorks-Labs/SpaceWorks` and the images are `ghcr.io/spaceworks-labs/*`; the
 installer and updater switch a saved old name automatically. The native-app contract is

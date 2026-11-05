@@ -38,6 +38,9 @@ services:
       THROTTLE_LOGIN: ${THROTTLE_LOGIN:-200/min}
       # Vite proxies with changeOrigin, so Django can see `Host: backend`.
       ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      # Docker Desktop hands the container the bridge gateway, never loopback, so the
+      # dev stack opts in to the website route to keep /control/ on localhost:8000 (#191).
+      CONTROL_PLANE_PROXY: "true"
       # The browser Origin is the Vite dev server. It must be allowed or the
       # staff-console refresh/logout CSRF check 403s and a page reload drops the
       # session back to the login screen.

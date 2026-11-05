@@ -7,6 +7,11 @@ def gate_tasks(exemptions):
             "Restore drill: reads one archive into a throwaway scratch database it drops; writes only "
             "its platform drill report (OMITTED), never a tenant row."
         ),
+        # #190: the same drill, of one chosen space, started from the web console.
+        "apps.backup.tasks.run_restore_drill_now_task": (
+            "Restore drill: reads one archive into a throwaway scratch database it drops; writes only "
+            "its platform drill report (OMITTED), never a tenant row."
+        ),
         "apps.backup.tasks.reencrypt_archives_task": (
             "Platform backup control plane: rewrites archive bytes and BackupArchive rows (OMITTED); "
             "no tenant writes."

@@ -139,7 +139,9 @@ class PlatformLoginMethodsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdm
 
 @admin.register(SocialIdentity)
 class SocialIdentityAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
-    list_display = ("id", "user", "provider", "created_at")
+    list_display = ("user", "provider", "created_at")
+    list_filter = ("provider",)
+    search_fields = ("user__username",)
     readonly_fields = ("user", "provider", "provider_sub", "created_at", "updated_at")
 
     def has_add_permission(self, request):

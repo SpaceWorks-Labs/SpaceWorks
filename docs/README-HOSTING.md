@@ -54,7 +54,7 @@ Outside this system entirely: **Public** users browse, submit requests, and — 
 self-checkout and return eligible QR tools, gated on member presence and photo evidence.
 
 Staff work in the **React console** at `/admin`; the superadmin-only **Django control plane** lives at
-`/control/` (backend-only, never exposed on the public port). Two design rules are load-bearing — the
+`/control/` (server-only by default: the public port answers 404 unless `CONTROL_PLANE_PROXY=true`). Two design rules are load-bearing — the
 Request Workflow module is the single source of truth for state transitions, and the Inventory
 Availability module owns all quantity math. Details in **[.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md)**.
 
@@ -71,7 +71,7 @@ A Space Manager grants roles to an active member of the space, or sends an email
 invitee accepts it while signed in to their own account, with a fresh code sent to the invited address;
 an invitation never creates an account. Revoking a role keeps the person's account and member features.
 Only the superadmin grants, changes or revokes the Space Manager role, and only the superadmin can
-disable a whole account (`/control/` "Disable account"). Nobody changes their own staff roles, and the
+disable a whole account (web console Platform settings → Accounts, or `/control/` "Disable account"). Nobody changes their own staff roles, and the
 last active Space Manager cannot be removed.
 
 Password recovery is the same for everyone with an account: `/reset-password` mails a six-digit code
@@ -89,7 +89,7 @@ third party. The [Quick start](../README.md#quick-start) is the recommended path
 | Public catalog | `http://localhost` |
 | Staff console | `http://localhost/admin` |
 | API | `http://localhost/api` (Swagger at `/docs/`) |
-| Django control plane | `/control/` on the backend only — **not** exposed on the public port |
+| Django control plane | `/control/`, server-only by default (SSH tunnel or this machine); the public port answers 404 |
 
 Create the first superadmin + makerspace (the wizard does this for you; for a manual instance):
 

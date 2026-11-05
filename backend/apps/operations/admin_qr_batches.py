@@ -31,8 +31,9 @@ class QrPrintBatchItemInline(TabularInline):
 @admin.register(QrPrintBatch)
 class QrPrintBatchAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     actions = ["mark_printed_selected", "download_zip_selected"]
-    list_display = ("id", "makerspace", "title", "status", "created_at", "printed_at")
+    list_display = ("title", "makerspace", "status", "created_at", "printed_at")
     list_filter = ("status", "makerspace")
+    search_fields = ("title", "makerspace__name")
     inlines = (QrPrintBatchItemInline,)
     # Status transitions belong to mark_batch_printed, never the admin form.
     readonly_fields = ("status", "printed_at")

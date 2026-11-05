@@ -3,6 +3,7 @@ from django.db import models
 from django.http import HttpResponseForbidden
 from django.urls import reverse
 
+from config.admin_confirm import ConfirmDangerousActionsMixin
 from config.admin_source_gate import AdminSourceGateMixin
 from config.admin_scope_registry import (  # noqa: F401
     GLOBAL_ADMIN_MODELS,
@@ -77,7 +78,7 @@ class AdminSuperuserOnlyMiddleware:
         )
 
 
-class SuperuserOnlyModelAdmin(AdminSourceGateMixin):
+class SuperuserOnlyModelAdmin(ConfirmDangerousActionsMixin, AdminSourceGateMixin):
     def resolve_hidden_lookup(self):
         """The makerspace-id lookup for this model, or None for a global model.
 

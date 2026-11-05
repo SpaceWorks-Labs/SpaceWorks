@@ -32,6 +32,9 @@ class PlatformSmsSettings(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "platform SMS settings"
+        verbose_name_plural = "platform SMS settings"
         constraints = [models.CheckConstraint(
             condition=models.Q(notifications_from_number="") | ~models.Q(notifications_from_number=models.F("from_number")),
             name="messaging_sms_otp_number_isolated",

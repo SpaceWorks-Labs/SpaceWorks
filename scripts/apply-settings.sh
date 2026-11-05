@@ -32,6 +32,7 @@ probe() {
       on:200) if grep -q csrfmiddlewaretoken "$PROBE_BODY"; then return 0; fi ;;
       on:403) if [[ -n "$CONTROL_PLANE_ALLOW_CIDRS" ]]; then say 'allowlist active'; return 0; fi ;;
       off:200) if ! grep -q csrfmiddlewaretoken "$PROBE_BODY"; then return 0; fi ;;
+      off:404) return 0 ;;  # #189/#191: the website answers 404 for the control plane
       tunnel:200) if grep -q csrfmiddlewaretoken "$PROBE_BODY"; then return 0; fi ;;
     esac
     [[ "$attempt" == 6 ]] || sleep 5

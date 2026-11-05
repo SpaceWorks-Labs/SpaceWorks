@@ -12,6 +12,11 @@ ARCHIVE_PURGE_WARNING = (
 
 
 class PlatformBackupSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "backup settings"
+        verbose_name_plural = "backup settings"
+
     automatic_backups_enabled = models.BooleanField(default=False)
     retention_days = models.PositiveSmallIntegerField(
         default=30, validators=(MinValueValidator(1), MaxValueValidator(3650))

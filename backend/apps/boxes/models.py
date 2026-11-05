@@ -41,6 +41,9 @@ class Box(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "container"
+        verbose_name_plural = "containers"
         constraints = [
             models.UniqueConstraint(
                 fields=["makerspace", "label"],

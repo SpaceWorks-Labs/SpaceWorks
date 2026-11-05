@@ -5,6 +5,14 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
 - `backend/config/` — Django project (`settings.py`, `urls.py`, wsgi/asgi). All API routes under `/api/`.
   `config/admin_access.py` holds the `/control/` gating, CSP middleware, and the makerspace-lookup
   registries (`NESTED_MAKERSPACE_LOOKUPS`, `GLOBAL_ADMIN_MODELS`) the source gate resolves tenants through.
+  `config/control_plane_access.py` is the #189/#191 reach check (server-only unless `CONTROL_PLANE_PROXY`).
+  `config/control_catalog*.py` names every `/control/` screen once (section, title, help line) and
+  `config/unfold_sidebar.py` builds the sidebar from it; `config/control_dashboard.py` and
+  `config/control_attention.py` fill the home page; `config/admin_confirm.py` confirms dangerous list
+  actions; `config/control_parity*.py` maps every `/control/` write to its web console path or host-only
+  reason (#190). The console side of #190 is `admin_api/urls_platform_parity.py` (IP access, accounts,
+  OIDC, request queues, chat templates, restore drills, self-host moves) and
+  `frontend/src/features/staff/platformParity/`.
 - `backend/apps/accounts/` — custom `User` model (`AUTH_USER_MODEL`), browser JWT auth, attested device
   grants/rotating refresh families, Google/Apple social identities + nonce/JWKS verification, and the
   Auth & RBAC module: thin `rbac.py` import surface/coordinator over `rbac_actions.py`,

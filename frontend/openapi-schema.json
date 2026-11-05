@@ -94424,7 +94424,7 @@
         "/api/v1/admin/makerspace/{makerspace_id}/requests/{request_id}/accountability/{accountability_id}/charge": {
             "post": {
                 "operationId": "api_v1_admin_makerspace_requests_accountability_charge_create",
-                "description": "return_request (handover roles included). One charge per damage/lost row; a second is 409 `charge_exists`. An amount above 0 needs the return photo that recorded the item (409 `return_photo_required`). 0 means no charge. A waived loan raises nothing.",
+                "description": "return_request (handover roles included). One charge per damage/lost row; a second is 409 `charge_exists`. An amount above 0 needs the return photo that recorded the item (409 `return_photo_required`). 0 means no charge. A waived loan raises nothing. 404 `charges_off` when loan charges are not tracked (charges.enabled or charges.loans off).",
                 "summary": "Charge for a damaged or lost item (staff-set amount)",
                 "parameters": [
                     {
@@ -206937,7 +206937,7 @@
         "/api/v1/public/{makerspace_slug}/pricing/quote": {
             "post": {
                 "operationId": "api_v1_public_pricing_quote_create",
-                "description": "Quotes a public item, room, machine (or type), event or plan. Signed-in members of the space get their own price. Send `digest` back on submit: a moved price is 409 `price_changed` with the new quote. 404 when the thing is not public, the module is off or `charges.pricing` is off.",
+                "description": "Quotes a public item, room, machine (or type), event or plan. Signed-in members of the space get their own price. Send `digest` back on submit: a moved price is 409 `price_changed` with the new quote. 404 when the thing is not public, the module is off or `charges.pricing` is off, and 404 `charges_off` when that domain's charges are not tracked (charges.enabled or charges.<domain> off): the domain is free.",
                 "summary": "Preview a price (anonymous allowed)",
                 "parameters": [
                     {
@@ -258547,6 +258547,10 @@
                     "pricing_enabled": {
                         "type": "boolean"
                     },
+                    "charges_enabled": {
+                        "type": "boolean",
+                        "description": "Loan charges are tracked (charges.enabled + charges.loans). False: the space lends for free and no damage/lost charge can be raised."
+                    },
                     "waivers_enabled": {
                         "type": "boolean"
                     },
@@ -258576,6 +258580,7 @@
                     "accountability",
                     "can_waive",
                     "charges",
+                    "charges_enabled",
                     "currency",
                     "pricing_enabled",
                     "request_id",
@@ -325301,6 +325306,9 @@
                             "type": "string"
                         }
                     },
+                    "charges_tracked": {
+                        "$ref": "#/components/schemas/TenantChargesTracked"
+                    },
                     "workflows": {
                         "type": "array",
                         "items": {
@@ -325321,6 +325329,7 @@
                 },
                 "required": [
                     "branding",
+                    "charges_tracked",
                     "edition",
                     "email_enabled",
                     "features",
@@ -325708,6 +325717,41 @@
                     "base_url",
                     "inventory_path",
                     "publishable_key"
+                ]
+            },
+            "TenantChargesTracked": {
+                "type": "object",
+                "properties": {
+                    "loans": {
+                        "type": "boolean"
+                    },
+                    "machines": {
+                        "type": "boolean"
+                    },
+                    "bookings": {
+                        "type": "boolean"
+                    },
+                    "events": {
+                        "type": "boolean"
+                    },
+                    "membership": {
+                        "type": "boolean"
+                    },
+                    "shop": {
+                        "type": "boolean"
+                    },
+                    "donations": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "bookings",
+                    "donations",
+                    "events",
+                    "loans",
+                    "machines",
+                    "membership",
+                    "shop"
                 ]
             },
             "TenantDeployment": {

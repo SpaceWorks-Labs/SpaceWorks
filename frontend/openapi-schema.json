@@ -40874,6 +40874,1219 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/peoples-choice/": {
+            "get": {
+                "operationId": "api_v1_admin_events_peoples_choice_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceConfigRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_events_peoples_choice_partial_update",
+                "description": "Switch the award on or off, the audience (any signed-in member, or checked-in attendees only), the voting window, an optional prize and the voting-open email (off by default). Final once published.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPeoplesChoiceConfigInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPeoplesChoiceConfigInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPeoplesChoiceConfigInput"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceConfigRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/peoples-choice/payouts/": {
+            "get": {
+                "operationId": "api_v1_admin_events_peoples_choice_payouts_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoicePayableWinnersRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_events_peoples_choice_payouts_create",
+                "description": "Record a People's choice prize payout by hand (record_payment or the Event Manager); one L5 ledger expense. Reverse it on the L21b route.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoicePayoutInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoicePayoutInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoicePayoutInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PayoutRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/peoples-choice/publish/": {
+            "post": {
+                "operationId": "api_v1_admin_events_peoples_choice_publish_create",
+                "description": "Publish once, after voting closes; expected_version is the settings version. Freezes the count, names the joint winners and ends voting. 409 already_published.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceStandingsRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/peoples-choice/standings/": {
+            "get": {
+                "operationId": "api_v1_admin_events_peoples_choice_standings_retrieve",
+                "description": "Staff only: the live count before publication, else the published standings. Never shown to voters or the public early.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceStandingsRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/peoples-choice/votes/": {
+            "get": {
+                "operationId": "api_v1_admin_events_peoples_choice_votes_retrieve",
+                "description": "Who voted (to spot abuse), never which project each person chose.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceVoteRowReadPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/peoples-choice/votes/{handle}/void/": {
+            "post": {
+                "operationId": "api_v1_admin_events_peoples_choice_votes_void_create",
+                "description": "Void one ballot with a reason; the row stays, so that person cannot vote again.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "handle",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoiceVoidInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoiceVoidInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoiceVoidInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceVoteRowRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/prize-awards/{award_id}/forfeit/": {
             "post": {
                 "operationId": "api_v1_admin_events_prize_awards_forfeit_create",
@@ -174912,6 +176125,323 @@
                 }
             }
         },
+        "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/peoples-choice/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_events_peoples_choice_retrieve",
+                "description": "Your ballot: whether you can vote now and why not, the project you chose, and your own team's projects. No counts.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceBallotRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/peoples-choice/vote/": {
+            "post": {
+                "operationId": "api_v1_member_makerspaces_events_peoples_choice_vote_create",
+                "description": "Cast or change your one vote (expected_version is your ballot's version, 0 at first). 403 own_project, attendees_only, voided, closed; per-account throttle.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoiceVoteInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoiceVoteInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PeoplesChoiceVoteInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoiceBallotRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/presentation/": {
             "get": {
                 "operationId": "api_v1_member_makerspaces_events_presentation_retrieve",
@@ -208379,6 +209909,137 @@
                 }
             }
         },
+        "/api/v1/public/event-programmes/{public_token}/peoples-choice/": {
+            "get": {
+                "operationId": "api_v1_public_event_programmes_peoples_choice_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "public_token",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PeoplesChoicePublicRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/public/event-programmes/{public_token}/prizes/": {
             "get": {
                 "operationId": "api_v1_public_event_programmes_prizes_list",
@@ -234847,7 +236508,7 @@
                         "format": "date"
                     },
                     "method": {
-                        "$ref": "#/components/schemas/MethodEa5Enum"
+                        "$ref": "#/components/schemas/PayoutInputMethodEnum"
                     },
                     "reference": {
                         "type": "string",
@@ -247629,6 +249290,10 @@
                             "additionalProperties": {}
                         },
                         "description": "S7: the final stage's public custom answers ({key, label, value})."
+                    },
+                    "peoples_choice": {
+                        "type": "boolean",
+                        "description": "A published People's choice winner (#181); absent before publication."
                     }
                 },
                 "required": [
@@ -267985,19 +269650,6 @@
                 "type": "string",
                 "description": "* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other"
             },
-            "MethodEa5Enum": {
-                "enum": [
-                    "cash",
-                    "upi",
-                    "bank_transfer",
-                    "card",
-                    "cheque",
-                    "online",
-                    "other"
-                ],
-                "type": "string",
-                "description": "* `cash` - cash\n* `upi` - upi\n* `bank_transfer` - bank_transfer\n* `card` - card\n* `cheque` - cheque\n* `online` - online\n* `other` - other"
-            },
             "MethodF34Enum": {
                 "enum": [
                     "bank_transfer",
@@ -285266,6 +286918,45 @@
                     }
                 }
             },
+            "PatchedPeoplesChoiceConfigInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "audience": {
+                        "$ref": "#/components/schemas/PeoplesChoiceAudienceEnum"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "closes_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "prize_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "An optional prize of this event the award carries."
+                    },
+                    "open_email": {
+                        "type": "boolean",
+                        "description": "Email the event's registrants when voting is switched on (off by default)."
+                    }
+                }
+            },
             "PatchedPlatformBackupSettings": {
                 "type": "object",
                 "properties": {
@@ -289075,7 +290766,7 @@
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
                     },
                     "method": {
-                        "$ref": "#/components/schemas/MethodEa5Enum"
+                        "$ref": "#/components/schemas/PayoutInputMethodEnum"
                     },
                     "reference": {
                         "type": "string",
@@ -289106,6 +290797,19 @@
                     "operation_id",
                     "paid_on"
                 ]
+            },
+            "PayoutInputMethodEnum": {
+                "enum": [
+                    "cash",
+                    "upi",
+                    "bank_transfer",
+                    "card",
+                    "cheque",
+                    "online",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `cash` - cash\n* `upi` - upi\n* `bank_transfer` - bank_transfer\n* `card` - card\n* `cheque` - cheque\n* `online` - online\n* `other` - other"
             },
             "PayoutPage": {
                 "type": "object",
@@ -289147,7 +290851,14 @@
                         "type": "integer"
                     },
                     "award_id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Null for a People's choice payout (#181)."
+                    },
+                    "peoples_choice_standing_id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "The People's choice winner paid, else null."
                     },
                     "prize_id": {
                         "type": "integer"
@@ -289471,6 +291182,554 @@
                 "required": [
                     "digest",
                     "identities"
+                ]
+            },
+            "PeoplesChoiceAudienceEnum": {
+                "enum": [
+                    "members",
+                    "attendees"
+                ],
+                "type": "string",
+                "description": "* `members` - Any signed-in member\n* `attendees` - Checked-in attendees only"
+            },
+            "PeoplesChoiceAwardRead": {
+                "type": "object",
+                "properties": {
+                    "prize_name": {
+                        "type": "string"
+                    },
+                    "total_votes": {
+                        "type": "integer"
+                    },
+                    "published_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "winners": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PeoplesChoiceWinnerRead"
+                        }
+                    }
+                },
+                "required": [
+                    "prize_name",
+                    "published_at",
+                    "total_votes",
+                    "winners"
+                ]
+            },
+            "PeoplesChoiceBallotRead": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/PeoplesChoiceStateEnum"
+                    },
+                    "audience": {
+                        "$ref": "#/components/schemas/PeoplesChoiceAudienceEnum"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "closes_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "can_vote": {
+                        "type": "boolean"
+                    },
+                    "refusal": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PeoplesChoiceRefusalEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "entry_public_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true,
+                        "description": "The project this ballot is for, if any."
+                    },
+                    "own_entry_public_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "Your own team's gallery projects, which you cannot vote for."
+                    },
+                    "version": {
+                        "type": "integer",
+                        "description": "Send as expected_version; 0 before the first vote."
+                    }
+                },
+                "required": [
+                    "audience",
+                    "can_vote",
+                    "closes_at",
+                    "entry_public_id",
+                    "event_id",
+                    "opens_at",
+                    "own_entry_public_ids",
+                    "refusal",
+                    "state",
+                    "version"
+                ]
+            },
+            "PeoplesChoiceConfigRead": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "audience": {
+                        "$ref": "#/components/schemas/PeoplesChoiceAudienceEnum"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "closes_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "prize_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "prize_name": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "open_email": {
+                        "type": "boolean"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/PeoplesChoiceStateEnum"
+                    },
+                    "ballots": {
+                        "type": "integer",
+                        "description": "Ballots cast and not voided; never a per-project count."
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "audience",
+                    "ballots",
+                    "closes_at",
+                    "enabled",
+                    "event_id",
+                    "id",
+                    "open_email",
+                    "opens_at",
+                    "prize_id",
+                    "prize_name",
+                    "state",
+                    "version"
+                ]
+            },
+            "PeoplesChoicePayableWinnerRead": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "prize_name": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "amount_per_winner": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "paid": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "amount_per_winner",
+                    "id",
+                    "paid",
+                    "prize_name",
+                    "title"
+                ]
+            },
+            "PeoplesChoicePayableWinnersRead": {
+                "type": "object",
+                "properties": {
+                    "winners": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PeoplesChoicePayableWinnerRead"
+                        }
+                    }
+                },
+                "required": [
+                    "winners"
+                ]
+            },
+            "PeoplesChoicePayoutInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "recipient_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "A member of the winning team; defaults to the team leader."
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "method": {
+                        "$ref": "#/components/schemas/PayoutInputMethodEnum"
+                    },
+                    "reference": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 64
+                    },
+                    "paid_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "receipt_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "tds_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true,
+                        "description": "Prize tax deducted (#181, record only). Omit to use the space's proposal; 0 records none."
+                    },
+                    "standing_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "A winning People's choice standing."
+                    }
+                },
+                "required": [
+                    "expected_version",
+                    "method",
+                    "operation_id",
+                    "paid_on",
+                    "standing_id"
+                ]
+            },
+            "PeoplesChoicePublicRead": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "state": {
+                        "$ref": "#/components/schemas/PeoplesChoiceStateEnum"
+                    },
+                    "audience": {
+                        "$ref": "#/components/schemas/PeoplesChoiceAudienceEnum"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "closes_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "award": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PeoplesChoiceAwardRead"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Only after staff publish; there are no counts before then."
+                    }
+                },
+                "required": [
+                    "audience",
+                    "award",
+                    "closes_at",
+                    "event_id",
+                    "opens_at",
+                    "state"
+                ]
+            },
+            "PeoplesChoiceRefusalEnum": {
+                "enum": [
+                    "off",
+                    "not_open",
+                    "closed",
+                    "published",
+                    "attendees_only",
+                    "voided"
+                ],
+                "type": "string",
+                "description": "* `off` - off\n* `not_open` - not_open\n* `closed` - closed\n* `published` - published\n* `attendees_only` - attendees_only\n* `voided` - voided"
+            },
+            "PeoplesChoiceStandingRead": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Null in the live preview."
+                    },
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "votes": {
+                        "type": "integer"
+                    },
+                    "rank": {
+                        "type": "integer"
+                    },
+                    "winner": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "rank",
+                    "snapshot_id",
+                    "title",
+                    "votes",
+                    "winner"
+                ]
+            },
+            "PeoplesChoiceStandingsRead": {
+                "type": "object",
+                "properties": {
+                    "published": {
+                        "type": "boolean"
+                    },
+                    "published_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "prize_name": {
+                        "type": "string"
+                    },
+                    "total_votes": {
+                        "type": "integer"
+                    },
+                    "standings": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PeoplesChoiceStandingRead"
+                        }
+                    }
+                },
+                "required": [
+                    "prize_name",
+                    "published",
+                    "published_at",
+                    "standings",
+                    "total_votes"
+                ]
+            },
+            "PeoplesChoiceStateEnum": {
+                "enum": [
+                    "off",
+                    "scheduled",
+                    "open",
+                    "closed",
+                    "published"
+                ],
+                "type": "string",
+                "description": "* `off` - off\n* `scheduled` - scheduled\n* `open` - open\n* `closed` - closed\n* `published` - published"
+            },
+            "PeoplesChoiceVoidInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 300
+                    }
+                },
+                "required": [
+                    "expected_version",
+                    "operation_id",
+                    "reason"
+                ]
+            },
+            "PeoplesChoiceVoteInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "entry_public_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The public gallery project to vote for."
+                    }
+                },
+                "required": [
+                    "entry_public_id",
+                    "expected_version",
+                    "operation_id"
+                ]
+            },
+            "PeoplesChoiceVoteRowRead": {
+                "type": "object",
+                "description": "A ballot as staff see it: who voted, never which project they chose.\n\nThe voter's name is masked for a platform superadmin without an open PII window on the space\n(#111 Q12), exactly as ``PiiMaskingSerializerMixin`` masks a model row.",
+                "properties": {
+                    "handle": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "voter_name": {
+                        "type": "string"
+                    },
+                    "attended": {
+                        "type": "boolean"
+                    },
+                    "changed": {
+                        "type": "boolean"
+                    },
+                    "voided": {
+                        "type": "boolean"
+                    },
+                    "void_reason": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "pii_masked": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "attended",
+                    "changed",
+                    "handle",
+                    "version",
+                    "void_reason",
+                    "voided",
+                    "voter_name"
+                ]
+            },
+            "PeoplesChoiceVoteRowReadPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PeoplesChoiceVoteRowRead"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "PeoplesChoiceWinnerRead": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "entry_public_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "votes": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "entry_public_id",
+                    "title",
+                    "votes"
                 ]
             },
             "PeriodEnum": {
@@ -304087,7 +306346,7 @@
                         "$ref": "#/components/schemas/RecoveryResolveInputOutcomeEnum"
                     },
                     "method": {
-                        "$ref": "#/components/schemas/MethodEa5Enum"
+                        "$ref": "#/components/schemas/PayoutInputMethodEnum"
                     },
                     "reference": {
                         "type": "string",

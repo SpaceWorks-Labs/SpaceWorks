@@ -216,6 +216,11 @@ class MakerspacePaymentSettings(models.Model):
 
 
 class PlatformStripeConnectSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "Stripe Connect settings"
+        verbose_name_plural = "Stripe Connect settings"
+
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     stripe_publishable_key = models.CharField(max_length=255, blank=True, default="")
     stripe_secret_key = models.TextField(blank=True, default="")

@@ -6,6 +6,11 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 
 class PlatformAttestationSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "app attestation settings"
+        verbose_name_plural = "app attestation settings"
+
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     app_display_name = models.CharField(max_length=100, default="SpaceWorks")
     play_integrity_service_account = models.TextField(blank=True, default="")

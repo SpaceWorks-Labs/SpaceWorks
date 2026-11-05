@@ -70,6 +70,9 @@ class MachineUsageEntry(ScopedPiiModelMixin, models.Model):
     objects = MachineUsageEntryQuerySet.as_manager()
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "machine usage entry"
+        verbose_name_plural = "machine usage entries"
         ordering = ["-created_at"]
         indexes = [
             models.Index(

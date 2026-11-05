@@ -35,6 +35,9 @@ class Warranty(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "warranty"
+        verbose_name_plural = "warranties"
         constraints = [
             models.CheckConstraint(
                 condition=(

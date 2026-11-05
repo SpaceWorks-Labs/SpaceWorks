@@ -230,6 +230,9 @@ class AuditBatch(models.Model):
     signer_fingerprint = models.CharField(max_length=64)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "audit batch"
+        verbose_name_plural = "audit batches"
         ordering = ["makerspace_id", "batch_seq"]
         constraints = [
             models.UniqueConstraint(
@@ -282,6 +285,9 @@ class AuditBatchLeaf(models.Model):
     leaf_position = models.PositiveIntegerField()
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "audit batch entry"
+        verbose_name_plural = "audit batch entries"
         ordering = ["leaf_position"]
         constraints = [
             models.UniqueConstraint(

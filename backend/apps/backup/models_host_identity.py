@@ -13,6 +13,9 @@ class DeploymentDatabaseIdentity(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "database identity"
+        verbose_name_plural = "database identities"
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(pk=1),

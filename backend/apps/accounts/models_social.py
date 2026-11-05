@@ -41,6 +41,9 @@ class SocialIdentity(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "linked sign-in account"
+        verbose_name_plural = "linked sign-in accounts"
         constraints = [
             models.UniqueConstraint(
                 fields=["provider", "provider_sub"], name="uniq_social_provider_sub"
@@ -109,6 +112,11 @@ class SocialLoginNonce(models.Model):
 
 
 class PlatformSocialAuthSettings(models.Model):
+    class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "social sign-in settings"
+        verbose_name_plural = "social sign-in settings"
+
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     google_web_client_id = models.CharField(max_length=255, blank=True, default="")
     google_ios_client_id = models.CharField(max_length=255, blank=True, default="")

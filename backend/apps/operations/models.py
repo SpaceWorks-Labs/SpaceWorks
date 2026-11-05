@@ -191,6 +191,9 @@ class QrPrintBatch(models.Model):
     printed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        # #188: plain-language admin name (the default plural was broken English).
+        verbose_name = "QR label batch"
+        verbose_name_plural = "QR label batches"
         indexes = [
             models.Index(
                 fields=["makerspace", "-created_at"],

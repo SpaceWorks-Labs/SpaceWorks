@@ -1245,7 +1245,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -26338,6 +26340,652 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/finalists/": {
+            "get": {
+                "operationId": "api_v1_admin_events_finalists_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FinalistAdvanceReadPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/finalists/apply/": {
+            "post": {
+                "operationId": "api_v1_admin_events_finalists_apply_create",
+                "description": "Advance the previewed finalists into a draft round, under the event lock; 409 plan_changed when the preview is stale.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FinalistApplyInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FinalistApplyInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FinalistApplyInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FinalistPreviewRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/finalists/preview/": {
+            "get": {
+                "operationId": "api_v1_admin_events_finalists_preview_retrieve",
+                "description": "Top N (ties at the cutoff included) or hand-picked finalists from a finalized round. Writes nothing; apply sends the fingerprint back. snapshot_ids is comma-separated.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "selection",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "snapshot_ids",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "source_round_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "target_round_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "top_n",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FinalistPreviewRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/finalists/publish/": {
+            "post": {
+                "operationId": "api_v1_admin_events_finalists_publish_create",
+                "description": "Publish the round's current finalists once; the finalists email follows the event switch.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FinalistPublishInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FinalistPublishInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FinalistPublishInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResultEnvelope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/forms/{form_key}/": {
             "get": {
                 "operationId": "api_v1_admin_events_forms_retrieve",
@@ -33078,6 +33726,179 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/judging-rounds/{round_id}/next-project/": {
+            "post": {
+                "operationId": "api_v1_admin_events_judging_rounds_next_project_create",
+                "description": "The judge's started project, else the eligible project with the fewest reviews (expected_version is not checked; judges send 0). With round visibility 'all' an unassigned project may be pulled and assigned.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "round_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NextProjectRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/judging-rounds/{round_id}/open/": {
             "post": {
                 "operationId": "api_v1_admin_events_judging_rounds_open_create",
@@ -34230,6 +35051,150 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/judging-rounds/{round_id}/progress/": {
+            "get": {
+                "operationId": "api_v1_admin_events_judging_rounds_progress_retrieve",
+                "description": "Below-target projects, per-judge completion, outliers (over 2 SD from the project mean, or over 25 points apart on a 0-100 scale) and drafts saved but not submitted for over 24 hours.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "round_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProgressRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/judging-signals/": {
             "get": {
                 "operationId": "api_v1_admin_events_judging_signals_retrieve",
@@ -34265,6 +35230,413 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ShortlistSignalReadPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/lists/{list_key}/": {
+            "get": {
+                "operationId": "api_v1_admin_events_lists_retrieve",
+                "description": "One filtered staff list (guests, teams, submissions, results, progress); 24 per page.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "below_target",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "list_key",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "guests",
+                                "progress",
+                                "results",
+                                "submissions",
+                                "teams"
+                            ]
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "prize",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "round",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "state",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "triage",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Event staff lists"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EventStaffListPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/lists/{list_key}/export/": {
+            "get": {
+                "operationId": "api_v1_admin_events_lists_export_retrieve",
+                "description": "Stream exactly the filtered rows as CSV. Guests need a PII window for a superadmin.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "below_target",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "list_key",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "guests",
+                                "progress",
+                                "results",
+                                "submissions",
+                                "teams"
+                            ]
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "prize",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "round",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "state",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "triage",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Event staff lists"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         },
@@ -39042,6 +40414,477 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/prize-payouts/": {
+            "get": {
+                "operationId": "api_v1_admin_events_prize_payouts_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrizePayoutPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_events_prize_payouts_create",
+                "description": "Record a prize payout by hand (record_payment or the Event Manager); writes one L5 ledger expense. Never moves money.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PayoutInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PayoutInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PayoutInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PayoutRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/prize-payouts/{payout_id}/reverse/": {
+            "post": {
+                "operationId": "api_v1_admin_events_prize_payouts_reverse_create",
+                "description": "Append a reversal row and void the payout's ledger expense.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "payout_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PayoutReverseInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PayoutReverseInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PayoutReverseInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PayoutRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/prizes/": {
             "get": {
                 "operationId": "api_v1_admin_events_prizes_retrieve",
@@ -39550,6 +41393,303 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResultEnvelope"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/programme-options/": {
+            "get": {
+                "operationId": "api_v1_admin_events_programme_options_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OptionsRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_events_programme_options_partial_update",
+                "description": "Email switches (off for new events), refund on disqualification, and the entry and team fees (each behind its capability).",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedOptionsInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedOptionsInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedOptionsInput"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OptionsRead"
                                 }
                             }
                         },
@@ -44603,6 +46743,171 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResultRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/results/send-email/": {
+            "post": {
+                "operationId": "api_v1_admin_events_results_send_email_create",
+                "description": "Send the results email once for the published results, even with the switch off; expected_version is the published result's version. 409 already_sent.",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The command operation_id UUID; replay requires identical body and route.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event programme judging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommandInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OptionsRead"
                                 }
                             }
                         },
@@ -66755,7 +69060,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -66929,7 +69236,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -67103,7 +69412,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -67277,7 +69588,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -67451,7 +69764,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -67625,7 +69940,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -67799,7 +70116,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -67973,7 +70292,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -68147,7 +70468,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -68321,7 +70644,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -68495,7 +70820,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -68669,7 +70996,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -68843,7 +71172,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -69017,7 +71348,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -69191,7 +71524,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -69365,7 +71700,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -69539,7 +71876,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -69713,7 +72052,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -81357,7 +83698,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -86089,7 +88432,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -107779,6 +110124,11 @@
                             "enum": [
                                 "audit",
                                 "bookings",
+                                "event_guests",
+                                "event_progress",
+                                "event_results",
+                                "event_submissions",
+                                "event_teams",
                                 "events",
                                 "inventory",
                                 "members",
@@ -116384,7 +118734,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -119322,7 +121674,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -119691,7 +122045,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -124464,7 +126820,9 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
-                                "sponsorship"
+                                "sponsorship",
+                                "submission_fee",
+                                "team_registration"
                             ]
                         }
                     }
@@ -133648,6 +136006,103 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/device/event-grant": {
+            "post": {
+                "operationId": "api_v1_auth_device_event_grant_create",
+                "description": "A person who holds an active event role (judge, mentor, volunteer or crew lead: a live event staff grant for that event) and no other way into its desks natively names the event, re-attests the app and proves their second factor, exactly as for the staff step-up. The MFA challenge returned here finishes through the ordinary ``auth/mfa/verify`` route and yields a NEW grant with authority ``event`` limited to that event's programme routes. It carries no staff authority, never reaches a staff route, and is revoked when the role ends; the member grant it started from keeps working. Challenges require an approved deployment-global registration and snapshot its signing identities. Play Integrity accepts any registered distribution signer and grants retain the matched digest. External verifiers receive only the first signing identity. Submit the returned challenge with the device login attestation payload: Android {\"type\":\"play_integrity\",\"token\":\"...\"} uses Standard requestHash = base64url(SHA-256(challenge UTF-8)), without padding. iOS {\"type\":\"app_attest\",\"key_id\":\"<base64>\",\"attestation\":\"<base64 CBOR>\"} uses a fresh key and clientDataHash = SHA-256(challenge UTF-8). Development-insecure mode accepts {\"type\":\"development\"} for development registrations only. External verifiers retain their deployment-specific payload format. Verifier outages return attestation_unavailable (503); restart with a new challenge.",
+                "summary": "Step a device session up to an event-role grant limited to one event",
+                "tags": [
+                    "Device auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceEventGrant"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceEventGrant"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceEventGrant"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MFAChallengeResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid attestation or device session."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "event_role_required, or a browser transport."
+                    },
+                    "426": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "native_app_update_required"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "attestation_unavailable"
                     }
                 }
             }
@@ -174376,6 +176831,270 @@
                 }
             }
         },
+        "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/charges/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_events_teams_charges_retrieve",
+                "description": "The project's entry fee and the team's leader-paid charge (C-39), for a team member.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "team_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProgrammeChargesRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "402": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/charges/entry-fee/": {
+            "post": {
+                "operationId": "api_v1_member_makerspaces_events_teams_charges_entry_fee_create",
+                "description": "The leader raises the project's entry fee (idempotent). The project stays a draft until it is paid or waived; pay through the member checkout for payment_id.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "team_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProgrammeChargeRead"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "402": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/teams/{team_id}/comments/": {
             "get": {
                 "operationId": "api_v1_member_makerspaces_events_teams_comments_retrieve",
@@ -195216,7 +197935,18 @@
         "/api/v1/public/event-programmes/{public_token}/gallery/": {
             "get": {
                 "operationId": "api_v1_public_event_programmes_gallery_retrieve",
+                "description": "Publishable entries. With events.gallery_search: q, sort (newest, az, awards) and awards=only; award badges appear only after results are published.",
                 "parameters": [
+                    {
+                        "in": "query",
+                        "name": "awards",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "only"
+                            ]
+                        }
+                    },
                     {
                         "in": "query",
                         "name": "page",
@@ -195232,6 +197962,25 @@
                             "format": "uuid"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "awards",
+                                "az",
+                                "newest"
+                            ]
+                        }
                     }
                 ],
                 "tags": [
@@ -204175,10 +206924,11 @@
                 "enum": [
                     "balanced",
                     "track",
-                    "room"
+                    "room",
+                    "random"
                 ],
                 "type": "string",
-                "description": "* `balanced` - balanced\n* `track` - track\n* `room` - room"
+                "description": "* `balanced` - balanced\n* `track` - track\n* `room` - room\n* `random` - random"
             },
             "AssignOperator": {
                 "type": "object",
@@ -204486,6 +207236,12 @@
                     },
                     "coverage_complete": {
                         "type": "boolean"
+                    },
+                    "strategy": {
+                        "type": "string"
+                    },
+                    "seed": {
+                        "type": "string"
                     }
                 },
                 "required": [
@@ -205366,7 +208122,7 @@
                                 "$ref": "#/components/schemas/SessionAuthorityEnum"
                             }
                         ],
-                        "description": "What this session is: member (a person's browser or native member session; staff routes are admitted per request from the person's staff roles), native_staff (a native staff grant fixed to one makerspace; tenant operations require a matching X-Makerspace-Id), platform (the superadmin) or verification_only (email not yet confirmed).\n\n* `member` - member\n* `native_staff` - native_staff\n* `platform` - platform\n* `verification_only` - verification_only"
+                        "description": "What this session is: member (a person's browser or native member session; staff routes are admitted per request from the person's staff roles), native_staff (a native staff grant fixed to one makerspace; tenant operations require a matching X-Makerspace-Id), native_event (a native event-role grant limited to one event's programme routes, no staff authority), platform (the superadmin) or verification_only (email not yet confirmed).\n\n* `member` - member\n* `native_staff` - native_staff\n* `native_event` - native_event\n* `platform` - platform\n* `verification_only` - verification_only"
                     },
                     "id": {
                         "type": "integer"
@@ -205494,7 +208250,7 @@
                 "type": "string",
                 "description": "* `person` - person\n* `platform` - platform"
             },
-            "AuthorityEnum": {
+            "Authority817Enum": {
                 "enum": [
                     "member",
                     "staff"
@@ -220476,6 +223232,35 @@
                     "detail"
                 ]
             },
+            "DeviceEventGrant": {
+                "type": "object",
+                "description": "Step up an active device session of this person to an event-role grant (#173).",
+                "properties": {
+                    "event_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The one event the grant is limited to."
+                    },
+                    "challenge": {
+                        "type": "string",
+                        "description": "A fresh attestation challenge for this device's app.",
+                        "maxLength": 512
+                    },
+                    "attestation": {
+                        "$ref": "#/components/schemas/DeviceAttestationPayload"
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "The app's own version (x.y.z). Refused with 426 native_app_update_required when it is older than the deployment's minimum for this platform, or missing while a minimum is set.",
+                        "maxLength": 32
+                    }
+                },
+                "required": [
+                    "attestation",
+                    "challenge",
+                    "event_id"
+                ]
+            },
             "DeviceGrant": {
                 "type": "object",
                 "properties": {
@@ -220496,11 +223281,16 @@
                         "type": "string"
                     },
                     "authority": {
-                        "$ref": "#/components/schemas/AuthorityEnum"
+                        "$ref": "#/components/schemas/DeviceGrantAuthorityEnum"
                     },
                     "staff_makerspace_id": {
                         "type": "integer",
                         "nullable": true
+                    },
+                    "event_id": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "The one event an event-role grant is limited to (#173)."
                     },
                     "login_method": {
                         "type": "string"
@@ -220531,6 +223321,15 @@
                     "staff_makerspace_id",
                     "status"
                 ]
+            },
+            "DeviceGrantAuthorityEnum": {
+                "enum": [
+                    "member",
+                    "staff",
+                    "event"
+                ],
+                "type": "string",
+                "description": "* `member` - member\n* `staff` - staff\n* `event` - event"
             },
             "DeviceGrantPage": {
                 "type": "object",
@@ -220646,7 +223445,7 @@
                     "authority": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/AuthorityEnum"
+                                "$ref": "#/components/schemas/Authority817Enum"
                             }
                         ],
                         "default": "member",
@@ -228248,6 +231047,44 @@
                     "linked_sponsor_id"
                 ]
             },
+            "EventStaffListPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "columns": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    }
+                },
+                "required": [
+                    "columns",
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
             "EventStaffRegistration": {
                 "type": "object",
                 "description": "Staff registering an identified account under the event's audience rules.\n\n`member_id` only. Contact details are copied off the account by the registration\nservice, so a staffer cannot record an attendee under a name and email that belong\nto nobody — which is what makes the attendee list usable as an accountability record\nrather than free text.",
@@ -229554,6 +232391,228 @@
                 ],
                 "type": "string",
                 "description": "* `available` - available\n* `expired` - expired\n* `withdrawn` - withdrawn"
+            },
+            "FinalistAdvanceRead": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "source_round_id": {
+                        "type": "integer"
+                    },
+                    "target_round_id": {
+                        "type": "integer"
+                    },
+                    "selection": {
+                        "type": "string"
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "current": {
+                        "type": "boolean"
+                    },
+                    "published_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "finalists": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FinalistRow"
+                        }
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "created_at",
+                    "current",
+                    "event_id",
+                    "finalists",
+                    "id",
+                    "published_at",
+                    "selection",
+                    "source_round_id",
+                    "target_round_id",
+                    "top_n"
+                ]
+            },
+            "FinalistAdvanceReadPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FinalistAdvanceRead"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
+            "FinalistApplyInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "source_round_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "target_round_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "selection": {
+                        "$ref": "#/components/schemas/SelectionEnum"
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "maximum": 500,
+                        "minimum": 1
+                    },
+                    "snapshot_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 2000
+                    },
+                    "fingerprint": {
+                        "type": "string",
+                        "description": "The preview's fingerprint; 409 plan_changed when stale.",
+                        "pattern": "^[0-9a-f]{64}$"
+                    }
+                },
+                "required": [
+                    "expected_version",
+                    "fingerprint",
+                    "operation_id",
+                    "selection",
+                    "source_round_id",
+                    "target_round_id"
+                ]
+            },
+            "FinalistPreviewRead": {
+                "type": "object",
+                "properties": {
+                    "source_round_id": {
+                        "type": "integer"
+                    },
+                    "target_round_id": {
+                        "type": "integer"
+                    },
+                    "selection": {
+                        "type": "string"
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "tied_at_cutoff": {
+                        "type": "boolean"
+                    },
+                    "fingerprint": {
+                        "type": "string"
+                    },
+                    "finalists": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FinalistRow"
+                        }
+                    }
+                },
+                "required": [
+                    "finalists",
+                    "fingerprint",
+                    "selection",
+                    "source_round_id",
+                    "target_round_id",
+                    "tied_at_cutoff",
+                    "top_n"
+                ]
+            },
+            "FinalistPublishInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "advance_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "advance_id",
+                    "expected_version",
+                    "operation_id"
+                ]
+            },
+            "FinalistRow": {
+                "type": "object",
+                "properties": {
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "source_rank": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "snapshot_id",
+                    "source_rank",
+                    "title"
+                ]
             },
             "FinalizeRoundInput": {
                 "type": "object",
@@ -233085,6 +236144,14 @@
                     },
                     "content_sha256": {
                         "type": "string"
+                    },
+                    "awards": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "description": "Award badges ({prize, rank}); only after results are published (L21b)."
                     }
                 },
                 "required": [
@@ -239676,6 +242743,38 @@
                     "payment_id",
                     "settlement_method",
                     "subject_type"
+                ]
+            },
+            "JudgeProgressRow": {
+                "type": "object",
+                "properties": {
+                    "judge_role_assignment_id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "assigned": {
+                        "type": "integer"
+                    },
+                    "submitted": {
+                        "type": "integer"
+                    },
+                    "withdrawn": {
+                        "type": "integer"
+                    },
+                    "completion": {
+                        "type": "integer",
+                        "description": "Percent of live assignments submitted."
+                    }
+                },
+                "required": [
+                    "assigned",
+                    "completion",
+                    "judge_role_assignment_id",
+                    "name",
+                    "submitted",
+                    "withdrawn"
                 ]
             },
             "Key292Enum": {
@@ -248995,7 +252094,7 @@
                         "readOnly": true
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectType64dEnum"
+                        "$ref": "#/components/schemas/SubjectTypeB20Enum"
                     },
                     "subject_label": {
                         "type": "string",
@@ -254119,6 +257218,36 @@
                 "type": "string",
                 "description": "* `allow` - allow\n* `clip` - clip"
             },
+            "NextProjectRead": {
+                "type": "object",
+                "properties": {
+                    "assignment_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "snapshot_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "reason": {
+                        "$ref": "#/components/schemas/NextProjectReadReasonEnum"
+                    }
+                },
+                "required": [
+                    "assignment_id",
+                    "reason",
+                    "snapshot_id"
+                ]
+            },
+            "NextProjectReadReasonEnum": {
+                "enum": [
+                    "started",
+                    "fewest_reviews",
+                    "none"
+                ],
+                "type": "string",
+                "description": "* `started` - started\n* `fewest_reviews` - fewest_reviews\n* `none` - none"
+            },
             "NextUpEvent": {
                 "type": "object",
                 "properties": {
@@ -255395,6 +258524,79 @@
                         "default": false
                     }
                 }
+            },
+            "OptionsRead": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "results_email": {
+                        "type": "boolean"
+                    },
+                    "submission_receipt_email": {
+                        "type": "boolean"
+                    },
+                    "finalists_email": {
+                        "type": "boolean"
+                    },
+                    "refund_on_disqualification": {
+                        "type": "boolean"
+                    },
+                    "entry_fee": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "team_fee": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "results_email_sent": {
+                        "type": "boolean"
+                    },
+                    "published_result_version": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Send-now's expected_version."
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "currency",
+                    "entry_fee",
+                    "event_id",
+                    "finalists_email",
+                    "id",
+                    "published_result_version",
+                    "refund_on_disqualification",
+                    "results_email",
+                    "results_email_sent",
+                    "submission_receipt_email",
+                    "team_fee",
+                    "version"
+                ]
             },
             "Order": {
                 "type": "object",
@@ -257199,6 +260401,42 @@
                 ],
                 "type": "string",
                 "description": "* `succeeded` - succeeded\n* `retryable_failed` - retryable_failed\n* `failed` - failed"
+            },
+            "OutlierRow": {
+                "type": "object",
+                "properties": {
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "judge_role_assignment_id": {
+                        "type": "integer"
+                    },
+                    "score": {
+                        "type": "string",
+                        "description": "0-100 scale: (weighted 1-5 value - 1) x 25."
+                    },
+                    "project_mean": {
+                        "type": "string"
+                    },
+                    "rule": {
+                        "$ref": "#/components/schemas/OutlierRowRuleEnum"
+                    }
+                },
+                "required": [
+                    "judge_role_assignment_id",
+                    "project_mean",
+                    "rule",
+                    "score",
+                    "snapshot_id"
+                ]
+            },
+            "OutlierRowRuleEnum": {
+                "enum": [
+                    "two_sd",
+                    "spread_25"
+                ],
+                "type": "string",
+                "description": "* `two_sd` - two_sd\n* `spread_25` - spread_25"
             },
             "OverdueSchedule": {
                 "type": "object",
@@ -269036,6 +272274,43 @@
                     }
                 }
             },
+            "PatchedOptionsInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "results_email": {
+                        "type": "boolean"
+                    },
+                    "submission_receipt_email": {
+                        "type": "boolean"
+                    },
+                    "finalists_email": {
+                        "type": "boolean"
+                    },
+                    "refund_on_disqualification": {
+                        "type": "boolean"
+                    },
+                    "entry_fee": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "team_fee": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    }
+                }
+            },
             "PatchedOrganizationMembershipUpdate": {
                 "type": "object",
                 "properties": {
@@ -269692,6 +272967,12 @@
                         "type": "integer",
                         "maximum": 10000,
                         "minimum": 0
+                    },
+                    "amount_per_winner": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
                     },
                     "track_id": {
                         "type": "integer",
@@ -270388,6 +273669,21 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,1}(?:\\.\\d{0,2})?$",
                         "description": "Pairwise only: share of picks made at random among projects still needing coverage."
+                    },
+                    "visibility": {
+                        "$ref": "#/components/schemas/RoundInputVisibilityEnum"
+                    },
+                    "fresh_eyes": {
+                        "type": "boolean"
+                    },
+                    "panel": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "description": "Judge role assignment IDs; empty means every active judge.",
+                        "maxItems": 2000
                     }
                 }
             },
@@ -272226,7 +275522,7 @@
                     "subject_type": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/SubjectType64dEnum"
+                                "$ref": "#/components/schemas/SubjectTypeB20Enum"
                             }
                         ],
                         "readOnly": true
@@ -272723,6 +276019,70 @@
                     "reason_code"
                 ]
             },
+            "PayoutInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "award_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "recipient_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "A member of the winning team; defaults to the team leader."
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "method": {
+                        "$ref": "#/components/schemas/PayoutInputMethodEnum"
+                    },
+                    "reference": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 64
+                    },
+                    "paid_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "receipt_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "award_id",
+                    "expected_version",
+                    "method",
+                    "operation_id",
+                    "paid_on"
+                ]
+            },
+            "PayoutInputMethodEnum": {
+                "enum": [
+                    "cash",
+                    "upi",
+                    "bank_transfer",
+                    "card",
+                    "cheque",
+                    "online",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `cash` - cash\n* `upi` - upi\n* `bank_transfer` - bank_transfer\n* `card` - card\n* `cheque` - cheque\n* `online` - online\n* `other` - other"
+            },
             "PayoutPage": {
                 "type": "object",
                 "properties": {
@@ -272751,6 +276111,86 @@
                     "next",
                     "previous",
                     "results"
+                ]
+            },
+            "PayoutRead": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "award_id": {
+                        "type": "integer"
+                    },
+                    "prize_id": {
+                        "type": "integer"
+                    },
+                    "prize_name": {
+                        "type": "string"
+                    },
+                    "recipient_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "reverses_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "method": {
+                        "type": "string"
+                    },
+                    "reference": {
+                        "type": "string"
+                    },
+                    "paid_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "ledger_entry_id": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "amount",
+                    "award_id",
+                    "created_at",
+                    "currency",
+                    "event_id",
+                    "id",
+                    "kind",
+                    "ledger_entry_id",
+                    "method",
+                    "paid_on",
+                    "prize_id",
+                    "prize_name",
+                    "recipient_id",
+                    "reference",
+                    "reverses_id"
                 ]
             },
             "PayoutRecordCommand": {
@@ -272858,6 +276298,28 @@
                     "id",
                     "state",
                     "version"
+                ]
+            },
+            "PayoutReverseInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 300
+                    }
+                },
+                "required": [
+                    "expected_version",
+                    "operation_id",
+                    "reason"
                 ]
             },
             "PayoutSummary": {
@@ -277057,6 +280519,12 @@
                         "maximum": 10000,
                         "minimum": 0
                     },
+                    "amount_per_winner": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
                     "track_id": {
                         "type": "integer",
                         "minimum": 1,
@@ -277089,6 +280557,77 @@
                 ],
                 "type": "string",
                 "description": "* `manager` - manager\n* `sponsor_proposal` - sponsor_proposal"
+            },
+            "PrizePayableAwardRead": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "prize_name": {
+                        "type": "string"
+                    },
+                    "rank": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "amount_per_winner": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "paid": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "amount_per_winner",
+                    "id",
+                    "paid",
+                    "prize_name",
+                    "rank",
+                    "title"
+                ]
+            },
+            "PrizePayoutPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PayoutRead"
+                        }
+                    },
+                    "awards": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PrizePayableAwardRead"
+                        }
+                    }
+                },
+                "required": [
+                    "awards",
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
             },
             "PrizeRead": {
                 "type": "object",
@@ -277148,6 +280687,12 @@
                     },
                     "winner_selection_mode": {
                         "$ref": "#/components/schemas/PrizeReadWinnerSelectionModeEnum"
+                    },
+                    "amount_per_winner": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -277726,6 +281271,53 @@
                     "results"
                 ]
             },
+            "ProgrammeChargeRead": {
+                "type": "object",
+                "properties": {
+                    "required": {
+                        "type": "boolean"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
+                    },
+                    "payment_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "not_required, not_raised, or the payment status."
+                    },
+                    "currency": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "currency",
+                    "payment_id",
+                    "required",
+                    "status"
+                ]
+            },
+            "ProgrammeChargesRead": {
+                "type": "object",
+                "properties": {
+                    "entry_fee": {
+                        "$ref": "#/components/schemas/ProgrammeChargeRead"
+                    },
+                    "team_charge": {
+                        "$ref": "#/components/schemas/ProgrammeChargeRead"
+                    }
+                },
+                "required": [
+                    "entry_fee",
+                    "team_charge"
+                ]
+            },
             "ProgrammeCommentPage": {
                 "type": "object",
                 "properties": {
@@ -278202,6 +281794,57 @@
                 "type": "string",
                 "description": "* `in_person` - in_person\n* `online` - online\n* `hybrid` - hybrid"
             },
+            "ProgressRead": {
+                "type": "object",
+                "properties": {
+                    "round_id": {
+                        "type": "integer"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "mode": {
+                        "type": "string"
+                    },
+                    "target": {
+                        "type": "integer"
+                    },
+                    "below_target": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjectProgressRow"
+                        }
+                    },
+                    "judges": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/JudgeProgressRow"
+                        }
+                    },
+                    "outliers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OutlierRow"
+                        }
+                    },
+                    "stale_drafts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StaleDraftRow"
+                        }
+                    }
+                },
+                "required": [
+                    "below_target",
+                    "judges",
+                    "mode",
+                    "outliers",
+                    "round_id",
+                    "stale_drafts",
+                    "state",
+                    "target"
+                ]
+            },
             "ProgressRow": {
                 "type": "object",
                 "properties": {
@@ -278311,6 +281954,29 @@
                     "label",
                     "track_id",
                     "version"
+                ]
+            },
+            "ProjectProgressRow": {
+                "type": "object",
+                "properties": {
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "reviews": {
+                        "type": "integer"
+                    },
+                    "target": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "reviews",
+                    "snapshot_id",
+                    "target",
+                    "title"
                 ]
             },
             "ProjectRead": {
@@ -280175,6 +283841,17 @@
                     "host",
                     "photos",
                     "space"
+                ]
+            },
+            "PublicFinalistRead": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "title"
                 ]
             },
             "PublicFunctional": {
@@ -282758,17 +286435,32 @@
                         "type": "integer"
                     },
                     "version": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Null while only finalists are published."
                     },
                     "published_at": {
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "nullable": true
                     },
                     "awards": {
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/PublicAwardRead"
                         }
+                    },
+                    "finalists": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicFinalistRead"
+                        },
+                        "description": "L21b: the published finalists block."
+                    },
+                    "finalists_published_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -287159,10 +290851,12 @@
                     "order_unfulfilled",
                     "ticket_type_changed",
                     "pass_occurrence_cancelled",
-                    "donation_returned"
+                    "donation_returned",
+                    "submission_disqualified",
+                    "team_rejected"
                 ],
                 "type": "string",
-                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `staff_cancelled` - Cancelled by staff\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request\n* `capture_flagged` - Unexpected online capture\n* `fee_waived` - Loan fee waived by staff\n* `order_unfulfilled` - Order could not be seated\n* `ticket_type_changed` - Changed to a cheaper ticket\n* `pass_occurrence_cancelled` - Pass occurrence cancelled\n* `donation_returned` - Gift returned to the giver"
+                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `staff_cancelled` - Cancelled by staff\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request\n* `capture_flagged` - Unexpected online capture\n* `fee_waived` - Loan fee waived by staff\n* `order_unfulfilled` - Order could not be seated\n* `ticket_type_changed` - Changed to a cheaper ticket\n* `pass_occurrence_cancelled` - Pass occurrence cancelled\n* `donation_returned` - Gift returned to the giver\n* `submission_disqualified` - Project disqualified\n* `team_rejected` - Team rejected"
             },
             "RefundCaseStatusEnum": {
                 "enum": [
@@ -289200,7 +292894,7 @@
                         "$ref": "#/components/schemas/Status66aEnum"
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectType64dEnum"
+                        "$ref": "#/components/schemas/SubjectTypeB20Enum"
                     },
                     "months": {
                         "type": "integer",
@@ -291410,6 +295104,21 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,1}(?:\\.\\d{0,2})?$",
                         "description": "Pairwise only: share of picks made at random among projects still needing coverage."
+                    },
+                    "visibility": {
+                        "$ref": "#/components/schemas/RoundInputVisibilityEnum"
+                    },
+                    "fresh_eyes": {
+                        "type": "boolean"
+                    },
+                    "panel": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "description": "Judge role assignment IDs; empty means every active judge.",
+                        "maxItems": 2000
                     }
                 },
                 "required": [
@@ -291427,6 +295136,14 @@
                 ],
                 "type": "string",
                 "description": "* `weighted_1_5` - weighted_1_5\n* `top3` - top3\n* `pairwise` - pairwise"
+            },
+            "RoundInputVisibilityEnum": {
+                "enum": [
+                    "assigned",
+                    "all"
+                ],
+                "type": "string",
+                "description": "* `assigned` - assigned\n* `all` - all"
             },
             "RoundProgress": {
                 "type": "object",
@@ -291537,6 +295254,24 @@
                     },
                     "skipped": {
                         "type": "integer"
+                    },
+                    "visibility": {
+                        "type": "string"
+                    },
+                    "fresh_eyes": {
+                        "type": "boolean"
+                    },
+                    "panel": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 2000
+                    },
+                    "advanced_from_id": {
+                        "type": "integer",
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -291752,14 +295487,6 @@
                     "expected_version",
                     "operation_id"
                 ]
-            },
-            "RuleEnum": {
-                "enum": [
-                    "superadmin",
-                    "space_manager"
-                ],
-                "type": "string",
-                "description": "* `superadmin` - superadmin\n* `space_manager` - space_manager"
             },
             "SalesSettings": {
                 "type": "object",
@@ -292446,10 +296173,15 @@
                     "payments",
                     "bookings",
                     "events",
-                    "audit"
+                    "audit",
+                    "event_guests",
+                    "event_teams",
+                    "event_submissions",
+                    "event_results",
+                    "event_progress"
                 ],
                 "type": "string",
-                "description": "* `requests` - requests\n* `inventory` - inventory\n* `members` - members\n* `payments` - payments\n* `bookings` - bookings\n* `events` - events\n* `audit` - audit"
+                "description": "* `requests` - requests\n* `inventory` - inventory\n* `members` - members\n* `payments` - payments\n* `bookings` - bookings\n* `events` - events\n* `audit` - audit\n* `event_guests` - event_guests\n* `event_teams` - event_teams\n* `event_submissions` - event_submissions\n* `event_results` - event_results\n* `event_progress` - event_progress"
             },
             "SavedViewList": {
                 "type": "object",
@@ -293102,6 +296834,14 @@
                 ],
                 "type": "string",
                 "description": "* `billed` - billed\n* `estimated` - estimated\n* `not_applicable` - not_applicable"
+            },
+            "SelectionEnum": {
+                "enum": [
+                    "top_n",
+                    "manual"
+                ],
+                "type": "string",
+                "description": "* `top_n` - top_n\n* `manual` - manual"
             },
             "SelfHostMoveCreate": {
                 "type": "object",
@@ -294248,11 +297988,12 @@
                 "enum": [
                     "member",
                     "native_staff",
+                    "native_event",
                     "platform",
                     "verification_only"
                 ],
                 "type": "string",
-                "description": "* `member` - member\n* `native_staff` - native_staff\n* `platform` - platform\n* `verification_only` - verification_only"
+                "description": "* `member` - member\n* `native_staff` - native_staff\n* `native_event` - native_event\n* `platform` - platform\n* `verification_only` - verification_only"
             },
             "SessionContext": {
                 "type": "object",
@@ -297223,13 +300964,21 @@
                         "type": "boolean"
                     },
                     "rule": {
-                        "$ref": "#/components/schemas/RuleEnum"
+                        "$ref": "#/components/schemas/StaffMfaResetResultRuleEnum"
                     }
                 },
                 "required": [
                     "reset",
                     "rule"
                 ]
+            },
+            "StaffMfaResetResultRuleEnum": {
+                "enum": [
+                    "superadmin",
+                    "space_manager"
+                ],
+                "type": "string",
+                "description": "* `superadmin` - superadmin\n* `space_manager` - space_manager"
             },
             "StaffOrder": {
                 "type": "object",
@@ -297419,7 +301168,7 @@
                         "readOnly": true
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectType64dEnum"
+                        "$ref": "#/components/schemas/SubjectTypeB20Enum"
                     },
                     "subject_label": {
                         "type": "string",
@@ -299589,6 +303338,30 @@
                     "stage_form_id"
                 ]
             },
+            "StaleDraftRow": {
+                "type": "object",
+                "properties": {
+                    "assignment_id": {
+                        "type": "integer"
+                    },
+                    "judge_role_assignment_id": {
+                        "type": "integer"
+                    },
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "saved_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "assignment_id",
+                    "judge_role_assignment_id",
+                    "saved_at",
+                    "snapshot_id"
+                ]
+            },
             "State5c1Enum": {
                 "enum": [
                     "open",
@@ -300912,7 +304685,7 @@
                 "type": "string",
                 "description": "* `machine` - Machine\n* `inventory_product` - Inventory item\n* `inventory_asset` - Inventory unit\n* `bookable_space` - Bookable space"
             },
-            "SubjectType64dEnum": {
+            "SubjectTypeB20Enum": {
                 "enum": [
                     "machine_service_request",
                     "booking",
@@ -300929,10 +304702,12 @@
                     "event_order",
                     "event_venue_fee",
                     "donation",
-                    "sponsorship"
+                    "sponsorship",
+                    "submission_fee",
+                    "team_registration"
                 ],
                 "type": "string",
-                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee\n* `loan_rental` - Loan rental\n* `loan_damage` - Loan damage charge\n* `loan_lost` - Lost item charge\n* `machine_session` - Machine session\n* `event_order` - Event ticket order\n* `event_venue_fee` - Event venue fee\n* `donation` - Donation\n* `sponsorship` - Sponsorship"
+                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee\n* `loan_rental` - Loan rental\n* `loan_damage` - Loan damage charge\n* `loan_lost` - Lost item charge\n* `machine_session` - Machine session\n* `event_order` - Event ticket order\n* `event_venue_fee` - Event venue fee\n* `donation` - Donation\n* `sponsorship` - Sponsorship\n* `submission_fee` - Project entry fee\n* `team_registration` - Team registration"
             },
             "SubjectTypeE13Enum": {
                 "enum": [

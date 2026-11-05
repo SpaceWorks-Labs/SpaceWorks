@@ -3522,8 +3522,14 @@ RBAC action `view_analytics`. The view list and its version are in [analytics-vi
   warranty switch in release 2 (#137 Q-C3). Do not reintroduce the old keys; new features join
   their parent as capabilities (#97).
 - **A switch-off is a 404, not a 400.** Folded routes gate through
-  `makerspaces.folded_capabilities.require_capability*` (NotFound, `code=capability_disabled`).
-  Off means no surface, no reminder, no alert, no low-stock draft; rows are kept.
+  `makerspaces.folded_capabilities.require_capability*` (NotFound, `code=capability_disabled`);
+  since #183B every module and capability guard does the same: `makerspaces.guards.SurfaceOff`
+  (`code=module_disabled|feature_disabled`, plus the `module`/`feature` key). Never raise a 400 for
+  an off switch, and catch `SurfaceOff` (not `ValidationError`) where a caller turns it into a form
+  error or a skip. Off means no surface, no report entry, no notification, no scheduled task, no
+  reminder, no alert, no low-stock draft; rows are kept. New scheduled tasks are mapped in
+  `operations/cloud_jobs/task_sources.py` and new notification events in
+  `integrations/notification_catalog_sources.py`; guard tests refuse an unmapped one.
 - **One list, two switches.** A To-Buy row's `kind` is its domain (`printing` → `machines.tobuy`,
   `hardware` → `inventory.tobuy`); `procurement.access.scope_items` hides a switched-off stream and
   creation refuses it. A warranty follows its host (machine → `machines.warranty`, asset →
@@ -5853,7 +5859,8 @@ responsibility; local purges never delete shared global organizations or foreign
 - **Ticket templates are copied, not shared.** Series creation copies its template rows into each
   occurrence; per-type occupancy belongs to that occurrence. Editing one copy cannot change others.
 - **Discovery is public-only.** Categories and tags are tenant-scoped. Detail reuses the public
-  serializer; private, terminal and unknown events are indistinguishable 404s. Module-off is 400.
+  serializer; private, terminal and unknown events are indistinguishable 404s. Module-off is the typed
+  `module_disabled` 404.
   Source code digests are omitted from exports; imported code rows are revoked and receive inert,
   fresh random digests. They cannot grant admission or discounts on a target deployment.
 
@@ -5899,7 +5906,7 @@ responsibility; local purges never delete shared global organizations or foreign
   `hardware_requests/kiosk_command_policy.py`; the stored snapshot only narrows. The Station is never an
   audit actor: existing services write their normal rows with the User, plus one companion
   `kiosk.online_command_executed` row carrying station/session/version/lease identity. Capability off
-  answers 400, missing authority 403, `inventory.kiosk` off refuses the session uniformly. Deployment
+  answers the typed `feature_disabled` 404, missing authority 403, `inventory.kiosk` off refuses the session uniformly. Deployment
   quarantine revokes every lease; leases and revocations are omitted from tenant archives.
 - **Handover replay is ordered, token-fenced coordination over the existing workflows (phase 9c).**
   `hardware_requests.ReplayCommand` stores only canonical SHA-256 identity, Station/session/human lease,
@@ -5908,7 +5915,8 @@ responsibility; local purges never delete shared global organizations or foreign
   signed Station cookie, exact Origin/Referer and `X-Station-CSRF`, plus `X-Kiosk-Operator-Lease`.
   Replay reloads the lease's real User without requiring their normal browser login to remain live;
   current account, membership/organization RBAC, Station version/revocation and operation capabilities
-  are checked before claim and again before the domain effect. Module/feature off is 400.
+  are checked before claim and again before the domain effect. Module/feature off is a 404
+  (`module_disabled` / `feature_disabled`).
   Prepare establishes one immutable evidence identity and presigns staging only. Execute commits a
   short claim plus `kiosk.replay_claimed` audit before S3, then commits workflow effects, stable results and `kiosk.replay_succeeded`
   together in one outer transaction. Nested workflows reuse finalized evidence from database state,

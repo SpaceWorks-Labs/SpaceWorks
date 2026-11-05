@@ -204,6 +204,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.paid_teams", parent_module: "events", label: "Paid team registration" },
   { key: "events.saved_views", parent_module: "events", label: "Saved views and exports for event lists" },
   { key: "events.gallery_search", parent_module: "events", label: "Gallery search and awards" },
+  // r2-peoples-choice (#181 S3): an optional People's choice award voted on the public gallery.
+  { key: "events.peoples_choice", parent_module: "events", label: "People's choice award" },
   // L24 (#163A): price-drop refunds.
   { key: "charges.price_drop_refunds", parent_module: null, label: "Price-drop refunds" },
   // L22 (#128 C-7, #129, #135, #137): the per-space shop.

@@ -26,6 +26,7 @@ from .capability_definitions_r2_l6 import definitions as r2_l6_definitions
 from .capability_definitions_r2_l18 import definitions as r2_l18_definitions
 from .capability_definitions_r2_l21a import definitions as r2_l21a_definitions
 from .capability_definitions_r2_l21b import definitions as r2_l21b_definitions
+from .capability_definitions_r2_peoples_choice import definitions as r2_peoples_choice_definitions
 from .capability_definitions_r2_l24 import definitions as r2_l24_definitions
 from .capability_definitions_r2_l22 import definitions as r2_l22_definitions
 from .capability_definitions_r2_l20 import definitions as r2_l20_definitions
@@ -270,6 +271,7 @@ FEATURE_DEFINITIONS += r2_l6_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l18_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l21a_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l21b_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += r2_peoples_choice_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l24_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l22_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l20_definitions(FeatureDefinition)

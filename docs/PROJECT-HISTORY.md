@@ -6,6 +6,16 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 GAP2, machines, maintenance and accounts gaps (#65, #100, #102, #141,
+  #142 OQ-6/OQ-12).** Maintenance cost (machine logs, schedules, work orders, item and room runs) posts a
+  `maintenance` expense to the L5 ledger per area, so Booking and Machine Managers see their maintenance
+  spend; maintenance `0006` adds `SubjectMaintenanceLog.cost`. Due-soon and overdue reminders for item and
+  room maintenance (`inventory.maintenance_reminders`, `bookings.room_maintenance_reminders`, default on).
+  Machine jobs carry an at-risk flag from "needed by" (never reordering), the staff queue board drags to
+  reorder (move buttons kept), and job files preview in the browser (STL/OBJ/3MF mesh, G-code toolpath,
+  DXF drawing, SVG) through the private signed URL. The other account's passkey proves an account merge
+  (`account-merge/<id>/passkey-options`), and the staff enrolment screen adds a passkey in place.
+
 - **2026-11-04 -- release 2 S-B, login doors, unusual sign-ins and security alerts (#62, #66, #128 C-2,
   #157, #162(3)).** Staff signing in with Google, Apple, GitHub or OIDC still pass their factor (web and
   device); provider proof is members-only. `mfa/verify` takes `factor` (totp, recovery, passkey with

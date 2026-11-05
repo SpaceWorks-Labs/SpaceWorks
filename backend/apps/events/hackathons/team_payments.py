@@ -41,8 +41,50 @@ def team_payment_settled(team):
 
 def close_team_charge(team, actor=None):
     from apps.events.programme_charges import close_charge
+    # Hack-money G1: a cohort withdrawn because the space cancelled the event is owed for that reason.
+    reason = "event_cancelled" if team.event.status == "cancelled" else "team_rejected"
     return close_charge(event=team.event, subject_type="team_registration", subject_id=team.pk, actor=actor,
-                        reason_code="team_rejected", audit_action="event.team.payment_closed")
+                        reason_code=reason, audit_action="event.team.payment_closed")
+
+
+def missing_charges(event):
+    """Hack-money G15: teams that owe a team charge that was never raised (a failed signal).
+
+    A team is owed a charge once confirmed: a locked roster outside team-together mode, or a
+    confirmed team-together cohort. Disbanded teams and closed cohorts owe nothing.
+    """
+    from apps.events.programme_charges import find_charge
+    from .admission_models import HackathonApplicationCohort
+    from .team_models import HackathonTeam
+    if not team_fee(event):
+        return []
+    together = _team_mode_for_event(event.pk) == "team_together"
+    confirmed = set(HackathonApplicationCohort.objects.filter(event_id=event.pk, state="confirmed")
+                    .values_list("team_id", flat=True))
+    teams = HackathonTeam.objects.filter(event_id=event.pk).select_related("leader", "event__makerspace").order_by("pk")
+    teams = teams.filter(pk__in=confirmed).exclude(state="disbanded") if together else teams.filter(state="locked")
+    return [team for team in teams if find_charge(event, "team_registration", team.pk) is None]
+
+
+def raise_missing(event, team_id, actor):
+    """Staff "raise charge now" (G15): idempotent through `raise_charge`; 404 for a team owing nothing."""
+    from django.http import Http404
+    from apps.events.programme_charges import find_charge
+    from .team_models import HackathonTeam
+    if not HackathonTeam.objects.filter(pk=team_id, event_id=event.pk).exists():
+        raise Http404
+    team = next((row for row in missing_charges(event) if row.pk == team_id), None)
+    if team is None:
+        existing = find_charge(event, "team_registration", team_id)
+        if existing is None:
+            raise Http404  # This team owes no charge (not confirmed, disbanded, or no team fee).
+        return existing
+    return raise_team_charge(team, actor)
+
+
+def _team_mode_for_event(event_id):
+    from .admission_models import HackathonConfig
+    return HackathonConfig.objects.filter(event_id=event_id).values_list("team_mode", flat=True).first()
 
 
 def subject_starts_at(payment):

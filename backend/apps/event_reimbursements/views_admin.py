@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from .http import PrivateView, body, paginated, admin_event
 from . import serializers as s, serializers_finance as f, serializers_read as reads
 from .api_schema import ERRORS, TAGS, IDEMPOTENCY, REVIEW, CLAIM_DETAIL, REQUEST_PAGE, FINANCE
-from . import programme_workflow, award_workflow, claim_workflow
+from . import programme_workflow, award_workflow, claim_workflow, direct_booking, pools
+from . import serializers_hackmoney as hm
 from .config_models import ReimbursementProgramme
 from .request_models import GrantRequest
 from .claim_models import ReimbursementClaim
@@ -113,3 +114,35 @@ class CorrectDecisionView(PrivateView):
         admin_event(request, pk, finance_only=True)
         return Response(claim_workflow.decide(request=request, event_id=pk, claim_id=claim_id,
             data=body(request, f.CorrectClaimDecisionCommand), correction=True))
+
+
+class CrewPoolView(PrivateView):
+    """Hack-money G14: finance adds the one crew pool, funded in the same transaction."""
+    @extend_schema(tags=TAGS, description=FINANCE + " 409 crew_pool_exists; 403 crew_claims_disabled.",
+                   parameters=IDEMPOTENCY, request=hm.CrewPoolCommand, responses={201: s.CommandResult, **ERRORS})
+    def post(self, request, pk):
+        admin_event(request, pk, finance_only=True)
+        return Response(pools.create_crew_pool(request=request, event_id=pk, data=body(request, hm.CrewPoolCommand)),
+                        status=201)
+
+
+class DirectBookingView(PrivateView):
+    """Hack-money G12: record travel the organiser booked; commits the pool and writes a ledger expense."""
+    @extend_schema(tags=TAGS, description=FINANCE + " Never sends money: the space already paid the vendor.",
+                   parameters=IDEMPOTENCY, request=hm.DirectBookingCommand, responses={200: s.CommandResult, **ERRORS})
+    def post(self, request, pk, request_id):
+        event, _ = admin_event(request, pk, finance_only=True)
+        get_object_or_404(GrantRequest, pk=request_id, event=event)
+        return Response(direct_booking.record(request=request, event_id=pk, request_id=request_id,
+                                              data=body(request, hm.DirectBookingCommand)))
+
+
+class DirectBookingCancelView(PrivateView):
+    """Hack-money G12: void the booking's ledger expense and release its committed budget."""
+    @extend_schema(tags=TAGS, description=FINANCE, parameters=IDEMPOTENCY, request=hm.DirectBookingCancelCommand,
+                   responses={200: s.CommandResult, **ERRORS})
+    def post(self, request, pk, request_id):
+        event, _ = admin_event(request, pk, finance_only=True)
+        get_object_or_404(GrantRequest, pk=request_id, event=event)
+        return Response(direct_booking.cancel(request=request, event_id=pk, request_id=request_id,
+                                              data=body(request, hm.DirectBookingCancelCommand)))

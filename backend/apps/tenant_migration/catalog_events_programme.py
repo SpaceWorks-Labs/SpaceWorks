@@ -167,6 +167,9 @@ FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _L21B_
 from .catalog_r2_submit_content import EXTRA_FIELDS as _SC_EXTRA, FIELD_NAMES as _SC_FIELD_NAMES  # noqa: E402
 FIELD_NAMES.update(_SC_FIELD_NAMES)
 FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _SC_EXTRA.items()})
+from .catalog_hackmoney import EXTRA_FIELDS as _HM_EXTRA, FIELD_NAMES as _HM_FIELD_NAMES  # noqa: E402
+FIELD_NAMES.update(_HM_FIELD_NAMES)
+FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _HM_EXTRA.items()})
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items() if label not in OMITTED_MODELS}
 
 EXTRA_FIELDS = {

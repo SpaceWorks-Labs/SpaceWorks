@@ -39,10 +39,20 @@ class HackathonPrize(EventOwned):
                                            choices=(("manager", "Manager"), ("sponsor_proposal", "Sponsor proposal")))
     # L21b (C-38): prize money per winner. Paid out only by hand, through the append-only payout ledger.
     amount_per_winner = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    # Hack-money G5/G8: what the prize is (cash, or hardware/credits/perks with a free-text value and an
+    # optional estimate) and who pays it (the space, or the sponsor straight to the winner: no expense).
+    kind = models.CharField(max_length=8, default="cash", choices=[(v, v) for v in ("cash", "item", "credit", "perk")])
+    value_text = models.CharField(max_length=300, blank=True)
+    estimated_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    funding = models.CharField(max_length=16, default="space", choices=[(v, v) for v in ("space", "sponsor_direct")])
 
     class Meta:
         ordering = ("order", "id")
         constraints = [models.CheckConstraint(condition=Q(award_count__gte=1), name="ev_prize_awards_positive"),
+                       models.CheckConstraint(condition=Q(kind__in=("cash", "item", "credit", "perk")), name="ev_prize_kind"),
+                       models.CheckConstraint(condition=Q(funding__in=("space", "sponsor_direct")), name="ev_prize_funding"),
+                       models.CheckConstraint(condition=Q(estimated_value__isnull=True) | Q(estimated_value__gt=0),
+                                              name="ev_prize_estimate_positive"),
                        models.CheckConstraint(condition=Q(amount_per_winner__isnull=True) | Q(amount_per_winner__gt=0),
                                               name="ev_prize_amount_positive")]
 

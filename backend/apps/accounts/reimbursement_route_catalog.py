@@ -72,6 +72,9 @@ ROUTES = (
     ('admin-event-reimbursement-programme', ('GET', 'HEAD', 'PATCH', 'POST'), 'event', 'membership'),
     ('admin-event-reimbursement-request-list', ('GET', 'HEAD'), 'event', 'delegable'),
     ('admin-event-reimbursement-request-decide', ('POST',), 'event', 'delegable'),
+    ('admin-event-reimbursement-crew-pool', ('POST',), 'event', 'membership'),  # hack-money G14
+    ('admin-event-reimbursement-direct-booking', ('POST',), 'event', 'membership'),  # hack-money G12
+    ('admin-event-reimbursement-direct-booking-cancel', ('POST',), 'event', 'membership'),
     ('admin-event-reimbursement-claim-list', ('GET', 'HEAD'), 'event', 'delegable'),
     ('admin-event-reimbursement-claim-detail', ('GET', 'HEAD'), 'event', 'delegable'),
     ('admin-event-reimbursement-claim-review', ('POST',), 'event', 'delegable'),

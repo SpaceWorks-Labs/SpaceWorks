@@ -70,3 +70,5 @@ from .catalog_r2_l21b import UNIQUE_CONSTRAINTS as _L21B_UNIQUE  # noqa: E402
 RULES.update({key: _policy(REMAP, "Typed owners or OneToOne scopes follow the target allocation; duplicate tuples refuse.") for key in _L21B_UNIQUE})
 from .catalog_r2_submit_content import UNIQUE_CONSTRAINTS as _SC_UNIQUE  # noqa: E402
 RULES.update({key: _policy(REMAP, "OneToOne scopes follow the target allocation; duplicate tuples refuse.") for key in _SC_UNIQUE})
+from .catalog_hackmoney import UNIQUE_CONSTRAINTS as _HM_UNIQUE  # noqa: E402
+RULES.update({key: _policy(REMAP, "Typed owners or OneToOne scopes follow the target allocation; duplicate tuples refuse.") for key in _HM_UNIQUE})

@@ -124,6 +124,8 @@ def money_fingerprint(makerspace_id, *, using="default"):
     from .money_digest_r2_l21b import l21b_money_rows
 
     payload.update(l21b_money_rows(makerspace_id, using))
+    from .money_digest_hackmoney import hackmoney_money_rows
+    payload.update(hackmoney_money_rows(makerspace_id, using))
     from .money_digest_r2_l22 import l22_money_rows
 
     payload.update(l22_money_rows(makerspace_id, using))

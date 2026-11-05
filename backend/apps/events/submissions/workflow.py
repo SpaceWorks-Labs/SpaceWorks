@@ -102,6 +102,8 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
             from .stage_runtime import current_snapshot_ids
             for snapshot_id in current_snapshot_ids(project):  # Every stage's current work leaves judging.
                 port.invalidate_snapshot(context=context, snapshot_id=snapshot_id)
+            from .entry_fees import on_withdrawn  # hack-money G2: void or (switch on) refund case
+            on_withdrawn(event=context.event, project=project, actor=actor)
             project.state = "withdrawn"
         project.version += 1
         project.save()

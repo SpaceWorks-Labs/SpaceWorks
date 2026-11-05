@@ -19,6 +19,7 @@ def lane_entries(authority, D):
     from .catalog_r2_l18 import authority_entries as _r2_l18_authority
     from .catalog_r2_l21a import authority_entries as _r2_l21a_authority
     from .catalog_r2_l22 import authority_entries as _r2_l22_authority
+    from .catalog_hackmoney_payments import authority_entries as _hackmoney_authority
 
     entries = ()
     entries += _r2_l1_authority(authority, D)
@@ -34,4 +35,5 @@ def lane_entries(authority, D):
     entries += _r2_l18_authority(authority, D)
     entries += _r2_l21a_authority(authority, D)
     entries += _r2_l22_authority(authority, D)
+    entries += _hackmoney_authority(authority, D)
     return entries

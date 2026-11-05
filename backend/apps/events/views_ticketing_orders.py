@@ -62,11 +62,12 @@ class MemberOrderQuoteView(MemberOrderView):
     def post(self, request, makerspace_id, event_id):
         from apps.payments.pricing.serializers import quote_payload
         from .cancellation_policy import policy_summary
-        from .orders_checkout import require_orderable
+        from .orders_checkout import addons_only, require_orderable
         from .orders_quote import build_quote
         event = self.event(makerspace_id, event_id)
-        require_orderable(event, request.user)
-        priced = build_quote(event, request.user, _request(request.data))
+        values = _request(request.data)
+        require_orderable(event, request.user, values)
+        priced = build_quote(event, request.user, values, addons_only=addons_only(event, request.user, values))
         return Response({"quote": quote_payload(priced.quote), "seats": priced.seats,
                          "promo_saving": (priced.quote.promo or {}).get("saving"), "policy": policy_summary(event)})
 

@@ -10,7 +10,7 @@ from apps.payments.event_payouts.errors import require
 from apps.payments.event_payouts.obligation_models import EventPayoutObligation
 from apps.payments.event_payouts.queries import paid
 from .award_models import GrantAward
-from .budget_models import ReimbursementBudgetPool, BudgetReservation
+from .budget_models import BudgetReservation
 from .config_models import ReimbursementProgramme
 from .request_models import GrantRequest
 from .claim_models import ReimbursementClaim
@@ -26,11 +26,13 @@ from .accepted_policy import claim_due
 
 def lock_claim_parents(event, claim_id=None, owner_id=None):
     programme = ReimbursementProgramme.objects.select_for_update().get(event=event)
-    pool = ReimbursementBudgetPool.objects.select_for_update().get(programme=programme, currency=programme.currency)
+    from .pools import lock_pools
+    pools = lock_pools(programme)  # G14: the award may hold the crew pool
     seed = ReimbursementClaim.objects.get(pk=claim_id, event=event) if claim_id else None
     grant = GrantRequest.objects.select_for_update(of=("self",)).get(programme=programme, **(
         {"award__pk": seed.award_id} if seed else {"member_id": owner_id}))
-    award = GrantAward.objects.select_for_update().get(request=grant, pool=pool)
+    award = GrantAward.objects.select_for_update().get(request=grant, pool_id__in=pools)
+    pool = pools[award.pool_id]
     claim = ReimbursementClaim.objects.select_for_update().filter(award=award).first()
     return programme, pool, award, claim
 

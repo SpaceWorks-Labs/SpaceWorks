@@ -123,3 +123,16 @@ def hold_appeal_locked(pool, reservation, *, operation_id, actor):
         reservation.released_at = None
         reservation.version += 1
         reservation.save()
+
+
+def book_directly_locked(pool, award, amount, *, operation_id, actor):
+    """Hack-money G12: travel the organiser booked commits straight from the pool (no claim, no decision)."""
+    reservation = reserve_locked(pool, award, amount, operation_id=operation_id, actor=actor, reason_code="direct_booking")
+    _, new = _entry(pool, operation_id=operation_id, actor=actor, kind="commit", amount=amount,
+                    reason_code="direct_booking", reservation=reservation)
+    if new:
+        _apply(pool, reserved=-reservation.held_minor, committed=amount)
+        reservation.held_minor, reservation.committed_minor, reservation.state = 0, amount, "committed"
+        reservation.version += 1
+        reservation.save()
+    return reservation

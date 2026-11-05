@@ -63,6 +63,18 @@ def validate_programme_money(payment, identity_unchanged):
         raise ValidationError({"member": "The team leader pays this charge."})
 
 
+def validate_event_deposit(payment, identity_unchanged):
+    """Hack-money G10: a deposit belongs to one registration in this space and is raised on its member."""
+    from apps.events.models import EventRegistration
+
+    row = EventRegistration.objects.filter(pk=payment.subject_id, event__makerspace_id=payment.makerspace_id
+                                           ).values("member_id").first()
+    if row is None and not identity_unchanged:
+        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+    if row is not None and payment.member_id != row["member_id"]:
+        raise ValidationError({"member": "Payment member must be the registered member."})
+
+
 def validate_shop_order(payment, identity_unchanged):
     """Lane L22: a shop order belongs to this space and to its buyer (none for a guest)."""
     from apps.shop.models import ShopOrder
@@ -140,6 +152,8 @@ def validate_subject(payment, identity_unchanged):
         validate_programme_money(payment, identity_unchanged)
     if payment.subject_type == "shop_order" and payment.subject_id:
         validate_shop_order(payment, identity_unchanged)
+    if payment.subject_type == "event_deposit" and payment.subject_id:
+        validate_event_deposit(payment, identity_unchanged)
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:
         from apps.makerspaces.models import MembershipTerm
 

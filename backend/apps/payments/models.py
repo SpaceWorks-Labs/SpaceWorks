@@ -71,3 +71,7 @@ from .donations.models import (  # noqa: E402,F401
     Donation, DonationCampaign, DonationPledge, DonationSettings, DonorTaxDetail,
     Sponsor, SponsorEventLink, SponsorPerk, SponsorshipCharge, SponsorTier,
 )
+
+# Hack-money (#180 G13, #181 G7): per-space prize tax and payee-template settings.
+from .models_event_money import EventMoneySettings  # noqa: E402,F401
+__all__ += ["EventMoneySettings"]

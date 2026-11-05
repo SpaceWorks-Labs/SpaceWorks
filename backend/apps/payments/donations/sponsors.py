@@ -105,22 +105,30 @@ def fulfil_perk(perk, *, actor, fulfilled=True, note=""):
 
 
 @transaction.atomic
-def raise_charge(sponsor, *, actor, amount, description=""):
-    """Record what the sponsor agreed to pay: one account-less charge staff raised."""
+def raise_charge(sponsor, *, actor, amount, description="", event_id=None, earmark="general"):
+    """Record what the sponsor agreed to pay: one account-less charge staff raised. Hack-money G8: it
+    may be for one event of this space and earmarked for that event's prize pool."""
+    from apps.events.models import Event
     from apps.payments.models import Payment
     from apps.payments.services import create_payment
 
     from .services import space_currency
 
     space = sponsor.makerspace
+    event = None
+    if event_id is not None:
+        event = Event.objects.filter(pk=event_id, makerspace_id=space.pk).first()
+        if event is None:
+            raise DonationRefused("That event is not in this space.", "event_invalid", "event_id")
     charge = SponsorshipCharge.objects.create(makerspace=space, sponsor=sponsor, amount=amount,
                                               currency=space_currency(space), description=description[:200],
-                                              created_by=actor)
+                                              event=event, earmark=earmark, created_by=actor)
     payment = create_payment(makerspace=space, subject_type=Payment.SubjectType.SPONSORSHIP, subject_id=charge.pk,
                              member=None, amount=amount, currency=charge.currency, created_by=actor,
                              subject_label=f"Sponsorship: {sponsor.name}"[:255])
     audit.record(actor, "sponsor.charge_raised", makerspace=space, target=charge, meta={
-        "sponsor_id": sponsor.pk, "charge_id": charge.pk, "payment_id": payment.pk, "amount": str(amount)})
+        "sponsor_id": sponsor.pk, "charge_id": charge.pk, "payment_id": payment.pk, "amount": str(amount),
+        "event_id": event_id, "earmark": earmark})
     return charge, payment
 
 

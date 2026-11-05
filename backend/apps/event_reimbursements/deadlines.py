@@ -14,6 +14,8 @@ from .accepted_policy import claim_due, attendance_required
 
 
 def close_award_locked(ctx, *, pool, award, claim, reason):
+    if award.reason_code == "direct_booking":
+        return False  # G12: booked travel is money already spent; only finance cancels it, by hand.
     reservation = BudgetReservation.objects.select_for_update().get(award=award, pool=pool)
     obligation = EventPayoutObligation.objects.select_for_update().filter(source_kind="event_reimbursement",
         source_uuid=claim.uuid).first() if claim else None

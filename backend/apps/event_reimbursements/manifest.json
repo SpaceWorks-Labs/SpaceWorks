@@ -353,6 +353,14 @@
           "encryption_required": false,
           "classification": "typed_reference",
           "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
+        },
+        "audience": {
+          "type": "CharField",
+          "declaration": "models.CharField(max_length=12, default='participants', choices=[(v, v) for v in ('participants', 'crew')])",
+          "pii": false,
+          "encryption_required": false,
+          "classification": "canonical_metadata",
+          "portable_disposition": "PRESERVE_WITH_TYPED_REFERENCE_REMAP"
         }
       },
       "constraints_and_indexes": [
@@ -2542,6 +2550,45 @@
       "session_only": true,
       "openapi": "extend_schema on every method; api_schema.ERRORS",
       "authority": "host VIEW_FINANCE for policy/final decisions/exceptional commands; review_reimbursements for screening; exact variants in views_admin.py"
+    },
+    {
+      "name": "admin-event-reimbursement-crew-pool",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/crew-pool/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.CrewPoolView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE with recent reauth (hack-money G12/G14)"
+    },
+    {
+      "name": "admin-event-reimbursement-direct-booking",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/<int:request_id>/direct-booking/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.DirectBookingView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE with recent reauth (hack-money G12/G14)"
+    },
+    {
+      "name": "admin-event-reimbursement-direct-booking-cancel",
+      "path": "/api/v1/admin/events/{pk}/reimbursements/requests/<int:request_id>/direct-booking/cancel/",
+      "methods": [
+        "POST"
+      ],
+      "view": "apps.event_reimbursements.views_admin.DirectBookingCancelView",
+      "module": "event_reimbursements",
+      "live_host": true,
+      "session_only": true,
+      "openapi": "extend_schema on every method; api_schema.ERRORS",
+      "authority": "host VIEW_FINANCE with recent reauth (hack-money G12/G14)"
     }
   ],
   "audits": [
@@ -2560,6 +2607,9 @@
     "event.reimbursement.claim_screened",
     "event.reimbursement.claim_submitted",
     "event.reimbursement.claim_withdrawn",
+    "event.reimbursement.crew_pool_created",
+    "event.reimbursement.direct_booking_cancelled",
+    "event.reimbursement.direct_booking_recorded",
     "event.reimbursement.forfeited",
     "event.reimbursement.module_purge_no_liability",
     "event.reimbursement.programme_configured",

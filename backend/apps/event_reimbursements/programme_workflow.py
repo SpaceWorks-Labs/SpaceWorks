@@ -29,7 +29,7 @@ def create_or_get(*, request, event_id, data):
         existing = ReimbursementProgramme.objects.select_for_update().filter(event=ctx.event).first()
         if existing:
             require(existing.initialization_digest == initialization_digest, "programme_initialization_conflict")
-            pool = ReimbursementBudgetPool.objects.get(programme=existing, currency=existing.currency)
+            pool = ReimbursementBudgetPool.objects.get(programme=existing, currency=existing.currency, audience="participants")
             return ctx.finish(existing, created=False, pool_id=pool.pk, pool_version=pool.version)
         require("claim_due_at" in settings, "claim_due_at_required", status=400)
         row = ReimbursementProgramme.objects.create(event=ctx.event, currency=currency, created_by=ctx.actor,

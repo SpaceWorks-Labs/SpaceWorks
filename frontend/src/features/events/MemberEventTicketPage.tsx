@@ -16,6 +16,7 @@ import { googleCalendarUrl, saveTicketBlob, type CalendarFields } from "./eventC
 import { LiveTicketState } from "./eventPresentation/LiveTicketState";
 import { PhotoChoice } from "./eventPresentation/PhotoChoice";
 import { TicketManageActions } from "./ticketing/TicketManageActions";
+import { AddonOnlyShop } from "./ticketing/AddonOnlyShop";
 
 export type MemberEventTicket = Omit<import('../../generated/api').ProgrammeTicket, 'event'> & {
   event: CalendarFields & { id?: number; public_token: string; timezone_name: string; status: string };
@@ -98,6 +99,10 @@ export function MemberEventTicketPage() {
         </div>
         {makerspaceId ? <TicketManageActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={current.registration_id} status={current.status} event={current.event} /> : null}
         <RouteLink className="desk-button" href={tenantPath("member/events/history")}>Your event history</RouteLink>
+        {/* Hack-money G9: a confirmed place on an approval event may buy add-ons alone. */}
+        {confirmed(current.status) && makerspaceId && space?.features?.includes("events.accepted_addons") && space.features.includes("events.addons")
+          ? <AddonOnlyShop makerspaceSlug={makerspaceSlug} makerspaceId={makerspaceId} publicToken={current.event.public_token}
+            ordersHref={orderId => tenantPath(`member/orders/${orderId}`)} /> : null}
         {current.event.id && makerspaceId ? <PhotoChoice actorId={identity.data?.id} makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
         {calendar.error ? <ErrorText message="Could not download this calendar." /> : null}
         {download.error ? <ErrorText message={download.error.message} /> : null}

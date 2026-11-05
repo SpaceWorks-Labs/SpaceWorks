@@ -150,6 +150,8 @@ def publish(event_id, *, actor, data):
             from .options import option
             if option(event, "finalists_email"):
                 notice(event, "finalists_announced", row.pk, 1)
+            from apps.events.submissions.entry_fees import on_shortlist_published  # hack-money G2
+            on_shortlist_published(event=event, actor=actor)
             return {"id": advance.pk, "event_id": event.pk, "version": advance.target_round.version,
                     "state": "published", "allowed_actions": []}
         return command(event, actor, values, path="finalists/publish", run=run)

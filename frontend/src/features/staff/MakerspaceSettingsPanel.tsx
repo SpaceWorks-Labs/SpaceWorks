@@ -23,6 +23,7 @@ import { KioskStationSettings } from "./KioskStationSettings";
 import { MakerspaceLocationSettings } from "./MakerspaceLocationSettings";
 import { MakerspaceProfileSettings } from "./MakerspaceProfileSettings";
 import { BillingDocumentsSettings } from "./BillingDocumentsSettings";
+import { EventMoneySettings } from "./EventMoneySettings";
 import { TaxSettings } from "../finance/TaxSettings";
 import { PricingSettings } from "./pricing/PricingSettings";
 import { capabilityOn } from "../../lib/features";
@@ -190,6 +191,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       <MakerspacePaymentSettings makerspace={settings.data ?? makerspace} />
       {canManageMakerspace ? <BillingDocumentsSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
       {canManageMakerspace ? <TaxSettings key={`tax-${makerspace.id}`} makerspaceId={makerspace.id} /> : null}
+      {canManageMakerspace && enabledModules.includes("events") ? <EventMoneySettings key={`event-money-${makerspace.id}`} makerspaceId={makerspace.id} /> : null}
     </> },
     ...(capabilityOn(settings.data ?? makerspace, "charges.pricing") ? [{ id: "pricing", title: "Pricing",
       description: "Free or paid per area, the rates, member discounts and the currency new charges use.",

@@ -6,12 +6,14 @@ import { utcInstant } from "../../events/stagedForms/formPayload";
 import { useUnsavedChanges } from "../../events/stagedForms/UnsavedChanges";
 import { reimbursementAdminPath, useProgramme, useProgrammeCommand } from "./api";
 import { PolicyFields } from "./PolicyFields";
+import { CrewPoolPanel } from "./TravelAndCrewPool";
 import type { ProgrammeDetail } from "./types";
 export function ReimbursementProgramme({ scope, onDirtyChange }: { scope: EventScope; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useProgramme(scope);
   if (!query.data) return <div><p role={query.error ? "alert" : "status"}>{query.error ? commandError(query.error) : "Loading reimbursement programme…"}</p>
     {query.error ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>Retry</button> : null}</div>;
-  return <ProgrammeEditor key={query.data.version ?? 0} scope={scope} row={query.data} onDirtyChange={onDirtyChange} />;
+  return <div className="grid gap-6"><ProgrammeEditor key={query.data.version ?? 0} scope={scope} row={query.data} onDirtyChange={onDirtyChange} />
+    <CrewPoolPanel scope={scope} /></div>;
 }
 function ProgrammeEditor({ scope, row, onDirtyChange }: { scope: EventScope; row: ProgrammeDetail; onDirtyChange?: (dirty: boolean) => void }) {
   const [currency, setCurrency] = useState(row.currency ?? "INR");

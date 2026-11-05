@@ -179,7 +179,11 @@
         "order": "models.PositiveIntegerField(default=0)",
         "award_count": "models.PositiveSmallIntegerField(default=1)",
         "winner_selection_mode": "models.CharField(max_length=20, default='manager', choices=(('manager', 'Manager'), ('sponsor_proposal', 'Sponsor proposal')))",
-        "amount_per_winner": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)"
+        "amount_per_winner": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "kind": "models.CharField(max_length=8, default='cash', choices=[(v, v) for v in ('cash', 'item', 'credit', 'perk')])",
+        "value_text": "models.CharField(max_length=300, blank=True)",
+        "estimated_value": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "funding": "models.CharField(max_length=16, default='space', choices=[(v, v) for v in ('space', 'sponsor_direct')])"
       },
       "foreign_keys": {
         "event": {
@@ -202,7 +206,10 @@
       "user_edges": {},
       "constraints": [
         "ev_prize_awards_positive",
-        "ev_prize_amount_positive"
+        "ev_prize_amount_positive",
+        "ev_prize_kind",
+        "ev_prize_funding",
+        "ev_prize_estimate_positive"
       ],
       "unique_fields": [],
       "uniqueness_policy": "Remap composite FK keys; public UUIDs preserve and refuse collision preflight; OneToOne scope remaps. Never regenerate an announced identity.",
@@ -1658,7 +1665,14 @@
         "updated_at": "models.DateTimeField(auto_now=True)",
         "stage_reminder_email": "models.BooleanField(default=False)",
         "shortlist_email": "models.BooleanField(default=False)",
-        "entry_fee_stage": "models.PositiveSmallIntegerField(default=1)"
+        "entry_fee_stage": "models.PositiveSmallIntegerField(default=1)",
+        "refund_on_withdrawal": "models.BooleanField(default=False)",
+        "refund_if_not_shortlisted": "models.BooleanField(default=False)",
+        "show_prize_amounts": "models.BooleanField(default=False)",
+        "prize_claim_days": "models.PositiveSmallIntegerField(null=True, blank=True)",
+        "deposit_amount": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "deposit_requires_submission": "models.BooleanField(default=False)",
+        "deposits_settled_at": "models.DateTimeField(null=True, blank=True)"
       },
       "foreign_keys": {
         "event": {
@@ -1670,7 +1684,8 @@
       "constraints": [
         "ev_options_entry_fee",
         "ev_options_team_fee",
-        "ev_options_fee_stage"
+        "ev_options_fee_stage",
+        "ev_options_deposit"
       ],
       "unique_fields": [
         "event"
@@ -1705,7 +1720,9 @@
         "paid_on": "models.DateField()",
         "ledger_entry": "models.ForeignKey('payments.LedgerEntry', on_delete=models.PROTECT, related_name='+')",
         "recorded_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
-        "created_at": "models.DateTimeField(auto_now_add=True)"
+        "created_at": "models.DateTimeField(auto_now_add=True)",
+        "tds_amount": "models.DecimalField(max_digits=12, decimal_places=2, default=0)",
+        "net_amount": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)"
       },
       "foreign_keys": {
         "makerspace": {
@@ -1748,7 +1765,9 @@
       "constraints": [
         "ev_payout_amount_positive",
         "ev_payout_kind",
-        "ev_payout_reversal_shape"
+        "ev_payout_reversal_shape",
+        "ev_payout_tds_bounds",
+        "ev_payout_net_shape"
       ],
       "unique_fields": [
         "reverses"
@@ -1763,6 +1782,214 @@
       "immutable": true,
       "purge": "event host only; explicit dependency graph and lifecycle purge capability",
       "tenant_scope": "event.makerspace_id"
+    },
+    {
+      "model": "events.HackathonPrizeShare",
+      "module": "backend/apps/events/judging/models_prize_money.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+        "version": "models.PositiveIntegerField(default=1)",
+        "makerspace": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+        "award": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+        "member": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "amount": "models.DecimalField(max_digits=12, decimal_places=2)",
+        "state": "models.CharField(max_length=12, default='proposed', choices=[(v, v) for v in SHARE_STATES])",
+        "proposed_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "confirmed_at": "models.DateTimeField(null=True, blank=True)",
+        "created_at": "models.DateTimeField(auto_now_add=True)"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+          "target": "events.Event"
+        },
+        "makerspace": {
+          "definition": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+          "target": "makerspaces.Makerspace"
+        },
+        "award": {
+          "definition": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.EventAward"
+        },
+        "member": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        },
+        "proposed_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "member": {
+          "tenant_export": "typed historical account closure or nullable pseudonym per existing fidelity; never email relink",
+          "account_erasure": "follow declared on_delete; money history stays as recorded",
+          "authority": "reference alone confers none"
+        },
+        "proposed_by": {
+          "tenant_export": "typed historical account closure or nullable pseudonym per existing fidelity; never email relink",
+          "account_erasure": "follow declared on_delete; money history stays as recorded",
+          "authority": "reference alone confers none"
+        }
+      },
+      "constraints": [
+        "ev_prize_share_amount",
+        "ev_prize_share_state",
+        "ev_prize_share_member"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; tenant-owned parents only (hack-money lane).",
+      "tenant_export": "PRESERVE typed refs and append-only money evidence (hack-money lane)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": false,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "makerspace_id"
+    },
+    {
+      "model": "events.HackathonPrizeClaim",
+      "module": "backend/apps/events/judging/models_prize_money.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "event": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+        "version": "models.PositiveIntegerField(default=1)",
+        "makerspace": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+        "share": "models.OneToOneField(HackathonPrizeShare, on_delete=models.CASCADE, related_name='claim')",
+        "country": "models.CharField(max_length=2, blank=True)",
+        "method": "models.CharField(max_length=16, blank=True)",
+        "template_key": "models.CharField(max_length=24, blank=True)",
+        "details": "models.TextField(blank=True, default='')",
+        "pan": "models.TextField(blank=True, default='')",
+        "submitted_at": "models.DateTimeField(null=True, blank=True)",
+        "verified_at": "models.DateTimeField(null=True, blank=True)",
+        "verified_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "cleared_at": "models.DateTimeField(null=True, blank=True)"
+      },
+      "foreign_keys": {
+        "event": {
+          "definition": "models.ForeignKey(\"events.Event\", on_delete=models.CASCADE, related_name=\"+\")",
+          "target": "events.Event"
+        },
+        "makerspace": {
+          "definition": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+          "target": "makerspaces.Makerspace"
+        },
+        "share": {
+          "definition": "models.OneToOneField(HackathonPrizeShare, on_delete=models.CASCADE, related_name='claim')",
+          "target": "events.HackathonPrizeShare"
+        },
+        "verified_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "verified_by": {
+          "tenant_export": "typed historical account closure or nullable pseudonym per existing fidelity; never email relink",
+          "account_erasure": "follow declared on_delete; money history stays as recorded",
+          "authority": "reference alone confers none"
+        }
+      },
+      "constraints": [],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; tenant-owned parents only (hack-money lane).",
+      "tenant_export": "PRESERVE typed refs; encrypted payee details and PAN are cleared on payment and never exported (hack-money lane)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [
+        "details",
+        "pan"
+      ],
+      "pii_scope": "makerspace_id",
+      "owned_object_fields": [],
+      "immutable": false,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "makerspace_id"
+    },
+    {
+      "model": "events.HackathonPrizeOutcome",
+      "module": "backend/apps/events/judging/models_prize_money.py",
+      "fields": {
+        "id": "models.BigAutoField(primary_key=True)",
+        "makerspace": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+        "event": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+        "award": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+        "share": "models.ForeignKey(HackathonPrizeShare, null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "payout": "models.ForeignKey('events.HackathonPrizePayout', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "resolves": "models.OneToOneField('self', null=True, blank=True, on_delete=models.PROTECT, related_name='resolution')",
+        "kind": "models.CharField(max_length=16, choices=[(v, v) for v in OUTCOME_KINDS])",
+        "method": "models.CharField(max_length=16, blank=True)",
+        "reference": "models.CharField(max_length=64, blank=True)",
+        "amount": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
+        "currency": "models.CharField(max_length=3, blank=True)",
+        "happened_on": "models.DateField()",
+        "note": "models.CharField(max_length=300, blank=True)",
+        "ledger_entry": "models.ForeignKey('payments.LedgerEntry', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "recorded_by": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+        "created_at": "models.DateTimeField(auto_now_add=True)"
+      },
+      "foreign_keys": {
+        "makerspace": {
+          "definition": "models.ForeignKey('makerspaces.Makerspace', on_delete=models.CASCADE, related_name='+')",
+          "target": "makerspaces.Makerspace"
+        },
+        "event": {
+          "definition": "models.ForeignKey('events.Event', on_delete=models.CASCADE, related_name='+')",
+          "target": "events.Event"
+        },
+        "award": {
+          "definition": "models.ForeignKey('events.EventAward', on_delete=models.PROTECT, related_name='+')",
+          "target": "events.EventAward"
+        },
+        "share": {
+          "definition": "models.ForeignKey(HackathonPrizeShare, null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.HackathonPrizeShare"
+        },
+        "payout": {
+          "definition": "models.ForeignKey('events.HackathonPrizePayout', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "events.HackathonPrizePayout"
+        },
+        "resolves": {
+          "definition": "models.OneToOneField('self', null=True, blank=True, on_delete=models.PROTECT, related_name='resolution')",
+          "target": "events.HackathonPrizeOutcome"
+        },
+        "ledger_entry": {
+          "definition": "models.ForeignKey('payments.LedgerEntry', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+          "target": "payments.LedgerEntry"
+        },
+        "recorded_by": {
+          "definition": "models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')",
+          "target": "accounts.User"
+        }
+      },
+      "user_edges": {
+        "recorded_by": {
+          "tenant_export": "typed historical account closure or nullable pseudonym per existing fidelity; never email relink",
+          "account_erasure": "follow declared on_delete; money history stays as recorded",
+          "authority": "reference alone confers none"
+        }
+      },
+      "constraints": [
+        "ev_prize_outcome_kind",
+        "ev_prize_outcome_amount",
+        "ev_prize_outcome_resolves",
+        "ev_prize_outcome_ledger"
+      ],
+      "unique_fields": [],
+      "uniqueness_policy": "Remap composite FK keys; tenant-owned parents only (hack-money lane).",
+      "tenant_export": "PRESERVE typed refs and append-only money evidence (hack-money lane)",
+      "tenant_import_reset": {},
+      "deployment_backup": "preserve under existing encrypted archive custody",
+      "pii_fields": [],
+      "pii_scope": null,
+      "owned_object_fields": [],
+      "immutable": true,
+      "purge": "event host only; explicit dependency graph and lifecycle purge capability",
+      "tenant_scope": "makerspace_id"
     }
   ],
   "json_typed_id_slots": {

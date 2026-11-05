@@ -74,6 +74,7 @@ def resolve_subject_labels(payments):
         # Lane L21b (appended after L6).
         Payment.SubjectType.SUBMISSION_FEE: "Project entry fee",
         Payment.SubjectType.TEAM_REGISTRATION: "Team registration",
+        Payment.SubjectType.EVENT_DEPOSIT: "Event deposit",  # hack-money G10
         Payment.SubjectType.SHOP_ORDER: "Shop order",
     }
     for payment in rows:

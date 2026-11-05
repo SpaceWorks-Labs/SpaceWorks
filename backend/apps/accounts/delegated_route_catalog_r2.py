@@ -129,3 +129,6 @@ PLATFORM_ONLY_ROUTES = frozenset("""admin-platform-analytics admin-platform-anal
 admin-platform-analytics-login admin-platform-analytics-login-rotate admin-platform-analytics-embed""".split())
 # Release-2 lane r2-platform-overview (#183A): the superadmin platform overview and its CSV.
 PLATFORM_ONLY_ROUTES |= frozenset({"platform-overview", "platform-overview-export"})
+# Hack-money (#180 G13, #181 G7): the space's prize-tax proposal and accepted payee templates are
+# the Space Manager's own finance settings, never delegated.
+MEMBERSHIP_ROUTES |= frozenset({"admin-event-money-settings"})

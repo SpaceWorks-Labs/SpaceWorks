@@ -39,6 +39,10 @@ export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged"
   shop_return: "Shop items returned",
   shop_uncollected: "Shop order not collected",
   shop_unfulfilled: "Shop order could not be filled",
+  // Hack-money (#180): G2 withdrawal and shortlist refunds, G10 deposits returned after the event.
+  submission_withdrawn: "Project withdrawn",
+  not_shortlisted: "Team not shortlisted",
+  deposit_returned: "Deposit returned after the event",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {

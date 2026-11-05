@@ -53,6 +53,7 @@ class CommandResult(s.Serializer):
     attendance_revision = s.IntegerField(required=False)
     override_id = s.UUIDField(required=False)
     receipt_use_version = s.IntegerField(required=False)
+    ledger_entry_id = s.IntegerField(required=False, allow_null=True, help_text="Hack-money G12: the booking's expense.")
 
 
 class ReceiptUploadCommand(Command):

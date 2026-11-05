@@ -140,6 +140,8 @@ def cancel(event, *, actor, notify=True):
     if notify:
         services.notify_event_lifecycle(locked, "cancelled")
     _cancel_open_charges_after_commit(locked, actor)
+    from .programme_charges import close_for_cancelled_event  # hack-money G1: entry and team fees too
+    close_for_cancelled_event(locked, actor)
     return services._refresh(locked)
 
 
@@ -165,6 +167,10 @@ def _cancel_open_charges_after_commit(event, actor, *, registration_ids=None):
     from apps.events.orders_refunds import after_event_charges  # lane L6: ticket orders and their seats
 
     after_event_charges(event, actor, registration_ids=registration_ids)
+    # Hack-money G10: a cancelled or rejected place closes its deposit (an event cancellation closes
+    # them through `programme_charges.close_for_cancelled_event`).
+    from apps.events.judging.deposits import close_deposits_after_commit
+    close_deposits_after_commit(event, actor, registration_ids)
     single = registration_ids is not None
     registration_ids = registration_ids if single else list(
         EventRegistration.objects.filter(event=event).values_list("pk", flat=True)

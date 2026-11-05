@@ -11,7 +11,8 @@ from .request_form_adapter import context
 
 
 def pool_detail(pool):
-    return {"id": pool.pk, "version": pool.version, "currency": pool.currency, "total_minor": pool.total_minor,
+    return {"id": pool.pk, "version": pool.version, "currency": pool.currency, "audience": pool.audience,
+        "total_minor": pool.total_minor,
         "reserved_minor": pool.reserved_minor, "committed_minor": pool.committed_minor,
         "available_minor": pool.total_minor - pool.reserved_minor - pool.committed_minor}
 
@@ -44,8 +45,9 @@ def request_detail(row, *, sensitive=False, screening=False):
         value.update(itinerary=json.loads(row.itinerary), need_statement=row.need_statement,
             distance_km=str(row.distance_km) if row.distance_km is not None else None, reason=row.reason)
     if screening:
-        from .budget_models import ReimbursementBudgetPool
-        pool = ReimbursementBudgetPool.objects.get(programme=row.programme, currency=row.currency)
+        from .pools import read_pool
+        award_row = GrantAward.objects.filter(request=row).select_related("pool").first()
+        pool = award_row.pool if award_row else read_pool(row.programme, row.kind)  # G14
         award = GrantAward.objects.filter(request=row).first()
         value.update(budget={"pool_id": pool.pk, "pool_version": pool.version,
             "available_minor": pool.total_minor - pool.reserved_minor - pool.committed_minor},

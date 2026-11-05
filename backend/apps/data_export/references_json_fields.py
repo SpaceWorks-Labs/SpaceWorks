@@ -130,5 +130,7 @@ from .classification_r2_l18 import JSON_FIELDS as _R2_L18_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _R2_L18_JSON
 from .classification_r2_l21a import JSON_FIELDS as _R2_L21A_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _R2_L21A_JSON
+from .classification_hackmoney import JSON_FIELDS as _HACKMONEY_JSON  # noqa: E402
+JSON_REFERENCE_FIELDS |= _HACKMONEY_JSON
 from .classification_r2_l22 import JSON_FIELDS as _R2_L22_JSON  # noqa: E402
 JSON_REFERENCE_FIELDS |= _R2_L22_JSON

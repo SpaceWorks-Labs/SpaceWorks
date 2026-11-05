@@ -74,6 +74,15 @@ class PrizeInput(TrackInput):
     sponsor_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     award_count = serializers.IntegerField(min_value=1, max_value=100, required=False)
     winner_selection_mode = serializers.ChoiceField(choices=("manager", "sponsor_proposal"), required=False)
+    # Hack-money G5/G8: non-cash prizes and prizes the sponsor pays the winner directly.
+    kind = serializers.ChoiceField(choices=("cash", "item", "credit", "perk"), required=False)
+    value_text = serializers.CharField(max_length=300, allow_blank=True, required=False,
+                                       help_text="What a non-cash prize is, e.g. 'Raspberry Pi 5 kit per member'.")
+    estimated_value = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+                                               allow_null=True, required=False)
+    funding = serializers.ChoiceField(choices=("space", "sponsor_direct"), required=False,
+                                      help_text="sponsor_direct: the sponsor pays the winner; the space records "
+                                                "fulfilment only, never an expense.")
 
 
 class CriterionInput(ClosedSerializer):

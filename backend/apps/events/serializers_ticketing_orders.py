@@ -23,7 +23,9 @@ class OrderAddonItemSerializer(serializers.Serializer):
 
 
 class OrderRequestSerializer(serializers.Serializer):
-    tickets = OrderTicketItemSerializer(many=True)
+    tickets = OrderTicketItemSerializer(many=True, required=False, default=list,
+                                        help_text="Empty only for an add-on-only order by a confirmed "
+                                                  "registration on an approval event (events.accepted_addons).")
     addons = OrderAddonItemSerializer(many=True, required=False, default=list)
     promo_code = serializers.CharField(max_length=128, required=False, allow_blank=True, write_only=True)
     access_codes = serializers.ListField(child=serializers.CharField(max_length=128), required=False,

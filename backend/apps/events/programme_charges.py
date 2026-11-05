@@ -23,6 +23,8 @@ def _component(subject_type):
     from apps.payments.pricing.components import Component
     if subject_type == "submission_fee":
         return Component("entry_fee", "Project entry fee", "project", "submission_fee", discountable=False)
+    if subject_type == "event_deposit":  # hack-money G10
+        return Component("deposit", "Refundable deposit", "registration", "event_deposit", discountable=False)
     return Component("team_fee", "Team registration", "team", "team_registration", discountable=False)
 
 
@@ -77,6 +79,11 @@ def settled_or_free(event, subject_type, subject_id):
     return payment is None or payment.status in (*PAID_OR_WAIVED, "cancelled")
 
 
+def _has_due_case(payment):
+    from apps.payments.models import RefundCase
+    return RefundCase.objects.filter(payment=payment, kind=RefundCase.Kind.DUE).exists()
+
+
 @transaction.atomic
 def close_charge(*, event, subject_type, subject_id, actor, reason_code, audit_action, open_due=True):
     """Void a pending charge, or (``open_due``) open a full-amount refund DUE case on a paid one.
@@ -90,6 +97,8 @@ def close_charge(*, event, subject_type, subject_id, actor, reason_code, audit_a
     case = None
     if payment.status in SETTLED and not open_due:
         return None  # Paid and no refund rule: the charge simply stands.
+    if payment.status in SETTLED and _has_due_case(payment):
+        return None  # Already assessed once (a disqualification, a closed team): staff own that case.
     if payment.status in SETTLED:
         case = add_due_share(payment, amount=payment.amount, reason_code=reason_code, actor=actor,
                              snapshot={"event_id": event.pk})
@@ -97,3 +106,42 @@ def close_charge(*, event, subject_type, subject_id, actor, reason_code, audit_a
            meta={"event_id": event.pk, "payment_id": payment.pk, "status": payment.status,
                  "refund_case_id": case.pk if case else None})
     return case
+
+
+def close_for_cancelled_event(event, actor):
+    """Hack-money G1: a cancelled hackathon closes every entry fee and team charge it raised.
+
+    Called inside the cancelling transaction; the work runs after commit, one charge per
+    transaction, because voiding a pending charge may expire a live provider checkout and
+    provider I/O never runs under the event lock. Pending charges are voided; a settled one
+    opens a full-amount DUE case (`event_cancelled`, decision 60) for staff to decide.
+    A charge a cohort signal or a disqualification already closed is left alone.
+    """
+    from apps.events.models import EventRegistration, HackathonSubmission, HackathonTeam
+    from apps.payments.models import Payment
+    owned = {"submission_fee": HackathonSubmission.objects.filter(event_id=event.pk).values("pk"),
+             "team_registration": HackathonTeam.objects.filter(event_id=event.pk).values("pk"),
+             # Hack-money G10: a cancelled event returns every deposit (staff still decide the case).
+             "event_deposit": EventRegistration.objects.filter(event_id=event.pk).values("pk")}
+    rows = []
+    for subject_type, subjects in owned.items():
+        rows += list(Payment.objects.filter(
+            makerspace=event.makerspace, subject_type=subject_type, subject_id__in=subjects,
+            status__in=(Payment.Status.PENDING, *SETTLED)).values_list("subject_type", "subject_id"))
+    if not rows:
+        return
+    actions = {"submission_fee": "event.submission.fee_closed", "team_registration": "event.team.payment_closed",
+               "event_deposit": "event.deposit.closed"}
+    event_id = event.pk
+
+    def close_all():
+        from apps.events.models import Event
+        cancelled = Event.objects.select_related("makerspace").get(pk=event_id)
+        for subject_type, subject_id in rows:
+            try:
+                close_charge(event=cancelled, subject_type=subject_type, subject_id=subject_id, actor=actor,
+                             reason_code="event_cancelled", audit_action=actions[subject_type])
+            except Exception:  # one provider outage never strands the others; the refund sweep recovers it
+                logger.exception("Programme charge close failed", extra={"subject_id": subject_id})
+
+    transaction.on_commit(close_all)

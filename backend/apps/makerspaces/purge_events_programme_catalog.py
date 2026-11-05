@@ -123,3 +123,5 @@ from apps.tenant_migration.catalog_r2_submit_content import PURGE_ORDER as _SC_P
 # Stage rows are leaves of snapshots and submissions; stages follow the judging rounds that point at them.
 _ROUND = PURGE_ORDER.index(('events.JudgingRound', 'event__makerspace')) + 1
 PURGE_ORDER = _SC_PURGE_ORDER + PURGE_ORDER[:_ROUND] + _SC_STAGE + PURGE_ORDER[_ROUND:]
+from apps.tenant_migration.catalog_hackmoney import PURGE_ORDER as _HM_PURGE_ORDER  # noqa: E402
+PURGE_ORDER = _HM_PURGE_ORDER + PURGE_ORDER  # hack-money rows are leaves of awards, payouts and events.

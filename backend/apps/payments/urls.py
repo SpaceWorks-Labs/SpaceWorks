@@ -14,6 +14,7 @@ from apps.payments.donations.urls import DONATION_PATTERNS  # release 2 L18
 from apps.payments.views_member import ArchivedPaymentDiscoveryView
 from apps.payments.views_documents import StaffDocumentListView, StaffDocumentGrantView, DocumentDownloadView
 from apps.payments.views_billing import BillingSettingsView
+from apps.payments.views_event_money import EventMoneySettingsView  # hack-money G7/G13
 from apps.payments.views_refunds_offline import PaymentOfflineRefundView, PaymentDepositReleaseView, PaymentRefundAmendView
 from apps.payments.views_refund_cases import (
     RefundCaseApproveView, RefundCaseDeclineView, RefundCaseDetailView, RefundCaseListView,
@@ -49,6 +50,7 @@ urlpatterns = [
     path("admin/makerspace/<int:makerspace_id>/payment-documents/<int:document_id>/download-url", StaffDocumentGrantView.as_view(), name="staff-payment-document-url"),
     path("payment-documents/<int:document_id>/download", DocumentDownloadView.as_view(), name="payment-document-download"),
     path("admin/makerspace/<int:makerspace_id>/billing-settings", BillingSettingsView.as_view(), name="payment-billing-settings"),
+    path("admin/makerspace/<int:makerspace_id>/event-money-settings", EventMoneySettingsView.as_view(), name="admin-event-money-settings"),
     path("admin/makerspace/<int:makerspace_id>/payments/<int:payment_id>/release-deposit", PaymentDepositReleaseView.as_view(), name="payment-deposit-release"),
     path("admin/makerspace/<int:makerspace_id>/payments/<int:payment_id>/refunds/<int:refund_id>/amend", PaymentRefundAmendView.as_view(), name="payment-refund-amend"),
     path("admin/makerspace/<int:makerspace_id>/payments/<int:payment_id>/refund-offline", PaymentOfflineRefundView.as_view(), name="payment-reconciliation-refund-offline"),

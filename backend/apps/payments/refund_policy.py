@@ -57,7 +57,7 @@ def area_for(payment):
 
 def reference_time(payment):
     """When the thing being paid for starts. None means no window applies."""
-    if payment.subject_type == Payment.SubjectType.EVENT_REGISTRATION:
+    if payment.subject_type in (Payment.SubjectType.EVENT_REGISTRATION, Payment.SubjectType.EVENT_DEPOSIT):
         from apps.events.models import EventRegistration
         row = EventRegistration.objects.filter(pk=payment.subject_id).values("event__starts_at").first()
         return row["event__starts_at"] if row else None

@@ -110,22 +110,22 @@ def _addons(event, items):
     return rows
 
 
-def build_quote(event, member, request, *, lock=False):
+def build_quote(event, member, request, *, lock=False, addons_only=False):
     from apps.payments.pricing import best_discount
     from apps.payments.pricing.rates import RateCard
     from .feature_gates import require_feature
     from .orders_codes import apply_promo, discount_promo, unlocked_types
     require_feature(event, "events.orders")
     unlocked, access = unlocked_types(event, request.get("access_codes"), lock=lock)
-    items = request.get("tickets") or []
-    if not items:
+    items = [] if addons_only else request.get("tickets") or []
+    if not items and not addons_only:
         raise OrderRefused("order_limit", "Choose at least one ticket.")
     tickets = [_ticket(event, member, item, unlocked) for item in items]
     settings_row = sales_settings(event)
     if sum(quantity for _ticket_row, quantity, _unit in tickets) > settings_row.max_tickets_per_order:
         raise OrderRefused("order_limit", f"At most {settings_row.max_tickets_per_order} tickets per order.",
                            limit=settings_row.max_tickets_per_order)
-    seats = _require_room(event, tickets)
+    seats = _require_room(event, tickets) if tickets else 0
     addons = _addons(event, request.get("addons"))
     currency = RateCard(event.makerspace, "events").currency
     target = {"type": "event", "id": event.pk, "label": event.title}

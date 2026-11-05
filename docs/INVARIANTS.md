@@ -6374,6 +6374,43 @@ responsibility; local purges never delete shared global organizations or foreign
   (people's choice, #181, reads it) (S18). Event analytics carry per-stage submitted / eligible /
   shortlisted / advanced counts (S16).
 
+### Hackathon money beyond L21b (release 2 hack-money lane; #180, #181)
+
+- **Nothing moves money on its own.** Prize payouts stay hand-recorded expenses; a split, a claim, a
+  fulfilment, a forfeit and a recovery are records. No automated prize or reimbursement transfer (#34/#94),
+  no deposit refund without staff approval (#59), no cash travel advance (#34), no per-member team fee
+  (C-39), no charge before acceptance (C-34), and every new hackathon notice stays off by default (C-37).
+- **Prize splits (G3).** With no shares the L21b rule stands: one standing payout per award, to the leader.
+  With shares, each CONFIRMED share is paid by its own payout, at most once while a payout stands, and the
+  standing payouts never exceed the prize amount. A split is fixed once a payout or an outcome exists.
+- **Prize claims (G4, #181 G7) are scoped PII.** `HackathonPrizeClaim.details` and `.pan` are
+  `encryption_required`, travel only as envelopes, never enter audit metadata, exports, reports or analytics,
+  and are read back masked. Finance reveals them through one audited command per release (reason only,
+  never the values). A paid share's routing details are cleared; a forfeited share's details and PAN are.
+- **Prize tax is RECORD ONLY (#181).** `payments.EventMoneySettings` (Space Manager, never delegated, off by
+  default; 30% above 10,000) PROPOSES tax deducted on a payout. Each payout stores gross (`amount`, the
+  ledger expense), `tds_amount` and `net_amount`; staff deduct and file outside SpaceWorks. No certificates,
+  no filing reports.
+- **Non-cash and sponsor-paid prizes (G5/G8) are never expenses.** `kind` item/credit/perk and `funding`
+  `sponsor_direct` are settled by an append-only `HackathonPrizeOutcome` (`fulfilled`, `sponsor_paid`);
+  payouts refuse them. A sponsorship charge may name an event and `earmark=prize_pool` (DB-checked).
+- **Forfeit and recovery (G4, G16).** A forfeit needs the claim window to have closed and has no ledger
+  effect. A disqualification after a payout opens `recovery_opened` in the disqualifying transaction; it
+  never charges the member. Only `recovery_repaid` writes a ledger receipt (category `prize_recovery`).
+- **Payee templates (G13).** The deployment keeps the ceiling: the operator's per-host
+  `EVENT_PAYOUT_TENANT_POLICIES`, else `EVENT_PAYOUT_TEMPLATE_CEILING` (unset = every supported pair). The
+  Space Manager's selection only narrows it; an empty selection changes nothing.
+- **Deposits (G10).** Subject `event_deposit` (per registration) is in every money touchpoint. Raised once
+  at confirmation (the registration-charge seam; never on crew); closed like any programme charge when a
+  place is cancelled or rejected or the event is cancelled. The settlement batch runs once, after the event,
+  on staff approval: attendees (and submitters when required) get a `deposit_returned` DUE case, pending
+  deposits of attendees are voided, no-shows keep the charge (`event.deposit.forfeited`).
+- **Add-ons for confirmed places (G9).** `events.accepted_addons` lets a registered or attended member of an
+  approval event order add-ons alone; no seat is sold, held or claimed, and seat orders stay refused there.
+- **Crew budget and booked travel (G12, G14).** One optional crew pool per programme; crew awards reserve
+  from it when it exists. Organiser-booked travel closes the award as `direct_booking` with a ledger expense
+  in the same transaction; cancelling voids it. A cash advance is not offered.
+
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
 - **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,

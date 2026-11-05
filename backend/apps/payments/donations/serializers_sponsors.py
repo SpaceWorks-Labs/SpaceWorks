@@ -64,6 +64,15 @@ class SponsorSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
 class ChargeCreateSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=1)
     description = serializers.CharField(required=False, allow_blank=True, max_length=200, default="")
+    # Hack-money G8: the payment may be for one event of this space, and earmarked for its prize pool.
+    event_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)
+    earmark = serializers.ChoiceField(choices=("general", "prize_pool"), required=False, default="general",
+                                      help_text="prize_pool needs event_id: the money funds that event's prizes.")
+
+    def validate(self, attrs):
+        if attrs["earmark"] == "prize_pool" and not attrs.get("event_id"):
+            raise serializers.ValidationError({"event_id": "Choose the event whose prize pool this funds."})
+        return attrs
 
 
 class ChargeSerializer(serializers.ModelSerializer):
@@ -72,7 +81,8 @@ class ChargeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SponsorshipCharge
-        fields = ("id", "sponsor", "amount", "currency", "description", "payment_id", "payment_status", "created_at")
+        fields = ("id", "sponsor", "amount", "currency", "description", "event", "earmark", "payment_id",
+                  "payment_status", "created_at")
 
     def _payment(self, obj):
         from apps.payments.models import Payment

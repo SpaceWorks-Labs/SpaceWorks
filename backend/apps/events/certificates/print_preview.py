@@ -15,7 +15,7 @@ from apps.events.serializers_staff_tools import StrictSerializer
 from apps.events.profile_photos.views import private
 from apps.events.throttles import CredentialRenderThrottle
 from .badge_designs import validate_design
-from .layout import STOCKS
+from .layout import DESIGN_STOCK_CHOICES
 from .serializers import BadgeDocumentSerializer
 from .print_snapshot import BadgeSnapshot
 from .layer_rendering import QrResource
@@ -23,7 +23,7 @@ from .layer_rendering import QrResource
 
 class BadgePreviewSerializer(StrictSerializer):
     document = BadgeDocumentSerializer()
-    stock = serializers.ChoiceField(choices=tuple(STOCKS))
+    stock = serializers.ChoiceField(choices=DESIGN_STOCK_CHOICES)
 
 
 class BadgePreviewView(APIView):

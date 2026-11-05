@@ -132,13 +132,14 @@ class BadgeDesignView(APIView):
     @extend_schema(tags=["Event credentials"], responses={200: SeedPageSerializer, **ERRORS})
     def get(self, request, pk):
         from .seeds import catalogue
-        from .layout import STOCKS
+        from .layout import DESIGN_STOCK_CHOICES, STOCKS
         from rest_framework.exceptions import ValidationError
         event_authority.get_event(request.user, pk, EDIT_DETAILS)
         stock, theme = request.query_params.get("stock", "cr80-landscape"), request.query_params.get("theme", "light")
-        if stock not in STOCKS or theme not in ("light", "dark"):
+        if stock not in DESIGN_STOCK_CHOICES or theme not in ("light", "dark"):
             raise ValidationError("Choose a named stock and light/dark theme.")
-        rows = catalogue(kind="badge", theme=theme, stock=stock)
+        # Packaged default designs exist for the six frozen stocks only; A6 landscape and custom start blank.
+        rows = catalogue(kind="badge", theme=theme, stock=stock) if stock in STOCKS else []
         return private(Response({"count": len(rows), "next": None, "previous": None, "results": rows}))
 
     @extend_schema(tags=["Event credentials"], request=BadgeDesignSerializer,

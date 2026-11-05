@@ -5,16 +5,21 @@ from apps.events.credentials.errors import ProgrammeConflict
 import hashlib
 import json
 from apps.events.event_permissions import EDIT_DETAILS
-from .layout import STOCKS, normalize_document
+from .layout import CUSTOM_RANGE_MM, CUSTOM_STOCK, DESIGN_STOCKS, normalize_document
 from .print_models import EventBadgeTemplateRevision
 
 
 def validate_design(document, stock, *, event_id=None):
     from rest_framework.exceptions import ValidationError
-    if stock not in STOCKS:
-        raise ValidationError({"stock": "Choose a named stock."})
+    if stock not in DESIGN_STOCKS and stock != CUSTOM_STOCK:
+        raise ValidationError({"stock": "Choose a named stock or a custom size."})
     result = normalize_document(document, badge=True)
-    if (result["page_width_mm"], result["page_height_mm"]) != STOCKS[stock]:
+    size = (result["page_width_mm"], result["page_height_mm"])
+    if stock == CUSTOM_STOCK:
+        low, high = CUSTOM_RANGE_MM
+        if not all(low <= side <= high and abs(side * 10 - round(side * 10)) < 1e-6 for side in size):
+            raise ValidationError({"stock": f"A custom size is {low}-{high} mm on each side, in 0.1 mm steps."})
+    elif size != DESIGN_STOCKS[stock]:
         raise ValidationError({"stock": "The document must match the physical stock dimensions."})
     if not any(layer["type"] == "event_credential_qr" for layer in result["layers"]):
         raise ValidationError({"layers": "A desk badge requires its typed event check-in QR slot."})

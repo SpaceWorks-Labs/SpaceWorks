@@ -18,6 +18,13 @@ TEXT = {"text", "font_family", "font_weight", "font_size_pt", "align", "shrink_t
         "uppercase", "tracking_pt", "line_height", "colour_token"}
 STOCKS = {"a6-portrait": (105, 148), "4x6": (101.6, 152.4), "3x4": (76.2, 101.6),
           "4x3": (101.6, 76.2), "cr80-portrait": (53.98, 85.6), "cr80-landscape": (85.6, 53.98)}
+# The six above have packaged default designs (the frozen artwork contract). A badge may also
+# use A6 landscape or a custom size (40-300 mm each side, 0.1 mm steps; SPEC §3.1, G13); those
+# start from a blank or imported design.
+DESIGN_STOCKS = {**STOCKS, "a6-landscape": (148, 105)}
+CUSTOM_STOCK = "custom"
+CUSTOM_RANGE_MM = (40, 300)
+DESIGN_STOCK_CHOICES = (*DESIGN_STOCKS, CUSTOM_STOCK)
 
 
 def _uuid(value):

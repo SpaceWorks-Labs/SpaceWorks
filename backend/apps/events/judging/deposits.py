@@ -155,7 +155,8 @@ def settle(event_id, *, actor, data):
             row.save(update_fields=["deposits_settled_at", "version", "updated_at"])
             counts = {kind: sum(1 for item in rows if item["outcome"] == kind) for kind in ("return", "void", "keep")}
             record(actor, "event.deposit.settled", makerspace=event.makerspace, target=event,
-                   meta={"event_id": event.pk, **counts})
+                   meta={"event_id": event.pk, "return": counts["return"], "void": counts["void"],
+                         "keep": counts["keep"]})
             closing = [item["registration_id"] for item in rows if item["outcome"] in ("return", "void")]
             if closing:
                 transaction.on_commit(lambda: _close(event.pk, actor, closing, "deposit_returned"))

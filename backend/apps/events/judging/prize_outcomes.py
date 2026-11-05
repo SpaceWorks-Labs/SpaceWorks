@@ -61,9 +61,12 @@ def fulfil(event_id, award_id, *, actor, data):
                 raise ProgrammeError("already_settled", "This prize is already settled.")
             row = _row(event, award, kind, actor, method=values["method"], reference=values.get("reference", ""),
                        note=values.get("note", ""), happened_on=values["happened_on"])
-            record(actor, "event.prize.sponsor_paid" if kind == "sponsor_paid" else "event.prize.fulfilled",
-                   makerspace=event.makerspace, target=row,
-                   meta={"event_id": event.pk, "award_id": award.pk, "outcome_id": row.pk})
+            if kind == "sponsor_paid":  # Literal actions, so the audit catalogue labels each one.
+                record(actor, "event.prize.sponsor_paid", makerspace=event.makerspace, target=row,
+                       meta={"event_id": event.pk, "award_id": award.pk, "outcome_id": row.pk})
+            else:
+                record(actor, "event.prize.fulfilled", makerspace=event.makerspace, target=row,
+                       meta={"event_id": event.pk, "award_id": award.pk, "outcome_id": row.pk})
             return projection(row)
         return command(event, actor, values, path=f"prize-awards/{award_id}/fulfil", run=run)
 
@@ -154,9 +157,12 @@ def resolve_recovery(event_id, outcome_id, *, actor, data):
             row = _row(event, opened.award, kind, actor, payout=opened.payout, resolves=opened, amount=opened.amount,
                        currency=opened.currency, method=values.get("method", ""), reference=values.get("reference", ""),
                        note=values.get("note", ""), happened_on=values["happened_on"], ledger_entry=entry)
-            record(actor, "event.prize.recovery_repaid" if entry is not None else "event.prize.recovery_waived",
-                   makerspace=event.makerspace, target=row,
-                   meta={"event_id": event.pk, "outcome_id": row.pk, "ledger_entry_id": entry.pk if entry else None})
+            if entry is not None:  # Literal actions, so the audit catalogue labels each one.
+                record(actor, "event.prize.recovery_repaid", makerspace=event.makerspace, target=row,
+                       meta={"event_id": event.pk, "outcome_id": row.pk, "ledger_entry_id": entry.pk})
+            else:
+                record(actor, "event.prize.recovery_waived", makerspace=event.makerspace, target=row,
+                       meta={"event_id": event.pk, "outcome_id": row.pk, "ledger_entry_id": None})
             return projection(row)
         return command(event, actor, values, path=f"prize-outcomes/{outcome_id}/resolve", run=run)
 

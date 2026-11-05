@@ -135,9 +135,12 @@ def respond(event_id, share_id, *, actor, data, accept):
             share.confirmed_at = timezone.now() if accept else None
             share.version += 1
             share.save()
-            record(actor, "event.prize.share_confirmed" if accept else "event.prize.share_declined",
-                   makerspace=event.makerspace, target=share,
-                   meta={"event_id": event.pk, "award_id": share.award_id, "share_id": share.pk})
+            if accept:  # Literal actions, so the audit catalogue labels each one.
+                record(actor, "event.prize.share_confirmed", makerspace=event.makerspace, target=share,
+                       meta={"event_id": event.pk, "award_id": share.award_id, "share_id": share.pk})
+            else:
+                record(actor, "event.prize.share_declined", makerspace=event.makerspace, target=share,
+                       meta={"event_id": event.pk, "award_id": share.award_id, "share_id": share.pk})
             return award_projection(share.award)
         return command(event, actor, values, path=f"prize-shares/{share_id}/{'confirm' if accept else 'decline'}", run=run)
 

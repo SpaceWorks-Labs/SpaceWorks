@@ -376,6 +376,8 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/crew/catering/",
   "/api/v1/admin/events/{id}/crew/{crew_id}/decide/",
   "/api/v1/admin/events/{id}/crew/{crew_id}/remove/",
+  "/api/v1/admin/events/{id}/deposits/",
+  "/api/v1/admin/events/{id}/deposits/settle/",
   "/api/v1/admin/events/{id}/design-seeds/",
   "/api/v1/admin/events/{id}/design-seeds/install/",
   "/api/v1/admin/events/{id}/design-seeds/preview.pdf",
@@ -461,8 +463,17 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/organizers/",
   "/api/v1/admin/events/{id}/pairwise-rounds/",
   "/api/v1/admin/events/{id}/participation-settings/",
+  "/api/v1/admin/events/{id}/prize-awards/{award_id}/forfeit/",
+  "/api/v1/admin/events/{id}/prize-awards/{award_id}/fulfil/",
+  "/api/v1/admin/events/{id}/prize-awards/{award_id}/split/",
+  "/api/v1/admin/events/{id}/prize-claims/",
+  "/api/v1/admin/events/{id}/prize-outcomes/",
+  "/api/v1/admin/events/{id}/prize-outcomes/{outcome_id}/resolve/",
   "/api/v1/admin/events/{id}/prize-payouts/",
   "/api/v1/admin/events/{id}/prize-payouts/{payout_id}/reverse/",
+  "/api/v1/admin/events/{id}/prize-pool/",
+  "/api/v1/admin/events/{id}/prize-shares/{share_id}/reveal/",
+  "/api/v1/admin/events/{id}/prize-shares/{share_id}/verify/",
   "/api/v1/admin/events/{id}/prizes/",
   "/api/v1/admin/events/{id}/prizes/{prize_id}/",
   "/api/v1/admin/events/{id}/programme-options/",
@@ -483,9 +494,12 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/reimbursements/claims/{claim_id}/extend/",
   "/api/v1/admin/events/{id}/reimbursements/claims/{claim_id}/receipt-allocation-overrides/",
   "/api/v1/admin/events/{id}/reimbursements/claims/{claim_id}/review/",
+  "/api/v1/admin/events/{id}/reimbursements/crew-pool/",
   "/api/v1/admin/events/{id}/reimbursements/programme/",
   "/api/v1/admin/events/{id}/reimbursements/requests/",
   "/api/v1/admin/events/{id}/reimbursements/requests/{request_id}/decide/",
+  "/api/v1/admin/events/{id}/reimbursements/requests/{request_id}/direct-booking/",
+  "/api/v1/admin/events/{id}/reimbursements/requests/{request_id}/direct-booking/cancel/",
   "/api/v1/admin/events/{id}/results/correct/",
   "/api/v1/admin/events/{id}/results/finalize/",
   "/api/v1/admin/events/{id}/results/preview/",
@@ -549,6 +563,8 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/submissions/{submission_id}/amend/",
   "/api/v1/admin/events/{id}/submissions/{submission_id}/integrity/",
   "/api/v1/admin/events/{id}/submissions/{submission_id}/triage/",
+  "/api/v1/admin/events/{id}/team-charges/missing/",
+  "/api/v1/admin/events/{id}/team-charges/{team_id}/raise/",
   "/api/v1/admin/events/{id}/teams-export/",
   "/api/v1/admin/events/{id}/teams-import/commit/",
   "/api/v1/admin/events/{id}/teams-import/preview/",
@@ -744,6 +760,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/email-templates/{stream}/{audience}/{key}/reset",
   "/api/v1/admin/makerspace/{makerspace_id}/email-templates/{stream}/{audience}/{key}/types/{machine_type_id}",
   "/api/v1/admin/makerspace/{makerspace_id}/email-templates/{stream}/{audience}/{key}/types/{machine_type_id}/reset",
+  "/api/v1/admin/makerspace/{makerspace_id}/event-money-settings",
   "/api/v1/admin/makerspace/{makerspace_id}/finance/access",
   "/api/v1/admin/makerspace/{makerspace_id}/finance/entries",
   "/api/v1/admin/makerspace/{makerspace_id}/finance/entries/{entry_id}",
@@ -1508,6 +1525,11 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/participant-resumes/{asset_id}/complete/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/participant-resumes/{asset_id}/download/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/presentation/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/prize-awards/{award_id}/claim/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/prize-awards/{award_id}/claim/remove/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/prize-awards/{award_id}/split/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/prize-shares/{share_id}/confirm/",
+  "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/prize-shares/{share_id}/decline/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/profile-photo-options/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/reimbursement/",
   "/api/v1/member/makerspaces/{makerspace_id}/events/{id}/reimbursement/award/accept/",
@@ -1595,6 +1617,7 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/payments/{payment_id}/refund-suggestion",
   "/api/v1/member/makerspaces/{makerspace_id}/pledges",
   "/api/v1/member/makerspaces/{makerspace_id}/pledges/{id}",
+  "/api/v1/member/makerspaces/{makerspace_id}/prizes/",
   "/api/v1/member/makerspaces/{makerspace_id}/profile",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/handle",
   "/api/v1/member/makerspaces/{makerspace_id}/profile/image",
@@ -1679,6 +1702,7 @@ export const openApiPaths = [
   "/api/v1/public/event-programmes/{public_token}/gallery/assets/{public_asset_id}/",
   "/api/v1/public/event-programmes/{public_token}/gallery/{entry_public_id}/",
   "/api/v1/public/event-programmes/{public_token}/member-cards/{card_public_id}/photo/",
+  "/api/v1/public/event-programmes/{public_token}/prizes/",
   "/api/v1/public/event-programmes/{public_token}/results/",
   "/api/v1/public/event-programmes/{public_token}/volunteer-postings/",
   "/api/v1/public/hosting/invitations/resolve",
@@ -3460,6 +3484,14 @@ export type AwardResponseCommand = {
   "operation_id": string;
   "expected_version": number;
   "award_revision": number;
+};
+
+export type AwardSplitRead = {
+  "award_id": number;
+  "prize_name": string;
+  "total": string | null;
+  "shares": Array<ShareRead>;
+  "split_open": boolean;
 };
 
 export type BackupArchive = {
@@ -5355,6 +5387,8 @@ export type Charge = {
   "amount": string;
   "currency": string;
   "description"?: string;
+  "event"?: number | null;
+  "earmark"?: ChargeEarmarkEnum;
   "payment_id": number | null;
   "payment_status": string;
   "created_at": string;
@@ -5363,7 +5397,13 @@ export type Charge = {
 export type ChargeCreate = {
   "amount": string;
   "description"?: string;
+  "event_id"?: number | null;
+  "earmark"?: ChargeCreateEarmarkEnum;
 };
+
+export type ChargeCreateEarmarkEnum = "general" | "prize_pool";
+
+export type ChargeEarmarkEnum = "general" | "prize_pool";
 
 export type CheckInList = {
   "id": number;
@@ -5538,6 +5578,17 @@ export type ClaimPreview = {
   "ticket_type": string;
   "from_name": string;
   "email_matches": boolean;
+};
+
+export type ClaimRead = {
+  "share_id": number | null;
+  "version": number;
+  "state": StateAe7Enum;
+  "country": string;
+  "method": string;
+  "masked_details": string;
+  "pan_masked": string;
+  "verified": boolean;
 };
 
 export type ClaimRecommendationCommand = {
@@ -6493,6 +6544,12 @@ export type CrewOwn = {
   "registration_id": number | null;
 };
 
+export type CrewPoolCommand = {
+  "operation_id": string;
+  "expected_version": number;
+  "initial_total_minor": number;
+};
+
 export type CrewRow = {
   "id": number;
   "version": number;
@@ -6849,6 +6906,27 @@ export type DeploymentSummaryScopeEnum = "deployment";
 
 export type DepositModeEnum = "none" | "fixed" | "per_product";
 
+export type DepositRow = {
+  "payment_id": number;
+  "registration_id": number;
+  "member_id": number | null;
+  "amount": string;
+  "currency": string;
+  "payment_status": string;
+  "outcome": DepositRowOutcomeEnum;
+};
+
+export type DepositRowOutcomeEnum = "return" | "void" | "keep" | "none";
+
+export type DepositSettlementRead = {
+  "event_id": number;
+  "amount": string | null;
+  "requires_submission": boolean;
+  "settled_at": string | null;
+  "event_ended": boolean;
+  "rows": Array<DepositRow>;
+};
+
 export type Design224Enum = "classic" | "bold" | "minimal" | "accent_band" | "photo_header" | "letter";
 
 export type DeskCollect = {
@@ -7042,6 +7120,26 @@ export type DeviceTokenResponse = {
 };
   "device_grant": DeviceGrant;
   "device_trust"?: string | null;
+};
+
+export type DirectBookingCancelCommand = {
+  "operation_id": string;
+  "expected_version": number;
+  "expected_pool_version": number;
+  "reason": string;
+};
+
+export type DirectBookingCommand = {
+  "operation_id": string;
+  "expected_version": number;
+  "expected_pool_version": number;
+  "amount_minor": number;
+  "currency": string;
+  "vendor": string;
+  "booked_on": string;
+  "method": MethodEa5Enum;
+  "reference"?: string;
+  "receipt_id"?: number | null;
 };
 
 export type DirectLoan = {
@@ -8164,6 +8262,17 @@ export type EventListWithDefaults = {
   "default_registration_audience": DefaultRegistrationAudienceEnum;
 };
 
+export type EventMoneySettingsRead = {
+  "makerspace_id": number;
+  "version": number;
+  "prize_tds_enabled": boolean;
+  "prize_tds_rate": string;
+  "prize_tds_threshold": string;
+  "payee_templates": Array<Array<string>>;
+  "available_payee_templates": Array<Array<string>>;
+  "currency": string;
+};
+
 export type EventOrganizerList = {
   "organizers": Array<EventOrganizerSummary>;
 };
@@ -9032,6 +9141,13 @@ export type FontWeightEnum = 400 | 500 | 600 | 700;
 
 export type ForeignCurrencyEnum = "no_gst" | "export_lut";
 
+export type ForfeitInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "share_id"?: number | null;
+  "note": string;
+};
+
 export type ForgotPasswordRequest = {
   "context"?: Context2dfEnum;
   "email": string;
@@ -9404,10 +9520,23 @@ export type Fulfil = {
   "note"?: string;
 };
 
+export type FulfilInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "method": FulfilInputMethodEnum;
+  "reference"?: string;
+  "note"?: string;
+  "happened_on": string;
+};
+
+export type FulfilInputMethodEnum = "handed_over" | "shipped" | "sponsor_paid" | "other";
+
 export type FunctionalLink = {
   "family": FamilyEnum;
   "url": string;
 };
+
+export type FundingEnum = "space" | "sponsor_direct";
 
 export type Gallery = {
   "title": string;
@@ -11112,6 +11241,8 @@ export type Kind429Enum = "intro" | "logo" | "speaker" | "track" | "room" | "spo
 export type Kind44fEnum = "eligibility" | "retention";
 
 export type Kind4e1Enum = "volunteer" | "office_hours";
+
+export type Kind9f3Enum = "cash" | "item" | "credit" | "perk";
 
 export type KindA1dEnum = "training" | "briefing";
 
@@ -13201,7 +13332,7 @@ export type MemberNotice = {
 
 export type MemberPayment = {
   "id": number;
-  "subject_type": SubjectTypeD7eEnum;
+  "subject_type": SubjectTypeC45Enum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -14137,6 +14268,8 @@ export type Method652Enum = "credentials" | "email_codes";
 
 export type MethodA66Enum = "cash" | "upi" | "bank_transfer" | "card" | "cheque" | "online" | "other";
 
+export type MethodEa5Enum = "cash" | "upi" | "bank_transfer" | "card" | "cheque" | "online" | "other";
+
 export type MethodF34Enum = "bank_transfer" | "cash" | "cheque" | "other" | "paypal" | "upi" | "wise";
 
 export type Mfa = {
@@ -14246,6 +14379,21 @@ export type MissedActionEnum = "none" | "warn" | "block";
 export type MissingCoverage = {
   "subject_id": number;
   "missing": number;
+};
+
+export type MissingTeamChargeRead = {
+  "team_id": number;
+  "team_name": string;
+  "leader_id": number;
+  "amount": string | null;
+  "currency": string;
+};
+
+export type MissingTeamChargeReadPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<MissingTeamChargeRead>;
 };
 
 export type MobilePaymentIntentResponse = StripeMobilePaymentIntentResponse | RazorpayMobilePaymentIntentResponse;
@@ -14406,6 +14554,34 @@ export type MyMembershipRow = {
 export type MyMemberships = {
   "memberships": Array<MyMembershipRow>;
   "requests": Array<MyMembershipRequest>;
+};
+
+export type MyPrizeRead = {
+  "award_id": number;
+  "event_id": number;
+  "event_title": string;
+  "prize_name": string;
+  "rank": number;
+  "kind": string;
+  "value_text": string;
+  "status": string;
+  "my_share": ShareRead | null;
+  "my_payout": {
+  [key: string]: unknown;
+} | null;
+  "claim": ClaimRead | null;
+  "claim_deadline": string | null;
+  "is_leader": boolean;
+  "allowed_actions": Array<string>;
+  "tax_id_requested": boolean;
+  "payee_templates": Array<PayeeTemplate>;
+};
+
+export type MyPrizeReadPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<MyPrizeRead>;
 };
 
 export type NamedRoute = {
@@ -14818,8 +14994,15 @@ export type OptionsRead = {
   "shortlist_email": boolean;
   "entry_fee_stage": number;
   "refund_on_disqualification": boolean;
+  "refund_on_withdrawal": boolean;
+  "refund_if_not_shortlisted": boolean;
   "entry_fee": string | null;
   "team_fee": string | null;
+  "show_prize_amounts": boolean;
+  "prize_claim_days": number | null;
+  "deposit_amount": string | null;
+  "deposit_requires_submission": boolean;
+  "deposits_settled_at": string | null;
   "currency": string;
   "results_email_sent": boolean;
   "published_result_version": number | null;
@@ -14893,7 +15076,7 @@ export type OrderQuoteResponse = {
 };
 
 export type OrderRequest = {
-  "tickets": Array<OrderTicketItem>;
+  "tickets"?: Array<OrderTicketItem>;
   "addons"?: Array<OrderAddonItem>;
   "promo_code"?: string;
   "access_codes"?: Array<string>;
@@ -15233,6 +15416,32 @@ export type OutboxHealthKindEnum = "email" | "personal_envelope" | "personal_del
 export type Outcome860Enum = "all_good" | "issue" | "damaged" | "left_early";
 
 export type OutcomeA1aEnum = "succeeded" | "retryable_failed" | "failed";
+
+export type OutcomeRead = {
+  "id": number;
+  "event_id": number;
+  "award_id": number;
+  "share_id": number | null;
+  "payout_id": number | null;
+  "resolves_id": number | null;
+  "kind": string;
+  "method": string;
+  "reference": string;
+  "amount": string | null;
+  "currency": string;
+  "happened_on": string;
+  "note": string;
+  "ledger_entry_id": number | null;
+  "created_at": string;
+  "allowed_actions": Array<string>;
+};
+
+export type OutcomeReadPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<OutcomeRead>;
+};
 
 export type OutlierRow = {
   "snapshot_id": number;
@@ -16816,6 +17025,14 @@ export type PatchedEmailTemplateUpdate = {
   "is_active"?: boolean;
 };
 
+export type PatchedEventMoneySettingsInput = {
+  "expected_version"?: number;
+  "prize_tds_enabled"?: boolean;
+  "prize_tds_rate"?: string;
+  "prize_tds_threshold"?: string;
+  "payee_templates"?: Array<Array<string>>;
+};
+
 export type PatchedEventSeriesWrite = {
   "registration_audience"?: RegistrationAudienceCa2Enum;
   "ticket_types"?: Array<TicketInput>;
@@ -17674,11 +17891,17 @@ export type PatchedOptionsInput = {
   "submission_receipt_email"?: boolean;
   "finalists_email"?: boolean;
   "refund_on_disqualification"?: boolean;
+  "refund_on_withdrawal"?: boolean;
+  "refund_if_not_shortlisted"?: boolean;
   "entry_fee"?: string | null;
   "team_fee"?: string | null;
   "stage_reminder_email"?: boolean;
   "shortlist_email"?: boolean;
   "entry_fee_stage"?: number;
+  "show_prize_amounts"?: boolean;
+  "prize_claim_days"?: number | null;
+  "deposit_amount"?: string | null;
+  "deposit_requires_submission"?: boolean;
 };
 
 export type PatchedOrganizationMembershipUpdate = {
@@ -17873,6 +18096,10 @@ export type PatchedPrizeInput = {
   "sponsor_id"?: number | null;
   "award_count"?: number;
   "winner_selection_mode"?: PrizeInputWinnerSelectionModeEnum;
+  "kind"?: Kind9f3Enum;
+  "value_text"?: string;
+  "estimated_value"?: string | null;
+  "funding"?: FundingEnum;
 };
 
 export type PatchedProfileWrite = {
@@ -18593,7 +18820,7 @@ export type PaymentProviderConflictCodeEnum = "payment_provider_conflict";
 
 export type PaymentReconciliation = {
   "id": number;
-  "subject_type": SubjectTypeD7eEnum;
+  "subject_type": SubjectTypeC45Enum;
   "subject_id": number;
   "subject_label": string;
   "status": Status66aEnum;
@@ -18711,13 +18938,12 @@ export type PayoutInput = {
   "award_id": number;
   "recipient_id"?: number;
   "amount"?: string;
-  "method": PayoutInputMethodEnum;
+  "method": MethodEa5Enum;
   "reference"?: string;
   "paid_on": string;
   "receipt_id"?: number | null;
+  "tds_amount"?: string | null;
 };
-
-export type PayoutInputMethodEnum = "cash" | "upi" | "bank_transfer" | "card" | "cheque" | "online" | "other";
 
 export type PayoutPage = {
   "count": number;
@@ -18736,6 +18962,8 @@ export type PayoutRead = {
   "kind": string;
   "reverses_id": number | null;
   "amount": string;
+  "tds_amount": string;
+  "net_amount": string;
   "currency": string;
   "method": string;
   "reference": string;
@@ -19241,6 +19469,7 @@ export type PolicySettings = {
 };
 
 export type PoolDetail = {
+  "audience": PoolDetailAudienceEnum;
   "id": number;
   "version": number;
   "currency": string;
@@ -19249,6 +19478,8 @@ export type PoolDetail = {
   "committed_minor": number;
   "available_minor": number;
 };
+
+export type PoolDetailAudienceEnum = "participants" | "crew";
 
 export type PositionedElement = {
   "field": string;
@@ -19829,6 +20060,17 @@ export type PrivateRequestDetail = {
   "reason": string;
 };
 
+export type PrizeClaimInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "country": string;
+  "method": MethodF34Enum;
+  "details": {
+  [key: string]: string;
+};
+  "pan"?: string;
+};
+
 export type PrizeInput = {
   "operation_id": string;
   "expected_version": number;
@@ -19848,6 +20090,10 @@ export type PrizeInput = {
   "sponsor_id"?: number | null;
   "award_count"?: number;
   "winner_selection_mode"?: PrizeInputWinnerSelectionModeEnum;
+  "kind"?: Kind9f3Enum;
+  "value_text"?: string;
+  "estimated_value"?: string | null;
+  "funding"?: FundingEnum;
 };
 
 export type PrizeInputWinnerSelectionModeEnum = "manager" | "sponsor_proposal";
@@ -19859,7 +20105,16 @@ export type PrizePayableAwardRead = {
   "title": string;
   "amount_per_winner": string | null;
   "paid": boolean;
+  "kind": string;
+  "funding": string;
+  "value_text": string;
+  "status": PrizePayableAwardReadStatusEnum;
+  "open_recoveries": number;
+  "tax_proposal": PrizeTaxProposal;
+  "shares": Array<PrizeShareRow>;
 };
+
+export type PrizePayableAwardReadStatusEnum = "owed" | "paid" | "part_paid" | "fulfilled" | "sponsor_paid" | "forfeited";
 
 export type PrizePayoutPage = {
   "count": number;
@@ -19867,6 +20122,17 @@ export type PrizePayoutPage = {
   "previous": string | null;
   "results": Array<PayoutRead>;
   "awards": Array<PrizePayableAwardRead>;
+};
+
+export type PrizePoolRead = {
+  "currency": string;
+  "announced_total": string;
+  "sponsor_funded": string;
+  "paid_gross": string;
+  "tds_recorded": string;
+  "owed": string;
+  "recovered": string;
+  "sponsor_direct_awards": number;
 };
 
 export type PrizeRead = {
@@ -19886,6 +20152,10 @@ export type PrizeRead = {
   "award_count"?: number;
   "winner_selection_mode"?: PrizeReadWinnerSelectionModeEnum;
   "amount_per_winner"?: string | null;
+  "kind"?: Kind9f3Enum;
+  "value_text"?: string;
+  "estimated_value"?: string | null;
+  "funding"?: FundingEnum;
 };
 
 export type PrizeReadPage = {
@@ -19896,6 +20166,20 @@ export type PrizeReadPage = {
 };
 
 export type PrizeReadWinnerSelectionModeEnum = "manager" | "sponsor_proposal";
+
+export type PrizeShareRow = {
+  "id": number;
+  "member_id": number | null;
+  "amount": string;
+  "state": string;
+  "paid": boolean;
+};
+
+export type PrizeTaxProposal = {
+  "enabled": boolean;
+  "rate": string;
+  "threshold": string;
+};
 
 export type ProblemReportTriage = {
   "outcome": ProblemReportTriageOutcomeEnum;
@@ -21246,6 +21530,17 @@ export type PublicPrinterUploadKindEnum = "stl" | "screenshot";
 
 export type PublicPrintStatusLookupPolicyEnum = "token_only" | "email_unverified";
 
+export type PublicPrizeRead = {
+  "name": string;
+  "track": string;
+  "sponsor": string;
+  "kind": string;
+  "value_text": string;
+  "amount_per_winner": string | null;
+  "award_count": number;
+  "currency": string;
+};
+
 export type PublicProduct = {
   "id": number;
   "name": string;
@@ -22284,6 +22579,19 @@ export type RecoveryAcknowledge = {
   "acknowledgement": string;
 };
 
+export type RecoveryResolveInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "outcome": RecoveryResolveInputOutcomeEnum;
+  "method"?: MethodEa5Enum;
+  "reference"?: string;
+  "receipt_id"?: number | null;
+  "note"?: string;
+  "happened_on": string;
+};
+
+export type RecoveryResolveInputOutcomeEnum = "repaid" | "waived";
+
 export type RecoveryState = {
   "mode": RecoveryStateModeEnum;
   "auth_generation": string;
@@ -22407,7 +22715,7 @@ export type RefundCasePayment = {
   "member_name": string;
 };
 
-export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived" | "order_unfulfilled" | "ticket_type_changed" | "pass_occurrence_cancelled" | "donation_returned" | "submission_disqualified" | "team_rejected" | "price_drop" | "job_cancelled" | "quote_difference" | "shop_return" | "shop_uncollected" | "shop_unfulfilled";
+export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived" | "order_unfulfilled" | "ticket_type_changed" | "pass_occurrence_cancelled" | "donation_returned" | "submission_disqualified" | "team_rejected" | "price_drop" | "job_cancelled" | "quote_difference" | "shop_return" | "shop_uncollected" | "shop_unfulfilled" | "submission_withdrawn" | "not_shortlisted" | "deposit_returned";
 
 export type RefundCaseStatusEnum = "open" | "approved" | "approval_failed" | "declined" | "withdrawn" | "void";
 
@@ -22488,6 +22796,7 @@ export type ReimbursementCommandResult = {
   "attendance_revision"?: number;
   "override_id"?: string;
   "receipt_use_version"?: number;
+  "ledger_entry_id"?: number | null;
 };
 
 export type ReimbursementPayoutSummary = {
@@ -22839,7 +23148,7 @@ export type ReportError = {
   "code"?: string;
 };
 
-export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "member-card-issuance" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "finance-donations" | "event-finance" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "finance-shop" | "shop-sales" | "donations-campaign-progress" | "donations-pledges" | "donations-sponsor-perks" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "repairs-work-orders" | "repairs-technician-workload" | "repairs-time-by-area" | "repairs-parts-used" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
+export type ReportKeyEnum = "payment-cash-book" | "taken-items" | "active-loans" | "returns" | "damaged-missing" | "top-borrowers" | "recently-added" | "event-attendance" | "booking-utilization" | "member-activity" | "printer-service" | "fablab-health" | "payment-reconciliation" | "evidence-compliance" | "import-quality" | "communications-health" | "community-engagement" | "certification-coverage" | "audit-trail" | "membership-growth" | "member-retention" | "membership-revenue" | "membership-renewals" | "membership-bridge" | "membership-breakdown" | "membership-expiry-calendar" | "membership-applications-funnel" | "membership-win-back" | "member-register" | "membership-monthly-summary" | "member-card-issuance" | "payments-ledger" | "revenue-over-time" | "cash-book" | "payments-ageing" | "accounting-journal" | "refunds" | "income-spending" | "finance-inventory" | "finance-machines" | "finance-bookings" | "finance-events" | "finance-donations" | "event-finance" | "prizes-owed" | "receipts-payments" | "subscription-income" | "money-methods" | "gstr1" | "gstr3b" | "tax-summary" | "documents-register" | "finance-shop" | "shop-sales" | "donations-campaign-progress" | "donations-pledges" | "donations-sponsor-perks" | "event-registrations" | "event-feedback" | "event-attendance-pdf" | "booking-resource-utilization" | "booking-resource-utilization-pdf" | "booking-reservations" | "booking-answers" | "mobile-devices" | "mobile-auth" | "booking-occupancy" | "booking-lead-time" | "booking-top-members" | "event-signups" | "event-revenue" | "event-funnel" | "event-checkin-times" | "event-feedback-scores" | "repairs-work-orders" | "repairs-technician-workload" | "repairs-time-by-area" | "repairs-parts-used" | "most-lent" | "asset-usage" | "loan-throughput" | "inventory-utilisation" | "overdue-loans" | "damaged-lost" | "longest-loans" | "stock-health" | "request-funnel" | "problem-reports" | "inventory-watch-demand" | "summary" | "qr-scans" | "qr-scan-actors" | "inventory-control" | "consumable-usage" | "consumable-pools" | "procurement-performance" | "stock-transfers" | "stocktake-variance" | "machine-usage" | "machine-usage-members" | "machine-usage-heatmap" | "machine-downtime" | "maintenance-activity" | "machine-service" | "service-queue-times" | "printer-jobs" | "machine-errors" | "warranty-expiry" | "machine-sessions" | "machine-session-utilisation" | "machine-session-busiest" | "machine-session-idle" | "machine-session-flagged" | "device-health" | "presence-activity" | "presence-top-visitors" | "presence-activity-hours" | "audit-activity" | "audit-top-actors" | "audit-activity-hours" | "organization-membership" | "module-operational-health" | "platform-services" | "platform-usage";
 
 export type ReportSchedule = {
   "id": number;
@@ -22868,7 +23177,7 @@ export type ReportScheduleFilters = {
   "end"?: string;
   "window_days"?: number;
   "status"?: Status66aEnum;
-  "subject_type"?: SubjectTypeD7eEnum;
+  "subject_type"?: SubjectTypeC45Enum;
   "months"?: number;
   "subject_kind"?: string;
   "subject_id"?: number;
@@ -23193,6 +23502,24 @@ export type Reveal = {
   "details": {
   [key: string]: unknown;
 };
+};
+
+export type RevealInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "reason_code": RevealInputReasonCodeEnum;
+};
+
+export type RevealInputReasonCodeEnum = "pay_winner" | "verify_details" | "record_tax";
+
+export type RevealRead = {
+  "share_id": number;
+  "country": string;
+  "method": string;
+  "details": {
+  [key: string]: string;
+};
+  "pan": string;
 };
 
 export type RevenueOverTimeReport = {
@@ -24276,6 +24603,26 @@ export type SetupState = {
   "modules_chosen": boolean;
 };
 
+export type ShareRead = {
+  "id": number;
+  "award_id": number;
+  "member_id": number | null;
+  "amount": string;
+  "state": string;
+  "version": number;
+  "confirmed_at": string | null;
+};
+
+export type ShareRespondInput = {
+  "operation_id": string;
+  "expected_version": number;
+};
+
+export type ShareRow = {
+  "member_id": number;
+  "amount": string;
+};
+
 export type Shift = {
   "id": number;
   "event_id": number;
@@ -25161,6 +25508,12 @@ export type SpeakerInviteResponse = {
   "claim_url": string;
 };
 
+export type SplitInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "shares": Array<ShareRow>;
+};
+
 export type Sponsor = {
   "id": number;
   "name": string;
@@ -25277,6 +25630,28 @@ export type StaffClaim = {
   "decided_at": string | null;
   "created_at": string;
   "via_pay_link": boolean;
+};
+
+export type StaffClaimRow = {
+  "share_id": number | null;
+  "version": number;
+  "state": StateAe7Enum;
+  "country": string;
+  "method": string;
+  "masked_details": string;
+  "pan_masked": string;
+  "verified": boolean;
+  "award_id": number;
+  "member_id": number | null;
+  "amount": string;
+  "share_state": string;
+};
+
+export type StaffClaimRowPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<StaffClaimRow>;
 };
 
 export type StaffErasure = {
@@ -25461,7 +25836,7 @@ export type StaffOrderList = {
 
 export type StaffPayment = {
   "id": number;
-  "subject_type": SubjectTypeD7eEnum;
+  "subject_type": SubjectTypeC45Enum;
   "subject_label": string;
   "status"?: Status66aEnum;
   "amount": string;
@@ -26158,6 +26533,8 @@ export type State9e8Enum = "reported" | "triaged" | "assigned" | "in_progress" |
 
 export type State9efEnum = "requested" | "invited" | "awaiting_vouches" | "awaiting_payment" | "expired" | "canceled" | "active" | "revoked";
 
+export type StateAe7Enum = "not_given" | "submitted" | "verified";
+
 export type StateE8dEnum = "draft" | "published" | "retired";
 
 export type StateE91Enum = "idle" | "preparing" | "printing" | "paused" | "finished" | "failed" | "error";
@@ -26474,7 +26851,7 @@ export type SubjectScheduleWriteSubjectTypeEnum = "inventory_product" | "invento
 
 export type SubjectType0b3Enum = "machine" | "inventory_product" | "inventory_asset" | "bookable_space";
 
-export type SubjectTypeD7eEnum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost" | "machine_session" | "event_order" | "event_venue_fee" | "donation" | "sponsorship" | "submission_fee" | "team_registration" | "shop_order";
+export type SubjectTypeC45Enum = "machine_service_request" | "booking" | "event_registration" | "makerspace_membership" | "membership_term" | "membership_request" | "loan_deposit" | "loan_late_fee" | "loan_rental" | "loan_damage" | "loan_lost" | "machine_session" | "event_order" | "event_venue_fee" | "donation" | "sponsorship" | "submission_fee" | "team_registration" | "event_deposit" | "shop_order";
 
 export type SubjectTypeE13Enum = "inventory_product" | "inventory_asset" | "bookable_space";
 
@@ -26658,6 +27035,14 @@ export type Team = {
   "roster_hash": string;
   "members": Array<RosterMember>;
   "join_requests": Array<JoinRequest>;
+};
+
+export type TeamChargeRead = {
+  "team_id": number;
+  "payment_id": number | null;
+  "status": string;
+  "amount": string | null;
+  "currency": string;
 };
 
 export type TeamEligibilityEnum = "offered" | "confirmed";

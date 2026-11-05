@@ -19,6 +19,8 @@ ENTRIES = (
     P("space_control.ownership_transferred", "Space ownership transferred",
       ("new_user_id", "previous_user_id", "previous_outcome")),
     P("space_control.space_onboarded", "Space created from a hosting request", ("hosting_request_id", "manager_invited")),
+    P("space_control.superadmin_bypass", "Superadmin acted in a paused or read-only space",
+      ("bypass_space_control", "path")),
     P("space_control.announcement_created", "Platform announcement created",
       ("severity", "audience", "space_count", "send_email", "show_to_members")),
     P("space_control.announcement_cancelled", "Platform announcement cancelled"),

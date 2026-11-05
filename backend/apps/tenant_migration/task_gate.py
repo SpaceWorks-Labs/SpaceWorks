@@ -18,7 +18,9 @@ class TenantGateTask(Task):
 
     def __call__(self, *args, **kwargs):
         from apps.integrations.notification_cutover import boundary
-        with boundary():
+        from apps.space_controls.superadmin_bypass import for_task, scope
+        # #195: a job queued by a confirmed superadmin action keeps that actor's bypass.
+        with boundary(), scope(for_task(self.request, self.name)):
             return self._dispatch(*args, **kwargs)
 
     def _dispatch(self, *args, **kwargs):

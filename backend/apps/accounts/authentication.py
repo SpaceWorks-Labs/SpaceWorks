@@ -87,7 +87,7 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             validate_session(user, token)
             if request.headers.get("X-Makerspace-Id") is not None:
                 raise PermissionDenied("Native makerspace selection requires a device grant.")
-            _assert_source_gate(request)
+            _assert_source_gate(request, user)
             request.session_authority = surface
             return authenticated
         staff = grant.authority == "staff"
@@ -107,7 +107,7 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             for key in ("makerspace_id", "makerspace_pk"):
                 if key in kwargs and str(kwargs[key]) != str(selected):
                     raise PermissionDenied("Makerspace target does not match the selected makerspace.")
-        _assert_source_gate(request)
+        _assert_source_gate(request, user)
         grant = heartbeat_device_grant(user, token)
         request.device_grant = grant
         from apps.accounts.device_activity import record_device_activity
@@ -166,7 +166,7 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         request.claim_session = claim
         request.session_authority = "member"
         request.selected_makerspace_id = claim.membership.makerspace_id
-        _assert_source_gate(request)
+        _assert_source_gate(request, user)
         return user, token
 
 
@@ -240,7 +240,7 @@ def _effective_session_surface(token):
     return surface
 
 
-def _assert_source_gate(request):
+def _assert_source_gate(request, user=None):
     from apps.tenant_migration.gate_runtime import assert_request_write_allowed
 
-    assert_request_write_allowed(request)
+    assert_request_write_allowed(request, user=user)

@@ -7,11 +7,12 @@ passes through: the HTTP gate middleware and the late DRF guard, every service's
 notification delivery. So no view, task or message needs its own patch.
 
 * SUSPENDED refuses every write in every context, except the permits below (money that a
-  payer already sent must still settle; the superadmin's own controls; ``/control/``).
-* READ-ONLY refuses only where enforcement is switched on: unsafe HTTP requests (all
-  roles, the superadmin included, except exports, the space controls and ``/control/``)
-  and scheduled sweeps that create records. Delivery of existing messages, expiry,
-  retention and settlement keep running, because they create nothing new.
+  payer already sent must still settle; the superadmin's own controls).
+* READ-ONLY refuses only where enforcement is switched on: unsafe HTTP requests (except
+  exports and the space controls) and scheduled sweeps that create records. Delivery of
+  existing messages, expiry, retention and settlement keep running: they create nothing new.
+* The live platform SUPERADMIN may write in either state (#195, applying #110/#190):
+  ``superadmin_bypass`` admits it and audits every such write. Everyone else is refused.
 """
 
 from contextlib import contextmanager, nullcontext
@@ -81,7 +82,7 @@ def enforcing_read_only():
 
 def http_context(path, view_name):
     """The write context for one unsafe HTTP request (entered by the gate middleware)."""
-    if path.startswith("/control/") or view_name in CONTROL_ROUTES or view_name in SETTLEMENT_ROUTES:
+    if view_name in CONTROL_ROUTES or view_name in SETTLEMENT_ROUTES:
         return permitted(BOTH)
     if view_name in READ_ONLY_ROUTES:
         return nullcontext()
@@ -117,6 +118,11 @@ def assert_space_writable(makerspace_id):
     from .errors import SpaceReadOnly, SpaceSuspended
 
     if lifecycle_state == Makerspace.LifecycleState.SUSPENDED and SUSPENDED not in permits:
-        raise SpaceSuspended()
-    if read_only_at is not None and _enforce_read_only.get() and READ_ONLY not in permits:
-        raise SpaceReadOnly()
+        restricted, refusal = SUSPENDED, SpaceSuspended
+    elif read_only_at is not None and _enforce_read_only.get() and READ_ONLY not in permits:
+        restricted, refusal = READ_ONLY, SpaceReadOnly
+    else:
+        return
+    from .superadmin_bypass import allows
+    if not allows(makerspace_id, restricted):
+        raise refusal()

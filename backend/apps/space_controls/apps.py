@@ -12,3 +12,11 @@ class SpaceControlsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.space_controls"
     verbose_name = "Space controls"
+
+    def ready(self):
+        # #195: a job queued by a confirmed superadmin action carries the actor (re-verified on run).
+        from celery.signals import before_task_publish
+
+        from .superadmin_bypass import publish_headers
+
+        before_task_publish.connect(publish_headers, dispatch_uid="space_controls_superadmin_bypass")

@@ -104,10 +104,13 @@ def fanout_tenant_write(makerspace_id, *, operation, counts):
         yield True
 
 
-def assert_request_write_allowed(request):
+def assert_request_write_allowed(request, user=None):
     """Late DRF guard for tenants resolved only after parsing/authentication."""
     if request.method in {"GET", "HEAD", "OPTIONS", "TRACE"}:
         return
+    # #195: the authenticated actor confirms (superadmin) or revokes a pending bypass.
+    from apps.space_controls.superadmin_bypass import confirm
+    confirm(user)
     from apps.makerspaces.origin_scope import origin_scoped_makerspace_id
     from apps.makerspaces.origin_scope_routes import authoritative_route_resolution
     from apps.tenant_migration.gate_policy import HTTP_EXEMPTIONS

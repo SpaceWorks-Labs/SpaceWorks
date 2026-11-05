@@ -318,7 +318,7 @@ requester mutes, opt-outs, suppression and verified-endpoint checks still apply 
 
 ## Events programme contract (checkpoint 2026-10-18)
 
-At GF4 the programme remains off pending runtime acceptance. This contract applies to
+The programme features are per-space switches, off for a new space. This contract applies to
 the installed adapters below; the [coverage table](notification-coverage.md#events-programme-checkpoint-2026-10-18)
 states which sources/producers are installed. A source manifest or a scheduled sweep
 alone is not delivery. Missing actual recipient/render/dispatch adapters must refuse.

@@ -1,7 +1,7 @@
 # Organizer and co-organizer runbook
 
-**Pre-release: keep the programme off until [integration acceptance](integration-status.md).**
-The steps below describe authored services and UI exports, not a verified deployed journey.
+The programme features are per-space switches, off for a new space; a Space Manager turns them
+on. The runtime evidence for each journey is in [integration status](integration-status.md).
 Missing required adapters deliberately refuse rather than invent an admission or permission.
 
 1. Use an account with full event management to create the event, select organizers and

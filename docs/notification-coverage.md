@@ -115,7 +115,8 @@ member-account boundaries. It has no room delivery.
 
 ## Events programme checkpoint (2026-10-18)
 
-GF4 installs the real sources below; programme features remain OFF. Authored runtime
+GF4 installs the real sources below; the programme features are per-space switches, off for a
+new space. Authored runtime
 composition is not provider acceptance. The [contract](notification-contract.md#events-programme-contract-checkpoint-2026-10-18)
 defines recipient/privacy/retry rules. No Docker, provider or browser delivery pass is claimed.
 

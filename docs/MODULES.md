@@ -340,8 +340,8 @@ lets crew claim expenses. `events.checkin_lists` adds swag, meal and workshop li
 check-in. Turning any of them off hides its screens and its routes answer 404; a purge of Events
 deletes this data with its events.
 
-**Programme checkpoint (2026-10-18, `f1ef7736`): keep the new features off.** Hackathons
-are features inside Events, not a separate module. Five declared switches default off:
+**Programme checkpoint (2026-10-18, `f1ef7736`).** Hackathons
+are features inside Events, not a separate module. Five declared switches are ordinary per-space switches, off for a new space, that a Space Manager may turn on:
 `events.hackathons`, `events.mentoring` (since release 2 it no longer requires hackathons: Mentor Desk
 works on any event), `events.mentor_rounds` (requires mentoring and hackathons), `events.volunteering`, and `events.project_gallery` (requires
 hackathons). Release 2 adds one more, off and requiring hackathons: `events.pairwise_judging` (a third

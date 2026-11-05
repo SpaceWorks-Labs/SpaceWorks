@@ -138655,6 +138655,102 @@
                 }
             }
         },
+        "/api/v1/auth/account-merge/{intent_id}/passkey-options": {
+            "post": {
+                "operationId": "api_v1_auth_account_merge_passkey_options_create",
+                "description": "`credentials` only: check the other account's password, then offer ITS passkeys on this address for `navigator.credentials.get()`. Send the answer to `prove` as `passkey` with the same password. A wrong password counts as a failed try; `factor_enrolment_required` when that account has no passkey usable here.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "intent_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergePasskeyOptionsRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergePasskeyOptionsRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MergePasskeyOptionsRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PasskeyOptions"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "410": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MergeError"
+                                }
+                            }
+                        },
+                        "description": "Typed refusal: see `code`."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/auth/account-merge/{intent_id}/preview": {
             "get": {
                 "operationId": "api_v1_auth_account_merge_preview_retrieve",
@@ -138724,7 +138820,7 @@
         "/api/v1/auth/account-merge/{intent_id}/prove": {
             "post": {
                 "operationId": "api_v1_auth_account_merge_prove_create",
-                "description": "Prove the other account: its password and authenticator code (`credentials`), or both emailed codes (`email_codes`). Codes work once; five wrong tries end the request.",
+                "description": "Prove the other account: its password and authenticator code, or its password and one of its passkeys (`credentials`), or both emailed codes (`email_codes`). Codes work once; five wrong tries end the request.",
                 "parameters": [
                     {
                         "in": "path",
@@ -211833,6 +211929,15 @@
                 "type": "string",
                 "description": "* `balanced` - balanced\n* `random` - random"
             },
+            "AtRiskReasonsEnum": {
+                "enum": [
+                    "needed_by_passed",
+                    "eta_after_needed_by",
+                    "needed_by_soon"
+                ],
+                "type": "string",
+                "description": "* `needed_by_passed` - needed_by_passed\n* `eta_after_needed_by` - eta_after_needed_by\n* `needed_by_soon` - needed_by_soon"
+            },
             "Attendance2a9Enum": {
                 "enum": [
                     "any",
@@ -225397,6 +225502,19 @@
                 ],
                 "type": "string",
                 "description": "* `approved` - approved\n* `partially_approved` - partially_approved\n* `rejected` - rejected"
+            },
+            "CostMethodEnum": {
+                "enum": [
+                    "cash",
+                    "upi",
+                    "bank_transfer",
+                    "card",
+                    "cheque",
+                    "online",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other"
             },
             "Count": {
                 "type": "object",
@@ -251606,6 +251724,14 @@
                         "nullable": true,
                         "readOnly": true
                     },
+                    "at_risk_reasons": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AtRiskReasonsEnum"
+                        },
+                        "readOnly": true,
+                        "description": "Why the job may miss the member's needed-by date (#142 OQ-6); empty when on track. A flag only: the date never reorders the queue."
+                    },
                     "queued_at": {
                         "type": "string",
                         "format": "date-time",
@@ -251747,6 +251873,7 @@
                     "actual_consumed_quantity",
                     "actual_minutes",
                     "assigned_machine",
+                    "at_risk_reasons",
                     "auto_requeue_count",
                     "batch_id",
                     "bucket_id",
@@ -252930,6 +253057,33 @@
             "MaintenanceLogWrite": {
                 "type": "object",
                 "properties": {
+                    "cost_method": {
+                        "default": "other",
+                        "description": "How the cost was paid (blank: other). With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CostMethodEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "cost_currency": {
+                        "description": "Three-letter currency code; blank uses the space's default payment currency.",
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "default": "",
+                                "maxLength": 3,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
                     "summary": {
                         "type": "string"
                     },
@@ -252964,6 +253118,33 @@
             "MaintenanceRun": {
                 "type": "object",
                 "properties": {
+                    "cost_method": {
+                        "default": "other",
+                        "description": "How the cost was paid (blank: other). With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CostMethodEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "cost_currency": {
+                        "description": "Three-letter currency code; blank uses the space's default payment currency.",
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "default": "",
+                                "maxLength": 3,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
                     "summary": {
                         "type": "string",
                         "maxLength": 4000
@@ -252972,6 +253153,13 @@
                         "type": "string",
                         "default": "",
                         "maxLength": 2000
+                    },
+                    "cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true,
+                        "description": "What the run cost; above zero it reaches the ledger."
                     }
                 },
                 "required": [
@@ -259976,6 +260164,19 @@
                 "type": "string",
                 "description": "* `started` - Started\n* `proved` - Proved\n* `consumed` - Consumed\n* `cancelled` - Cancelled\n* `expired` - Expired"
             },
+            "MergePasskeyOptionsRequest": {
+                "type": "object",
+                "properties": {
+                    "password": {
+                        "type": "string",
+                        "description": "The other account's password; its passkeys are offered only after it matches.",
+                        "maxLength": 4096
+                    }
+                },
+                "required": [
+                    "password"
+                ]
+            },
             "MergePreview": {
                 "type": "object",
                 "properties": {
@@ -260027,8 +260228,16 @@
                     },
                     "otp": {
                         "type": "string",
-                        "description": "credentials: a code from the other account's authenticator, or one of its recovery codes. Passkey proof arrives with lane S-A.",
+                        "description": "credentials: a code from the other account's authenticator, or one of its recovery codes. Or send `passkey` instead.",
                         "maxLength": 64
+                    },
+                    "passkey": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PasskeyVerifyRequest"
+                            }
+                        ],
+                        "description": "credentials: the other account's passkey answering the ceremony from `passkey-options`, sent with the same password instead of `otp`."
                     },
                     "survivor_code": {
                         "type": "string",
@@ -311454,6 +311663,12 @@
                     },
                     "parts_note": {
                         "type": "string"
+                    },
+                    "cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -318213,6 +318428,33 @@
             "WorkOrderMove": {
                 "type": "object",
                 "properties": {
+                    "cost_method": {
+                        "default": "other",
+                        "description": "How the cost was paid (blank: other). With a cost above zero the run records a maintenance expense in the finance ledger (cash goes to the cash account, everything else to the bank account).\n\n* `cash` - Cash\n* `upi` - UPI\n* `bank_transfer` - Bank transfer\n* `card` - Card\n* `cheque` - Cheque\n* `online` - Online\n* `other` - Other",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CostMethodEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "cost_currency": {
+                        "description": "Three-letter currency code; blank uses the space's default payment currency.",
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "default": "",
+                                "maxLength": 3,
+                                "minLength": 3
+                            },
+                            {
+                                "type": "string",
+                                "maxLength": 0
+                            }
+                        ]
+                    },
                     "status": {
                         "$ref": "#/components/schemas/WorkOrderMoveStatusEnum"
                     },

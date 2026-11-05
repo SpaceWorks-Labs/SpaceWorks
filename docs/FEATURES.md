@@ -26,8 +26,9 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   show a Hosted at venue block. Both Events and Bookings support resource staff grants, draft cloning,
   answer edits, cancellation undo, curated websites, email campaigns, signed server reads and scoped
   reports through shared infrastructure.
-- **People and access.** Seven fixed built-in roles, combinable staff assignments and per-person
-  machine-type scope. Organizations can link spaces, publish profiles and cross-space event catalogues,
+- **People and access.** Nine fixed built-in roles per makerspace: Space Manager, Inventory Manager,
+  Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member. Staff
+  roles combine (Space Manager and Member stand alone), with per-person machine-type scope. Organizations can link spaces, publish profiles and cross-space event catalogues,
   and grant actions across the network without conferring membership identity. Superadmins use a
   separate Django control plane; see [roles and access](README-HOSTING.md#roles--access).
 - **Public pages.** Makerspaces and organizations share the `/<handle>` namespace with member
@@ -39,7 +40,12 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   Server-Sent Events, falling back to polling. Inventory, machine and event lists support `?q=`
   full-text search with typo tolerance. Boxes, tools and individual assets have QR/scan history.
 - **Money and reports.** Track debt and offline receipts independently of optional Stripe/Razorpay
-  checkout. Overdue tracking, CSV/XLSX exports and accessible charts with table fallbacks cover
+  checkout. One pricing kernel prices every charge (rate cards, item prices, member discounts, fee
+  waivers); everything is free until a space sets prices. Optional GST/tax, a two-person check for
+  offline income, pay links, disputes, a finance ledger with receipts, and refunds only through
+  staff-approved refund cases (including offers when a price drops after people paid). Donations,
+  recurring pledges, optional 80G receipts and sponsors with a public sponsor wall. Per-space Metabase
+  analytics (off by default) give each space a read-only database login over curated views. Overdue tracking, CSV/XLSX exports and accessible charts with table fallbacks cover
   operations. Historical metric rollups are append-only: corrections add revisions. Every module
   has a substantive report or an explicitly gated row.
 - **Notifications.** Transactional personal outboxes, verified Telegram, Slack, Mattermost, Discord
@@ -52,9 +58,13 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   of inbox installation. Sending activation and destructive retirement remain held pending
   [conversion/replay sign-off](notification-reconciliation-rollout.md). Routing to rooms and
   recipients is described in [Notification channels, rooms and recipients](notification-routing.md).
-- **Accounts and profiles.** Separate member, tenant staff and platform accounts. Members use
-  password, Google, Apple, GitHub, OIDC (Keycloak, Authentik, Azure AD, Okta) or phone/SMS;
-  staff/platform use password plus authenticator MFA where required. Member methods are switchable;
+- **Accounts and profiles.** One account per person: staff roles are granted to that account, and the
+  superadmin has a separate platform account. People sign in with password, Google, Apple, GitHub,
+  OIDC (Keycloak, Authentik, Azure AD, Okta) or phone/SMS. Anyone with a staff role must use a second
+  factor (an authenticator or a passkey), with one 3-day grace to enrol. Unusual sign-ins are checked
+  and alerted ("this wasn't me" signs out everywhere), IPs can be blocked, CAPTCHA (Turnstile) and
+  breached-password checks are available, and each space sets its own staff session, idle-timeout,
+  passkey and staff IP rules. Member methods are switchable;
   external identity and staff-created walk-ins support spaces without the member-account ecosystem
   (see [Sign-in, identity and borrowing](sign-in-and-borrowing.md)). Opt-in maker profiles include
   projects, interests, education, optional GitHub counts and a consent-based member directory.
@@ -65,6 +75,21 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   prompts, a hard location check for self check-in and a staff alternative. Privacy controls govern
   the public TV display at `/m/<slug>/now`; browser GPS remains spoofable. Presence is installed on
   existing spaces by migration 0096; new spaces opt in. Defaults are 1/2/3/4 h.
+- **Shop.** An optional per-space shop: consumables, kits and merch with variants, online checkout
+  (Stripe/Razorpay or pay at the desk), a front-desk till with cash-ups, pickup codes and receipts. Stock
+  moves only through the inventory availability module, and every sale is in the ledger.
+- **ID cards.** A free-canvas card designer, digital member cards with a public validity check,
+  ID programmes under membership, event badges and tickets that every event organizer can edit, wallet
+  passes and door scans. Cards carry no fee.
+- **Repairs and maintenance.** Members report issues on what they used; staff triage them into work
+  orders, assign a Technician or an outside contact, approve quotes and track parts. Maintenance,
+  To-Buy and warranty live under each area (machines, bookings, inventory). Metered machine sessions
+  bill time on a machine from a QR scan, a staff start or (later) the machine itself.
+- **Events depth.** Paid ticketing with orders, seats, tiers, add-ons, series passes, transfers and
+  venue fees; calendar invites on confirmation emails; applications with review stages for any event;
+  crew and custom check-in lists; hackathon finalists, prize payouts, entry fees and leader-pays teams.
+- **Help and public stats.** An in-app help centre with role-based guides, and a public stats page per
+  space (events, machines, lending, community) with a TV mode and small-number suppression.
 - **Space management.** Task-grouped Space Manager navigation, a searchable settings hub and setup
   checklist; domain managers reach their own settings from their consoles. The dashboard counts
   unresolved booking issues under current booking authority and links to the issues view.
@@ -80,10 +105,9 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   state; metadata, remarks and scans remain. A separate default-off cleanup can remove proven unused
   upload slots that never became handover evidence.
 
-## Events programme (pre-release)
+## Events programme
 
-The expanded Events programme is at an **integration checkpoint**, with its new features
-off by default. See [current status and remaining work](events/integration-status.md)
-before enabling hackathons, Mentor Desk, volunteering or project gallery. Schema/routes
-alone do not establish release acceptance. The [Events programme guide](events/README.md) links the
+Hackathons, Mentor Desk, mentor rounds, volunteering and the project gallery are ordinary per-space
+switches, off for a new space. See [current status](events/integration-status.md) for what has runtime
+evidence. The [Events programme guide](events/README.md) links the
 organizer, participant, mentor, volunteer and judge runbooks.

@@ -103,7 +103,7 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 **Stocktake**: [stocktake](#stocktake) — **Machines**: [machines](#machines) ·
 [machine_service](#machine_service) · [printing](#printing) —
 **Per parent**: [maintenance, To-Buy, warranty and repairs](#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent) —
-**Events**: [events](#events) — **Bookings**: [bookings](#bookings) —
+**Events**: [events](#events) · [event_reimbursements](#event_reimbursements) — **Bookings**: [bookings](#bookings) —
 **Membership**: [membership](#membership) · [presence](#presence)
 **Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) · [analytics](#analytics) —

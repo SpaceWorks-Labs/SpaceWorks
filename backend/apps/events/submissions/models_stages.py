@@ -40,6 +40,9 @@ class SubmissionStage(models.Model):
     custom_fields = models.JSONField(default=list, blank=True)
     shortlist_after = models.BooleanField(default=False)
     shortlist_label = models.CharField(max_length=60, blank=True)
+    # #180 S18: this (earlier) stage's work may join the gallery once its shortlist is published; only teams
+    # that passed its gate (or every team, when it has none) - never an eliminated team's work.
+    public_after_publish = models.BooleanField(default=False)
     version = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -123,7 +126,10 @@ class StageShortlist(AppendOnly):
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="+")
     stage = models.ForeignKey(SubmissionStage, on_delete=models.PROTECT, related_name="shortlists")
     source_round = models.ForeignKey("events.JudgingRound", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
-    selection = models.CharField(max_length=8, choices=(("top_n", "Top N"), ("manual", "Hand-picked")))
+    selection = models.CharField(max_length=8, choices=(("top_n", "Top N"), ("manual", "Hand-picked"),
+                                                         ("promoted", "Next team promoted")))
+    # #180 S12: a promotion is a new shortlist amending the published one.
+    amends = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
     top_n = models.PositiveSmallIntegerField(null=True, blank=True)
     fingerprint = models.CharField(max_length=64)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
@@ -132,9 +138,12 @@ class StageShortlist(AppendOnly):
     class Meta:
         app_label = "events"
         constraints = [
-            models.CheckConstraint(condition=Q(selection__in=("top_n", "manual")), name="ev_shortlist_selection"),
-            models.CheckConstraint(condition=Q(selection="manual") | Q(top_n__gte=1, source_round__isnull=False),
+            models.CheckConstraint(condition=Q(selection__in=("top_n", "manual", "promoted")),
+                                   name="ev_shortlist_selection"),
+            models.CheckConstraint(condition=~Q(selection="top_n") | Q(top_n__gte=1, source_round__isnull=False),
                                    name="ev_shortlist_top_n"),
+            models.CheckConstraint(condition=~Q(selection="promoted") | Q(amends__isnull=False),
+                                   name="ev_shortlist_promotion"),
         ]
 
 

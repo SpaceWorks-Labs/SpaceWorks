@@ -10,18 +10,20 @@ FIELD_NAMES = {
     'events.SubmissionStage': frozenset(
         'id event position name description opens_at deadline grace_minutes late_policy resubmission '
         'requires_previous content_mode required_link_kinds min_files max_files max_links accepted_families '
-        'max_bytes_per_file video_hosts custom_fields shortlist_after shortlist_label version created_at updated_at'.split()),
+        'max_bytes_per_file video_hosts custom_fields shortlist_after shortlist_label public_after_publish version '
+        'created_at updated_at'.split()),
     'events.SubmissionStageEntry': frozenset('id submission stage current_snapshot submitted_at triage version'.split()),
     'events.StageExtension': frozenset('id stage team until reason created_by created_at'.split()),
     'events.SnapshotStage': frozenset('id snapshot stage extension'.split()),
     'events.StageShortlist': frozenset(
-        'id event stage source_round selection top_n fingerprint created_by created_at'.split()),
+        'id event stage source_round selection top_n fingerprint created_by created_at amends'.split()),
     'events.StageShortlistEntry': frozenset('id shortlist submission snapshot source_rank'.split()),
     'events.StageShortlistAnnouncement': frozenset('id event shortlist published_at published_by'.split()),
 }
 #: New columns on existing programme models.
 EXTRA_FIELDS = {
-    'events.JudgingRound': frozenset({'submission_stage'}),
+    'events.JudgingRound': frozenset({'submission_stage', 'share_feedback', 'judge_reminders'}),
+    'events.JudgeScore': frozenset({'team_feedback'}),
     'events.HackathonProgrammeOptions': frozenset({'stage_reminder_email', 'shortlist_email', 'entry_fee_stage'}),
 }
 
@@ -50,10 +52,13 @@ _GATE = 'Programme disclosure input; imported triage and selections are rechecke
 _STAGE_DEF = ('position', 'name', 'description', 'opens_at', 'deadline', 'grace_minutes', 'late_policy', 'resubmission',
               'requires_previous', 'content_mode', 'required_link_kinds', 'min_files', 'max_files', 'max_links',
               'accepted_families', 'max_bytes_per_file', 'video_hosts', 'custom_fields', 'shortlist_after',
-              'shortlist_label', 'version', 'created_at', 'updated_at')
+              'shortlist_label', 'public_after_publish', 'version', 'created_at', 'updated_at')
 
 AUTHORITY_FIELDS = {
     ('events.JudgingRound', 'submission_stage'): _REFERENCE,
+    ('events.JudgingRound', 'share_feedback'): _DEF, ('events.JudgingRound', 'judge_reminders'): _DEF,
+    ('events.JudgeScore', 'team_feedback'): ('Private historical evidence; disclosure stays owner/permission scoped and '
+                                             'sensitive sources stay encrypted.'),
     **{('events.HackathonProgrammeOptions', name): _DEF for name in (
         'stage_reminder_email', 'shortlist_email', 'entry_fee_stage')},
     **{('events.SubmissionStage', name): _DEF for name in _STAGE_DEF},
@@ -65,7 +70,7 @@ AUTHORITY_FIELDS = {
     **{('events.StageExtension', name): _REFERENCE for name in ('stage', 'team', 'created_by')},
     **{('events.SnapshotStage', name): _REFERENCE for name in ('snapshot', 'stage', 'extension')},
     **{('events.StageShortlist', name): _EVIDENCE for name in ('selection', 'top_n', 'fingerprint', 'created_at')},
-    **{('events.StageShortlist', name): _REFERENCE for name in ('event', 'stage', 'source_round', 'created_by')},
+    **{('events.StageShortlist', name): _REFERENCE for name in ('event', 'stage', 'source_round', 'created_by', 'amends')},
     ('events.StageShortlistEntry', 'source_rank'): _EVIDENCE,
     **{('events.StageShortlistEntry', name): _REFERENCE for name in ('shortlist', 'submission', 'snapshot')},
     ('events.StageShortlistAnnouncement', 'published_at'): _EVIDENCE,
@@ -97,4 +102,6 @@ STAGE_PURGE = (('events.SubmissionStage', 'event__makerspace'),)
 #: ``min_application_stage`` (this is not a programme-catalogue model).
 REIMBURSEMENT_EXTRA_FIELDS = {
     'event_reimbursements.ReimbursementProgramme': frozenset({'required_submission', 'required_submission_stage'}),
+    # S14: the stage-deadline push signal on L2's (dropped) integrity job row.
+    'events.SubmissionIntegrityCheck': frozenset({'after_deadline_state'}),
 }

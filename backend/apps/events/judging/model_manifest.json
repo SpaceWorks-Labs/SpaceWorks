@@ -239,7 +239,9 @@
         "visibility": "models.CharField(max_length=12, default='assigned', choices=(('assigned', 'Assigned only'), ('all', 'All judges see all')))",
         "fresh_eyes": "models.BooleanField(default=False)",
         "advanced_from": "models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
-        "submission_stage": "models.ForeignKey(\"events.SubmissionStage\", null=True, blank=True, on_delete=models.PROTECT, related_name=\"+\")"
+        "submission_stage": "models.ForeignKey(\"events.SubmissionStage\", null=True, blank=True, on_delete=models.PROTECT, related_name=\"+\")",
+        "share_feedback": "models.BooleanField(default=False)",
+        "judge_reminders": "models.BooleanField(default=False)"
       },
       "foreign_keys": {
         "event": {
@@ -781,7 +783,8 @@
         "criterion_values": "models.JSONField(default=dict)",
         "notes": "models.TextField(blank=True, max_length=4000)",
         "submitted_at": "models.DateTimeField(null=True, blank=True)",
-        "saved_at": "models.DateTimeField(null=True, blank=True)"
+        "saved_at": "models.DateTimeField(null=True, blank=True)",
+        "team_feedback": "models.TextField(blank=True, max_length=4000)"
       },
       "foreign_keys": {
         "makerspace": {
@@ -807,7 +810,8 @@
       "tenant_import_reset": {},
       "deployment_backup": "preserve under existing encrypted archive custody",
       "pii_fields": [
-        "notes"
+        "notes",
+        "team_feedback"
       ],
       "pii_scope": "makerspace_id",
       "owned_object_fields": [],

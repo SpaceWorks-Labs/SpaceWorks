@@ -72,6 +72,9 @@ class JudgingRound(EventOwned):
     # #178: the submission stage this round judges; empty means the event's last stage.
     submission_stage = models.ForeignKey("events.SubmissionStage", null=True, blank=True,
                                          on_delete=models.PROTECT, related_name="+")
+    # #180 S4: release judges' team feedback with the stage shortlist or the results; S15: judge reminders.
+    share_feedback = models.BooleanField(default=False)
+    judge_reminders = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

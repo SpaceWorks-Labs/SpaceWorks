@@ -55,7 +55,7 @@ def finalize(event_id, *, actor, data, correction=False):
                 if not calculation["coverage_complete"] and not round.coverage_exception_id:
                     raise ProgrammeError("incomplete_coverage", "Record an explicit coverage exception before finalization.")
                 calculations.append(calculation)
-            awards = _awards(event, values["awards"], calculations)
+            awards = _awards(event, values["awards"], calculations, rounds)
             aggregate = {"rounds": [{"round_id": r.pk, **c} for r, c in zip(rounds, calculations)],
                          "awards": [{key: value for key, value in a.items() if key != "tie_reason"} for a in awards]}
             reason = _reason(event, actor, values.get("reason"))
@@ -82,7 +82,7 @@ def _reason(event, actor, text):
                                         actor=actor, body=text) if text else None
 
 
-def _awards(event, selections, calculations):
+def _awards(event, selections, calculations, rounds=()):
     prizes = {p.pk: p for p in HackathonPrize.objects.filter(event=event)}
     projects = {r["snapshot_id"] for c in calculations for r in c["rows"] if r["n"]}
     seen_ranks, seen_projects = set(), set()
@@ -92,6 +92,8 @@ def _awards(event, selections, calculations):
         if (not prize or snapshot.event_id != event.pk or snapshot.id not in projects
                 or not snapshot.current or not snapshot.eligible):
             raise Http404
+        from apps.events.submissions.stage_judging import require_award_stage
+        require_award_stage(rounds, snapshot)  # S17: awards point at the stage their round judges.
         if prize.pk not in snapshot.prize_ids or (prize.track_id and prize.track_id not in snapshot.track_ids):
             raise ValidationError({"awards": "The project is not eligible for this prize."})
         if selection["rank"] > prize.award_count:

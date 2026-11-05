@@ -62,12 +62,16 @@ def _open(round, event):
         round.algorithm_version = PAIRWISE_VERSION
         round.configuration |= {"guidance": draft.get("guidance", ""), "pairwise": {
             **DEFAULTS, **draft.get("pairwise", {}), "seed": f"round-{round.pk}"}}
-    snapshots = [s for s in runtime().snapshots(round.event_id) if s.event_id == round.event_id and s.eligible and s.current]
+    from apps.events.submissions.stage_judging import narrow_to_finalists, require_triaged, round_stage_id
+    stage_id = round_stage_id(round)  # #178: the round's stage; empty means the last stage.
+    require_triaged(round, stage_id)
+    snapshots = [s for s in runtime().snapshots(round.event_id, stage_id=stage_id)
+                 if s.event_id == round.event_id and s.eligible and s.current]
     from .finalists import current_finalist_ids
     from .round_settings import frozen_settings
     finalists = current_finalist_ids(round)
     if finalists is not None:  # L21b: a round fed by an advance judges only its finalists.
-        snapshots = [s for s in snapshots if s.id in finalists]
+        snapshots = narrow_to_finalists(snapshots, finalists, stage_id)
     round.configuration |= {"settings": frozen_settings(round)}
     if not snapshots:
         invalid("There are no eligible frozen submissions.")

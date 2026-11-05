@@ -106,6 +106,8 @@ class RoundInput(CommandInput):
     visibility = serializers.ChoiceField(choices=("assigned", "all"), required=False)  # L21b round settings
     fresh_eyes = serializers.BooleanField(required=False)
     panel = IdList(required=False, help_text="Judge role assignment IDs; empty means every active judge.")
+    submission_stage_id = serializers.IntegerField(min_value=1, allow_null=True, required=False,
+                                                   help_text="The submission stage this round judges; empty means the last stage.")
 
     def validate_criteria(self, value):
         if len({row["key"] for row in value}) != len(value):

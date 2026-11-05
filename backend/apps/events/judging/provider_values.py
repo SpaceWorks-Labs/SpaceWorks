@@ -23,13 +23,14 @@ class ProgrammeValues:
         links = tuple(PublicLink(id=link.link_id, kind=link.kind, url=link.url)
                       for link in row.link_refs.order_by("pk"))
         usage = EventAssetUsage.objects.filter(event_id=project.event_id).first()
+        current, triage, stage_id = self._stage_state(row, project)
         return Snapshot(id=row.pk, event_id=project.event_id, team_id=project.team_id,
             member_ids=tuple(row.sealed_member_ids),
             track_ids=tuple(row.track_refs.values_list("track_id", flat=True)),
             prize_ids=tuple(row.prize_refs.values_list("prize_id", flat=True)),
             title=data.get("title", ""), description=data.get("description", ""),
-            content_sha256=row.content_sha256, current=project.current_snapshot_id == row.pk,
-            eligible=project.state in PROJECT_STATES and project.triage == "eligible",
+            content_sha256=row.content_sha256, current=current,
+            eligible=project.state in PROJECT_STATES and triage == "eligible", stage_id=stage_id,
             metadata_public=data.get("public_requested") is True,
             public_asset_ids=tuple(row.asset_refs.filter(public_requested=True).values_list("asset_id", flat=True)),
             public_links=tuple(link for link in links if link.id in set(row.link_refs.filter(
@@ -37,7 +38,23 @@ class ProgrammeValues:
             expires_at=usage.expires_at if usage else None, room=project.team.zone,
             judge_asset_ids=assets, judge_links=links)
 
-    def snapshots(self, event_id):
+    @staticmethod
+    def _stage_state(row, project):
+        """#178: a snapshot is current for ITS stage, and its eligibility is that stage entry's triage (S5).
+        A snapshot without a stage record (none after migration 0070) keeps the project-level meaning."""
+        from apps.events.submissions.models_stages import SnapshotStage, SubmissionStageEntry
+        ref = SnapshotStage.objects.filter(snapshot_id=row.pk).values_list("stage_id", flat=True).first()
+        if ref is None:
+            return project.current_snapshot_id == row.pk, project.triage, None
+        entry = SubmissionStageEntry.objects.filter(submission_id=project.pk, stage_id=ref).first()
+        current = entry is not None and entry.current_snapshot_id == row.pk
+        return current, entry.triage if entry else "pending", ref
+
+    def snapshots(self, event_id, stage_id=None):
+        """Each project's current snapshot: of its furthest stage, or of ``stage_id`` (a round's stage)."""
+        if stage_id is not None:
+            from apps.events.submissions.stage_runtime import stage_snapshot_ids
+            return tuple(self.snapshot(pk) for pk in stage_snapshot_ids(stage_id))
         ids = HackathonSubmission.objects.filter(event_id=event_id,
             current_snapshot__isnull=False).order_by("pk").values_list("current_snapshot_id", flat=True)
         return tuple(self.snapshot(pk) for pk in ids)
@@ -46,7 +63,7 @@ class ProgrammeValues:
         self.assert_lock_context(locks)
         if event_id != locks.event_id:
             raise Http404
-        rows = SnapshotTrack.objects.filter(track_id__in=track_ids,
+        rows = SnapshotTrack.objects.filter(track_id__in=track_ids,  # Track capacity counts the latest work.
             snapshot__submission__event_id=event_id, snapshot_id=F("snapshot__submission__current_snapshot_id"),
             snapshot__submission__state__in=PROJECT_STATES).exclude(
                 snapshot__submission__triage="ineligible").exclude(snapshot__submission__team_id=exclude_team_id)

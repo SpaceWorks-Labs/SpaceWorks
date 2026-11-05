@@ -67,6 +67,7 @@ class RoundRead(ResultEnvelope, CalculationRead):
     fresh_eyes = serializers.BooleanField(required=False)
     panel = IdList(required=False)
     advanced_from_id = serializers.IntegerField(allow_null=True, required=False)
+    submission_stage_id = serializers.IntegerField(allow_null=True, required=False)
 
 
 class AssignmentRead(ResultEnvelope):

@@ -96,7 +96,8 @@ def _audit_charge(actor, request, row, payment, evidence_id, note):
 def charge_accountability(row, actor, *, amount, note=""):
     """Raise the damage/lost charge for one row; None when it comes to 0 (no charge or waived)."""
     from apps.payments.pricing.charging import record_free
-    from apps.payments.pricing.errors import ChargeExists, PricingDisabled, ReturnPhotoRequired
+    from apps.hardware_requests.loan_charges_common import loans_enabled
+    from apps.payments.pricing.errors import ChargeExists, ChargesOff, PricingDisabled, ReturnPhotoRequired
     from apps.payments.pricing.rates import PRICING_FEATURE
     from apps.makerspaces.platform import feature_enabled
     from apps.tenant_migration.gate_runtime import assert_write_allowed
@@ -107,6 +108,9 @@ def charge_accountability(row, actor, *, amount, note=""):
         raise PermissionDenied("Charging for damage or loss needs the return permission in this space.")
     if not feature_enabled(request.makerspace, PRICING_FEATURE):
         raise PricingDisabled()
+    if not loans_enabled(request.makerspace):
+        # #184 G1: a free-lending space records no damage or lost debt at all.
+        raise ChargesOff("loans")
     subject, _key, _action, event, label = SUBJECTS[row.issue_type]
     existing = _existing(request, subject, row.pk)
     if existing is not None:

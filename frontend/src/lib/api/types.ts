@@ -37,6 +37,17 @@ export type TenantBootstrap = {
   theme: Record<string, string>;
   branding: Record<string, string>;
   email_enabled: boolean;
+  // #184: per-domain money switch (`charges.enabled` AND `charges.<domain>`). Absent on older
+  // backends; read it through `lib/charges.ts`, which fails open when it is missing.
+  charges_tracked?: {
+    loans: boolean;
+    machines: boolean;
+    bookings: boolean;
+    events: boolean;
+    membership: boolean;
+    shop: boolean;
+    donations: boolean;
+  };
   public_api: {
     base_url: string;
     publishable_key: string;

@@ -87,7 +87,9 @@ def pass_quote(series, pass_type):
     item = line(PASS, currency=currency, quantity=1, unit_amount=pass_type.amount, rate_source="item",
                 target={"type": "series", "id": series.pk, "label": series.title},
                 detail={"pass_type_id": pass_type.pk, "label": pass_type.name})
-    return Quote(domain="events", currency=currency, lines=(item,), mode="paid")
+    from .orders_quote import free_unless_tracked
+    return free_unless_tracked(series.makerspace, Quote(domain="events", currency=currency, lines=(item,),
+                                                        mode="paid"))
 
 
 @event_write
@@ -109,7 +111,7 @@ def place_pass_order(series, *, member, actor, pass_type_id, digest=None):
                                       pricing_snapshot=quote.to_snapshot(occurrences=[e.pk for e in occurrences]))
     line = EventOrderLine.objects.create(order=order, kind=EventOrderLine.Kind.PASS, pass_type=pass_type,
                                          label=pass_type.name, quantity=1, seats_per_unit=1,
-                                         unit_amount=pass_type.amount, line_total=quote.total)
+                                         unit_amount=quote.lines[0].unit_amount, line_total=quote.total)
     for event in occurrences:
         EventOrderSeat.objects.create(makerspace=series.makerspace, order=order, line=line, event=event,
                                       attendee_email=(member.email or "").strip().lower())

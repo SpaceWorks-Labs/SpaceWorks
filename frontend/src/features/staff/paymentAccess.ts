@@ -10,6 +10,18 @@ const SUBJECT_ACTION: Record<PaymentRow["subject_type"], string> = {
   membership_request: "manage_members",
   loan_deposit: "issue_request",
   loan_late_fee: "return_request",
+  loan_rental: "return_request",
+  loan_damage: "return_request",
+  loan_lost: "return_request",
+  machine_session: "manage_machines",
+  event_order: "manage_events",
+  event_venue_fee: "manage_events",
+  donation: "record_payment",
+  sponsorship: "record_payment",
+  submission_fee: "manage_events",
+  team_registration: "manage_events",
+  event_deposit: "manage_events",
+  shop_order: "manage_shop",
 };
 
 /** Cash receipt authority is separate from forgiving debt or sending provider money. */

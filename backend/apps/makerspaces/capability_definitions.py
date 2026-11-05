@@ -152,10 +152,11 @@ FEATURE_DEFINITIONS = (
         default_enabled=True,
     ),
     FeatureDefinition(
-        "charges.machines", "machines", "Track machine job charges",
-        "Record a charge when a priced machine service request completes.",
+        "charges.machines", "machines", "Track machine charges",
+        "Record a charge when a priced machine job completes or a metered machine "
+        "session stops. Needs only the machines module: sessions bill without the job "
+        "service, and jobs exist only where `machine_service` is installed anyway.",
         default_enabled=True,
-        requires_modules=("machine_service",),
     ),
     FeatureDefinition(
         "charges.membership", "membership", "Track membership charges",

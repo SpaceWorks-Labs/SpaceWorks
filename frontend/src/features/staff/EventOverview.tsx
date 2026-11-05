@@ -3,6 +3,7 @@ import { AUDIENCE_LABELS } from "./EventAudienceOptions";
 import { Card, EmptyState, ListRow, RelativeTime, StatCard, StatusBadge } from "../../components/ui";
 import { useEventRegistrations, type StaffEvent } from "./eventsApi";
 import { eventAccess } from "./eventStaffPermissions";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 
 /** The latest registrations. Mounted only for staff who may read the roster, so nobody else requests it. */
 function RegistrationsPreview({ eventId, onRegistrations }: { eventId: number; onRegistrations?: () => void }) {
@@ -37,6 +38,7 @@ const audienceLabel = (event: StaffEvent) => event.registration_audience === "pa
 
 export function EventAtAGlance({ event, onCheckIn }: { event: StaffEvent; onCheckIn?: () => void }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
+  const chargesOn = useStaffChargesOn("events");
   const eventDay = new Date(event.starts_at); eventDay.setHours(0, 0, 0, 0);
   const days = Math.round((eventDay.getTime() - today.getTime()) / 86_400_000);
   return <div className="grid gap-6">
@@ -45,7 +47,7 @@ export function EventAtAGlance({ event, onCheckIn }: { event: StaffEvent; onChec
         <div><dt className="text-muted">When</dt><dd>{new Date(event.starts_at).toLocaleString()} → {new Date(event.ends_at).toLocaleString()} · {event.timezone_name}</dd></div>
         <div><dt className="text-muted">Where</dt><dd>{event.location || "Location to be confirmed"}</dd></div>
         <div><dt className="text-muted">Who can join</dt><dd>{audienceLabel(event)} · {event.is_public ? "Public listing" : "Private event"}</dd></div>
-        <div><dt className="text-muted">Price</dt><dd>{Number(event.payment_amount) === 0 ? "Free" : event.payment_amount}</dd></div>
+        {chargesOn ? <div><dt className="text-muted">Price</dt><dd>{Number(event.payment_amount) === 0 ? "Free" : event.payment_amount}</dd></div> : null}
         <div><dt className="text-muted">Registration</dt><dd>{event.registration_open ? "Open" : "Closed"}{event.effective_registration_cutoff_at ? ` · Closes ${new Date(event.effective_registration_cutoff_at).toLocaleString()}` : ""}</dd></div>
       </dl>
     </Card>

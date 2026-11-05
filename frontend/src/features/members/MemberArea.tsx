@@ -6,6 +6,7 @@ import { CenteredCardLayout } from "../../components/layouts";
 import { EmptyState, StatusPill } from "../../components/ui";
 import { MemberScreenLayout } from "./MemberScreenLayout";
 import { useTenantBranding } from "../../lib/useTenantBranding";
+import { chargesOn } from "../../lib/charges";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -89,6 +90,7 @@ export function MemberArea() {
   // errors -- the dashboard simply does not exist for a space that runs no memberships.
   const activeTab = useMemberTab(bootstrap.data?.modules ?? []);
   const membershipModuleOn = (bootstrap.data?.modules ?? []).includes("membership");
+  const membershipCharges = chargesOn(bootstrap.data, "membership"); // #184: free membership shows no fee
   // The server derives ties from owned loans/bookings/events as well as memberships.
   const messagingEnabled = makerspaceId >= 0 && Boolean(memberAccess) && !restoring && !claimSession
     && (!membership || membership.membership_status === "active");
@@ -182,7 +184,7 @@ export function MemberArea() {
     {bootstrap.isLoading ? <section className="desk-panel p-5 text-sm text-muted">Loading makerspace joining options…</section> : null}
     {bootstrap.isError ? <section className="desk-panel p-5"><p className="text-sm text-danger" role="alert">{message(bootstrap.error)}</p></section> : null}
     {activeTab === "overview" && policy && canApply && !requested && memberships.isLoading ? <section className="desk-panel p-5 text-sm text-muted">Checking your sign-in status…</section> : null}
-    {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading ? membershipModuleOn ? admission.data ? <AdmissionJoinWithPlans key={resolvedSlug} settings={admission.data} signedIn={Boolean(memberships.data)} pending={request.isPending} error={request.error} slug={resolvedSlug} onJoin={(answers, join) => request.mutate({ answers, ...join })} onSignIn={() => setShowSignIn(true)} /> : <section className="desk-panel p-5"><p className={admission.isError ? "text-sm text-danger" : "text-sm text-muted"} role={admission.isError ? "alert" : undefined}>{admission.error?.message ?? "Loading admission conditions…"}</p></section> : <JoinMembershipCta policy={policy} signedIn={Boolean(memberships.data)} pending={request.isPending} onJoin={() => request.mutate({})} onSignIn={() => setShowSignIn(true)} /> : null}
+    {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading ? membershipModuleOn ? admission.data ? <AdmissionJoinWithPlans key={resolvedSlug} settings={admission.data} signedIn={Boolean(memberships.data)} pending={request.isPending} error={request.error} slug={resolvedSlug} showPrice={membershipCharges} onJoin={(answers, join) => request.mutate({ answers, ...join })} onSignIn={() => setShowSignIn(true)} /> : <section className="desk-panel p-5"><p className={admission.isError ? "text-sm text-danger" : "text-sm text-muted"} role={admission.isError ? "alert" : undefined}>{admission.error?.message ?? "Loading admission conditions…"}</p></section> : <JoinMembershipCta policy={policy} signedIn={Boolean(memberships.data)} pending={request.isPending} onJoin={() => request.mutate({})} onSignIn={() => setShowSignIn(true)} /> : null}
     {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading && membershipModuleOn && admission.data ? <PricePreview makerspaceSlug={resolvedSlug} request={{ domain: "membership", joining: true, plan_id: admission.data.default_plan?.id }} /> : null}
     {activeTab === "overview" && membershipModuleOn && admission.data?.join_mode !== "closed" && admission.isSuccess && resolvedSlug && canApply && !requested && !memberships.isLoading ? <InvitationRequestForm slug={resolvedSlug} /> : null}
     {activeTab === "overview" && (membershipModuleOn && latestApplication?.id ? <MemberAdmission makerspaceId={makerspaceId} request={ownApplication.data?.id === latestApplication.id && ownApplication.data.state === latestApplication.state ? ownApplication.data : latestApplication as AdmissionRequest} /> : requested ? <section className="desk-panel p-5"><h2 className="title-panel">Membership request sent</h2><p className="mt-1 text-sm text-muted">Staff will review your request.</p></section> : null)}
@@ -204,7 +206,7 @@ export function MemberArea() {
       {(["overview", "events", "bookings"].includes(activeTab) && section !== "partners" || activeTab === "loans" && section !== "history") && memberActivity ? <MemberActivityPanel modules={bootstrap.data?.modules ?? []} features={bootstrap.data?.features ?? []} section={activeTab === "overview" ? "overview" : activeTab as "loans" | "bookings" | "events"} activity={memberActivity} eventPeriod={section === "past" ? "past" : "going"} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} makerspaceName={spaceName} /> : null}
       {activeTab === "overview" && memberActivity ? <MemberTerm term={memberActivity.membership_term} /> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" ? <MemberCardPanel compact cardHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=card`} makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : null}
-      {activeTab === "payments" && memberActivity ? <MemberDues dues={memberActivity.membership_dues} /> : null}
+      {activeTab === "payments" && memberActivity && membershipCharges ? <MemberDues dues={memberActivity.membership_dues} /> : null}
       {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history}
         withdraw={bootstrap.data?.features?.includes("loans.withdrawals") ? { makerspaceId, makerspaceSlug: resolvedSlug } : undefined} /> : null}
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}

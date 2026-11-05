@@ -26,8 +26,9 @@ the behaviour when that switch is on. Turning one off keeps its data (#95, #128 
 * `shop.bundles` -- a kit can take each component's stock at sale (Q-S12).
 * `shop.consumable_link` -- a variant may draw on an inventory consumable (Q-S11).
 
-Money: `charges.shop` records every sale (standalone, default on, like `charges.enabled`,
-so turning the shop on never sells unrecorded); `payments.shop` adds the online card/UPI
+Money: `charges.shop` records every sale (default on, parented to the `shop` module like every
+other `charges.<domain>` key; installing the shop turns it back on, so the shop never sells
+unrecorded); `payments.shop` adds the online card/UPI
 rail and needs the `payments` module. With it off, online orders are "pay at the desk".
 """
 
@@ -72,7 +73,7 @@ def definitions(feature):
         feature("shop.consumable_link", shop, "Sell inventory consumables",
                 "A product can draw on an inventory consumable, so workshop use and sales share one "
                 "count. Lendable tools are never sold."),
-        feature("charges.shop", None, "Track shop sales",
+        feature("charges.shop", shop, "Track shop sales",
                 "Record every shop sale as a charge in the finance ledger, whether or not online "
                 "payment is configured.", default_enabled=True),
         feature("payments.shop", shop, "Online shop payments",

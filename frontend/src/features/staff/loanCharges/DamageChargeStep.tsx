@@ -3,6 +3,7 @@ import { Coins } from "lucide-react";
 
 import { Modal } from "../../../components/ui";
 import { capabilityOn } from "../../../lib/features";
+import { staffChargesOn } from "../useStaffChargesOn";
 import { formatMoney } from "../paymentsApi";
 import { AccountabilityChargeForm, rowTitle } from "./AccountabilityChargeForm";
 import { freeNotice, useLoanCharges } from "./LoanChargesPanel";
@@ -10,11 +11,11 @@ import { undecidedRows, type LoanAccountabilityChargeResult, type LoanAccountabi
 
 type Resolution = { damaged: number; missing: number };
 
-/** The charge step follows a return only when price lists are on and the return recorded damage or loss. */
+/** The charge step follows a return only when loan charges (#184) and price lists are on and the return recorded damage or loss. */
 export function needsDamageCharges(
   makerspace: { enabled_modules?: string[]; enabled_features?: string[] }, resolutions: Resolution[],
 ) {
-  return capabilityOn(makerspace, "charges.pricing") && resolutions.some(value => value.damaged + value.missing > 0);
+  return staffChargesOn(makerspace, "loans") && capabilityOn(makerspace, "charges.pricing") && resolutions.some(value => value.damaged + value.missing > 0);
 }
 
 /**

@@ -13,6 +13,7 @@ import {
   planIntervalLabel,
   startTerm,
 } from "./membershipPlansApi";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 import { formatMoney } from "./paymentsApi";
 import { MemberLifecycleDetails } from "./membershipLifecycle/MemberLifecycleDetails";
 
@@ -33,6 +34,7 @@ export function MemberTermsDialog({
   const client = useQueryClient();
   const terms = useQuery({ queryKey: membershipPlanKeys.terms(membershipId), queryFn: () => listTerms(membershipId) });
   const plans = useQuery({ queryKey: membershipPlanKeys.plans(makerspaceId), queryFn: () => listPlans(makerspaceId) });
+  const chargesOn = useStaffChargesOn("membership", makerspaceId); // #184: no prices while membership is free
   const activePlans = plans.data?.filter((plan) => plan.is_active) ?? [];
   const [planId, setPlanId] = useState<number | null>(null);
   const selectedPlan = planId ?? activePlans[0]?.id ?? null;
@@ -73,7 +75,7 @@ export function MemberTermsDialog({
             {!activePlans.length ? <option value="">{plans.isLoading ? "Loading plans…" : "No active plans"}</option> : null}
             {activePlans.map((plan) => (
               <option key={plan.id} value={plan.id}>
-                {plan.name} · {planIntervalLabel(plan)} · {formatMoney(plan.amount, plan.currency)}
+                {plan.name} · {planIntervalLabel(plan)}{chargesOn ? ` · ${formatMoney(plan.amount, plan.currency)}` : ""}
               </option>
             ))}
           </select>
@@ -92,7 +94,7 @@ export function MemberTermsDialog({
                 <p className="font-semibold text-ink">{term.plan_name}</p>
                 <p className="text-xs text-muted">
                   {new Date(term.starts_at).toLocaleDateString()} – {term.is_lifetime ? "lifetime" : new Date(term.ends_at).toLocaleDateString()}
-                  {term.kind ? ` · ${term.kind}` : ""}{term.price != null ? ` · ${formatMoney(term.price, term.currency || "usd")}` : ""}
+                  {term.kind ? ` · ${term.kind}` : ""}{chargesOn && term.price != null ? ` · ${formatMoney(term.price, term.currency || "usd")}` : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2">

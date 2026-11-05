@@ -23,6 +23,7 @@ import { useTenantBootstrap } from "./usePublicInventory";
 import { PageMetadata } from "../../components/PageMetadata";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
+import { chargesOn } from "../../lib/charges";
 import { EventRegistrationEntry } from "./EventRegistrationEntry";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
@@ -47,6 +48,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
+  const showPrice = chargesOn(bootstrap, "events"); // #184: no price at all when event charges are off
   const [shareError, setShareError] = useState("");
   const sponsors = useEventSponsors(makerspaceSlug, publicToken, Boolean(bootstrap?.features.includes("finance.sponsors")));
   const calendar = useMutation({ mutationFn: (item: PublicEventDetail) => downloadEventCalendar(makerspaceSlug, item) });
@@ -101,7 +103,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",
           state: event?.registration_open || organizationAudience ? "open" : "closed", note: event?.registration_open ? undefined : closedNote,
           summary: event ? <div className="flex flex-wrap items-end gap-6">
-            <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
+            {showPrice ? <EventPrice amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} /> : null}
             <dl><dt className="eyebrow">Capacity</dt><dd className="font-semibold tabular-nums text-ink">{eventCapacityLabel(event.capacity)}</dd></dl>
             {showCount ? <dl><dt className="eyebrow">Registered</dt><dd className="font-semibold tabular-nums text-ink">{event.registration_count}</dd></dl> : null}
             <StatusPill label={event.availability} tone={event.availability === "Full" ? "warn" : "success"} />

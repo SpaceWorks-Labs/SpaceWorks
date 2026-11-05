@@ -11,8 +11,10 @@ type Props = {
   changeAvailability: (checked: boolean) => void;
   /** Machine time booking: whether the "Machine time" kind is offered, and the machine picker to show for it. */
   machineTime?: { available: boolean; picker: (id: string) => ReactNode };
+  /** #184: false while booking charges are off -- no price input, one muted line instead. */
+  chargesOn?: boolean;
 };
-export function BookableSpaceFields({ values, set, machineTypes, typesError, pagination, changeAvailability, machineTime }: Props) {
+export function BookableSpaceFields({ values, set, machineTypes, typesError, pagination, changeAvailability, machineTime, chargesOn = true }: Props) {
   const id = useId();
   const machineKind = values.kind === "machine";
   const notificationsValue = values.requester_notifications_enabled === null ? "inherit" : values.requester_notifications_enabled ? "on" : "off";
@@ -44,8 +46,9 @@ export function BookableSpaceFields({ values, set, machineTypes, typesError, pag
         value={values.description} onChange={event => set("description", event.target.value)} /></SettingsRow>
     </SettingsSection>
     <SettingsSection title="Booking and visibility" description="Space Managers set approval mode, duration limits, buffers and cancellation policy in makerspace booking rules.">
-      <SettingsRow label="Booking price" htmlFor={id + "-price"} helper="Use 0 for no charge."><input id={id + "-price"} className="desk-input w-full" type="number" min="0" step="0.01"
+      {chargesOn ? <SettingsRow label="Booking price" htmlFor={id + "-price"} helper="Use 0 for no charge."><input id={id + "-price"} className="desk-input w-full" type="number" min="0" step="0.01"
         value={values.payment_amount} onChange={event => set("payment_amount", event.target.value)} /></SettingsRow>
+        : <p className="text-sm text-muted">Booking charges are off in this space, so bookings are free.</p>}
       <SettingsRow label="Requester email" htmlFor={id + "-email"}><select id={id + "-email"} className="desk-input w-full" value={notificationsValue}
         onChange={event => set("requester_notifications_enabled", event.target.value === "inherit" ? null : event.target.value === "on")}>
         <option value="inherit">Inherit makerspace setting</option><option value="on">On</option><option value="off">Off</option>

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 import { memberRequest } from '../../../lib/api';
+import { useChargesOn } from '../../../lib/charges';
 import { ErrorBlock } from '../../../components/ui';
 import type { ProgrammeChargeRead, ProgrammeChargesRead } from '../../../generated/api';
 import { submissionKey, teamBase } from './api';
@@ -17,7 +19,9 @@ export function ProgrammeCharges({ scope, isLeader }: { scope: SubmissionScope; 
   const pay = useMutation({ mutationFn: (id: number) => memberRequest<{ checkout_url: string }>(`/member/makerspaces/${scope.makerspaceId}/payments/${id}/checkout`, { method: 'POST' }),
     onSuccess: data => window.location.assign(data.checkout_url) });
   const data = query.data;
-  if (!data || (!data.entry_fee.required && !data.team_charge.required)) return query.error ? <ErrorBlock error={query.error} /> : null;
+  // #184: with event charges off nothing is owed, so the fees section never shows.
+  const chargesOn = useChargesOn('events', useParams().slug);
+  if (!chargesOn || !data || (!data.entry_fee.required && !data.team_charge.required)) return query.error ? <ErrorBlock error={query.error} /> : null;
   const row = (label: string, charge: ProgrammeChargeRead, action?: ReactNode) => charge.required ? <li className="grid gap-1">
     <span className="font-semibold">{label}: {charge.amount} {charge.currency.toUpperCase()}</span>
     <span className="text-sm text-muted">{PAID.includes(charge.status) ? 'Settled.' : charge.status === 'not_raised' ? 'Not charged yet.' : 'Waiting for payment.'}</span>

@@ -35,7 +35,7 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
-| Always on | Six core modules, `notifications`, `email`, `member_accounts` | Every satisfiable child of `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `billing.documents`, `staff.invitations`, `presence.geofence`, `ui.delight`, `ui.easter_eggs` |
+| Always on | Six core modules, `notifications`, `email`, `member_accounts` | Every satisfiable child of `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `charges.donations`, `billing.documents`, `staff.invitations`, `presence.geofence`, `ui.delight`, `ui.easter_eggs` |
 
 The source is `makerspaces/setup_areas.py`; registry module keys/defaults are unchanged. Inventory
 off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Charges,
@@ -916,7 +916,8 @@ top-level module, an owner exception to #97 (#135 Q-S1).
   `shop.receipts` (receipt screen at 80 mm and A4 and by email; default on), `shop.reorder` (a To-Buy draft
   with `inventory.tobuy`, else a staff notice), `shop.bundles` (kits take their parts' stock),
   `shop.consumable_link` (a product draws on an inventory consumable). Money: `charges.shop`
-  (standalone, default on: every sale is recorded) and `payments.shop` (the online card/UPI rail; needs the
+  (parented to `shop` like every `charges.<domain>` key, default on, and turned back on whenever the
+  shop is installed: every sale is recorded; off, the shop shows no prices and sells nothing) and `payments.shop` (the online card/UPI rail; needs the
   `payments` module; without it online orders are paid at the desk).
 - **Purge:** a superadmin purge of the module removes the shop's catalogue, stock history and cash
   sessions; orders that carry a charge keep their `Payment` and documents, which are core ledger.
@@ -933,7 +934,7 @@ its parent module is off.
 | `ui.delight` | standalone (deployment flag `UI_DELIGHT_ENABLED`) | ● | Artwork, gentle motion and celebration moments across the app; reduced-motion preferences always apply | Plain screens with no decorative motion or artwork |
 | `ui.easter_eggs` | standalone (deployment flag `UI_EASTER_EGGS_ENABLED`) | ● | Hidden playful moments; never on scanner, kiosk, check-in or payment screens | No easter eggs |
 | `billing.reminders` | `notifications` (needs `email`) | | Email the payer about due and overdue charges using [core billing policy](payment-billing.md), including cash-only charges | No automatic payment reminders; debt and receipts stay visible |
-| `charges.enabled` | — | ● | Master switch for recording money owed | The space charges for nothing: no debt is recorded in any area |
+| `charges.enabled` | — | ● | Master switch for recording money owed. With each `charges.<domain>` key it decides that area's money mode ([money modes](payment-billing.md#money-modes-free-offline-online)): free, paid offline, or paid online with the `payments` rail; each area is decided on its own, so a space can lend for free while charging for machines | The space charges for nothing: no debt is recorded in any area, no price shows anywhere, and every flow completes with no payment step |
 | `billing.tax` | standalone core ledger | | Single named tax or India GST (CGST/SGST/IGST, GSTIN check, place of supply, composition, exempt, LUT exports) frozen onto each new charge; tax invoices and credit notes numbered per financial year; GSTR-1 (JSON), GSTR-3B, tax summary and documents register reports ([payment billing](payment-billing.md#tax-and-gst)) | Every charge and document is exactly release 1: no tax, the single receipt series; settings and issued tax documents are kept |
 | `billing.maker_checker` | standalone core ledger | | A second person with `record_payment` confirms every offline settlement (offline income only, #128 C-5) | One person records a cash/UPI/bank receipt and the charge is paid at once; an awaiting queue still drains |
 | `billing.offline_claims` | standalone core ledger | | UPI QR for the exact amount and the payer's "I've paid" claim (UTR, once per reference) that staff confirm or reject | No QR and no claim form; existing claims stay readable |
@@ -958,11 +959,11 @@ its parent module is off.
 | `machines.time_booking` | `machines` (needs `bookings`) | | Book a machine's time through bookings; types that require a booking can then only be used by the booker, and nobody starts a job while someone else holds it | Nothing is enforced; machine resources are kept |
 | `machines.sessions` | `machines` | | Metered machine sessions: a checked-in, certified member scans the machine's QR, sees the rate, starts and stops; staff start, stop, correct and confirm; integrated machines report their own. Forgotten sessions stop at the type's maximum length, check-out or closing (flagged for a staff check). Bills the type's hourly rate, frozen at start, only while `charges.machines` is on. A purge deletes sessions and their corrections; charges and usage entries stay | Every session route answers 404 and no sweep runs; the manual-hours usage log is unchanged; sessions are kept |
 | `loans.fee_waivers` | `request_workflow` | ● | Staff waive a loan's rental, late, damage or lost fees with a recorded reason; a fee already paid opens a refund case for approval; the deposit is never waived | No waive tool; waivers already written keep their loans free |
-| `charges.machines` | `machines` (needs `machine_service`) | ● | Record a charge when a priced machine job completes | Machine jobs are free |
+| `charges.machines` | `machines` | ● | Record a charge when a priced machine job completes or a metered session stops; quotes and prepay apply only while it is on | Machine use is free: no quote is sent, no job waits on a payment, sessions do not bill, and no machine price shows |
 | `machines.integrations` | `machines` (needs `devices`, `machine_service`) | | **Foundation only; the integration is deferred (#76).** An enrolled printer device bound to a machine whose type has an enabled printer-agent binding may pull its approved jobs, report start/completion/failure through the machine-service workflow (failures held for staff) and send a bounded status snapshot. Superadmin `/control/` only; no console screen | Every integration route answers 404; bindings and snapshots are kept |
-| `charges.bookings` | `bookings` | ● | Record a charge when a paid booking is confirmed | Bookings are free |
-| `charges.events` | `events` | ● | Record a charge when a registration for a paid event is confirmed | Registration is free |
-| `charges.membership` | `membership` | ● | Record dues and renewal charges | Dues are not recorded |
+| `charges.bookings` | `bookings` | ● | Record a charge when a paid booking is confirmed | Bookings are free and show no price |
+| `charges.events` | `events` | ● | Record a charge when a registration, ticket or add-on order, venue fee, entry fee, paid team or deposit is raised | Events are free: orders settle at a total of 0, venue fees resolve Free, no price shows |
+| `charges.membership` | `membership` | ● | Record joining fees, dues and renewal charges | Joining activates free whatever the payment timing, dues are not recorded, no plan price shows |
 | `membership.auto_renew` | `membership` | | Open the next term after renewal settlement, with plan timing/retries/grace | Manual renewal terms remain available |
 | `membership.lifecycle_mail` | `membership` | | Send renewal lifecycle mail to the member | No automated lifecycle mail |
 | `membership.self_service` | `membership` | | Edit own contact fields, revoke sessions and cancel/leave | Staff manage membership changes |
@@ -1057,6 +1058,7 @@ its parent module is off.
 | `finance.recurring_donations` | standalone core ledger (needs `finance.donations`) | | Pledges that raise one charge per month, quarter or year; the giver pays each like any charge, no card stored; missed periods are never back-charged | No new pledges and no period charges; pledges are kept |
 | `finance.tax_exempt_receipts` | standalone core ledger (needs `finance.donations`) | | India 80G receipts with the space's registration number and validity; the donor's PAN is asked only for an 80G receipt and is always stored encrypted | No 80G option; frozen receipts are kept |
 | `finance.sponsors` | standalone core ledger | | Sponsors with tiers, perk checklists (who ticked, when), sponsorship charges and the opt-in sponsor wall (Pages section and event page) | Sponsor screens, wall and perk reminders are gone; rows are kept |
+| `charges.donations` | standalone core ledger | ● | Record every gift, pledge period and sponsor payment as a charge (with `charges.enabled`) | The space takes no donation or sponsor money: gifts, pledges and sponsor charges are refused, pledge periods are skipped (never back-charged), the donate page says so; past gifts are kept |
 | `payments.donations` | `payments` (needs `finance.donations`) | | Gifts and sponsor money can be paid online | Gifts are settled offline with a receipt |
 | `bookings.calendar_feed` | `bookings` | ● | A member's private calendar link for their own bookings | The link answers 404; links are kept and work again when turned back on |
 | `events.calendar_feed` | `events` | ● | A member's private calendar link for their own event registrations | The link answers 404; links are kept |

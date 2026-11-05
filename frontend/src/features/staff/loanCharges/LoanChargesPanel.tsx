@@ -6,7 +6,7 @@ import { StatusPill } from "../../../components/ui";
 import { formatMoney } from "../paymentsApi";
 import { AccountabilityChargeForm, rowTitle } from "./AccountabilityChargeForm";
 import {
-  chargeStatus, getLoanCharges, isHiddenError, loanCanCarryCharges, loanChargesKey,
+  chargeStatus, getLoanCharges, isHiddenError, loanCanCarryCharges, loanChargesKey, loanChargesOn,
   type LoanCharge, type LoanCharges, type LoanFeeWaiver,
 } from "./loanChargesApi";
 import { RevokeWaiverDialog } from "./RevokeWaiverDialog";
@@ -72,7 +72,10 @@ function LoanChargesSection({ makerspaceId, requestId, inDisclosure = false }: {
   }
   const data = query.data as LoanCharges | undefined;
   if (!data || !Array.isArray(data.charges)) return null;
-  const rows = data.pricing_enabled ? data.accountability : [];
+  // #184: with loan charges off nothing new can be raised; charges raised before the switch still list.
+  const chargesOn = loanChargesOn(data);
+  if (!chargesOn && !data.charges.length) return inDisclosure ? <p className="text-sm text-muted">Loan charges are off in this space.</p> : null;
+  const rows = data.pricing_enabled && chargesOn ? data.accountability : [];
   const waivers = data.waivers_enabled ? data.waivers : [];
 
   return <section aria-label="Charges" className="grid gap-4">

@@ -64,6 +64,12 @@ TenantBootstrapSerializer = inline_serializer(
         "modules": serializers.ListField(child=serializers.CharField()),
         "edition": serializers.CharField(),
         "features": serializers.ListField(child=serializers.CharField()),
+        # #184 G5: per chargeable domain, whether its money is tracked (charges.enabled AND
+        # charges.<domain>). False means that domain is free and shows no money UI.
+        "charges_tracked": inline_serializer(name="TenantChargesTracked", fields={
+            domain: serializers.BooleanField() for domain in
+            ("loans", "machines", "bookings", "events", "membership", "shop", "donations")
+        }),
         "workflows": serializers.ListField(child=serializers.CharField()),
         "theme": serializers.JSONField(),
         "branding": serializers.JSONField(),

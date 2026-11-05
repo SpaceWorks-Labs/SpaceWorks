@@ -5,6 +5,8 @@
   (pledges that raise a charge each period, no card on file), `finance.sponsors` (sponsors, perks,
   sponsorship income and the opt-in sponsor wall) and `finance.tax_exempt_receipts` (80G receipts,
   the donor PAN encrypted).
+* `charges.donations` (#184 G10, parentless, default on) -- gifts and sponsor money are recorded at
+  all; with it or `charges.enabled` off, a gift, pledge period or sponsor charge is refused.
 * `payments.donations` -- the online rail for gifts and sponsor money; off means they are settled
   offline with a receipt. Like every `payments.*` key it is an additive AND in front of credentials.
 * Calendar sync: `bookings.calendar_feed` and `events.calendar_feed` keep today's feeds (on by
@@ -30,6 +32,11 @@ def definitions(feature):
                 "Issue 80G receipts with the space's registration number. A donor's PAN is collected "
                 "only when they ask for one and is always stored encrypted.",
                 requires_features=("finance.donations",)),
+        # #184 G10: whether gift and sponsor money is RECORDED at all (with `charges.enabled`).
+        # Parentless like the `finance.*` keys it serves; on by default and backfilled on.
+        feature("charges.donations", None, "Track donation and sponsor money",
+                "Record every gift, pledge period and sponsor payment as a charge in the finance "
+                "ledger. Off, the space takes no donations or sponsor money.", default_enabled=True),
         feature("payments.donations", "payments", "Donation payments",
                 "Take donations and sponsor payments online. Off, they are recorded and settled "
                 "offline with a receipt.", requires_features=("finance.donations",)),

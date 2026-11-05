@@ -18,6 +18,7 @@ def charge_row(payment):
 
 
 def loan_charges_payload(loan, actor):
+    from apps.hardware_requests.loan_charges_common import loans_enabled
     from apps.hardware_requests.loan_payments import return_evidence_id, suggestion
     from apps.hardware_requests.models import RequesterAccountability
     from apps.payments.pricing.resolver import rate_card
@@ -47,6 +48,7 @@ def loan_charges_payload(loan, actor):
     return {
         "request_id": loan.pk, "currency": rate_card(loan.makerspace, "loans").currency,
         "pricing_enabled": feature_enabled(loan.makerspace, PRICING_FEATURE),
+        "charges_enabled": loans_enabled(loan.makerspace),
         "waivers_enabled": waivers_on,
         "can_waive": waivers_on and rbac.can(actor, rbac.Action.RETURN_REQUEST, loan.makerspace_id),
         "charges": [charge_row(payment) for payment in payments], "waivers": list(waivers),

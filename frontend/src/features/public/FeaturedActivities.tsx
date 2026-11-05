@@ -4,6 +4,7 @@ import { DateChip } from "../../components/ui/DateChip";
 import { RouteLink } from "../../components/ui/RouteLink";
 import type { ApiPath } from "../../generated/api";
 import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { useChargesOn } from "../../lib/charges";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
 import { eventActionLabel } from "../inventory/PublicEventCard";
@@ -43,7 +44,7 @@ function chips(event: PublicEventDetail) {
   return [...new Set(labels.map((label) => label.trim()))].slice(0, 3);
 }
 
-function FeaturedEventCard({ event, href, timeZone }: { event: PublicEventDetail; href: string; timeZone?: string }) {
+function FeaturedEventCard({ event, href, timeZone, showPrice }: { event: PublicEventDetail; href: string; timeZone?: string; showPrice: boolean }) {
   const titleId = `featured-${event.public_token}`;
   return <li className="flex w-[85%] shrink-0 snap-start sm:w-80 md:w-auto">
     <article aria-labelledby={titleId} className="desk-panel flex w-full min-w-0 flex-col overflow-hidden">
@@ -63,7 +64,7 @@ function FeaturedEventCard({ event, href, timeZone }: { event: PublicEventDetail
           {chips(event).map((label) => <li key={label} className="rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-wide text-ink">{label}</li>)}
         </ul> : null}
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
-          <EventPrice inline amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} />
+          {showPrice ? <EventPrice inline amount={event.payment_amount} currency={event.currency} tickets={event.ticket_types} ticketRequired={event.ticket_selection_required} /> : <span />}
           <RouteLink className={event.registration_open ? "desk-button-brand" : "desk-button"} href={href} aria-describedby={titleId}>{eventActionLabel(event)}</RouteLink>
         </div>
       </div>
@@ -82,6 +83,7 @@ type Props = { slug: string; path: (part?: string) => string; timeZone?: string 
  */
 export function FeaturedActivities({ slug, path, timeZone }: Props) {
   const events = useFeaturedEvents(slug, true);
+  const showPrice = useChargesOn("events", slug); // #184
   if (events.isLoading) return null;
   if (events.isError) return <MakerspaceSection id="featured" title="Featured activities">
     <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">Couldn't load upcoming events.
@@ -93,7 +95,7 @@ export function FeaturedActivities({ slug, path, timeZone }: Props) {
   if (!upcoming.length) return null;
   return <MakerspaceSection id="featured" title="Featured activities" more={{ label: "All events", href: path("events") }}>
     <ul aria-label="Upcoming events" className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] md:overflow-visible md:pb-0">
-      {upcoming.map((event) => <FeaturedEventCard key={event.public_token} event={event} href={path(`events/${event.public_token}`)} timeZone={timeZone} />)}
+      {upcoming.map((event) => <FeaturedEventCard key={event.public_token} event={event} href={path(`events/${event.public_token}`)} timeZone={timeZone} showPrice={showPrice} />)}
     </ul>
   </MakerspaceSection>;
 }

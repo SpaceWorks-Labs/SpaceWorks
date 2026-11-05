@@ -82,9 +82,23 @@ def install_module(makerspace, key, actor=None):
         added = sorted(with_dependencies({key}) - before)
         if not added:
             return []
-        _apply(locked, before | set(added), actor)
+        _apply(locked, before | set(added), actor, add_features=_tracking_defaults(added))
     makerspace.refresh_from_db(fields=["enabled_modules"])
     return added
+
+
+def _tracking_defaults(modules):
+    """#184 / G9: a module installed now comes with its default-on `charges.<domain>` key.
+
+    The key may have been pruned while its module was off (any capability save drops a
+    feature whose parent is missing), and money owed is tracked by default (#84). Only the
+    charge-tracking family is re-added: every other switch keeps the operator's choice.
+    """
+    from apps.makerspaces.capabilities import FEATURES
+
+    return sorted(key for key, definition in FEATURES.items()
+                  if key.startswith("charges.") and definition.default_enabled
+                  and definition.parent_module in set(modules))
 
 
 def uninstall_module(makerspace, key, actor=None):

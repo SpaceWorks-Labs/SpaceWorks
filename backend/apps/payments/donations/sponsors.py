@@ -7,7 +7,7 @@ the ledger's `donations` domain, settled offline with a receipt or paid through 
 
 from django.db import transaction
 from django.utils import timezone
-from .gates import DonationRefused
+from .gates import DonationRefused, require_tracking
 
 from apps.audit import services as audit
 
@@ -114,7 +114,7 @@ def raise_charge(sponsor, *, actor, amount, description="", event_id=None, earma
 
     from .services import space_currency
 
-    space = sponsor.makerspace
+    space = require_tracking(sponsor.makerspace)
     event = None
     if event_id is not None:
         event = Event.objects.filter(pk=event_id, makerspace_id=space.pk).first()

@@ -2,6 +2,7 @@ import { EventTicketTemplates } from "./EventTicketTemplates";
 import { CustomFormBuilder } from "../forms/CustomFormBuilder";
 import { AudienceOptions } from "./EventAudienceOptions";
 import type { EventSeries, EventSeriesPayload } from "./eventSeriesApi";
+import { useStaffChargesOn } from "./useStaffChargesOn";
 
 export type SeriesFormValues = EventSeriesPayload & {
   frequency: "DAILY" | "WEEKLY" | "MONTHLY";
@@ -43,6 +44,7 @@ export function EventSeriesFields({ values, setValues, disabled = false, canEdit
   canEditDetails?: boolean; canEditSchedule?: boolean; canEditPrice?: boolean; organizationAudienceEnabled?: boolean;
 }) {
   const set = <K extends keyof SeriesFormValues>(key: K, value: SeriesFormValues[K]) => setValues({ ...values, [key]: value });
+  const chargesOn = useStaffChargesOn("events"); // #184: no price input while event charges are off
   const unit = { DAILY: "day", WEEKLY: "week", MONTHLY: "month" }[values.frequency];
   const cadence = `Every ${values.interval > 1 ? values.interval + " " : ""}${unit}${values.interval > 1 ? "s" : ""} at ${values.dtstart_local_time || "the selected time"} (${values.recurrence_timezone}).`;
   return <div className="grid gap-3 sm:grid-cols-2">
@@ -59,7 +61,8 @@ export function EventSeriesFields({ values, setValues, disabled = false, canEdit
     <label className="grid gap-1 text-sm font-semibold text-ink">Capacity per occurrence<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.capacity} onChange={(e) => set("capacity", Number(e.target.value))} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">Registration audience<select className="desk-input" value={values.registration_audience ?? "members"} disabled={disabled || !canEditDetails} onChange={(e) => set("registration_audience", e.target.value as SeriesFormValues["registration_audience"])}><AudienceOptions value={values.registration_audience} organizationAudienceEnabled={organizationAudienceEnabled} /></select></label>
     {values.ticket_types ? <div className="sm:col-span-2"><EventTicketTemplates value={values.ticket_types} onChange={(tickets) => set("ticket_types", tickets)} disabled={disabled || !canEditDetails} /></div> : null}
-    <label className="grid gap-1 text-sm font-semibold text-ink">Price per occurrence<input className="desk-input" type="number" min="0" step="0.01" disabled={disabled || !canEditPrice} value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} /></label>
+    {chargesOn ? <label className="grid gap-1 text-sm font-semibold text-ink">Price per occurrence<input className="desk-input" type="number" min="0" step="0.01" disabled={disabled || !canEditPrice} value={values.payment_amount} onChange={(e) => set("payment_amount", e.target.value)} /></label>
+      : <p className="text-sm text-muted sm:col-span-2">Event charges are off in this space, so events are free.</p>}
     <label className="grid gap-1 text-sm font-semibold text-ink">Registration closes minutes before<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.registration_cutoff_lead_minutes ?? ""} onChange={(e) => set("registration_cutoff_lead_minutes", e.target.value === "" ? null : Number(e.target.value))} /></label>
     <label className="grid gap-1 text-sm font-semibold text-ink">Member cancellation closes hours before<input className="desk-input" type="number" min="0" disabled={disabled || !canEditDetails} value={values.cancellation_cutoff_hours ?? ""} onChange={(e) => set("cancellation_cutoff_hours", e.target.value === "" ? null : Number(e.target.value))} /><span className="text-xs font-normal text-muted">Blank allows cancellation until each occurrence starts.</span></label>
     <label className="grid gap-1 text-sm font-semibold text-ink sm:col-span-2">Description<textarea className="desk-input min-h-24" disabled={disabled || !canEditDetails} value={values.description} onChange={(e) => set("description", e.target.value)} /></label>

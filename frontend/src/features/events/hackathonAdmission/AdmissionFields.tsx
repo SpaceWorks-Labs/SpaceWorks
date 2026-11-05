@@ -1,3 +1,5 @@
+import { useParams } from 'react-router-dom'
+import { useChargesOn } from '../../../lib/charges'
 import type { AdmissionRequirements, AdmissionSelection } from './types'
 
 export function AdmissionFields({ requirements: r, value, onChange, disabled }: {
@@ -5,13 +7,14 @@ export function AdmissionFields({ requirements: r, value, onChange, disabled }: 
   onChange: (value: AdmissionSelection) => void; disabled: boolean
 }) {
   const set = (update: Partial<AdmissionSelection>) => onChange({ ...value, ...update })
+  const showPrice = useChargesOn('events', useParams().slug) // #184: free events list tickets without prices
   return <fieldset disabled={disabled} className="grid gap-4">
     <legend className="title-section mb-3">Your admission details</legend>
     {r.ticket_selection_required || r.ticket_types.length ? <label className="grid gap-1 text-sm text-ink">Ticket
       <select className="desk-input" required={r.ticket_selection_required} value={value.ticket_type_id ?? ''}
         onChange={e => set({ ticket_type_id: e.target.value ? Number(e.target.value) : undefined })}>
         <option value="">Choose a ticket</option>{r.ticket_types.map(t => <option key={t.id} value={t.id}>
-          {t.name} · {r.currency} {t.amount}{t.spots_left === null ? '' : ' · ' + t.spots_left + ' places'}</option>)}
+          {t.name}{showPrice ? ` · ${r.currency} ${t.amount}` : ''}{t.spots_left === null ? '' : ' · ' + t.spots_left + ' places'}</option>)}
       </select></label> : null}
     {r.contact_requirements.email.fallback_required ? <label className="grid gap-1 text-sm text-ink">Contact email
       <input required type="email" maxLength={254} autoComplete="email" className="desk-input" value={value.email ?? ''} onChange={e => set({ email: e.target.value })} /></label> : null}

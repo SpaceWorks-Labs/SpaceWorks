@@ -5,6 +5,7 @@ import type { Action, CalloutProps } from "../../components/ui";
 import { SiteFooter } from "../../components/SiteFooter";
 import { StructuredApiError } from "../../lib/api";
 import { useTenant, useTenantPath } from "../../lib/tenant";
+import { chargesOn } from "../../lib/charges";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
@@ -42,6 +43,7 @@ export function JobRequestPage() {
   const bootstrapQuery = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
+  const showPrice = chargesOn(bootstrap, "machines"); // #184: no quote, prepay or price copy when machines are free
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const member = useMemberIdentity();
   const flow = useJobRequest(makerspaceSlug, bootstrap?.features ?? [], search, id => navigate(tenantPath(`member/machine-jobs/${id}`)));
@@ -73,14 +75,14 @@ export function JobRequestPage() {
   const error: CalloutProps | undefined = submit.isError && !(submit.error instanceof JobUploadError) ? { size: "panel", tone: "danger",
     lead: "Couldn't send your request.", body: jobErrorMessage(submit.error), action: refusalAction(submit.error, tenantPath("member")) } : undefined;
 
-  const work = !type || step === "type" ? <JobTypeStep types={types.data ?? []} value={type?.queue_id ?? null} onChange={flow.chooseType} />
+  const work = !type || step === "type" ? <JobTypeStep types={types.data ?? []} value={type?.queue_id ?? null} onChange={flow.chooseType} showPrice={showPrice} />
     : step === "files" ? <div className="grid gap-4">
       {submit.error instanceof JobUploadError ? <p className="text-sm text-danger" role="alert">{submit.error.message}</p> : null}
       <JobFilesStep accepted={accepted} typeName={type.name} models={flow.models} screenshots={flow.screenshots} errors={flow.fileErrors} onChange={flow.changeFiles} disabled={busy} /></div>
       : step === "details" ? <JobDetailsStep draft={draft} update={flow.update} type={type} intake={flow.intake.data} pools={flow.pools.data}
         poolsError={flow.pools.error} disabled={busy} />
         : <div className="grid gap-5">
-          <JobConfirmStep type={type} draft={draft} fileCount={flow.models.length} screenshotCount={flow.screenshots.length} disabled={busy}
+          <JobConfirmStep type={type} draft={draft} fileCount={flow.models.length} screenshotCount={flow.screenshots.length} disabled={busy} showPrice={showPrice}
             onAck={(key, value) => flow.update({ acks: { ...draft.acks, [key]: value } })} />
           <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: type.machine_type_id,
             pool_id: draft.poolId ? Number(draft.poolId) : undefined, quantity: Number(draft.grams) > 0 ? draft.grams.trim() : undefined }} />

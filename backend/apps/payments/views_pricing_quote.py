@@ -98,7 +98,9 @@ class PricingQuoteView(APIView):
                    description="Quotes a public item, room, machine (or type), event or plan. Signed-in members of "
                                "the space get their own price. Send `digest` back on submit: a moved price is "
                                "409 `price_changed` with the new quote. 404 when the thing is not public, the "
-                               "module is off or `charges.pricing` is off.",
+                               "module is off or `charges.pricing` is off, and 404 `charges_off` when that "
+                               "domain's charges are not tracked (charges.enabled or charges.<domain> off): "
+                               "the domain is free.",
                    request=PricingQuoteRequestSerializer,
                    responses={200: PricingPublicQuoteSerializer, 400: OpenApiResponse(ErrorSerializer),
                               404: OpenApiResponse(ErrorSerializer), 429: OpenApiResponse(ErrorSerializer)})

@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { PublicDetailLayout, PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
 import type { QueryState, StatusPillProps } from "../../components/ui";
+import { chargesOn } from "../../lib/charges";
 import { ShopCartDrawer } from "./ShopCartDrawer";
 import { fetchProduct, fetchShop, priceRange, shopErrorMessage, shopKeys, shopMoney, stockLabel, variantLabel } from "./shopApi";
 import { ShopVariantPicker } from "./ShopVariantPicker";
@@ -16,6 +17,7 @@ export function PublicShopProductPage() {
   const { productSlug = "" } = useParams();
   const space = useShopSpace();
   const cart = useShopCart(space.slug);
+  const selling = chargesOn(space.bootstrap, "shop"); // #184: shop charges off means nothing is sold
   const [open, setOpen] = useState(false);
   const [chosen, setChosen] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -45,21 +47,22 @@ export function PublicShopProductPage() {
       breadcrumb={[{ label: "Shop", href: space.path("shop") }, { label: product?.name ?? "Item" }]}>
       <PublicDetailLayout title={product?.name ?? (state.status === "error" ? "Item unavailable" : "Item")} state={state}
         cover={product?.image_url ? { src: product.image_url, alt: "" } : undefined} chips={chips}
-        tagline={product ? priceRange(product, currency) : undefined}
+        tagline={product && selling ? priceRange(product, currency) : undefined}
         sections={product ? [
           { id: "about", label: "About this item", content: <p className="whitespace-pre-wrap leading-7">{product.description || "No description yet."}</p> },
-          { id: "pickup", label: "Pickup", content: <p className="leading-7">Order online, then collect it at {space.name}{shop.data?.pay_online ? "." : " and pay at the desk."}</p> },
+          ...(selling ? [{ id: "pickup", label: "Pickup", content: <p className="leading-7">Order online, then collect it at {space.name}{shop.data?.pay_online ? "." : " and pay at the desk."}</p> }] : []),
         ] : []}
-        actionCard={{ title: "Buy", state: product?.sold_out ? "closed" : "open", note: product?.sold_out ? "This item is sold out." : undefined,
-          summary: variant ? <p className="text-2xl font-semibold tabular-nums">{shopMoney(variant.price, currency)}
+        actionCard={{ title: "Buy", state: product?.sold_out || !selling ? "closed" : "open",
+          note: !selling ? "This shop is not taking orders right now." : product?.sold_out ? "This item is sold out." : undefined,
+          summary: variant && selling ? <p className="text-2xl font-semibold tabular-nums">{shopMoney(variant.price, currency)}
             {product?.unit ? <span className="ml-1 text-sm font-normal text-muted">per {product.unit}</span> : null}</p> : null,
           form: product ? <ShopVariantPicker product={product} currency={currency} variantId={variant?.id ?? null} quantity={quantity}
             onVariant={setChosen} onQuantity={setQuantity} /> : null,
           primary: { label: "Add to basket", onClick: add, disabled: !variant || variant.sold_out,
             disabledReason: !variant || variant.sold_out ? "Choose an option that is in stock." : undefined },
-          secondary: cart.count ? [{ label: `View basket (${cart.count})`, onClick: () => setOpen(true) }] : undefined,
+          secondary: cart.count && selling ? [{ label: `View basket (${cart.count})`, onClick: () => setOpen(true) }] : undefined,
           mobileBar: { summary: product?.name ?? "Item", label: "Buy" } }} />
     </PublicLayout>
-    {shop.data ? <ShopCartDrawer open={open} onClose={() => setOpen(false)} slug={space.slug} shop={shop.data} cart={cart} path={space.path} /> : null}
+    {shop.data && selling ? <ShopCartDrawer open={open} onClose={() => setOpen(false)} slug={space.slug} shop={shop.data} cart={cart} path={space.path} /> : null}
   </div>;
 }

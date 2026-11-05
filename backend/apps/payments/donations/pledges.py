@@ -11,7 +11,7 @@ import logging
 from dateutil.relativedelta import relativedelta
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from .gates import DonationRefused
+from .gates import DonationRefused, require_tracking
 
 from apps.audit import services as audit
 
@@ -32,6 +32,7 @@ def create_pledge(space, donor, *, amount, interval, starts_on=None, campaign=No
     from .services import space_currency, tax_detail_for
 
     assert_write_allowed(space.pk)
+    require_tracking(space)
     if interval not in STEP:
         raise DonationRefused("Choose monthly, quarterly or yearly.", "interval_invalid", "interval")
     today = timezone.localdate()
@@ -146,8 +147,13 @@ def raise_one(pledge_id, today):
     from apps.makerspaces.platform import feature_enabled
     from apps.tenant_migration.gate_runtime import tenant_write
 
+    from apps.payments.availability import charge_tracking_enabled
+
     pledge = DonationPledge.objects.select_related("makerspace").get(pk=pledge_id)
-    if not feature_enabled(pledge.makerspace, "finance.recurring_donations"):
+    # A period due while donation money is not tracked is skipped like one due while the
+    # recurring switch is off (#184 G10): never raised, never back-charged.
+    if (not feature_enabled(pledge.makerspace, "finance.recurring_donations")
+            or not charge_tracking_enabled(pledge.makerspace, "donations")):
         return None
     with tenant_write(pledge.makerspace_id):
         return raise_period(pledge, today)

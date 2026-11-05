@@ -71,7 +71,12 @@ def charge(event, *, actor):
     if fee is None or fee.status != EventVenueFee.Status.CONFIGURED:
         raise OrderRefused("venue_fee_charged", "There is no venue fee waiting to be charged.")
     if not charge_tracking_enabled(event.makerspace, "events"):
-        raise OrderRefused("order_not_payable", "This space is not taking payments for events.")
+        # #184 G6: event charges are off, so hosting is free -- the fee resolves FREE, not stuck.
+        fee.status, fee.charged_at = EventVenueFee.Status.FREE, timezone.now()
+        fee.save(update_fields=["status", "charged_at", "updated_at"])
+        record(actor, "event.venue_fee_charged", makerspace=event.makerspace, target=fee,
+               meta={"event_id": event.pk, "payment_id": None, "total": "0", "charges_off": True})
+        return fee, None
     priced = venue_quote(event, fee)
     payment = raise_priced(priced, makerspace=event.makerspace, subject_type=Payment.SubjectType.EVENT_VENUE_FEE,
                            subject_id=fee.pk, member=fee.payer, created_by=actor or fee.payer, target=fee,

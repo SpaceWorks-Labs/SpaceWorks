@@ -89,7 +89,7 @@ def _lines(order, priced):
     for (addon, variant, quantity), quote_line in zip(priced.addons, priced.quote.lines[offset:]):
         EventOrderLine.objects.create(order=order, kind=EventOrderLine.Kind.ADDON, addon=addon, variant=variant,
                                       label=quote_line.detail.get("label", addon.name), quantity=quantity,
-                                      unit_amount=addon.amount, discount_amount=quote_line.discount,
+                                      unit_amount=quote_line.unit_amount, discount_amount=quote_line.discount,
                                       line_total=quote_line.net)
 
 

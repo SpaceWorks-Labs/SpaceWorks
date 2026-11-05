@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from "react";
 import { Receipt } from "lucide-react";
 
+import { useChargesOn } from "../../lib/charges";
 import { QuoteExtras, QuoteLines, QuoteTotals } from "./PricePreviewDetails";
 import { quoteErrorStatus, usePriceQuote, type PricingPublicQuote, type PricingQuoteRequest } from "./usePriceQuote";
 
@@ -12,12 +13,14 @@ const isQuote = (value: unknown): value is PricingPublicQuote =>
  * their inputs live. Renders nothing until there is something to price, while price lists are off
  * (404) or on any other refusal -- the price is advisory here, the submit re-checks it. `onDigest`
  * hands the quote's digest to a host that wants to send it with its submit (409 `price_changed`).
+ * In a free domain (its charges off, #184) it neither fetches nor renders.
  */
 export function PricePreview({ makerspaceSlug, request, onDigest, className = "" }: {
   makerspaceSlug: string; request: PricingQuoteRequest; onDigest?: (digest: string) => void; className?: string;
 }) {
   const id = useId();
-  const quote = usePriceQuote(makerspaceSlug, request);
+  const chargesOn = useChargesOn(request.domain, makerspaceSlug);
+  const quote = usePriceQuote(makerspaceSlug, request, 400, chargesOn);
   const digestHandler = useRef(onDigest);
   digestHandler.current = onDigest;
   const data = isQuote(quote.data) ? quote.data : undefined;

@@ -7,7 +7,8 @@ import { CardJobList } from "../../cards/cardJobs";
 import { ProgrammeImport } from "./ProgrammeImport";
 import { ProgrammeMembers } from "./ProgrammeMembers";
 import { ProgrammeSettings } from "./ProgrammeSettings";
-import { programmeJobsPath, useProgramme, useProgrammeDesign } from "./api";
+import { ApprovalLevelSelect } from "../../cards/ApprovalLevelSelect";
+import { programmeJobsPath, useProgramme, useProgrammeApproval, useProgrammeDesign } from "./api";
 
 type TabKey = "members" | "import" | "design" | "settings";
 
@@ -39,14 +40,27 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
     <Tabs tabs={tabs} activeKey={tab} label="Programme" onChange={(key) => setTab(key as TabKey)} />
     {tab === "members" ? <><CardJobList listPath={programmeJobsPath(row.id)} /><ProgrammeMembers programme={row} /></> : null}
     {tab === "import" ? <ProgrammeImport programme={row} onDone={() => setTab("members")} sheetImport={sheetImport} /> : null}
-    {tab === "design" ? <ProgrammeDesign programmeId={row.id} /> : null}
+    {tab === "design" ? <ProgrammeDesign programmeId={row.id} canManage={row.can_manage} /> : null}
     {tab === "settings" ? <ProgrammeSettings programme={row} /> : null}
   </div>;
 }
 
-function ProgrammeDesign({ programmeId }: { programmeId: number }) {
+function ProgrammeDesign({ programmeId, canManage }: { programmeId: number; canManage: boolean }) {
   const design = useProgrammeDesign(programmeId);
   if (design.isLoading) return <Skeleton className="h-64 w-full" />;
   if (design.isError || !design.data) return <ErrorBlock error={design.error} resource="card design" />;
-  return <CardDesigner designId={design.data.id} canEdit={design.data.can_edit} title="Programme card design" />;
+  return <div className="grid gap-4">
+    {canManage ? <ProgrammeApproval programmeId={programmeId} /> : null}
+    <CardDesigner designId={design.data.id} canEdit={design.data.can_edit} title="Programme card design" />
+  </div>;
+}
+
+function ProgrammeApproval({ programmeId }: { programmeId: number }) {
+  const { query, save } = useProgrammeApproval(programmeId);
+  if (!query.data) return query.error ? <ErrorBlock error={query.error} resource="approval setting" /> : null;
+  return <div className="grid max-w-md gap-1">
+    <ApprovalLevelSelect label="Design changes for this programme" value={query.data.required} inherited={query.data.inherited}
+      inheritLabel="Follow the organisation and space" disabled={save.isPending} onChange={(value) => save.mutate(value)} />
+    {save.error ? <ErrorBlock error={save.error} /> : null}
+  </div>;
 }

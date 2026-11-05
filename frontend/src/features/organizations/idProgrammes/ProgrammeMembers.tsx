@@ -1,9 +1,11 @@
 // Programme members: status chips with counts, search (ID number or exact email), the table,
 // a bulk bar (approve, reject, revoke, renew, email, download) and "Add a person".
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge, ErrorBlock, OverflowMenu } from "../../../components/ui";
 import { JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
+import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
 import { downloadProgrammeCard, programmeJobsPath, useAddProgrammeCard, useDecide, useProgrammeCards,
   type Programme, type ProgrammeCard, type ProgrammeCardStatus } from "./api";
 
@@ -20,6 +22,8 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [photoFor, setPhotoFor] = useState<ProgrammeCard | null>(null);
+  const client = useQueryClient();
   const cards = useProgrammeCards(programme.id, status, search.trim(), page);
   const decide = useDecide(programme.id);
   const startJob = useStartCardJob(programmeJobsPath(programme.id));
@@ -70,10 +74,13 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
           {!cards.isLoading && !rows.length ? <tr><td className="p-3 text-muted" colSpan={6}>No one here yet.</td></tr> : null}
           {rows.map((card) => <MemberRow key={card.id} card={card} manage={manage} selected={selected.includes(card.id)}
             onToggle={(on) => setSelected((current) => on ? [...current, card.id] : current.filter((id) => id !== card.id))}
+            onPhoto={() => setPhotoFor(card)}
             onAction={(action) => (NEEDS_REASON.has(action) ? (setSelected([card.id]), setPendingAction(action)) : run(action, [card.id]))} />)}
         </tbody>
       </table>
     </div>
+    <StaffPhotoDialog holderName={photoFor?.name ?? null} photoPath={`/admin/id-programme-cards/${photoFor?.id}/photo`}
+      onClose={() => setPhotoFor(null)} onSaved={() => { setPhotoFor(null); void client.invalidateQueries({ queryKey: ["id-programme-cards", programme.id] }); }} />
     {cards.data && cards.data.count > 24 ? <div className="flex gap-2">
       <button type="button" className="desk-button min-h-11" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</button>
       <button type="button" className="desk-button min-h-11" disabled={page * 24 >= cards.data.count} onClick={() => setPage(page + 1)}>Next</button>
@@ -81,8 +88,8 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
   </div>;
 }
 
-function MemberRow({ card, manage, selected, onToggle, onAction }: { card: ProgrammeCard; manage: boolean; selected: boolean;
-  onToggle: (on: boolean) => void; onAction: (action: string) => void }) {
+function MemberRow({ card, manage, selected, onToggle, onAction, onPhoto }: { card: ProgrammeCard; manage: boolean; selected: boolean;
+  onToggle: (on: boolean) => void; onAction: (action: string) => void; onPhoto: () => void }) {
   const actions = [
     ...(card.status === "approved" ? [{ label: "Download PDF", onClick: () => void downloadProgrammeCard(card, "pdf") },
       { label: "Download PNG", onClick: () => void downloadProgrammeCard(card, "png") }] : []),
@@ -91,6 +98,8 @@ function MemberRow({ card, manage, selected, onToggle, onAction }: { card: Progr
     ...(manage && card.status === "approved" ? [{ label: "Renew", onClick: () => onAction("renew") },
       { label: "Revoke", confirms: true, tone: "danger" as const, onClick: () => onAction("revoke") }] : []),
     ...(manage && card.status === "revoked" ? [{ label: "Reinstate", onClick: () => onAction("reinstate") }] : []),
+    ...(manage && (card.status === "pending" || card.status === "approved")
+      ? [{ label: card.photo_set ? "Replace photo" : "Take or upload photo", confirms: true, onClick: onPhoto }] : []),
   ];
   return <tr className="border-t border-line">
     {manage ? <td className="p-2"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${card.name}`} checked={selected}

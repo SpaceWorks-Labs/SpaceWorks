@@ -8,6 +8,8 @@ import type { CardDesign } from "../../../components/card-designer/cardTypes";
 import { Badge, ErrorBlock, OverflowMenu, SegmentedControl, Skeleton } from "../../../components/ui";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
 import { CardJobList, JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
+import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
+import { EventCardApproval } from "./EventCardApproval";
 
 type EventCard = { id: number; registration: number | null; role: string; printed_name: string; status: "active" | "revoked";
   valid_until: string | null; issued_at: string; revoked_at: string | null; photo_set: boolean };
@@ -29,8 +31,12 @@ export function EventCardsPanel({ eventId, features }: { eventId: number; featur
     <h3 className="text-lg font-semibold text-ink">Cards and tickets</h3>
     <SegmentedControl label="Cards and tickets" value={view} options={options} onChange={(value) => setView(value as typeof view)} />
     {view === "cards" && card ? <EventCardList eventId={eventId} published={Boolean(card.published_at)} /> : null}
-    {view === "design" && card ? <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title="Event card design" /> : null}
+    {view === "design" && card ? <>
+      <EventCardApproval eventId={eventId} />
+      <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title="Event card design" />
+    </> : null}
     {view === "ticket" && ticket ? <>
+      <EventCardApproval eventId={eventId} />
       <p className="text-sm text-muted">The published ticket is attached as a PDF to each confirmation email.</p>
       <CardDesigner key={ticket.id} designId={ticket.id} canEdit={ticket.can_edit} title="Ticket design" />
     </> : null}
@@ -51,6 +57,7 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
   const startJob = useStartCardJob(jobsPath);
   const [revoking, setRevoking] = useState<EventCard | null>(null);
   const [reason, setReason] = useState("");
+  const [photoFor, setPhotoFor] = useState<EventCard | null>(null);
   const download = async (row: EventCard) => {
     const url = URL.createObjectURL(await staffRequestBlob(`/admin/event-id-cards/${row.id}/download?format=pdf`));
     Object.assign(document.createElement("a"), { href: url, download: `event-card-${row.id}.pdf` }).click();
@@ -68,6 +75,8 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
     {issue.data ? <p role="status" className="text-sm text-muted">{issue.data.issued} issued, {issue.data.revoked} withdrawn.</p> : null}
     {[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean) ? <ErrorBlock error={[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean)} /> : null}
     <CardJobList listPath={jobsPath} />
+    <StaffPhotoDialog holderName={photoFor?.printed_name ?? null} photoPath={`/admin/event-id-cards/${photoFor?.id}/photo`}
+      onClose={() => setPhotoFor(null)} onSaved={() => { setPhotoFor(null); void refresh(); }} />
     {revoking ? <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault();
       revoke.mutate({ id: revoking.id, reason: reason.trim() }, { onSuccess: () => { setRevoking(null); setReason(""); } }); }}>
       <label className="grid flex-1 gap-1 text-xs font-semibold text-muted"><span>Why revoke {revoking.printed_name}'s card?</span>
@@ -85,6 +94,7 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
         <Badge tone={row.status === "active" ? "success" : "danger"}>{row.status === "active" ? "Active" : "Revoked"}</Badge>
         {row.status === "active" ? <OverflowMenu label={`Actions for ${row.printed_name}`} actions={[
           { label: "Download PDF", onClick: () => void download(row) },
+          { label: row.photo_set ? "Replace photo" : "Take or upload photo", confirms: true, onClick: () => setPhotoFor(row) },
           { label: "Revoke", confirms: true, tone: "danger", onClick: () => { setReason(""); setRevoking(row); } }]} /> : null}
       </li>)}
     </ul>

@@ -112,3 +112,16 @@ export async function downloadProgrammeCard(card: ProgrammeCard, format: "pdf" |
   Object.assign(document.createElement("a"), { href: url, download: `${card.id_number || "card"}.${format}` }).click();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/** The programme level of the design-approval switch (#136): true, false, or null to follow the organisation/space. */
+export function useProgrammeApproval(id: number) {
+  const client = useQueryClient();
+  const key = ["id-programme-approval", id];
+  const path = `/admin/id-programmes/${id}/approval`;
+  const query = useQuery({ queryKey: key, queryFn: () => staffRequest<{ required: boolean | null; inherited: boolean }>(path) });
+  const save = useMutation({
+    mutationFn: (required: boolean | null) => staffRequest<{ required: boolean | null; inherited: boolean }>(path, json("PUT", { required })),
+    onSuccess: (value) => { client.setQueryData(key, value); void client.invalidateQueries({ queryKey: ["card-design"] }); },
+  });
+  return { query, save };
+}

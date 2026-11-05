@@ -1,9 +1,11 @@
 // The per-card dialogs of the Cards tab (reissue, revoke with a required note, photo
 // request) and the row-menu actions that need no dialog (downloads, email).
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ErrorBlock } from "../../../../components/ui";
 import { toast } from "../../../../components/ui/toastStore";
+import { StaffPhotoDialog } from "../../../cards/StaffPhotoDialog";
 import { useReissueCard, useRevokeCard } from "./api";
 import { useDownloadCard, useEmailCard, useRequestPhoto } from "./apiCards";
 import { PhotoRequestDialog, ReissueCardDialog, RevokeCardDialog } from "./CardDialogs";
@@ -18,6 +20,8 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
   const [revokeNote, setRevokeNote] = useState("");
   const [photoTarget, setPhotoTarget] = useState<MemberCard | null>(null);
   const [photoReason, setPhotoReason] = useState("");
+  const [uploadTarget, setUploadTarget] = useState<MemberCard | null>(null);
+  const client = useQueryClient();
   const reissue = useReissueCard(makerspaceId);
   const revoke = useRevokeCard(makerspaceId);
   const download = useDownloadCard();
@@ -31,6 +35,7 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
       onSuccess: () => toast(`Card emailed to ${card.printed_name}.`, { tone: "success" }),
       onError: (error) => toast(message(error) ?? "The card couldn't be emailed.", { tone: "error" }),
     }) }] : []),
+    { label: "Take or upload photo", confirms: true, onClick: () => setUploadTarget(card) },
     { label: "Request new photo", confirms: true, onClick: () => { setPhotoReason(""); setPhotoTarget(card); } },
   ];
 
@@ -48,6 +53,12 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
       onReasonChange={setPhotoReason} onClose={() => setPhotoTarget(null)}
       onSubmit={() => photoTarget && photo.mutate({ card: photoTarget, reason: photoReason.trim() },
         { onSuccess: () => { setPhotoTarget(null); toast("Photo update requested.", { tone: "success" }); } })} />
+    <StaffPhotoDialog holderName={uploadTarget?.printed_name ?? null} photoPath={`/admin/member-cards/${uploadTarget?.id}/photo`}
+      onClose={() => setUploadTarget(null)} onSaved={() => {
+        toast(`Photo saved for ${uploadTarget?.printed_name}.`, { tone: "success" });
+        setUploadTarget(null);
+        void client.invalidateQueries({ queryKey: ["member-cards", makerspaceId] });
+      }} />
   </>;
 
   return {

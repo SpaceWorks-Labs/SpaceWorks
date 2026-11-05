@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListLayout } from "../../../../components/layouts";
 import { ErrorText, type QueryState } from "../../../../components/ui";
-import { StructuredApiError } from "../../../../lib/api/errors";
+import { isSurfaceOff } from "../../../../lib/api/errors";
 import { refreshMembershipAuthority } from "../roleSets";
 import { RolesReference } from "../RolesReference";
 import { StaffMfaResetDialog } from "./StaffMfaResetDialog";
@@ -50,7 +50,7 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
   const restore = useMutation({ mutationFn: (row: StaffRoleRow) => restoreStaffRole(space, row.id),
     onSuccess: row => done(`${row.display_name || row.username}'s staff roles were restored.`) });
   // The invitations feature can be off for a space; the API answers 400 and that is an info state, not a failure.
-  const invitesOff = invites.error instanceof StructuredApiError && invites.error.status === 400;
+  const invitesOff = isSurfaceOff(invites.error);
   const active = activeTab === "staff" ? list : activeTab === "invitations" ? invites : roles;
   const state: QueryState = active.isPending ? { status: "loading" }
     : active.isError && !(activeTab === "invitations" && invitesOff)

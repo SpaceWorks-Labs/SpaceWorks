@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { EmptyState, ListRow, Modal, StatusPill } from "../../components/ui";
 import { ListLayout } from "../../components/layouts";
 import { opsQueryState } from "./opsPresentation";
-import { StructuredApiError } from "../../lib/api";
+import { StructuredApiError, isSurfaceOff } from "../../lib/api";
 import { BookableSpaceForm } from "./BookableSpaceForm";
 import { MakerspaceBookingRulesSettings } from "./MakerspaceBookingRulesSettings";
 import { BookingDrawer } from "./BookingDrawer";
@@ -49,7 +49,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const apiError = spaces.error instanceof StructuredApiError ? spaces.error : null;
 
   const unavailable = apiError?.status === 403 ? "Booking management requires the Booking Manager role or a resource permission."
-    : apiError?.status === 400 && apiError.body.module ? "The Bookings module is not enabled for this makerspace." : undefined;
+    : isSurfaceOff(apiError) ? "The Bookings module is not enabled for this makerspace." : undefined;
   if (!unavailable && selectedId !== null) return <BookingDrawer recurringEnabled={recurringEnabled} key={selectedId}
     makerspaceId={makerspaceId} spaceId={selectedId} onClose={closeSelection} initialCreateOpen={bookingSpaceId === selectedId} />;
   if (!unavailable && createOpen) return <BookableSpaceForm mode="create" makerspaceId={makerspaceId}

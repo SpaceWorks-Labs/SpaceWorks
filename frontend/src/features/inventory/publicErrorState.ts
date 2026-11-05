@@ -1,5 +1,5 @@
 import type { QueryState } from "../../components/ui/types";
-import { StructuredApiError } from "../../lib/api";
+import { StructuredApiError, isSurfaceOff } from "../../lib/api";
 
 type Copy = { noun: string; missing?: string };
 
@@ -10,7 +10,8 @@ type Copy = { noun: string; missing?: string };
 export function publicErrorState(error: unknown, { noun, missing }: Copy, onRetry: () => void): QueryState {
   const apiError = error instanceof StructuredApiError ? error : null;
   if (apiError?.status === 429) return { status: "error", error: "Please slow down. Too many requests were made; wait a moment and retry.", onRetry };
-  if (apiError?.status === 400) return { status: "error", error: apiError.detail || `${noun} ${noun.endsWith("s") ? "aren't" : "isn't"} turned on at this makerspace.` };
+  // A switched-off module answers a typed 404 (#183B): say so, not "not found".
+  if (isSurfaceOff(error)) return { status: "error", error: `${noun} ${noun.endsWith("s") ? "aren't" : "isn't"} turned on at this makerspace.` };
   if (apiError?.status === 404) return { status: "error", error: missing ?? "We couldn't find this makerspace. Check the link." };
   return { status: "error", error: apiError?.detail || `Couldn't load ${noun.toLowerCase()}. Try again.`, onRetry };
 }

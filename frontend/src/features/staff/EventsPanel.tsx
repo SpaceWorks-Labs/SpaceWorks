@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { EmptyState, ListRow, StatusBadge } from "../../components/ui";
 import { FormPageLayout, ListLayout } from "../../components/layouts";
 import { opsQueryState, opsStatusLabel } from "./opsPresentation";
-import { StructuredApiError } from "../../lib/api";
+import { StructuredApiError, isSurfaceOff } from "../../lib/api";
 import { useEventCollaborationReview } from "./EventCollaborationReview";
 import { EventCreatePreview } from "./EventCreatePreview";
 import { EventPartnersSection, emptyPartnerValues, partnerPayload } from "./EventPartnersSection";
@@ -107,7 +107,7 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules
   const collaborations = useEventCollaborationReview(makerspaceId);
   const activeError = isSeries ? series.error : events.error;
   const apiError = activeError instanceof StructuredApiError ? activeError : null;
-  const denied = apiError?.status === 403 || (apiError?.status === 400 && apiError.body.module);
+  const denied = apiError?.status === 403 || isSurfaceOff(apiError);
   const rows = events.data?.results ?? [];
   const shown = rows;
   const organizationAudience = enabledFeatures.includes("events.organization_audience");

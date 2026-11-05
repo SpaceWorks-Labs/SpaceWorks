@@ -30,6 +30,15 @@ export class StructuredApiError extends Error {
   }
 }
 
+const SURFACE_OFF_CODES = new Set(["module_disabled", "feature_disabled", "capability_disabled"]);
+
+/** A module or capability switched off for this space: the API answers a typed 404 (#183B),
+ *  `{ detail, code: "module_disabled" | "feature_disabled", module | feature }`. Tell it
+ *  apart from a plain "not found" by the code, never by the status. */
+export function isSurfaceOff(error: unknown): error is StructuredApiError {
+  return error instanceof StructuredApiError && SURFACE_OFF_CODES.has(error.code ?? "");
+}
+
 export function apiError(status: number, value: unknown, headers?: Headers) {
   const body = value && typeof value === "object" && !Array.isArray(value)
     ? value as ApiErrorBody

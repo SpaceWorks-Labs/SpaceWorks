@@ -1839,3 +1839,7 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
     "OverviewMetricTimingEnum": [("period", "period"), ("snapshot", "snapshot")],
 })
 # --- end lane r2-platform-overview
+# --- lane r2-gap-api (release 2, #193): the OpenAPI contract and API-client management.
+from config import openapi_settings as _openapi_settings
+_openapi_settings.apply(REST_FRAMEWORK, SPECTACULAR_SETTINGS, env)
+# --- end lane r2-gap-api

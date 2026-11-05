@@ -149,7 +149,11 @@ class MakerspaceAdmin(
             if domain_changed:
                 # A superadmin edit is still a domain change: the new host must not
                 # inherit the old host's VERIFIED trust on managed hosting.
-                apply_domain_change(obj, new_domain)
+                apply_domain_change(obj, new_domain, operator_trusted=True)
+        elif not change and obj.frontend_domain:
+            # /control/ is the superadmin's: a domain set at creation is the operator's word.
+            obj.frontend_domain = normalize_frontend_domain(obj.frontend_domain)
+            apply_domain_change(obj, obj.frontend_domain, operator_trusted=True)
         super().save_model(request, obj, form, change)
         if not change:
             self.assign_owner(request, obj, form)

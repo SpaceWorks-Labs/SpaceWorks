@@ -16,13 +16,24 @@ DOMAIN_CHANGE_COOLDOWN_MESSAGE = (
 
 def is_self_host() -> bool:
     """Self-host mode = no platform suffix configured. In that mode the operator
-    controls both DNS and the server, so a custom domain is trusted (by a
-    superadmin) without the TXT challenge that defends the shared managed box."""
+    controls both DNS and the server, so a SUPERADMIN-set custom domain is trusted
+    without the TXT challenge that defends the shared managed box. A Space-Manager-set
+    domain is not the operator's word, so it passes the same TXT challenge (#192)."""
     return not str(settings.PLATFORM_DOMAIN_SUFFIX or "").strip()
 
 
+def is_operator(actor) -> bool:
+    """The platform superadmin: on self-host, their word is the operator's."""
+    from apps.accounts.models import User
+    return bool(actor is not None and (actor.is_superuser or actor.role == User.Role.SUPERADMIN))
+
+
 def expected_record(makerspace):
-    if is_self_host() or not makerspace.frontend_domain:
+    """The TXT record that proves control of the domain, or None when none is needed:
+    no domain, or a self-host domain already trusted (the operator's, or one that passed)."""
+    if not makerspace.frontend_domain:
+        return None
+    if is_self_host() and makerspace.frontend_domain_status == Makerspace.DomainStatus.VERIFIED:
         return None
     return {
         "host": f"{EXPECTED_HOST_PREFIX}.{makerspace.frontend_domain}",
@@ -106,18 +117,19 @@ def domain_change_cooldown_active(makerspace, normalized_domain) -> bool:
     )
 
 
-def apply_domain_change(makerspace, frontend_domain) -> None:
+def apply_domain_change(makerspace, frontend_domain, *, operator_trusted) -> None:
     """The one status transition for a changed ``frontend_domain`` (unsaved).
 
     VERIFIED is the trust gate for CORS, staff origins, Host validation and on-demand
     TLS, so a new host must never inherit the old host's VERIFIED. Self-host trusts a
-    superadmin-set domain at once; managed hosting sends it back to PENDING until the TXT
-    challenge passes. Every writer -- the staff serializer and the /control/ form --
-    calls this rather than restating it; the caller owns the authority check.
+    superadmin-set domain (``operator_trusted``) at once; a Space-Manager-set one on
+    self-host, and every one on managed hosting, goes to PENDING until the TXT challenge
+    passes (#192). Every writer -- the staff serializer and the /control/ form -- calls
+    this rather than restating it; the caller owns the authority check.
     """
     now = timezone.now()
     makerspace.frontend_domain_changed_at = now
-    if is_self_host() and frontend_domain:
+    if is_self_host() and frontend_domain and operator_trusted:
         makerspace.frontend_domain_status = Makerspace.DomainStatus.VERIFIED
         makerspace.domain_verified_at = now
     else:
@@ -202,17 +214,21 @@ def verify_domain(makerspace, *, actor):
         return (Makerspace.DomainStatus.PENDING, None, "No custom domain set.")
 
     target = makerspace.frontend_domain
-    # Self-host: the operator owns DNS and the server, so a superadmin-set custom
-    # domain is trusted immediately — the TXT challenge only defends the shared box.
-    if is_self_host():
+    # Self-host: the operator owns DNS and the server, so the superadmin's word trusts a
+    # domain immediately. A Space Manager proves control with the TXT record below
+    # (#192); a domain already trusted stays trusted, so their re-check never drops the
+    # operator's decision.
+    if is_self_host() and is_operator(actor):
         return _commit_status(
             makerspace,
             target,
             Makerspace.DomainStatus.VERIFIED,
             set_verified_at=True,
             actor=actor,
-            detail="Self-hosted custom domain — trusted automatically.",
+            detail="Self-hosted custom domain set by the platform operator — trusted automatically.",
         )
+    if is_self_host() and makerspace.frontend_domain_status == Makerspace.DomainStatus.VERIFIED:
+        return (makerspace.frontend_domain_status, makerspace.domain_verified_at, "Domain verified.")
     # Platform subdomains are provisioned+verified by staff and have no per-tenant TXT
     # record. Running the custom-domain DNS flow on them would mark them FAILED and drop
     # the live tenant host from the allowlists — so keep them VERIFIED without a lookup.

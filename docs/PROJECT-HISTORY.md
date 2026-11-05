@@ -12,7 +12,7 @@
   Codex off (#119), the SpaceWorks-Labs names (#107) and the mobile clean break. INVARIANTS gains
   **Release 2 owner decisions on record**: every #128 answer, the #77 answers (platform Q8 billing out of
   scope; Q9 org self-creation kept as built; D2 and D5 kept as built with the Helm chart unpublished; E1/E2
-  confirmed) and the #161-#181 product rules. `docs/machine-integrations/INTEGRATION.md` is new; the
+  confirmed) and the #161-#176 product rules. `docs/machine-integrations/INTEGRATION.md` is new; the
   report-builder notes folded into `docs/SOURCE-MAP-REPORTS.md`.
 
 - **2026-11-05 -- release 2 ID-card gaps (M7-M9, P19-P28).** In-browser photo crop everywhere a card photo

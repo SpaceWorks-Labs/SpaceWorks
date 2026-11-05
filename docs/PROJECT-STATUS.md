@@ -30,8 +30,6 @@ version bump run in the release phase, so treat this as built, not yet released.
   the Postgres RLS backstop; per-space key rotation and emergency re-key.
 - **Still open at the release phase:** the `backend/config/settings.py` split (the only file over 300
   lines), the full regression with RLS forced on, the end-to-end flow audit and the README screenshots.
-  Lanes still being built outside this tree: per-event submission content and multi-stage submissions,
-  hackathon money, and the People's choice award.
 
 ## Events programme status
 

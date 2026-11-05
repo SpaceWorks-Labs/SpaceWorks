@@ -77,7 +77,7 @@ rules and are not recorded here.
   and D7 (accepted requests expire and release stock) under **Machines and loans depth**; C#6 (a restore
   revokes live station credentials) under **Backup, restore and tenant migration**.
 
-**#161-#181, rules that reach the product.**
+**#161-#176, rules that reach the product.**
 
 - #162(1): with member password sign-in off, people who hold a staff role still sign in with their
   password; staff are never locked out. #162(2): native member grants and claim sessions see no staff
@@ -91,9 +91,6 @@ rules and are not recorded here.
   machine work through staff: **Machines and loans depth**.
 - #176(2) proprietary maker file formats with no owner samples are waived from the real-tool export test
   for this release.
-- #177-#181 (per-event submission content, multi-stage submissions with shortlist gates, hackathon
-  money G1-G16, prize TDS recorded only, the People's choice award) are built in their own lanes and are
-  NOT in this tree yet; their rules arrive with those merges.
 
 ## One account per person (release 2, lane U-A1; #63, #65, #66)
 

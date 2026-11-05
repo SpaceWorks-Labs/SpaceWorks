@@ -235,3 +235,8 @@ class ApiClientImportApproval(models.Model):
 
     def delete(self, *args, **kwargs):
         raise RuntimeError("API-client import approvals are append-only.")
+
+# Release 2 (#196): credentials that act as a person. Kept in their own module.
+from apps.apiclients.models_tokens import (  # noqa: E402,F401
+    OAuthAppRegistration, OAuthConsent, PersonalAccessToken,
+)

@@ -38,7 +38,7 @@ GROUPS = (
      ("public", "embed", "server events", "server bookings")),
     ("Sign-in and accounts", "Sign-in, MFA, passkeys, devices and the person's account.",
      ("auth", "mfa", "passkey", "reauthentication", "account", "saved details", "mobile associations",
-      "security settings")),
+      "security settings", "access token", "app connections")),
     ("Members", "What a signed-in member sees and does in a space.",
      ("member", "my cards", "personal notification", "memberships", "loans", "presence", "push")),
     ("Events", "Events, programmes, hackathons, tickets and their staff tools.",

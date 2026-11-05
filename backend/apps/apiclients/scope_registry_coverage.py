@@ -37,6 +37,7 @@ OUT_OF_SCOPE = (
     ("api/v1/internal/", "Infrastructure-only routes, refused at the public edge."),
     ("api/v1/health", "Health and readiness probes."),
     ("api/v1/metrics", "Prometheus metrics: a static bearer token."),
+    ("api/v1/oauth/", "OAuth 2.0 / OIDC protocol endpoints: client authentication and PKCE (#196)."),
     ("api/v1/discover/", "Anonymous public discovery of live sites; no client needed."),
     ("control/", "The Django control plane: superadmin session only."),
     ("mfa/", "Control-plane MFA and re-authentication."),

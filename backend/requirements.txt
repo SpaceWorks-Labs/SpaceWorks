@@ -26,6 +26,10 @@ pytest-django>=4.12
 whitenoise>=6.12
 segno
 djangorestframework-simplejwt>=5.5
+# #196 app connections: OAuth 2.0 / OIDC provider (authorization code + PKCE, rotating refresh).
+django-oauth-toolkit==3.4.1
+oauthlib==4.0.1
+jwcrypto==1.6.1
 # >=50 closes GHSA-g6cj-pr64-35w5, GHSA-jwv3-5hgf-82ww and GHSA-m2h6-j472-rp4c.
 cryptography>=50
 # App Attest's CBOR attestation object and COSE credential key (also passkeys).

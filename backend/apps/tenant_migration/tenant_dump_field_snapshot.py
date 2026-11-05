@@ -78,6 +78,12 @@ THIRD_PARTY_FIELD_NAMES = {
     'sessions.Session': frozenset('expire_date session_data session_key'.split()),
     'token_blacklist.OutstandingToken': frozenset('created_at expires_at id jti token user'.split()),
     'token_blacklist.BlacklistedToken': frozenset('blacklisted_at id token'.split()),
+    'oauth2_provider.Application': frozenset('algorithm allowed_origins authorization_grant_type cimd_expires_at client_id client_secret client_type created hash_client_secret id name post_logout_redirect_uris redirect_uris registration_source skip_authorization updated user'.split()),
+    'oauth2_provider.Grant': frozenset('application claims code code_challenge code_challenge_method created expires id nonce redirect_uri resource scope updated user'.split()),
+    'oauth2_provider.AccessToken': frozenset('application created expires id id_token resource scope source_refresh_token token token_checksum updated user'.split()),
+    'oauth2_provider.RefreshToken': frozenset('access_token application created id resource revoked token token_checksum token_family updated user'.split()),
+    'oauth2_provider.IDToken': frozenset('application created expires id jti scope updated user'.split()),
+    'oauth2_provider.DeviceGrant': frozenset('client_id device_code expires id interval last_checked scope status user user_code'.split()),
 }
 
 from .catalog_profiles import FIELD_NAMES as PROFILE_FIELD_NAMES, PROFILE_FIELDS, PROJECT_FIELDS

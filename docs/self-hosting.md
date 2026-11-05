@@ -645,6 +645,7 @@ every variable the backend reads, with its default — is
 | `ALLOWED_HOSTS` | yes | Comma-separated hostnames the backend will serve |
 | `DATABASE_URL` | no | Never put this in static `.env`; the atomic ops pointer is its only Compose source |
 | `CORS_ALLOWED_ORIGINS` | no | Browser origins allowed to call the API |
+| `PLATFORM_STAFF_ORIGINS` | yes for the superadmin | The only origins the platform superadmin can sign in from (release 2). The installer writes your site's own origin, and the 0.11.0 updater adds it to an older self-host that lacks it; without it the superadmin cannot reach the web console |
 | `API_CLIENT_ENC_KEY` | recommended | Fernet key encrypting integration secrets at rest |
 | `MINIO_ROOT_USER` | yes | MinIO/S3 access key used by the backend |
 | `MINIO_ROOT_PASSWORD` | yes | MinIO/S3 secret key used by the backend |
@@ -673,6 +674,17 @@ every variable the backend reads, with its default — is
 | `STORAGE_PRESIGN_METHOD` | no (default `post`) | `put` for Supabase Storage presigned PUT uploads (server re-validates size at attach) |
 | `CRON_SECRET` | no (default empty) | Enables `POST /api/v1/internal/cron/return-reminders` (header `X-Cron-Secret`); 404s while unset |
 | `DEVICE_SIGNATURE_MAX_SKEW_SECONDS`, `DEVICE_NONCE_TTL_SECONDS`, `DEVICE_ENROLLMENT_TTL_SECONDS` | no (`300`, `86400`, `900`) | Enrolled-device protocol (module `devices`): signed-request clock skew, replay-nonce lifetime (must be at least twice the skew, or startup refuses with `devices.E003`) and one-time enrollment lifetime. The backend must sit behind a server that exposes the raw request target (gunicorn `RAW_URI`, uWSGI `REQUEST_URI` or ASGI); see [device-protocol.md](device-protocol.md) |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | no (unset) | Cloudflare Turnstile on sign-in after repeated failures; dormant until both are set. The website container reads the site key too, to allow the widget in its CSP |
+| `LOGIN_IP_BLOCK_ENABLED`, `PASSWORD_BREACH_CHECK_ENABLED` | no (`True`, `True`) | Automatic blocking of an IP that fails against many accounts, and the breached-password check (HIBP range API, fails open). Set the breach check `False` on an offline server |
+| `WEBAUTHN_RP_NAME` | no (`Space Works`) | Name the browser shows when someone creates a passkey |
+| `WEB_PUSH_VAPID_PRIVATE_KEY`, `WEB_PUSH_VAPID_SUBJECT` | no (unset) | Browser notifications; generate the key once and keep it |
+| `CARD_FONT_DOWNLOADS_ENABLED` | no (`True`) | Card designs fetch Google Fonts on demand; `False` keeps the bundled faces |
+| `CARD_PHOTO_MODEL_PATH` | no (`/var/lib/spaceworks/models/u2netp.onnx` in Compose) | The photo clean-up model on the `card_models` volume, shared by web and worker. Fetch it once with `scripts/spaceworks-compose.sh bundled run --rm --no-deps backend --role management python manage.py fetch_card_photo_model`; the clean-up button stays hidden until then |
+| `MESSAGING_WEBHOOK_BASE_URL`, `MIN_NATIVE_APP_VERSION_IOS`, `MIN_NATIVE_APP_VERSION_ANDROID` | no (unset) | Public base for inbound messaging webhooks, and the oldest native app allowed to sign in |
+
+The release-2 keys above reach the backend, worker, beat and live processes through
+`docker-compose.prod.yml`, each defaulting to the value above; a value in `.env` that the compose file
+does not pass would never reach Django.
 
 > **Supabase free-tier deployment** (managed Postgres + Storage, env-toggled, demo/pilot scope):
 > see **[supabase-deployment.md](supabase-deployment.md)** for the full runbook. All five vars

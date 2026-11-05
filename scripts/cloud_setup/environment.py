@@ -16,17 +16,40 @@ COMMON = {
     "EVENT_REIMBURSEMENT_EVENT_STORAGE_BYTES": "1073741824", "EVENT_STAGE_FILE_RETENTION_DAYS": "365",
     "MANAGED_UPLOAD_TRANSFER_BOUND_SECONDS": "0",
 }
+# Non-secret release-1 messaging and release-2 operator settings at their settings.py
+# defaults, so every rendered recipe lists them and an operator may override each one
+# (#194). Their secrets (TURNSTILE_SECRET_KEY, WEB_PUSH_VAPID_PRIVATE_KEY) stay in the
+# protected secrets file, never here.
+OPERATOR_DEFAULTS = {
+    "NOTIFICATION_SLACK_REDIRECT_URI": "", "NOTIFICATION_MATTERMOST_REDIRECT_URI": "",
+    "NOTIFICATION_DISCORD_REDIRECT_URI": "", "NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS": "False",
+    "WHATSAPP_META_GRAPH_VERSION": "v25.0", "MESSAGING_WEBHOOK_BASE_URL": "",
+    "TURNSTILE_SITE_KEY": "", "TURNSTILE_FAIL_MODE": "open", "TURNSTILE_HOSTNAMES": "",
+    "LOGIN_IP_BLOCK_ENABLED": "True", "PASSWORD_BREACH_CHECK_ENABLED": "True", "WEBAUTHN_RP_NAME": "Space Works",
+    "WEB_PUSH_VAPID_SUBJECT": "", "MIN_NATIVE_APP_VERSION_IOS": "", "MIN_NATIVE_APP_VERSION_ANDROID": "",
+    "CARD_FONT_DOWNLOADS_ENABLED": "True",
+}
+COMMON.update(OPERATOR_DEFAULTS)
+BOOLEAN_DEFAULTS = {
+    "PII_ENCRYPTION_ENABLED", "PII_ENCRYPTION_DUAL_READ", "CONN_HEALTH_CHECKS", "DISABLE_SERVER_SIDE_CURSORS",
+    "NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS", "LOGIN_IP_BLOCK_ENABLED", "PASSWORD_BREACH_CHECK_ENABLED",
+    "CARD_FONT_DOWNLOADS_ENABLED",
+}
 SECRET_MOUNTS = {"EMAIL_PROVIDER_CONFIG_FILE", "STORAGE_CAPABILITIES_FILE"}
 CONFIGURABLE_DEFAULTS = {
     "PII_ENCRYPTION_ENABLED", "PII_ENCRYPTION_DUAL_READ", "PII_KEY_BROKER", "PII_DEK_CACHE_TTL_SECONDS",
     "CONN_MAX_AGE", "CONN_HEALTH_CHECKS", "DISABLE_SERVER_SIDE_CURSORS", "CRON_INTERVAL_SECONDS",
-    *(key for key in COMMON if key.startswith("EVENT_")),
+    *(key for key in COMMON if key.startswith("EVENT_")), *OPERATOR_DEFAULTS,
 }
 
 
 def validate_default_override(name, value):
-    if name in {"PII_ENCRYPTION_ENABLED", "PII_ENCRYPTION_DUAL_READ", "CONN_HEALTH_CHECKS", "DISABLE_SERVER_SIDE_CURSORS"}:
+    if name in BOOLEAN_DEFAULTS:
         valid = value.lower() in {"true", "false"}
+    elif name == "TURNSTILE_FAIL_MODE":
+        valid = value in {"open", "closed"}
+    elif name in OPERATOR_DEFAULTS:
+        valid = True  # bounded single-line strings, already checked with the answers
     elif name == "PII_KEY_BROKER":
         valid = value in {"local", "aws_kms"}
     else:

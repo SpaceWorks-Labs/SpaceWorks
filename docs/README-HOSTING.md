@@ -144,6 +144,14 @@ the catch-all rewrite to `index.html`, without which every deep link — `/m/<sl
 `/event-check-in/<token>` — 404s on refresh. Set **`VITE_API_URL`** in the Netlify UI to your API,
 e.g. `https://api.example.org/api`.
 
+It also sends the security and cache headers the bundled nginx sends (no framing, `nosniff`, a strict
+referrer, immutable hashed assets, `no-store` runtime config, revalidated service workers). Link previews
+(`/share/`), embeds (`/embed/`), `sitemap.xml`, `robots.txt` and the native-app association files are
+pages the backend renders: uncomment the proxy block in `netlify.toml` and put in your API origin, or
+those links land on the React app. If Turnstile or web analytics are on, add their origins to a CSP
+header there; the nginx image derives them from env and Netlify cannot. Every shape is compared in
+[choose your hosting](choose-your-hosting.md).
+
 The backend then has to accept a browser on a different origin. Auth already defaults to cross-site
 cookies (`AUTH_COOKIE_SAMESITE=None`, `AUTH_COOKIE_SECURE=True`), **which only works if both sides
 are HTTPS**:

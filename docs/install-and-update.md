@@ -52,6 +52,10 @@ downloading** that questionnaire; a source checkout asks it near the end.
 5. **Control-plane proxy:** website access to `/control/` (default off), allowed peer IPs/CIDRs and,
    with automatic HTTPS, an optional loopback HTTPS SSH-tunnel port. SaaS and API-only behind your
    own proxy skip this choice. See [control-plane access](PROJECT-STATUS.md#admin-control-plane-superadmin-only).
+   The recommended answer is the default, **No**: the control plane is then reachable only from the
+   server itself (this machine, or the SSH tunnel). Choosing **Yes** serves `/control/` on the site's own address;
+   if you do, give an IP allowlist and keep MFA on. The managed-hosting limiter is never asked about
+   and stays off. Every hosting shape is compared in [choose your hosting](choose-your-hosting.md).
 6. **Web address:** hostname/IP if not already supplied.
 7. **Organization name:** created as the owner of your makerspace.
 8. **Makerspace name:** then the first tenant subdomain on a platform.

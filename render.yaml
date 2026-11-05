@@ -21,6 +21,7 @@ envVarGroups:
       - {"key": "BACKUP_ARCHIVE_VERIFY_PUBLIC_KEY", "value": ""}
       - {"key": "BEHIND_TRUSTED_PROXY", "value": "False"}
       - {"key": "CACHE_URL", "sync": false}
+      - {"key": "CARD_FONT_DOWNLOADS_ENABLED", "value": "True"}
       - {"key": "CELERY_BROKER_URL", "sync": false}
       - {"key": "CELERY_TASK_ALWAYS_EAGER", "value": "False"}
       - {"key": "CLOUD_SCHEDULER", "value": "beat"}
@@ -47,7 +48,16 @@ envVarGroups:
       - {"key": "EVENT_REIMBURSEMENT_RECEIPT_RETENTION_DAYS", "value": "2555"}
       - {"key": "EVENT_STAGE_FILE_RETENTION_DAYS", "value": "365"}
       - {"key": "EVENT_STATION_PIN_PEPPER", "sync": false}
+      - {"key": "LOGIN_IP_BLOCK_ENABLED", "value": "True"}
       - {"key": "MANAGED_POSTGRES", "value": "True"}
+      - {"key": "MESSAGING_WEBHOOK_BASE_URL", "value": ""}
+      - {"key": "MIN_NATIVE_APP_VERSION_ANDROID", "value": ""}
+      - {"key": "MIN_NATIVE_APP_VERSION_IOS", "value": ""}
+      - {"key": "NOTIFICATION_DISCORD_REDIRECT_URI", "value": ""}
+      - {"key": "NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS", "value": "False"}
+      - {"key": "NOTIFICATION_MATTERMOST_REDIRECT_URI", "value": ""}
+      - {"key": "NOTIFICATION_SLACK_REDIRECT_URI", "value": ""}
+      - {"key": "PASSWORD_BREACH_CHECK_ENABLED", "value": "True"}
       - {"key": "PII_DEK_CACHE_TTL_SECONDS", "value": "300"}
       - {"key": "PII_ENCRYPTION_DUAL_READ", "value": "True"}
       - {"key": "PII_ENCRYPTION_ENABLED", "value": "False"}
@@ -67,7 +77,13 @@ envVarGroups:
       - {"key": "STORAGE_PRESIGN_METHOD", "value": "put"}
       - {"key": "TRUSTED_PROXY_COUNT", "value": "1"}
       - {"key": "TRUST_X_FORWARDED_PROTO", "value": "true"}
+      - {"key": "TURNSTILE_FAIL_MODE", "value": "open"}
+      - {"key": "TURNSTILE_HOSTNAMES", "value": ""}
+      - {"key": "TURNSTILE_SITE_KEY", "value": ""}
       - {"key": "UPLOAD_SCAN_POLICY", "value": "none"}
+      - {"key": "WEBAUTHN_RP_NAME", "value": "Space Works"}
+      - {"key": "WEB_PUSH_VAPID_SUBJECT", "value": ""}
+      - {"key": "WHATSAPP_META_GRAPH_VERSION", "value": "v25.0"}
 services:
   - {"type": "web", "name": "spaceworks-web", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "0.5c-512mb", "dockerCommand": "--role backend python -m scripts.run_cloud_role web", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1, "healthCheckPath": "/api/v1/health/readiness/"}
   - {"type": "worker", "name": "spaceworks-worker", "runtime": "image", "image": {"url": "ghcr.io/spaceworks-labs/spaceworks-backend@sha256:0000000000000000000000000000000000000000000000000000000000000000"}, "plan": "0.5c-512mb", "dockerCommand": "--role worker python -m scripts.run_cloud_role worker", "envVars": [{"fromGroup": "spaceworks-runtime"}], "autoDeployTrigger": "off", "numInstances": 1}

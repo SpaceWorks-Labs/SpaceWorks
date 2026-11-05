@@ -236,6 +236,7 @@ source "$UPDATE_SCRIPT_DIR/installer/setup-state.sh"
 ensure_station_pepper no-refresh
 apply_key_backfill
 backfill_absent_continuity_keys || die 'Could not add the missing encryption keys.'
+backfill_platform_staff_origin || die 'Could not add the platform sign-in origin.'
 refresh_compose_config
 COMPOSE=("$UPDATE_SCRIPT_DIR/spaceworks-compose.sh" bundled)
 say "Pulling immutable release images."

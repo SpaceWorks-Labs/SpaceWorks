@@ -96,17 +96,18 @@ def on_withdrawn(*, event, project, actor):
                  open_due=bool(option(event, "refund_on_withdrawal")))
 
 
-def on_shortlist_published(*, event, actor):
-    """Hack-money G2: with "refund if not shortlisted" on, a published shortlist opens a DUE case on
-    every PAID entry fee of a submitted project that did not advance. Off: paid fees stand.
+def on_shortlist_published(*, event, actor, stage=None):
+    """Hack-money G2: with "refund if not shortlisted" on, a published shortlist (L21b finalists, or a
+    submission stage's gate when `stage` is given) opens a DUE case on every PAID entry fee of a
+    submitted project that did not advance. Off: paid fees stand.
 
-    Who advanced is asked through `judging.shortlist_seam`, the one place the stage engine replaces.
+    Who advanced is asked through `judging.shortlist_seam`.
     """
     from apps.events.judging.options import option
     from apps.events.judging.shortlist_seam import not_shortlisted_project_ids
     from apps.events.programme_charges import close_charge
     if not entry_fee(event) or not option(event, "refund_if_not_shortlisted"):
         return
-    for project_id in not_shortlisted_project_ids(event):
+    for project_id in not_shortlisted_project_ids(event, stage=stage):
         close_charge(event=event, subject_type="submission_fee", subject_id=project_id, actor=actor,
                      reason_code="not_shortlisted", audit_action="event.submission.fee_closed")

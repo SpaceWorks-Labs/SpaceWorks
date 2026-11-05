@@ -141,6 +141,8 @@ def publish(*, actor, event_id, stage_id, values):
             from apps.events.judging.boundary import notice
             notice(ctx.event, "stage_shortlisted", row.pk, 1)
             notice(ctx.event, "stage_not_shortlisted", row.pk, 1)
+        from .entry_fees import on_shortlist_published  # hack-money G2 at a stage gate
+        on_shortlist_published(event=ctx.event, actor=actor, stage=stage)
         result = projection(ctx.event, stage)
         port.store_receipt(event_id=event_id, actor_id=actor.pk, operation_id=str(values["operation_id"]), digest=digest,
                            result=result)

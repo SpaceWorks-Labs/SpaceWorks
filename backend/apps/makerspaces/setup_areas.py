@@ -19,7 +19,7 @@ AREAS = {
 ALWAYS_MODULES = {"notifications", "email", "member_accounts"}
 ALWAYS_FEATURES = {"billing.reminders", "charges.enabled", "billing.documents",
                    "staff.invitations", "presence.geofence", "ui.delight", "ui.easter_eggs",
-                   "platform.help_centre"}
+                   "platform.help_centre", "charges.donations"}
 # The inventory family is parentless, so the area names its switches; To-Buy and warranty
 # replace the retired `procurement` module this area used to install (#97, C-9).
 INVENTORY_FEATURES = {"inventory.self_checkout", "inventory.kiosk", "inventory.tobuy", "inventory.warranty"}

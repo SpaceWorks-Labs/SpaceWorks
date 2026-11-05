@@ -1,12 +1,13 @@
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { StatusPill as Badge } from "../../components/ui";
 import type { ApiPath } from "../../generated/api";
 import { staffRequest } from "../../lib/api";
 import type { Makerspace } from "./StaffPanels";
+import { CustomDomainGuide, domainStatusLabel, domainStatusTone, type DomainRecord, type DomainStatus } from "./CustomDomainGuide";
 
 type Props = {
   makerspace: Makerspace;
@@ -22,33 +23,29 @@ type VerifyDomainResponse = {
   detail: string;
 };
 
-type DomainStatus = "pending" | "verified" | "failed";
-type DomainRecord = { host: string; type: "TXT"; value: string };
-
 const VERIFY_DOMAIN_API_PATH: ApiPath = "/api/v1/admin/makerspace/{makerspace_id}/verify-domain";
 
 function verifyDomainStaffPath(makerspaceId: number) {
   return VERIFY_DOMAIN_API_PATH.replace("/api/v1", "").replace("{makerspace_id}", String(makerspaceId));
 }
 
+/** The space's own domain or frontend (#192). Any Space Manager may set it, on self-host too;
+ *  it is trusted only once VERIFIED (the operator's own domain at once, anyone else's after the
+ *  DNS TXT proof). Directory visibility is a separate row (MakerspaceDirectoryVisibility). */
 export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }: Props) {
   const queryClient = useQueryClient();
   const [domainInput, setDomainInput] = useState("");
-  const [hideFromDirectory, setHideFromDirectory] = useState(false);
   const [verifyDetail, setVerifyDetail] = useState("");
 
   const currentDomain = settings?.frontend_domain ?? makerspace.frontend_domain ?? null;
-  const currentHidden =
-    settings?.hidden_from_central_directory ?? makerspace.hidden_from_central_directory ?? false;
   const status = settings?.frontend_domain_status ?? makerspace.frontend_domain_status ?? "pending";
   const record = settings?.domain_verification_record ?? makerspace.domain_verification_record ?? null;
   const token = settings?.domain_verification_token ?? makerspace.domain_verification_token ?? "";
 
   useEffect(() => {
     setDomainInput(currentDomain ?? "");
-    setHideFromDirectory(Boolean(currentDomain) && currentHidden);
     setVerifyDetail("");
-  }, [currentDomain, currentHidden, makerspace.id]);
+  }, [currentDomain, makerspace.id]);
 
   const refreshSettings = () => {
     queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
@@ -57,29 +54,16 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
   };
 
   const trimmedDomain = domainInput.trim();
-  const hasDomainInput = trimmedDomain.length > 0;
-  const effectiveHidden = hasDomainInput ? hideFromDirectory : false;
   const domainChanged = trimmedDomain !== (currentDomain ?? "");
-  const hiddenChanged = effectiveHidden !== currentHidden;
-  const customDomainUrls = useMemo(
-    () => [`https://${trimmedDomain}/`, `https://${trimmedDomain}/admin`],
-    [trimmedDomain],
-  );
 
   const updateCustomDomain = useMutation({
     mutationFn: () =>
       staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          frontend_domain: trimmedDomain,
-          hidden_from_central_directory: effectiveHidden,
-        }),
+        body: JSON.stringify({ frontend_domain: trimmedDomain }),
       }),
     onSuccess: (updated) => {
       setDomainInput(updated.frontend_domain ?? "");
-      setHideFromDirectory(
-        Boolean(updated.frontend_domain) && updated.hidden_from_central_directory,
-      );
       setVerifyDetail("");
       refreshSettings();
     },
@@ -96,18 +80,12 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
     },
   });
 
-  const domainSaveDisabled =
-    loading || updateCustomDomain.isPending || (!domainChanged && !hiddenChanged);
+  const domainSaveDisabled = loading || updateCustomDomain.isPending || !domainChanged;
   const verifyDisabled = loading || verifyDomain.isPending || !currentDomain || domainChanged;
-  const visibleRecord = domainChanged ? null : record;
-  // Self-host mode returns no DNS verification record; a VERIFIED domain with no
-  // record is trusted automatically, so show a compact "Active" state and hide the
-  // TXT-record instructions + Verify button (managed domains keep the DNS/verify UI).
-  const isSelfHostActive =
-    Boolean(currentDomain) && !record && status === "verified" && !domainChanged;
 
   return (
-    <SettingsRow label="Custom domain" helper="Route this makerspace's public and staff surfaces through a dedicated domain."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label="Your own domain or frontend"
+      helper="Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {
@@ -117,17 +95,12 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
           }
         }}
       >
-        <div className="grid min-w-0 gap-3  md:items-start">
-          <div className="grid min-w-0 max-w-2xl gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-
-              <Badge label="" tone={isSelfHostActive ? "success" : domainStatusTone(status)}>
-                {isSelfHostActive ? "Active" : domainStatusLabel(status)}
-              </Badge>
-            </div>
-
-          </div>
-          <SettingsEditorActions dirty={domainChanged || hiddenChanged} onDiscard={() => { setDomainInput(currentDomain ?? ""); setHideFromDirectory(Boolean(currentDomain) && currentHidden); setVerifyDetail(""); }} pending={updateCustomDomain.isPending} disabled={domainSaveDisabled} />
+        <div className="grid min-w-0 gap-3 md:items-start">
+          {currentDomain ? <div className="flex flex-wrap items-center gap-2">
+            <Badge label="" tone={domainStatusTone(status)}>{domainStatusLabel(status)}</Badge>
+          </div> : null}
+          <SettingsEditorActions dirty={domainChanged} onDiscard={() => { setDomainInput(currentDomain ?? ""); setVerifyDetail(""); }}
+            pending={updateCustomDomain.isPending} disabled={domainSaveDisabled} />
         </div>
 
         <div className="grid min-w-0 max-w-xl gap-2">
@@ -139,51 +112,14 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
             className="desk-input"
             placeholder="alphamakerspace.com"
             value={domainInput}
-            onChange={(event) => {
-              const next = event.target.value;
-              setDomainInput(next);
-              if (!next.trim()) {
-                setHideFromDirectory(false);
-              }
-            }}
+            onChange={(event) => setDomainInput(event.target.value)}
           />
         </div>
 
-        <label className="min-h-11 flex min-w-0 max-w-xl items-start gap-3 text-sm text-ink">
-          <input
-            className="mt-1 h-4 w-4"
-            type="checkbox"
-            checked={effectiveHidden}
-            disabled={!hasDomainInput}
-            onChange={(event) => setHideFromDirectory(event.target.checked)}
-          />
-          <span>
-            <span className="font-semibold">Hide from central directory</span>
-            <span className="block text-muted">Available only after a custom domain is set.</span>
-          </span>
-        </label>
-
-        {hasDomainInput ? (
-          <div className="grid min-w-0 gap-3 rounded-md border border-line bg-surface p-3 text-sm text-muted">
-            <div className="min-w-0 overflow-x-auto">
-              <p className="font-semibold text-ink">Resulting URLs</p>
-              <ul className="mt-2 grid gap-1">
-                {customDomainUrls.map((url) => (
-                  <li className="break-all" key={url}>{url}</li>
-                ))}
-              </ul>
-            </div>
-            {visibleRecord ? <DnsRecord record={visibleRecord} /> : null}
-            <p>
-              TLS and reverse proxy routing must terminate HTTPS for this hostname and forward both
-              the public site and <code>/admin</code> staff console to this deployment.
-            </p>
-            {isSelfHostActive ? (
-              <p className="text-sm text-ink">
-                This custom domain is active. Staff and public traffic on this hostname are
-                trusted automatically on a self-hosted instance.
-              </p>
-            ) : (
+        {currentDomain && !domainChanged ? (
+          <div className="grid min-w-0 gap-3 rounded-md border border-line bg-surface p-3">
+            <CustomDomainGuide domain={currentDomain} record={record} status={status} />
+            {status !== "verified" ? (
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   className="desk-button w-full max-w-full sm:w-auto"
@@ -195,48 +131,20 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
                 </button>
                 {token ? <span className="break-all text-xs text-muted">Token: {token}</span> : null}
               </div>
-            )}
+            ) : null}
           </div>
         ) : null}
-        {domainChanged && currentDomain ? (
-          <p className="text-sm text-muted">Save the new domain before verifying DNS.</p>
+        {domainChanged && trimmedDomain ? (
+          <p className="text-sm text-muted">Save the domain first; the DNS steps and the verification check appear after.</p>
         ) : null}
-        {verifyDetail ? <p className="text-sm text-ink">{verifyDetail}</p> : null}
+        {verifyDetail ? <p role="status" className="text-sm text-ink">{verifyDetail}</p> : null}
         {updateCustomDomain.error ? (
-          <p className="text-sm text-danger">{updateCustomDomain.error.message}</p>
+          <p role="alert" className="text-sm text-danger">{updateCustomDomain.error.message}</p>
         ) : null}
         {verifyDomain.error ? (
-          <p className="text-sm text-danger">{verifyDomain.error.message}</p>
+          <p role="alert" className="text-sm text-danger">{verifyDomain.error.message}</p>
         ) : null}
       </form>
     </div></SettingsRow>
   );
-}
-
-function DnsRecord({ record }: { record: DomainRecord }) {
-  return (
-    <div className="grid min-w-0 gap-2">
-      <p className="font-semibold text-ink">DNS TXT record</p>
-      <dl className="grid min-w-0 gap-2 @sm:grid-cols-[96px_minmax(0,1fr)]">
-        <dt className="text-xs uppercase text-muted">Host</dt>
-        <dd className="break-all code-text text-xs text-ink">{record.host}</dd>
-        <dt className="text-xs uppercase text-muted">Type</dt>
-        <dd className="code-text text-xs text-ink">{record.type}</dd>
-        <dt className="text-xs uppercase text-muted">Value</dt>
-        <dd className="break-all code-text text-xs text-ink">{record.value}</dd>
-      </dl>
-    </div>
-  );
-}
-
-function domainStatusTone(status: DomainStatus) {
-  return status === "verified" ? "success" : status === "failed" ? "danger" : "warn";
-}
-
-function domainStatusLabel(status: DomainStatus) {
-  return {
-    pending: "Pending",
-    verified: "Verified",
-    failed: "Failed",
-  }[status];
 }

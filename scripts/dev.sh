@@ -103,6 +103,10 @@ test_suite() {
   )
   # tests/tombstone only runs under an exported TOMBSTONED_APPS profile, so pass it through.
   [[ -z "${TOMBSTONED_APPS:-}" ]] || TEST_ENV+=(-e "TOMBSTONED_APPS=$TOMBSTONED_APPS")
+  # The forced-on RLS regression (X-8) and the scoped-PII checks: pass these only when the caller
+  # exported them, never a default, so an unset variable stays unset in the container.
+  [[ -z "${TENANT_RLS_PROBE_ROLE:-}" ]] || TEST_ENV+=(-e "TENANT_RLS_PROBE_ROLE=$TENANT_RLS_PROBE_ROLE")
+  [[ -z "${PII_MASTER_KEY:-}" ]] || TEST_ENV+=(-e "PII_MASTER_KEY=$PII_MASTER_KEY")
   (($#)) || set -- -q
   docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" --entrypoint pytest \
     -v "$HOST_ROOT:/workspace" -w /workspace/backend \

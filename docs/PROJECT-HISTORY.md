@@ -6,6 +6,11 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 L25, per-space Metabase analytics (#163B).** New module `analytics` (off by
+  default) and action `view_analytics`. Each space gets a read-only database login over 26 curated,
+  versioned views (catalogue version 1), pinned to its space by L8's fixed-role RLS seam; the superadmin
+  gets one platform-wide login. Metabase dashboards embed in the console through ten-minute signed URLs.
+  Secrets encrypted, password shown once, every credential act audited. See [analytics views](analytics-views.md).
 - **2026-11-05 -- release 2 L22, the per-space shop (#128 C-7, #129, #135-#137).** A new top-level
   module `shop` (owner exception to #97) with fourteen optional switches: a catalogue of consumables,
   kits and merch with variants, stock kept only by the inventory availability module (holds, sales,

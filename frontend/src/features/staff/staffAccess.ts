@@ -5,6 +5,8 @@ const ALL_TABS = [
   "devices", "email-logs", "payments", "refunds", "finance", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
   "consumables", "repairs",
   "shop",
+  // L25 (#163B): the space's Metabase dashboards, and the platform-wide Metabase.
+  "analytics", "platform-analytics",
 ] as const;
 
 export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
@@ -12,7 +14,7 @@ export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
 // What a superadmin sees before choosing a space (surface_policy.PLATFORM_ROUTES). Once a
 // space is chosen they also hold every action there (owner decision #115) and see exactly
 // that space's Space-Manager tabs; `StaffApp` passes `superadmin_actions` only then.
-const PLATFORM_TABS = ["platform-dashboard", "users", "security", "organizations", "modules", "backups", "migration", "platform"];
+const PLATFORM_TABS = ["platform-dashboard", "users", "security", "organizations", "modules", "backups", "migration", "platform", "platform-analytics"];
 
 export const TAB_LABELS: Record<string, string> = {
   "platform-dashboard": "Platform dashboard",
@@ -65,6 +67,8 @@ export const TAB_LABELS: Record<string, string> = {
   backups: "Backup & restore",
   migration: "Tenant migration",
   shop: "Shop",
+  analytics: "Analytics",
+  "platform-analytics": "Platform analytics",
 };
 
 export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
@@ -75,9 +79,9 @@ export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
   { label: "Events", tabs: ["events", "organized", "granted"] },
   { label: "Bookings", tabs: ["bookings"] },
   { label: "Members", tabs: ["members", "cards"] },
-  { label: "Insights", tabs: ["reports", "organization-analytics", "accountability", "warranty", "audit"] },
+  { label: "Insights", tabs: ["reports", "analytics", "organization-analytics", "accountability", "warranty", "audit"] },
   { label: "Organizations", tabs: ["organizations"] },
-  { label: "Admin", tabs: ["users", "settings", "security", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform"] },
+  { label: "Admin", tabs: ["users", "settings", "security", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform", "platform-analytics"] },
 ];
 
 // Permissions only. Module availability is decided in exactly one place --
@@ -140,7 +144,7 @@ export function getStaffAccess(
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.
   const allowedTabs: readonly string[] = isSuperadmin && actions.length === 0
-    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform", "organizations"].includes(tab))
+    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform", "organizations", "platform-analytics"].includes(tab))
     : grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
     if (tabName === "granted") return hasGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;
@@ -176,6 +180,9 @@ export function getStaffAccess(
     if (tabName === "emailtemplates") return canEditInventory || canSeePrinting || has("manage_devices") || canManageEvents || canManageBookings;
     if (tabName === "email-logs") return canManageMakerspace;
     if (tabName === "platform") return isSuperadmin && !singleTenantLocked;
+    // L25: view_analytics (the Space Manager holds it through manage_makerspace).
+    if (tabName === "analytics") return isSuperadmin || has("view_analytics") || has("manage_makerspace");
+    if (tabName === "platform-analytics") return isSuperadmin && !singleTenantLocked;
     // #128 C-10: the Space Manager switches modules on and off (data kept); the server
     // keeps limit-gated installs on the managed platform for the superadmin.
     if (tabName === "modules") return canManageMakerspace;

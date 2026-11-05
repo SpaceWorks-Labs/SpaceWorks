@@ -1,6 +1,6 @@
 import type { StaffAuthUser } from "../../lib/api";
 import type { Makerspace } from "./panels/shared";
-import { TenantUsagePanel } from "./StaffTabLoaders";
+import { AnalyticsPanel, TenantUsagePanel } from "./StaffTabLoaders";
 import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, PlatformSettingsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel, SecuritySettingsPanel, PiiAccessBanner } from "./StaffTabLoaders";
 
 export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspaces, isSuperadmin, canManageMakerspace, currentUser, onAuthRefresh, allowedTabs, singleTenantLocked }: { activeTab: string; activeMakerspace: Makerspace; makerspaces: Makerspace[]; isSuperadmin: boolean; canManageMakerspace: boolean; currentUser: StaffAuthUser; onAuthRefresh: () => void; allowedTabs?: readonly string[]; singleTenantLocked?: boolean }) {
@@ -38,6 +38,12 @@ export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspac
       ) : null}
       {activeTab === "modules" && canManageMakerspace ? (
         <ModulesPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} />
+      ) : null}
+      {activeTab === "analytics" && allowedTabs?.includes("analytics") ? (
+        <AnalyticsPanel key={`analytics:${makerspaceKey}`} scope={{ kind: "space", makerspaceId: makerspaceKey }} />
+      ) : null}
+      {activeTab === "platform-analytics" && isSuperadmin && !singleTenantLocked ? (
+        <AnalyticsPanel key="platform-analytics" scope={{ kind: "platform" }} />
       ) : null}
       {activeTab === "platform" ? (
         <PlatformSettingsPanel platformHosting={Boolean(activeMakerspace.platform_hosting)} />

@@ -116,3 +116,12 @@ admin-shop-order-ready admin-shop-order-collect admin-shop-order-take-payment ad
 admin-shop-order-returns admin-shop-order-receipt admin-shop-pos-quote admin-shop-pos-sale admin-shop-member-lookup
 admin-shop-cash-sessions admin-shop-cash-session-close admin-shop-cash-session-confirm
 admin-shop-report""".split())
+# Release-2 lane L25 (#163B), Metabase analytics: opening dashboards needs view_analytics, which
+# an organization grant may carry (delegable); the login, the secret and the dashboards list are
+# the space's own Space Manager or the superadmin (membership-only); the platform connection is
+# the superadmin's (platform-only). Every view re-checks its own authority (analytics.access).
+DELEGABLE_ROUTES |= frozenset("""admin-makerspace-analytics admin-makerspace-analytics-embed""".split())
+MEMBERSHIP_ROUTES |= frozenset("""admin-makerspace-analytics-connection admin-makerspace-analytics-login
+admin-makerspace-analytics-login-rotate""".split())
+PLATFORM_ONLY_ROUTES = frozenset("""admin-platform-analytics admin-platform-analytics-connection
+admin-platform-analytics-login admin-platform-analytics-login-rotate admin-platform-analytics-embed""".split())

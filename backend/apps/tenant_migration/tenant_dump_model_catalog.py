@@ -6,7 +6,7 @@ from .tenant_dump_types import ModelDisposition, ModelRule, TableRule
 
 
 FIRST_PARTY_APP_LABELS = frozenset(
-    """accounts admin_api apiclients audit backup bookings boxes card_designs data_export devices
+    """accounts admin_api analytics apiclients audit backup bookings boxes card_designs data_export devices
     encryption event_reimbursements events evidence hardware_requests hosting_requests id_programmes integrations
     inventory machines
     maintenance makerspaces notifications operations organizations payments payments_rail

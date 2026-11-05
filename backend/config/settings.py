@@ -197,6 +197,8 @@ INSTALLED_APPS = [
     "apps.tenant_rls",
     # Release 2 L22: the per-space shop; separable, switched by the `shop` module key.
     "apps.shop",
+    # Lane L25 (#163B): per-space read-only analytics logins and Metabase embedding.
+    "apps.analytics",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.

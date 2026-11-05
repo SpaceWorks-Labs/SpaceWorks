@@ -83,8 +83,8 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
-The registry contains 35 keys (34 in the main catalogue plus presence): six core,
-member accounts enabled by default, and 28 opt-in. `maintenance` and `procurement`
+The registry contains 36 keys (34 in the main catalogue plus presence and analytics): six core,
+member accounts enabled by default, and 29 opt-in. `maintenance` and `procurement`
 were retired in release 2 and are capabilities now (see below); `backup` was retired in P1b.
 SMS/WhatsApp are separate opt-in modules.
 Migration 0097 preserves only previously enabled canonical WhatsApp installations;
@@ -106,7 +106,7 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 **Events**: [events](#events) — **Bookings**: [bookings](#bookings) —
 **Membership**: [membership](#membership) · [presence](#presence)
 **Notifications**: [notifications](#notifications) · [email](#email) · [sms](#sms) · [whatsapp](#whatsapp) · [telegram](#telegram) ·
-[slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) —
+[slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) · [analytics](#analytics) —
 **Payments**: [payments](#payments) — **Accounts**: [member_accounts](#member_accounts) —
 **Mobile apps**: [mobile](#mobile) · **Connected devices**: [devices](#devices) — **Shop**: [shop](#shop)
 
@@ -789,6 +789,41 @@ notification opt-out. Currency thresholds must choose a currency when the report
 Delivery remains a private, expiring download link. Purging reports deletes report saved views,
 schedules and delivery files; other saved staff-list views remain. Portable imports reset saved-view
 state/sharing and drop schedules, so neither restores source disclosure rules.
+
+### analytics
+
+Per-space Metabase analytics (release 2, lane L25; owner decision #163B). **Off by default**; no
+module requires it and it requires none. It adds:
+
+- **A read-only database login per space.** The Space Manager (or the superadmin) creates, rotates
+  and revokes it under Analytics in the staff console; the password is shown once and kept only as
+  ciphertext. The login reads the curated views in the `spaceworks_analytics` schema and nothing
+  else. It is a member of L8's `spaceworks_rls_fixed` group and pinned to its space by a
+  `tenant_rls.FixedRoleScope` row, so row-level security limits it to that space whatever settings
+  it sends. It owns nothing and holds no `BYPASSRLS`.
+- **Curated, versioned views** over inventory and loans, machines and jobs, bookings, events,
+  tickets and orders, membership, the payments ledger (amounts only) and To-Buy. They carry no
+  secrets, tokens, evidence keys, contact fields or free text; member names and emails appear only
+  in `members`, and only when the space turns **Show member details** on. The list, columns and
+  version are in [Analytics views](analytics-views.md).
+- **Embedded dashboards.** The Space Manager pastes the Metabase site URL and its embedding secret
+  (encrypted at rest) and lists the dashboards to show. Staff holding `view_analytics` (the Space
+  Manager always does) open them inside the console through a signed embed URL that expires after
+  ten minutes; the secret never reaches the browser.
+- **One platform-wide Metabase** (superadmin only, not per space): its own login over the
+  `spaceworks_analytics_platform` schema, which sees every space and never member details.
+
+Every create, rotate, revoke and view of the credentials, every connection change and every
+dashboard opened is audited (`analytics.*`).
+
+**Without it:** the Analytics tab and every per-space analytics route answer 404, and the space's
+views return no rows. The connection, its dashboards list and the login are kept, so switching it on
+again restores them. Revoke the login to remove it from the database.
+
+**Hosting:** creating logins needs a database owner that can create roles (the bundled Postgres
+can). Where it cannot (some managed or free-tier databases), the console says analytics is not
+available on this hosting; nothing else is affected. Purging the module, or the space, drops its
+login.
 
 ## Payments
 

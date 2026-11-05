@@ -211,4 +211,10 @@ from apps.shop.purge import delete as shop_delete, public_images as shop_public_
 PLANS += (ModulePurgePlan("shop", "Shop catalogue, stock history, orders, returns and cash-ups. Shop charges, their "
                           "receipts and refunds are core ledger and stay.", shop_delete, pii_labels=("shop.ShopOrder",),
                           public_image_keys=shop_public_images),)
+# Lane L25 (#163B): the connection row; its database login is dropped after commit.
+from apps.analytics.purge import analytics_delete  # noqa: E402
+PLANS += (ModulePurgePlan(
+    "analytics", "The Metabase connection, its dashboards list and the space's read-only database login.",
+    analytics_delete,
+),)
 BY_KEY = {plan.key: plan for plan in PLANS}

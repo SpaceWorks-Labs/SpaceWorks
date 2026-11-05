@@ -98,6 +98,8 @@ REPORT_MODULE_COVERAGE.update({
 REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device-health", "module-operational-health"))
 # Release 2 L22: shop sales by month and channel, and the shop's own ledger money.
 REPORT_MODULE_COVERAGE["shop"] = ModuleReportCoverage("substantive", ("shop-sales", "finance-shop"))
+# Lane L25 (#163B): analytics is reported as a health row; its audit actions count as activity.
+REPORT_MODULE_COVERAGE["analytics"] = ModuleReportCoverage("health_row", ("module-operational-health",))
 
 
 @checks.register(checks.Tags.models)

@@ -69,6 +69,11 @@ class Action:
     MANAGE_SHOP = "manage_shop"
     SELL_SHOP = "sell_shop"
     VIEW_SHOP = "view_shop"
+    # Release 2 L25 (#163B, owner-approved new action): open the space's embedded Metabase
+    # dashboards. Read-only; managing the database login and the Metabase secret is the
+    # Space Manager's (rbac.is_space_manager_identity), who holds this through
+    # MANAGE_MAKERSPACE below, so no stored role changes.
+    VIEW_ANALYTICS = "view_analytics"
 
 
 IMPLIED_ACTIONS = {
@@ -87,6 +92,8 @@ IMPLIED_ACTIONS = {
 IMPLIED_ACTIONS[Action.MANAGE_SHOP] = {Action.SELL_SHOP, Action.VIEW_SHOP}
 IMPLIED_ACTIONS[Action.SELL_SHOP] = {Action.VIEW_SHOP}
 IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_SHOP}
+# Release 2 L25: the Space Manager sees the space's analytics dashboards.
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.VIEW_ANALYTICS}
 
 
 def expand_implied_actions(actions) -> set:

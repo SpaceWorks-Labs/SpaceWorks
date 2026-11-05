@@ -78,6 +78,7 @@ from .presentation_catalog_account_merge import ENTRIES as _ACCOUNT_MERGE
 from .presentation_catalog_login_security import ENTRIES as _LOGIN_SECURITY
 from .presentation_catalog_ip_security import ENTRIES as _IP_SECURITY
 from .presentation_catalog_staff_roles import ENTRIES as _STAFF_ROLES
+from .presentation_catalog_r2_l25 import ENTRIES as _R2_L25
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -104,6 +105,7 @@ PRESENTATION_CATALOG = _compose(
     _MESSAGING, _R2_L4, _L12, _L23, _L16, _L3, _R2_L6, _R2_L18, _R2_L21A, _R2_L21B,
     _R2_L24,
     _R2_L22,
+    _R2_L25,
 )
 
 

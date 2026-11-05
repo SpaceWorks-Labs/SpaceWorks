@@ -3243,6 +3243,53 @@ makerspace's rows. Code lives in `apps/tenant_rls/`.
   `rls.capability_used`, `rls.report_only_violation`. None of the new rows (jobs, salts, retired browser keys,
   fixed roles) travels in a dump or an export.
 
+## Per-space analytics (release 2, lane L25; #163B)
+
+Code: `apps/analytics/`. Module `analytics` (Reports group, off by default, owner-approved new key);
+RBAC action `view_analytics`. The view list and its version are in [analytics-views.md](analytics-views.md).
+
+- **A login reads curated views, never tables.** A space login is a NOLOGIN-group member that owns
+  nothing, holds no `BYPASSRLS`, is read-only by default and has no grant on `public`. It is a
+  member of exactly one reader role, which holds `USAGE` and `SELECT` on the views of
+  `spaceworks_analytics` only. The platform login reads `spaceworks_analytics_platform` instead.
+- **Row-level security on top of L8 (the seam).** A space login joins `spaceworks_rls_fixed` and is
+  pinned by a `tenant_rls.FixedRoleScope` row. Its views are owned by a NOLOGIN owner role that is
+  itself in `spaceworks_rls_fixed`, so L8's RESTRICTIVE fixed-role policy applies to every table a
+  space view reads, with `current_user` = the login. Every space view also filters on
+  `spaceworks_rls_fixed_scope(current_user)`, the `analytics` switch and servability. Lookup views
+  (`members`, `machine_types`) read platform rows the fixed policy hides; they are owned by the
+  platform view owner, so that explicit filter is their scoping. All views are `security_barrier`.
+- **The migrating role never inherits a view owner.** On a non-superuser owner it holds the owner
+  roles `WITH INHERIT FALSE, SET TRUE` (PostgreSQL 16+), so the fixed-role policy can never apply to
+  the role that owns the tables. Views are dropped with their schema (the schema owner may drop it).
+- **Roles are tagged per database.** Owner and reader roles end in a hash of the database name, so a
+  login made for one database holds no grant in another on the same cluster.
+- **No secrets, evidence or contacts in any view; PII masked unless allowed.** Only `members` carries
+  a name and an email, NULL unless the space turns `show_member_details` on, and always NULL on the
+  platform. Every other view names a person by `member_id`. Payments views are amounts only.
+- **Derived objects.** `analytics.db_sync` (post_migrate, also `manage.py analytics_sync`) builds the
+  roles, schemas, views and the SECURITY DEFINER `spaceworks_analytics_admin.ensure_login` /
+  `drop_login`, fingerprinted and never failing a migrate; `pre_migrate` drops the views before a
+  migrate that changes the schema. Hosts whose owner cannot create roles are skipped and the console
+  reports "not available on this hosting". Scratch (Lane D) databases are skipped.
+- **The runtime never makes roles itself.** It calls the two functions, granted only to the runtime
+  role from `SPACEWORKS_RUNTIME_DATABASE_URL` and L8's probe role. They refuse any name that is not
+  this database's login pattern for that exact space, and take a SCRAM-SHA-256 verifier computed in
+  the app, so the clear password never reaches the server or its statement log.
+- **Credentials.** The embed secret and the login password are Fernet ciphertext
+  (`makerspaces.secrets`). The password is returned once (create, rotate) and never again; the
+  secret is write-only. Nothing logs either. A deleted connection (module or space purge) drops its
+  login after commit.
+- **Embedding.** HS256 tokens signed server-side for one listed dashboard, no parameters, ten-minute
+  expiry; the secret never reaches the browser.
+- **Authority.** Viewing needs `view_analytics` (implied by `manage_makerspace`; organization-
+  grantable). Login, secret, dashboards and the PII switch are the space's own Space Manager or the
+  superadmin (`rbac.is_space_manager_identity`). The platform connection is superadmin-only. Module
+  off: every per-space route is 404 and the space views return no rows; data and login are kept.
+- **Audit.** `analytics.credentials_viewed`, `connection_updated`, `login_created`, `login_rotated`,
+  `login_revoked`, `dashboard_viewed`; metadata never carries a URL, secret or password.
+- **Neither connection travels.** Both models are omitted from exports and tenant dumps.
+
 ## Settings authority (release 2, lane L17; #101, #128 C-11)
 
 - **One write gate.** Every module setting is written through

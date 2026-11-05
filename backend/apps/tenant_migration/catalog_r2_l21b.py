@@ -61,11 +61,10 @@ AUTHORITY_FIELDS = {
         'makerspace', 'event', 'award', 'prize', 'recipient', 'reverses', 'ledger_entry', 'recorded_by')},
 }
 
+# Panel seats, finalists and programme options are unique per tenant-owned parent (round, advance,
+# event), so they carry no deployment-global risk.
 UNIQUE_CONSTRAINTS = (
-    ('events.JudgingPanelSeat', 'ev_round_panel_seat'),
-    ('events.JudgingFinalist', 'ev_finalist_once'),
     ('events.FinalistAnnouncement', 'field:advance'),
-    ('events.HackathonProgrammeOptions', 'field:event'),
     ('events.HackathonPrizePayout', 'field:reverses'),
 )
 

@@ -97,3 +97,17 @@ frontend/playwright.config.ts
 frontend/vitest.config.ts
 frontend/vitest.local-junction.config.ts
 frontend/src/test/staffActor.ts
+
+# Planning, hand-off, prompt and research notes never enter the repo (#148). They live
+# outside the repository (scratchpads, the local handover folder).
+*-handoff.md
+*-HANDOFF.md
+HANDOFF*.md
+**/PLAN.md
+**/*-PLAN.md
+/plans/
+/research/
+docs/research/
+/handover/
+*-prompt.md
+*.prompt.md

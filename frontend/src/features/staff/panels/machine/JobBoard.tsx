@@ -5,7 +5,9 @@ import { ConfirmDialog, EmptyState, ErrorBlock, Skeleton, StatusPill } from "../
 import { isBuiltinPrinterType, type Machine, type MachineType, type MeteringUnit } from "../../machinesApi";
 import { BatchCompleteDialog, BatchStartDialog } from "./BatchDialogs";
 import { reorderPosition } from "./boardOrder";
+import { useQueueDrag } from "./boardDrag";
 import { JobActionDialog } from "./JobActionDialog";
+import { JobFilesDialog } from "./filePreview/JobFilesDialog";
 import { JobBoardCard, type CardHandlers } from "./JobBoardCard";
 import type { DialogAction } from "./jobActionBody";
 import { machineStatusLabel } from "./machineStatusLabel";
@@ -23,9 +25,11 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
   const direct = useJobAction(makerspaceId, machineType.id);
   const [dialog, setDialog] = useState<{ job: StaffJob; action: DialogAction } | null>(null);
   const [uncollected, setUncollected] = useState<StaffJob | null>(null);
+  const [filesOf, setFilesOf] = useState<StaffJob | null>(null);
   const [selected, setSelected] = useState<number[]>([]);
   const [batching, setBatching] = useState(false);
   const [completing, setCompleting] = useState<{ batchId: number; jobs: StaffJob[] } | null>(null);
+  const drag = useQueueDrag(board.data, (job, position) => direct.mutate({ id: job.id, action: "reorder", body: { position } }));
   if (!visible) return null;
   const printer = isBuiltinPrinterType(machineType);
   const metering = (machineType.capability_config?.metering_unit ?? "count") as MeteringUnit;
@@ -36,6 +40,7 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
     onDialog: (job, action) => setDialog({ job, action }),
     onDirect: (job, action, body) => direct.mutate({ id: job.id, action, body }),
     onUncollected: setUncollected,
+    onFiles: setFilesOf,
   };
   if (board.isLoading) return <div role="status" aria-label="Loading queue board" className="grid gap-3"><Skeleton className="h-24 w-full" /><Skeleton className="h-40 w-full" /></div>;
   if (board.error) return <ErrorBlock error={board.error} resource="queue board" onRetry={() => { void board.refetch(); }} />;
@@ -46,12 +51,14 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
   const card = (job: StaffJob, column?: StaffJob[]) => <JobBoardCard key={job.id} job={job} {...handlers} pending={direct.isPending}
     overdue={overdue.has(job.id)} noShow={!!job.requester?.id && noShows.has(job.requester.id)}
     move={column ? { up: reorderPosition(job, "up", column, data), down: reorderPosition(job, "down", column, data) } : undefined}
+    drag={column && !direct.isPending ? drag.dragFor(job, column) : undefined}
     select={batchEnabled && job.status === "accepted" ? { checked: selected.includes(job.id),
       onChange: checked => setSelected(current => checked ? [...current, job.id] : current.filter(id => id !== job.id)) } : undefined} />;
   const waiting = [...data.queue, ...data.lanes.flatMap(lane => lane.assigned)];
   const chosen = waiting.filter(job => selected.includes(job.id));
   return <div className="grid gap-6">
     {direct.error ? <ErrorBlock error={direct.error} /> : null}
+    <p aria-live="polite" className="sr-only">{drag.announcement}</p>
     {batchEnabled ? <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface p-3 text-sm">
       <span>{chosen.length ? `${chosen.length} queued job${chosen.length === 1 ? "" : "s"} selected.` : "Select two or more queued jobs to run them together."}</span>
       <button type="button" className="desk-button-primary" disabled={chosen.length < 2} onClick={() => setBatching(true)}>Start as batch</button>
@@ -68,7 +75,8 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
       </li>)}
     </Column>
     <div className="grid gap-6 lg:grid-cols-2">
-      <Column title="Queue" count={data.queue.length} empty="No accepted jobs waiting for a machine.">{data.queue.map(job => card(job, data.queue))}</Column>
+      <Column title="Queue" count={data.queue.length} empty="No accepted jobs waiting for a machine."
+        hint={data.queue.length > 1 ? "Drag a job to reorder the queue, or use its move buttons." : undefined}>{data.queue.map(job => card(job, data.queue))}</Column>
       <Column title="To review" count={data.review.length} empty="No new requests to review.">{data.review.map(job => card(job))}</Column>
       <Column title="Waiting on member" count={data.waiting_on_member.length} empty="No jobs waiting for changes or a quote decision.">{data.waiting_on_member.map(job => card(job))}</Column>
       <Column title="Ready to collect" count={data.ready.length} empty="Nothing waiting for pickup.">{data.ready.map(job => card(job))}</Column>
@@ -79,16 +87,18 @@ export function JobBoard({ makerspaceId, machineType, machines, pools, batchEnab
       unitLabel={unitLabel} hasPool={!!poolUnit} printer={printer} onClose={done => { setBatching(false); if (done) setSelected([]); }} /> : null}
     {completing ? <BatchCompleteDialog batchId={completing.batchId} jobs={completing.jobs} makerspaceId={makerspaceId} typeId={machineType.id}
       unitLabel={unitLabel} hasPool={!!poolUnit} onClose={() => setCompleting(null)} /> : null}
+    {filesOf ? <JobFilesDialog title={filesOf.title} files={filesOf.files ?? []} onClose={() => setFilesOf(null)} /> : null}
     <ConfirmDialog open={uncollected !== null} title="Mark not collected?" tone="danger" confirmLabel="Mark not collected" pending={direct.isPending}
       message="The member did not pick this job up within 14 days. It leaves the pickup shelf and the member is told."
       onCancel={() => setUncollected(null)} onConfirm={() => { if (uncollected) direct.mutate({ id: uncollected.id, action: "uncollected" }, { onSuccess: () => setUncollected(null) }); }} />
   </div>;
 }
 
-function Column({ title, count, empty, children }: { title: string; count: number; empty: string; children: ReactNode }) {
+function Column({ title, count, empty, hint, children }: { title: string; count: number; empty: string; hint?: string; children: ReactNode }) {
   const id = `board-${title.toLowerCase().replace(/\s+/g, "-")}`;
   return <section aria-labelledby={id} className="grid content-start gap-3">
     <h3 id={id} className="title-panel">{title} <span className="text-sm font-normal text-muted">({count})</span></h3>
+    {hint ? <p className="text-sm text-muted">{hint}</p> : null}
     {count ? <ul className="grid gap-3">{children}</ul> : <EmptyState message={empty} />}
   </section>;
 }

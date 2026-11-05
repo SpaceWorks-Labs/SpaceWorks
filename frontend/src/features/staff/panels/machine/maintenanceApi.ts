@@ -60,6 +60,7 @@ export type LogInput = {
   summary: string;
   performed_at?: string;
   cost?: string | null;
+  cost_method?: string;
   parts_note?: string;
   set_idle?: boolean;
   schedule_id?: number;

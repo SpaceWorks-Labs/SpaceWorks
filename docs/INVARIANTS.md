@@ -206,7 +206,10 @@ There is no deadline (#66); `merge_suggested` in the auth payload marks a conver
 not linked another account yet (Q17), and U-B renders the nudge.
 
 **Proof (`account_merge_proofs`).** `credentials`: the source's password AND its authenticator (a TOTP
-or recovery code; passkey proof arrives with S-A), unavailable when the source has no factor
+or recovery code), or the source's password AND one of ITS passkeys (GAP2 M6:
+`account_merge_passkey.py` over S-A's `begin_proof`/`verify_proof`; `passkey-options` checks the
+password first, a wrong one counting as a failed try, and only then offers the source's passkeys on
+this RP ID; `prove` takes `passkey` instead of `otp`), unavailable when the source has no factor
 (`factor_enrolment_required`, said only after the password matched). `email_codes`: two fresh 6-digit
 codes, one to the survivor's email and one to the source's current or held email, both required, two
 separate codes even when both go to one mailbox (Q16). Codes are stored only as
@@ -3538,6 +3541,22 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   `ledger_api.record_expense(..., source_kind="repairs.payout", category="repair")` tagged with the
   area's domain and machine type (#100). Nothing is ever paid automatically; a Technician never
   records a payout.
+- **Item and room maintenance reminders (GAP2 M2).** `maintenance/reminders_subjects.py` adds two
+  sources to the shared reminder sweeper (`maintenance.items`, `maintenance.rooms`), each behind its
+  own default-on switch (`inventory.maintenance_reminders`, `bookings.room_maintenance_reminders`,
+  which need the parent maintenance key and Notifications). One "due soon" notice at the start of the
+  local day before an occurrence (schedule id + due date) is due, one "overdue" the day after; a run
+  moves the date on and starts a new occurrence. Notices go to the area's family
+  (`hardware_requests` / `bookings`, events `maintenance_due_soon` / `maintenance_overdue`) with the
+  subject's name and date only, and delivery re-checks the switch, the schedule and the occurrence.
+- **Maintenance spend reaches the ledger (#100, #102; GAP2 M1).** A maintenance run with a cost above
+  zero -- a machine log, a completed machine schedule, a closed work order, an item or room run
+  (`SubjectMaintenanceLog.cost`) -- posts exactly one `record_expense(..., category="maintenance")` in
+  the log's own transaction (`maintenance/ledger.py`; source `maintenance.log` or
+  `maintenance.subject_log` + log id). Domain machines (with the machine type), inventory or bookings,
+  so the Booking and Machine Managers see their maintenance spend and nobody else's. Whoever may log the
+  run records its cost (spending is always recorded, C-15); `cost_method` defaults to `other`, the
+  currency to the space's default payment currency.
 - **Out of service (#93, C-6b).** A machine goes to `maintenance` (refused while running) through
   `status_tracking.change_status`; the queue/ETA kernel counts only machines with capacity, so it
   recomputes on its next read. Units and items move only through `availability`. A room outage
@@ -3580,6 +3599,14 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   the staging key, and validated with versioned range reads (`job_files.validate_job_object`)
   before it attaches. At least one non-screenshot file is required. No server-side slicing or
   geometry parsing (#142 OQ-12).
+- **Browser preview of job files (OQ-12; GAP2 M5).** Staff open a job's files from its board card.
+  STL, OBJ and 3MF render as a 3D mesh (three.js 0.186.1, MIT, lazy), G-code as its cutting or
+  extruding moves seen from above, ASCII DXF as a drawing, and SVG as an image; nothing else is
+  previewed. Bytes come only through `machine-service/files/<id>/url` (the private, short-lived
+  signed URL; fetched without cookies or referrer), are parsed in a worker with the shared size,
+  vertex and 20-second limits, and every generated SVG passes `safeSvg`; a member's own SVG is
+  stripped of scripts, handlers and outside references and shown only as an `<img>`. A preview is
+  loaded only when staff ask; any failure falls back to download.
 - **The lifecycle is still one authority.** New statuses `changes_requested`, `quoted`,
   `uncollected` join `service_workflow_helpers._ALLOWED`; every edge is taken in `service_workflow*`
   (review, board, batch, failure, collect modules) with one `machine_service.<event>` audit row and
@@ -3611,6 +3638,13 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   next" head, the ETA simulator and the board. `queued_at` is empty until the place moves: a
   staff reorder (an anchor between the new neighbours), a late answer (more than 3 days on a
   change request or quote moves the anchor to the answer time, OQ-5) or a re-run (inherits).
+  Staff reorder by dragging a queue card onto another (it lands before a target above, after a
+  target below) or with the move buttons, which stay the keyboard way (#141; GAP2 M4); both call
+  the one `reorder` endpoint, and a drag never crosses queues or urgency.
+- **At-risk flag (OQ-6; GAP2 M3).** "Needed by" never reorders. The staff job row carries
+  `at_risk_reasons` (`machines/job_risk.py`): `needed_by_passed`, `eta_after_needed_by` (the
+  response's queue forecast ends after the needed-by day in the space's local time) or
+  `needed_by_soon` (no forecast, not started, due today or tomorrow); open jobs only.
 - **Batch runs (OQ-9, `machines.batch_start`).** Several queued jobs start on one machine; each
   keeps its own hold, estimate and audit. The machine frees and the batch closes when its LAST
   job ends; completing a batch splits time and material by estimate unless staff give the split.

@@ -3,13 +3,15 @@
 from django.urls import path
 
 from apps.accounts.views_account_merge import (
-    AccountMergeCancelView, AccountMergeConfirmView, AccountMergePreviewView, AccountMergeProveView,
-    AccountMergeResendView, AccountMergeStartView,
+    AccountMergeCancelView, AccountMergeConfirmView, AccountMergePasskeyOptionsView, AccountMergePreviewView,
+    AccountMergeProveView, AccountMergeResendView, AccountMergeStartView,
 )
 
 account_merge_urlpatterns = [
     path("account-merge/start", AccountMergeStartView.as_view(), name="auth-account-merge-start"),
     path("account-merge/<uuid:intent_id>/prove", AccountMergeProveView.as_view(), name="auth-account-merge-prove"),
+    path("account-merge/<uuid:intent_id>/passkey-options", AccountMergePasskeyOptionsView.as_view(),
+         name="auth-account-merge-passkey-options"),
     path("account-merge/<uuid:intent_id>/resend", AccountMergeResendView.as_view(), name="auth-account-merge-resend"),
     path("account-merge/<uuid:intent_id>/preview", AccountMergePreviewView.as_view(),
          name="auth-account-merge-preview"),

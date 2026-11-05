@@ -6,6 +6,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.machines.models import MachineServiceRequest
+from apps.machines import job_risk
 from apps.machines.service_queue_eta_serializers import ServiceRequestEtaSerializer, eta_for
 from apps.payments.models import Payment
 from apps.payments.serializers import StaffPaymentSerializer
@@ -82,6 +83,9 @@ class MachineServiceRequestSerializer(serializers.ModelSerializer):
     files = ServiceFileSerializer(many=True, read_only=True)
     consumptions = ServiceConsumptionSerializer(many=True, read_only=True)
     eta = serializers.SerializerMethodField()
+    at_risk_reasons = serializers.SerializerMethodField(
+        help_text="Why the job may miss the member's needed-by date (#142 OQ-6); empty when on track. "
+                  "A flag only: the date never reorders the queue.")
 
     class Meta:
         model = MachineServiceRequest
@@ -92,14 +96,20 @@ class MachineServiceRequestSerializer(serializers.ModelSerializer):
             "actual_minutes", "fail_percent_complete", "accepted_at", "started_at",
             "completed_at", "failed_at", "collected_at", "cancelled_at", "created_at", "updated_at",
             "capability_payload", "metering_unit", "planned_quantity", "reserved_quantity", "actual_consumed_quantity", "planned_grams", "reserved_grams", "actual_consumed_grams", "payment", "run_machine_model", "files", "consumptions", "eta",
-            *JOB_FIELDS,
+            "at_risk_reasons", *JOB_FIELDS,
         )
         read_only_fields = fields
 
     @extend_schema_field(ServiceRequestEtaSerializer(allow_null=True))
     def get_eta(self, obj):
         # Context-only: list/detail/action responses pass one batched snapshot.
-        return eta_for(self, obj)
+        value = eta_for(self, obj)
+        self.context.setdefault("_eta_by_id", {})[obj.pk] = value
+        return value
+
+    @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(choices=job_risk.REASONS)))
+    def get_at_risk_reasons(self, obj):
+        return job_risk.for_serializer(self, obj, self.context.get("_eta_by_id", {}).get(obj.pk))
 
     def get_machine_type(self, obj) -> str:
         if obj.queue_id:

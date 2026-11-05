@@ -35,6 +35,9 @@ EVENTS = {
     **{(feature, event): ("issue_id",) for feature in ("hardware_requests", "bookings", "maintenance")
        for event in ("issue_reported", "repair_quote_pending")},
     ("maintenance", "repair_dispatched"): (),
+    # GAP2 M2: item and room maintenance reminders (ids only).
+    **{(feature, event): ("schedule_id",) for feature in ("hardware_requests", "bookings")
+       for event in ("maintenance_due_soon", "maintenance_overdue")},
     **{("printing", event): () for event in (
         "changes_requested", "resubmitted", "quoted", "quote_approved", "quote_declined", "quote_expired",
         "requeued", "uncollected", "no_show_flagged")},

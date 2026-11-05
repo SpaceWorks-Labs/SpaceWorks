@@ -898,7 +898,11 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `MyMachineJobsPage`; one job `MachineJobPage` with quote, changes, pickup cards; `PrintRequestAlias`
   keeps `/print` working). Loans: `inventory/{PickupWindowFields,WaitlistJoin,ExpectedBack,waitlistApi}`,
   `members/{MemberWaitlist,MemberRequestWithdraw}.tsx`.
-- Frontend, staff: `staff/panels/machine/JobBoard*.tsx` (per-type queue board), `JobAction*`,
+- Frontend, staff: `staff/panels/machine/JobBoard*.tsx` (per-type queue board; `boardDrag.ts` drag to
+  reorder, `boardOrder.dropPosition`), `filePreview/` (GAP2 M5: `JobFilesDialog`, `JobFilePreview`,
+  `jobPreview.worker.ts`, `drawings.ts` G-code/DXF to SVG, `svgFile.ts`, `previewKinds.ts`; mesh
+  parsing shared with the hackathon preview through `events/hackathonSubmissions/previewMesh.ts`),
+  backend `machines/job_risk.py` (the at-risk flag, GAP2 M3), `JobAction*`,
   `BatchDialogs.tsx`, `JobSettingsEditor.tsx`, `DowntimePanel.tsx` (+ lockout badge), `workOrders/`;
   `staff/BookableSpaceMachine.tsx`; `staff/panels/{ConsumablesPanel,VendorsPanel,MarkBoughtDialog,
   ItemWaitlist,RequestCancelDialog,InventoryLendingFlags}.tsx`, `staff/LoanReservationPolicySettings.tsx`.
@@ -923,6 +927,14 @@ identity normalization and production minimum-version comparison. `mobile_associ
 - Seams outside the package: `maintenance/work_orders.may_manage`, `maintenance/services_shared.
   prepare_machine(technician=)`, `bookings/admission._refuse_room_outage`,
   `integrations/notification_telegram_callbacks._technician_opt_in`.
+- Item and room maintenance reminders (GAP2 M2): `maintenance/reminders_subjects.py` (two reminder
+  sources registered in `operations/reminder_registry.py`, plus its notification source registered in
+  `maintenance/apps.py`); switches in `makerspaces/capability_definitions_gap2.py`.
+- Maintenance spend (GAP2 M1): `maintenance/ledger.py` posts a run's cost to L5's ledger (machine logs,
+  schedules and work orders through `services_workflows._append_log`, item/room runs through
+  `maintenance_subjects.run`); `maintenance/serializers_cost.py` holds the shared `cost_method` and
+  `cost_currency` fields; `maintenance/0006` adds `SubjectMaintenanceLog.cost`. Frontend
+  `staff/panels/machine/MaintenanceCostInput.tsx` (cost plus "Paid by").
 - Switches: `makerspaces/capability_definitions_r2_l17.py` (the 8 keys), purge plans
   `makerspaces/capability_purge_plans_l16.py`.
 - Classification: `data_export/classification_l16.py`, `tenant_migration/{catalog,audit_references,
@@ -1010,7 +1022,8 @@ shell predicates, `has_staff_role`, `actor_ids_for`, `require_staff_mfa`);
 `accounts/merge_registry.py` (+ `merge_registry_types.py`, `merge_registry_rows_*.py`) classifies
 every `accounts.User` reference for merges, checked by `accounts.E003` in `checks.py`.
 Interactive merges (U-C): `accounts/account_merge_eligibility.py` (refusals, source resolution,
-`merge_suggested`), `account_merge_proofs.py` (start/prove/resend/cancel over `login_codes`),
+`merge_suggested`), `account_merge_proofs.py` (start/prove/resend/cancel over `login_codes`), `account_merge_passkey.py` (the
+`passkey-options` route and the passkey proof, GAP2 M6),
 `account_merge_mail.py` (platform mail), `account_merge_walk.py` (reads the registry: row lookup,
 unique-slot conflicts, loser revocation), `account_merge_preview.py`, `account_merge_shell.py` (the merge
 record and the inert shell) and the engine

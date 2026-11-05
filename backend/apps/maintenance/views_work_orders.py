@@ -17,6 +17,7 @@ from apps.admin_api.permissions import IsActiveStaff
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.platform import feature_enabled
+from apps.maintenance.serializers_cost import MaintenanceCostFields
 
 from . import work_orders as service
 from .models import WorkOrder
@@ -54,7 +55,7 @@ class WorkOrderCreateSerializer(serializers.Serializer):
     takes_machine_down = serializers.BooleanField(default=False)
 
 
-class WorkOrderMoveSerializer(serializers.Serializer):
+class WorkOrderMoveSerializer(MaintenanceCostFields):
     status = serializers.ChoiceField(choices=[S for S in WorkOrder.Status.values if S != "open"])
     resolution = serializers.CharField(required=False, allow_blank=True, default="")
     cost = serializers.DecimalField(required=False, allow_null=True, max_digits=12, decimal_places=2, min_value=0,
@@ -138,7 +139,8 @@ class WorkOrderMoveView(APIView):
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
         order = service.move(request.user, order, data["status"], resolution=data["resolution"],
-                             log_cost=data["cost"], parts_note=data["parts_note"])
+                             log_cost=data["cost"], parts_note=data["parts_note"],
+                             log_cost_method=data["cost_method"], log_cost_currency=data["cost_currency"])
         return Response(WorkOrderSerializer(order).data)
 
 

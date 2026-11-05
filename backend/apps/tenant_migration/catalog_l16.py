@@ -42,6 +42,6 @@ def authority_entries(authority, disposition):
               "A room's out-of-service history."),
         *same("maintenance.SubjectMaintenanceSchedule", "subject_type description interval_days next_due is_active "
               "created_at updated_at", keep, "An item or room maintenance schedule is the space's own policy."),
-        *same("maintenance.SubjectMaintenanceLog", "subject_type performed_at summary parts_note created_at", keep,
+        *same("maintenance.SubjectMaintenanceLog", "subject_type performed_at summary parts_note cost created_at", keep,
               "The append-only maintenance log."),
     )

@@ -42,6 +42,9 @@ def _production_sources():
             "maintenance.due", "machines", machines.discover_maintenance,
             machines.build_maintenance, "maintenance.reminders", machines.dispatch_maintenance,
         ))
+        # GAP2 M2: item and room maintenance, each behind its own parent's reminder switch.
+        from apps.maintenance.reminders_subjects import sources as subject_sources
+        sources.extend(subject_sources())
     if runtime_active("events"):
         from apps.events.reminders import EVENT_REMINDER_SOURCE
 

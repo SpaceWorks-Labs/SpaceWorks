@@ -3,7 +3,7 @@ import { ActionControl } from "../../../components/ui";
 import type { PreviewMesh } from "./types";
 
 /** Render only checked numeric mesh buffers; textures/material URLs never cross. */
-export default function MeshCanvas({ meshes }: { meshes: PreviewMesh[] }) {
+export default function MeshCanvas({ meshes, label = "Project model preview" }: { meshes: PreviewMesh[]; label?: string }) {
   const host = useRef<HTMLDivElement>(null);
   const turn = useRef<(angle: number) => void>(() => {});
   const [failed, setFailed] = useState(false);
@@ -56,7 +56,7 @@ export default function MeshCanvas({ meshes }: { meshes: PreviewMesh[] }) {
   }, [meshes]);
   if (failed) return <p role="status">This device cannot display the model. Download the original to view it.</p>;
   return <div className="grid gap-3">
-    <div ref={host} className="min-h-80 overflow-hidden rounded-xl border border-line bg-panel" role="img" aria-label="Project model preview" />
+    <div ref={host} className="min-h-80 overflow-hidden rounded-xl border border-line bg-panel" role="img" aria-label={label} />
     <div className="flex gap-3"><ActionControl action={{ label: "Rotate left", onClick: () => turn.current(-Math.PI / 8) }} />
       <ActionControl action={{ label: "Rotate right", onClick: () => turn.current(Math.PI / 8) }} /></div>
   </div>;

@@ -4,6 +4,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.settings import api_settings
 
+from apps.maintenance.serializers_cost import MaintenanceCostFields
+
 from apps.maintenance.models import (
     MaintenanceLog,
     MaintenanceLogDocument,
@@ -85,7 +87,7 @@ class MaintenanceLogSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class MaintenanceLogWriteSerializer(StrictFieldsSerializer):
+class MaintenanceLogWriteSerializer(MaintenanceCostFields, StrictFieldsSerializer):
     summary = serializers.CharField()
     performed_at = serializers.DateTimeField(required=False)
     cost = serializers.DecimalField(

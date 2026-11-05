@@ -4,10 +4,11 @@ import { FlowLayout } from "../../../components/layouts";
 import type { Action, CalloutProps } from "../../../components/ui";
 import { ActionControl } from "../../../components/ui/ActionControl";
 import { StructuredApiError } from "../../../lib/api";
-import { cancelMerge, confirmMerge, errorCode, fetchMergePreview, linkErrorCopy, mergeMeKey, mergePreviewKey, proveMerge,
+import { cancelMerge, confirmMerge, errorCode, fetchMergePreview, linkErrorCopy, mergeMeKey, mergePreviewKey, proveMerge, proveMergeWithPasskey,
   resendMergeCodes, startMerge, type MergeIntent, type MergeMethod, type MergeResult } from "./accountLinkApi";
 import { ConfirmStep, ResultCounts, ReviewStep } from "./AccountLinkReview";
 import { proofReady, ProveStep, StartStep, type ProofFields } from "./AccountLinkSteps";
+import { isPasskeyCancelled, passkeysSupported } from "../../auth/passkeys/webauthn";
 
 type Step = "start" | "prove" | "review" | "confirm";
 const ORDER: Step[] = ["start", "prove", "review", "confirm"];
@@ -43,6 +44,10 @@ export function AccountLinkFlow({ open, onClose }: { open: boolean; onClose: () 
   const prove = useMutation({ onMutate: () => setError(null), onError: fail,
     mutationFn: () => proveMerge(intentId, method === "credentials" ? { password: fields.password, otp: fields.otp }
       : { survivor_code: fields.survivorCode, source_code: fields.sourceCode }),
+    onSuccess: next => { setIntent(next); setFields(EMPTY); if (next.state === "proved") setStep("review"); else setError(new StructuredApiError(400, { code: "proof_failed" })); } });
+  const passkey = useMutation({ onMutate: () => setError(null),
+    onError: (failure: unknown) => { if (!isPasskeyCancelled(failure)) fail(failure); },
+    mutationFn: () => proveMergeWithPasskey(intentId, fields.password),
     onSuccess: next => { setIntent(next); setFields(EMPTY); if (next.state === "proved") setStep("review"); else setError(new StructuredApiError(400, { code: "proof_failed" })); } });
   const resend = useMutation({ mutationFn: () => resendMergeCodes(intentId), onMutate: () => { setError(null); setResent(false); }, onError: fail,
     onSuccess: next => { setIntent(next); setFields(EMPTY); setResent(true); } });
@@ -92,7 +97,8 @@ export function AccountLinkFlow({ open, onClose }: { open: boolean; onClose: () 
       next: grace ? { label: "Set up two-step sign-in", href: "/mfa" } : back, undo: grace ? back : staff } : undefined}
     work={step === "start" ? <StartStep identifier={identifier} method={method} onIdentifier={setIdentifier} onMethod={setMethod} />
       : step === "prove" ? <ProveStep method={method} identifier={identifier.trim()} fields={fields} onChange={setFields}
-        onResend={() => resend.mutate()} resending={resend.isPending} resent={resent} />
+        onResend={() => resend.mutate()} resending={resend.isPending} resent={resent}
+        passkey={passkeysSupported() ? { onUse: () => passkey.mutate(), pending: passkey.isPending } : undefined} />
       : preview.data ? step === "review" ? <ReviewStep preview={preview.data} />
         : <ConfirmStep preview={preview.data} understood={understood} onUnderstood={setUnderstood} /> : null} />;
 }

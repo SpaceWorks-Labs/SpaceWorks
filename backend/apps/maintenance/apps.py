@@ -13,3 +13,7 @@ class MaintenanceConfig(AppConfig):
         from .repairs.notify import register
 
         register()
+        # GAP2 M2: item and room maintenance reminders (delivery re-checks the occurrence).
+        from .reminders_subjects import register as register_subject_reminders
+
+        register_subject_reminders()

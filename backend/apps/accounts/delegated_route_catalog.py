@@ -255,6 +255,7 @@ MEMBER_ROUTES |= {"auth-staff-invitation-accept"}
 ACCOUNT_MERGE_ROUTES = frozenset({
     "auth-account-merge-start", "auth-account-merge-prove", "auth-account-merge-resend",
     "auth-account-merge-preview", "auth-account-merge-confirm", "auth-account-merge-cancel",
+    "auth-account-merge-passkey-options",  # GAP2 M6 (#65): passkey merge proof
 })
 
 # Release 2 lanes L4, L5, L15, L10/L11, L12 and L26 live in delegated_route_catalog_r2.py.

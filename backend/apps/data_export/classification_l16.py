@@ -36,7 +36,7 @@ EXPORTED_FIELDS = {
     "maintenance.SubjectMaintenanceSchedule": "id makerspace subject_type product asset room description "
                                               "interval_days next_due is_active created_at updated_at",
     "maintenance.SubjectMaintenanceLog": "id makerspace schedule subject_type product asset room performed_by "
-                                         "performed_at summary parts_note created_at",
+                                         "performed_at summary parts_note cost created_at",
 }
 OMITTED_FIELDS = {
     ("maintenance.TechnicianContact", "opt_in_digest"): "Live one-time opt-in link credential; re-sent on the target.",

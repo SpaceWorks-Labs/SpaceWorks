@@ -91,8 +91,12 @@ class SubjectMaintenanceLog(AppendOnly):
     performed_at = models.DateTimeField(default=timezone.now)
     summary = models.TextField()
     parts_note = models.TextField(blank=True)
+    # #102: what the run cost; above zero it is also a `maintenance` ledger expense.
+    cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-performed_at", "-id"]
-        constraints = [models.CheckConstraint(name="subject_log_one_subject", condition=_SUBJECT_SHAPE)]
+        constraints = [models.CheckConstraint(name="subject_log_one_subject", condition=_SUBJECT_SHAPE),
+                       models.CheckConstraint(name="subject_log_cost_nonnegative",
+                                              condition=Q(cost__isnull=True) | Q(cost__gte=0))]

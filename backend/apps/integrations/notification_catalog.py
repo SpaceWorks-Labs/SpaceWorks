@@ -110,6 +110,9 @@ FEATURE_EVENTS[F.EVENTS] += ("finalists_announced", "prize_payout_recorded")
 FEATURE_EVENTS[F.PAYMENTS] += ("shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
                                "shop_order_cancelled", "shop_order_unfulfilled", "shop_order_reminder",
                                "shop_order_receipt", "shop_order_new", "shop_low_stock")
+# Release 2 GAP2 M2: item maintenance reaches the Inventory Manager's family, rooms the Booking Manager's.
+FEATURE_EVENTS[F.HARDWARE_REQUESTS] += ("maintenance_due_soon", "maintenance_overdue")
+FEATURE_EVENTS[F.BOOKINGS] += ("maintenance_due_soon", "maintenance_overdue")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

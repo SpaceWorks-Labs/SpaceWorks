@@ -954,7 +954,8 @@ shell predicates, `has_staff_role`, `actor_ids_for`, `require_staff_mfa`);
 `accounts/merge_registry.py` (+ `merge_registry_types.py`, `merge_registry_rows_*.py`) classifies
 every `accounts.User` reference for merges, checked by `accounts.E003` in `checks.py`.
 Interactive merges (U-C): `accounts/account_merge_eligibility.py` (refusals, source resolution,
-`merge_suggested`), `account_merge_proofs.py` (start/prove/resend/cancel over `login_codes`),
+`merge_suggested`), `account_merge_proofs.py` (start/prove/resend/cancel over `login_codes`), `account_merge_passkey.py` (the
+`passkey-options` route and the passkey proof, GAP2 M6),
 `account_merge_mail.py` (platform mail), `account_merge_walk.py` (reads the registry: row lookup,
 unique-slot conflicts, loser revocation), `account_merge_preview.py`, `account_merge_shell.py` (the merge
 record and the inert shell) and the engine

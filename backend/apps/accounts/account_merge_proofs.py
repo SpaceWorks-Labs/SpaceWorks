@@ -2,9 +2,10 @@
 
 Nothing merges on email alone. The survivor (the signed-in person) proves the source by:
 
-- ``credentials``: the source's password AND its authenticator (TOTP or a recovery code);
-  a source with no factor cannot use this method (``factor_enrolment_required``, said
-  only after the password matched);
+- ``credentials``: the source's password AND its authenticator (TOTP or a recovery code) or,
+  instead of the code, one of its passkeys (``account_merge_passkey``; #65, GAP2 M6); a source
+  with no factor cannot use this method (``factor_enrolment_required``, said only after the
+  password matched);
 - ``email_codes``: two fresh 6-digit codes, one to the survivor's email and one to the
   source's current or held email; both are required, even when both go to the same mailbox.
 
@@ -102,7 +103,7 @@ def _close(intent, state, now):
     intent.save(update_fields=["state", "survivor_code_digest", "source_code_digest", "cancelled_at"])
 
 
-def prove(survivor, intent_id, data):
+def prove(survivor, intent_id, data, request=None):
     now, failure = timezone.now(), None
     with transaction.atomic():
         intent = locked_intent(survivor, intent_id)
@@ -111,7 +112,7 @@ def prove(survivor, intent_id, data):
         if not _live(intent, now):
             failure = (PROOF_EXPIRED, "This link request expired. Start again.")
         else:
-            failure = _check(intent, data, now)
+            failure = _check(intent, data, now, request)
             if failure is None:
                 intent.state, intent.proved_at, intent.expires_at = Intent.State.PROVED, now, now + TTL
                 intent.survivor_code_digest = intent.source_code_digest = ""
@@ -119,17 +120,25 @@ def prove(survivor, intent_id, data):
                                            "source_code_digest", "survivor_code_verified_at",
                                            "source_code_verified_at"])
                 return intent
-            intent.attempts += 1
-            if login_codes.attempts_exhausted(intent.attempts):
-                _close(intent, Intent.State.EXPIRED, now)
-            intent.save(update_fields=["attempts"])
-            audit.record(survivor, "account.merge_proof_failed", target=survivor,
-                              meta={"method": intent.method, "attempts": intent.attempts})
+            count_failure(survivor, intent, now)
     raise MergeRefused(*failure)
 
 
-def _check(intent, data, now):
+def count_failure(survivor, intent, now):
+    """One wrong proof: counted toward the intent's attempts and audited (committed by the caller)."""
+    intent.attempts += 1
+    if login_codes.attempts_exhausted(intent.attempts):
+        _close(intent, Intent.State.EXPIRED, now)
+    intent.save(update_fields=["attempts"])
+    audit.record(survivor, "account.merge_proof_failed", target=survivor,
+                 meta={"method": intent.method, "attempts": intent.attempts})
+
+
+def _check(intent, data, now, request=None):
     if intent.method == Intent.Method.CREDENTIALS:
+        if data.get("passkey"):
+            from apps.accounts.account_merge_passkey import check_passkey
+            return check_passkey(request, intent.source, data.get("password") or "", data["passkey"])
         return _check_credentials(intent.source, data.get("password") or "", data.get("otp") or "")
     survivor_ok = login_codes.verify(intent.survivor_code_digest, data.get("survivor_code"), SURVIVOR, intent.pk)
     source_ok = intent.source is not None and login_codes.verify(
@@ -140,16 +149,24 @@ def _check(intent, data, now):
     return None
 
 
-def _check_credentials(source, password, otp):
-    from apps.accounts.models_mfa import UserMFA
-    from apps.accounts.services_mfa import consume_code
-
+def check_password(source, password):
+    """None when ``password`` is the source's; the same hashing cost for an unknown source."""
     if source is None:
         from apps.accounts.models import User
         User().set_password(password or "-")  # same hashing cost as a real check
         return PROOF_FAILED, "The account details are wrong."
     if not password or not source.check_password(password):
         return PROOF_FAILED, "The account details are wrong."
+    return None
+
+
+def _check_credentials(source, password, otp):
+    from apps.accounts.models_mfa import UserMFA
+    from apps.accounts.services_mfa import consume_code
+
+    failure = check_password(source, password)
+    if failure is not None:
+        return failure
     factor = UserMFA.objects.select_for_update().filter(user=source, enabled_at__isnull=False).first()
     if factor is None:
         return (FACTOR_ENROLMENT_REQUIRED,

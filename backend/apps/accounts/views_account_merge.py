@@ -6,6 +6,8 @@ throttles; proofs and confirm have their own budget. Confirm also needs recent
 re-authentication, and staff MFA when the person already holds elevated authority.
 """
 
+import json
+
 from django.db import transaction
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
@@ -17,8 +19,10 @@ from apps.accounts import account_merge, account_merge_proofs as proofs
 from apps.accounts.account_merge_eligibility import PROOF_EXPIRED, MergeRefused, require_survivor
 from apps.accounts.serializers_account_merge import (
     MergeConfirmRequestSerializer, MergeConfirmResponseSerializer, MergeErrorSerializer, MergeIntentSerializer,
-    MergePreviewSerializer, MergeProveRequestSerializer, MergeStartRequestSerializer,
+    MergePasskeyOptionsRequestSerializer, MergePreviewSerializer, MergeProveRequestSerializer,
+    MergeStartRequestSerializer,
 )
+from apps.accounts.passkeys.serializers import PasskeyOptionsSerializer
 from apps.openapi_errors import errors
 
 _REFUSED = OpenApiResponse(MergeErrorSerializer, description="Typed refusal: see `code`.")
@@ -69,13 +73,30 @@ class AccountMergeProveView(_MergeView):
     @extend_schema(tags=["Accounts"], request=MergeProveRequestSerializer,
                    responses={200: MergeIntentSerializer, 400: _REFUSED, 409: _REFUSED, 410: _REFUSED,
                               **errors(401, 404, 429)},
-                   description="Prove the other account: its password and authenticator code (`credentials`), or "
-                               "both emailed codes (`email_codes`). Codes work once; five wrong tries end the request.")
+                   description="Prove the other account: its password and authenticator code, or its password and "
+                               "one of its passkeys (`credentials`), or both emailed codes (`email_codes`). Codes "
+                               "work once; five wrong tries end the request.")
     def post(self, request, intent_id):
         data = MergeProveRequestSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        intent = proofs.prove(request.user, intent_id, data.validated_data)
+        intent = proofs.prove(request.user, intent_id, data.validated_data, request)
         return _no_store(MergeIntentSerializer(intent).data)
+
+
+class AccountMergePasskeyOptionsView(_MergeView):
+    @extend_schema(tags=["Accounts"], request=MergePasskeyOptionsRequestSerializer,
+                   responses={200: PasskeyOptionsSerializer, 400: _REFUSED, 409: _REFUSED, 410: _REFUSED,
+                              **errors(401, 404, 429)},
+                   description="`credentials` only: check the other account's password, then offer ITS passkeys "
+                               "on this address for `navigator.credentials.get()`. Send the answer to `prove` as "
+                               "`passkey` with the same password. A wrong password counts as a failed try; "
+                               "`factor_enrolment_required` when that account has no passkey usable here.")
+    def post(self, request, intent_id):
+        from apps.accounts.account_merge_passkey import passkey_options
+        data = MergePasskeyOptionsRequestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        ceremony, options = passkey_options(request, intent_id, data.validated_data["password"])
+        return _no_store({"ceremony": ceremony.pk, "options": json.loads(options)})
 
 
 class AccountMergeResendView(_MergeView):

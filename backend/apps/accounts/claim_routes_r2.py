@@ -13,6 +13,7 @@ _REFUSED = (
         ("auth-account-merge-start", ("POST",)), ("auth-account-merge-prove", ("POST",)),
         ("auth-account-merge-resend", ("POST",)), ("auth-account-merge-preview", ("GET", "HEAD")),
         ("auth-account-merge-confirm", ("POST",)), ("auth-account-merge-cancel", ("POST",)),
+        ("auth-account-merge-passkey-options", ("POST",)),
     )),
     ("claim sessions cannot read or act on machine jobs", (
         ("member-machine-jobs", ("GET", "HEAD")), ("member-machine-job-detail", ("GET", "HEAD")),

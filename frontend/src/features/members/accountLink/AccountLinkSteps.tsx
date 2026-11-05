@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { Field } from "../../../components/ui";
 import type { MergeMethod } from "./accountLinkApi";
+import { Fingerprint } from "lucide-react";
 
 const METHODS: { value: MergeMethod; label: string; hint: string }[] = [
   { value: "credentials", label: "Its password and authenticator", hint: "Sign in to the other account here, once." },
@@ -33,9 +34,10 @@ export function StartStep({ identifier, method, onIdentifier, onMethod }: {
 export type ProofFields = { password: string; otp: string; survivorCode: string; sourceCode: string };
 const digits = (value: string) => value.replace(/\s+/g, "");
 
-export function ProveStep({ method, identifier, fields, onChange, onResend, resending, resent }: {
+export function ProveStep({ method, identifier, fields, onChange, onResend, resending, resent, passkey }: {
   method: MergeMethod; identifier: string; fields: ProofFields; onChange: (fields: ProofFields) => void;
   onResend: () => void; resending: boolean; resent: boolean;
+  passkey?: { onUse: () => void; pending: boolean };
 }) {
   const set = (key: keyof ProofFields, value: string) => onChange({ ...fields, [key]: value });
   if (method === "credentials") return <div className="grid gap-4">
@@ -48,6 +50,12 @@ export function ProveStep({ method, identifier, fields, onChange, onResend, rese
       <input className="desk-input min-h-11" inputMode="numeric" autoComplete="off" maxLength={10} value={fields.otp}
         onChange={event => set("otp", digits(event.target.value))} />
     </Field>
+    {passkey ? <div className="grid gap-2">
+      <p className="text-sm text-muted">No authenticator code? Enter the password above, then use a passkey saved for the other account.</p>
+      <div><button type="button" className="desk-button min-h-11 gap-2" disabled={!fields.password || passkey.pending}
+        aria-busy={passkey.pending || undefined} onClick={passkey.onUse}>
+        <Fingerprint aria-hidden="true" size={20} />{passkey.pending ? "Waiting for your device…" : "Use its passkey instead"}</button></div>
+    </div> : null}
   </div>;
   return <div className="grid gap-4">
     <p className="text-sm text-muted">If <strong className="text-ink">{identifier}</strong> is an account we can link, we've emailed it a code, and sent a second code to this account's email. Codes expire quickly.</p>

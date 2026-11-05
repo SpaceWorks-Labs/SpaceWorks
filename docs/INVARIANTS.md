@@ -192,7 +192,10 @@ There is no deadline (#66); `merge_suggested` in the auth payload marks a conver
 not linked another account yet (Q17), and U-B renders the nudge.
 
 **Proof (`account_merge_proofs`).** `credentials`: the source's password AND its authenticator (a TOTP
-or recovery code; passkey proof arrives with S-A), unavailable when the source has no factor
+or recovery code), or the source's password AND one of ITS passkeys (GAP2 M6:
+`account_merge_passkey.py` over S-A's `begin_proof`/`verify_proof`; `passkey-options` checks the
+password first, a wrong one counting as a failed try, and only then offers the source's passkeys on
+this RP ID; `prove` takes `passkey` instead of `otp`), unavailable when the source has no factor
 (`factor_enrolment_required`, said only after the password matched). `email_codes`: two fresh 6-digit
 codes, one to the survivor's email and one to the source's current or held email, both required, two
 separate codes even when both go to one mailbox (Q16). Codes are stored only as

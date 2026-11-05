@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { memberRequest, StructuredApiError } from "../../../lib/api";
+import { getPasskeyAssertion } from "../../auth/passkeys/webauthn";
 
 /** Account linking: the signed-in person proves a second (former staff) account and folds it in. */
 export type MergeMethod = "credentials" | "email_codes";
 export type MergeIntent = { intent_id: string; method: MergeMethod; state: string; expires_at: string };
-export type MergeProof = { password: string; otp: string } | { survivor_code: string; source_code: string };
+export type MergeProof = { password: string; otp: string } | { survivor_code: string; source_code: string }
+  | { password: string; passkey: { ceremony: string; credential: unknown } };
 export type MakerspaceRef = { id: number; slug: string; name: string };
 export type RoleGrant = { makerspace: MakerspaceRef; roles: string[] };
 export type MergePreview = {
@@ -28,6 +30,15 @@ const intentPath = (id: string, action: string) => `/${encodeURIComponent(id)}/$
 
 export const startMerge = (identifier: string, method: MergeMethod) => post<MergeIntent>("/start", { identifier, method });
 export const proveMerge = (id: string, proof: MergeProof) => post<MergeIntent>(intentPath(id, "prove"), proof);
+/**
+ * #65 (GAP2 M6): the other account's password, then ITS passkey instead of the authenticator code.
+ * The password is checked before any passkey is offered; the browser's own sheet is the only prompt.
+ */
+export async function proveMergeWithPasskey(id: string, password: string) {
+  const { ceremony, options } = await post<{ ceremony: string; options: unknown }>(intentPath(id, "passkey-options"), { password });
+  const credential = await getPasskeyAssertion(options);
+  return proveMerge(id, { password, passkey: { ceremony, credential } });
+}
 export const resendMergeCodes = (id: string) => post<MergeIntent>(intentPath(id, "resend"));
 export const fetchMergePreview = (id: string) => memberRequest<MergePreview>(`${BASE}${intentPath(id, "preview")}`);
 export const confirmMerge = (id: string, previewSha256: string) => post<MergeResult>(intentPath(id, "confirm"), { preview_sha256: previewSha256 });

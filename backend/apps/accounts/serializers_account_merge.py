@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.accounts.account_merge_eligibility import ERROR_CODES
 from apps.accounts.models_account_merge import AccountMergeIntent
+from apps.accounts.passkeys.serializers import PasskeyVerifyRequestSerializer
 
 METHODS = AccountMergeIntent.Method.choices
 
@@ -26,11 +27,19 @@ class MergeProveRequestSerializer(serializers.Serializer):
                                      help_text="credentials: the other account's password.")
     otp = serializers.CharField(required=False, allow_blank=True, max_length=64,
                                 help_text="credentials: a code from the other account's authenticator, or one of "
-                                          "its recovery codes. Passkey proof arrives with lane S-A.")
+                                          "its recovery codes. Or send `passkey` instead.")
+    passkey = PasskeyVerifyRequestSerializer(
+        required=False, help_text="credentials: the other account's passkey answering the ceremony from "
+                                  "`passkey-options`, sent with the same password instead of `otp`.")
     survivor_code = serializers.CharField(required=False, allow_blank=True, max_length=16,
                                           help_text="email_codes: the code sent to this account's email.")
     source_code = serializers.CharField(required=False, allow_blank=True, max_length=16,
                                         help_text="email_codes: the code sent to the other account's email.")
+
+
+class MergePasskeyOptionsRequestSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=4096, trim_whitespace=False,
+                                     help_text="The other account's password; its passkeys are offered only after it matches.")
 
 
 class _Makerspace(serializers.Serializer):

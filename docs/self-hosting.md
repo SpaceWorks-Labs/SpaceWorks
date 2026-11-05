@@ -623,6 +623,7 @@ every variable the backend reads, with its default — is
 | `ALLOWED_HOSTS` | yes | Comma-separated hostnames the backend will serve |
 | `DATABASE_URL` | no | Never put this in static `.env`; the atomic ops pointer is its only Compose source |
 | `CORS_ALLOWED_ORIGINS` | no | Browser origins allowed to call the API |
+| `PLATFORM_STAFF_ORIGINS` | yes for the superadmin | The only origins the platform superadmin can sign in from (release 2). The installer writes your site's own origin, and the 0.11.0 updater adds it to an older self-host that lacks it; without it the superadmin cannot reach the web console |
 | `API_CLIENT_ENC_KEY` | recommended | Fernet key encrypting integration secrets at rest |
 | `MINIO_ROOT_USER` | yes | MinIO/S3 access key used by the backend |
 | `MINIO_ROOT_PASSWORD` | yes | MinIO/S3 secret key used by the backend |

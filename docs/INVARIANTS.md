@@ -3222,7 +3222,12 @@ makerspace's rows. Code lives in `apps/tenant_rls/`.
 - **How.** `ENABLE` + `FORCE ROW LEVEL SECURITY` and one permissive policy `spaceworks_rls_tenant` per table
   (`FOR ALL TO PUBLIC`, same `USING` and `WITH CHECK`), compiled by `tenant_rls.policies` from the predicate:
   a one-hop path compares the column, a longer path is an `EXISTS` join to the makerspace column; a row whose
-  every owner path is NULL is a platform row and stays visible. Applied by an idempotent `post_migrate` step
+  every owner path is NULL is a platform row and stays visible. A longer path whose last link is nullable
+  counts a chain ending at NULL as NULL too: the account ledgers reached through
+  `accounts.User.staff_makerspace_id` (session markers, blacklisted tokens, MFA, re-authentication, device grants)
+  of a person or the superadmin are platform rows, exactly as `accounts_user`'s own policy admits them. Without
+  this an enforcing database answered every tenant route with "This session has been revoked." (#194 VPS boot).
+  Applied by an idempotent `post_migrate` step
   (`tenant_rls.sync`, also `manage.py rls_sync`); each policy carries a fingerprint comment, so unchanged tables
   cost one catalog read. A table the migrating role cannot alter is reported, never fatal. Lane D scratch
   databases (`spaceworks_dump_*`, or holding `spaceworks_scratch_identity`) are not policed: their data-only

@@ -287037,7 +287037,15 @@
                         "type": "array",
                         "items": {
                             "type": "integer"
-                        }
+                        },
+                        "description": "The viewer's spaces this announcement reaches (empty for the superadmin = every space)."
+                    },
+                    "member_makerspace_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "The viewer's spaces where it reaches them as a member; member pages show only these."
                     }
                 },
                 "required": [
@@ -287045,6 +287053,7 @@
                     "ends_at",
                     "id",
                     "makerspace_ids",
+                    "member_makerspace_ids",
                     "severity",
                     "starts_at",
                     "title"

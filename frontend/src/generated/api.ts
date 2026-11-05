@@ -19220,6 +19220,7 @@ export type PlatformNoticeAnnouncement = {
   "starts_at": string;
   "ends_at": string | null;
   "makerspace_ids": Array<number>;
+  "member_makerspace_ids": Array<number>;
 };
 
 export type PlatformNotices = {

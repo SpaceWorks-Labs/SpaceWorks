@@ -83,8 +83,8 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
-The registry contains 36 keys (34 in the main catalogue plus presence and analytics): six core,
-member accounts enabled by default, and 29 opt-in. `maintenance` and `procurement`
+The registry contains 37 keys (35 in the main catalogue, with L22's `shop`, plus presence and analytics):
+six core, member accounts enabled by default, and 30 opt-in. `maintenance` and `procurement`
 were retired in release 2 and are capabilities now (see below); `backup` was retired in P1b.
 SMS/WhatsApp are separate opt-in modules.
 Migration 0097 preserves only previously enabled canonical WhatsApp installations;

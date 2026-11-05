@@ -48,6 +48,12 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   analytics (off by default) give each space a read-only database login over curated views. Overdue tracking, CSV/XLSX exports and accessible charts with table fallbacks cover
   operations. Historical metric rollups are append-only: corrections add revisions. Every module
   has a substantive report or an explicitly gated row.
+- **Platform overview (superadmin).** One page in the web superadmin console totals every live
+  space: people, lending, machines, events, bookings, membership, money and operations, each total
+  beside its per-space table, with this month / this year / all time / custom periods, a toggle for
+  archived and not-serving spaces, drill-down into each space and an audited CSV. Money stays per
+  currency, a block hides where its module is off everywhere, and no member name is shown. See
+  [MODULES.md](MODULES.md#the-platform-overview-superadmin-not-a-module).
 - **Notifications.** Transactional personal outboxes, verified Telegram, Slack, Mattermost, Discord
   and Twilio/Meta WhatsApp connections, Twilio SMS, per-category selection and email fallback; staff
   rooms retain their delivery matrix. Space Managers configure encrypted channel credentials. Member

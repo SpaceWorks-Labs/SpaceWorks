@@ -1124,6 +1124,34 @@ Counts never carry a name and any count below 3 shows as "fewer than 3". New spa
 machines, printing and lending on, events and community off, and the page itself off. The page
 builder's own "Public stats" section (Settings › Public page) is separate and unchanged.
 
+## The platform overview (superadmin, not a module)
+
+**Platform dashboard › Platform overview** in the web superadmin console (#183A) combines every
+live space's numbers: a total for each figure, always shown beside the per-space table it adds up.
+It is not a module and has no switch; it is platform-only (`GET /admin/platform/overview`, CSV at
+`/overview/export`). Periods are UTC: this month, this year, all time or a custom range. Archived
+and not-serving (importing/aborted) spaces are left out unless the superadmin ticks **Include
+archived and not-serving spaces**.
+
+Each block follows its own switch, space by space: a space with the switch off shows "Off" in the
+table and adds nothing to the total. A block whose switch is off in every space is hidden, and the
+Modules section names it. Each block says "Off in N spaces".
+
+| Block | Needs | Shows |
+|---|---|---|
+| People | always | active members, new sign-ups, active staff by role; platform-wide person accounts (not split by space, since one person can belong to several) |
+| Lending | `loans.enabled` | catalogue items, loans issued, out now, overdue now, returned, requests awaiting review |
+| Machines | `machines` | active machines, jobs by status, sessions, session hours, utilisation (session hours over machines x period hours; none for all time) |
+| Events | `events` | events held, upcoming, registrations, people checked in, hackathon submissions |
+| Bookings | `bookings` | bookings, booked hours, no-shows, cancellations, awaiting approval |
+| Membership | `membership` | active memberships, new, renewals, lapsed (expired and not renewed) |
+| Money | `charges.enabled`, `payments`, `shop` or `finance.donations` | per currency: charges raised, charged, collected, still owed, refunded, waived, expenses, donations and sponsorship, shop sales |
+| Operations | always | storage used, emails waiting/failed, failed notifications, space backups and restore drills; platform-wide emails, whole-platform backups, network blocks and unusual sign-in alerts |
+
+Counts and money only: no member name, email or contact ever leaves the overview. Money is never
+added across currencies. Each space's name links to that space in the console (`?space=<id>`).
+Exporting the CSV writes a `platform.overview_exported` audit row.
+
 ## Editions
 
 [Read about editions](MODULES-LIFECYCLE.md#editions).

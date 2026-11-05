@@ -692,6 +692,21 @@ anonymous hidden-service bucket; `reports_platform_usage.py` owns visible-space 
 with finalized consumable sources in `reports_platform_consumables.py`.
 `views_platform_analytics.py` serves the two platform keys and the action-scoped tenant
 picker. `metrics_push.py` reads both per-device outcome ledgers for Prometheus.
+
+Superadmin platform overview (#183A): `operations/platform_overview.py` composes the blocks and
+the space selection (archived and importing/aborted spaces left out unless toggled);
+`platform_overview_blocks.py` holds the `Block`/`Metric` contract and the grouped per-space
+query helpers, so every total is the sum of its per-space rows. Blocks live in
+`platform_overview_people.py` (people, lending), `platform_overview_activity.py` (machines,
+events, bookings, membership) and `platform_overview_ops.py` (operations, module matrix);
+`platform_overview_money.py` groups money per currency from `reports_finance_sources` plus
+non-voided `LedgerEntry` rows. `platform_overview_window.py` resolves the UTC presets,
+`platform_overview_cache.py` + `tasks_platform_overview.py` cache the result and compute it in
+Celery (202 "computing" until ready), `platform_overview_export.py` writes the CSV and
+`views_platform_overview.py` serves `platform-overview` and the audited `platform-overview-export`
+(both `PLATFORM_ONLY_ROUTES`). The web console page is
+`frontend/src/features/platformOverview/` (the Platform overview tab of
+`staff/eventProgramme/PlatformProgrammeDashboard.tsx`).
 Field/measurement contracts and the complete lane handoff are in [`SOURCE-MAP-REPORTS.md`](SOURCE-MAP-REPORTS.md#area-j).
 
 Membership admission is described in [membership-admission.md](membership-admission.md).

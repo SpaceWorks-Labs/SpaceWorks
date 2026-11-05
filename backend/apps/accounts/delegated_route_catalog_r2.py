@@ -127,3 +127,5 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-makerspace-analytics-connection admin-ma
 admin-makerspace-analytics-login-rotate""".split())
 PLATFORM_ONLY_ROUTES = frozenset("""admin-platform-analytics admin-platform-analytics-connection
 admin-platform-analytics-login admin-platform-analytics-login-rotate admin-platform-analytics-embed""".split())
+# Release-2 lane r2-platform-overview (#183A): the superadmin platform overview and its CSV.
+PLATFORM_ONLY_ROUTES |= frozenset({"platform-overview", "platform-overview-export"})

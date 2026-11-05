@@ -12,7 +12,8 @@
 The load-bearing rules, grouped by area. These were established across many shipped batches and matter
 beyond any single module. Read the subsection covering what you are touching.
 
-The mobile reconciliation preserves immutable member/staff/platform kinds. Accounts
+Accounts are one per person (release 2; see the next section): the old member/staff/platform split of
+the mobile reconciliation is gone, and `account_kind="staff"` survives only on inert shells. Accounts
 `0032_account_context` resets development roles only; it is not authorized for live authority data.
 Canonical envelopes/configurations and Twilio/Meta providers own personal delivery, including SMS,
 WhatsApp and per-device push. Addressed sender, consent, STOP, callback, template and analytics
@@ -22,6 +23,77 @@ retirement. Destructive integrations `0043` is not supplied. Workers/schedulers 
 sending remains paused until durable ingress, conversion, replay, verification and activation
 checkpoints in [the rollout guide](notification-reconciliation-rollout.md) pass.
 Documentation is not rollout sign-off.
+
+## Release 2 owner decisions on record
+
+Where each release-2 owner answer is written down. This list only routes: the rule itself lives in the
+section named. `#n` is the owner's decision log; `C-n` is the release-2 question sheet answered one by
+one in #128. Process decisions (pushes, agent caps, test phases, the memory watchdog) are not product
+rules and are not recorded here.
+
+**#128, the release-2 questions.**
+
+| Answer | Where |
+| --- | --- |
+| C-1 a person who gains a staff role without a factor gets one 3-day grace with a banner; then staff screens block until they enrol; member features never block | **Login security** › Mandatory staff MFA |
+| C-2 per-space security rows (risk check, remembered-device days 1-90, staff session 1-720 h, idle timeout 0-1440 min, CAPTCHA, passkeys allowed, staff IP allow-list), strictest across a person's staff spaces, all lockable; platform deny rules stay global | **Login security**, **Per-space security settings** |
+| C-3 the Technician built-in role; C-4 email always, Telegram/WhatsApp only after a one-time opt-in, SMS with the `sms` module; C-5 the area manager or SM approves quotes, no threshold | **Repairs and technicians** |
+| C-5 (second half) an optional per-space two-person check for OFFLINE income only | Cross-cutting invariants › Money, tax and the finance ledger (`billing.maker_checker`) |
+| C-6 a minimum app version x.y.z per platform; a room outage blocks new bookings by default (or warns) and lists the bookings inside it | `docs/mobile/MOBILE-APP-PRD.md`; **Repairs and technicians** (out of service) |
+| C-7 the shop, one per space | **Shop** |
+| C-8 switching a module off keeps the data and purge is a separate superadmin action; C-9 maintenance, To-Buy, warranty and repairs live under each parent; C-10 Space Managers switch modules, limit-gated installs and purges stay superadmin-only | **Folded modules**, **Settings authority** |
+| C-11 per-person setting grants, existing holders auto-granted at upgrade, the Inventory Manager always edits rental timing | **Settings authority** |
+| C-12 ID programmes live under membership; C-20 cards are fully digital with no fee; C-21 a card font library (cards only); C-28 a per-space approval switch for member-card designs by non-SMs; C-30 six Space Works templates; every organizer of an event edits and publishes its card with no approval | **Member cards, ID programmes and event cards** |
+| C-13 imports become pending memberships with emailed invites; record-only rows | Cross-cutting invariants (imports never link accounts) |
+| C-14 donations and sponsors under `finance.*`, guest donors via the email code, pledges, optional 80G receipts, personal and public calendar feeds | Events › **Donations, sponsors and calendar sync** |
+| C-15 spending is always recorded and `finance.ledger` only hides screens; C-16 the Event Manager sees events money | Cross-cutting invariants › Money, tax and the finance ledger |
+| C-17 rows a per-space restore brings back follow `merged_into` to the survivor | **One account per person** › Account merge (Merge x per-space restore) |
+| C-18 staff logins travel with a space moved to another server | **Backup, restore and tenant migration** › One account per person in backup |
+| C-19 no inductions before a loan; machine-service quotes and QR sessions kept | **Machines and loans depth** › Loans depth |
+| C-20 (second half) venue fees for hosting; no booking no-show fee and no day or guest passes | Events › **Paid ticketing v2 and venue fees** |
+| C-22 restore drills read the live key in memory only, on a throwaway database; C-23 the SM requests a self-host move and the superadmin runs it; C-24 no backup emails to spaces, an optional "archive ready" notice to the platform email | **Backup, restore and tenant migration** › Key rotation, self-host moves, restore drills |
+| C-25 RLS is report-only with a warning on owner-role installs and the app always starts; C-26 re-key = a new DEK now plus a background re-encrypt | **Row-level security backstop**, **Per-space key rotation** |
+| C-27 watch and push actions are Open and Mark seen only | Cross-cutting invariants (push actions are never decisions) |
+| C-29 a fixed member number with a custom printed pattern | Cross-cutting invariants (member numbers) |
+| C-31 a help centre for everyone plus operator guides | the in-app help centre (`frontend/src/features/help/`); no invariant section |
+| C-32 applications for any event; C-33 judging needs 3 or more judges, application stages 1-20; C-34 paid places are charged after confirming; C-35 "free the place on No" is a per-event switch, off by default; C-36 full crew | Events › **Applications, review stages, attendance, crew and check-in lists** |
+| C-37 hackathon emails are per-event switches, off for new events; C-38 prizes recorded by `record_payment` holders and the Event Manager, append-only; C-39 a paid team's leader pays once | Events › **Judging extras, hackathon money, staff lists and the gallery** |
+
+**#77, the old-decisions audit (every open question took its recommended answer).**
+
+- **Platform Q8, platform billing:** out of scope. There is no platform ledger and no platform plans.
+- **Platform Q9, self-serve organization creation:** kept as built. It is a global platform switch,
+  `ORGANIZATION_SELF_CREATION_ENABLED`, default off, for verified accounts and capped
+  (`ORGANIZATION_SELF_CREATION_MAX_OWNED`, `ORGANIZATION_SELF_CREATION_MAX_PER_DAY`). An organization
+  never gives its members access across the spaces it is linked to. See **Organization self-service and
+  governance**.
+- **D2, organization self-creation, and D5, the Helm chart:** both kept as built. The chart
+  (`charts/spaceworks`, `docs/helm.md`) stays unpublished; the two published images are unchanged.
+- **E1/E2, the fixed-role exceptions:** confirmed as built; see the fixed-role upgrade under
+  Cross-cutting invariants.
+- **Theme:** the app follows the OS theme until the user chooses (`frontend/src/lib/theme.ts`).
+- The other #77 answers live with their areas: §11 #1 (publishable-key rotation with a grace window)
+  under **Per-space key rotation**; 9c/9e (no offline direct handout; a failed handout is redone online)
+  and D7 (accepted requests expire and release stock) under **Machines and loans depth**; C#6 (a restore
+  revokes live station credentials) under **Backup, restore and tenant migration**.
+
+**#161-#181, rules that reach the product.**
+
+- #162(1): with member password sign-in off, people who hold a staff role still sign in with their
+  password; staff are never locked out. #162(2): native member grants and claim sessions see no staff
+  authority (**One account per person** › RBAC, session authority).
+- #163A price-drop refunds and #171 prepaid-job cases: **Price-drop refunds**. #163B per-space Metabase:
+  **Per-space analytics**.
+- #169 confirmation emails attach a calendar invite: Events › **Paid ticketing v2 and venue fees**.
+- #170 the public stats page: **Public stats page**.
+- #173 native event-role grants: Events › **Judging extras** and `docs/mobile/MOBILE-APP-PRD.md`.
+- #174 walk-in claim sessions are refused on the machine-job upload and submit routes; walk-ins get
+  machine work through staff: **Machines and loans depth**.
+- #176(2) proprietary maker file formats with no owner samples are waived from the real-tool export test
+  for this release.
+- #177-#181 (per-event submission content, multi-stage submissions with shortlist gates, hackathon
+  money G1-G16, prize TDS recorded only, the People's choice award) are built in their own lanes and are
+  NOT in this tree yet; their rules arrive with those merges.
 
 ## One account per person (release 2, lane U-A1; #63, #65, #66)
 
@@ -252,37 +324,13 @@ the restore preview (`merged_since`/`merged_followed`); a UNIQUE_RESOLVE slot th
 keeps the archived row on the shell (a membership there comes back revoked). A shell is never
 re-activated by a restore. Implemented in `backup/space_restore_merges.py` (U-D).
 
-### Split-account surfaces awaiting their lanes (superseded as each lane lands)
+### Staff roles on people, invitations, and what is left of the account split
 
-These are the account-split owner decisions D1–D12, including approved amendments V1–V12, as
-the code still implements them outside U-A1's files. The identity, uniqueness and membership
-bullets directly below are SUPERSEDED by the section above; the surface, lifecycle, recovery,
-transport and retirement text stays current until U-A2/U-B/U-C/U-D replace it.
-
-**Identity and database boundaries (D1–D3, M1–M5, V7/V10).**
-
-- `User.account_kind` is non-null: `member`, `staff` or `platform`. The same person uses separate
-  accounts for community activity, each makerspace's staff work and platform administration.
-  Staff have a `staff_makerspace` FK with `PROTECT`; kind and tenant are immutable in model and
-  database guards, except the retirement/restore transitions below. Platform means both
-  `is_superuser=True` and `role=superadmin`; members/staff cannot have those flags (M1/M2).
-- Email is case-insensitively unique among members, among platform accounts, and within each
-  staff makerspace, independently. A staff email never blocks member signup. Member phone,
-  Telegram and legacy external-check-in identities have member-only uniqueness. Username is
-  globally unique; staff allocation uses `<handle>.<slug>` (bounded to 150 characters), captured
-  at creation and unchanged by a later makerspace slug change (M3).
-- A nonretired staff account has exactly one active or revoked membership in its own makerspace,
-  with only the six built-in staff roles; Space Manager stands alone, the other five combine.
-  Member memberships hold only Member; platform and retired accounts have none (M4).
-  `DEFERRABLE INITIALLY DEFERRED` constraint triggers on User, MakerspaceMembership and
-  MembershipAdditionalRole validate at commit, including both old and new subjects when links
-  move. Deferral permits atomic creation/import/role replacement, never a durable invalid set.
-  Object and SQL readers in `accounts/rbac_roles.py` fail closed even before commit; deleting a
-  staff membership requires the exact-tenant purge guard.
-- Community-owned profiles, cards, terms, waivers, presence, bookings, loans, registrations and
-  payments are created for member accounts only. No history or credential moves between a
-  person's accounts (M5). Resource event/booking helpers and organization grants/governance stay
-  on member accounts (D8); they confer their specific actions, never built-in staff identity.
+The account split (owner decisions D1-D12 and amendments V1-V12: separate member, per-space staff and
+platform accounts) was reversed by #63/#65/#66. Its identity, uniqueness and membership rules, its
+`<handle>.<slug>` staff usernames, its six-role staff ceiling and its three recovery contexts are gone;
+the sections above replace them. What follows is the part of that design that is still current, plus
+the staff-role surface that replaced staff accounts (U-B).
 
 **Surface policy and simultaneous sessions (D5/D8/D9, V8/V10/V12)** -- SUPERSEDED by
 "Sign-in, sessions and native grants" above (U-A2): one door, person/platform tokens, staff
@@ -333,17 +381,8 @@ never touches the account's own email verification) grants the role under the in
 re-checked authority and opens the person's staff MFA grace (`open_grace(user, "invite")`). It does
 not stamp `email_verified_at`. Resend revokes the old link; revoke ends it.
 
-(The staff recovery context below is SUPERSEDED by U-A2: recovery is person or platform only.)
-Self-service email recovery uses separate `member`, `staff` and `platform` contexts. Envelopes bind
-an account, context, staff tenant, trusted request origin and credential generation, never shared-email
-ownership. Member recovery remains independent; legacy UID/token links remain member-only. Staff
-supply their tenant slug and email or username; platform recovery uses only the platform origin.
-Staff/platform recovery requires configured Platform Email at request and issuance, irrespective of
-tenant email/modules. Unknown, unavailable, other-kind/tenant and unconfigured requests acknowledge
-identically without issuing mail. Staff accounts must be live, unrestricted, have active membership
-and a servable, nonmigrating tenant; trusted origin and all live conditions are rechecked at issuance
-and confirmation. Mail contains a six-digit OTP and a trusted reset-page URL, never a bearer link;
-only verified tenant domains override configured central URLs.
+**Recovery** is person or platform only; see **Sign-in, sessions and native grants** above. The
+ordering rules below still hold for it.
 
 Recovery, invitation redemption, admin password issue and deactivation share the lock order:
 Makerspace, account invitations, User, then envelopes. OTP expiry, attempt budget, single use and
@@ -387,18 +426,17 @@ that exact tenant and deletes the tenant's rows on BOTH membership tracks with t
 their accounts, credentials and global authentication history (actor ids, MACs and batch leaves
 unchanged). Legacy `retired-<uuid>` shells from before unification stay as they are.
 
-Readable-main deployment backups use the same PII-free, inactive same-PK staff shells, never null
-AuditLog.actor. Full staff rows and account credential rows reside in sealed tenant slices;
-browser sessions are omitted. The registered inert-shell boundary and username reservations
-protect delayed slices. Guarded slice restoration checks the exact complete shell, owning restore
-component, staged full row, inverse deltas and merge role; ordinary occupied-ID upserts or partial
-reversals remain refused. The unserved producer reconstruction clone has its own narrow guard.
+Deployment backups still project PII-free, inactive same-PK staff shells (`backup/staff_shells.py`;
+the `INERT_SHELL_BOUNDARIES` entry on `accounts.User.staff_makerspace`), so `AuditLog.actor` is never
+nulled. There are no sealed tenant slices any more (P1b: every archive byte is platform-readable, see
+**Deployment archives**). The shell producer can only be retired after `User.staff_makerspace` is
+dropped and that boundary changes; until then it is live code, not dead code. The projection and its verifier
+(`backup/main_projection.py`, `main_projection_verification.py`) still treat that boundary as
+`INERT_SHELL_TO_SLICE`; ordinary occupied-ID upserts and partial reversals stay refused.
 
-This programme is an atomic release, not conversion of mixed production accounts (D12). Rebuild
-dev data from separate platform/staff/member seeds; classify existing superusers as platform and
-other legacy accounts as member while stripping old built-in staff assignments. Cutover invalidates
-existing sessions/refresh credentials. Installer/setup, target restore and host recovery use only
-platform operators and never promote an existing member/staff identity.
+The release-2 upgrade converts existing staff accounts in place (accounts 0049/0050, see **Conversion**
+above); it is irreversible, so back up first. Installer/setup, target restore and host recovery use
+only platform operators and never promote an existing person.
 
 ## Cross-cutting invariants (from shipped batches)
 
@@ -2823,8 +2861,8 @@ Owner decisions #110c/#110e and #111 Q9-Q13 (P1b, superadmin always on).
   authority, checks the lock floor and records `makerspace.security_setting_changed` (key, from, to,
   `via=space|platform`), `_locked` (key, floor, note) or `_unlocked` (key, floor), all makerspace-scoped so
   the space's audit readers see them. No email.
-- **Authority (Q10/Q11).** Only the space's OWN Space Manager (a staff account of that tenant holding the
-  Space Manager identity through its direct membership) or an active platform superadmin. Never delegable:
+- **Authority (Q10/Q11).** Only the space's OWN Space Manager (a person holding the Space Manager role
+  on that space's staff track) or an active platform superadmin. Never delegable:
   no module manager, no organization grant, no resource grant. Precedence: platform lock > Space Manager >
   module manager. Every change needs recent re-authentication: the API uses `require_recent_reauth`,
   `/control/` its own step-up (`RecentReauthenticationAdminMixin`), and the host setup command

@@ -82,6 +82,8 @@ class AssignmentRead(ResultEnvelope):
     notes = serializers.CharField()
     asset_ids = IdList(required=False)
     batch_projects = serializers.ListField(child=serializers.DictField())
+    answers = serializers.ListField(child=serializers.DictField(), required=False,
+                                    help_text="S7: the stage's custom answers a judge may read ({label, value}).")
 
 
 class ConsentRead(ClosedSerializer):

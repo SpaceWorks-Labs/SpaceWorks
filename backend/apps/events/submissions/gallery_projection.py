@@ -96,7 +96,8 @@ def project_entry(entry):
     files_state = "expired" if expired else ("available" if assets or links else "withdrawn")
     return {"public_id": str(entry.public_id), "title": entry.title, "description": entry.description,
             "consent_version": consent.version, "files_state": files_state, "assets": assets, "links": links,
-            "members": _member_cards(snapshot), "content_sha256": snapshot.content_sha256}
+            "members": _member_cards(snapshot), "content_sha256": snapshot.content_sha256,
+            "answers": [{"key": a[0], "label": a[1], "value": a[3]} for a in snapshot.answers if a[4] == "public"]}
 
 
 def asset_download(public_token, public_asset_id, *, request):

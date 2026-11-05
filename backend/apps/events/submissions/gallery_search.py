@@ -40,8 +40,9 @@ def query(event, rows, params):
         if used:
             raise Http404  # Off: the search surface does not exist; the plain gallery still does.
         return rows.order_by("pk"), {}
-    if set(params) - PARAMS:
-        raise ValidationError({key: "Unknown gallery filter." for key in sorted(set(params) - PARAMS)})
+    if {key for key in params if not key.startswith("field.")} - PARAMS:
+        raise ValidationError({key: "Unknown gallery filter." for key in sorted(set(params) - PARAMS)
+                               if not key.startswith("field.")})
     sort = params.get("sort") or "newest"
     if sort not in SORTS:
         raise ValidationError({"sort": "Use newest, az or awards."})
@@ -53,6 +54,8 @@ def query(event, rows, params):
         rows = rows.filter(snapshot_id__in=list(badges))
     elif params.get("awards") not in (None, ""):
         raise ValidationError({"awards": "Use awards=only."})
+    from .stage_gallery import filter_by_fields
+    rows = filter_by_fields(event, rows, params)  # S7: public choice fields of the final stage.
     if sort == "az":
         rows = rows.order_by(Lower("title"), "pk")
     else:

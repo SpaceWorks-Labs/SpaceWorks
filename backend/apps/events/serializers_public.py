@@ -47,6 +47,15 @@ class EventOrganizerSummarySerializer(serializers.Serializer):
     name = serializers.CharField(source='organization.name', read_only=True)
 
 
+class PublicStageSerializer(serializers.Serializer):
+    position = serializers.IntegerField()
+    name = serializers.CharField()
+    opens_at = serializers.DateTimeField(allow_null=True)
+    deadline = serializers.DateTimeField()
+    filters = serializers.ListField(child=serializers.DictField(),
+                                    help_text="S7: public choice fields ({key, label, choices}); the last stage's filter the gallery.")
+
+
 class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSerializer):
     accent_preset = serializers.CharField(read_only=True, allow_blank=True)
     website = serializers.SerializerMethodField()
@@ -55,6 +64,15 @@ class PublicEventSerializer(OrganizationAudienceFields, EventTicketingPublicSeri
         help_text="in_person, online or hybrid; null while the space has online events switched off.")
     indexable = serializers.SerializerMethodField(
         help_text="False for unlisted events: pages must send noindex, nofollow.")
+    submission_stages = serializers.SerializerMethodField(
+        help_text="#178: the hackathon's submission stage deadlines (event detail only; empty elsewhere).")
+
+    @extend_schema_field(PublicStageSerializer(many=True))
+    def get_submission_stages(self, obj):
+        if not self.context.get("submission_stages"):
+            return []
+        from .submissions.stage_public import public_stages
+        return public_stages(obj)
 
     @extend_schema_field(serializers.ChoiceField(choices=Event.DeliveryMode.choices, allow_null=True))
     def get_delivery_mode(self, obj):

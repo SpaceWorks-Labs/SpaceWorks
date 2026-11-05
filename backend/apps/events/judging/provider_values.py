@@ -13,6 +13,15 @@ from .ports import Judge, ParticipantAsset, PublicLink, Snapshot, Sponsor
 PROJECT_STATES = ("submitted", "locked", "under_review", "judged")
 
 
+def frozen_answers(document):
+    """S7: the stage's custom-field answers exactly as they were frozen into the snapshot."""
+    stage = document.get("stage") or {}
+    values = stage.get("answers") or {}
+    return tuple((f["key"], f.get("label", f["key"]), f.get("type", "short_text"), values[f["key"]],
+                  f.get("visible_to", "staff_and_judges"))
+                 for f in stage.get("custom_fields") or () if f.get("key") in values)
+
+
 class ProgrammeValues:
     def snapshot(self, snapshot_id):
         row = SubmissionSnapshot.objects.select_related("submission", "submission__team").filter(pk=snapshot_id).first()
@@ -31,6 +40,7 @@ class ProgrammeValues:
             title=data.get("title", ""), description=data.get("description", ""),
             content_sha256=row.content_sha256, current=current,
             eligible=project.state in PROJECT_STATES and triage == "eligible", stage_id=stage_id,
+            answers=frozen_answers(data),
             metadata_public=data.get("public_requested") is True,
             public_asset_ids=tuple(row.asset_refs.filter(public_requested=True).values_list("asset_id", flat=True)),
             public_links=tuple(link for link in links if link.id in set(row.link_refs.filter(

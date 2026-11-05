@@ -42,6 +42,8 @@ class Snapshot:
     judge_asset_ids: tuple[int, ...] = ()
     judge_links: tuple[PublicLink, ...] = ()
     stage_id: int | None = None  # #178: the submission stage that froze it.
+    # S7: frozen custom-field answers as (key, label, type, value, visible_to); readers filter by audience.
+    answers: tuple[tuple[str, str, str, str, str], ...] = ()
 
 
 @dataclass(frozen=True, kw_only=True)

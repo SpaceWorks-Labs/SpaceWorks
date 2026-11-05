@@ -151,7 +151,13 @@ def render_public_event_calendar(event):
     method = "CANCEL" if event.status == Event.Status.CANCELLED else "PUBLISH"
     calendar = _calendar(event.title, method=method)
     calendar.add_component(_event_component(event))
+    _stage_deadlines(calendar, event)
     return calendar.to_ical()
+
+
+def _stage_deadlines(calendar, event):
+    from .submissions.stage_public import add_stage_deadlines  # #178: stage deadlines ride the event's feed.
+    add_stage_deadlines(calendar, event, component_class=_icalendar_types()[1], add_common=_add_common, utc=_utc)
 
 
 def _series_local_start(series):
@@ -275,4 +281,6 @@ def render_member_calendar(makerspace, registrations):
                 and registration.event.status == Event.Status.PUBLISHED):
             add_member_alarms(component, makerspace, registration.event.title)
         calendar.add_component(component)
+        if registration.status == EventRegistration.Status.REGISTERED:
+            _stage_deadlines(calendar, registration.event)
     return calendar.to_ical()

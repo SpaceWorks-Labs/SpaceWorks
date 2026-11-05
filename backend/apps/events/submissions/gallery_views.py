@@ -77,7 +77,9 @@ class GalleryConsentGrant(MemberView):
 
 GALLERY_PARAMS = [OpenApiParameter("page", int, OpenApiParameter.QUERY), OpenApiParameter("q", str, OpenApiParameter.QUERY),
                   OpenApiParameter("sort", str, OpenApiParameter.QUERY, enum=("newest", "az", "awards")),
-                  OpenApiParameter("awards", str, OpenApiParameter.QUERY, enum=("only",))]
+                  OpenApiParameter("awards", str, OpenApiParameter.QUERY, enum=("only",)),
+                  OpenApiParameter("field.<key>", str, OpenApiParameter.QUERY,
+                                   description="S7: filter by a public choice field of the final stage.")]
 GalleryEntryPage = inline_serializer(name="GalleryEntryReadPage", fields={
     "count": serializers.IntegerField(), "next": serializers.URLField(allow_null=True),
     "previous": serializers.URLField(allow_null=True), "results": GalleryEntryRead(many=True)})

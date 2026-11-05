@@ -34,6 +34,7 @@ def assignment_projection(actor, row, event):
         description=snapshot.description, mode=round.mode, batch=row.batch, configuration=round.configuration,
         scores=own_score.criterion_values if own_score else {}, notes=own_score.notes if own_score else "",
         asset_ids=list(snapshot.judge_asset_ids), batch_projects=batch_projects,
+        answers=[{"label": a[1], "value": a[3]} for a in snapshot.answers if a[4] != "staff_only"],
         allowed_actions=_actions(round.mode, can_score, can_recuse))
 
 

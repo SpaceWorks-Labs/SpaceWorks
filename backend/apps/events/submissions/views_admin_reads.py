@@ -20,6 +20,8 @@ class OrganizerProjectSerializer(serializers.Serializer):
     triage = serializers.CharField()
     allowed_actions = serializers.ListField(child=serializers.CharField())
     assets = serializers.ListField(child=serializers.DictField())
+    stages = serializers.ListField(child=serializers.DictField(), required=False,
+                                   help_text="#178/S5: per stage, its current snapshot, triage, submitted time and lateness.")
 
 
 class OrganizerProjectPageSerializer(serializers.Serializer):
@@ -37,7 +39,20 @@ def project(row):
         "assets": [{"id": asset.pk, "state": asset.state, "kind": asset.kind,
             "bytes": asset.actual_bytes, "mime": asset.canonical_mime, "sha256": asset.sha256,
             "download_url": f"/api/v1/admin/events/{row.event_id}/assets/{asset.pk}/download/"}
-            for asset in row.assets.filter(pk__in=row.asset_ids).order_by("pk")[:100]]}
+            for asset in row.assets.filter(pk__in=row.asset_ids).order_by("pk")[:100]],
+        "stages": [{"stage_id": entry.stage_id, "position": entry.stage.position, "name": entry.stage.name,
+                    "snapshot_id": entry.current_snapshot_id, "triage": entry.triage, "submitted_at": entry.submitted_at,
+                    "late": bool(entry.current_snapshot and entry.current_snapshot.late),
+                    "answers": _answers(entry.current_snapshot_id)}
+                   for entry in row.stage_entries.select_related("stage", "current_snapshot").order_by("stage__position")]}
+
+
+def _answers(snapshot_id):
+    """S7: staff read every frozen custom answer, with who else may read it."""
+    if not snapshot_id:
+        return []
+    from apps.events.judging.ports import runtime
+    return [{"key": a[0], "label": a[1], "value": a[3], "visible_to": a[4]} for a in runtime().snapshot(snapshot_id).answers]
 
 
 class OrganizerProjectListView(AdminView):

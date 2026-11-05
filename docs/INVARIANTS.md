@@ -1147,10 +1147,10 @@ and should be built only if the owner decides vendors can be named individuals. 
 re-raise the question from a grep for "contact" columns; this entry is the answer.
 
 **Fixed per-makerspace roles (replaces Part L; seven at first, nine since release 2 added Technician and Shop Manager).** `makerspaces/role_catalog.py` defines
-Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member.
-Names, slugs and grants are immutable; role CRUD and the capabilities editor/API are removed. Each
-membership has a primary `assigned_role` plus `MembershipAdditionalRole` rows. Space Manager and Member
-stand alone; the other five combine freely. `accounts/rbac_roles.py` shares the validity predicate
+Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician,
+Shop Manager and Member. Names, slugs and grants are immutable; role CRUD and the capabilities editor/API
+are removed. Each membership has a primary `assigned_role` plus `MembershipAdditionalRole` rows. Space
+Manager and Member stand alone; the other seven combine freely. `accounts/rbac_roles.py` shares the validity predicate
 between object and SQL readers: additional rows contribute only when the primary and additional role
 belong to the membership's tenant and both have combinable canonical slugs. Account-kind/context
 validation also applies; null primary or foreign/obsolete roles fail closed. Authority is

@@ -36,6 +36,13 @@ def assert_write_allowed(makerspace_id):
 
 
 def _assert_gate_state(makerspace_id):
+    _assert_source_gate_state(makerspace_id)
+    # #185: the same single check refuses writes to a paused or read-only space.
+    from apps.space_controls.write_policy import assert_space_writable
+    assert_space_writable(makerspace_id)
+
+
+def _assert_source_gate_state(makerspace_id):
     gate = SourceMigrationGate.objects.only(
         "state", "purpose", "owner_id", "fencing_token", "lease_expires_at"
     ).filter(makerspace_id=makerspace_id).first()
@@ -77,7 +84,10 @@ def boundary_tenant_write(makerspace_id):
 def fanout_tenant_write(makerspace_id, *, operation, counts):
     """Hold one tenant boundary, or report a frozen item and let the scan continue."""
     makerspace_id = int(makerspace_id)
+    from apps.space_controls.write_policy import fanout_context
     with ExitStack() as stack:
+        # #185: paused spaces skip every sweep; read-only spaces skip sweeps that create.
+        stack.enter_context(fanout_context(operation))
         try:
             stack.enter_context(boundary_tenant_write(makerspace_id))
         except SourceMigrationGateClosed:

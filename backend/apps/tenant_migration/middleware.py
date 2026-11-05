@@ -49,6 +49,11 @@ class SourceMigrationGateMiddleware:
             # remains protected by its own inner tenant_write transaction.
             return self.get_response(request)
         makerspace_ids = _makerspace_ids(request, match)
+        from apps.space_controls.write_policy import http_context
+        with http_context(request.path_info, match.url_name or ""):
+            return self._dispatch(request, match, makerspace_ids)
+
+    def _dispatch(self, request, match, makerspace_ids):
         try:
             refusal_exempt = match.view_name in HTTP_EXEMPTIONS
             if makerspace_ids:

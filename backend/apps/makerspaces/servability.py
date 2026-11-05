@@ -6,11 +6,17 @@ from apps.makerspaces.models import Makerspace
 
 
 def is_servable(makerspace: Makerspace, *, allow_archived: bool = False) -> bool:
-    """Return whether traffic may use it, optionally for archived recovery only."""
-    return (
-        makerspace.lifecycle_state == Makerspace.LifecycleState.ACTIVE
-        and (allow_archived or makerspace.archived_at is None)
-    )
+    """Return whether traffic may use it, optionally for archived recovery only.
+
+    ``allow_archived`` answers the capability/settlement question (webhooks settling
+    money, module and feature capability). A space a superadmin SUSPENDED (#185) keeps
+    its data and money exactly like an archived one, so it passes that path too; normal
+    traffic refuses it. Suspended writes are refused separately by the source gate.
+    """
+    state = makerspace.lifecycle_state
+    if allow_archived:
+        return state in (Makerspace.LifecycleState.ACTIVE, Makerspace.LifecycleState.SUSPENDED)
+    return state == Makerspace.LifecycleState.ACTIVE and makerspace.archived_at is None
 
 
 def servable_queryset(queryset: QuerySet | None = None, *, relation: str = ""):

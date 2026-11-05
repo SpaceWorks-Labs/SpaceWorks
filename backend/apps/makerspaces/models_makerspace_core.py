@@ -43,6 +43,9 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         ACTIVE = "active", "Active"
         IMPORTING = "importing", "Importing"
         ABORTED = "aborted", "Aborted"
+        # #185: a superadmin paused the space (reversible). Unservable like an archive,
+        # but data, money settlement and the schedule stay; see apps.space_controls.
+        SUSPENDED = "suspended", "Suspended"
 
     class MembershipPolicy(models.TextChoices):
         REQUEST = "request", "Request"

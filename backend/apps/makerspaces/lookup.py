@@ -26,7 +26,10 @@ def get_makerspace_by_public_code(public_code, *, allow_archived=False):
     """Resolve an exact webhook/public-code tenant through canonical servability."""
     queryset = Makerspace.objects.filter(public_code__iexact=str(public_code or ""))
     if allow_archived:
-        queryset = queryset.filter(lifecycle_state=Makerspace.LifecycleState.ACTIVE)
+        # Settlement addressing: archived and superadmin-suspended (#185) spaces settle.
+        queryset = queryset.filter(lifecycle_state__in=(
+            Makerspace.LifecycleState.ACTIVE, Makerspace.LifecycleState.SUSPENDED,
+        ))
     else:
         queryset = servable_queryset(queryset)
     return queryset.first()

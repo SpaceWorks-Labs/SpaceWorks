@@ -58,8 +58,10 @@ def sweep_notices(*, after_id=None, limit=100):
     """
     from apps.events.tasks_sweeps import take_ids
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
-    ids = (take_ids("judging-notices", JudgingNotice.objects.all(), limit=limit) if after_id is None else
-           list(JudgingNotice.objects.filter(pk__gt=after_id).order_by("pk").values_list("pk", flat=True)[:min(limit, 500)]))
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    live = JudgingNotice.objects.filter(event__makerspace_id__in=live_space_ids("events"))
+    ids = (take_ids("judging-notices", live, limit=limit) if after_id is None else
+           list(live.filter(pk__gt=after_id).order_by("pk").values_list("pk", flat=True)[:min(limit, 500)]))
     failed = 0
     counts = {"skipped": 0}
     for pk in bounded.items(ids):

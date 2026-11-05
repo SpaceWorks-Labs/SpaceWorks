@@ -81,7 +81,8 @@ def sweep_deadlines_task(limit=100):
     spaces = servable_q("event__makerspace")
     from apps.tenant_migration.models_source_gate import SourceMigrationGate
     closed = SourceMigrationGate.objects.exclude(state="open").values("makerspace_id")
-    gates = {"event__makerspace__enabled_modules__contains": ["events", "event_reimbursements"],
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    gates = {"event__makerspace_id__in": live_space_ids(("events", "event_reimbursements")),
         "event__reimbursement_programme__enabled": True, "event__reimbursement_programme__imported_paused": False}
     # Work completion removes candidates from this queue. Unlike slicing the first
     # N events on every run, an older full page cannot starve a later event.

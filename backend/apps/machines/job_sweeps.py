@@ -21,8 +21,11 @@ LIMIT = 200
 
 
 def _rows(queryset):
+    # Only spaces with job requests switched on (#183B), read through the registry helpers
+    # so a tombstoned app or an off parent module counts as off too.
+    from apps.makerspaces.scheduled_scope import live_space_ids
     return rbac.scope_for_scheduled_work(queryset.filter(
-        makerspace__enabled_features__contains=[job_policy.JOB_REQUESTS])).order_by("pk")[:LIMIT]
+        makerspace_id__in=live_space_ids(job_policy.JOB_REQUESTS))).order_by("pk")[:LIMIT]
 
 
 def _each(rows, operation, counts, work):

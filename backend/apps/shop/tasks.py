@@ -27,7 +27,8 @@ def _live(queryset):
     from apps.makerspaces.models import Makerspace
     from apps.makerspaces.servability import servable_queryset
 
-    spaces = servable_queryset(Makerspace.objects.filter(enabled_modules__contains=["shop"])).values("pk")
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    spaces = servable_queryset(Makerspace.objects.filter(pk__in=live_space_ids("shop"))).values("pk")
     return queryset.filter(makerspace_id__in=spaces)
 
 

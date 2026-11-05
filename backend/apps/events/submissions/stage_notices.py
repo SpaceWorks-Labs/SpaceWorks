@@ -84,9 +84,11 @@ def remind_due_stages(now=None, limit=100):
     from apps.events.judging.boundary import notice
     from apps.events.judging.options import options_for
     from .models_stages import SubmissionStage
+    from apps.makerspaces.scheduled_scope import live_space_ids
     now = now or timezone.now()
     due = (SubmissionStage.objects.select_related("event__makerspace")
-           .filter(deadline__gt=now, deadline__lte=now + REMINDER_WINDOW, event__status="published")
+           .filter(deadline__gt=now, deadline__lte=now + REMINDER_WINDOW, event__status="published",
+                   event__makerspace_id__in=live_space_ids("events"))
            .order_by("deadline", "pk")[:limit])
     queued = 0
     for stage in due:

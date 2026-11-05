@@ -56,9 +56,13 @@ def disable_dead_destinations_task():
     from apps.makerspaces.servability import servable_queryset
     from .models_destinations import NotificationDestination
     counts = {"disabled": 0, "failed": 0}
+    from .dispatch_channels import channel_module_blocks
     rows = (NotificationDestination.objects.filter(is_active=True, makerspace__in=servable_queryset().values("pk"))
-            .order_by("pk"))
+            .select_related("makerspace").order_by("pk"))
     for destination in bounded.page(rows, "notification-destination-health"):
+        # A room whose channel module is off is left alone (#183B); it is kept as is.
+        if channel_module_blocks(destination.makerspace, destination.channel):
+            continue
         try:
             if dead(destination) and disable(destination):
                 counts["disabled"] += 1

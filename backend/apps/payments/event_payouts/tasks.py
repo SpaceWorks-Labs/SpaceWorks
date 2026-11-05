@@ -64,8 +64,12 @@ def recover_finance_work_task(limit=100):
     from .cleanup import due_ids, delete_one
     limit = bounded.rows(max(1, min(int(limit), 500)), heavy=True)
     counts = {"validated": 0, "deleted": 0, "retry": 0}
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    # Upload validation is reimbursement work (#183B); the retention cleanup below is not
+    # switch-gated, because deleting expired private bytes must outlive the module.
     for asset_id in bounded.items(page("recover-uploads", FinanceAttachment.objects.filter(
-            state__in=("uploaded", "validating")), limit=limit)):
+            state__in=("uploaded", "validating"),
+            makerspace_id__in=live_space_ids(("events", "event_reimbursements"))), limit=limit)):
         try:
             counts["validated"] += bool(process(asset_id))
         except Exception:

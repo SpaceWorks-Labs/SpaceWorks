@@ -109,7 +109,9 @@ def enqueue_update(kind, card_id):
 
 def sweep_changed(*, limit=100):
     """Refresh passes whose content changed (renewals, expiry) since they were last sent."""
-    rows = WalletPass.objects.filter(voided_at__isnull=True).order_by("last_updated_at")[:limit]
+    from ..switches import live_holder_q
+    # A pass is refreshed only while its card kind and its wallet switch are on (#183B).
+    rows = WalletPass.objects.filter(live_holder_q(wallet=True), voided_at__isnull=True).order_by("last_updated_at")[:limit]
     refreshed = 0
     for row in rows:
         kind = row.holder_kind

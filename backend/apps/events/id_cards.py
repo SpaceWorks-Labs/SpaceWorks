@@ -112,7 +112,10 @@ def reconcile_due(limit=50):
     """Events with a published card design that are live or upcoming."""
     from apps.card_designs.models import CardDesign
     now = timezone.now()
-    events = Event.objects.filter(ends_at__gte=now - VALID_AFTER_END, makerspace__enabled_modules__contains=["events"])
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    # Event ID cards are their own capability (#183B): no reconcile while it is off.
+    events = Event.objects.filter(ends_at__gte=now - VALID_AFTER_END,
+                                  makerspace_id__in=live_space_ids("events.id_cards"))
     spaces = CardDesign.objects.filter(domain="event_card", event__isnull=True, published_document__isnull=False) \
         .values_list("makerspace_id", flat=True)
     with_design = CardDesign.objects.filter(domain="event_card", published_document__isnull=False,

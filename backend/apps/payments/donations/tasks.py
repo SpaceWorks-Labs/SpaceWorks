@@ -33,8 +33,10 @@ def raise_pledges_task(limit=100):
 
 def due_perk_ids(limit, today):
     from .models import SponsorPerk
+    from apps.makerspaces.scheduled_scope import live_space_ids
 
     return list(SponsorPerk.objects.filter(
+        makerspace_id__in=live_space_ids("finance.sponsors"),
         sponsor__isnull=False, sponsor__archived_at__isnull=True, fulfilled_at__isnull=True, reminded_on__isnull=True,
         due_on__isnull=False, due_on__lte=today + timedelta(days=PERK_NOTICE_DAYS),
     ).order_by("due_on", "pk").values_list("pk", flat=True)[:limit])

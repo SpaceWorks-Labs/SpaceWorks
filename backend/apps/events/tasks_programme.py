@@ -22,8 +22,9 @@ def sweep_admission_deadlines_task():
         expire_due, freeze_closed_applications, resume_waitlist,
     )
 
+    from apps.makerspaces.scheduled_scope import live_space_ids
     configs = servable_queryset(HackathonConfig.objects.filter(
-        enabled=True, event__makerspace__enabled_modules__contains=["events"],
+        enabled=True, event__makerspace_id__in=live_space_ids("events.hackathons"),
     ), relation="event__makerspace").select_related("event__makerspace").order_by("event_id")
     processed = 0
     for config in bounded.page(configs, "event-admission-configs"):

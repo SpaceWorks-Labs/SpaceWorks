@@ -69,12 +69,16 @@ def _expire_series(series, *, actor, order_id):
 
 
 def due_expiries(limit):
+    from apps.makerspaces.scheduled_scope import live_space_ids
     return list(EventCheckoutHold.objects.filter(
         released_at__isnull=True, expires_at__lte=timezone.now(), order__status=EventOrder.Status.PENDING,
+        order__makerspace_id__in=live_space_ids("events.orders"),
     ).order_by("expires_at").values_list("order_id", flat=True)[:limit])
 
 
 def missed_settlements(limit):
+    # Not switch-gated (#183B money-in-flight exemption): the payer has already paid,
+    # so the order settles even if the space switched ticket orders off since.
     from apps.payments.models import Payment
     from .orders_settlement import SETTLED
     paid = Payment.objects.filter(subject_type="event_order", status__in=SETTLED).values("subject_id")
@@ -83,8 +87,10 @@ def missed_settlements(limit):
 
 
 def due_reminders(limit):
+    from apps.makerspaces.scheduled_scope import live_space_ids
     cutoff = timezone.now() - REMINDER_AFTER
     return list(EventOrder.objects.filter(status=EventOrder.Status.PENDING, hold__isnull=True,
+                                          makerspace_id__in=live_space_ids("events.orders"),
                                           reminded_at__isnull=True, created_at__lte=cutoff)
                 .order_by("pk").values_list("pk", flat=True)[:limit])
 

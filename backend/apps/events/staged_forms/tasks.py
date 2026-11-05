@@ -74,7 +74,8 @@ def reconcile_event(event_id, *, limit=100):
 @shared_task
 def reconcile_stage_forms_task(limit=50):
     limit = batch(limit)
-    events = Event.objects.filter(servable_q("makerspace"), makerspace__enabled_modules__contains=["events"],
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    events = Event.objects.filter(servable_q("makerspace"), makerspace_id__in=live_space_ids("events"),
         stage_forms__isnull=False).annotate(sweep=Coalesce("stage_reconcile_cursor__version", Value(0),
             output_field=BigIntegerField())).order_by("sweep", "pk").values_list("pk", flat=True).distinct()[:min(limit, 100)]
     processed = 0
@@ -91,11 +92,12 @@ def recover_stage_files_task(limit=50):
     from django.db.models import Q
     from .upload_models import StageFormAsset
     from .upload_jobs import validate_asset
+    from apps.makerspaces.scheduled_scope import live_space_ids
     limit = batch(limit, heavy=True)
     now = timezone.now()
     rows = StageFormAsset.objects.filter(state__in=("uploaded", "validating"), expires_at__gt=now).filter(
         Q(lease_until__isnull=True) | Q(lease_until__lte=now)).filter(servable_q("event__makerspace"),
-        event__makerspace__enabled_modules__contains=["events"]).order_by("attempts", "pk").values_list("pk", flat=True)[:min(limit, 100)]
+        event__makerspace_id__in=live_space_ids("events")).order_by("attempts", "pk").values_list("pk", flat=True)[:min(limit, 100)]
     count = 0
     for pk in bounded.items(list(rows)):
         try:

@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 def extend_published_series():
+    from apps.makerspaces.scheduled_scope import live_space_ids
     series_ids = servable_queryset(
         EventSeries.objects.filter(
             status=EventSeries.Status.PUBLISHED,
-            makerspace__enabled_modules__contains=["events"],
+            makerspace_id__in=live_space_ids("events"),
         ),
         relation="makerspace",
     ).order_by("pk").values_list("pk", flat=True)

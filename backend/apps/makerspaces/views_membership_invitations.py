@@ -52,7 +52,7 @@ class InvitationDiscoveryView(APIView):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied()
         # A community invitation or referral of a space that has since switched the
-        # module off is not claimable (the claim answers 400), so it is not offered.
+        # module off is not claimable (the claim answers 404), so it is not offered.
         invitations = [
             item for item in _claimable_invitations(request.user)
             if is_staff_invitation(item) or module_enabled(item.makerspace, "membership")

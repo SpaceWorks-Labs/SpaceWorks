@@ -32,7 +32,8 @@ class DeviceHeartbeatView(APIView):
             **{
                 code: OpenApiResponse(DeviceErrorSerializer, description=text)
                 for code, text in (
-                    (400, "Module disabled, or an invalid status snapshot (sizes, kinds, unknown fields)."),
+                    (400, "An invalid status snapshot (sizes, kinds, unknown fields)."),
+                    (404, "The module is turned off."),
                     (401, "Missing, malformed, stale, replayed or invalid signature."),
                     (403, "Device not allowed on this route, revoked or tenant unavailable."),
                     (423, "Tenant frozen for migration."),

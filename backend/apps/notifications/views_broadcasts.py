@@ -4,7 +4,6 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
 
 from apps.accounts import rbac
 from apps.makerspaces.models import Makerspace
@@ -23,7 +22,8 @@ def require_broadcasts(space):
     require_module(space, 'membership')
     require_module(space, 'notifications')
     if not feature_enabled(space, 'membership.broadcasts'):
-        raise ValidationError({'feature': 'Member broadcasts are disabled.'})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off('membership.broadcasts', 'Member broadcasts are turned off.')
 
 
 class BroadcastCreateView(APIView):

@@ -7,7 +7,7 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from unfold.admin import ModelAdmin, TabularInline
 
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.guards import SurfaceOff, require_module
 from apps.operations import services
 from apps.operations.admin_forms import StockTransferAdminForm, StocktakeCountAdminForm
 from apps.operations.models import (
@@ -91,7 +91,7 @@ class StockTransferAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
                     makerspace,
                     form.service_payload(),
                 )
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
                 form.add_error(None, exc)
             else:
                 self.message_user(
@@ -173,7 +173,7 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         for stocktake in queryset:
             try:
                 service_func(request.user, stocktake)
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
                 self.message_user(request, f"{stocktake.pk}: {exc}", level=messages.ERROR)
             else:
                 success_count += 1
@@ -188,8 +188,8 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             return redirect(reverse("admin:operations_stocktakesession_changelist"))
         try:
             require_module(stocktake.makerspace, "stocktake")
-        except DRFValidationError as exc:
-            self.message_user(request, exc.detail, level=messages.ERROR)
+        except SurfaceOff as exc:
+            self.message_user(request, exc.message, level=messages.ERROR)
             return redirect(reverse("admin:operations_stocktakesession_change", args=[stocktake.pk]))
         if stocktake.status not in {StocktakeSession.Status.DRAFT, StocktakeSession.Status.COUNTING}:
             self.message_user(
@@ -207,7 +207,7 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
                     stocktake,
                     form.cleaned_data["_validated_payload"],
                 )
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
                 form.add_error(None, exc)
             else:
                 self.message_user(

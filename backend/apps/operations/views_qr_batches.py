@@ -35,9 +35,9 @@ QR_MUTATION_ERRORS = {
                   {"type": "array", "items": {"type": "string"}}],
     }, description=description)
     for code, description in (
-        (400, "Invalid input, disabled module, or non-draft print batch."),
+        (400, "Invalid input, or non-draft print batch."),
         (401, "Authentication required."), (403, "QR management permission required."),
-        (404, "Batch or inventory target not in scope."), (423, "Tenant frozen for migration."),
+        (404, "Batch or inventory target not in scope, or the module is turned off."), (423, "Tenant frozen for migration."),
     )
 }
 

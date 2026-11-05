@@ -29,7 +29,7 @@ def public_service_status(public_token):
 
     machine_type = _machine_type(row)
     # The token names a job in ONE makerspace: that space's module and edition gates
-    # apply (edition-hidden = 404, module off = 400), and built-in printer jobs also
+    # apply (edition-hidden and module off both answer 404), and built-in printer jobs also
     # need `printing`, exactly like the printer-specific status route.
     require_module_for_servable(row.makerspace, "machine_service")
     if is_printer_type(machine_type):

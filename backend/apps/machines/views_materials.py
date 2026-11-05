@@ -37,7 +37,8 @@ def managed_space(actor, pk, feature="machines.material_catalogue"):
                                Makerspace.objects.all(), field="id"), pk=pk)
     require_module(space, "machines")
     if not feature_enabled(space, feature):
-        raise ValidationError({"detail": "This machine feature is disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off(feature, "This machine feature is turned off.")
     if not rbac.is_space_manager_identity(actor, space.pk):
         raise PermissionDenied()
     return space

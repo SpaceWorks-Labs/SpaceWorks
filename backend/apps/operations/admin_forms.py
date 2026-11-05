@@ -1,9 +1,8 @@
 from django import forms
-from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from apps.boxes.models import Box
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
-from apps.makerspaces.guards import require_module
+from apps.makerspaces.guards import SurfaceOff, require_module
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
 from apps.operations.models import StocktakeLine, StocktakeSession
@@ -91,8 +90,8 @@ class StockTransferAdminForm(forms.Form):
             raise forms.ValidationError("Makerspace is archived or unavailable.")
         try:
             require_module(makerspace, module)
-        except DRFValidationError as exc:
-            raise forms.ValidationError(exc.detail) from exc
+        except SurfaceOff as exc:
+            raise forms.ValidationError(exc.message) from exc
 
 
 class StocktakeCountAdminForm(forms.Form):

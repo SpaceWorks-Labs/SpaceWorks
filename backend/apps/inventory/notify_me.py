@@ -25,7 +25,8 @@ def subscribe(product, user):
     if not product.makerspace.public_inventory_enabled:
         raise ValidationError({"detail": "Public inventory is disabled."})
     if not feature_enabled(product.makerspace, "inventory.notify_when_back"):
-        raise ValidationError({"detail": "Notify-me is disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off("inventory.notify_when_back", "Notify-me is turned off.")
     # Same lock as quantity writes: a return cannot slip between eligibility and watch.
     product = rbac.scope_public_catalogue(
         type(product).objects.select_for_update(), product.makerspace,

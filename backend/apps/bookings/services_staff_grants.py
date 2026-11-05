@@ -2,7 +2,7 @@
 
 import logging
 
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 
 from apps.makerspaces import resource_grants_services as lifecycle
 from apps.makerspaces.guards import require_module_locked
@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 def require_feature(space):
     if not feature_enabled(space.makerspace, "bookings.staff_grants"):
-        raise ValidationError({"feature": "Booking staff grants are disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off("bookings.staff_grants", "Booking staff grants are turned off.")
 
 
 def _locked_target(target):

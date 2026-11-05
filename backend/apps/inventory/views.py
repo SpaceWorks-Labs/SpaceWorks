@@ -30,10 +30,10 @@ class PublicInventoryErrorSerializer(serializers.Serializer):
 
 
 PUBLIC_INVENTORY_ERRORS = {
-    400: OpenApiResponse(PublicInventoryErrorSerializer, description="Public inventory module or loans feature is disabled."),
+    400: OpenApiResponse(PublicInventoryErrorSerializer, description="Invalid request."),
     401: OpenApiResponse(PublicInventoryErrorSerializer, description="Invalid authentication credentials."),
     403: OpenApiResponse(PublicInventoryErrorSerializer, description="Public API client is not authorized."),
-    404: OpenApiResponse(PublicInventoryErrorSerializer, description="Item or public makerspace not found, or hidden by edition."),
+    404: OpenApiResponse(PublicInventoryErrorSerializer, description="Item or public makerspace not found, hidden by edition, or the public inventory module or loans feature is turned off."),
     429: OpenApiResponse(PublicInventoryErrorSerializer, description="Public read rate limit exceeded."),
 }
 

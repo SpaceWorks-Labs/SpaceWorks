@@ -1,7 +1,6 @@
 """Space-Manager messaging settings, scoped through RBAC."""
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,7 +23,8 @@ def settings_space(actor, makerspace_id):
     space = staff_space(actor, makerspace_id)
     # This shared configuration surface belongs to either addressed channel.
     if not any(module_enabled(space, channel) for channel in ("sms", "whatsapp")):
-        raise ValidationError({"module": "sms and whatsapp are disabled for this makerspace."})
+        from apps.makerspaces.guards import module_off
+        raise module_off("sms", "SMS and WhatsApp are turned off for this makerspace.")
     return space
 
 

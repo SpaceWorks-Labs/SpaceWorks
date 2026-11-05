@@ -152,7 +152,8 @@ def _require_module(makerspace, *, locked=False):
 
         makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=getattr(makerspace, "pk", makerspace))
     if not module_enabled(makerspace, "machine_service"):
-        raise ValidationError("Machine service is disabled for this makerspace.")
+        from apps.makerspaces.guards import module_off
+        raise module_off("machine_service", "Machine service is turned off for this makerspace.")
 
 
 def _require_edge(service_request, next_status):

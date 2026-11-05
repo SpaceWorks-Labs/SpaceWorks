@@ -7,6 +7,7 @@ from unfold.admin import ModelAdmin, TabularInline
 
 from apps.accounts import rbac
 from apps.audit import services as audit
+from apps.makerspaces.guards import SurfaceOff
 from apps.operations import services
 from apps.operations.models import QrPrintBatch, QrPrintBatchItem
 from apps.operations.qr_zip import build_batch_zip
@@ -67,7 +68,7 @@ class QrPrintBatchAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         for batch in queryset:
             try:
                 services.mark_batch_printed(request.user, batch)
-            except (DRFValidationError, DjangoValidationError) as exc:
+            except (DRFValidationError, DjangoValidationError, SurfaceOff) as exc:
                 self.message_user(request, f"{batch.pk}: {exc}", level=messages.ERROR)
             else:
                 success_count += 1

@@ -10,10 +10,11 @@ blanket list every route copies.
 from drf_spectacular.utils import OpenApiResponse
 
 _DESCRIPTIONS = {
-    400: "Validation failed, or the makerspace module this route belongs to is off.",
+    400: "Validation failed.",
     401: "Not signed in.",
     403: "Signed in, but this action or makerspace is not permitted (or the secret is wrong).",
-    404: "Not found, not visible to this actor, or the surface is not enabled here.",
+    404: ("Not found, not visible to this actor, or the module/feature this route belongs to is turned off "
+          "here (typed `module_disabled` / `feature_disabled`)."),
     409: "Conflicts with the current state.",
     410: "Gone: the resource was retired or migrated and is no longer served here.",
     415: "Unsupported media type for the request body.",

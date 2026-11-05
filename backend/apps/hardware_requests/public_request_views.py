@@ -187,4 +187,5 @@ def _require_module(makerspace, module_key):
 
     require_public_surface(module_key)
     if not module_enabled(makerspace, module_key):
-        raise ValidationError({"module": f"{module_key} is disabled for this makerspace."})
+        from apps.makerspaces.guards import module_off
+        raise module_off(module_key)

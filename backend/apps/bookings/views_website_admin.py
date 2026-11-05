@@ -22,8 +22,8 @@ from .services_website_assets import upload_asset, delete_asset, image_response
 from .website_projection import project
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer, description=label) for code, label in (
-    (400, "Invalid content, stale revision or disabled feature."), (401, "Sign in required."),
-    (403, "Missing resource permission or wrong origin."), (404, "Unknown or out-of-scope resource/image."),
+    (400, "Invalid content or stale revision."), (401, "Sign in required."),
+    (403, "Missing resource permission or wrong origin."), (404, "Unknown or out-of-scope resource/image, or the feature is turned off."),
     (429, "Rate limit exceeded."), (423, "Tenant frozen."), (503, "Storage or write gate unavailable."),
 )}
 

@@ -28,7 +28,8 @@ from apps.tenant_migration.gate_errors import SourceMigrationGateError
 logger = logging.getLogger(__name__)
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer, description=detail) for code, detail in (
-    (400, "Invalid command, target, module or feature disabled."),
+    (400, "Invalid command or target."),
+    (404, "A required module or feature is turned off (`module_disabled` / `feature_disabled`)."),
     (403, "Station, origin, session, operator lease or live permission refused."),
     (409, "Ownership conflict, expired command, predecessor refusal or concurrent claim."),
     (423, "Tenant migration source gate is closed."),

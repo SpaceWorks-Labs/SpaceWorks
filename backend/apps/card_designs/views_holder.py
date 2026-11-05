@@ -152,7 +152,8 @@ class MyCardEmailView(APIView):
         from .email import blocked, send_card_email
         _spec, card = own_card(request.user, kind, card_id)
         if blocked(card.makerspace):
-            raise ValidationError({"detail": "Email is turned off for this space."})
+            from apps.makerspaces.guards import module_off
+            raise module_off("email", "Email is turned off for this space.")
         data = CardEmailSerializer(data=request.data or {})
         data.is_valid(raise_exception=True)
         _remember_format(request.user, kind, card, data.validated_data.get("format"))

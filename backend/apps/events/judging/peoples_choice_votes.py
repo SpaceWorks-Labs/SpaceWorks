@@ -18,7 +18,7 @@ from .feature import PEOPLES_CHOICE, require_capability
 from .models_peoples_choice import PeoplesChoiceVote
 from .peoples_choice import attended, config_for, public_gallery_event, require_live, result_for, state, window
 from .serializers import validated
-from .serializers_peoples_choice import BallotRead, VoteInput
+from .serializers_peoples_choice import PeoplesChoiceBallotRead, PeoplesChoiceVoteInput
 
 MESSAGES = {
     "off": "People's choice voting is not running for this event.",
@@ -71,7 +71,7 @@ def ballot(event, *, actor):
 
 
 def cast(event_id, *, actor, data):
-    values = validated(VoteInput, data)
+    values = validated(PeoplesChoiceVoteInput, data)
     with mutation(event_id, actor, owner=True, gallery=True) as (event, _):
         require_capability(event, PEOPLES_CHOICE)
         public_gallery_event(event)
@@ -92,7 +92,7 @@ def cast(event_id, *, actor, data):
             if actor.pk in snapshot.member_ids or snapshot.team_id in own_team_ids(event, actor.pk):
                 raise ProgrammeError("own_project", "You cannot vote for your own team's project.", status=403)
             if vote is not None and vote.team_id == snapshot.team_id:
-                return BallotRead(ballot_projection(event, actor)).data  # The same choice again changes nothing.
+                return PeoplesChoiceBallotRead(ballot_projection(event, actor)).data  # The same choice again changes nothing.
             changed = vote is not None
             if vote is None:
                 PeoplesChoiceVote.objects.create(event=event, voter=actor, team_id=snapshot.team_id)
@@ -102,5 +102,5 @@ def cast(event_id, *, actor, data):
             # Never the project or the team: the audit trail must not become a ballot record.
             record(actor, "event.peoples_choice.ballot_cast", makerspace=event.makerspace, target=event,
                    meta={"event_id": event.pk, "changed": changed})
-            return BallotRead(ballot_projection(event, actor)).data
+            return PeoplesChoiceBallotRead(ballot_projection(event, actor)).data
         return command(event, actor, values, path="peoples-choice/vote", run=run)

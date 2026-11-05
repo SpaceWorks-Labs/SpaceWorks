@@ -20,7 +20,7 @@ from .models_peoples_choice import PeoplesChoiceConfig, PeoplesChoiceStanding, P
 from .peoples_choice import DEFAULT_NAME, config_for, result_for, staff_event, state, window
 from .ports import runtime
 from .serializers import CommandInput, validated
-from .serializers_peoples_choice import StandingsRead
+from .serializers_peoples_choice import PeoplesChoiceStandingsRead
 
 
 def _live_entries(event):
@@ -92,7 +92,7 @@ def publish(event_id, *, actor, data):
             record(actor, "event.peoples_choice.published", makerspace=event.makerspace, target=result,
                    meta={"event_id": event.pk, "prize_id": config.prize_id, "total_votes": result.total_votes,
                          "winners": sum(1 for row in rows if row["winner"])})
-            return StandingsRead(standings_projection(event)).data
+            return PeoplesChoiceStandingsRead(standings_projection(event)).data
         return command(event, actor, values, path="peoples-choice/publish", run=run)
 
 

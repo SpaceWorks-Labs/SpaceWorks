@@ -16,7 +16,7 @@ from .models_peoples_choice import PeoplesChoiceVote
 from .models_scoring import JudgingReason
 from .peoples_choice import result_for, staff_event
 from .serializers import validated
-from .serializers_peoples_choice import VoidInput, VoteRowRead
+from .serializers_peoples_choice import PeoplesChoiceVoidInput, PeoplesChoiceVoteRowRead
 
 
 def _attendees(event):
@@ -42,7 +42,7 @@ def listing(event_id, *, actor):
 
 
 def void(event_id, handle, *, actor, data):
-    values = validated(VoidInput, data)
+    values = validated(PeoplesChoiceVoidInput, data)
     with mutation(event_id, actor, gallery=True) as (event, _):
         require_capability(event, PEOPLES_CHOICE)
 
@@ -62,5 +62,5 @@ def void(event_id, handle, *, actor, data):
             record(actor, "event.peoples_choice.vote_voided", makerspace=event.makerspace, target=vote,
                    meta={"event_id": event.pk, "vote_id": vote.pk})
             # JSON-safe for the command receipt; the view masks the name for a superadmin.
-            return VoteRowRead(row_projection(vote, published=False, attendees=_attendees(event))).data
+            return PeoplesChoiceVoteRowRead(row_projection(vote, published=False, attendees=_attendees(event))).data
         return command(event, actor, values, path=f"peoples-choice/votes/{handle}/void", run=run)

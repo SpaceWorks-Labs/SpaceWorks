@@ -15,7 +15,7 @@ STATES = ("off", "scheduled", "open", "closed", "published")
 REFUSALS = ("off", "not_open", "closed", "published", "attendees_only", "voided")
 
 
-class ConfigInput(CommandInput):
+class PeoplesChoiceConfigInput(CommandInput):
     enabled = serializers.BooleanField(required=False)
     audience = serializers.ChoiceField(choices=AUDIENCES, required=False)
     opens_at = serializers.DateTimeField(allow_null=True, required=False)
@@ -26,11 +26,11 @@ class ConfigInput(CommandInput):
                                           help_text="Email the event's registrants when voting is switched on (off by default).")
 
 
-class VoteInput(CommandInput):
+class PeoplesChoiceVoteInput(CommandInput):
     entry_public_id = serializers.UUIDField(help_text="The public gallery project to vote for.")
 
 
-class VoidInput(CommandInput):
+class PeoplesChoiceVoidInput(CommandInput):
     reason = serializers.CharField(max_length=300)
 
 
@@ -39,7 +39,7 @@ class PeoplesChoicePayoutInput(PayoutInput):
     standing_id = serializers.IntegerField(min_value=1, help_text="A winning People's choice standing.")
 
 
-class ConfigRead(ClosedSerializer):
+class PeoplesChoiceConfigRead(ClosedSerializer):
     id = serializers.IntegerField()
     event_id = serializers.IntegerField()
     version = serializers.IntegerField()
@@ -55,7 +55,7 @@ class ConfigRead(ClosedSerializer):
     allowed_actions = serializers.ListField(child=serializers.CharField())
 
 
-class StandingRead(ClosedSerializer):
+class PeoplesChoiceStandingRead(ClosedSerializer):
     id = serializers.IntegerField(allow_null=True, help_text="Null in the live preview.")
     snapshot_id = serializers.IntegerField()
     title = serializers.CharField()
@@ -64,15 +64,15 @@ class StandingRead(ClosedSerializer):
     winner = serializers.BooleanField()
 
 
-class StandingsRead(ClosedSerializer):
+class PeoplesChoiceStandingsRead(ClosedSerializer):
     published = serializers.BooleanField()
     published_at = serializers.DateTimeField(allow_null=True)
     prize_name = serializers.CharField()
     total_votes = serializers.IntegerField()
-    standings = StandingRead(many=True)
+    standings = PeoplesChoiceStandingRead(many=True)
 
 
-class VoteRowRead(ClosedSerializer):
+class PeoplesChoiceVoteRowRead(ClosedSerializer):
     """A ballot as staff see it: who voted, never which project they chose.
 
     The voter's name is masked for a platform superadmin without an open PII window on the space
@@ -97,7 +97,7 @@ class VoteRowRead(ClosedSerializer):
         return data
 
 
-class BallotRead(ClosedSerializer):
+class PeoplesChoiceBallotRead(ClosedSerializer):
     event_id = serializers.IntegerField()
     state = serializers.ChoiceField(choices=STATES)
     audience = serializers.ChoiceField(choices=AUDIENCES)
@@ -111,29 +111,29 @@ class BallotRead(ClosedSerializer):
     version = serializers.IntegerField(help_text="Send as expected_version; 0 before the first vote.")
 
 
-class PublicWinnerRead(ClosedSerializer):
+class PeoplesChoiceWinnerRead(ClosedSerializer):
     title = serializers.CharField()
     entry_public_id = serializers.UUIDField(allow_null=True)
     votes = serializers.IntegerField()
 
 
-class PublicAwardRead(ClosedSerializer):
+class PeoplesChoiceAwardRead(ClosedSerializer):
     prize_name = serializers.CharField()
     total_votes = serializers.IntegerField()
     published_at = serializers.DateTimeField()
-    winners = PublicWinnerRead(many=True)
+    winners = PeoplesChoiceWinnerRead(many=True)
 
 
-class PublicRead(ClosedSerializer):
+class PeoplesChoicePublicRead(ClosedSerializer):
     event_id = serializers.IntegerField()
     state = serializers.ChoiceField(choices=STATES)
     audience = serializers.ChoiceField(choices=AUDIENCES)
     opens_at = serializers.DateTimeField(allow_null=True)
     closes_at = serializers.DateTimeField(allow_null=True)
-    award = PublicAwardRead(allow_null=True, help_text="Only after staff publish; there are no counts before then.")
+    award = PeoplesChoiceAwardRead(allow_null=True, help_text="Only after staff publish; there are no counts before then.")
 
 
-class PayableWinnerRead(ClosedSerializer):
+class PeoplesChoicePayableWinnerRead(ClosedSerializer):
     id = serializers.IntegerField()
     prize_name = serializers.CharField()
     title = serializers.CharField()
@@ -141,5 +141,5 @@ class PayableWinnerRead(ClosedSerializer):
     paid = serializers.BooleanField()
 
 
-class PayableWinnersRead(ClosedSerializer):
-    winners = PayableWinnerRead(many=True)
+class PeoplesChoicePayableWinnersRead(ClosedSerializer):
+    winners = PeoplesChoicePayableWinnerRead(many=True)

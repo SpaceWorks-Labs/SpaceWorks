@@ -18,7 +18,7 @@ from .models_definitions import HackathonPrize
 from .models_peoples_choice import PeoplesChoiceConfig, PeoplesChoiceResult, PeoplesChoiceVote
 from .ports import runtime
 from .serializers import validated
-from .serializers_peoples_choice import ConfigInput, ConfigRead
+from .serializers_peoples_choice import PeoplesChoiceConfigInput, PeoplesChoiceConfigRead
 
 FIELDS = ("enabled", "audience", "opens_at", "closes_at", "open_email")
 DEFAULT_NAME = "People's choice"
@@ -97,7 +97,7 @@ def _changes(event, row, values):
 
 
 def update(event_id, *, actor, data):
-    values = validated(ConfigInput, data, partial=True)
+    values = validated(PeoplesChoiceConfigInput, data, partial=True)
     with mutation(event_id, actor, gallery=True) as (event, _):
         require_capability(event, PEOPLES_CHOICE)
 
@@ -119,7 +119,7 @@ def update(event_id, *, actor, data):
             if row.enabled and not was_on and row.open_email:
                 notice(event, "peoples_choice_open", row.pk, row.version)
             # The command receipt stores this response as JSON, so it is serialized first.
-            return ConfigRead(projection(event)).data
+            return PeoplesChoiceConfigRead(projection(event)).data
         return command(event, actor, values, path="peoples-choice", run=run)
 
 

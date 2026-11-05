@@ -16,6 +16,10 @@ class HostingRequestSubmitSerializer(serializers.Serializer):
     space_website_url = serializers.URLField(max_length=200, required=False, allow_blank=True, default="")
     description = serializers.CharField(min_length=20, max_length=2000)
     proposed_slug = serializers.SlugField(max_length=50, required=False, allow_blank=True, default="")
+    expected_members = serializers.IntegerField(
+        min_value=1, max_value=100000, required=False, allow_null=True, default=None,
+        help_text="Roughly how many members the space expects (optional).",
+    )
     new_organization_name = serializers.CharField(
         max_length=200, required=False, allow_blank=True, default="",
     )

@@ -44,6 +44,8 @@ class HostingRequest(models.Model):
     location = models.CharField(max_length=200, blank=True)
     space_website_url = models.URLField(max_length=200, blank=True)
     description = models.TextField(max_length=2000, blank=True)
+    # #185 item 5: the size the applicant expects (members); informs the review only.
+    expected_members = models.PositiveIntegerField(null=True, blank=True)
     organization_choice = models.CharField(
         max_length=8, choices=OrganizationChoice.choices, default=OrganizationChoice.OWN,
     )

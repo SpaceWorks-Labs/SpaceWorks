@@ -8,10 +8,10 @@ from .tenant_dump_types import ModelDisposition, ModelRule, TableRule
 FIRST_PARTY_APP_LABELS = frozenset(
     """accounts admin_api analytics apiclients audit backup bookings boxes card_designs data_export devices
     encryption event_reimbursements events evidence hardware_requests hosting_requests id_programmes integrations
-    inventory machines
+    inventory machines managed_hosting
     maintenance makerspaces notifications operations organizations payments payments_rail
     presence
-    printing procurement roadmap separability shop tenant_migration tenant_rls warranty""".split()
+    printing procurement roadmap separability shop space_controls tenant_migration tenant_rls warranty""".split()
 )
 THIRD_PARTY_MODEL_APP_LABELS = frozenset(
     {"admin", "auth", "axes", "contenttypes", "sessions", "token_blacklist"}

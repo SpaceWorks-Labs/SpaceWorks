@@ -151,8 +151,8 @@ Requires `member_accounts`.
   Canonical push uses per-device children beneath an envelope delivery, independently of inbox
   creation or the inbox module. Current source-tied member/requester accounts qualify under
   recipient policy; device registration still requires active native local selection. Staff
-  use separate staff accounts with password, MFA, attestation and a fixed tenant; phone/social/OIDC
-  native login is member-only and platform grants are forbidden. Matrix/personal policy and
+  tools need a staff step-up grant on the person's own account (two-step sign-in, attestation, one
+  fixed space); event-role desks use an event grant; platform grants are forbidden. Matrix/personal policy and
   current source/device checks apply. See [notification-inbox.md](notification-inbox.md).
 - **Without it** — native apps cannot hold a session for this space; the web app is unaffected.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
@@ -234,7 +234,7 @@ Opt-in and default off, independently of OTP and the optional inbox. Canonical
 `ChannelConfiguration` and personal envelopes use Twilio SMS. Eligible member accounts
 have a non-revoked membership or an owned loan/request, booking, event registration,
 machine-service request or charge. Account-only owners qualify; revoked/restricted/deleting
-accounts are excluded. Staff delivery needs a separate active local staff account and source
+accounts are excluded. Staff delivery needs an active staff role in that space and source
 role authority. Current staff SMS diagnostics cannot acquire consent via member-only APIs.
 
 SMS consent binds the verified phone instance, sender and configuration generation; phone
@@ -256,7 +256,7 @@ separate from estimates. See [channel setup](messaging-channels.md).
 
 Opt-in, default off and personal-only, with canonical Twilio or Meta providers. The module
 key is registered, resolving the old Meta missing-module blocker. A current tenant-tied
-member/account-only owner or authorized local staff account still needs its own signed
+member/account-only owner or authorized staff person still needs their own signed
 matching inbound endpoint proof. SMS/phone login does not establish WhatsApp consent.
 Matrix/category opt-outs, source standing, physical STOP and installation generation apply.
 Platform sending needs explicit operator and tenant opt-in; broken own credentials never

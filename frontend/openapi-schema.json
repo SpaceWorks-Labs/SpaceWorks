@@ -95902,7 +95902,7 @@
                         "description": ""
                     },
                     "403": {
-                        "description": "Not an active staff account."
+                        "description": "Not an active account, or outside this origin's scope."
                     }
                 }
             },
@@ -141365,7 +141365,7 @@
         "/api/v1/auth/mfa/confirm": {
             "post": {
                 "operationId": "api_v1_auth_mfa_confirm_create",
-                "description": "Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff account, its fixed tenant, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
+                "description": "Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff role in the grant's fixed makerspace, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                 "tags": [
                     "MFA"
                 ],
@@ -141668,7 +141668,7 @@
         "/api/v1/auth/mfa/verify": {
             "post": {
                 "operationId": "api_v1_auth_mfa_verify_create",
-                "description": "Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff account, its fixed tenant, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
+                "description": "Complete the server-owned login context. `factor` picks totp, recovery, passkey (with `webauthn` from `auth/mfa/passkey/options`) or email_code (a `purpose: risk` challenge; wrong code: `login_code_invalid`, 400; a failed passkey: `passkey_failed`, 400). Native completions return `device_trust`. Native staff authority requires a staff role in the grant's fixed makerspace, authenticator MFA and approved app attestation, after any primary sign-in method. Consumer login methods remain member-only. Platform device grants return device_superadmin_not_supported (403). Attestation outages return attestation_unavailable (503).",
                 "tags": [
                     "MFA"
                 ],

@@ -278,7 +278,7 @@ requiring `machines.maintenance`.
   rows, the key typed back, audited `makerspace.capability_purged`), split per parent:
   purging `machines.tobuy` never deletes an inventory row.
 - **Who switches them.** The Space Manager; a module's manager with that module's settings
-  grant (see [Settings authority](INVARIANTS.md#settings-authority)).
+  grant (see [Settings authority](INVARIANTS.md#settings-authority-release-2-lane-l17-101-128-c-11)).
 - **Repairs and issue reporting (L16).** A report needs its area's `*.issue_reporting`
   switch; everything after it needs `*.repairs`, which needs the area's maintenance switch
   because the repair job is the L12 work order. With repairs off a report is notify-only and

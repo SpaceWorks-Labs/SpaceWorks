@@ -71,7 +71,7 @@ submodule at `design/` and pin a commit.
 |---|---|
 | Brand guidelines (PDF) | `brand/space-works-brand-guidelines-v1.pdf` and `brand/guidelines/` |
 | UI brand spec | `docs/ui-brand-spec.md` |
-| UX specs (screens) | `docs/ux-yuyu-spec.md`, `docs/ux-screens-longtail.md` |
+| UX specs (screens) | `docs/ux-spec.md`, `docs/ux-screens-longtail.md` |
 | Colour + theme tokens | `tokens/tokens.json` (light + dark), `tokens/tokens.css` |
 | Logo lockups, symbol, app icon | `logo/` (`app-icon.svg`, `symbol-*`, `lockup-*`) |
 | Icons | `icons/` |

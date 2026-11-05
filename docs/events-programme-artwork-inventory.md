@@ -19,7 +19,7 @@ Read-only sources: `docs/brand/space-works-brand-guidelines-v1.pdf` v1.0
 (17 pages; identity, logo, colour, typography and graphic-system rules),
 `docs/brand/README.md`, original symbol/reversed symbol and lockup masters.
 The approved 2026-10-15 font kit supersedes older type recommendations.
-Research supplies interaction ideas only. No third-party/yuyu assets, code,
+Research supplies interaction ideas only. No third-party assets, code,
 palette, illustration, character, layout, text or font is included.
 
 Original constructions use open flaps, print layers, perforations, workshop

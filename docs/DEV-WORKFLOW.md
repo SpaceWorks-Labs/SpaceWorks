@@ -51,7 +51,7 @@ the unconditional three-trailer rule in the global config — so the trailer set
 really wrote the code, never by the branch or the program.
 
 Per owner direction, the **single user QA is deferred to the very end** (after all Parts) — no per-Part QA
-gate. Specs live (gitignored) under `docs/superpowers/specs/2026-07-1*`. Commits sit **local and unpushed on
+gate. Commits sit **local and unpushed on
 `dev`**; **pushing is the owner's call alone.** Ask `git rev-list --count origin/dev..dev` rather than
 trusting any number written here.
 

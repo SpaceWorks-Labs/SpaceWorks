@@ -47,8 +47,7 @@ any authenticated non-superadmin; the `/api/v1/admin/...` React staff APIs are N
 `config.admin_access.SuperuserOnlyModelAdmin` (first base of every `ModelAdmin`). Superadmin operations are
 Django admin **actions that route through the existing services** (never mutating status directly);
 issue/return remain React-only. Superadmin monitoring surfaces (QR ZIP, inline QR/photo previews, print file
-downloads) are read-only and guard storage failures. Design spec:
-`docs/superpowers/specs/2026-06-13-superadmin-admin-control-plane-design.md`.
+downloads) are read-only and guard storage failures.
 Since owner decision #115 the superadmin also works in the React staff console as any space's Space
 Manager: choose a space and every report, analytics page, export, setting and email surface of that
 space opens (person data masked outside a PII window); each `/control/` makerspace page links there,

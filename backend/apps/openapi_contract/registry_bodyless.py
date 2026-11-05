@@ -164,6 +164,16 @@ BODYLESS_POSTS = {
     ),
     "apps.tenant_migration.views_cutover": ("SourceArchiveView", "SourceQuiesceView", "TargetAbortView",),
     "apps.tenant_migration.views_import_upload": ("TenantImportArchiveCompleteView",),
+    # r2-control-restructure (#190): console parity actions whose path names the act.
+    "apps.accounts.views_platform_ip_access": ("IPAutoBlockUnblockView",),
+    "apps.accounts.views_platform_accounts": ("PlatformAccountEnableView",),
+    "apps.admin_api.views_platform_queues": (
+        "ApiKeyRequestApproveView", "ApiKeyRequestRejectView", "SubdomainRequestApproveView",
+        "SubdomainRequestRejectView",
+    ),
+    "apps.tenant_migration.views_selfhost_moves_platform": (
+        "PlatformMoveDiscardView", "PlatformMoveDownloadLinkView",
+    ),
 }
 
 

@@ -12,6 +12,7 @@ from .urls_membership_lifecycle import urlpatterns as membership_lifecycle_urlpa
 from .urls_memberships import management_urlpatterns, roster_urlpatterns
 from .urls_notifications import urlpatterns as notification_urlpatterns
 from .urls_platform import settings_urlpatterns, urlpatterns as platform_urlpatterns
+from .urls_platform_parity import urlpatterns as platform_parity_urlpatterns
 from .urls_staff import urlpatterns as staff_urlpatterns
 from .urls_staff_roles import urlpatterns as staff_role_urlpatterns
 from .urls_security import urlpatterns as space_security_urlpatterns
@@ -26,6 +27,7 @@ urlpatterns = [
     *security_urlpatterns,
     *space_security_urlpatterns,
     *platform_urlpatterns,
+    *platform_parity_urlpatterns,
     *space_restore_urlpatterns,
     *roster_urlpatterns,
     *machine_service_urlpatterns,

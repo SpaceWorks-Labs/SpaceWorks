@@ -45,21 +45,35 @@ def throwaway_identity(workdir):
     return identity, recipient
 
 
+def drills_configured():
+    """A drill reads the archive with this server's restore identity, so both must be set."""
+    return bool(settings.TENANT_MIGRATION_AGE_IDENTITY_FILE and settings.TENANT_MIGRATION_AGE_RECIPIENT)
+
+
+def restorable_archives():
+    return BackupArchive.objects.filter(
+        scope=BackupArchive.Scope.MAKERSPACE, status=BackupArchive.Status.AVAILABLE,
+        format__in=READABLE_FORMATS, makerspace__isnull=False, manifest__server_restorable=True,
+    )
+
+
+def latest_restorable_archive(makerspace_id):
+    """The newest archive a drill of this space would open, or None (#190: run one now)."""
+    return restorable_archives().filter(makerspace_id=makerspace_id).order_by("-completed_at").first()
+
+
 def due_archive(now=None):
     """The newest restorable archive of the space whose last drill is oldest, or None."""
     row = PlatformBackupSettings.load()
     days = row.restore_drill_interval_days
     if not days:
         return None
-    if not (settings.TENANT_MIGRATION_AGE_IDENTITY_FILE and settings.TENANT_MIGRATION_AGE_RECIPIENT):
+    if not drills_configured():
         return None
     now = now or timezone.now()
     last = dict(RestoreDrillReport.objects.values("makerspace_id_snapshot")
                 .annotate(at=Max("started_at")).values_list("makerspace_id_snapshot", "at"))
-    archives = BackupArchive.objects.filter(
-        scope=BackupArchive.Scope.MAKERSPACE, status=BackupArchive.Status.AVAILABLE,
-        format__in=READABLE_FORMATS, makerspace__isnull=False, manifest__server_restorable=True,
-    ).order_by("makerspace_id", "-completed_at").distinct("makerspace_id")
+    archives = restorable_archives().order_by("makerspace_id", "-completed_at").distinct("makerspace_id")
     due = [item for item in archives if last.get(item.makerspace_id) is None
            or last[item.makerspace_id] <= now - timedelta(days=days)]
     due.sort(key=lambda item: (last.get(item.makerspace_id) is not None, last.get(item.makerspace_id) or now))

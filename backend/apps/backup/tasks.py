@@ -73,6 +73,17 @@ def run_restore_drill_task(self):
 
 
 @shared_task(bind=True, max_retries=0)
+def run_restore_drill_now_task(self, archive_id, actor_id):
+    """#190: one drill of a chosen space's latest archive, started from the web console."""
+    from apps.accounts.models import User
+    from apps.backup.restore_drill import run_drill
+    archive = BackupArchive.objects.filter(pk=archive_id).select_related("makerspace").first()
+    if archive is None:
+        return None
+    return run_drill(archive, actor=User.objects.filter(pk=actor_id).first()).outcome
+
+
+@shared_task(bind=True, max_retries=0)
 def reencrypt_archives_task(self):
     """Release 2 L11: one bounded batch of a requested re-encryption to the current keys."""
     from apps.backup.archive_reencrypt import run_requested_reencryption

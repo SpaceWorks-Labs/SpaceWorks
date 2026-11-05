@@ -1,7 +1,9 @@
 """Route classes for r2-superadmin-controls (#185, #187A). Authority stays in each view.
 
 * Platform-only: the superadmin console's space controls, onboarding, announcements and
-  managed-hosting administration.
+  managed-hosting administration; and the #190 parity paths (IP rules and blocks, account
+  disable and two-step reset, OIDC providers, restore drills, self-host moves) that were
+  /control/-only.
 * Membership-only: a space's own hosting plan usage and invoices (its Space Manager, or
   the superadmin through the console surface rule).
 * Shared: the signed-in notices feed (banners and the paused page) for every account.
@@ -16,6 +18,16 @@ admin-platform-hosting-request-approve admin-platform-hosting-request-changes ad
 admin-platform-announcements admin-platform-announcement admin-platform-announcement-cancel
 admin-platform-hosting-plans admin-platform-hosting-plan admin-space-plan admin-platform-hosting-invoices
 admin-platform-hosting-invoice-payment admin-platform-hosting-invoice-void admin-platform-hosting-billing-settings
+admin-platform-ip-rules admin-platform-ip-rule admin-platform-ip-blocks admin-platform-ip-block-unblock
+admin-platform-restore-drills admin-platform-restore-drill-settings
+admin-platform-accounts admin-platform-account-disable admin-platform-account-enable
+admin-platform-account-reset-two-step admin-platform-oidc-providers admin-platform-oidc-provider
+admin-platform-archive-requests admin-platform-archive-request-approve admin-platform-archive-request-decline
+admin-platform-api-key-requests admin-platform-api-key-request-approve admin-platform-api-key-request-reject
+admin-platform-subdomain-requests admin-platform-subdomain-request-approve admin-platform-subdomain-request-reject
+admin-platform-chat-templates admin-platform-chat-template
+admin-platform-selfhost-moves admin-platform-selfhost-move-approve admin-platform-selfhost-move-reject
+admin-platform-selfhost-move-export admin-platform-selfhost-move-discard admin-platform-selfhost-move-download-url
 """.split())
 
 MEMBERSHIP_ROUTES = frozenset("""

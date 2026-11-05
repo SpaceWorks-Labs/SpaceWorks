@@ -30,7 +30,7 @@ def disable(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("makerspaces", "0122_technician_role_seed"),
+        ("makerspaces", "0126_shop_manager_role_seed"),
     ]
 
     operations = [migrations.RunPython(enable, disable)]

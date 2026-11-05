@@ -18,6 +18,41 @@
   # Node, which fails the build with an error that does not mention the Node version.
   NODE_VERSION = "22"
 
+# Backend-rendered pages. In this split setup the API lives on another origin, so these
+# paths are NOT React routes: link previews (/share/*), embeddable event cards (/embed/*,
+# the snippet the console hands out uses this site's own origin), sitemap/robots and the
+# native-app association files. Uncomment the block and replace https://api.example.org
+# with your API origin; Netlify then proxies them (status 200 to an external URL). Rules
+# match top to bottom, so they must stay ABOVE the SPA fallback. Netlify does not add the
+# [[headers]] below to proxied responses: the backend keeps its own framing policy, which
+# is what lets /embed/ be framed. Crawler previews of /e/<code> need the same-origin recipe
+# (deploy/static/netlify/netlify.same-origin.toml), whose edge function sees the user agent.
+#
+# [[redirects]]
+#   from = "/share/*"
+#   to = "https://api.example.org/share/:splat"
+#   status = 200
+# [[redirects]]
+#   from = "/embed/*"
+#   to = "https://api.example.org/embed/:splat"
+#   status = 200
+# [[redirects]]
+#   from = "/sitemap.xml"
+#   to = "https://api.example.org/sitemap.xml"
+#   status = 200
+# [[redirects]]
+#   from = "/robots.txt"
+#   to = "https://api.example.org/robots.txt"
+#   status = 200
+# [[redirects]]
+#   from = "/.well-known/assetlinks.json"
+#   to = "https://api.example.org/.well-known/assetlinks.json"
+#   status = 200
+# [[redirects]]
+#   from = "/.well-known/apple-app-site-association"
+#   to = "https://api.example.org/.well-known/apple-app-site-association"
+#   status = 200
+
 # Client-side routing. Every deep link -- /m/<slug>, /admin/*, /member,
 # /event-check-in/<stationToken>, /o/<organizationSlug> -- is a React route, not a file
 # on disk, so a refresh or a shared link 404s without this rewrite. Status 200 (rewrite),
@@ -26,3 +61,42 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# The same response headers the bundled nginx frontend sends (frontend/nginx.conf and
+# docker-entrypoint.d/40-web-analytics.sh), so a Netlify site is not weaker than a VPS.
+# Analytics or Turnstile need their CSP origins added here by hand; the nginx image
+# derives them from env, Netlify cannot.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin"
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+
+# Hashed build output never changes under one name; the runtime config and the service
+# workers must always be revalidated, or a deploy leaves browsers on the old app.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "no-store"
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/member-sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/browser-alerts-sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"

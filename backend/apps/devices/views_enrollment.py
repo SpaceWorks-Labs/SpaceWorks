@@ -26,10 +26,10 @@ from apps.tenant_migration.gate_runtime import assert_write_allowed
 ERRORS = {
     code: OpenApiResponse(DeviceErrorSerializer, description=text)
     for code, text in (
-        (400, "Malformed key, challenge or signature, or module disabled."),
+        (400, "Malformed key, challenge or signature."),
         (401, "Not authenticated."),
         (403, "Enrollment credentials or proof of possession rejected."),
-        (404, "Not found."),
+        (404, "Not found, or the module is turned off."),
         (409, "The key is already bound to another device, or rotation reused the key."),
         (410, "The enrollment was used, revoked or has expired."),
         (423, "Tenant frozen for migration."),

@@ -10,8 +10,8 @@ a module key; maintenance and To-Buy are now per-parent capabilities, so an entr
 
 Every enforcement site (preview, export, catalog, dashboard, schedules, saved views,
 organization and deployment pickers) reads through here, so a report whose source is off
-is unavailable the same way everywhere. A switched-off capability source answers 404,
-like the folded route it reports on; a missing module keeps its historical 400.
+is unavailable the same way everywhere, and is HIDDEN from every listing (#183B). A
+switched-off source answers 404 (capability or module alike), like the route it reports on.
 """
 
 from django.db.models import Q
@@ -41,6 +41,20 @@ def source_enabled(makerspace, key):
         feature_enabled(makerspace, part) if is_capability(part) else module_enabled(makerspace, part)
         for part in parts(key)
     )
+
+
+
+def definition_live(makerspace, definition):
+    """True while every source module and the capability a report reads are on (#183B).
+
+    A report whose source is off is HIDDEN from every listing (catalogue, schedules),
+    never shown as a disabled entry; its stored schedules and saved views are kept.
+    """
+    from apps.makerspaces.platform import feature_enabled
+
+    if definition.required_feature and not feature_enabled(makerspace, definition.required_feature):
+        return False
+    return all(source_enabled(makerspace, key) for key in definition.required_modules)
 
 
 def require_source(makerspace, key):

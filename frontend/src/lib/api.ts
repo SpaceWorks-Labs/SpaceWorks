@@ -21,7 +21,7 @@ export {
   setRuntimePublishableKey,
 } from "./api/client";
 
-export { StructuredApiError } from "./api/errors";
+export { StructuredApiError, isSurfaceOff } from "./api/errors";
 export type { ApiErrorBody } from "./api/errors";
 
 export {

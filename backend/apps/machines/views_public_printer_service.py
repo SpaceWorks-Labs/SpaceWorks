@@ -32,8 +32,8 @@ def _require_printer_module(makerspace):
 
     require_public_surface("printing")
     if not module_enabled(makerspace, "printing"):
-        from rest_framework.exceptions import ValidationError
-        raise ValidationError({"module": "printing is disabled for this makerspace."})
+        from apps.makerspaces.guards import module_off
+        raise module_off("printing")
 
 
 class PublicPrinterQueuesView(APIView):

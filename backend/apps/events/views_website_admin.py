@@ -26,9 +26,9 @@ from .services_website_assets import upload_asset, delete_asset
 from .website_projection import project
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer, description=label) for code, label in (
-    (400, "Invalid content, stale revision, disabled feature or terminal event."),
+    (400, "Invalid content, stale revision or terminal event."),
     (401, "Sign in required."), (403, "Missing event permission or wrong staff origin."),
-    (404, "Unknown or out-of-scope event/page/image."), (429, "Rate limit exceeded."),
+    (404, "Unknown or out-of-scope event/page/image, or the feature is turned off."), (429, "Rate limit exceeded."),
     (503, "Private image storage is unavailable."),
 )}
 

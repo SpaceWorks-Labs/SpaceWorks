@@ -59,8 +59,10 @@ def sweep_asset_deadlines_task():
     from .hackathons.admission_models import HackathonConfig
     if not runtime_active("events"):
         return 0
+    from apps.makerspaces.scheduled_scope import live_space_ids
     ids = take_ids("asset-deadlines", HackathonConfig.objects.filter(
-        enabled=True, submission_deadline__lte=timezone.now()), limit=batch(100))
+        enabled=True, submission_deadline__lte=timezone.now(),
+        event__makerspace_id__in=live_space_ids("events.hackathons")), limit=batch(100))
     done = 0
     for config in bounded.items(HackathonConfig.objects.filter(pk__in=ids)):
         try:

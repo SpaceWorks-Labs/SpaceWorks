@@ -113,8 +113,8 @@ def sweep_integrity_checks_task():
     if not runtime_active("events"):
         return counts
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
-    spaces = servable_queryset().filter(enabled_modules__contains=["events"],
-                                        enabled_features__contains=[FEATURE]).order_by("pk")
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    spaces = servable_queryset().filter(pk__in=live_space_ids(FEATURE)).order_by("pk")
     for space in bounded.page(spaces, "event-integrity-spaces"):
         with fanout_tenant_write(space.pk, operation="event_submission_integrity", counts=counts) as allowed:
             if not allowed:

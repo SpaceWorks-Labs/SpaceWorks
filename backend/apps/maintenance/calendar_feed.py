@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
 from apps.audit.services import record
@@ -34,7 +34,8 @@ def feed_space(actor, pk):
         raise PermissionDenied()
     require_capability(space, MACHINES_MAINTENANCE)
     if not feature_enabled(space, "maintenance.calendar_feed"):
-        raise ValidationError({"detail": "Maintenance calendar feed is disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off("maintenance.calendar_feed", "The maintenance calendar feed is turned off.")
     if not scope(actor, space).exists():
         raise PermissionDenied()
     return space

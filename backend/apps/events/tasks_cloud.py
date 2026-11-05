@@ -79,7 +79,10 @@ def resume_certificates_task(limit=25):
     from datetime import timedelta
     counts = {"processed": 0, "failed": 0, "skipped": 0}
     # One issuance chunk per batch; never process_batch.delay() eager recursion.
-    batches = CertificateIssueBatch.objects.filter(state__in=("queued", "running")).order_by("pk")[:limit]
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    live = live_space_ids("events")  # no certificate work while events is off (#183B)
+    batches = CertificateIssueBatch.objects.filter(state__in=("queued", "running"),
+                                                   event__makerspace_id__in=live).order_by("pk")[:limit]
     for batch in batches:
         with fanout_tenant_write(batch.event.makerspace_id, operation="event_certificate_resume", counts=counts) as allowed:
             if not allowed:
@@ -91,7 +94,8 @@ def resume_certificates_task(limit=25):
     pending = Q(status__in=("pending", "failed")) | Q(
         status="rendering", render_started_at__lte=timezone.now()-timedelta(minutes=5),
     ) | Q(status="rendering", render_started_at__isnull=True)
-    rows = EventAttendanceCertificate.objects.filter(pending).order_by("render_attempts", "issued_at", "pk")[:limit]
+    rows = EventAttendanceCertificate.objects.filter(pending, event__makerspace_id__in=live).order_by(
+        "render_attempts", "issued_at", "pk")[:limit]
     for certificate in rows:
         with fanout_tenant_write(certificate.event.makerspace_id, operation="event_certificate_resume", counts=counts) as allowed:
             if not allowed:

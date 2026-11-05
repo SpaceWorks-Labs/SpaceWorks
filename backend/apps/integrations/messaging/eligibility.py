@@ -29,7 +29,7 @@ def eligibility(candidate_or_delivery):
     if not module_enabled(space, row.channel):
         return "module_disabled"
     diagnostic = row.source_type == "messaging_test"
-    if not feature_available(space, row.feature):
+    if not feature_available(space, row.feature, event=row.event):
         return "feature_unavailable"
     if not is_notification_enabled(space, row.feature, row.channel):
         return "matrix_disabled"

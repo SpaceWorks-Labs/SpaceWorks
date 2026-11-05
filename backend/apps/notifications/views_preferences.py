@@ -86,7 +86,8 @@ class OneClickUnsubscribeView(APIView):
         ))
         require_module(space, "notifications")
         if not feature_enabled(space, "notifications.member_preferences"):
-            raise ValidationError({"feature": "Member preferences are disabled."})
+            from apps.makerspaces.guards import feature_off
+            raise feature_off("notifications.member_preferences", "Member preferences are turned off.")
         user = get_object_or_404(User, pk=data["user"], is_active=True, is_tenant_dump_stub=False)
         # The signature is the authority here; no browser login and no CSRF cookie.
         # Actor is the user who received the capability, never a provider/device.

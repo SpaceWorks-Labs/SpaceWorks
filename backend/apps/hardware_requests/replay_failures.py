@@ -6,6 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from apps.evidence.storage import EvidenceObjectValidationError, StorageUnavailable
 from apps.hardware_requests import workflow_errors as errors
 from apps.inventory.availability import InsufficientStock
+from apps.makerspaces.guards import SurfaceOff
 from apps.presence.guard import MemberPresenceRequired, PresenceRequired, WaiverAcceptanceRequired
 
 
@@ -18,8 +19,8 @@ CATALOG = {
     "lease_expired": (403, "The operator lease is expired or revoked."),
     "station_revoked": (403, "The Station credential is disabled or rotated."),
     "session_mismatch": (403, "The Station session or command owner does not match."),
-    "feature_disabled": (400, "This kiosk feature is disabled."),
-    "module_disabled": (400, "A required kiosk module is disabled."),
+    "feature_disabled": (404, "This kiosk feature is turned off."),
+    "module_disabled": (404, "A required kiosk module is turned off."),
     "permission_revoked": (403, "The operator no longer has permission for this operation."),
     "predecessor_missing": (409, "The immediate predecessor is missing or belongs to another stream."),
     "predecessor_pending": (409, "The preceding command has not succeeded yet."),
@@ -57,6 +58,8 @@ class ReplayFailure(Exception):
 def mapped_failure(exc, kind):
     if isinstance(exc, ReplayFailure):
         return exc
+    if isinstance(exc, SurfaceOff):
+        return ReplayFailure(f"{exc.kind}_disabled")
     if isinstance(exc, StorageUnavailable):
         return ReplayFailure("storage_unavailable")
     if isinstance(exc, EvidenceObjectValidationError):

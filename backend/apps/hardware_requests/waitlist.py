@@ -137,8 +137,12 @@ def lapse_due_offers(*, now=None, limit=200):
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
     now = now or timezone.now()
     counts, lapsed = {"skipped": 0}, 0
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    # A space with the waitlist switched off runs no waitlist work (#183B); its offers
+    # are kept and lapse on the first sweep after the switch comes back on.
     due = rbac.scope_for_scheduled_work(Entry.objects.filter(
-        status=Entry.Status.OFFERED, offer_expires_at__lte=now)).order_by("offer_expires_at", "pk")[:limit]
+        status=Entry.Status.OFFERED, offer_expires_at__lte=now,
+        makerspace_id__in=live_space_ids("loans.waitlist"))).order_by("offer_expires_at", "pk")[:limit]
     for entry in due:
         with fanout_tenant_write(entry.makerspace_id, operation="loan_waitlist_lapse", counts=counts) as go:
             if not go:

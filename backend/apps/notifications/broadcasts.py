@@ -57,7 +57,8 @@ def send_broadcast(space, *, actor, title, body, **segment):
     if not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, space):
         raise PermissionDenied()
     if not feature_enabled(space, 'membership.broadcasts'):
-        raise ValidationError({'feature': 'Member broadcasts are disabled.'})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off('membership.broadcasts', 'Member broadcasts are turned off.')
     # Explicit cap prevents one HTTP transaction from enqueueing an unbounded roster.
     ids = list(segment_members(space, segment).values_list('user_id', flat=True)[:2001])
     if len(ids) > 2000:

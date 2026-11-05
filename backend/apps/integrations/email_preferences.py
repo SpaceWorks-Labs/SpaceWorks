@@ -34,6 +34,13 @@ def blocked_reason(makerspace, address, *, user_id=None, feature="", stream="", 
     # Bounce/complaint blocks even safety mail: retrying a known dead address cannot deliver it.
     if suppressed(makerspace, address):
         return "email_address_suppressed"
+    if makerspace is not None and event:
+        from apps.integrations.notification_catalog_sources import event_live
+        from apps.notifications.preferences import STREAM_FEATURES
+
+        # A catalogue event whose source capability is off is never mailed (#183B).
+        if not event_live(makerspace, feature or STREAM_FEATURES.get(stream, stream), event):
+            return "notification_source_disabled"
     if makerspace is not None and user_id:
         from apps.notifications.preferences import STREAM_FEATURES, personal_enabled
 

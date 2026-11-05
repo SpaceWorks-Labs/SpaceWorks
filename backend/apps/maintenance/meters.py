@@ -64,7 +64,8 @@ def due_queryset(queryset, today):
         Q(job_count__isnull=False, meter_jobs__gte=F("job_count"))
     )
     # Archived feature-off spaces retain calendar schedules but no meter behavior.
-    return queryset.filter(calendar | (usage & Q(machine__makerspace__enabled_features__contains=["maintenance.meters"])))
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    return queryset.filter(calendar | (usage & Q(machine__makerspace_id__in=live_space_ids("maintenance.meters"))))
 
 
 def validate_meter(schedule):

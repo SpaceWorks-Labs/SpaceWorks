@@ -8,7 +8,7 @@
 | event ticket designs (X49) | capability `events.ticket_designs` |
 | wallet passes | `membership.wallet_passes` / `events.wallet_passes` + platform credentials |
 
-Off means no UI, 404/400 from the API and no scheduled work; the data is kept.
+Off means no UI, 404 from the API and no scheduled work; the data is kept.
 """
 from apps.makerspaces.platform import feature_enabled, module_enabled
 
@@ -47,3 +47,22 @@ def scope_enabled(job):
 def wallet_on(kind, makerspace):
     from .wallet.credentials import configured_platforms
     return bool(configured_platforms()) and feature_enabled(makerspace, WALLET[kind])
+
+
+# The switch each card holder kind lives behind, as scheduled-work sources (#183B).
+HOLDER_SOURCES = {"member_card": "membership", "programme_card": MEMBERSHIP_PROGRAMMES, "event_card": EVENT_CARDS}
+
+
+def live_holder_q(*, wallet=False):
+    """Rows (any holder-keyed model) whose card kind is switched on for their space.
+
+    Scheduled card work filters with this so an off switch runs nothing and its rows
+    never crowd the bounded batch; `wallet=True` also needs that kind's wallet switch.
+    """
+    from django.db.models import Q
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    q = Q(pk__in=[])
+    for kind, source in HOLDER_SOURCES.items():
+        sources = (source, WALLET[kind]) if wallet else source
+        q |= Q(**{f"{kind}__isnull": False, "makerspace_id__in": live_space_ids(sources)})
+    return q

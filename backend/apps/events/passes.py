@@ -23,9 +23,9 @@ PASS_FIELDS = ("name", "amount", "capacity", "occurrence_refund_amount", "sales_
 
 def _require_feature(series):
     from apps.makerspaces.platform import feature_enabled
-    from rest_framework.exceptions import ValidationError
+    from apps.makerspaces.guards import feature_off
     if not feature_enabled(series.makerspace, "events.series_passes"):
-        raise ValidationError({"detail": "This events feature is disabled."})
+        raise feature_off("events.series_passes", "This events feature is turned off.")
 
 
 def passes_sold(pass_type):

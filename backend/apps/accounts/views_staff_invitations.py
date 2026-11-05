@@ -6,7 +6,6 @@ No response here carries the accept link; it goes to the invitee only.
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -50,7 +49,8 @@ class StaffInvitationListView(RecentReauthenticationMixin, GenericAPIView):
         space = get_object_or_404(rbac.scope_by_action(request.user, self.required_action,
                                                       Makerspace.objects.all(), "id"), pk=makerspace_id)
         if not feature_enabled(space, "staff.invitations"):
-            raise ValidationError("Staff invitations are disabled for this makerspace.")
+            from apps.makerspaces.guards import feature_off
+            raise feature_off("staff.invitations", "Staff invitations are turned off for this makerspace.")
         page = self.paginate_queryset(self.get_queryset())
         return self.get_paginated_response(self.get_serializer(page, many=True).data)
 

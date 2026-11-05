@@ -21,9 +21,9 @@ from apps.devices.services_label_delivery import command_content
 from apps.devices.services_label_results import report_result
 
 LABEL_ERRORS = {code: OpenApiResponse(DeviceErrorSerializer, description=text)
-    for code, text in [(400, "Invalid request or adapter module disabled."),
+    for code, text in [(400, "Invalid request."),
         (401, "Authentication required or invalid signature."), (403, "Permission denied."),
-        (404, "Command or batch not in scope."), (409, "Idempotency or delivery conflict."),
+        (404, "Command or batch not in scope, or the adapter module is turned off."), (409, "Idempotency or delivery conflict."),
         (410, "Batch no longer available."), (423, "Tenant frozen for migration.")]}
 LABEL_ERRORS[400] = OpenApiResponse(
     response={"oneOf": [{"type": "object", "additionalProperties": True},

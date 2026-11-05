@@ -138,7 +138,10 @@ def raise_period(pledge, today):
 
 
 def due_pledge_ids(limit, today):
-    return list(DonationPledge.objects.filter(status=DonationPledge.Status.ACTIVE, next_due_on__lte=today)
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    # Off-switch spaces are left out of the page itself (#183B), so they never starve it.
+    return list(DonationPledge.objects.filter(status=DonationPledge.Status.ACTIVE, next_due_on__lte=today,
+                                              makerspace_id__in=live_space_ids("finance.recurring_donations"))
                 .order_by("next_due_on", "pk").values_list("pk", flat=True)[:limit])
 
 

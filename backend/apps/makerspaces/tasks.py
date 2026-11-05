@@ -27,9 +27,11 @@ def refresh_github_contributions_task():
     if not github_contributions.is_configured():
         return {"configured": False}
     counts = {"updated": 0, "unavailable": 0, "skipped": 0}
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    # Maker profiles belong to the membership module: none refresh while it is off.
     profiles = MemberProfile.objects.select_related("membership").exclude(
         github_username=""
-    )
+    ).filter(membership__makerspace_id__in=live_space_ids("membership"))
     for profile in bounded.page(profiles, "github-profiles"):
         if not github_contributions.due_for_sync(profile):
             continue

@@ -123,7 +123,9 @@ def resolve_requests(kind, card):
 
 def send_due_reminders(*, limit=200):
     from .notifications import photo_requested
-    due = CardPhotoRequest.objects.filter(resolved_at__isnull=True, reminded_at__isnull=True,
+    from .switches import live_holder_q
+    # Only card kinds switched on for their space (#183B); an off kind keeps its request.
+    due = CardPhotoRequest.objects.filter(live_holder_q(), resolved_at__isnull=True, reminded_at__isnull=True,
                                           created_at__lte=timezone.now() - REMINDER_AFTER).order_by("pk")[:limit]
     sent = 0
     for row in due:

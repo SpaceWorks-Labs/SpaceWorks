@@ -29,10 +29,10 @@ from apps.makerspaces.guards import require_module
 
 MODULE_KEY = "devices"
 ERRORS = {
-    400: OpenApiResponse(DeviceErrorSerializer, description="Invalid request or module disabled."),
+    400: OpenApiResponse(DeviceErrorSerializer, description="Invalid request."),
     401: OpenApiResponse(DeviceErrorSerializer, description="Authentication required."),
     403: OpenApiResponse(DeviceErrorSerializer, description="Permission denied."),
-    404: OpenApiResponse(DeviceErrorSerializer, description="Not found."),
+    404: OpenApiResponse(DeviceErrorSerializer, description="Not found, or the module is turned off."),
     423: OpenApiResponse(DeviceErrorSerializer, description="Tenant frozen for migration."),
 }
 

@@ -22,10 +22,10 @@ from apps.makerspaces.throttles import MemberImagePresignThrottle
 from apps.makerspaces.member_card_own_serializer import OwnMemberCardSerializer
 
 ERRORS = {
-    400: OpenApiResponse(description="Membership module disabled or invalid input."),
+    400: OpenApiResponse(description="Invalid input."),
     401: OpenApiResponse(description="Authentication required."),
     403: OpenApiResponse(description="An active membership is required."),
-    404: OpenApiResponse(description="No card has been issued to this membership."),
+    404: OpenApiResponse(description="No card has been issued to this membership, or the membership module is turned off."),
 }
 
 

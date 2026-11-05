@@ -126,16 +126,12 @@ class ReportCatalogView(APIView):
                 continue
             if definition.key in {"machine-usage-members", "booking-top-members"} and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
                 continue
-            from .report_sources import source_enabled
-            missing = [key for key in definition.required_modules if not source_enabled(makerspace, key)]
-            if definition.required_feature:
-                from apps.makerspaces.platform import feature_enabled
-                if not feature_enabled(makerspace, definition.required_feature):
-                    missing.append(definition.required_feature)
-            entries.append(_catalog_entry(
-                definition, available=not missing,
-                reason=f"Required module disabled: {', '.join(missing)}" if missing else None,
-            ))
+            # A report whose source module or capability is off is hidden, not listed
+            # as disabled (#183B): an off switch leaves no menu entry behind.
+            from .report_sources import definition_live
+            if not definition_live(makerspace, definition):
+                continue
+            entries.append(_catalog_entry(definition, available=True, reason=None))
         return Response({"results": entries})
 
 

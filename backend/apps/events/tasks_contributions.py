@@ -55,7 +55,8 @@ def sweep_contributor_maintenance_task():
     counts = {"processed": 0, "failed": 0, "skipped": 0}
     if not runtime_active("events"):
         return counts
-    spaces = servable_queryset(Makerspace.objects.filter(enabled_modules__contains=["events"]))
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    spaces = servable_queryset(Makerspace.objects.filter(pk__in=live_space_ids("events")))
     for space in bounded.page(spaces.order_by("pk"), "event-contributor-spaces"):
         with fanout_tenant_write(space.pk, operation="event_contributor_maintenance", counts=counts) as allowed:
             if not allowed:

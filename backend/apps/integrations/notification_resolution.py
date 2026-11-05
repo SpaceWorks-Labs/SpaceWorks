@@ -61,7 +61,7 @@ def eligible(envelope):
             return False
     from .recipients import feature_available
     if not mandatory_email(envelope.stream, envelope.event) and not feature_available(
-        space, envelope.feature, source_kind=envelope.source_kind,
+        space, envelope.feature, source_kind=envelope.source_kind, event=envelope.event,
     ):
         return False
     if envelope.audience == "staff" and envelope.source_kind != "notification.digest":

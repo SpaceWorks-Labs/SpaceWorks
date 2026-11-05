@@ -1,10 +1,10 @@
 """Event feature guards without dependencies on event models or workflows."""
 
-from rest_framework.exceptions import ValidationError
+from apps.makerspaces.guards import feature_off
 
 from apps.makerspaces.platform import feature_enabled
 
 
 def require_feature(event, key):
     if not feature_enabled(event.makerspace, key):
-        raise ValidationError({"detail": "This events feature is disabled."})
+        raise feature_off(key, "This events feature is turned off.")

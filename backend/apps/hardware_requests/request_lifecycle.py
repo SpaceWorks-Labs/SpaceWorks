@@ -92,9 +92,10 @@ def expire_due_requests(*, now=None, limit=200):
     from apps.operations.cloud_jobs import bounded
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
     now = now or timezone.now()
+    from apps.makerspaces.scheduled_scope import live_space_ids
     rows = rbac.scope_for_scheduled_work(HardwareRequest.objects.filter(
         status=HardwareRequest.Status.ACCEPTED, pickup_until__lte=now,
-        makerspace__enabled_features__contains=["loans.pickup_windows"],
+        makerspace_id__in=live_space_ids("loans.pickup_windows"),
     )).order_by("pickup_until", "id")[:max(int(limit), 1)]
     counts = {"expired": 0, "skipped": 0}
     for row in bounded.page(rows, "loan-pickups"):

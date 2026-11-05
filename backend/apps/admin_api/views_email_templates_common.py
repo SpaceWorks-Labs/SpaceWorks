@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from rest_framework.exceptions import NotFound
 
 from apps.accounts import rbac
 from apps.integrations.email_streams import (
@@ -148,7 +149,7 @@ def _visible_streams(actor, makerspace_id):
     for stream in STREAM_ACTIONS:
         try:
             makerspace = _resolve_makerspace(actor, makerspace_id, stream)
-        except (Http404, serializers.ValidationError):
+        except (Http404, NotFound, serializers.ValidationError):  # NotFound: a stream whose module is off
             continue
         type_scope = email_template_type_scope(actor, makerspace_id, stream)
         if type_scope is not None and not any(

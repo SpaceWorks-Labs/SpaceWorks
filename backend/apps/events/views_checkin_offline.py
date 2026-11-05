@@ -18,10 +18,10 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 
 
 ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Feature disabled or invalid batch."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid batch."),
     401: OpenApiResponse(ErrorSerializer, description="Authentication or lease failed."),
     403: OpenApiResponse(ErrorSerializer, description="Event authority changed."),
-    404: OpenApiResponse(ErrorSerializer, description="Event not found."),
+    404: OpenApiResponse(ErrorSerializer, description="Event not found, or the feature is turned off."),
     409: OpenApiResponse(ErrorSerializer, description="Roster window closed."),
     410: OpenApiResponse(ErrorSerializer, description="Synchronization deadline passed."),
     413: OpenApiResponse(ErrorSerializer, description="Roster exceeds the offline limit."),

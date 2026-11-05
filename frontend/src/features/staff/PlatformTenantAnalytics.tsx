@@ -23,7 +23,7 @@ export function PlatformTenantAnalytics({ space, period, initialReport }: {
   if (catalog.isLoading) return <p role="status">Loading this makerspace's reports…</p>;
   if (catalog.isError) return <div role="alert"><p>Access to this makerspace's analytics is blocked or unavailable.</p>
     <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>Retry</button></div>;
-  const reports = catalog.data?.results ?? [];
+  const reports = (catalog.data?.results ?? []).filter(report => report.available !== false);
   if (!reports.length) return <p>No reports available for this makerspace.</p>;
   const report = reports.find(row => row.key === selected) ?? reports[0];
   async function download(format: string) {

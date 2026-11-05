@@ -62,8 +62,16 @@ FEATURE_MODULES = {
 }
 
 
-def feature_available(makerspace, feature, *, source_kind="") -> bool:
-    """False when the feature's module is not installed for this makerspace."""
+def feature_available(makerspace, feature, *, source_kind="", event="") -> bool:
+    """False when the feature's module is not installed for this makerspace.
+
+    With `event`, the event's own capability must be on too (#183B; see
+    `notification_catalog_sources`): it narrows, it never re-opens a closed family.
+    """
+    if event:
+        from .notification_catalog_sources import event_live
+        if not event_live(makerspace, feature, event):
+            return False
     # These categories are shared by independent domain families. Their registered
     # source still checks the particular job type/revision before every delivery.
     # Inventory is core (no module key): low-stock thresholds are never module-gated, and the

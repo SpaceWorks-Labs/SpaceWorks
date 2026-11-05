@@ -32,10 +32,10 @@ from apps.makerspaces.member_card_serializers import (
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MemberCard
 
 ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Invalid card input or membership module disabled."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid card input."),
     401: OpenApiResponse(ErrorSerializer, description="Authentication required."),
     403: OpenApiResponse(ErrorSerializer, description="Missing member-card action or inactive account."),
-    404: OpenApiResponse(ErrorSerializer, description="Not found in the permitted makerspace."),
+    404: OpenApiResponse(ErrorSerializer, description="Not found in the permitted makerspace, or the membership module is turned off."),
 }
 TAG = "Admin memberships"
 

@@ -8,7 +8,7 @@ def eligible_source(space, feature, event, source):
     from .notification_sources import source_eligible
     space.refresh_from_db()
     kind = source["source_kind"]
-    if not is_servable(space) or not feature_available(space, feature, source_kind=kind):
+    if not is_servable(space) or not feature_available(space, feature, source_kind=kind, event=event):
         return False
     return source_eligible(SimpleNamespace(**source, makerspace=space, makerspace_id=space.pk,
         audience="staff", recipient_id=None, feature=feature, event=event))

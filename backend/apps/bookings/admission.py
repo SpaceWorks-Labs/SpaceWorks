@@ -66,4 +66,5 @@ def _refuse_machine_under_repair(space, booking):
 def require_feature(space, key):
     from apps.makerspaces.platform import feature_enabled
     if not feature_enabled(space.makerspace, key):
-        raise ValidationError({"detail": "This bookings feature is disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off(key, "This bookings feature is turned off.")

@@ -38,7 +38,9 @@ def process_batch(batch_id):
 def resume_batches(limit=100):
     from .models import CertificateIssueBatch
     from apps.events.tasks_sweeps import batch as rows_for, take_ids
-    ids = take_ids("certificate-batches", CertificateIssueBatch.objects.filter(state__in=("queued", "running")),
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    ids = take_ids("certificate-batches", CertificateIssueBatch.objects.filter(
+        state__in=("queued", "running"), event__makerspace_id__in=live_space_ids("events")),
                    limit=rows_for(limit, heavy=True))
     rows = CertificateIssueBatch.objects.filter(pk__in=ids).order_by("pk")
     for batch in bounded.items(rows):
@@ -83,7 +85,9 @@ def resume_certificates(limit=100):
     from apps.events.models_certificates import EventAttendanceCertificate
     pending = Q(status__in=("pending", "failed")) | Q(status="rendering", render_started_at__lte=timezone.now()-timedelta(minutes=5)) | Q(status="rendering", render_started_at__isnull=True)
     from apps.events.tasks_sweeps import batch as rows_for, take_ids
-    ids = take_ids("certificate-renders", EventAttendanceCertificate.objects.filter(pending),
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    ids = take_ids("certificate-renders", EventAttendanceCertificate.objects.filter(
+        pending, event__makerspace_id__in=live_space_ids("events")),
                    limit=rows_for(limit, heavy=True))
     rows = EventAttendanceCertificate.objects.filter(pk__in=ids).order_by("pk")
     for row in bounded.items(rows):

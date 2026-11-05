@@ -49,7 +49,7 @@ def eligible_room(log):
     space.refresh_from_db()
     if not is_servable(space):
         return False
-    if not feature_available(space, log.feature, source_kind=kind):
+    if not feature_available(space, log.feature, source_kind=kind, event=log.event):
         return False
     if not is_notification_enabled(space, log.feature, log.channel):
         return False

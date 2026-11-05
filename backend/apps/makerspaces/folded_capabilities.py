@@ -1,8 +1,8 @@
 """Gates for the capabilities folded out of the retired `maintenance`/`procurement` keys.
 
 Owner decisions #97, #95 and #128 C-9. Each parent has its own switch, and a surface whose
-switch is off answers **404** (the feature does not exist for this space), never the 400
-the old `require_module` raised. Switching off keeps every row; purging them is the
+switch is off answers **404** (the feature does not exist for this space), exactly as
+`require_module` does since #183B. Switching off keeps every row; purging them is the
 separate superadmin action in `capability_purge`.
 
 One To-Buy list and one warranty app serve two parents, so the row decides the switch:

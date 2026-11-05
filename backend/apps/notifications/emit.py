@@ -26,6 +26,12 @@ def emit_notification(makerspace, *, title, level="info", event="", body="", url
 
         if not module_enabled(makerspace, "notifications"):
             return
+        from apps.integrations.notification_catalog_sources import emit_live
+
+        # The alert's own source module must be on too (#183B): a stocktake alert is
+        # never written for a space that has switched stocktake off.
+        if not emit_live(makerspace, event):
+            return
         makerspace_id = makerspace.pk
         payload = {
             "level": level,
@@ -48,7 +54,7 @@ def emit_notification(makerspace, *, title, level="info", event="", body="", url
                     current = rbac.scope_notification_policy(
                         servable_queryset(), makerspace_id=makerspace_id, field="pk",
                     ).first()
-                    if current is None or not module_enabled(current, "notifications"):
+                    if current is None or not module_enabled(current, "notifications") or not emit_live(current, event):
                         return
                     Notification.objects.create(makerspace_id=makerspace_id, **payload)
                     try:

@@ -18,6 +18,7 @@ from unfold.contrib.filters.admin import (
 
 from apps.audit import services as audit
 from apps.inventory import availability
+from apps.makerspaces.guards import SurfaceOff
 from apps.inventory import admin_assets  # noqa: F401
 from apps.inventory.admin_bulk_import import bulk_import_view
 from apps.inventory.admin_image_uploads import PublicImageAdminForm, PublicImageAdminMixin
@@ -152,7 +153,7 @@ class InventoryProductAdmin(PublicImageAdminMixin, SuperuserOnlyModelAdmin, Mode
                     product,
                     serializer.validated_data,
                 )
-            except (DRFValidationError, DjangoValidationError, ObjectDoesNotExist) as exc:
+            except (DRFValidationError, DjangoValidationError, ObjectDoesNotExist, SurfaceOff) as exc:
                 self.message_user(request, f"{product.pk}: {exc}", level=messages.ERROR)
             else:
                 success_count += 1

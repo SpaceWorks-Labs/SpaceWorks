@@ -31,7 +31,8 @@ class PublicMachineDetailMixin:
         require_public_surface("machines")
         require_module_for_servable(space, "machines")
         if not feature_enabled(space, "machines.public_detail"):
-            raise ValidationError({"detail": "Public machine details are disabled."})
+            from apps.makerspaces.guards import feature_off
+            raise feature_off("machines.public_detail", "Public machine details are turned off.")
         if not getattr(space, "public_site_enabled", space.public_inventory_enabled):
             raise ValidationError({"detail": "Public site is disabled."})
         return rbac.scope_public_catalogue(

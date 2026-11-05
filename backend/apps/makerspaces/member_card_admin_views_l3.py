@@ -136,7 +136,8 @@ class MemberCardEmailView(APIView):
         from apps.card_designs.email import blocked, send_card_email
         card = _card(request.user, pk)
         if blocked(card.makerspace):
-            raise ValidationError({"detail": "Email is turned off for this space."})
+            from apps.makerspaces.guards import module_off
+            raise module_off("email", "Email is turned off for this space.")
         if not send_card_email("member_card", card, actor=request.user, explicit=True):
             raise ValidationError({"detail": "This card was emailed in the last 10 minutes, the daily limit was "
                                              "reached, or the holder has no email address."})

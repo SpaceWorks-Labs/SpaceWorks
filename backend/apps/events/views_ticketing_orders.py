@@ -20,9 +20,9 @@ from .serializers_ticketing_orders import (
 )
 
 ERRORS = {code: OpenApiResponse(ErrorSerializer, description=text) for code, text in (
-    (400, "Invalid body, an order rule (`order_limit`, `amount_below_minimum`) or the feature is off."),
+    (400, "Invalid body, or an order rule (`order_limit`, `amount_below_minimum`)."),
     (401, "Sign in first."), (403, "This account cannot buy here."),
-    (404, "Event, order or code not found (`access_code_invalid`)."),
+    (404, "Event, order or code not found (`access_code_invalid`), or the feature is turned off (`feature_disabled`)."),
     (409, "`sold_out`, `hold_expired`, `price_changed`, `already_registered` or `order_not_payable`."),
     (423, "The space is frozen for a move."),
 )}

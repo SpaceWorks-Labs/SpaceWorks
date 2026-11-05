@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
 from apps.accounts.models import User
@@ -31,5 +31,6 @@ def personal_space(user, makerspace_id, *, preferences=False):
     key = "notifications.member_preferences" if preferences else "notifications.member_inbox"
     # Staff can always reach their personal inbox. Member feature gates stay opt-in.
     if (preferences or not rbac.effective_actions(user, space.pk)) and not feature_enabled(space, key):
-        raise ValidationError({"feature": f"{key} is disabled for this makerspace."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off(key)
     return space

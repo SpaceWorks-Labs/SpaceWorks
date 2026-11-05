@@ -30,9 +30,8 @@ class NotificationMarkAllReadSerializer(serializers.Serializer):
 
 
 NOTIFICATION_ERROR_RESPONSES = {
-    400: OpenApiResponse(description="Notifications module is disabled."),
     403: OpenApiResponse(description="Permission denied."),
-    404: OpenApiResponse(description="Not found."),
+    404: OpenApiResponse(description="Not found, or the notifications module is turned off."),
 }
 
 

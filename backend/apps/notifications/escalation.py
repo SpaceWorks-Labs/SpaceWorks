@@ -82,9 +82,9 @@ def escalate(space, group):
 def escalate_unseen_task():
     from apps.makerspaces.servability import servable_queryset
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
+    from apps.makerspaces.scheduled_scope import live_space_ids
     counts = {"escalated": 0, "failed": 0, "skipped": 0}
-    spaces = servable_queryset().filter(enabled_modules__contains=["notifications"],
-                                        enabled_features__contains=[FEATURE]).order_by("pk")
+    spaces = servable_queryset().filter(pk__in=live_space_ids(FEATURE)).order_by("pk")
     now = timezone.now()
     for space in bounded.page(spaces, "notification-escalation-spaces"):
         with fanout_tenant_write(space.pk, operation="notification_escalation", counts=counts) as allowed:

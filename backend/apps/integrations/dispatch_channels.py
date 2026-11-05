@@ -161,6 +161,11 @@ def dispatch_channel(
     if configuration_blocks(makerspace, channel):
         return [record(NotificationDeliveryStatus.SKIPPED, "notification_channel_configuration_disabled")]
 
+    from apps.integrations.notification_catalog_sources import event_live
+    if not event_live(makerspace, feature, event):
+        # The event's source capability is off for this space (#183B): recorded, not sent.
+        return [record(NotificationDeliveryStatus.SKIPPED, "notification_source_disabled")]
+
     if channel == NonEmailNotificationChannel.NATIVE_PUSH:
         # Push has no room to address: it is delivered per device to a named user, so it
         # keeps the single-log shape with a null destination.

@@ -62,13 +62,29 @@ the existing services and audited model paths, and never calls purge.
 
 ## What "without it" actually means
 
-Uninstalling a module does two things and nothing else:
+Uninstalling a module (or switching a capability off) removes it everywhere and keeps its data (#95, #183B):
 
-- **The API refuses its endpoints.** Every gated view calls `require_module(makerspace, "<key>")`, which
-  returns `400 {"module": "<key> is disabled for this makerspace."}`. A folded capability that is off
-  (maintenance, To-Buy, warranty) answers `404 {"code": "capability_disabled"}` instead.
+- **The API answers 404.** Every gated view calls `require_module(makerspace, "<key>")` or
+  `require_feature(...)`, which raise `makerspaces.guards.SurfaceOff`:
+  `404 {"detail": "<key> is turned off for this makerspace.", "code": "module_disabled", "module": "<key>"}`
+  (or `"code": "feature_disabled", "feature": "<key>"` for a capability). A folded capability that is off
+  (maintenance, To-Buy, warranty) answers `404 {"code": "capability_disabled"}`. Clients tell "turned
+  off" from "no such row" by the `code`, never by the status (`isSurfaceOff` in `frontend/src/lib/api/errors.ts`).
 - **The frontend never renders the surface.** Bootstrap only publishes the workflows of installed
-  modules, so the nav entry, page and buttons are simply not there.
+  modules, so the nav entry, staff tab, member tab, settings section and buttons are simply not there
+  (`staffTabs.filterTabsByEnabledModules`, `memberTabs`, `MakerspaceSettingsPanel`).
+- **Its reports are hidden, not listed as disabled.** The report catalogue, the dashboards that read it
+  and the schedule list leave out every report whose source module or capability is off
+  (`operations.report_sources.definition_live`); saved schedules are kept and skipped by the runner.
+- **Its notifications stop.** No inbox row, room post, email or push is produced for an event whose
+  source is off: the family's module (`recipients_selection.FEATURE_MODULES`) and the event's own
+  capability (`integrations/notification_catalog_sources.EVENT_SOURCES`, staff alerts by
+  `EMIT_SOURCES`) are checked at every delivery chokepoint.
+- **Its scheduled work stops.** Every beat/cloud/free-tick task is mapped in
+  `operations/cloud_jobs/task_sources.py` to its module/capability or to a stated platform-level
+  exemption (security, recovery, the core ledger, retention that must outlive the module, money already
+  in flight). Gated tasks select spaces through `makerspaces.scheduled_scope.live_space_ids`; the work
+  resumes on the first run after the switch comes back on.
 
 **Your data is retained.** Uninstalling never deletes rows; reinstalling brings the surface back with its
 history intact. Deleting rows is a separate, deliberate second command — see [Deleting a module's
@@ -1047,10 +1063,10 @@ its parent module is off.
 | `events.id_cards` | `events` | | An ID card for every confirmed registrant, designed and published by the event's organisers (no approval by default), valid until the day after the event; the door scan identifies the card | No event cards; issued cards and designs are kept |
 | `events.ticket_designs` | `events` | | Design tickets per event and ticket type; one check-in QR; the PDF can go with the confirmation email | Tickets use no custom design |
 | `events.wallet_passes` | `events` (needs `events.id_cards`) | | Wallet passes for event ID cards | No wallet buttons on event cards |
-| `events.orders` | `events` (needs `events.ticket_types`) | | One order buys several tickets (tiers that open on sell-out or end, pay-what-you-want with a minimum, group tickets, hidden tickets behind access codes, per-order limits, a booking fee); one `Payment` per order; every seat becomes its attendee's own registration once they sign in and claim it | The order shop and order routes answer 400/404; single registration is unchanged; orders, seats and their money are kept |
+| `events.orders` | `events` (needs `events.ticket_types`) | | One order buys several tickets (tiers that open on sell-out or end, pay-what-you-want with a minimum, group tickets, hidden tickets behind access codes, per-order limits, a booking fee); one `Payment` per order; every seat becomes its attendee's own registration once they sign in and claim it | The order shop and order routes answer 404; single registration is unchanged; orders, seats and their money are kept |
 | `events.seat_holds` | `events` (needs `events.orders`) | | A checkout holds its seats for 30 minutes and releases them on expiry or failure | Seats are taken only when payment lands; a paid order with no room left opens a staff-approved refund |
 | `events.addons` | `events` (needs `events.orders`) | | Kit, lunch, T-shirts with sizes and session seats sold with tickets, with event-local stock (never hardware inventory) | Add-ons are hidden and refused; sold lines are kept |
-| `events.series_passes` | `events` (needs `events.orders`) | | One pass for every future occurrence of a series; a cancelled occurrence opens the organiser's partial amount as a refund case | Pass routes answer 400; issued passes keep their registrations |
+| `events.series_passes` | `events` (needs `events.orders`) | | One pass for every future occurrence of a series; a cancelled occurrence opens the organiser's partial amount as a refund case | Pass routes answer 404; issued passes keep their registrations |
 | `events.transfers` | `events` (needs `events.orders`) | | Attendees hand a ticket to another account (credential rotated, card re-issued) or change ticket type (pay the difference, or a refund case for it), when the organiser allows | Transfers and type changes are refused |
 | `events.desk_collect` | `events` | | Check-in staff record a pending ticket payment at the desk (receipt) or open a pay-now checkout | Settlement stays in the payments console |
 | `events.refund_override` | `events` | | An event's own refund policy, shown before payment; after the first sale it may only become more generous | The space's events refund policy applies |

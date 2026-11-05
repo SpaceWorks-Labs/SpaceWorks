@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, generics
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -24,7 +23,8 @@ def space_for(actor, pk):
     require_module(space, "stocktake")
     require_action(actor, rbac.Action.EDIT_INVENTORY, pk)
     if not feature_enabled(space, "stocktake.discipline"):
-        raise ValidationError({"detail": "Stocktake discipline is disabled."})
+        from apps.makerspaces.guards import feature_off
+        raise feature_off("stocktake.discipline", "Stocktake discipline is turned off.")
     return space
 
 

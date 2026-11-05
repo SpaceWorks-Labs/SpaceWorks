@@ -126,7 +126,10 @@ def release_due(campaign_id):
 @shared_task
 def resume_scheduled_broadcasts():
     """G wires this task to periodic recovery; it also works after enqueue loss."""
-    due = EventBroadcast.objects.filter(status="scheduled", available_at__lte=timezone.now())
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    # A space with event broadcasts switched off releases nothing; the rows wait (#183B).
+    due = EventBroadcast.objects.filter(status="scheduled", available_at__lte=timezone.now(),
+                                        makerspace_id__in=live_space_ids("events.broadcasts"))
     rows = list(due.order_by("available_at", "pk").values_list("makerspace_id", "pk")[:200])
     counts = {"skipped": 0}
     recover_for_tenants(((space_id, (pk,)) for space_id, pk in rows),

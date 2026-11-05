@@ -111,8 +111,8 @@ def send_approval_digests_task():
     if not runtime_active("events"):
         return 0
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
-    spaces = servable_queryset().filter(enabled_modules__contains=["events"],
-                                        enabled_features__contains=[FEATURE]).order_by("pk")
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    spaces = servable_queryset().filter(pk__in=live_space_ids(FEATURE)).order_by("pk")
     counts = {"sent": 0, "failed": 0, "skipped": 0}
     for space in bounded.page(spaces, "event-approval-digest-spaces"):
         with fanout_tenant_write(space.pk, operation="event_approval_digest", counts=counts) as allowed:

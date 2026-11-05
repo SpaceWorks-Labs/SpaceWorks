@@ -81,7 +81,8 @@ def reconcile_event_storage_task():
     from apps.makerspaces.servability import servable_queryset
     from apps.events.models import Event
     from .models_assets import EventAssetUsage
-    spaces = servable_queryset().values("pk")
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    spaces = servable_queryset().filter(pk__in=live_space_ids("events")).values("pk")
     rows = (EventAssetUsage.objects.filter(event__makerspace__in=spaces).order_by("event_id")
             .values_list("event_id", flat=True))
     for event_id in bounded.items(list(rows[:500])):

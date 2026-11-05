@@ -133,8 +133,9 @@ def sweep_admissions(*, now=None, limit=200):
     from apps.tenant_migration.gate_runtime import fanout_tenant_write
     now = now or timezone.now()
     counts = {"expired": 0, "activated": 0, "failed": 0, "skipped": 0}
+    from apps.makerspaces.scheduled_scope import live_space_ids
     scoped = rbac.scope_for_scheduled_work(MembershipRequest.objects.all()).filter(
-        admission_managed=True, makerspace__enabled_modules__contains=["membership"],
+        admission_managed=True, makerspace_id__in=live_space_ids("membership"),
     )
     rows = scoped.filter(state__in=OPEN_STATES).filter(
         expires_at__lte=now,

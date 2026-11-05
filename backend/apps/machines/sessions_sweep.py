@@ -61,7 +61,8 @@ def due_stop(session, now=None):
 def _rows():
     from apps.machines.models import MachineSession
     from apps.machines.sessions_state import FEATURE
-    rows = MachineSession.objects.filter(ended_at__isnull=True, makerspace__enabled_features__contains=[FEATURE]) \
+    from apps.makerspaces.scheduled_scope import live_space_ids
+    rows = MachineSession.objects.filter(ended_at__isnull=True, makerspace_id__in=live_space_ids(FEATURE)) \
         .exclude(source=MachineSession.Source.DEVICE).select_related("makerspace", "machine", "machine_type")
     return rbac.scope_for_scheduled_work(rows).order_by("pk")[:LIMIT]
 

@@ -194,7 +194,8 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
     def _origin_ok(self, request, client):
         raw = request.headers.get("Origin") or request.headers.get("Referer", "")
         if not raw:
-            return client.client_type == "server"
+            # Server-to-server shapes send no Origin; a peer is another space's backend.
+            return client.client_type in ("server", "peer")
         if not client.allowed_origins:
             return False
         parts = urlsplit(raw)

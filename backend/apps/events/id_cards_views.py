@@ -16,6 +16,12 @@ from rest_framework.views import APIView
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 from apps.openapi_errors import errors
+from apps.card_designs.serializers import CardJobCreateSerializer, CardJobSerializer
+from apps.card_designs.serializers_openapi import CardDesignPairSerializer, ReasonSerializer
+
+from .id_cards_openapi import (
+    CardRoleRequestSerializer, CardScanRequestSerializer, CardScanResultSerializer, IssueResultSerializer,
+)
 
 from . import id_cards
 from .event_permissions import CHECK_IN, EDIT_DETAILS
@@ -60,7 +66,7 @@ class EventCardDesignsView(APIView):
 
     @extend_schema(tags=TAGS, summary="This event's card and ticket designs (created from Event pass on first use)",
                    request=None, parameters=[OpenApiParameter("ticket_type", int)],
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   responses={200: CardDesignPairSerializer, **errors(401, 403, 404)})
     def get(self, request, pk):
         from apps.card_designs.resolution import get_or_create
         from apps.card_designs.serializers import CardDesignSerializer
@@ -91,7 +97,7 @@ class EventIdCardListView(APIView):
         return Response(EventIdCardSerializer(rows, many=True, context={"request": request}).data)
 
     @extend_schema(tags=TAGS, summary="Issue cards now to every confirmed registrant", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   responses={200: IssueResultSerializer, **errors(401, 403, 404)})
     def post(self, request, pk):
         event = organiser_event(request.user, pk)
         if not id_cards.has_published_design(event):
@@ -103,7 +109,7 @@ class EventIdCardListView(APIView):
 class EventIdCardRevokeView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="Revoke an event card with a reason", request=OpenApiTypes.OBJECT,
+    @extend_schema(tags=TAGS, summary="Revoke an event card with a reason", request=ReasonSerializer,
                    responses={200: EventIdCardSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         card = id_cards.revoke(request.user, organiser_card(request.user, pk), str(request.data.get("reason", "")))
@@ -114,7 +120,7 @@ class EventIdCardDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Change a card's role (attendee, speaker, mentor, judge, volunteer, crew)",
-                   request=OpenApiTypes.OBJECT, responses={200: EventIdCardSerializer, **errors(400, 401, 403, 404)})
+                   request=CardRoleRequestSerializer, responses={200: EventIdCardSerializer, **errors(400, 401, 403, 404)})
     def patch(self, request, pk):
         card = id_cards.set_role(request.user, organiser_card(request.user, pk), request.data.get("role"))
         return Response(EventIdCardSerializer(card, context={"request": request}).data)
@@ -142,13 +148,13 @@ class EventCardJobView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="My card jobs for this event", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   responses={200: CardJobSerializer(many=True), **errors(401, 403, 404)})
     def get(self, request, pk):
         from apps.card_designs.jobs import my_jobs
         return Response(my_jobs(request.user, "event", organiser_event(request.user, pk).pk))
 
-    @extend_schema(tags=TAGS, summary="Queue a bulk job for this event's active cards", request=OpenApiTypes.OBJECT,
-                   responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+    @extend_schema(tags=TAGS, summary="Queue a bulk job for this event's active cards", request=CardJobCreateSerializer,
+                   responses={201: CardJobSerializer, 200: CardJobSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from apps.card_designs.jobs import enqueue
         from apps.card_designs.serializers import CardJobCreateSerializer, CardJobSerializer
@@ -171,7 +177,7 @@ class EventCardScanView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Scan a card at the door: find (and optionally check in) the registration",
-                   request=OpenApiTypes.OBJECT, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=CardScanRequestSerializer, responses={200: CardScanResultSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from apps.audit import services as audit
         from .services_checkin_cards import candidates, check_in

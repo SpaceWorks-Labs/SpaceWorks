@@ -26,7 +26,8 @@ class CommentsView(MemberCommandView):
 
 
 class FinderView(MemberCommandView):
-    @extend_schema(tags=["Event teams"], request=None, responses={200: {"type": "object"}, **ERRORS})
+    @extend_schema(tags=["Event teams"], request=None,
+                   responses={200: paginated_schema("TeamFinderPage", FinderCardSerializer), **ERRORS})
     def get(self, request, makerspace_id, pk):
         event, config = self.member_target(request, makerspace_id, pk)
         if not config.finder_enabled or config.team_mode != "individual_then_team":

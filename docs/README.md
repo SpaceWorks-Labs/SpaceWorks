@@ -107,6 +107,7 @@ Every guide in this repository, grouped by what you are trying to do. Start with
   [notifications](SOURCE-MAP-NOTIFICATIONS.md), [platform](SOURCE-MAP-PLATFORM.md),
   [recovery](SOURCE-MAP-RECOVERY.md), [booking passes](SOURCE-MAP-BOOKING-PASSES.md),
   [booking reads](SOURCE-MAP-BOOKING-READS.md) and [booking websites](SOURCE-MAP-BOOKING-WEBSITES.md).
+- [API guide](api-guide.md) — start here: clients, scopes, signing in Python/JS/curl, tokens, OAuth apps, pagination, errors, limits, versioning.
 - [API client protocol](api-client-protocol.md) — scoped, signed clients for the protected API.
 - [Signed webhook v2](webhooks-v2.md) — payload format 2 and its [JSON schema](webhooks-v2.schema.json).
 - [Device protocol](device-protocol.md) — enrollment and signed requests for printers and label printers.

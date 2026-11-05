@@ -16,17 +16,24 @@ from .serializers import ErrorSerializer
 from .views_base import PrivateSubmissionView
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 402, 403, 404, 409, 429, 503)}
+
+
+class ProgrammeChargeReadSerializer(serializers.Serializer):
+    required = serializers.BooleanField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    payment_id = serializers.IntegerField(allow_null=True)
+    status = serializers.CharField(help_text="not_required, not_raised, or the payment status.")
+    currency = serializers.CharField(allow_blank=True)
+    before_stage = serializers.IntegerField(allow_null=True, required=False,
+                                            help_text="Entry fee only (S17): due before this stage position.")
+
+    class Meta:
+        ref_name = "ProgrammeChargeRead"
+
+
 def charge_read():
     """A fresh field per use: one serializer instance cannot be bound to two fields."""
-    return inline_serializer(name="ProgrammeChargeRead", fields={
-        "required": serializers.BooleanField(),
-        "amount": serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True),
-        "payment_id": serializers.IntegerField(allow_null=True),
-        "status": serializers.CharField(help_text="not_required, not_raised, or the payment status."),
-        "currency": serializers.CharField(allow_blank=True),
-        "before_stage": serializers.IntegerField(allow_null=True, required=False,
-                                                 help_text="Entry fee only (S17): due before this stage position."),
-    })
+    return ProgrammeChargeReadSerializer()
 
 
 FeesRead = inline_serializer(name="ProgrammeChargesRead", fields={"entry_fee": charge_read(), "team_charge": charge_read()})

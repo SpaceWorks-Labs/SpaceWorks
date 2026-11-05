@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from apps.audit import services as audit
 from apps.openapi_errors import errors
+from .serializers_openapi import CheckLinkSerializer, QueuedSerializer
 
 from . import extras, tokens
 from .holder_access import my_cards, own_card
@@ -147,7 +148,7 @@ class MyCardEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Email me my card (PDF, or PNG images of each side)", request=CardEmailSerializer,
-                   responses={202: OpenApiTypes.OBJECT, **errors(400, 401, 404)})
+                   responses={202: QueuedSerializer, **errors(400, 401, 404)})
     def post(self, request, kind, card_id):
         from .email import blocked, send_card_email
         _spec, card = own_card(request.user, kind, card_id)
@@ -211,7 +212,7 @@ class MyCardRotateLinkView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Rotate my check link (the old printed QR stops working)", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 404)})
+                   responses={200: CheckLinkSerializer, **errors(400, 401, 404)})
     def post(self, request, kind, card_id):
         _spec, card = own_card(request.user, kind, card_id)
         if not public_verify_on(kind, card):

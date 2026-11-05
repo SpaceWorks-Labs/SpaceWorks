@@ -7544,6 +7544,29 @@ object key or purge ownership is introduced by these adapters.
   i.e. the default deployment.
 - **The nonce namespace is `(client_id, nonce)` and is claimed exactly once per request**, shared
   across secrets. Never clear nonces on rotation.
+- **Every route is deliberately in or out of API-client reach (#193).** In: under a protected prefix
+  and registered (E001). Out: listed by prefix in `apiclients/scope_registry_coverage.py` with the
+  credential that serves it; `apiclients.E003` refuses startup otherwise. Every public entry has exactly
+  one area in `scope_registry_areas.py` (the registry build raises for an unlisted public route) and
+  accepts `public:<area>:read|write` in addition to the broad public scopes.
+- **A peer client reaches only its own space's public catalogue, events and stats, by GET/HEAD.** The
+  grant policy limits its scopes and `scope_registry_verdicts.peer_may_reach` re-checks every request,
+  so a widened row still reaches nothing else. Nothing private crosses tenants.
+- **Credentials that act as a person never exceed the person (#196).** Personal access tokens (`swpat_`,
+  stored as a SHA-256 digest) and OAuth app tokens (`swoa_`, django-oauth-toolkit) authenticate the
+  person and then replay `surface_policy.enforce_request`, `mfa_policy.assert_verified` (against the MFA
+  proof captured at creation/consent, so a factor reset ends them), the recovery and source gates, and
+  the view's own RBAC; `apiclients/person_scopes.admit` then narrows by scope. They are refused on every
+  `/api/v1/auth/` route (so a token can never mint, list or revoke credentials), on platform and
+  `/control/` routes and on credential/security console routes. Staff scopes bind to exactly one space
+  and reach only routes whose resolved targets are that space. Creating a token or consenting to an
+  app needs a recent re-authentication; PKCE is mandatory and refresh tokens rotate with reuse
+  protection. Platform (superadmin) accounts cannot hold either.
+- **The OpenAPI contract is a guard, not a convention (#193).** `manage.py openapi_contract_check` (CI
+  `contracts` job) fails on an operation without an area tag, security requirement, error response,
+  typed success body or (for a write) a request body, on an untyped body outside
+  `openapi_contract/registry_payloads.py`, on a stale exception entry, and on two serializers sharing a
+  component name (`openapi_contract/component_names.py` names them apart by exact class).
 
 ## Container / deployment invariants
 

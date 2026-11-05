@@ -1,7 +1,6 @@
 """Staff routes for programmes: list/create per organisation, read/change/delete one,
 its design, its approval switch. Authority by action on the host space (`access`)."""
 from django.shortcuts import get_object_or_404
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -9,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.openapi_errors import errors
+from apps.card_designs.serializers import CardDesignSerializer
+from apps.card_designs.serializers_openapi import ApprovalLevelRequestSerializer, ApprovalLevelSerializer
 
 from . import services
 from .access import MANAGE, programme_for, programmes_for
@@ -76,7 +77,7 @@ class ProgrammeDesignView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="The programme's card design (edit it through the card-design routes)",
-                   request=None, responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   request=None, responses={200: CardDesignSerializer, **errors(401, 403, 404)})
     def get(self, request, pk):
         from apps.card_designs.resolution import get_or_create
         from apps.card_designs.serializers import CardDesignSerializer
@@ -97,14 +98,13 @@ class ProgrammeApprovalView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Whether this programme's design edits need approval (#136)", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+                   responses={200: ApprovalLevelSerializer, **errors(401, 403, 404)})
     def get(self, request, pk):
         return Response(_approval(programme_for(request.user, pk, MANAGE)))
 
     @extend_schema(tags=TAGS, summary="Set this programme's approval level (true, false, or null to inherit)",
-                   request={"application/json": {"type": "object", "properties": {
-                       "required": {"type": "boolean", "nullable": True}}}},
-                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
+                   request=ApprovalLevelRequestSerializer,
+                   responses={200: ApprovalLevelSerializer, **errors(400, 401, 403, 404)})
     def put(self, request, pk):
         from rest_framework.exceptions import ValidationError
         from apps.card_designs.approval import set_level

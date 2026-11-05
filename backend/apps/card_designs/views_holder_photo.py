@@ -3,7 +3,6 @@
 Member-card photos keep `member/makerspaces/<id>/member-card/photo`; the clean-up and
 wallet routes serve all three kinds.
 """
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -14,6 +13,7 @@ from rest_framework.views import APIView
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.openapi_errors import errors
+from .serializers_openapi import PhotoDecisionResultSerializer, PhotoSetSerializer, PhotoUploadSerializer
 
 from . import jobs, photo_cleanup, photos
 from .holder_access import own_card
@@ -46,7 +46,7 @@ class MyCardPhotoView(APIView):
         return own_card(request.user, kind, card_id)[1]
 
     @extend_schema(tags=TAGS, summary="Start a card photo upload (staging presign only)",
-                   request=PhotoPresignSerializer, responses={201: OpenApiTypes.OBJECT, **errors(400, 401, 404, 503)})
+                   request=PhotoPresignSerializer, responses={201: PhotoUploadSerializer, **errors(400, 401, 404, 503)})
     def post(self, request, kind, card_id):
         card = self._card(request, kind, card_id)
         data = PhotoPresignSerializer(data=request.data)
@@ -57,7 +57,7 @@ class MyCardPhotoView(APIView):
             return storage_unavailable_response()
 
     @extend_schema(tags=TAGS, summary="Attach the uploaded photo (needs consent; re-encoded, metadata stripped)",
-                   request=PhotoFinalizeSerializer, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 404, 503)})
+                   request=PhotoFinalizeSerializer, responses={200: PhotoSetSerializer, **errors(400, 401, 404, 503)})
     def put(self, request, kind, card_id):
         card = self._card(request, kind, card_id)
         data = PhotoFinalizeSerializer(data=request.data)
@@ -70,7 +70,7 @@ class MyCardPhotoView(APIView):
         return Response({"photo_set": True})
 
     @extend_schema(tags=TAGS, summary="Remove my card photo", request=None,
-                   responses={200: OpenApiTypes.OBJECT, **errors(401, 404)})
+                   responses={200: PhotoSetSerializer, **errors(401, 404)})
     def delete(self, request, kind, card_id):
         card = self._card(request, kind, card_id)
         photos.remove(request.user, kind, card)
@@ -92,7 +92,7 @@ class MyCardPhotoDecisionView(APIView):
     accept = True
 
     @extend_schema(tags=TAGS, summary="Use the cleaned photo (the original is deleted)", request=JobRefSerializer,
-                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 404)})
+                   responses={200: PhotoDecisionResultSerializer, **errors(400, 401, 404)})
     def post(self, request, kind, card_id):
         _spec, card = own_card(request.user, kind, card_id)
         data = JobRefSerializer(data=request.data)
@@ -111,7 +111,7 @@ class MyCardPhotoDiscardView(MyCardPhotoDecisionView):
     accept = False
 
     @extend_schema(tags=TAGS, summary="Keep my original photo and discard the cleaned one", request=JobRefSerializer,
-                   responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 404)})
+                   responses={200: PhotoDecisionResultSerializer, **errors(400, 401, 404)})
     def post(self, request, kind, card_id):
         return super().post(request, kind, card_id)
 

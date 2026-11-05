@@ -13,6 +13,15 @@ from .programme_route_catalog import ROUTES as PROGRAMME_ROUTES
 from .reimbursement_route_catalog import ROUTES as REIMBURSEMENT_ROUTES
 from .security_route_catalog import ROUTES as SECURITY_ROUTES
 
+PERSON_CREDENTIAL_ROUTES = frozenset({
+    "auth-access-tokens", "auth-access-token-revoke", "auth-access-token-scopes", "auth-oauth-consent",
+    "auth-connected-apps", "auth-connected-app-revoke",
+})
+OAUTH_APP_ROUTES = frozenset({"admin-oauth-apps", "admin-oauth-app"})
+# The OAuth protocol endpoints authenticate the CLIENT (secret or PKCE), never a person session.
+OAUTH_PROTOCOL_ROUTES = frozenset({"authorize", "token", "revoke-token", "introspect",
+                                   "oidc-connect-discovery-info", "jwks-info", "user-info"})
+
 MEMBERSHIP_ONLY = "membership-only"
 DELEGABLE = "delegable"
 SHARED_ACCOUNT_UTILITY = "shared-account-utility"
@@ -46,6 +55,10 @@ ROUTE_CLASSES = MappingProxyType({
     **dict.fromkeys(MEMBER_ROUTES, MEMBER_ONLY),
     **dict.fromkeys(PLATFORM_ONLY_ROUTES, PLATFORM_ONLY),
     **dict.fromkeys(SIGNED_PROTOCOL_ROUTES, SIGNED_PROTOCOL),
+    # #196: a person's own tokens and app connections; registering apps is tenant staff.
+    **dict.fromkeys(PERSON_CREDENTIAL_ROUTES, MEMBER_ONLY),
+    **dict.fromkeys(OAUTH_APP_ROUTES, MEMBERSHIP_ONLY),
+    **dict.fromkeys(OAUTH_PROTOCOL_ROUTES, SIGNED_PROTOCOL),
 })
 
 

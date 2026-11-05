@@ -14,12 +14,12 @@ FIRST_PARTY_APP_LABELS = frozenset(
     printing procurement roadmap separability shop space_controls tenant_migration tenant_rls warranty""".split()
 )
 THIRD_PARTY_MODEL_APP_LABELS = frozenset(
-    {"admin", "auth", "axes", "contenttypes", "sessions", "token_blacklist"}
+    {"admin", "auth", "axes", "contenttypes", "sessions", "token_blacklist", "oauth2_provider"}
 )
 THIRD_PARTY_INSTALLED_APP_LABELS = frozenset(
     """unfold unfold_filters admin auth axes contenttypes postgres sessions messages
     staticfiles rest_framework drf_spectacular rest_framework_simplejwt token_blacklist
-    corsheaders storages""".split()
+    corsheaders storages oauth2_provider""".split()
 )
 
 # These labels are literal. A new exported model must be placed here deliberately;
@@ -137,6 +137,9 @@ PROJECTED_MODEL_LABELS |= MESSAGING_PROJECTED_LABELS
 
 EXPLICIT_DROP_MODEL_REASONS = {
     "apiclients.ApiClient": "Source clients and their bearer secrets never become target authority.",
+    "apiclients.PersonalAccessToken": "Personal bearer tokens never travel; the person makes new ones.",
+    "apiclients.OAuthAppRegistration": "App registrations are source authority; the target registers its own.",
+    "apiclients.OAuthConsent": "App consent and its MFA proof never travel; the person reconnects.",
     "events.EventCollaborator": "Cross-tenant collaboration grants have no target counterpart.",
     "events.EventSeriesCollaborator": "Cross-tenant series collaboration grants have no target counterpart.",
     "integrations.EmailNotificationMute": "Source delivery suppression does not control target mail.",
@@ -215,6 +218,9 @@ THIRD_PARTY_MODEL_RULES = {
     "sessions.Session": TableRule(ModelDisposition.EMPTY, "Source bearer sessions never travel."),
     "token_blacklist.OutstandingToken": TableRule(ModelDisposition.EMPTY, "Source bearer tokens never travel."),
     "token_blacklist.BlacklistedToken": TableRule(ModelDisposition.EMPTY, "Source bearer-token state never travels."),
+    # #196 app connections: OAuth clients, codes and tokens are source bearer authority.
+    **{f"oauth2_provider.{name}": TableRule(ModelDisposition.EMPTY, "Source OAuth clients and tokens never travel.")
+       for name in ("Application", "AccessToken", "RefreshToken", "Grant", "IDToken", "DeviceGrant")},
 }
 
 UNMANAGED_MODEL_RULES = {}

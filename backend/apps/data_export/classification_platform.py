@@ -43,6 +43,10 @@ OMITTED_MODELS = {
         "Deployment-local bearer credential over member registration history; restored tenants must reissue it."
     ),
     "apiclients.ApiClientImportApproval": "Artifact-bound target authority approval is deployment-local coordination state.",
+    # #196: credentials that act as a person; bearer authority never leaves the deployment.
+    "apiclients.PersonalAccessToken": "Live personal bearer credential (stored as a digest); the person reissues it.",
+    "apiclients.OAuthConsent": "Live app-connection consent and its MFA proof; the person reconnects the app.",
+    "apiclients.OAuthAppRegistration": "Deployment-local OAuth client authority; a restored space registers apps again.",
     "accounts.DailyOtpEmailCounter": "Platform authentication telemetry.",
     "accounts.DeviceAttestationChallenge": "Transient authentication state.",
     "accounts.DeviceGrant": "Live bearer-session authority.",

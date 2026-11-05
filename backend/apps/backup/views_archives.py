@@ -1,6 +1,7 @@
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -93,7 +94,7 @@ class BackupArchiveDownloadView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @extend_schema(tags=["Backup"], summary="Consume a one-use backup download", auth=[], responses={200: OpenApiResponse(description="Age-encrypted archive stream."), 404: OpenApiResponse(description="Invalid or expired download.")})
+    @extend_schema(tags=["Backup"], summary="Consume a one-use backup download", auth=[], responses={(200, "application/octet-stream"): OpenApiResponse(OpenApiTypes.BINARY, description="Age-encrypted archive stream."), 404: OpenApiResponse(description="Invalid or expired download.")})
     def get(self, request, archive_id, token):
         try:
             archive = services.consume_download_token(archive_id, token)

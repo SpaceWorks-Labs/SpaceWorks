@@ -1879,3 +1879,14 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
         "off", "not_open", "closed", "published", "attendees_only", "voided")],
 })
 # --- end lane r2-peoples-choice
+# --- lane r2-gap-api (release 2, #193): the OpenAPI contract and API-client management.
+from config import openapi_settings as _openapi_settings
+_openapi_settings.apply(REST_FRAMEWORK, SPECTACULAR_SETTINGS, env)
+# #196: personal access tokens and app connections (OAuth 2.0 / OIDC via django-oauth-toolkit).
+from config import oauth_settings as _oauth_settings
+INSTALLED_APPS += ["oauth2_provider"]
+OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"
+OAUTH2_PROVIDER = _oauth_settings.provider_settings(env)
+_oauth_settings.apply(REST_FRAMEWORK, SPECTACULAR_SETTINGS, env)
+PERSON_CREDENTIAL_RATE_PER_MINUTE = env.int("PERSON_CREDENTIAL_RATE_PER_MINUTE", default=120)
+# --- end lane r2-gap-api

@@ -127,6 +127,10 @@ jobs:
             exit 1
           fi
 
+      - name: OpenAPI contract is complete (tags, security, bodies, errors)
+        working-directory: backend
+        run: python manage.py openapi_contract_check
+
       - name: Generated API client matches the snapshot
         working-directory: frontend
         run: |

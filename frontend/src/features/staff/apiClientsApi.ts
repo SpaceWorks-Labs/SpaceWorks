@@ -8,11 +8,14 @@ export type ApiKeyRequest = {
   created_at: string;
 };
 
+/** server: your own backend; peer: another space reading only public data; browser: a site. */
+export type ApiClientType = "server" | "browser" | "peer";
+
 export type ApiClient = {
   id: number;
   label: string;
   client_id: string;
-  client_type: "server" | "browser";
+  client_type: ApiClientType;
   last_seen_at: string | null;
   allowed_origins: string[];
   scopes: string[];
@@ -27,6 +30,7 @@ export type ApiClientScopeOption = {
   group: string;
   grantable: boolean;
   lock_reason: string | null;
+  client_types?: ApiClientType[];
 };
 
 export type ApiClientScopeCatalog = {
@@ -36,20 +40,21 @@ export type ApiClientScopeCatalog = {
   results: ApiClientScopeOption[];
 };
 
-const browserClientScopes = new Set([
-  "legacy:v1", "public:read", "public:write", "public:*",
-]);
-const browserScopeLockReason = "Browser clients may only use public/read scopes.";
+const typeLockReason: Record<ApiClientType, string> = {
+  server: "This scope cannot be granted here.",
+  browser: "Browser clients may only use public scopes.",
+  peer: "A peer client only reads the public catalogue, events and stats.",
+};
 
+/** The catalog says which client types each scope suits; lock the rest for this type. */
 export function scopeOptionsForClient(
   options: ApiClientScopeOption[],
-  clientType: ApiClient["client_type"],
+  clientType: ApiClientType,
 ) {
-  if (clientType !== "browser") return options;
-  return options.map((option) => browserClientScopes.has(option.value) ? option : {
+  return options.map((option) => (!option.client_types || option.client_types.includes(clientType)) ? option : {
     ...option,
     grantable: false,
-    lock_reason: browserScopeLockReason,
+    lock_reason: typeLockReason[clientType],
   });
 }
 
@@ -89,6 +94,7 @@ export function createApiClient(
   label: string,
   allowedOrigins: string[],
   scopes: string[],
+  clientType: ApiClientType = "server",
 ) {
   return staffRequest<ApiClientCreateResponse>(`/admin/makerspace/${makerspaceId}/api-clients`, {
     method: "POST",
@@ -96,7 +102,16 @@ export function createApiClient(
       label,
       allowed_origins: allowedOrigins,
       scopes,
+      client_type: clientType,
     }),
+  });
+}
+
+/** Revoke (false) keeps the client and its history; reactivate (true) restores it. */
+export function setApiClientActive(clientId: number, isActive: boolean) {
+  return staffRequest<ApiClient>(`/admin/api-clients/${clientId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_active: isActive }),
   });
 }
 

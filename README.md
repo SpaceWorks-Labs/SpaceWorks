@@ -128,7 +128,7 @@ makerspace; leave one out and nothing else changes.
 | **Sign-in** | Password, Google, Apple, GitHub, your own OIDC provider and phone codes ([sign-in methods](docs/sign-in-and-borrowing.md)) |
 | **Payments** | Stripe and Razorpay checkout, UPI QR codes, offline receipts, and India GST invoices ([payments and billing](docs/payment-billing.md)) |
 | **Calendars** | Google Calendar, Apple Calendar and Outlook: one-click "Add to Google Calendar", `.ics` downloads on every event and booking confirmation, and subscribable iCal feeds for events, bookings and maintenance |
-| **Your own systems** | Signed [webhooks](docs/webhooks-v2.md), scoped and signed [API clients](docs/api-client-protocol.md), and CSV/XLSX import and export |
+| **Your own systems** | The [API guide](docs/api-guide.md): Swagger and ReDoc on every deployment, signed [webhooks](docs/webhooks-v2.md), scoped and signed [API clients](docs/api-client-protocol.md) (also space to space), personal access tokens, OAuth app connections, and CSV/XLSX import and export |
 | **Storage** | Any S3-compatible bucket: the bundled Silo store, AWS S3, Cloudflare R2 or MinIO |
 
 ## Modules
@@ -242,7 +242,7 @@ tenancy and the module map.
 
 Every endpoint is documented in OpenAPI. A running deployment serves Swagger UI at `/docs/`, ReDoc at
 `/redoc/` and the schema at `/schema/`; the versioned API lives under `/api/v1/`. To connect another
-system, read the [API client protocol](docs/api-client-protocol.md) (scoped, signed clients) and
+system, start with the [API guide](docs/api-guide.md), then the [API client protocol](docs/api-client-protocol.md) (scoped, signed clients) and
 [signed webhooks v2](docs/webhooks-v2.md). Printers and label printers use the
 [device protocol](docs/device-protocol.md); branded phone apps use the [mobile integration guide](docs/mobile-integration.md).
 

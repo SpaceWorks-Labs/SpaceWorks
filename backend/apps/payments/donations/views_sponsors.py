@@ -5,6 +5,7 @@ Finance staff only, like donations (#100): reading needs `view_finance`, every w
 """
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -193,12 +194,16 @@ class ChargeListView(APIView):
         return Response(s.ChargeSerializer(charge).data, status=201)
 
 
+class ChargeReturnSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=False, allow_blank=True, default="", max_length=500)
+
+
 class ChargeReturnView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAG, summary="Open a case to return a sponsor's payment",
                    description="A refund case in area `donations`; staff approve it in the refund-case queue (#59).",
-                   request=None, responses={200: s.ChargeSerializer, **ERRORS})
+                   request=ChargeReturnSerializer, responses={200: s.ChargeSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk):
         from apps.payments.models import Payment
 
@@ -207,7 +212,9 @@ class ChargeReturnView(APIView):
         charge = _row(request, SponsorshipCharge, makerspace_id, pk, record=True, label="Charge not found.")
         payment = Payment.objects.get(makerspace_id=makerspace_id, subject_type="sponsorship", subject_id=charge.pk)
         with tenant_write(charge.makerspace_id):
-            open_return_case(payment, actor=request.user, reason=str(request.data.get("reason") or ""))
+            body = ChargeReturnSerializer(data=request.data)
+            body.is_valid(raise_exception=True)
+            open_return_case(payment, actor=request.user, reason=body.validated_data["reason"])
         return Response(s.ChargeSerializer(charge).data)
 
 

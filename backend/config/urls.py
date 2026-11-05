@@ -249,3 +249,8 @@ from apps.integrations.messaging.urls import staff_urlpatterns as messaging_staf
 urlpatterns += [path("api/v1/", include(messaging_member_urls)), path("api/v1/admin/", include(messaging_staff_urls))]
 
 urlpatterns += [path("api/v1/integrations/messaging/", include("apps.integrations.messaging.urls_webhooks"))]
+
+# Release 2 (#196): personal access tokens, app connections and the OAuth 2.0 protocol.
+from apps.apiclients.urls_tokens import account_urlpatterns as _token_urls, protocol_urlpatterns,     staff_urlpatterns as _oauth_app_urls
+urlpatterns += [path("api/v1/auth/", include(_token_urls)), path("api/v1/admin/", include(_oauth_app_urls)),
+                path("api/v1/oauth/", include((protocol_urlpatterns(), "oauth2_provider")))]

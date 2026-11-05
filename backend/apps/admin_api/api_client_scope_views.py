@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
@@ -18,7 +19,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.models import Makerspace
 
 
-ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer}
+ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer, 429: ErrorSerializer}
 
 
 class ApiClientScopePagination(PageNumberPagination):
@@ -43,6 +44,8 @@ def _visible_makerspace(actor, makerspace_id):
 class ApiClientScopeCatalogView(APIView):
     permission_classes = [IsActiveStaff]
     pagination_class = ApiClientScopePagination
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "api_client_manage"
 
     @extend_schema(
         tags=["API clients"],

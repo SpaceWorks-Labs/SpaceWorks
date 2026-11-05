@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.accounts import rbac
 from apps.admin_api.api_client_serializers import (
@@ -32,7 +33,9 @@ from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
 
 
-ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer}
+ERRORS = {401: ErrorSerializer, 403: ErrorSerializer, 404: ErrorSerializer, 429: ErrorSerializer}
+# Credential management is a rare, human act: one per-person budget covers every call.
+THROTTLE = {"throttle_classes": [ScopedRateThrottle], "throttle_scope": "api_client_manage"}
 
 
 def _visible_makerspace(actor, makerspace_id):
@@ -70,6 +73,8 @@ def _related_makerspace(makerspace_id):
 class ApiClientListCreateView(RecentReauthenticationMixin, generics.ListCreateAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
+    throttle_classes = THROTTLE["throttle_classes"]
+    throttle_scope = THROTTLE["throttle_scope"]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -133,6 +138,8 @@ class ApiClientListCreateView(RecentReauthenticationMixin, generics.ListCreateAP
 class ApiClientDetailView(RecentReauthenticationMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
+    throttle_classes = THROTTLE["throttle_classes"]
+    throttle_scope = THROTTLE["throttle_scope"]
     http_method_names = ["get", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
@@ -170,8 +177,9 @@ class ApiClientDetailView(RecentReauthenticationMixin, generics.RetrieveUpdateDe
                 )
             else:
                 makerspace = serializer.instance.makerspace
+            was_active = serializer.instance.is_active
             reactivating = (
-                not serializer.instance.is_active
+                not was_active
                 and serializer.validated_data.get("is_active") is True
             )
             if reactivating and makerspace is not None:
@@ -184,6 +192,14 @@ class ApiClientDetailView(RecentReauthenticationMixin, generics.RetrieveUpdateDe
                     makerspace=makerspace,
                     target=instance,
                     meta={"previous_scopes": previous_scopes, "scopes": instance.scopes},
+                )
+            if was_active != instance.is_active:
+                # Revoking keeps the row (and its audit trail); deleting removes it.
+                audit.record(
+                    self.request.user,
+                    "api_client.reactivated" if instance.is_active else "api_client.revoked",
+                    makerspace=makerspace,
+                    target=instance,
                 )
         sync_makerspace_origins(instance.makerspace)
         audit.record(
@@ -214,6 +230,8 @@ class ApiClientDetailView(RecentReauthenticationMixin, generics.RetrieveUpdateDe
 class ApiClientRotateSecretView(RecentReauthenticationMixin, generics.GenericAPIView):
     serializer_class = ApiClientSerializer
     permission_classes = [IsActiveStaff]
+    throttle_classes = THROTTLE["throttle_classes"]
+    throttle_scope = THROTTLE["throttle_scope"]
 
     def get_queryset(self):
         return _visible_clients(self.request.user)

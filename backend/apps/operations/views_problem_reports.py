@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,7 +10,9 @@ from apps.audit import services as audit
 from apps.hardware_requests.models import PublicProblemReport
 from apps.hardware_requests.problem_report_workflow import triage_problem_report
 from apps.makerspaces.guards import require_module
+from apps.openapi_errors import errors
 from apps.operations.serializers_problem_reports import (
+    ProblemReportResolvedSerializer,
     ProblemReportTriageResponseSerializer,
     ProblemReportTriageSerializer,
 )
@@ -25,7 +26,7 @@ class ProblemReportResolveView(APIView):
         tags=["Analytics"],
         summary="Resolve a public problem report",
         request=None,
-        responses={200: OpenApiTypes.OBJECT},
+        responses={200: ProblemReportResolvedSerializer, **errors(400, 401, 403, 404)},
     )
     def post(self, request, makerspace_id, pk, *args, **kwargs):
         makerspace = _makerspace_for_inventory_view(request.user, makerspace_id)

@@ -138394,6 +138394,239 @@
                 }
             }
         },
+        "/api/v1/admin/platform/accounts": {
+            "get": {
+                "operationId": "api_v1_admin_platform_accounts_list",
+                "summary": "Find a personal account by its exact user name",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "username",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PlatformAccount"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/accounts/{id}/disable": {
+            "post": {
+                "operationId": "api_v1_admin_platform_accounts_disable_create",
+                "summary": "Disable an account: every session ends and its staff roles are revoked",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountActionReason"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountActionReason"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountActionReason"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformAccount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/accounts/{id}/enable": {
+            "post": {
+                "operationId": "api_v1_admin_platform_accounts_enable_create",
+                "summary": "Re-enable a disabled account (staff roles stay revoked)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform accounts"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformAccount"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/accounts/{id}/reset-two-step": {
+            "post": {
+                "operationId": "api_v1_admin_platform_accounts_reset_two_step_create",
+                "summary": "Reset an account's two-step sign-in (every factor cleared, sessions end)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountActionReason"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountActionReason"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountActionReason"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TwoStepReset"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/platform/analytics/{report_key}": {
             "get": {
                 "operationId": "api_v1_admin_platform_analytics_retrieve",
@@ -139451,6 +139684,346 @@
                     }
                 },
                 "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/api-key-requests": {
+            "get": {
+                "operationId": "api_v1_admin_platform_api_key_requests_list",
+                "summary": "List API key requests from every space",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Only requests in this state."
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedApiKeyRequestRowList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/api-key-requests/{id}/approve": {
+            "post": {
+                "operationId": "api_v1_admin_platform_api_key_requests_approve_create",
+                "summary": "Approve an API key request and issue its server client",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IssuedClient"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/api-key-requests/{id}/reject": {
+            "post": {
+                "operationId": "api_v1_admin_platform_api_key_requests_reject_create",
+                "summary": "Reject an API key request",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiKeyRequestRow"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/archive-requests": {
+            "get": {
+                "operationId": "api_v1_admin_platform_archive_requests_list",
+                "summary": "List archive requests from every space",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Only requests in this state."
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedArchiveRequestRowList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/archive-requests/{id}/approve": {
+            "post": {
+                "operationId": "api_v1_admin_platform_archive_requests_approve_create",
+                "summary": "Approve (archives the space now) or decline an archive request",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueueDecisionNote"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueueDecisionNote"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueueDecisionNote"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArchiveRequestRow"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/archive-requests/{id}/decline": {
+            "post": {
+                "operationId": "api_v1_admin_platform_archive_requests_decline_create",
+                "summary": "Approve (archives the space now) or decline an archive request",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueueDecisionNote"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueueDecisionNote"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueueDecisionNote"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArchiveRequestRow"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
             }
         },
         "/api/v1/admin/platform/backup-destinations": {
@@ -141173,6 +141746,294 @@
                 }
             }
         },
+        "/api/v1/admin/platform/ip-blocks": {
+            "get": {
+                "operationId": "api_v1_admin_platform_ip_blocks_list",
+                "summary": "List automatic network blocks (blocking now first)",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Platform security"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedIPAutoBlockList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/ip-blocks/{id}/unblock": {
+            "post": {
+                "operationId": "api_v1_admin_platform_ip_blocks_unblock_create",
+                "summary": "Lift an automatic block now",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform security"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnblockResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/ip-rules": {
+            "get": {
+                "operationId": "api_v1_admin_platform_ip_rules_list",
+                "summary": "List the platform IP allow and deny rules",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Platform security"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedIPAccessRuleList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_platform_ip_rules_create",
+                "summary": "Add a platform IP rule (refused if it would lock you out)",
+                "tags": [
+                    "Platform security"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IPAccessRule"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IPAccessRule"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IPAccessRule"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IPAccessRule"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/ip-rules/{id}": {
+            "patch": {
+                "operationId": "api_v1_admin_platform_ip_rules_partial_update",
+                "summary": "Change a platform IP rule",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform security"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedIPAccessRule"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedIPAccessRule"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedIPAccessRule"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IPAccessRule"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_platform_ip_rules_destroy",
+                "summary": "Delete a platform IP rule",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform security"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/platform/metabase": {
             "get": {
                 "operationId": "api_v1_admin_platform_metabase_retrieve",
@@ -141543,6 +142404,169 @@
                     },
                     "403": {
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/oidc-providers": {
+            "get": {
+                "operationId": "api_v1_admin_platform_oidc_providers_list",
+                "summary": "List single sign-on (OIDC) providers",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Platform security"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedOidcProviderList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_platform_oidc_providers_create",
+                "summary": "Add a single sign-on (OIDC) provider",
+                "tags": [
+                    "Platform security"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OidcProvider"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OidcProvider"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OidcProvider"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OidcProvider"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/oidc-providers/{id}": {
+            "patch": {
+                "operationId": "api_v1_admin_platform_oidc_providers_partial_update",
+                "summary": "Change a single sign-on (OIDC) provider (disable it rather than delete)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform security"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedOidcProvider"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedOidcProvider"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedOidcProvider"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OidcProvider"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
                     }
                 }
             }
@@ -141938,6 +142962,192 @@
                 }
             }
         },
+        "/api/v1/admin/platform/restore-drills": {
+            "get": {
+                "operationId": "api_v1_admin_platform_restore_drills_list",
+                "summary": "List restore drill reports (newest first)",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Backup"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedRestoreDrillReportList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_platform_restore_drills_create",
+                "summary": "Run a restore drill of one space now",
+                "tags": [
+                    "Backup"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DrillRun"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DrillRun"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DrillRun"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DrillQueued"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/restore-drills/settings": {
+            "get": {
+                "operationId": "api_v1_admin_platform_restore_drills_settings_retrieve",
+                "summary": "Read the restore drill settings",
+                "tags": [
+                    "Backup"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DrillOverview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_platform_restore_drills_settings_partial_update",
+                "summary": "Change the drill interval and the archive-ready notice",
+                "tags": [
+                    "Backup"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedDrillSettings"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedDrillSettings"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedDrillSettings"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DrillSettings"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/platform/restores": {
             "get": {
                 "operationId": "api_v1_admin_platform_restores_list",
@@ -142140,6 +143350,366 @@
                     },
                     "403": {
                         "description": "The authenticated actor is not authorized."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/selfhost-moves": {
+            "get": {
+                "operationId": "api_v1_admin_platform_selfhost_moves_list",
+                "summary": "List every space's self-host move requests (newest first)",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPlatformMoveList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/selfhost-moves/{id}/approve": {
+            "post": {
+                "operationId": "api_v1_admin_platform_selfhost_moves_approve_create",
+                "summary": "Decide a self-host move request",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MoveDecision"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MoveDecision"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MoveDecision"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformMove"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/selfhost-moves/{id}/discard": {
+            "post": {
+                "operationId": "api_v1_admin_platform_selfhost_moves_discard_create",
+                "summary": "Delete the move export file from this server",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformMove"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/selfhost-moves/{id}/download-url": {
+            "post": {
+                "operationId": "api_v1_admin_platform_selfhost_moves_download_url_create",
+                "summary": "Issue a five-minute, one-use download link for the export",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DownloadLink"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/selfhost-moves/{id}/export": {
+            "post": {
+                "operationId": "api_v1_admin_platform_selfhost_moves_export_create",
+                "summary": "Run the move export, encrypted to the target server's key",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Export"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Export"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Export"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformMove"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/selfhost-moves/{id}/reject": {
+            "post": {
+                "operationId": "api_v1_admin_platform_selfhost_moves_reject_create",
+                "summary": "Decide a self-host move request",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MoveDecision"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MoveDecision"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MoveDecision"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PlatformMove"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    },
+                    "423": {
+                        "description": "Makerspace writes are frozen for tenant migration."
                     }
                 }
             }
@@ -142390,6 +143960,245 @@
                     }
                 },
                 "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/chat-templates": {
+            "get": {
+                "operationId": "api_v1_admin_platform_spaces_chat_templates_list",
+                "summary": "List a space's chat message templates",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Platform messaging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedChatTemplateList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_platform_spaces_chat_templates_create",
+                "summary": "Add a chat message template for one event",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform messaging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatTemplate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatTemplate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatTemplate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatTemplate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/spaces/{makerspace_id}/chat-templates/{id}": {
+            "patch": {
+                "operationId": "api_v1_admin_platform_spaces_chat_templates_partial_update",
+                "summary": "Change a chat message template",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform messaging"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedChatTemplate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedChatTemplate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedChatTemplate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatTemplate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_platform_spaces_chat_templates_destroy",
+                "summary": "Remove a chat template (the event goes back to the built-in text)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform messaging"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
             }
         },
         "/api/v1/admin/platform/spaces/{makerspace_id}/plan": {
@@ -143101,6 +144910,155 @@
                     },
                     "409": {
                         "description": "Conflicts with the current state."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/subdomain-requests": {
+            "get": {
+                "operationId": "api_v1_admin_platform_subdomain_requests_list",
+                "summary": "List web address requests from every space",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Only requests in this state."
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedSubdomainRequestRowList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/subdomain-requests/{id}/approve": {
+            "post": {
+                "operationId": "api_v1_admin_platform_subdomain_requests_approve_create",
+                "summary": "Approve a web address request and provision it",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubdomainRequestRow"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                },
+                "x-request-body": "none"
+            }
+        },
+        "/api/v1/admin/platform/subdomain-requests/{id}/reject": {
+            "post": {
+                "operationId": "api_v1_admin_platform_subdomain_requests_reject_create",
+                "summary": "Reject a web address request",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Platform requests"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubdomainRequestRow"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
                     }
                 },
                 "x-request-body": "none"
@@ -163442,6 +165400,54 @@
                     },
                     "404": {
                         "description": "Invalid or expired download."
+                    }
+                },
+                "security": [
+                    {}
+                ]
+            }
+        },
+        "/api/v1/backups/selfhost-moves/{id}/{token}": {
+            "get": {
+                "operationId": "api_v1_backups_selfhost_moves_retrieve",
+                "description": "Consume a link from ``PlatformMoveDownloadLinkView``: signed, five minutes, one use.",
+                "summary": "Download a move export through its one-use link",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "token",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Tenant migration"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "The age-encrypted move archive."
+                    },
+                    "404": {
+                        "description": "Invalid, used or expired link."
                     }
                 },
                 "security": [
@@ -232590,6 +234596,19 @@
                     "token"
                 ]
             },
+            "AccountActionReason": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "minLength": 3
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
             "AccountDeletionBlocker": {
                 "type": "object",
                 "properties": {
@@ -232756,6 +234775,15 @@
                 "required": [
                     "detail"
                 ]
+            },
+            "AccountKindEnum": {
+                "enum": [
+                    "member",
+                    "staff",
+                    "platform"
+                ],
+                "type": "string",
+                "description": "* `member` - Person\n* `staff` - Inert shell\n* `platform` - Platform"
             },
             "AccountProfile": {
                 "type": "object",
@@ -236607,6 +238635,64 @@
                     "status"
                 ]
             },
+            "ApiKeyRequestRow": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "label": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "allowed_origins": {
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusE94Enum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "resolved_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "allowed_origins",
+                    "created_at",
+                    "id",
+                    "label",
+                    "makerspace",
+                    "makerspace_name",
+                    "reason",
+                    "resolved_at",
+                    "status"
+                ]
+            },
             "AppAttestAttestationTypeEnum": {
                 "type": "string",
                 "enum": [
@@ -237230,6 +239316,62 @@
                 },
                 "required": [
                     "detail"
+                ]
+            },
+            "ArchiveRequestRow": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Status028Enum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "default": "pending"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Do not include personal data. Maximum 2,000 characters."
+                    },
+                    "resolution_note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "requested_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "resolved_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "id",
+                    "makerspace",
+                    "makerspace_name",
+                    "reason",
+                    "requested_at",
+                    "resolution_note",
+                    "resolved_at",
+                    "status"
                 ]
             },
             "ArchiveRequestValidationError": {
@@ -248280,6 +250422,40 @@
                     }
                 }
             },
+            "ChatTemplate": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "feature": {
+                        "$ref": "#/components/schemas/Feature4d1Enum"
+                    },
+                    "event": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "text_body": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "event",
+                    "feature",
+                    "id",
+                    "text_body",
+                    "updated_at"
+                ]
+            },
             "CheckInList": {
                 "type": "object",
                 "properties": {
@@ -256935,6 +259111,23 @@
                     "url"
                 ]
             },
+            "DownloadLink": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "expires_at",
+                    "url"
+                ]
+            },
             "Downtime": {
                 "type": "object",
                 "properties": {
@@ -257022,6 +259215,74 @@
                     "periods",
                     "uptime_percent"
                 ]
+            },
+            "DrillOverview": {
+                "type": "object",
+                "properties": {
+                    "configured": {
+                        "type": "boolean",
+                        "description": "False until this server has its restore identity and recipient."
+                    },
+                    "settings": {
+                        "$ref": "#/components/schemas/DrillSettings"
+                    },
+                    "key_rotation": {
+                        "type": "string",
+                        "description": "Where platform key rotation runs (server only, by design)."
+                    }
+                },
+                "required": [
+                    "configured",
+                    "key_rotation",
+                    "settings"
+                ]
+            },
+            "DrillQueued": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer"
+                    },
+                    "archive_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "status": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "archive_id",
+                    "makerspace_id",
+                    "status"
+                ]
+            },
+            "DrillRun": {
+                "type": "object",
+                "properties": {
+                    "makerspace_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "makerspace_id"
+                ]
+            },
+            "DrillSettings": {
+                "type": "object",
+                "properties": {
+                    "restore_drill_interval_days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0,
+                        "description": "Days between drills of each space; 0 turns scheduled drills off."
+                    },
+                    "archive_ready_notice_enabled": {
+                        "type": "boolean",
+                        "description": "Email the superadmins when a requested archive is ready."
+                    }
+                }
             },
             "DrillStatusEnum": {
                 "enum": [
@@ -263571,6 +265832,19 @@
                 ],
                 "type": "string",
                 "description": "* `explicit` - explicit"
+            },
+            "Export": {
+                "type": "object",
+                "properties": {
+                    "recipient": {
+                        "type": "string",
+                        "description": "The TARGET server's age public key (age1...).",
+                        "maxLength": 200
+                    }
+                },
+                "required": [
+                    "recipient"
+                ]
             },
             "ExportPreviewRow": {
                 "type": "object",
@@ -271968,6 +274242,102 @@
                     "url"
                 ]
             },
+            "IPAccessRule": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "cidr": {
+                        "type": "string",
+                        "description": "One address (203.0.113.7) or a network (203.0.113.0/24, 2001:db8::/48).",
+                        "maxLength": 49
+                    },
+                    "action": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/IPAccessRuleActionEnum"
+                            }
+                        ],
+                        "description": "allow beats every deny rule and every automatic block; deny always applies.\n\n* `allow` - allow\n* `deny` - deny"
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Empty keeps the rule until it is deleted."
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_by": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "action",
+                    "active",
+                    "cidr",
+                    "created_at",
+                    "created_by",
+                    "id"
+                ]
+            },
+            "IPAccessRuleActionEnum": {
+                "enum": [
+                    "allow",
+                    "deny"
+                ],
+                "type": "string",
+                "description": "* `allow` - allow\n* `deny` - deny"
+            },
+            "IPAutoBlock": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "network": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "blocked_until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "active",
+                    "blocked_until",
+                    "created_at",
+                    "id",
+                    "network"
+                ]
+            },
             "IdProgramme": {
                 "type": "object",
                 "properties": {
@@ -275867,6 +278237,26 @@
                 },
                 "required": [
                     "assignment_id"
+                ]
+            },
+            "IssuedClient": {
+                "type": "object",
+                "properties": {
+                    "request": {
+                        "$ref": "#/components/schemas/ApiKeyRequestRow"
+                    },
+                    "client_id": {
+                        "type": "string"
+                    },
+                    "client_secret": {
+                        "type": "string",
+                        "description": "Shown once. Copy it now; it cannot be shown again."
+                    }
+                },
+                "required": [
+                    "client_id",
+                    "client_secret",
+                    "request"
                 ]
             },
             "Issuer": {
@@ -283670,7 +286060,7 @@
                     "status": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/MakerspaceArchiveRequestStatusEnum"
+                                "$ref": "#/components/schemas/Status028Enum"
                             }
                         ],
                         "readOnly": true,
@@ -283690,16 +286080,6 @@
                     "resolved_by_username",
                     "status"
                 ]
-            },
-            "MakerspaceArchiveRequestStatusEnum": {
-                "enum": [
-                    "pending",
-                    "approved",
-                    "declined",
-                    "withdrawn"
-                ],
-                "type": "string",
-                "description": "* `pending` - Pending\n* `approved` - Approved\n* `declined` - Declined\n* `withdrawn` - Withdrawn"
             },
             "MakerspaceBackupStatus": {
                 "type": "object",
@@ -291306,6 +293686,16 @@
                     "total_quantity_lent"
                 ]
             },
+            "MoveDecision": {
+                "type": "object",
+                "properties": {
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 500
+                    }
+                }
+            },
             "MoveError": {
                 "type": "object",
                 "properties": {
@@ -293426,6 +295816,64 @@
                     "expires_in",
                     "nonce",
                     "state"
+                ]
+            },
+            "OidcProvider": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 40,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "display_name": {
+                        "type": "string",
+                        "maxLength": 80
+                    },
+                    "issuer": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 255
+                    },
+                    "jwks_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 255
+                    },
+                    "client_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "is_enabled": {
+                        "type": "boolean"
+                    },
+                    "allow_auto_link": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "client_id",
+                    "created_at",
+                    "display_name",
+                    "id",
+                    "issuer",
+                    "jwks_url",
+                    "slug",
+                    "updated_at"
                 ]
             },
             "OnboardingApprove": {
@@ -297775,6 +300223,68 @@
                     }
                 }
             },
+            "PaginatedApiKeyRequestRowList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApiKeyRequestRow"
+                        }
+                    }
+                }
+            },
+            "PaginatedArchiveRequestRowList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ArchiveRequestRow"
+                        }
+                    }
+                }
+            },
             "PaginatedAuditLogList": {
                 "type": "object",
                 "required": [
@@ -297895,6 +300405,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/CategoryAdmin"
+                        }
+                    }
+                }
+            },
+            "PaginatedChatTemplateList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ChatTemplate"
                         }
                     }
                 }
@@ -298116,6 +300657,68 @@
                     }
                 }
             },
+            "PaginatedIPAccessRuleList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IPAccessRule"
+                        }
+                    }
+                }
+            },
+            "PaginatedIPAutoBlockList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IPAutoBlock"
+                        }
+                    }
+                }
+            },
             "PaginatedInventoryAssetAdminList": {
                 "type": "object",
                 "required": [
@@ -298333,6 +300936,37 @@
                     }
                 }
             },
+            "PaginatedOidcProviderList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OidcProvider"
+                        }
+                    }
+                }
+            },
             "PaginatedOverdueScheduleList": {
                 "type": "object",
                 "required": [
@@ -298422,6 +301056,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/PlatformAnnouncement"
+                        }
+                    }
+                }
+            },
+            "PaginatedPlatformMoveList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PlatformMove"
                         }
                     }
                 }
@@ -298643,6 +301308,37 @@
                     }
                 }
             },
+            "PaginatedRestoreDrillReportList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RestoreDrillReport"
+                        }
+                    }
+                }
+            },
             "PaginatedScheduleList": {
                 "type": "object",
                 "required": [
@@ -298825,6 +301521,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/SubdomainRequest"
+                        }
+                    }
+                }
+            },
+            "PaginatedSubdomainRequestRowList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SubdomainRequestRow"
                         }
                     }
                 }
@@ -302979,6 +305706,33 @@
                     }
                 }
             },
+            "PatchedChatTemplate": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "feature": {
+                        "$ref": "#/components/schemas/Feature4d1Enum"
+                    },
+                    "event": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "text_body": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                }
+            },
             "PatchedCheckInListInput": {
                 "type": "object",
                 "properties": {
@@ -303216,6 +305970,21 @@
                         "type": "string",
                         "format": "date-time",
                         "nullable": true
+                    }
+                }
+            },
+            "PatchedDrillSettings": {
+                "type": "object",
+                "properties": {
+                    "restore_drill_interval_days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 0,
+                        "description": "Days between drills of each space; 0 turns scheduled drills off."
+                    },
+                    "archive_ready_notice_enabled": {
+                        "type": "boolean",
+                        "description": "Email the superadmins when a requested archive is ready."
                     }
                 }
             },
@@ -305500,6 +308269,52 @@
                         "readOnly": true
                     },
                     "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                }
+            },
+            "PatchedIPAccessRule": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "cidr": {
+                        "type": "string",
+                        "description": "One address (203.0.113.7) or a network (203.0.113.0/24, 2001:db8::/48).",
+                        "maxLength": 49
+                    },
+                    "action": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/IPAccessRuleActionEnum"
+                            }
+                        ],
+                        "description": "allow beats every deny rule and every automatic block; deny always applies.\n\n* `allow` - allow\n* `deny` - deny"
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 200
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Empty keeps the rule until it is deleted."
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_by": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true
@@ -308466,6 +311281,54 @@
                         "default": true
                     },
                     "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                }
+            },
+            "PatchedOidcProvider": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 40,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "display_name": {
+                        "type": "string",
+                        "maxLength": 80
+                    },
+                    "issuer": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 255
+                    },
+                    "jwks_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "maxLength": 255
+                    },
+                    "client_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "is_enabled": {
+                        "type": "boolean"
+                    },
+                    "allow_auto_link": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true
@@ -314200,6 +317063,59 @@
                 "type": "string",
                 "description": "* `rolling` - Rolling\n* `financial_year` - Financial year\n* `fixed_end` - Fixed end date\n* `lifetime` - Lifetime"
             },
+            "PlatformAccount": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "username": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+                    },
+                    "account_kind": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AccountKindEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "Active",
+                        "description": "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
+                    },
+                    "access_status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AccessStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "mfa_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "staff_role_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "access_status",
+                    "account_kind",
+                    "id",
+                    "is_active",
+                    "mfa_enabled",
+                    "staff_role_count",
+                    "username"
+                ]
+            },
             "PlatformAnalyticsReport": {
                 "type": "object",
                 "properties": {
@@ -314686,6 +317602,94 @@
                 "required": [
                     "ends_at",
                     "starts_at"
+                ]
+            },
+            "PlatformMove": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Status897Enum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "default": "requested"
+                    },
+                    "status_label": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "requested_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "decided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "decision_note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "recipient_fingerprint": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "exported_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "artifact_sha256": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "failure_code": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "has_file": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "artifact_sha256",
+                    "decided_at",
+                    "decision_note",
+                    "exported_at",
+                    "failure_code",
+                    "has_file",
+                    "id",
+                    "makerspace",
+                    "makerspace_name",
+                    "note",
+                    "recipient_fingerprint",
+                    "requested_at",
+                    "status",
+                    "status_label"
                 ]
             },
             "PlatformNoticeAnnouncement": {
@@ -327148,6 +330152,16 @@
                     "machine_type_id"
                 ]
             },
+            "QueueDecisionNote": {
+                "type": "object",
+                "properties": {
+                    "note": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 2000
+                    }
+                }
+            },
             "QueueJob": {
                 "type": "object",
                 "properties": {
@@ -332039,6 +335053,69 @@
                 "type": "string",
                 "description": "* `proceed` - proceed\n* `reset` - reset\n* `abort` - abort"
             },
+            "RestoreDrillReport": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "makerspace_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "outcome": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RestoreDrillReportOutcomeEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "checks": {
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "checks",
+                    "error_code",
+                    "finished_at",
+                    "id",
+                    "makerspace_id",
+                    "makerspace_name",
+                    "outcome",
+                    "started_at"
+                ]
+            },
+            "RestoreDrillReportOutcomeEnum": {
+                "enum": [
+                    "passed",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `passed` - Passed\n* `failed` - Failed"
+            },
             "RestoreOperation": {
                 "type": "object",
                 "properties": {
@@ -335545,7 +338622,7 @@
                     "status": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/SelfHostMoveRequestStatusEnum"
+                                "$ref": "#/components/schemas/Status897Enum"
                             }
                         ],
                         "readOnly": true
@@ -335590,19 +338667,6 @@
                     "status",
                     "status_label"
                 ]
-            },
-            "SelfHostMoveRequestStatusEnum": {
-                "enum": [
-                    "requested",
-                    "approved",
-                    "exporting",
-                    "exported",
-                    "rejected",
-                    "failed",
-                    "cancelled"
-                ],
-                "type": "string",
-                "description": "* `requested` - Requested\n* `approved` - Approved\n* `exporting` - Exporting\n* `exported` - Exported\n* `rejected` - Rejected\n* `failed` - Export failed\n* `cancelled` - Cancelled"
             },
             "SelfHostMoveStatus": {
                 "type": "object",
@@ -345729,6 +348793,16 @@
                 "type": "string",
                 "description": "* `ok` - ok\n* `warn` - warn\n* `error` - error"
             },
+            "Status028Enum": {
+                "enum": [
+                    "pending",
+                    "approved",
+                    "declined",
+                    "withdrawn"
+                ],
+                "type": "string",
+                "description": "* `pending` - Pending\n* `approved` - Approved\n* `declined` - Declined\n* `withdrawn` - Withdrawn"
+            },
             "Status0bfEnum": {
                 "enum": [
                     "working",
@@ -345810,6 +348884,19 @@
                 ],
                 "type": "string",
                 "description": "* `ok` - ok\n* `warn` - warn\n* `error` - error\n* `unknown` - unknown"
+            },
+            "Status897Enum": {
+                "enum": [
+                    "requested",
+                    "approved",
+                    "exporting",
+                    "exported",
+                    "rejected",
+                    "failed",
+                    "cancelled"
+                ],
+                "type": "string",
+                "description": "* `requested` - Requested\n* `approved` - Approved\n* `exporting` - Exporting\n* `exported` - Exported\n* `rejected` - Rejected\n* `failed` - Export failed\n* `cancelled` - Cancelled"
             },
             "Status910Enum": {
                 "enum": [
@@ -346645,6 +349732,56 @@
                 },
                 "required": [
                     "detail"
+                ]
+            },
+            "SubdomainRequestRow": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "makerspace_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "requested_label": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StatusE94Enum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "default": "pending"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "decided_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "decided_at",
+                    "id",
+                    "makerspace",
+                    "makerspace_name",
+                    "requested_label",
+                    "status"
                 ]
             },
             "SubjectExport": {
@@ -350456,6 +353593,18 @@
                     "To"
                 ]
             },
+            "TwoStepReset": {
+                "type": "object",
+                "properties": {
+                    "rule": {
+                        "type": "string",
+                        "description": "Which reset rule applied."
+                    }
+                },
+                "required": [
+                    "rule"
+                ]
+            },
             "Type07aEnum": {
                 "enum": [
                     "about"
@@ -350913,6 +354062,18 @@
                 ],
                 "type": "string",
                 "description": "* `minutes` - Minutes\n* `weight` - Weight\n* `volume` - Volume\n* `length` - Length\n* `count` - Count"
+            },
+            "UnblockResult": {
+                "type": "object",
+                "properties": {
+                    "unblocked": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "unblocked"
+                ]
             },
             "UnsubscribeResult": {
                 "type": "object",
@@ -354527,6 +357688,7 @@
                 "Mobile associations",
                 "Passkeys",
                 "Personal access tokens",
+                "Platform accounts",
                 "Reauthentication",
                 "Saved details",
                 "Security settings",
@@ -354681,8 +357843,11 @@
                 "Platform",
                 "Platform announcements",
                 "Platform insights",
+                "Platform messaging",
                 "Platform onboarding",
                 "Platform overview",
+                "Platform requests",
+                "Platform security",
                 "Platform space controls",
                 "Platform tenant reports",
                 "Tenant bootstrap",

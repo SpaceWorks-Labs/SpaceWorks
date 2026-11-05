@@ -132,10 +132,14 @@ export const openApiTags = [
   "Personal notification contract",
   "Personal notifications",
   "Platform",
+  "Platform accounts",
   "Platform announcements",
   "Platform insights",
+  "Platform messaging",
   "Platform onboarding",
   "Platform overview",
+  "Platform requests",
+  "Platform security",
   "Platform space controls",
   "Platform tenant reports",
   "Presence",
@@ -1128,6 +1132,10 @@ export const openApiPaths = [
   "/api/v1/admin/organizations/{organization_id}/analytics/{report_key}",
   "/api/v1/admin/organizations/{organization_id}/id-programmes",
   "/api/v1/admin/organized-events/",
+  "/api/v1/admin/platform/accounts",
+  "/api/v1/admin/platform/accounts/{id}/disable",
+  "/api/v1/admin/platform/accounts/{id}/enable",
+  "/api/v1/admin/platform/accounts/{id}/reset-two-step",
   "/api/v1/admin/platform/analytics/makerspaces",
   "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/analytics/{report_key}",
   "/api/v1/admin/platform/analytics/makerspaces/{makerspace_id}/dashboard",
@@ -1137,6 +1145,12 @@ export const openApiPaths = [
   "/api/v1/admin/platform/announcements",
   "/api/v1/admin/platform/announcements/{id}",
   "/api/v1/admin/platform/announcements/{id}/cancel",
+  "/api/v1/admin/platform/api-key-requests",
+  "/api/v1/admin/platform/api-key-requests/{id}/approve",
+  "/api/v1/admin/platform/api-key-requests/{id}/reject",
+  "/api/v1/admin/platform/archive-requests",
+  "/api/v1/admin/platform/archive-requests/{id}/approve",
+  "/api/v1/admin/platform/archive-requests/{id}/decline",
   "/api/v1/admin/platform/backup-destinations",
   "/api/v1/admin/platform/backup-destinations/push",
   "/api/v1/admin/platform/backup-destinations/{destination_id}",
@@ -1161,23 +1175,39 @@ export const openApiPaths = [
   "/api/v1/admin/platform/hosting-requests/{id}/reject",
   "/api/v1/admin/platform/hosting-requests/{id}/request-changes",
   "/api/v1/admin/platform/insights/",
+  "/api/v1/admin/platform/ip-blocks",
+  "/api/v1/admin/platform/ip-blocks/{id}/unblock",
+  "/api/v1/admin/platform/ip-rules",
+  "/api/v1/admin/platform/ip-rules/{id}",
   "/api/v1/admin/platform/metabase",
   "/api/v1/admin/platform/metabase/connection",
   "/api/v1/admin/platform/metabase/dashboards/{dashboard_id}/embed",
   "/api/v1/admin/platform/metabase/login",
   "/api/v1/admin/platform/metabase/login/rotate",
   "/api/v1/admin/platform/mobile-readiness",
+  "/api/v1/admin/platform/oidc-providers",
+  "/api/v1/admin/platform/oidc-providers/{id}",
   "/api/v1/admin/platform/overview",
   "/api/v1/admin/platform/overview/export",
   "/api/v1/admin/platform/payment-settings",
   "/api/v1/admin/platform/problems",
+  "/api/v1/admin/platform/restore-drills",
+  "/api/v1/admin/platform/restore-drills/settings",
   "/api/v1/admin/platform/restores",
   "/api/v1/admin/platform/restores/{restore_id}",
   "/api/v1/admin/platform/restores/{restore_id}/decision",
+  "/api/v1/admin/platform/selfhost-moves",
+  "/api/v1/admin/platform/selfhost-moves/{id}/approve",
+  "/api/v1/admin/platform/selfhost-moves/{id}/discard",
+  "/api/v1/admin/platform/selfhost-moves/{id}/download-url",
+  "/api/v1/admin/platform/selfhost-moves/{id}/export",
+  "/api/v1/admin/platform/selfhost-moves/{id}/reject",
   "/api/v1/admin/platform/social-auth-settings",
   "/api/v1/admin/platform/space-health",
   "/api/v1/admin/platform/space-health/{makerspace_id}",
   "/api/v1/admin/platform/spaces/{makerspace_id}/archive",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/chat-templates",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/chat-templates/{id}",
   "/api/v1/admin/platform/spaces/{makerspace_id}/plan",
   "/api/v1/admin/platform/spaces/{makerspace_id}/purge",
   "/api/v1/admin/platform/spaces/{makerspace_id}/read-only",
@@ -1188,6 +1218,9 @@ export const openApiPaths = [
   "/api/v1/admin/platform/spaces/{makerspace_id}/transfer-ownership",
   "/api/v1/admin/platform/spaces/{makerspace_id}/unarchive",
   "/api/v1/admin/platform/spaces/{makerspace_id}/unsuspend",
+  "/api/v1/admin/platform/subdomain-requests",
+  "/api/v1/admin/platform/subdomain-requests/{id}/approve",
+  "/api/v1/admin/platform/subdomain-requests/{id}/reject",
   "/api/v1/admin/platform/tenant-migrations/deployment-identity",
   "/api/v1/admin/platform/tenant-migrations/imports",
   "/api/v1/admin/platform/tenant-migrations/imports/uploads",
@@ -1385,6 +1418,7 @@ export const openApiPaths = [
   "/api/v1/auth/social/providers/{provider}",
   "/api/v1/auth/staff-invitations/accept",
   "/api/v1/backups/download/{archive_id}/{token}",
+  "/api/v1/backups/selfhost-moves/{id}/{token}",
   "/api/v1/booking-integration/bookings/",
   "/api/v1/booking-integration/bookings/{id}/",
   "/api/v1/booking-integration/resources/",
@@ -2088,6 +2122,10 @@ export type AccountabilityTruncation = {
   "problem_reports": boolean;
 };
 
+export type AccountActionReason = {
+  "reason": string;
+};
+
 export type AccountDeletionBlocker = {
   "code": string;
   "makerspace_id": number | null;
@@ -2138,6 +2176,8 @@ export type AccountingJournalReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<JournalLine>;
 };
+
+export type AccountKindEnum = "member" | "staff" | "platform";
 
 export type AccountProfile = {
   "display_name"?: string;
@@ -2883,6 +2923,18 @@ export type ApiKeyRequest = {
   "resolved_at": string | null;
 };
 
+export type ApiKeyRequestRow = {
+  "id": number;
+  "makerspace": number;
+  "makerspace_name": string;
+  "label": string;
+  "reason": string;
+  "allowed_origins": unknown;
+  "status": StatusE94Enum;
+  "created_at": string;
+  "resolved_at": string | null;
+};
+
 export type AppAttestAttestationTypeEnum = "app_attest";
 
 export type Application = {
@@ -3075,6 +3127,17 @@ export type ArchiveHost = {
 export type ArchiveRequestError = {
   "detail": string;
   "code"?: string;
+};
+
+export type ArchiveRequestRow = {
+  "id": number;
+  "makerspace": number;
+  "makerspace_name": string;
+  "status": Status028Enum;
+  "reason": string;
+  "resolution_note": string;
+  "requested_at": string;
+  "resolved_at": string | null;
 };
 
 export type ArchiveRequestValidationError = {
@@ -5668,6 +5731,15 @@ export type ChargeReturn = {
   "reason"?: string;
 };
 
+export type ChatTemplate = {
+  "id": number;
+  "feature": Feature4d1Enum;
+  "event": string;
+  "text_body": string;
+  "is_active"?: boolean;
+  "updated_at": string;
+};
+
 export type CheckInList = {
   "id": number;
   "event_id": number;
@@ -7794,6 +7866,11 @@ export type DownloadGrant = {
   "expires_in": number;
 };
 
+export type DownloadLink = {
+  "url": string;
+  "expires_at": string;
+};
+
 export type Downtime = {
   "summary": DowntimeSummary;
   "periods": Array<DowntimeRow>;
@@ -7815,6 +7892,27 @@ export type DowntimeSummary = {
   "uptime_percent": number;
   "periods": number;
   "mean_hours_to_repair": number | null;
+};
+
+export type DrillOverview = {
+  "configured": boolean;
+  "settings": DrillSettings;
+  "key_rotation": string;
+};
+
+export type DrillQueued = {
+  "makerspace_id": number;
+  "archive_id": string;
+  "status": string;
+};
+
+export type DrillRun = {
+  "makerspace_id": number;
+};
+
+export type DrillSettings = {
+  "restore_drill_interval_days"?: number;
+  "archive_ready_notice_enabled"?: boolean;
 };
 
 export type DrillStatusEnum = "verified" | "failed" | "never" | "unknown";
@@ -9104,6 +9202,10 @@ export type ExplicitTeamEntry = {
 };
 
 export type ExplicitTeamEntryKindEnum = "explicit";
+
+export type Export = {
+  "recipient": string;
+};
 
 export type ExportPreviewRow = {
   "batch_id": string;
@@ -11568,6 +11670,27 @@ export type InviteList = {
   "results": Array<Invite>;
 };
 
+export type IPAccessRule = {
+  "id": number;
+  "cidr": string;
+  "action": IPAccessRuleActionEnum;
+  "note"?: string;
+  "expires_at"?: string | null;
+  "active": boolean;
+  "created_by": string | null;
+  "created_at": string;
+};
+
+export type IPAccessRuleActionEnum = "allow" | "deny";
+
+export type IPAutoBlock = {
+  "id": number;
+  "network": string;
+  "blocked_until": string;
+  "created_at": string;
+  "active": boolean;
+};
+
 export type IssueAssign = {
   "contact_id"?: number | null;
   "myself"?: boolean;
@@ -11578,6 +11701,12 @@ export type IssueAssignment = {
   "contact_id": number | null;
   "person_id": number | null;
   "name": string;
+};
+
+export type IssuedClient = {
+  "request": ApiKeyRequestRow;
+  "client_id": string;
+  "client_secret": string;
 };
 
 export type IssueDispatchRequest = {
@@ -13485,10 +13614,8 @@ export type MakerspaceArchiveRequest = {
   "resolved_at": string | null;
   "reason": string;
   "resolution_note": string;
-  "status": MakerspaceArchiveRequestStatusEnum;
+  "status": Status028Enum;
 };
-
-export type MakerspaceArchiveRequestStatusEnum = "pending" | "approved" | "declined" | "withdrawn";
 
 export type MakerspaceBackupStatus = {
   "last_backed_up_at": string | null;
@@ -15280,6 +15407,10 @@ export type MostLentReportRow = {
   "total_quantity_lent": number;
 };
 
+export type MoveDecision = {
+  "note"?: string;
+};
+
 export type MoveError = {
   "detail": string;
   "code"?: string;
@@ -15822,6 +15953,19 @@ export type OidcBrowserStartResponse = {
   "state": string;
   "nonce": string;
   "expires_in": number;
+};
+
+export type OidcProvider = {
+  "id": number;
+  "slug": string;
+  "display_name": string;
+  "issuer": string;
+  "jwks_url": string;
+  "client_id": string;
+  "is_enabled"?: boolean;
+  "allow_auto_link"?: boolean;
+  "created_at": string;
+  "updated_at": string;
 };
 
 export type OnboardingApprove = {
@@ -16834,6 +16978,20 @@ export type PaginatedApiKeyRequestList = {
   "results": Array<ApiKeyRequest>;
 };
 
+export type PaginatedApiKeyRequestRowList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<ApiKeyRequestRow>;
+};
+
+export type PaginatedArchiveRequestRowList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<ArchiveRequestRow>;
+};
+
 export type PaginatedAuditLogList = {
   "count": number;
   "next"?: string | null;
@@ -16860,6 +17018,13 @@ export type PaginatedCategoryAdminList = {
   "next"?: string | null;
   "previous"?: string | null;
   "results": Array<CategoryAdmin>;
+};
+
+export type PaginatedChatTemplateList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<ChatTemplate>;
 };
 
 export type PaginatedDeviceList = {
@@ -16925,6 +17090,20 @@ export type PaginatedInventoryProductAdminList = {
   "results": Array<InventoryProductAdmin>;
 };
 
+export type PaginatedIPAccessRuleList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<IPAccessRule>;
+};
+
+export type PaginatedIPAutoBlockList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<IPAutoBlock>;
+};
+
 export type PaginatedJobList = {
   "count": number;
   "next"?: string | null;
@@ -16960,6 +17139,13 @@ export type PaginatedNotificationList = {
   "results": Array<Notification>;
 };
 
+export type PaginatedOidcProviderList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<OidcProvider>;
+};
+
 export type PaginatedOverdueScheduleList = {
   "count": number;
   "next"?: string | null;
@@ -16979,6 +17165,13 @@ export type PaginatedPlatformAnnouncementList = {
   "next"?: string | null;
   "previous"?: string | null;
   "results": Array<PlatformAnnouncement>;
+};
+
+export type PaginatedPlatformMoveList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<PlatformMove>;
 };
 
 export type PaginatedPublicMachineDetailList = {
@@ -17030,6 +17223,13 @@ export type PaginatedReportScheduleList = {
   "results": Array<ReportSchedule>;
 };
 
+export type PaginatedRestoreDrillReportList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<RestoreDrillReport>;
+};
+
 export type PaginatedScheduleList = {
   "count": number;
   "next"?: string | null;
@@ -17070,6 +17270,13 @@ export type PaginatedSubdomainRequestList = {
   "next"?: string | null;
   "previous"?: string | null;
   "results": Array<SubdomainRequest>;
+};
+
+export type PaginatedSubdomainRequestRowList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<SubdomainRequestRow>;
 };
 
 export type PaginatedWarrantyReportRowList = {
@@ -17880,6 +18087,15 @@ export type PatchedCertificationTypeUpdate = {
   "updated_at"?: string;
 };
 
+export type PatchedChatTemplate = {
+  "id"?: number;
+  "feature"?: Feature4d1Enum;
+  "event"?: string;
+  "text_body"?: string;
+  "is_active"?: boolean;
+  "updated_at"?: string;
+};
+
 export type PatchedCheckInListInput = {
   "name"?: string;
   "kind"?: CheckInListInputKindEnum;
@@ -17956,6 +18172,11 @@ export type PatchedDomainSettingsUpdate = {
 export type PatchedDowntimeUpdate = {
   "reason"?: string;
   "expected_back_at"?: string | null;
+};
+
+export type PatchedDrillSettings = {
+  "restore_drill_interval_days"?: number;
+  "archive_ready_notice_enabled"?: boolean;
 };
 
 export type PatchedEmailTemplateUpdate = {
@@ -18365,6 +18586,17 @@ export type PatchedInventoryProductAdminUpdate = {
   "is_archived"?: boolean;
   "created_at"?: string;
   "updated_at"?: string;
+};
+
+export type PatchedIPAccessRule = {
+  "id"?: number;
+  "cidr"?: string;
+  "action"?: IPAccessRuleActionEnum;
+  "note"?: string;
+  "expires_at"?: string | null;
+  "active"?: boolean;
+  "created_by"?: string | null;
+  "created_at"?: string;
 };
 
 export type PatchedLibraryWrite = {
@@ -18863,6 +19095,19 @@ export type PatchedOAuthApp = {
   "allowed_scopes"?: Array<string>;
   "is_active"?: boolean;
   "created_at"?: string;
+};
+
+export type PatchedOidcProvider = {
+  "id"?: number;
+  "slug"?: string;
+  "display_name"?: string;
+  "issuer"?: string;
+  "jwks_url"?: string;
+  "client_id"?: string;
+  "is_enabled"?: boolean;
+  "allow_auto_link"?: boolean;
+  "created_at"?: string;
+  "updated_at"?: string;
 };
 
 export type PatchedOptionsInput = {
@@ -20348,6 +20593,16 @@ export type PlanPair = {
 
 export type PlanTypeEnum = "rolling" | "financial_year" | "fixed_end" | "lifetime";
 
+export type PlatformAccount = {
+  "id": number;
+  "username": string;
+  "account_kind": AccountKindEnum;
+  "is_active": boolean;
+  "access_status": AccessStatusEnum;
+  "mfa_enabled": boolean;
+  "staff_role_count": number;
+};
+
 export type PlatformAnalyticsReport = {
   "report_key"?: string;
   "rows": Array<Array<unknown>>;
@@ -20459,6 +20714,23 @@ export type PlatformInsights = {
 export type PlatformInsightsWindow = {
   "starts_at": string;
   "ends_at": string;
+};
+
+export type PlatformMove = {
+  "id": string;
+  "makerspace": number;
+  "makerspace_name": string;
+  "status": Status897Enum;
+  "status_label": string;
+  "note": string;
+  "requested_at": string;
+  "decided_at": string | null;
+  "decision_note": string;
+  "recipient_fingerprint": string;
+  "exported_at": string | null;
+  "artifact_sha256": string;
+  "failure_code": string;
+  "has_file": boolean;
 };
 
 export type PlatformNoticeAnnouncement = {
@@ -23493,6 +23765,10 @@ export type Queued = {
   "queued": boolean;
 };
 
+export type QueueDecisionNote = {
+  "note"?: string;
+};
+
 export type QueueJob = {
   "service_request_id": number;
   "status": QueueJobStatusEnum;
@@ -24648,6 +24924,19 @@ export type RestoreDecision = {
 
 export type RestoreDecisionDecisionEnum = "proceed" | "reset" | "abort";
 
+export type RestoreDrillReport = {
+  "id": string;
+  "makerspace_id": number;
+  "makerspace_name": string | null;
+  "started_at": string;
+  "finished_at": string | null;
+  "outcome": RestoreDrillReportOutcomeEnum;
+  "error_code": string;
+  "checks": unknown;
+};
+
+export type RestoreDrillReportOutcomeEnum = "passed" | "failed";
+
 export type RestoreOperation = {
   "id": string;
   "archive": string;
@@ -25571,7 +25860,7 @@ export type SelfHostMoveCreate = {
 
 export type SelfHostMoveRequest = {
   "id": string;
-  "status": SelfHostMoveRequestStatusEnum;
+  "status": Status897Enum;
   "status_label": string;
   "note": string;
   "requested_at": string;
@@ -25579,8 +25868,6 @@ export type SelfHostMoveRequest = {
   "decision_note": string;
   "exported_at": string | null;
 };
-
-export type SelfHostMoveRequestStatusEnum = "requested" | "approved" | "exporting" | "exported" | "rejected" | "failed" | "cancelled";
 
 export type SelfHostMoveStatus = {
   "request": SelfHostMoveRequest | null;
@@ -28061,6 +28348,8 @@ export type Stats = {
 
 export type Status00eEnum = "ok" | "warn" | "error";
 
+export type Status028Enum = "pending" | "approved" | "declined" | "withdrawn";
+
 export type Status0bfEnum = "working" | "visiting" | "attending_event" | "guest";
 
 export type Status2caEnum = "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
@@ -28076,6 +28365,8 @@ export type Status5efEnum = "valid" | "expired" | "revoked";
 export type Status66aEnum = "pending" | "paid_online" | "paid_offline" | "waived" | "canceled";
 
 export type Status83eEnum = "ok" | "warn" | "error" | "unknown";
+
+export type Status897Enum = "requested" | "approved" | "exporting" | "exported" | "rejected" | "failed" | "cancelled";
 
 export type Status910Enum = "pending" | "paid" | "cancelled" | "expired" | "unfulfilled";
 
@@ -28279,6 +28570,16 @@ export type SubdomainRequest = {
 
 export type SubdomainRequestError = {
   "detail": string;
+};
+
+export type SubdomainRequestRow = {
+  "id": number;
+  "makerspace": number;
+  "makerspace_name": string;
+  "requested_label": string;
+  "status": StatusE94Enum;
+  "created_at": string;
+  "decided_at": string | null;
 };
 
 export type SubjectExport = {
@@ -29198,6 +29499,10 @@ export type TwilioCallback = {
   "MessagingServiceSid"?: string;
 };
 
+export type TwoStepReset = {
+  "rule": string;
+};
+
 export type Type07aEnum = "about";
 
 export type Type188Enum = "short_text" | "long_text" | "choice" | "url";
@@ -29305,6 +29610,10 @@ export type TypeIntegrationCreate = {
   "kind": KindDb6Enum;
   "enabled"?: boolean;
   "config_schema_version"?: number;
+};
+
+export type UnblockResult = {
+  "unblocked": number;
 };
 
 export type UnsubscribeResult = {

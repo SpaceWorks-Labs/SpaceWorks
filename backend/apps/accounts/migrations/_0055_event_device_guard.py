@@ -1,4 +1,4 @@
-"""0054's replacement body for ``accounts_guard_device_context`` (#173, lane L21b).
+"""0055's replacement body for ``accounts_guard_device_context`` (#173, lane L21b).
 
 Adds the ``event`` authority: a step-up on a person limited to one event. It carries no staff
 tenant, names its event (immutable provenance, like the staff tenant), needs attestation and the
@@ -12,7 +12,7 @@ from ._0051_passkey_device_guard import AFTER as BEFORE, _FACTOR_OR_PASSKEY
 
 
 def _swap(text, old, new):
-    assert text.count(old) == 1, f"0051's device-context body moved; re-derive 0054 ({old[:40]!r})."
+    assert text.count(old) == 1, f"0051's device-context body moved; re-derive 0055 ({old[:40]!r})."
     return text.replace(old, new)
 
 

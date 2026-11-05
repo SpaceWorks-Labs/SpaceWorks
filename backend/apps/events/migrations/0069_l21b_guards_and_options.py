@@ -63,7 +63,7 @@ def keep_existing_emails(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("events", "0067_l21b_judging_money")]
+    dependencies = [("events", "0068_l21b_judging_money")]
     operations = [
         migrations.RunSQL(FORWARD_SQL, REVERSE_SQL),
         migrations.RunPython(keep_existing_emails, migrations.RunPython.noop),

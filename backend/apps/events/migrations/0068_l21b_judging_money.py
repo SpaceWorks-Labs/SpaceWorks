@@ -8,9 +8,9 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0066_l21a_participation'),
-        ('makerspaces', '0119_l3_member_cards'),
-        ('payments', '0036_l21b_programme_subjects'),
+        ('events', '0067_l21a_participation'),
+        ('makerspaces', '0124_l18_calendar_feed_switches'),
+        ('payments', '0038_l21b_programme_subjects'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

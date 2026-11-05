@@ -56,7 +56,8 @@ def _type_row(space, queue):
             "machine_type_name": queue.machine_type.name, "machine_type_slug": queue.machine_type.slug,
             "is_printer": is_printer_type(queue.machine_type), "file_groups": groups,
             "accepted_extensions": sorted({spec.extension for spec in REGISTRY.values() if spec.group in groups}),
-            "quotes": policy.quote_mode if job_policy.feature_enabled(space, job_policy.JOB_QUOTES) else "off",
+            "quotes": policy.quote_mode if job_policy.feature_enabled(space, job_policy.JOB_QUOTES)
+            and job_policy.charges_tracked(space) else "off",
             "prepay": job_policy.prepay(space, queue.machine_type),
             "runs_unattended": job_policy.runs_unattended(space, queue.machine_type, policy),
             "max_open_jobs": policy.max_open_jobs}

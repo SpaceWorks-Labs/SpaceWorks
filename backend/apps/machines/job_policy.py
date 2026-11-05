@@ -56,9 +56,15 @@ def runs_unattended(makerspace, machine_type, policy=None):
     return machine_type.slug in UNATTENDED_SLUGS if value is None else bool(value)
 
 
+def charges_tracked(makerspace):
+    """#184 G3: machine money is recorded here. Off, every job is free: no quote, no prepay."""
+    from apps.payments.availability import charge_tracking_enabled
+    return charge_tracking_enabled(makerspace, "machines")
+
+
 def quote_required(makerspace, machine_type, total):
     """#142 OQ-2: off / above an amount / always; default always when priced, off when free."""
-    if not feature_enabled(makerspace, JOB_QUOTES):
+    if not feature_enabled(makerspace, JOB_QUOTES) or not charges_tracked(makerspace):
         return False
     policy = policy_for(makerspace, machine_type)
     total = Decimal(total or 0)
@@ -72,6 +78,8 @@ def quote_required(makerspace, machine_type, total):
 
 
 def prepay(makerspace, machine_type):
+    if not charges_tracked(makerspace):
+        return False
     return policy_for(makerspace, machine_type).payment_timing == Policy.PaymentTiming.PREPAY
 
 

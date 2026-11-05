@@ -31,7 +31,7 @@ def require_acceptable(row, *, planned_grams=None, override_length=False):
         raise JobRuleRefused("job_too_long", "This job is longer than this machine type allows. Confirm the "
                              "override to accept it.", max_job_minutes=policy.max_job_minutes)
     from apps.makerspaces.platform import feature_enabled
-    if not feature_enabled(row.makerspace, job_policy.JOB_QUOTES):
+    if not feature_enabled(row.makerspace, job_policy.JOB_QUOTES) or not job_policy.charges_tracked(row.makerspace):
         return
     from apps.machines.service_workflow_review import quote_preview
     quantity = planned_grams if planned_grams is not None else row.planned_grams

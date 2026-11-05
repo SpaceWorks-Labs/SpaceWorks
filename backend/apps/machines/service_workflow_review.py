@@ -109,6 +109,9 @@ def send_quote(service_request, actor, *, estimated_minutes, quantity=None, pool
         _require_edge(locked, Status.QUOTED)
         if locked.status == Status.QUOTED and locked.quote_approved_at:
             raise ServiceInvalidTransition("The member already approved this quote.")
+        if not job_policy.charges_tracked(locked.makerspace):
+            raise ServiceInvalidTransition("Machine charges are switched off here, so jobs are free; accept it "
+                                           "instead of quoting.")
         _lock_scope(locked)
         priced = quote_preview(locked, minutes=estimated_minutes, quantity=quantity, pool=pool, machine=machine)
         if priced.total <= 0:
@@ -154,7 +157,9 @@ def approve_quote(service_request, member, *, digest):
             raise PriceChanged(quote=member_quote(locked.quote_snapshot or {}))
         _lock_scope(locked)
         locked.quote_approved_at = timezone.now()
-        if locked.prepay:
+        # #184 G3: with machine charges switched off since the quote, nothing can be raised to
+        # settle, so a prepaid job queues straight away instead of waiting on a charge forever.
+        if locked.prepay and job_policy.charges_tracked(locked.makerspace):
             locked.save()
             job_charges.raise_prepay(locked, locked.handled_by)
             _audit_transition(member, locked, "quote_approved", extra={"prepay": True})
@@ -180,11 +185,14 @@ def promote_prepaid(service_request, *, actor=None):
     with transaction.atomic():
         locked = _open(service_request)
         payment = job_charges.payment_for(locked)
-        if locked.status != Status.QUOTED or not locked.prepay or not job_charges.settled(payment):
+        # #184 G3: a prepaid job with no charge while machine charges are off is free and queues.
+        free = payment is None and not job_policy.charges_tracked(locked.makerspace)
+        if locked.status != Status.QUOTED or not locked.prepay or not (free or job_charges.settled(payment)):
             return None
         _lock_scope(locked)
         _enter_queue(locked, locked.quoted_at, actor, now=timezone.now())
-        _audit_transition(actor, locked, "prepaid_queued", extra={"payment_id": payment.pk})
+        _audit_transition(actor, locked, "prepaid_queued", extra={"payment_id": getattr(payment, "pk", None),
+                                                                  "free": free})
         _notify(locked, "quote_approved")
         return locked
 

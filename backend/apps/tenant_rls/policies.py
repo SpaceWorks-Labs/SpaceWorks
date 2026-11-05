@@ -10,7 +10,8 @@ One permissive policy per table, ``spaceworks_rls_tenant``, for every command an
 "Owned" follows the predicate: any of its ``any_paths`` points at a bound makerspace,
 or none of them names an owner at all (a platform row is nobody else's row); every
 ``local_or_global_paths`` entry is unset or bound. A one-hop path compares the column;
-a longer path is an ``EXISTS`` join to the makerspace column. When the L25 group role
+a longer path is an ``EXISTS`` join to the makerspace column; when its last link is nullable,
+a chain that ends at no makerspace is a platform row too. When the L25 group role
 ``spaceworks_rls_fixed`` exists, a restrictive ``spaceworks_rls_fixed`` policy limits its
 members to their fixed space whatever settings they send.
 """
@@ -83,8 +84,14 @@ def _path_sql(table, hops, scope):
                      f"ON {nxt}.{q(field.target_field.column)} = {alias}.{q(field.column)}")
         alias = nxt
     last = hops[-1]
-    owned = (f"EXISTS (SELECT 1 FROM {source} {' '.join(joins)} WHERE {condition} "
-             f"AND {alias}.{q(last.column)} = ANY({scope}))").replace("  ", " ")
+    chain = f"EXISTS (SELECT 1 FROM {source} {' '.join(joins)} WHERE {condition} AND {alias}.{q(last.column)}"
+    owned = f"{chain} = ANY({scope}))".replace("  ", " ")
+    if last.null:
+        # The chain may end at no makerspace: a credential row of an account with no
+        # staff_makerspace_id (a person, the superadmin) is nobody's tenant row, exactly
+        # as accounts_user's own one-hop policy already admits. Without this every
+        # tenant-bound request hid the session marker of every person (#194 VPS boot).
+        unowned = f"({unowned} OR {chain} IS NULL))".replace("  ", " ")
     return owned, unowned
 
 

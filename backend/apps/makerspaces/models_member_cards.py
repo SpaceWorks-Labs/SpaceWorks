@@ -58,6 +58,8 @@ class MemberCard(ScopedPiiModelMixin, models.Model):
     verify_show_photo = models.BooleanField(default=False)
     verify_consent_at = models.DateTimeField(null=True, blank=True)
     verify_consent_version = models.CharField(max_length=16, blank=True, default="")
+    # The holder's choice of attachment for "your card" email: the PDF, or PNG images of each side.
+    email_format = models.CharField(max_length=3, choices=(("pdf", "PDF"), ("png", "PNG")), default="pdf")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

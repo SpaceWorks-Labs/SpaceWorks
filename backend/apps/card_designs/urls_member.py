@@ -2,6 +2,7 @@
 from django.urls import path
 
 from .views_holder import MyCardDownloadView, MyCardEmailView, MyCardRotateLinkView, MyCardSettingsView, MyCardsView
+from .views_holder_face import MyCardFaceView, MyCardFontView
 from .views_holder_photo import (MyCardJobResultView, MyCardJobView, MyCardPhotoCleanupView, MyCardPhotoDecisionView,
                                  MyCardPhotoDiscardView, MyCardPhotoView, MyCardWalletView)
 
@@ -10,6 +11,8 @@ _CARD = "cards/<str:kind>/<int:card_id>"
 urlpatterns = [
     path("cards", MyCardsView.as_view(), name="member-cards"),
     path(f"{_CARD}/download", MyCardDownloadView.as_view(), name="member-card-download"),
+    path(f"{_CARD}/face", MyCardFaceView.as_view(), name="member-card-face"),
+    path(f"{_CARD}/fonts/<slug:family_slug>/<int:weight>", MyCardFontView.as_view(), name="member-card-font"),
     path(f"{_CARD}/email", MyCardEmailView.as_view(), name="member-card-email"),
     path(f"{_CARD}/settings", MyCardSettingsView.as_view(), name="member-card-settings"),
     path(f"{_CARD}/rotate-link", MyCardRotateLinkView.as_view(), name="member-card-rotate-link"),

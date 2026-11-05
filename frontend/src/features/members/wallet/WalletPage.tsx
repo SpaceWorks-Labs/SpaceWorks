@@ -56,7 +56,7 @@ function CardEntry({ card }: { card: MyCard }) {
       <button type="button" className="desk-button-ghost min-h-11" onClick={() => void downloadMyCard(card, "png")}>Download PNG</button>
       {card.check_url ? <a className="desk-button-ghost min-h-11" href={card.check_url} target="_blank" rel="noreferrer">Check page</a> : null}
       {card.email_available ? <button type="button" className="desk-button-ghost min-h-11" disabled={email.isPending || email.isSuccess}
-        onClick={() => email.mutate(card)}>{email.isSuccess ? "Emailed" : "Email me my card"}</button> : null}
+        onClick={() => email.mutate({ card })}>{email.isSuccess ? "Emailed" : "Email me my card"}</button> : null}
       {card.wallet_platforms.map((platform) => <button key={platform} type="button" className="desk-button-ghost min-h-11"
         disabled={wallet.isPending} onClick={() => wallet.mutate(platform)}>{WALLET_LABELS[platform] ?? platform}</button>)}
       <button type="button" className="desk-button-ghost min-h-11" aria-expanded={settings} onClick={() => setSettings((value) => !value)}>

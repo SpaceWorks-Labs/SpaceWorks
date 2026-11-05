@@ -123,5 +123,6 @@ class PublicProgrammeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_questions(self, obj) -> list:
-        return [{key: question[key] for key in ("key", "label", "type", "required", "options")}
-                for question in obj.form_schema or ()]
+        from .prefill import allowed
+        return [{**{key: question[key] for key in ("key", "label", "type", "required", "options")},
+                 "prefill": allowed(question.get("saved_details_key", ""))} for question in obj.form_schema or ()]

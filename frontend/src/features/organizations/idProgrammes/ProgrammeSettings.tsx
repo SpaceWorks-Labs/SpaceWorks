@@ -5,6 +5,12 @@ import { useState } from "react";
 import { ErrorBlock } from "../../../components/ui";
 import { useUpdateProgramme, type Programme, type Question } from "./api";
 
+// Saved details that may fill a join answer (backend id_programmes/prefill.py PREFILL_KEYS):
+// never date of birth, emergency contact, dietary or access needs, the resume or skills.
+const SAVED_DETAILS: [string, string][] = [["", "Nothing (typed by hand)"], ["name", "Name"], ["phone", "Phone"],
+  ["institution", "Institution"], ["organization", "Organisation"], ["study_level", "Study level"], ["country", "Country"],
+  ["shirt_size", "T-shirt size"], ["github_url", "GitHub link"], ["linkedin_url", "LinkedIn link"], ["portfolio_url", "Portfolio link"]];
+
 export function ProgrammeSettings({ programme }: { programme: Programme }) {
   const update = useUpdateProgramme(programme.id);
   const [draft, setDraft] = useState<Programme>(programme);
@@ -53,6 +59,9 @@ export function ProgrammeSettings({ programme }: { programme: Programme }) {
         <label className={label}><span>On the card</span><select className={input} value={question.placement}
           onChange={(e) => setQuestion(index, { placement: e.target.value as Question["placement"] })}>
           <option value="hidden">Not printed</option><option value="front">Front</option><option value="back">Back</option></select></label>
+        <label className={label}><span>Offer to fill from Saved details</span><select className={input} value={question.saved_details_key ?? ""}
+          onChange={(e) => setQuestion(index, { saved_details_key: e.target.value })}>
+          {SAVED_DETAILS.map(([key, text]) => <option key={key} value={key}>{text}</option>)}</select></label>
         <div className="flex items-end gap-3">
           <label className="flex min-h-11 items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5" checked={question.required}
             onChange={(e) => setQuestion(index, { required: e.target.checked })} />Required</label>

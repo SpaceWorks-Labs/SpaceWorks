@@ -1,11 +1,14 @@
 import { QuickBadgePrint } from "./eventCredentials/QuickBadgePrint";
 import { useReducedMotion } from "../../components/delight";
 import { opsStatusLabel } from "./opsPresentation";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import { QueryClientContext } from "@tanstack/react-query";
 
 import { ScanWorkbench } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { EventAttendanceTools } from "./EventAttendanceTools";
+import { CardMatchList, cardMatchSummary, scanEventCard, type CardMatch, type CardScanRow } from "./eventCardScan";
+import { eventKeys } from "./eventsApiTypes";
 import {
   useMarkEventAttended,
   useResolveEventCheckIn,
@@ -36,7 +39,10 @@ export default function EventCheckInScanner({
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<string | null>(null);
   const [attendedId, setAttendedId] = useState<number | null>(null);
+  const [cardMatch, setCardMatch] = useState<CardMatch | null>(null);
   const resolve = useResolveEventCheckIn(eventId);
+  const [cardPending, setCardPending] = useState(false);
+  const queryClient = useContext(QueryClientContext);
   const attend = useMarkEventAttended(makerspaceId, eventId, "qr");
   // On a phone the workbench stacks the camera card and the code field ABOVE the result, so the
   // guest's name and the Confirm button land below the fold after every scan. Bring the result
@@ -52,15 +58,32 @@ export default function EventCheckInScanner({
     setConfirmed(null);
     setAttendedId(null);
     setResolved(null);
+    setCardMatch(null);
     try {
       setResolved(await resolve.mutateAsync(value.trim()));
     } catch (cause) {
+      if (cause instanceof StructuredApiError && cause.status === 404) {
+        // Not a ticket code: it may be a card (member card, this event's ID card, a programme card's check link).
+        try {
+          setCardPending(true);
+          const found = await scanEventCard(eventId, value.trim());
+          setCardMatch({ payload: value.trim(), rows: found.registrations });
+          return;
+        } catch (cardCause) {
+          if (!(cardCause instanceof StructuredApiError && cardCause.status === 404)) {
+            setError(cardCause instanceof Error ? cardCause.message : "Could not read that card.");
+            return;
+          }
+        } finally {
+          setCardPending(false);
+        }
+      }
       // A 404 covers unknown, malformed and wrong-event tokens alike -- the endpoint
       // answers them identically on purpose -- so say the one thing that is true of all
       // three rather than surfacing a bare "not found".
       setError(
         cause instanceof StructuredApiError && cause.status === 404
-          ? "That is not a check-in code for this event."
+          ? "That is not a check-in code or a card for this event."
           : cause instanceof Error
             ? cause.message
             : "Could not read that code.",
@@ -95,6 +118,30 @@ export default function EventCheckInScanner({
     }
   };
 
+  const handleCardConfirm = async (row: CardScanRow) => {
+    if (!cardMatch) return;
+    setError(null);
+    try {
+      if (cardMatch.rows.length === 1) {
+        setCardPending(true);
+        const result = await scanEventCard(eventId, cardMatch.payload, true).finally(() => setCardPending(false));
+        if (result.checked_in === null) throw new Error(`${row.name} could not be checked in. Scan the card again.`);
+        await queryClient?.invalidateQueries({ queryKey: eventKeys.registrations(eventId) });
+        await queryClient?.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+      } else {
+        await attend.mutateAsync(row.registration_id);
+      }
+      setConfirmed(`${row.name} checked in.`);
+      setAttendedId(row.registration_id);
+      setQuickPrint({ id: row.registration_id, name: row.name });
+      setCardMatch(null);
+    } catch (cause) {
+      setCardMatch(null);
+      setError(cause instanceof Error ? cause.message : "Could not confirm attendance.");
+    }
+  };
+  const cardSummary = cardMatch ? cardMatchSummary(cardMatch) : null;
+
   // Gate on "registered" rather than excluding "waitlisted": `mark-attended` refuses every
   // other status, so an allow-list keeps a cancelled or already-attended code from offering
   // a button that can only fail. Excluding one status at a time is how the cancelled case
@@ -121,10 +168,17 @@ export default function EventCheckInScanner({
   // `scroll-mb-*` keeps the scrolled-to result clear of the shell's bottom tabs and the home indicator.
   return <section ref={sectionRef} aria-labelledby="event-checkin-title" className="grid gap-4 [&_section[aria-labelledby]]:scroll-mb-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom)+1rem)]">
     <div className="flex flex-wrap items-center justify-between gap-3"><h3 id="event-checkin-title" className="title-panel">Check in by QR</h3><button className={`desk-button ${FOCUS}`} type="button" onClick={onClose}>Done</button></div>
-    <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find a guest by check-in code" helper="Paste the guest’s event check-in code. Confirm their name before recording attendance."
-      findPending={resolve.isPending || attend.isPending}
+    <ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find a guest by check-in code" helper="Scan or paste the guest’s ticket code, or scan their member or event ID card. Confirm their name before recording attendance."
+      findPending={resolve.isPending || attend.isPending || cardPending}
       result={resolved ? { title: resolved.name, tone: confirmable ? "success" : "warn", summary: <div className="grid gap-2"><p>{opsStatusLabel(resolved.status)}</p>{resolved.payment_status ? <p>Payment: {resolved.payment_status}</p> : null}{resolved.host_waiver_state === "missing" ? <p>No host waiver on file — take one at the desk.</p> : null}{blockedReason ? <p>{blockedReason}</p> : null}</div>,
         next: { label: "Confirm attendance", onClick: handleConfirm, disabled: !confirmable || attend.isPending, disabledReason: blockedReason || (attend.isPending ? "Attendance is being recorded." : undefined) },
+      } : cardMatch && cardSummary ? { title: cardSummary.title, tone: cardSummary.confirmable ? "success" : "warn",
+        summary: <div className="grid gap-2"><p>{cardSummary.note}</p>
+          <CardMatchList match={cardMatch} pending={cardPending || attend.isPending} onPick={(row) => void handleCardConfirm(row)} /></div>,
+        next: cardMatch.rows.length === 1
+          ? { label: "Confirm attendance", onClick: () => void handleCardConfirm(cardMatch.rows[0]), disabled: !cardSummary.confirmable || cardPending,
+            disabledReason: cardSummary.confirmable ? undefined : cardSummary.note }
+          : { label: "Scan another", onClick: () => setCardMatch(null) },
       } : error ? { title: "Couldn’t check in", tone: "danger", summary: error, next: { label: "Scan another", onClick: () => { setError(null); setResolved(null); } } } : confirmed ? { title: confirmed, tone: "success", next: { label: "Scan another", onClick: () => { setConfirmed(null); setAttendedId(null); } } } : undefined}
       controls={resolved || attendanceTools ? <>{resolved ? <button className="desk-button" type="button" onClick={() => setResolved(null)}>Scan another</button> : null}{attendanceTools}</> : undefined}
       recent={confirmed ? [{ key: "latest", label: confirmed, tone: "success" }] : []} recentTitle="Recent check-ins" />

@@ -68,7 +68,8 @@ def check(token, request=None):
     _count(row.makerspace_id)
     issuer = spec.issuer(card)
     result = {"status": standing, "valid": standing == "valid", "issuer": issuer, "label": None, "number": None,
-              "valid_until": None, "holder": None, "note": "", "checked_at": timezone.now()}
+              "valid_until": None, "holder": None, "note": "", "checked_at": timezone.now(),
+              "timezone": getattr(row.makerspace, "timezone", "") or "UTC"}
     if standing == "revoked":
         if row.retired_reason == CardVerifyToken.Retired.REISSUED:
             result["note"] = "A newer card was issued."

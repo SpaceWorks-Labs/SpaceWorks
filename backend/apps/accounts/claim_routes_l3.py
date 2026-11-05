@@ -11,6 +11,8 @@ _REASON = "claim sessions cannot read or act on a person's cards"
 _ROUTES = (
     ("member-cards", ("GET", "HEAD")),
     ("member-card-download", ("GET", "HEAD")),
+    ("member-card-face", ("GET", "HEAD")),
+    ("member-card-font", ("GET", "HEAD")),
     ("member-card-email", ("POST",)),
     ("member-card-settings", ("GET", "HEAD", "PATCH")),
     ("member-card-rotate-link", ("POST",)),
@@ -26,6 +28,7 @@ _ROUTES = (
     ("public-id-programme", ("GET", "HEAD")),
     ("public-id-programme-join", ("POST",)),
     ("public-id-programme-join-photo", ("POST",)),
+    ("public-id-programme-prefill", ("GET", "HEAD")),
 )
 
 L3_CLAIM_ROUTES = {

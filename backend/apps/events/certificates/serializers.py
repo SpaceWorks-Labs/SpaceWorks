@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.events.models_certificates import EventAttendanceCertificate
 from apps.events.serializers_staff_tools import StrictSerializer
 from apps.events.credentials.views import CredentialCommandSerializer
-from .layout import STOCKS
+from .layout import DESIGN_STOCK_CHOICES
 from .serializers_layout import CertificateLayerSerializer
 
 
@@ -47,7 +47,7 @@ class BatchSerializer(serializers.Serializer):
 class PrintCreateSerializer(CredentialCommandSerializer):
     registration_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), min_length=1, max_length=200)
     template_revision = serializers.IntegerField(min_value=1)
-    stock = serializers.ChoiceField(choices=tuple(STOCKS))
+    stock = serializers.ChoiceField(choices=DESIGN_STOCK_CHOICES)
     include_photo = serializers.BooleanField(default=False)
 
 
@@ -74,13 +74,13 @@ class BadgeDocumentSerializer(StrictSerializer):
 
 class BadgeDesignSerializer(CredentialCommandSerializer):
     document = BadgeDocumentSerializer()
-    stock = serializers.ChoiceField(choices=tuple(STOCKS))
+    stock = serializers.ChoiceField(choices=DESIGN_STOCK_CHOICES)
 
 
 class BadgeDesignResultSerializer(StrictSerializer):
     id = serializers.IntegerField()
     document = BadgeDocumentSerializer()
-    stock = serializers.ChoiceField(choices=tuple(STOCKS))
+    stock = serializers.ChoiceField(choices=DESIGN_STOCK_CHOICES)
     event_version = serializers.IntegerField(required=False)
 
 

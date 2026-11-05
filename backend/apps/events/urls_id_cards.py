@@ -1,6 +1,8 @@
 """Event ID-card and ticket-design organiser routes under /api/v1/admin/ (release 2 L3)."""
 from django.urls import path
 
+from apps.card_designs.views_staff_photo import EventCardStaffPhotoView
+
 from .id_cards_views import (EventCardDesignsView, EventCardJobView, EventCardScanView, EventIdCardDetailView,
                              EventIdCardDownloadView, EventIdCardListView, EventIdCardRevokeView)
 from .id_cards_views_settings import EventCardExtrasView, EventCardSettingsView
@@ -14,5 +16,6 @@ urlpatterns = [
     path("events/<int:pk>/check-in/card-scan", EventCardScanView.as_view(), name="admin-event-card-scan"),
     path("event-id-cards/<int:pk>", EventIdCardDetailView.as_view(), name="admin-event-id-card"),
     path("event-id-cards/<int:pk>/revoke", EventIdCardRevokeView.as_view(), name="admin-event-id-card-revoke"),
+    path("event-id-cards/<int:pk>/photo", EventCardStaffPhotoView.as_view(), name="admin-event-id-card-photo"),
     path("event-id-cards/<int:pk>/download", EventIdCardDownloadView.as_view(), name="admin-event-id-card-download"),
 ]

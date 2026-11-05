@@ -81,7 +81,8 @@ admin-card-design-export admin-card-design-import admin-card-design-preview admi
 admin-card-design-asset-finalize admin-card-design-asset admin-card-design-fonts admin-card-design-font-prepare
 admin-card-design-font-file admin-card-job admin-card-job-cancel admin-card-job-result""".split())
 MEMBERSHIP_ROUTES |= frozenset("""admin-member-card-settings admin-card-designs admin-member-card-jobs
-admin-member-card-download admin-member-card-email admin-member-card-photo-request admin-member-card-presence""".split())
+admin-member-card-download admin-member-card-email admin-member-card-photo-request admin-member-card-presence
+admin-card-approval-levels admin-member-card-photo""".split())
 # Release-2 lane L3, ID programmes and event cards: programme routes are reached by the host
 # space's programme managers and by organisation governors (organisation branch); event card
 # routes by every organiser of the event. Each view re-checks its own authority.
@@ -90,7 +91,8 @@ admin-id-programme-approval admin-id-programme-cards admin-id-programme-decide a
 admin-id-programme-import admin-id-programme-card-jobs admin-id-programme-card admin-id-programme-card-download
 admin-id-programme-card-email admin-id-programme-card-photo-request admin-event-card-designs
 admin-event-card-settings admin-event-id-cards admin-event-id-card-extras admin-event-card-jobs
-admin-event-card-scan admin-event-id-card admin-event-id-card-revoke admin-event-id-card-download""".split())
+admin-event-card-scan admin-event-id-card admin-event-id-card-revoke admin-event-id-card-download
+admin-id-programme-card-photo admin-event-id-card-photo""".split())
 # Release-2 lane L6, paid ticketing v2: add-ons, sales rules, the order list, desk collection and
 # the guest pay link are run by every organiser holding the event's registration grant (each view
 # re-checks it). The refund override, venue fees and series pass prices are money policy: a staff

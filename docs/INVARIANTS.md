@@ -7870,6 +7870,18 @@ reconciliation may release it. Full never consults free accounting caps or free 
   designer loads the bytes through the authenticated design route. Gilroy, Unbounded and Noto are
   bundled.
 - **No fee on any ID card (C-20).** No card route raises a charge.
+- **Approval levels are written only by the host space's settings authority** (gap lane, #136):
+  `admin-card-approval-levels` sets the space and organisation levels for both groups; programme and
+  event levels live on the programme and the event. `null` clears a level so it inherits again. An
+  organisation governor never writes the organisation level (it overrides the space).
+- **Photos are cropped in the browser before upload** and staff may set a holder's photo only after
+  confirming the holder agreed (`holder_consented`, audited `card.photo_set_by_staff`); the staging →
+  final rule is unchanged. The holder's printed-card view (`member-card-face`) and font route serve only
+  the holder's own live card; extras appear there only when the holder opted in.
+- **Card email format is the holder's choice** (`email_format` pdf | png on each card kind). PNG
+  attachments are allowed only for the email-only `card_designs.card` source; chat media stay PDF-only.
+- **Programme join prefill is opt-in** (`public-id-programme-prefill`): it reads only the signed-in
+  owner's non-sensitive Saved details for mapped questions, returns `no-store`, and stores nothing.
 - **Lifecycle**: event cards are issued automatically by reconcile (on publish, on "issue now", every
   15 minutes) and expire the day after the event ends (Q-I6); programme holders need no host-space
   membership (Q-I7); a "new photo" request keeps the card valid with one reminder after 7 days (Q-I4).

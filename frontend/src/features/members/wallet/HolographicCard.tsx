@@ -1,9 +1,11 @@
-// The printed card (server PNG, the source of truth) with tilt, sheen and flip. Tilt and sheen
-// run only with interface effects on and motion allowed; otherwise flip is an instant swap.
+// The printed card with tilt, sheen and flip: the design drawn in the browser from its document
+// (CardFaces); the server PNG is the fallback when that cannot load. Tilt and sheen run only
+// with interface effects on and motion allowed; otherwise flip is an instant swap.
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { useDelight, useReducedMotion } from "../../../components/delight/DelightProvider";
 import { useCardImage, type MyCard } from "./api";
+import { CardFaceSvg, useCardFace, useCardFaceFonts } from "./CardFaces";
 
 type OrientationRequest = { requestPermission?: () => Promise<"granted" | "denied"> };
 
@@ -15,8 +17,11 @@ export function HolographicCard({ card }: { card: MyCard }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [needsPermission, setNeedsPermission] = useState(false);
   const frame = useRef(0);
-  const front = useCardImage(card, "front", true);
-  const back = useCardImage(card, "back", card.has_back);
+  const drawn = useCardFace(card, true);
+  useCardFaceFonts(card, drawn.data);
+  const fallback = drawn.isError;
+  const front = useCardImage(card, "front", fallback);
+  const back = useCardImage(card, "back", fallback && card.has_back);
   const name = `${card.title} for ${card.name}, ${flipped ? "back" : "front"}`;
 
   const schedule = (next: { x: number; y: number }) => {
@@ -57,11 +62,13 @@ export function HolographicCard({ card }: { card: MyCard }) {
       <div className="relative h-full w-full [transform-style:preserve-3d]" style={{ transform,
         transition: motion ? "transform 650ms cubic-bezier(0.32,0.72,0,1)" : undefined }}>
         <div className={face} aria-hidden={flipped} style={motion ? undefined : { visibility: flipped ? "hidden" : "visible" }}>
-          {image(front.data, front.isError ? "The card image couldn't load." : "Loading the card…")}
+          {drawn.data ? <CardFaceSvg face={drawn.data} side="front" />
+            : image(front.data, front.isError ? "The card image couldn't load." : "Loading the card…")}
         </div>
         {card.has_back ? <div className={face} aria-hidden={!flipped}
           style={motion ? { transform: "rotateY(180deg)" } : { visibility: flipped ? "visible" : "hidden" }}>
-          {image(back.data, back.isError ? "The card image couldn't load." : "Loading the back…")}
+          {drawn.data ? <CardFaceSvg face={drawn.data} side="back" />
+            : image(back.data, back.isError ? "The card image couldn't load." : "Loading the back…")}
         </div> : null}
         {motion ? <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[4%] mix-blend-soft-light" style={{
           opacity: 0.18, background: `linear-gradient(${115 + tilt.x * 40}deg, rgba(232,255,113,0) 20%, #E8FF71 ${45 + tilt.y * 15}%, #B7E4F9 ${55 + tilt.y * 15}%, #FFF4E8 70%, rgba(255,244,232,0) 85%)` }} /> : null}

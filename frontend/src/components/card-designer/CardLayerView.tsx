@@ -47,10 +47,15 @@ function QrPlaceholder() {
   </div>;
 }
 
+/** Real images for a holder's own card (the printed-card view); the designer passes none and shows placeholders. */
+export type LiveImages = { photo: string | null; logos: Record<string, string | null>; assets: Record<string, string | null>;
+  desk_qr: string | null; verify_qr: string | null };
+
 /** One layer drawn to scale: `px` converts millimetres to CSS pixels. Static; the canvas adds interaction. */
-export function CardLayerView({ layer, px, values, designId, mono }: { layer: Layer; px: number;
-  values: Record<string, string>; designId: number; mono: boolean }) {
-  const imageUrl = useAssetUrl(designId, layer.kind === "image" ? layer.asset_id : null);
+export function CardLayerView({ layer, px, values, designId, mono, live }: { layer: Layer; px: number;
+  values: Record<string, string>; designId: number; mono: boolean; live?: LiveImages }) {
+  const fetched = useAssetUrl(designId, !live && layer.kind === "image" ? layer.asset_id : null);
+  const imageUrl = live ? (layer.asset_id ? live.assets[layer.asset_id] ?? null : null) : fetched;
   const grey = mono ? "grayscale(1)" : undefined;
   if (layer.kind === "text" || layer.kind === "data_field") {
     const text = merge(layer.text ?? "", values);
@@ -73,7 +78,19 @@ export function CardLayerView({ layer, px, values, designId, mono }: { layer: La
     return <div className="h-full w-full" style={{ [vertical ? "borderLeft" : "borderTop"]: `1px dashed ${layer.colour}`,
       marginLeft: vertical ? "50%" : undefined, marginTop: vertical ? undefined : "50%" }} />;
   }
-  if (layer.kind === "desk_qr" || layer.kind === "verify_qr") return <QrPlaceholder />;
+  if (layer.kind === "desk_qr" || layer.kind === "verify_qr") {
+    const qr = live?.[layer.kind];
+    return qr ? <div className="h-full w-full bg-white"><img src={qr} alt="" className="h-full w-full" /></div> : <QrPlaceholder />;
+  }
+  if (layer.kind === "photo" && live?.photo) {
+    return <img src={live.photo} alt="" className="h-full w-full object-cover" style={{ filter: grey,
+      borderRadius: layer.shape === "circle" ? "50%" : layer.shape === "rounded" ? "14%" : 0 }} />;
+  }
+  if (layer.kind === "logo" && live) {
+    const logo = live.logos[layer.source ?? "space"];
+    return logo ? <div className="h-full w-full" style={{ background: layer.tile ? "#FFFFFF" : undefined }}>
+      <img src={logo} alt="" className="h-full w-full object-contain" style={{ filter: grey }} /></div> : null;
+  }
   if (layer.kind === "photo") {
     const initials = (values.name ?? "").split(/\s+/).slice(0, 2).map((word) => word[0] ?? "").join("").toUpperCase();
     return <div className="grid h-full w-full place-items-center bg-[#FFF4E8] font-bold text-[#142C2A]" style={{

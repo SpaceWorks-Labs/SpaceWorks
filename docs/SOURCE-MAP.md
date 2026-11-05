@@ -835,8 +835,13 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `sheets.py`, `symbol.py`, `default_templates/`, `design_file.py`; `holders*.py` (holder-kind registry),
   `resolution.py`, `approval.py`, `designs.py`, `tokens.py`, `lifecycle.py`, `cards.py`, `jobs.py` +
   `job_runner.py` + `job_outputs.py` + `tasks.py`, `email*.py`, `photos.py`, `photo_cleanup.py`,
-  `segmentation.py`, `extras.py`, `verification.py`, `scan.py`, `wallet/`; views `views_*.py`, URLs
-  `urls_{admin,member,public,wallet}.py`.
+  `segmentation.py`, `extras.py`, `verification.py`, `scan.py`, `wallet/`; views `views_*.py` (gap lane:
+  `views_approval.py` approval levels, `views_staff_photo.py` staff photos, `views_holder_face.py` printed
+  view + fonts), URLs `urls_{admin,member,public,wallet}.py`. `id_programmes/prefill.py` is the join prefill.
+- Gap-lane frontend: `components/photo-crop/` (crop dialog + picker), `features/cards/{ApprovalLevelSelect,
+  StaffPhotoDialog}.tsx`, `features/members/wallet/{CardFaces,CardPhotoSection,PhotoCleanup}.tsx`,
+  `features/staff/eventCardScan.tsx` (door card scan), `features/staff/eventCredentials/badgeStocks.ts`,
+  `components/card-designer/undoHistory.ts` (undo/redo shared with the badge designer).
 - `apps/id_programmes/` (separable) -- programmes, cards, numbering, questions, import, invites, join.
 - `apps/shop/` (separable, module `shop`, release 2 L22) -- `models_catalogue.py` (settings, products,
   variants, kit parts), `models_orders.py` (orders, lines, returns), `models_stock.py` (movements,

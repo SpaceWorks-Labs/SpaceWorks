@@ -52,7 +52,7 @@ EDGES = {
     **_remap("card_designs.CardPhotoRequest", ("card.photo_requested", "request_id")),
     **_null("audit_polymorphic_card", *((f"card.{action}", "card_id") for action in (
         "extras_optin_changed", "photo_requested", "photo_cleanup_accepted", "verify_optin_changed",
-        "verify_link_rotated"))),
+        "verify_link_rotated", "photo_set_by_staff", "email_format_changed"))),
     **_null("audit_omitted_target_model", *((f"card_job.{action}", "job_id") for action in (
         "queued", "succeeded", "failed", "cancelled", "result_downloaded")), ("card.photo_cleanup_accepted", "job_id"),
         *((f"wallet_pass.{action}", "pass_id") for action in ("issued", "updated", "voided"))),

@@ -24,6 +24,11 @@ def _approval_required(event):
     return row.required if row else None
 
 
+def _approval_inherited(event):
+    from apps.card_designs.approval import event_organization_id, inherited
+    return inherited(event.makerspace_id, "event", event_organization_id(event.pk))
+
+
 class EventCardSettingsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -33,7 +38,8 @@ class EventCardSettingsView(APIView):
         event = organiser_event(request.user, pk)
         row = EventCardSettings.objects.filter(event=event).first()
         return Response({"extras_visible_to_organizers": bool(row and row.extras_visible_to_organizers),
-                         "design_approval_required": _approval_required(event)})
+                         "design_approval_required": _approval_required(event),
+                         "design_approval_inherited": _approval_inherited(event)})
 
     @extend_schema(tags=TAGS, summary="Change this event's card settings (event settings authority)",
                    request=OpenApiTypes.OBJECT, responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
@@ -42,6 +48,7 @@ class EventCardSettingsView(APIView):
         from apps.makerspaces.settings_authority import assert_setting_write
         event = organiser_event(request.user, pk)
         extras = request.data.get("extras_visible_to_organizers")
+        clear_approval = "design_approval_required" in request.data
         approval = request.data.get("design_approval_required")
         if extras is not None:
             if type(extras) is not bool:
@@ -52,9 +59,9 @@ class EventCardSettingsView(APIView):
                 row.save(update_fields=["extras_visible_to_organizers", "updated_at"])
                 audit.record(request.user, "event_card.extras_access_changed", makerspace=event.makerspace,
                              target=row, meta={"event_id": event.pk, "enabled": extras})
-        if approval is not None:
-            if type(approval) is not bool:
-                raise ValidationError({"design_approval_required": "Use true or false."})
+        if clear_approval:
+            if approval is not None and type(approval) is not bool:
+                raise ValidationError({"design_approval_required": "Use true, false or null (follow the space)."})
             assert_setting_write(request.user, event.makerspace, "events", "card_designs.approval")
             set_level(request.user, event.makerspace, "event", approval, event=event)
         return self.get(request, pk)

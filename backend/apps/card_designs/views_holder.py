@@ -37,6 +37,9 @@ class MyCardSerializer(serializers.Serializer):
     wallet_platforms = serializers.ListField(child=serializers.CharField())
     email_available = serializers.BooleanField()
     qr_image = serializers.CharField(allow_null=True)
+    photo_set = serializers.BooleanField()
+    photo_cleanup_available = serializers.BooleanField()
+    photo_aspect = serializers.FloatField(help_text="Width / height of the design's photo frame, for the crop step.")
 
 
 class CardSettingsSerializer(serializers.Serializer):
@@ -47,9 +50,25 @@ class CardSettingsSerializer(serializers.Serializer):
     emergency_contact_name = serializers.CharField(required=False, allow_blank=True, max_length=80)
     emergency_contact_phone = serializers.CharField(required=False, allow_blank=True, max_length=32)
     public_check_on = serializers.BooleanField(read_only=True)
+    email_format = serializers.ChoiceField(choices=("pdf", "png"), required=False)
+
+
+class CardEmailSerializer(serializers.Serializer):
+    format = serializers.ChoiceField(choices=("pdf", "png"), required=False,
+                                     help_text="Also remembered as my choice for later card emails.")
+
+
+def photo_aspect(document):
+    """Width / height of the first photo layer (front, then back); the Classic frame otherwise."""
+    for side in ("front", "back"):
+        for layer in (document.get(side) or {}).get("layers", ()):
+            if layer.get("kind") == "photo" and layer.get("w_mm") and layer.get("h_mm"):
+                return round(float(layer["w_mm"]) / float(layer["h_mm"]), 4)
+    return round(18 / 22, 4)
 
 
 def _row(kind, spec, card, standing):
+    from . import segmentation
     from .email import blocked
     from .switches import wallet_on
     from .wallet.credentials import configured_platforms
@@ -66,7 +85,10 @@ def _row(kind, spec, card, standing):
             "photo_request_open": CardPhotoRequest.objects.filter(**{kind: card}, resolved_at__isnull=True).exists(),
             "wallet_platforms": list(configured_platforms()) if standing == "valid" and wallet_on(kind, card.makerspace)
             else [], "email_available": not blocked(card.makerspace), "qr_image": _qr_image(kind, spec, card, token,
-                                                                                          standing)}
+                                                                                          standing),
+            "photo_set": bool(getattr(card, "photo_object_key", "")),
+            "photo_cleanup_available": segmentation.available() and standing != "revoked",
+            "photo_aspect": photo_aspect(document or {})}
 
 
 def _qr_image(kind, spec, card, token, standing):
@@ -76,6 +98,15 @@ def _qr_image(kind, spec, card, token, standing):
         return None
     payload = spec.desk_payload(card) if kind == "member_card" else (tokens.url(token.token) if token else None)
     return segno.make(payload).png_data_uri(scale=6) if payload else None
+
+
+def _remember_format(actor, kind, card, fmt):
+    if not fmt or fmt == card.email_format:
+        return
+    card.email_format = fmt
+    card.save(update_fields=["email_format", "updated_at"])
+    audit.record(actor, "card.email_format_changed", makerspace=card.makerspace, target=card,
+                 meta={"card_id": card.pk, "holder_kind": kind, "format": fmt})
 
 
 class MyCardsView(APIView):
@@ -115,13 +146,16 @@ class MyCardDownloadView(APIView):
 class MyCardEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="Email me my card (PDF attached)", request=None,
+    @extend_schema(tags=TAGS, summary="Email me my card (PDF, or PNG images of each side)", request=CardEmailSerializer,
                    responses={202: OpenApiTypes.OBJECT, **errors(400, 401, 404)})
     def post(self, request, kind, card_id):
         from .email import blocked, send_card_email
         _spec, card = own_card(request.user, kind, card_id)
         if blocked(card.makerspace):
             raise ValidationError({"detail": "Email is turned off for this space."})
+        data = CardEmailSerializer(data=request.data or {})
+        data.is_valid(raise_exception=True)
+        _remember_format(request.user, kind, card, data.validated_data.get("format"))
         if not send_card_email(kind, card, actor=request.user, explicit=True):
             raise ValidationError({"detail": "Your card was emailed a few minutes ago. Try again later."})
         return Response({"queued": True}, status=202)
@@ -136,7 +170,7 @@ class MyCardSettingsView(APIView):
                 "extras_opted_in": values["opted_in"], "blood_group": values["blood_group"],
                 "emergency_contact_name": values["emergency_contact_name"],
                 "emergency_contact_phone": values["emergency_contact_phone"],
-                "public_check_on": public_verify_on(kind, card)}
+                "public_check_on": public_verify_on(kind, card), "email_format": card.email_format}
 
     @extend_schema(tags=TAGS, summary="My card's check-page and extras choices", request=None,
                    responses={200: CardSettingsSerializer, **errors(401, 404)})
@@ -163,6 +197,7 @@ class MyCardSettingsView(APIView):
             card.save(update_fields=[*changed, "verify_consent_at", "updated_at"])
             audit.record(request.user, "card.verify_optin_changed", makerspace=card.makerspace, target=card,
                          meta={"card_id": card.pk, "holder_kind": kind, "fields": changed})
+        _remember_format(request.user, kind, card, values.get("email_format"))
         if "extras_opted_in" in values:
             extras.write(request.user, kind, card, opted_in=values["extras_opted_in"],
                          blood_group=values.get("blood_group", ""),

@@ -2,7 +2,7 @@
 from django.urls import path
 
 from .views_public import (PublicProgrammeDetailView, PublicProgrammeJoinPhotoView,
-                           PublicProgrammeJoinView, PublicProgrammeListView)
+                           PublicProgrammeJoinView, PublicProgrammeListView, PublicProgrammePrefillView)
 
 _PROGRAMME = "organizations/<slug:slug>/id-programmes/<slug:programme_slug>"
 
@@ -11,5 +11,6 @@ urlpatterns = [
          name="public-organization-id-programmes"),
     path(_PROGRAMME, PublicProgrammeDetailView.as_view(), name="public-id-programme"),
     path(f"{_PROGRAMME}/join", PublicProgrammeJoinView.as_view(), name="public-id-programme-join"),
+    path(f"{_PROGRAMME}/prefill", PublicProgrammePrefillView.as_view(), name="public-id-programme-prefill"),
     path(f"{_PROGRAMME}/join/photo", PublicProgrammeJoinPhotoView.as_view(), name="public-id-programme-join-photo"),
 ]

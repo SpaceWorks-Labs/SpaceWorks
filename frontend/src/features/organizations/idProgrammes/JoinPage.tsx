@@ -1,15 +1,18 @@
 // /o/:organizationSlug/ids/:programmeSlug — ask to join an ID programme. Needs a signed-in
-// account (the email comes from it); photo upload with consent when the programme asks for one.
+// account (the email comes from it); photo upload with consent when the programme asks for one,
+// cropped to the card's photo frame first; answers can be filled from Saved details on request.
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
 import { CenteredCardLayout } from "../../../components/layouts";
+import { PhotoPicker } from "../../../components/photo-crop/PhotoPicker";
 import { ErrorText } from "../../../components/ui";
 import { memberRequest, publicV1Request } from "../../../lib/api";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
 
-type JoinQuestion = { key: string; label: string; type: "text" | "choice" | "email" | "phone"; required: boolean; options?: string[] };
+type JoinQuestion = { key: string; label: string; type: "text" | "choice" | "email" | "phone"; required: boolean; options?: string[];
+  prefill?: boolean };
 type PublicProgramme = { name: string; slug: string; description: string; organization_name: string;
   photo_mode: "none" | "optional" | "required"; requires_approval: boolean; registration_open: boolean; questions: JoinQuestion[];
   state: "signed_out" | "open" | "closed" | "waiting" | "approved" | "not_approved" | "revoked" };
@@ -38,12 +41,19 @@ export function JoinPage() {
   const programme = useQuery({ queryKey: ["id-programme-join", organizationSlug, programmeSlug], retry: false,
     queryFn: () => publicV1Request<PublicProgramme>(base) });
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photo, setPhoto] = useState<Blob | null>(null);
+  const [filled, setFilled] = useState<number | null>(null);
+  // Opt-in: Saved details are read only when the person presses the button, and only kept in this form.
+  const prefill = useMutation({ mutationFn: () => memberRequest<{ values: Record<string, string> }>(`${base}/prefill`),
+    onSuccess: ({ values }) => {
+      setAnswers((current) => ({ ...current, ...Object.fromEntries(Object.entries(values).filter(([key]) => !(current[key] ?? "").trim())) }));
+      setFilled(Object.keys(values).length);
+    } });
   const [consent, setConsent] = useState(false);
   const join = useMutation({ mutationFn: async () => {
     let photoKey = "";
     if (photo) {
-      const presign = await memberRequest<Presign>(`${base}/join/photo`, { method: "POST", body: JSON.stringify({ content_type: photo.type }) });
+      const presign = await memberRequest<Presign>(`${base}/join/photo`, { method: "POST", body: JSON.stringify({ content_type: photo.type || "image/jpeg" }) });
       const form = new FormData();
       Object.entries(presign.fields ?? {}).forEach(([key, value]) => form.append(key, value));
       form.append("file", photo);
@@ -69,6 +79,12 @@ export function JoinPage() {
   return <CenteredCardLayout state={{ status: "ready" }} width="wide" eyebrow={data.organization_name} title={data.name}
     body={data.description || (data.requires_approval ? "The organiser approves each request." : "Your card is issued straight away.")}
     content={<form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); join.mutate(); }}>
+      {data.questions.some((question) => question.prefill) ? <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className="desk-button-ghost min-h-11" disabled={prefill.isPending} onClick={() => prefill.mutate()}>
+          {prefill.isPending ? "Filling…" : "Fill from my Saved details"}</button>
+        <span role="status" aria-live="polite" className="text-xs text-muted">{filled === null ? "Only fills empty answers; check them before sending."
+          : filled ? `Filled ${filled} answer${filled === 1 ? "" : "s"}. Check them before sending.` : "Nothing in your Saved details matches these questions."}</span>
+      </div> : null}
       {data.questions.map((question) => <label key={question.key} className="grid gap-1 text-sm font-semibold text-ink">
         <span>{question.label}{question.required ? "" : " (optional)"}</span>
         {question.type === "choice" ? <select className="desk-input min-h-11" value={answers[question.key] ?? ""} required={question.required}
@@ -79,13 +95,13 @@ export function JoinPage() {
             onChange={(event) => setAnswers({ ...answers, [question.key]: event.target.value })} />}
       </label>)}
       {data.photo_mode !== "none" ? <div className="grid gap-2">
-        <label className="grid gap-1 text-sm font-semibold text-ink"><span>Photo{data.photo_mode === "optional" ? " (optional)" : ""}</span>
-          <input type="file" className="desk-input" accept="image/png,image/jpeg,image/webp" capture="user"
-            onChange={(event) => setPhoto(event.target.files?.[0] ?? null)} /></label>
+        <p className="text-sm font-semibold text-ink">Photo{data.photo_mode === "optional" ? " (optional)" : ""}</p>
+        <PhotoPicker aspect={18 / 22} chooseLabel={photo ? "Change the photo" : "Choose a photo"} onPhoto={setPhoto} />
+        {photo ? <p className="text-xs text-muted">Photo cropped and ready. It is only uploaded when you send this request.</p> : null}
         {photo ? <label className="flex min-h-11 items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5" checked={consent}
           onChange={(event) => setConsent(event.target.checked)} />I agree my photo is stored privately and printed on my card.</label> : null}
       </div> : null}
-      {join.error ? <ErrorText message={join.error.message} /> : null}
+      {join.error || prefill.error ? <ErrorText message={(join.error ?? prefill.error)?.message} /> : null}
       <div><button type="submit" className="desk-button-primary min-h-11" disabled={missing || join.isPending}>
         {join.isPending ? "Sending…" : "Ask to join"}</button></div>
     </form>}

@@ -13,10 +13,15 @@ export function fontSlug(family: string) {
 }
 
 export function loadCardFont(designId: number, family: string, weight: number) {
+  return loadCardFontWith(family, weight, (slug) => staffRequestBlob(`/admin/card-designs/${designId}/fonts/${slug}/${weight}`));
+}
+
+/** The same registration with another source of the bytes (a holder's own card uses the member route). */
+export function loadCardFontWith(family: string, weight: number, fetchFont: (slug: string) => Promise<Blob>) {
   const key = `${family}:${weight}`;
   if (typeof FontFace === "undefined" || typeof document === "undefined") return Promise.resolve(false);
   if (!loaded.has(key)) {
-    loaded.set(key, staffRequestBlob(`/admin/card-designs/${designId}/fonts/${fontSlug(family)}/${weight}`)
+    loaded.set(key, fetchFont(fontSlug(family))
       .then((blob) => blob.arrayBuffer())
       .then(async (buffer) => {
         const face = new FontFace(`SW Card ${family}`, buffer, { weight: String(weight) });

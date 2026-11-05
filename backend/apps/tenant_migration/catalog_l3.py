@@ -41,16 +41,17 @@ FIELD_NAMES = {
                                      "photo_content_type photo_size_bytes photo_consent_at photo_consent_version status "
                                      "status_reason source invite_digest id_number sequence issued_at expires_at "
                                      "revoked_at last_emailed_at verify_show_name verify_show_photo verify_consent_at "
-                                     "created_at updated_at",
+                                     "email_format created_at updated_at",
     "id_programmes.IdProgrammeImport": "id programme created_by created_at source_sha256 rows_total created skipped "
                                        "mapping",
     "events.EventIdCard": "id event makerspace registration person role printed_name photo_object_key "
                           "photo_content_type photo_size_bytes photo_consent_at photo_consent_version status revoked_at "
                           "revoked_reason revoked_by valid_until issued_at last_emailed_at verify_show_name "
-                          "verify_show_photo verify_consent_at updated_at",
+                          "verify_show_photo verify_consent_at email_format updated_at",
 }
 FIELD_NAMES = {label: frozenset(names.split()) for label, names in FIELD_NAMES.items()}
-MEMBER_CARD_FIELDS = "revoked_note last_emailed_at verify_show_name verify_show_photo verify_consent_at verify_consent_version"
+MEMBER_CARD_FIELDS = ("revoked_note last_emailed_at verify_show_name verify_show_photo verify_consent_at "
+                      "verify_consent_version email_format")
 EXTRA_FIELDS = {"makerspaces.MemberCard": frozenset(MEMBER_CARD_FIELDS.split())}
 _OMITTED = {"card_designs.CardJob", "card_designs.CardFont", "card_designs.CardVerifyToken",
             "card_designs.CardHolderExtras", "card_designs.WalletPass", "card_designs.WalletDeviceRegistration"}

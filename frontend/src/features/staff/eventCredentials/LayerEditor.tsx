@@ -1,20 +1,27 @@
-import { useState } from "react";
-import { Copy, ArrowUp, ArrowDown, Trash2, Undo2, Plus } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Copy, ArrowUp, ArrowDown, Trash2, Undo2, Redo2, Plus } from "lucide-react";
 import { PositionedLayoutEditor } from "../../../components/print-layout/PositionedLayoutEditor";
 import type { PositionedElement } from "../../../components/print-layout/positionedLayout";
+import { useUndoHistory, useUndoShortcuts } from "../../../components/card-designer/undoHistory";
 import { duplicate, newTextLayer, reorder, type Layer, type LayerDocument } from "./layout";
+import { badgeSampleValues } from "./badgeStocks";
 import { LayerInspector } from "./LayerInspector";
 import { LayerCanvas } from "./LayerCanvas";
 
+/** The certificate and event badge layer editor. Shares the card designer's undo/redo (50 snapshots,
+ *  Ctrl/Cmd+Z, Shift+Ctrl/Cmd+Z) and, for badges, its short/long name preview (G13). */
 export function LayerEditor({ document, onChange, disabled = false, kind = "certificate" }: {
   document: LayerDocument; onChange: (value: LayerDocument) => void; disabled?: boolean; kind?: "certificate" | "badge";
 }) {
   const [selected, setSelected] = useState(document.layers[0]?.id);
-  const [history, setHistory] = useState<LayerDocument[]>([]);
   const [grid, setGrid] = useState(1);
+  const [longNames, setLongNames] = useState(false);
+  const apply = useCallback((value: LayerDocument) => onChange(value), [onChange]);
+  const history = useUndoHistory(document, apply);
+  useUndoShortcuts(history.undo, history.redo, !disabled);
   const current = document.layers.find((layer) => layer.id === selected) ?? document.layers[0];
   function change(layers: Layer[]) {
-    setHistory((rows) => [...rows.slice(-29), document]);
+    history.record(document);
     onChange({ ...document, layers });
   }
   function patch(value: Partial<Layer>) { change(document.layers.map((row) => row.id === current.id ? { ...row, ...value } : row)); }
@@ -33,11 +40,17 @@ export function LayerEditor({ document, onChange, disabled = false, kind = "cert
   return <fieldset className="grid min-w-0 gap-4" disabled={disabled}>
     <legend className="font-semibold text-ink">Layers ({document.layers.length}/20)</legend>
     <p className="text-sm text-muted">Canvas is approximate. The server PDF preview checks final fonts, wrapping and image placement.</p>
-    <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={!history.length} onClick={() => {
-      const prior = history[history.length - 1]; if (prior) { onChange(prior); setHistory(history.slice(0, -1)); }
-    }}><Undo2 size={16} aria-hidden="true" />Undo</button>
-      {addTypes.map((type) => <button className="desk-button" key={type} type="button" disabled={document.layers.length >= 20} onClick={() => add(type)}><Plus size={16} aria-hidden="true" />Add {type.replace(/_/g, " ")}</button>)}</div>
-    <LayerCanvas document={document} onChange={(value) => change(value.layers)} />
+    <div className="flex flex-wrap gap-2">
+      <button type="button" className="desk-button" disabled={!history.canUndo} onClick={history.undo} aria-keyshortcuts="Control+Z Meta+Z">
+        <Undo2 size={16} aria-hidden="true" />Undo</button>
+      <button type="button" className="desk-button" disabled={!history.canRedo} onClick={history.redo} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
+        <Redo2 size={16} aria-hidden="true" />Redo</button>
+      {addTypes.map((type) => <button className="desk-button" key={type} type="button" disabled={document.layers.length >= 20} onClick={() => add(type)}><Plus size={16} aria-hidden="true" />Add {type.replace(/_/g, " ")}</button>)}
+      {kind === "badge" ? <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
+        <input type="checkbox" className="h-5 w-5" checked={longNames} onChange={(event) => setLongNames(event.target.checked)} />
+        Preview a long name</label> : null}
+    </div>
+    <LayerCanvas document={document} onChange={(value) => change(value.layers)} values={kind === "badge" ? badgeSampleValues(longNames) : undefined} />
     <ol className="grid gap-2" aria-label="Certificate layers">{document.layers.map((layer, index) => <li key={layer.id} className="flex flex-wrap items-center gap-2 rounded-control border border-line p-2">
       <button type="button" className="desk-button flex-1" aria-pressed={current?.id === layer.id} onClick={() => setSelected(layer.id)}>{index + 1}. {layer.type === "text" ? layer.text || "Text" : layer.type.replace(/_/g, " ")}</button>
       <button className="desk-button min-h-11" type="button" aria-label={`Move layer ${index + 1} up`} disabled={index === 0} onClick={() => change(reorder(document.layers, index, index-1))}><ArrowUp size={16} aria-hidden="true" /></button>

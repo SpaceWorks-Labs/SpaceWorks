@@ -1,6 +1,8 @@
 """Staff ID-programme routes under /api/v1/admin/ (mounted only while the app ships)."""
 from django.urls import path
 
+from apps.card_designs.views_staff_photo import ProgrammeCardStaffPhotoView
+
 from .views import (OrganizationProgrammeListView, ProgrammeApprovalView, ProgrammeDesignView,
                     ProgrammeDetailView)
 from .views_cards import (ProgrammeCardDetailView, ProgrammeCardDownloadView, ProgrammeCardEmailView,
@@ -25,6 +27,7 @@ urlpatterns = [
     path(_CARD, ProgrammeCardDetailView.as_view(), name="admin-id-programme-card"),
     path(f"{_CARD}/download", ProgrammeCardDownloadView.as_view(), name="admin-id-programme-card-download"),
     path(f"{_CARD}/email", ProgrammeCardEmailView.as_view(), name="admin-id-programme-card-email"),
+    path(f"{_CARD}/photo", ProgrammeCardStaffPhotoView.as_view(), name="admin-id-programme-card-photo"),
     path(f"{_CARD}/photo-request", ProgrammeCardPhotoRequestView.as_view(),
          name="admin-id-programme-card-photo-request"),
 ]

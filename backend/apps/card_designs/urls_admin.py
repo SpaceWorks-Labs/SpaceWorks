@@ -11,12 +11,14 @@ from apps.makerspaces.member_card_admin_views_l3 import (
     MemberCardSettingsView,
 )
 
+from .views_approval import CardApprovalLevelsView
 from .views_assets import (CardAssetContentView, CardAssetFinalizeView, CardAssetUploadView, CardFontFileView,
                            CardFontListView, CardFontPrepareView)
 from .views_design_actions import (CardDesignApproveView, CardDesignExportView, CardDesignImportView,
                                    CardDesignPreviewView, CardDesignPublishView, CardDesignRejectView,
                                    CardDesignResetView, CardDesignSubmitView)
 from .views_designs import CardDesignDetailView, CardTemplateListView, SpaceCardDesignListView
+from .views_staff_photo import MemberCardStaffPhotoView
 from .views_jobs import CardJobCancelView, CardJobDetailView, CardJobResultView, MemberCardJobListView
 
 _SPACE = "makerspaces/<int:makerspace_id>"
@@ -25,11 +27,13 @@ _DESIGN = "card-designs/<int:pk>"
 urlpatterns = [
     path(f"{_SPACE}/member-card-settings", MemberCardSettingsView.as_view(), name="admin-member-card-settings"),
     path(f"{_SPACE}/card-designs", SpaceCardDesignListView.as_view(), name="admin-card-designs"),
+    path(f"{_SPACE}/card-approval-levels", CardApprovalLevelsView.as_view(), name="admin-card-approval-levels"),
     path(f"{_SPACE}/member-card-jobs", MemberCardJobListView.as_view(), name="admin-member-card-jobs"),
     path(f"{_SPACE}/member-cards/presence-check-in", MemberCardPresenceView.as_view(),
          name="admin-member-card-presence"),
     path("member-cards/<int:pk>/download", MemberCardDownloadView.as_view(), name="admin-member-card-download"),
     path("member-cards/<int:pk>/email", MemberCardEmailView.as_view(), name="admin-member-card-email"),
+    path("member-cards/<int:pk>/photo", MemberCardStaffPhotoView.as_view(), name="admin-member-card-photo"),
     path("member-cards/<int:pk>/photo-request", MemberCardPhotoRequestView.as_view(),
          name="admin-member-card-photo-request"),
     path(_DESIGN, CardDesignDetailView.as_view(), name="admin-card-design"),

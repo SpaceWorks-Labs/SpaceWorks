@@ -1,4 +1,7 @@
-"""Email a holder their card (SPEC §6 "Email your card"), with the card PDF attached.
+"""Email a holder their card (SPEC §6 "Email your card"), as a PDF or as PNG images.
+
+The holder chooses the attachment (`email_format` on the card: the PDF, or one 300-dpi
+PNG per side); staff and bulk sends use that choice too.
 
 Limits: one email per card per 24 h for bulk and automatic sends; an explicit single
 "Email card" again after 10 minutes; at most 200 card emails per space per day (50 for
@@ -45,12 +48,18 @@ def subject_for(kind, values):
     return f"Your {values.get('space')} member card"
 
 
+def attachment_note(card):
+    if getattr(card, "email_format", "pdf") == "png":
+        return "Your card is attached as PNG images (front, and back when it has one)."
+    return "Your card is attached as a PDF."
+
+
 def body_for(kind, card, values):
     from django.conf import settings
     from django.utils.html import escape
     base = (getattr(settings, "PUBLIC_APP_BASE_URL", "") or "").rstrip("/")
     link = f"{base}/member/cards"
-    lines = [f"Hello {values.get('name', '')},", "", "Your card is attached as a PDF.",
+    lines = [f"Hello {values.get('name', '')},", "", attachment_note(card),
              f"Number: {values.get('number', '')}", f"Valid until: {values.get('valid_until', '')}", "",
              f"See it any time under My cards: {link}"]
     html = ("<div style=\"font-family:Gilroy,Arial,sans-serif;max-width:420px;border:1px solid #D5D0C6;"
@@ -84,7 +93,8 @@ def send_card_email(kind, card, *, actor=None, explicit=False):
     dispatch_email(to_email=address, subject=subject_for(kind, values), text_body=text, html_body=html,
                    makerspace=space, stream=STREAMS[kind], event="card_issued", audience="requester",
                    recipient_id=spec.account_id(card), source_kind=SOURCE_KIND, source_id=card.pk,
-                   source_metadata={"holder_kind": kind, "revision": card.updated_at.isoformat()})
+                   source_metadata={"holder_kind": kind, "revision": card.updated_at.isoformat(),
+                                    "format": getattr(card, "email_format", "pdf")})
     type(card).objects.filter(pk=card.pk).update(last_emailed_at=now)
     if kind == "member_card":
         audit.record(actor, "member_card.emailed", makerspace=space, target=card, meta={"card_id": card.pk, "count": 1})

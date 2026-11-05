@@ -85,20 +85,36 @@ class ProgrammeDesignView(APIView):
         return Response(CardDesignSerializer(design, context={"request": request}).data)
 
 
+def _approval(programme):
+    from apps.card_designs.approval import inherited, level_value
+    return {"required": level_value(programme.makerspace, "membership", programme=programme),
+            "inherited": inherited(programme.makerspace_id, "membership", programme.organization_id)}
+
+
 class ProgrammeApprovalView(APIView):
+    """The programme level of the approval switch (#136): on, off, or null to follow the
+    organisation and then the space. `inherited` is what null currently means."""
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="Whether this programme's design edits need approval (#136)",
-                   request={"application/json": {"type": "object", "properties": {"required": {"type": "boolean"}}}},
+    @extend_schema(tags=TAGS, summary="Whether this programme's design edits need approval (#136)", request=None,
+                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404)})
+    def get(self, request, pk):
+        return Response(_approval(programme_for(request.user, pk, MANAGE)))
+
+    @extend_schema(tags=TAGS, summary="Set this programme's approval level (true, false, or null to inherit)",
+                   request={"application/json": {"type": "object", "properties": {
+                       "required": {"type": "boolean", "nullable": True}}}},
                    responses={200: OpenApiTypes.OBJECT, **errors(400, 401, 403, 404)})
     def put(self, request, pk):
         from rest_framework.exceptions import ValidationError
         from apps.card_designs.approval import set_level
         from apps.makerspaces.settings_authority import assert_setting_write
         programme = programme_for(request.user, pk, MANAGE)
+        if "required" not in request.data:
+            raise ValidationError({"required": "Use true, false or null."})
         required = request.data.get("required")
-        if type(required) is not bool:
-            raise ValidationError({"required": "Use true or false."})
+        if required is not None and type(required) is not bool:
+            raise ValidationError({"required": "Use true, false or null."})
         assert_setting_write(request.user, programme.makerspace, "membership", "card_designs.approval")
         set_level(request.user, programme.makerspace, "membership", required, programme=programme)
-        return Response({"required": required})
+        return Response(_approval(programme))

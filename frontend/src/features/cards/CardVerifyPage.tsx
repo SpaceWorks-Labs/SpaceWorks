@@ -1,21 +1,29 @@
-// /verify/c/:token — the public card check. Valid, expired or revoked; the issuer and what the
-// card is for; the holder's name and photo only when they opted in. Never indexed.
-import { useEffect } from "react";
+// /verify/c/:token — the public card check (SPEC §7, the public-verify-card screens). Valid,
+// expired or revoked in a status band; the issuer and what the card is for; the holder's name
+// and photo only when they opted in. Never indexed, never sends a referrer.
+import { useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { BadgeCheck, CalendarX, SearchX, ShieldOff, type LucideIcon } from "lucide-react";
 import { useParams } from "react-router-dom";
 
-import { CenteredCardLayout } from "../../components/layouts";
+import { useDelight, useReducedMotion } from "../../components/delight/DelightProvider";
+import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
 import { StructuredApiError, publicV1Request } from "../../lib/api";
+import "./cardVerify.css";
 
 type Verification = {
   status: "valid" | "expired" | "revoked"; valid: boolean;
   issuer: { kind: "space" | "organisation" | "event"; name: string; logo_url: string | null };
   label: string | null; number: string | null; valid_until: string | null;
-  holder: { name: string | null; photo_url: string | null } | null; note: string; checked_at: string;
+  holder: { name: string | null; photo_url: string | null } | null; note: string; checked_at: string; timezone?: string;
 };
 
-const TITLES = { valid: "This card is valid", expired: "This card has expired", revoked: "This card is not valid" } as const;
-const TONES = { valid: "success", expired: "warn", revoked: "danger" } as const;
+const BANDS: Record<Verification["status"], { icon: LucideIcon; title: string; body: string; className: string }> = {
+  valid: { icon: BadgeCheck, title: "Valid card", body: "This card is genuine and in date.", className: "bg-success text-on-success" },
+  expired: { icon: CalendarX, title: "Expired card", body: "This card was genuine but is no longer in date.", className: "bg-warn-soft text-warn-ink" },
+  revoked: { icon: ShieldOff, title: "Revoked card", body: "This card has been cancelled by its issuer.", className: "bg-danger/10 text-danger" },
+};
+const LABELS = { space: "Plan", organisation: "Programme", event: "Event" } as const;
 
 function useNoIndex() {
   useEffect(() => {
@@ -26,33 +34,78 @@ function useNoIndex() {
   }, []);
 }
 
+export function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "").join("");
+}
+
+export function checkedLine(data: Pick<Verification, "checked_at" | "timezone">) {
+  const zone = data.timezone || "UTC";
+  let time: string;
+  try {
+    time = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: zone }).format(new Date(data.checked_at));
+  } catch {
+    time = new Date(data.checked_at).toLocaleString();
+  }
+  return `Checked ${time} (${zone}).`;
+}
+
+function Shell({ children }: { children: ReactNode }) {
+  return <main className="min-h-dvh bg-bg px-4 py-6 text-ink sm:px-8">
+    <SpaceWorksLogo variant="horizontal" size={180} />
+    <div className="mx-auto mt-10 w-full max-w-[420px]">{children}</div>
+  </main>;
+}
+
 export function CardVerifyPage() {
   const { token = "" } = useParams();
   useNoIndex();
+  const delight = useDelight();
+  const reduced = useReducedMotion();
   const check = useQuery({ queryKey: ["card-verify", token], retry: false, staleTime: 0, gcTime: 0,
     queryFn: () => publicV1Request<Verification>(`/public/card-verifications/${encodeURIComponent(token)}`) });
-  const missing = check.error instanceof StructuredApiError && check.error.status === 404;
   const limited = check.error instanceof StructuredApiError && check.error.status === 429;
   const data = check.data;
-  if (!data) return <CenteredCardLayout state={check.isLoading ? { status: "loading" } : { status: "ready" }}
-    media={{ icon: "ShieldAlert", tone: "danger" }} title={missing ? "We can't find this card" : "The check didn't work"}
-    body={missing ? "The link may be mistyped, or the card's check link was changed. Ask the holder to show their card again."
-      : limited ? "Too many checks from here. Wait a minute and try again." : "Try again in a moment."}
-    primary={{ label: "Try again", onClick: () => void check.refetch() }} />;
 
-  const facts = [["Issued by", data.issuer.name], ["Card", data.label], ["Number", data.number], ["Valid until", data.valid_until]]
-    .filter((row): row is [string, string] => Boolean(row[1]));
-  return <CenteredCardLayout state={{ status: "ready" }} media={{ banner: TONES[data.status] }} eyebrow="Card check" title={TITLES[data.status]}
-    body={data.note || (data.valid ? "Checked just now." : "Do not accept this card.")}
-    content={<div className="grid gap-4">
-      {data.holder?.photo_url || data.holder?.name ? <div className="flex items-center gap-3">
-        {data.holder.photo_url ? <img src={data.holder.photo_url} alt="" className="h-16 w-16 rounded-control border border-line object-cover" /> : null}
-        {data.holder.name ? <p className="text-lg font-semibold text-ink">{data.holder.name}</p> : null}
-      </div> : null}
-      <dl className="grid gap-2 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
-        {facts.map(([label, value]) => <div key={label} className="contents"><dt className="text-muted">{label}</dt><dd className="text-ink">{value}</dd></div>)}
-      </dl>
-      <p className="text-xs text-muted">Checked {new Date(data.checked_at).toLocaleString()}.</p>
-    </div>}
-    primary={{ label: "Check again", onClick: () => void check.refetch() }} />;
+  if (check.isLoading) return <Shell><p role="status" className="text-center text-muted">Checking the card…</p></Shell>;
+  if (!data) return <Shell><section className="grid justify-items-center gap-3 rounded-card border border-line bg-panel p-8 text-center">
+    <SearchX size={56} aria-hidden="true" className="text-muted" />
+    <h1 className="text-xl font-semibold">{limited ? "Too many checks" : "Card not found"}</h1>
+    <p className="text-sm text-muted">{limited ? "Too many checks. Try again in a minute."
+      : "We couldn't match this code to a card. Check the whole code was scanned, or ask to see the card again."}</p>
+    <button type="button" className="desk-button min-h-11" onClick={() => void check.refetch()}>Check again</button>
+  </section></Shell>;
+
+  const band = BANDS[data.status];
+  const Icon = band.icon;
+  const stamp = data.valid && delight.enabled && !reduced;
+  const holderName = data.status === "revoked" ? null : data.holder?.name ?? null;
+  // A revoked card shows its issuer alone (SPEC §7), whatever else arrives.
+  const facts = data.status === "revoked" ? [] : [[LABELS[data.issuer.kind], data.label], ["Number", data.number],
+    ["Valid until", data.valid_until]].filter((row): row is [string, string] => Boolean(row[1]));
+  return <Shell><section className="overflow-hidden rounded-card border border-line bg-panel" aria-labelledby="card-check-title">
+    <div className={`grid justify-items-center gap-2 px-6 py-6 text-center ${band.className}`}>
+      <Icon size={56} aria-hidden="true" className={stamp ? "sw-verify-stamp" : undefined} />
+      <h1 id="card-check-title" className="text-xl font-semibold">{band.title}</h1>
+      <p className="text-sm">{band.body}</p>
+    </div>
+    <div className="grid gap-4 p-6">
+      <div className="flex items-center gap-3">
+        {data.status === "valid" && data.holder?.photo_url ? <img src={data.holder.photo_url} alt="" className="h-14 w-14 rounded-full border border-line object-cover" />
+          : holderName ? <span aria-hidden="true" className="grid h-14 w-14 place-items-center rounded-full bg-surface text-lg font-semibold">{initials(holderName)}</span>
+            : data.issuer.logo_url ? <img src={data.issuer.logo_url} alt="" className="h-14 w-14 rounded-control border border-line bg-white object-contain p-1" />
+              : null}
+        <div className="grid">
+          {holderName ? <p className="text-lg font-semibold">{holderName}</p> : null}
+          <p className={holderName ? "text-sm text-muted" : "text-lg font-semibold"}>{data.issuer.name}</p>
+        </div>
+      </div>
+      {data.note ? <p className="text-sm text-muted">{data.note}</p> : null}
+      {facts.length ? <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+        {facts.map(([label, value]) => <div key={label} className="grid gap-0.5"><dt className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{label}</dt>
+          <dd className="font-medium tabular-nums">{value}</dd></div>)}
+      </dl> : null}
+      <p className="border-t border-line pt-4 text-xs text-muted">Space Works checks this card against {data.issuer.name}'s records and shows
+        only what is needed to confirm it. {checkedLine(data)}</p>
+    </div>
+  </section></Shell>;
 }

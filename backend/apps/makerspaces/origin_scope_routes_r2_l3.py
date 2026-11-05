@@ -12,6 +12,7 @@ MODEL_LOOKUPS = {
     **{name: _CARD for name in (
         "admin-member-card-reissue", "admin-member-card-revoke", "admin-member-card-print",
         "admin-member-card-download", "admin-member-card-email", "admin-member-card-photo-request",
+        "admin-member-card-photo",
     )},
     **{name: _DESIGN for name in (
         "admin-card-design", "admin-card-design-templates", "admin-card-design-publish", "admin-card-design-submit",
@@ -30,13 +31,13 @@ MODEL_LOOKUPS = {
     )},
     **{name: ("id_programmes.IdProgrammeCard", "makerspace_id") for name in (
         "admin-id-programme-card", "admin-id-programme-card-download", "admin-id-programme-card-email",
-        "admin-id-programme-card-photo-request",
+        "admin-id-programme-card-photo-request", "admin-id-programme-card-photo",
     )},
     **{name: ("events.Event", "makerspace_id") for name in (
         "admin-event-card-designs", "admin-event-card-settings", "admin-event-id-cards", "admin-event-id-card-extras",
         "admin-event-card-jobs", "admin-event-card-scan",
     )},
     **{name: ("events.EventIdCard", "makerspace_id") for name in (
-        "admin-event-id-card", "admin-event-id-card-revoke", "admin-event-id-card-download",
+        "admin-event-id-card", "admin-event-id-card-revoke", "admin-event-id-card-download", "admin-event-id-card-photo",
     )},
 }

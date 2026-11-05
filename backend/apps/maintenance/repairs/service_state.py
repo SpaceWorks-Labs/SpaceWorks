@@ -3,7 +3,9 @@
 * Machine: its status goes to `maintenance` (or back to `idle`) through
   `status_tracking.change_status`, which also opens or closes the downtime period; the
   machine-service queue and ETA kernel count only machines with capacity, so the queue
-  recomputes on its next read (#44). A running machine is refused.
+  recomputes on its next read (#44). A running machine is refused. While it is under repair,
+  new bookings of its time are refused (`machines.booking_gate`); the bookings already made
+  until it is expected back are returned for staff, and their bookers emailed, as for a room.
 * Unit: `availability.move_asset_status` (available <-> maintenance).
 * Item: `availability.move_available_to_needs_fix` / `repair_from_needs_fix` for a count.
 * Room: an outage that blocks (default) or warns; the affected bookings are returned for
@@ -45,6 +47,13 @@ def _machine(actor, machine, in_service, reason, expected_back_at):
         change_status(machine, "maintenance", source="service_state", actor=actor, reason=reason,
                       expected_back_at=expected_back_at)
     return machine.status
+
+
+def _machine_bookings(machine, expected_back_at):
+    from apps.machines.booking_gate import bookings_in_repair
+    bookings = bookings_in_repair(machine, expected_back_at)
+    notify.bookers_machine_repair(machine, bookings, expected_back_at)
+    return bookings
 
 
 def _asset(asset, in_service):
@@ -104,7 +113,10 @@ def set_state(actor, space, *, subject_type, subject, in_service, reason="", exp
     _gate(actor, space, subject_type, subject)
     outage, bookings = None, []
     if subject_type == "machine":
+        was_down = subject.status == "maintenance"
         state = _machine(actor, subject, in_service, reason, expected_back_at)
+        if not in_service and not was_down:
+            bookings = _machine_bookings(subject, expected_back_at)
     elif subject_type == "inventory_asset":
         state = _asset(subject, in_service)
     elif subject_type == "inventory_product":

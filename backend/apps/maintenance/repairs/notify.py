@@ -5,7 +5,8 @@
   `maintenance` family (scoped to the machine type), items through `hardware_requests`
   (the Inventory Manager's family), rooms through `bookings`.
 * The reporter gets a plain "fixed" email (members and account-less borrowers alike).
-* Bookers inside a room outage get an email naming the room and the window.
+* Bookers inside a room outage, or holding time on a machine taken out for repair, get an
+  email naming the room or machine and the window.
 
 Bodies carry ids, the subject's name and the issue title -- never a reporter's or a
 contractor's contact details.
@@ -101,6 +102,22 @@ def bookers_outage(outage, bookings):
                 f"Your booking #{booking.pk} falls in this time. The space will contact you about it.")
         sent += _email(outage.makerspace, booking.email, f"{room.name} is out of service"[:200], body,
                        event="room_outage", feature="bookings", recipient_id=booking.member_id)
+    return sent
+
+
+def bookers_machine_repair(machine, bookings, expected_back_at=None):
+    """Each booker of a machine taken out for repair hears it; staff decide on each booking."""
+    sent = 0
+    for booking in bookings:
+        if not booking.email:
+            continue
+        back = f" It is expected back {expected_back_at:%Y-%m-%d %H:%M}." if expected_back_at else ""
+        body = (f"{machine.name} at {machine.makerspace.name} is out of service for repair.{back}
+
+"
+                f"Your booking #{booking.pk} falls in this time. The space will contact you about it.")
+        sent += _email(machine.makerspace, booking.email, f"{machine.name} is out of service"[:200], body,
+                       event="machine_repair", feature="bookings", recipient_id=booking.member_id)
     return sent
 
 

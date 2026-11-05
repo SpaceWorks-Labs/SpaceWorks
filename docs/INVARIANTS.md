@@ -3617,6 +3617,12 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   (`RoomOutage`, one open per room) BLOCKS new overlapping bookings by default through
   `bookings/admission.validate_admission` (or WARNS); bookings already inside it are listed to staff
   with booking authority and their bookers are emailed; a staff cancel owes the full amount (#72).
+  A machine under repair (`status == "maintenance"`) is treated the same way for its bookable time
+  (`BookableSpace.machine`): `machines/booking_gate.refuse_if_under_repair`, called from the same
+  admission seam, refuses a new booking overlapping the repair window (open downtime start to its
+  `expected_back_at`; no end known = every later booking) with a 409 `machine_under_repair`
+  (`MachineUnderRepair`, still a `BookingConflict`); taking it out lists the bookings already made
+  until it is expected back to booking authority and emails their bookers once.
 - **Records.** Every step writes an append-only `IssueEvent` and an audit row (`issue.*`,
   `repair.*`, `dispatch.sent`, `technician.*`, `service_state.changed`, `maintenance.subject_*`).
   Photos are private, presigned to the STAGING key and promoted once on attach, and charge managed

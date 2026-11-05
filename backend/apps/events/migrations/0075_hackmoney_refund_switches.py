@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0069_l21b_guards_and_options'),
+        ('events', '0074_stage_feedback_promotion'),
     ]
 
     operations = [

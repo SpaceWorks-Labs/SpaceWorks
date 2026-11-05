@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('event_reimbursements', '0006_l21a_stage_and_crew_claims'),
+        ('event_reimbursements', '0007_required_submission_stage'),
     ]
 
     operations = [

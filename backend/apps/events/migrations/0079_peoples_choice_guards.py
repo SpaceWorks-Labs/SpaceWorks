@@ -5,7 +5,9 @@
 - Same-event scope: a ballot's team and void reason, the config's and result's prize, and every
   standing's snapshot belong to the row's own event.
 - The L21b prize-payout scope guard is replaced so a payout may point at a People's choice winning
-  standing instead of a judged award; the judged-award branch is unchanged.
+  standing instead of a judged award; the judged-award branch is unchanged. This is the only
+  replacement of that function in the combined release-2 chain (hack-money's 0075-0077 add columns
+  and constraints to the payout row but leave its scope trigger alone), so it is the combined guard.
 """
 from django.db import migrations
 
@@ -89,5 +91,5 @@ REVERSE_SQL = "".join(f"DROP TRIGGER IF EXISTS {t}_programme_history ON {t};\n" 
 
 
 class Migration(migrations.Migration):
-    dependencies = [("events", "0070_peoples_choice")]
+    dependencies = [("events", "0078_peoples_choice")]
     operations = [migrations.RunSQL(FORWARD_SQL, REVERSE_SQL)]

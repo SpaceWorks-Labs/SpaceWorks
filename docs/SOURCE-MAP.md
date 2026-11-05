@@ -1012,7 +1012,7 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `events.project_gallery`); the gate constant is `events/judging/feature.PEOPLES_CHOICE`.
 - Models `events/judging/models_peoples_choice.py` (`PeoplesChoiceConfig`, `PeoplesChoiceVote`, the
   append-only `PeoplesChoiceResult` and `PeoplesChoiceStanding`); `HackathonPrizePayout.peoples_choice_standing`
-  (`models_payouts.py`). Migrations `events/0070_peoples_choice` and `0071_peoples_choice_guards` (append-only
+  (`models_payouts.py`). Migrations `events/0078_peoples_choice` and `0079_peoples_choice_guards` (append-only
   and same-event triggers, the widened payout scope guard).
 - Workflows in `events/judging/`: `peoples_choice.py` (settings, state, the voting-open notice recipients),
   `peoples_choice_votes.py` (the member ballot and vote), `peoples_choice_ballots.py` (staff ballot list and

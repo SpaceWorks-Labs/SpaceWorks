@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('events', '0069_l21b_guards_and_options'),
+        ('events', '0077_hackmoney_deposits'),
         ('makerspaces', '0127_help_centre_default_on'),
         ('payments', '0040_l22_shop_subject'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

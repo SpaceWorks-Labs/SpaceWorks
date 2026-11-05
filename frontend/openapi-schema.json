@@ -108525,6 +108525,413 @@
                 }
             }
         },
+        "/api/v1/admin/makerspaces/{makerspace_id}/metabase": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_metabase_retrieve",
+                "description": "view_analytics in the space (or the superadmin for the platform). 404 when the analytics module is off. Never returns a secret.",
+                "summary": "Analytics dashboards available to the viewer",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseSummary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/metabase/connection": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_metabase_connection_retrieve",
+                "description": "Space Manager of the space or the superadmin. Audited as a credentials view. The embed secret and the password are never returned.",
+                "summary": "Read the Metabase connection and the login state",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseConnection"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_makerspaces_metabase_connection_partial_update",
+                "summary": "Change the Metabase URL, embed secret, dashboards or member-details switch",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedMetabaseConnectionUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedMetabaseConnectionUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedMetabaseConnectionUpdate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseConnection"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/metabase/dashboards/{dashboard_id}/embed": {
+            "get": {
+                "operationId": "api_v1_admin_makerspaces_metabase_dashboards_embed_retrieve",
+                "description": "view_analytics. The URL expires after ten minutes; the embedding secret never leaves the server. Audited.",
+                "summary": "A signed, short-lived embed URL for one listed dashboard",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "dashboard_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseEmbed"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/metabase/login": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_metabase_login_create",
+                "summary": "Create the read-only database login (password shown once)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseCredentials"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_login_failed: the database refused."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_makerspaces_metabase_login_destroy",
+                "summary": "Revoke (drop) the database login",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Revoked."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_login_failed: the database refused."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/metabase/login/rotate": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_metabase_login_rotate_create",
+                "summary": "Rotate the login's password (new password shown once)",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseCredentials"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_login_failed: the database refused."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/makerspaces/{makerspace_id}/my-jobs": {
             "get": {
                 "operationId": "api_v1_admin_makerspaces_my_jobs_list",
@@ -124229,6 +124636,345 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/metabase": {
+            "get": {
+                "operationId": "api_v1_admin_platform_metabase_retrieve",
+                "description": "view_analytics in the space (or the superadmin for the platform). 404 when the analytics module is off. Never returns a secret.",
+                "summary": "Analytics dashboards available to the viewer",
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseSummary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/metabase/connection": {
+            "get": {
+                "operationId": "api_v1_admin_platform_metabase_connection_retrieve",
+                "description": "Space Manager of the space or the superadmin. Audited as a credentials view. The embed secret and the password are never returned.",
+                "summary": "Read the Metabase connection and the login state",
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseConnection"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_platform_metabase_connection_partial_update",
+                "summary": "Change the Metabase URL, embed secret, dashboards or member-details switch",
+                "tags": [
+                    "Analytics"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedMetabaseConnectionUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedMetabaseConnectionUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedMetabaseConnectionUpdate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseConnection"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed, or the makerspace module this route belongs to is off."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/metabase/dashboards/{dashboard_id}/embed": {
+            "get": {
+                "operationId": "api_v1_admin_platform_metabase_dashboards_embed_retrieve",
+                "description": "view_analytics. The URL expires after ten minutes; the embedding secret never leaves the server. Audited.",
+                "summary": "A signed, short-lived embed URL for one listed dashboard",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "dashboard_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseEmbed"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/metabase/login": {
+            "post": {
+                "operationId": "api_v1_admin_platform_metabase_login_create",
+                "summary": "Create the read-only database login (password shown once)",
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseCredentials"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_login_failed: the database refused."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_platform_metabase_login_destroy",
+                "summary": "Revoke (drop) the database login",
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Revoked."
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_login_failed: the database refused."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/platform/metabase/login/rotate": {
+            "post": {
+                "operationId": "api_v1_admin_platform_metabase_login_rotate_create",
+                "summary": "Rotate the login's password (new password shown once)",
+                "tags": [
+                    "Analytics"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseCredentials"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_not_available, analytics_login_exists, analytics_login_missing, analytics_not_configured or analytics_dashboard_unknown."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MetabaseError"
+                                }
+                            }
+                        },
+                        "description": "analytics_login_failed: the database refused."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the surface is not enabled here."
                     }
                 }
             }
@@ -259748,6 +260494,227 @@
                     "accepted"
                 ]
             },
+            "MetabaseConnection": {
+                "type": "object",
+                "properties": {
+                    "available": {
+                        "type": "boolean"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "views_version": {
+                        "type": "integer"
+                    },
+                    "configured": {
+                        "type": "boolean"
+                    },
+                    "dashboards": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MetabaseDashboard"
+                        }
+                    },
+                    "metabase_url": {
+                        "type": "string"
+                    },
+                    "embed_secret_set": {
+                        "type": "boolean"
+                    },
+                    "show_member_details": {
+                        "type": "boolean",
+                        "nullable": true,
+                        "description": "Per space only; null on the platform."
+                    },
+                    "login": {
+                        "$ref": "#/components/schemas/MetabaseLoginState"
+                    },
+                    "database": {
+                        "$ref": "#/components/schemas/MetabaseDatabase"
+                    }
+                },
+                "required": [
+                    "available",
+                    "configured",
+                    "dashboards",
+                    "database",
+                    "embed_secret_set",
+                    "login",
+                    "metabase_url",
+                    "reason",
+                    "show_member_details",
+                    "views_version"
+                ]
+            },
+            "MetabaseCredentials": {
+                "type": "object",
+                "properties": {
+                    "role": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "Shown once; it is never returned again."
+                    },
+                    "host": {
+                        "type": "string"
+                    },
+                    "port": {
+                        "type": "integer"
+                    },
+                    "database": {
+                        "type": "string"
+                    },
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "database",
+                    "host",
+                    "password",
+                    "port",
+                    "role",
+                    "schema"
+                ]
+            },
+            "MetabaseDashboard": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 120
+                    }
+                },
+                "required": [
+                    "id",
+                    "title"
+                ]
+            },
+            "MetabaseDatabase": {
+                "type": "object",
+                "properties": {
+                    "host": {
+                        "type": "string"
+                    },
+                    "port": {
+                        "type": "integer"
+                    },
+                    "database": {
+                        "type": "string"
+                    },
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "database",
+                    "host",
+                    "port",
+                    "schema"
+                ]
+            },
+            "MetabaseEmbed": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "Signed Metabase embed URL."
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "expires_at",
+                    "url"
+                ]
+            },
+            "MetabaseError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "detail": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "detail"
+                ]
+            },
+            "MetabaseLoginState": {
+                "type": "object",
+                "properties": {
+                    "role": {
+                        "type": "string"
+                    },
+                    "exists": {
+                        "type": "boolean",
+                        "description": "The role exists in the database right now."
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "rotated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "exists",
+                    "role",
+                    "rotated_at"
+                ]
+            },
+            "MetabaseSummary": {
+                "type": "object",
+                "properties": {
+                    "available": {
+                        "type": "boolean",
+                        "description": "Logins can be made on this hosting."
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "views_version": {
+                        "type": "integer"
+                    },
+                    "configured": {
+                        "type": "boolean",
+                        "description": "A Metabase URL and embedding secret are set."
+                    },
+                    "dashboards": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MetabaseDashboard"
+                        }
+                    },
+                    "can_manage": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "available",
+                    "can_manage",
+                    "configured",
+                    "dashboards",
+                    "reason",
+                    "views_version"
+                ]
+            },
             "Method087Enum": {
                 "enum": [
                     "cash",
@@ -260066,6 +261033,7 @@
             },
             "ModulesEnum": {
                 "enum": [
+                    "analytics",
                     "asset_units",
                     "bookings",
                     "bulk_import",
@@ -260104,7 +261072,7 @@
                     "whatsapp"
                 ],
                 "type": "string",
-                "description": "* `asset_units` - asset_units\n* `bookings` - bookings\n* `bulk_import` - bulk_import\n* `containers` - containers\n* `devices` - devices\n* `discord` - discord\n* `email` - email\n* `event_reimbursements` - event_reimbursements\n* `events` - events\n* `evidence_uploads` - evidence_uploads\n* `guest_handover` - guest_handover\n* `machine_service` - machine_service\n* `machines` - machines\n* `mattermost` - mattermost\n* `member_accounts` - member_accounts\n* `membership` - membership\n* `mobile` - mobile\n* `notifications` - notifications\n* `payments` - payments\n* `presence` - presence\n* `printing` - printing\n* `public_inventory` - public_inventory\n* `qr_management` - qr_management\n* `qr_print_batches` - qr_print_batches\n* `reports` - reports\n* `request_workflow` - request_workflow\n* `scanner` - scanner\n* `shop` - shop\n* `slack` - slack\n* `sms` - sms\n* `staff_admin` - staff_admin\n* `stock_transfers` - stock_transfers\n* `stocktake` - stocktake\n* `telegram` - telegram\n* `webhook` - webhook\n* `whatsapp` - whatsapp"
+                "description": "* `analytics` - analytics\n* `asset_units` - asset_units\n* `bookings` - bookings\n* `bulk_import` - bulk_import\n* `containers` - containers\n* `devices` - devices\n* `discord` - discord\n* `email` - email\n* `event_reimbursements` - event_reimbursements\n* `events` - events\n* `evidence_uploads` - evidence_uploads\n* `guest_handover` - guest_handover\n* `machine_service` - machine_service\n* `machines` - machines\n* `mattermost` - mattermost\n* `member_accounts` - member_accounts\n* `membership` - membership\n* `mobile` - mobile\n* `notifications` - notifications\n* `payments` - payments\n* `presence` - presence\n* `printing` - printing\n* `public_inventory` - public_inventory\n* `qr_management` - qr_management\n* `qr_print_batches` - qr_print_batches\n* `reports` - reports\n* `request_workflow` - request_workflow\n* `scanner` - scanner\n* `shop` - shop\n* `slack` - slack\n* `sms` - sms\n* `staff_admin` - staff_admin\n* `stock_transfers` - stock_transfers\n* `stocktake` - stocktake\n* `telegram` - telegram\n* `webhook` - webhook\n* `whatsapp` - whatsapp"
             },
             "MostLentReport": {
                 "type": "object",
@@ -275866,6 +276834,31 @@
                             }
                         },
                         "readOnly": true
+                    }
+                }
+            },
+            "PatchedMetabaseConnectionUpdate": {
+                "type": "object",
+                "properties": {
+                    "metabase_url": {
+                        "type": "string",
+                        "maxLength": 300
+                    },
+                    "embed_secret": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "description": "Write-only; blank clears it.",
+                        "maxLength": 512
+                    },
+                    "dashboards": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MetabaseDashboard"
+                        }
+                    },
+                    "show_member_details": {
+                        "type": "boolean",
+                        "description": "Ignored on the platform."
                     }
                 }
             },
@@ -293838,6 +294831,7 @@
                     "sell_shop",
                     "set_service_state",
                     "upload_evidence",
+                    "view_analytics",
                     "view_audit",
                     "view_finance",
                     "view_id_programmes",
@@ -293846,7 +294840,7 @@
                     "work_repairs"
                 ],
                 "type": "string",
-                "description": "* `accept_request` - accept_request\n* `approve_card_designs` - approve_card_designs\n* `assign_box` - assign_box\n* `collect_service_request` - collect_service_request\n* `edit_inventory` - edit_inventory\n* `issue_direct_loan` - issue_direct_loan\n* `issue_request` - issue_request\n* `manage_bookings` - manage_bookings\n* `manage_devices` - manage_devices\n* `manage_events` - manage_events\n* `manage_id_programmes` - manage_id_programmes\n* `manage_machines` - manage_machines\n* `manage_makerspace` - manage_makerspace\n* `manage_member_cards` - manage_member_cards\n* `manage_members` - manage_members\n* `manage_printing` - manage_printing\n* `manage_qr` - manage_qr\n* `manage_shop` - manage_shop\n* `record_payment` - record_payment\n* `record_reimbursement_payout` - record_reimbursement_payout\n* `reject_request` - reject_request\n* `return_request` - return_request\n* `run_maintenance` - run_maintenance\n* `scan_member_cards` - scan_member_cards\n* `sell_shop` - sell_shop\n* `set_service_state` - set_service_state\n* `upload_evidence` - upload_evidence\n* `view_audit` - view_audit\n* `view_finance` - view_finance\n* `view_id_programmes` - view_id_programmes\n* `view_inventory` - view_inventory\n* `view_shop` - view_shop\n* `work_repairs` - work_repairs"
+                "description": "* `accept_request` - accept_request\n* `approve_card_designs` - approve_card_designs\n* `assign_box` - assign_box\n* `collect_service_request` - collect_service_request\n* `edit_inventory` - edit_inventory\n* `issue_direct_loan` - issue_direct_loan\n* `issue_request` - issue_request\n* `manage_bookings` - manage_bookings\n* `manage_devices` - manage_devices\n* `manage_events` - manage_events\n* `manage_id_programmes` - manage_id_programmes\n* `manage_machines` - manage_machines\n* `manage_makerspace` - manage_makerspace\n* `manage_member_cards` - manage_member_cards\n* `manage_members` - manage_members\n* `manage_printing` - manage_printing\n* `manage_qr` - manage_qr\n* `manage_shop` - manage_shop\n* `record_payment` - record_payment\n* `record_reimbursement_payout` - record_reimbursement_payout\n* `reject_request` - reject_request\n* `return_request` - return_request\n* `run_maintenance` - run_maintenance\n* `scan_member_cards` - scan_member_cards\n* `sell_shop` - sell_shop\n* `set_service_state` - set_service_state\n* `upload_evidence` - upload_evidence\n* `view_analytics` - view_analytics\n* `view_audit` - view_audit\n* `view_finance` - view_finance\n* `view_id_programmes` - view_id_programmes\n* `view_inventory` - view_inventory\n* `view_shop` - view_shop\n* `work_repairs` - work_repairs"
             },
             "RecipientEnum": {
                 "enum": [

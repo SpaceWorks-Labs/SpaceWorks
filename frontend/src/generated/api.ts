@@ -976,6 +976,11 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/machine-scope",
   "/api/v1/admin/makerspaces/{makerspace_id}/memberships/{membership_id}/role",
+  "/api/v1/admin/makerspaces/{makerspace_id}/metabase",
+  "/api/v1/admin/makerspaces/{makerspace_id}/metabase/connection",
+  "/api/v1/admin/makerspaces/{makerspace_id}/metabase/dashboards/{dashboard_id}/embed",
+  "/api/v1/admin/makerspaces/{makerspace_id}/metabase/login",
+  "/api/v1/admin/makerspaces/{makerspace_id}/metabase/login/rotate",
   "/api/v1/admin/makerspaces/{makerspace_id}/my-jobs",
   "/api/v1/admin/makerspaces/{makerspace_id}/my-maintenance",
   "/api/v1/admin/makerspaces/{makerspace_id}/pii-access",
@@ -1093,6 +1098,11 @@ export const openApiPaths = [
   "/api/v1/admin/platform/dashboard",
   "/api/v1/admin/platform/email-settings",
   "/api/v1/admin/platform/insights/",
+  "/api/v1/admin/platform/metabase",
+  "/api/v1/admin/platform/metabase/connection",
+  "/api/v1/admin/platform/metabase/dashboards/{dashboard_id}/embed",
+  "/api/v1/admin/platform/metabase/login",
+  "/api/v1/admin/platform/metabase/login/rotate",
   "/api/v1/admin/platform/mobile-readiness",
   "/api/v1/admin/platform/payment-settings",
   "/api/v1/admin/platform/problems",
@@ -13876,6 +13886,66 @@ export type MessagingTestResponse = {
   "skip_reason": string;
 };
 
+export type MetabaseConnection = {
+  "available": boolean;
+  "reason": string;
+  "views_version": number;
+  "configured": boolean;
+  "dashboards": Array<MetabaseDashboard>;
+  "metabase_url": string;
+  "embed_secret_set": boolean;
+  "show_member_details": boolean | null;
+  "login": MetabaseLoginState;
+  "database": MetabaseDatabase;
+};
+
+export type MetabaseCredentials = {
+  "role": string;
+  "password": string;
+  "host": string;
+  "port": number;
+  "database": string;
+  "schema": string;
+};
+
+export type MetabaseDashboard = {
+  "id": number;
+  "title": string;
+};
+
+export type MetabaseDatabase = {
+  "host": string;
+  "port": number;
+  "database": string;
+  "schema": string;
+};
+
+export type MetabaseEmbed = {
+  "url": string;
+  "expires_at": string;
+};
+
+export type MetabaseError = {
+  "code": string;
+  "detail": string;
+};
+
+export type MetabaseLoginState = {
+  "role": string;
+  "exists": boolean;
+  "created_at": string | null;
+  "rotated_at": string | null;
+};
+
+export type MetabaseSummary = {
+  "available": boolean;
+  "reason": string;
+  "views_version": number;
+  "configured": boolean;
+  "dashboards": Array<MetabaseDashboard>;
+  "can_manage": boolean;
+};
+
 export type MetaChange = {
   "field": MetaChangeFieldEnum;
   "value": MetaValue;
@@ -14084,7 +14154,7 @@ export type ModuleAction = {
 
 export type ModuleEnum = "bookings" | "events" | "inventory" | "machines" | "shop";
 
-export type ModulesEnum = "asset_units" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "event_reimbursements" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "shop" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
+export type ModulesEnum = "analytics" | "asset_units" | "bookings" | "bulk_import" | "containers" | "devices" | "discord" | "email" | "event_reimbursements" | "events" | "evidence_uploads" | "guest_handover" | "machine_service" | "machines" | "mattermost" | "member_accounts" | "membership" | "mobile" | "notifications" | "payments" | "presence" | "printing" | "public_inventory" | "qr_management" | "qr_print_batches" | "reports" | "request_workflow" | "scanner" | "shop" | "slack" | "sms" | "staff_admin" | "stock_transfers" | "stocktake" | "telegram" | "webhook" | "whatsapp";
 
 export type MostLentReport = {
   "rows": Array<Array<unknown>>;
@@ -17326,6 +17396,13 @@ export type PatchedMessagingSettings = {
   [key: string]: string;
 };
 };
+};
+
+export type PatchedMetabaseConnectionUpdate = {
+  "metabase_url"?: string;
+  "embed_secret"?: string;
+  "dashboards"?: Array<MetabaseDashboard>;
+  "show_member_details"?: boolean;
 };
 
 export type PatchedNotificationRecipientsPatch = {
@@ -21791,7 +21868,7 @@ export type RecentlyAddedReportRow = {
 
 export type RecipeEnum = "free_open" | "free_vouch" | "paid_approval" | "paid_invite_only" | "closed";
 
-export type RecipientActionsEnum = "accept_request" | "approve_card_designs" | "assign_box" | "collect_service_request" | "edit_inventory" | "issue_direct_loan" | "issue_request" | "manage_bookings" | "manage_devices" | "manage_events" | "manage_id_programmes" | "manage_machines" | "manage_makerspace" | "manage_member_cards" | "manage_members" | "manage_printing" | "manage_qr" | "manage_shop" | "record_payment" | "record_reimbursement_payout" | "reject_request" | "return_request" | "run_maintenance" | "scan_member_cards" | "sell_shop" | "set_service_state" | "upload_evidence" | "view_audit" | "view_finance" | "view_id_programmes" | "view_inventory" | "view_shop" | "work_repairs";
+export type RecipientActionsEnum = "accept_request" | "approve_card_designs" | "assign_box" | "collect_service_request" | "edit_inventory" | "issue_direct_loan" | "issue_request" | "manage_bookings" | "manage_devices" | "manage_events" | "manage_id_programmes" | "manage_machines" | "manage_makerspace" | "manage_member_cards" | "manage_members" | "manage_printing" | "manage_qr" | "manage_shop" | "record_payment" | "record_reimbursement_payout" | "reject_request" | "return_request" | "run_maintenance" | "scan_member_cards" | "sell_shop" | "set_service_state" | "upload_evidence" | "view_analytics" | "view_audit" | "view_finance" | "view_id_programmes" | "view_inventory" | "view_shop" | "work_repairs";
 
 export type RecipientEnum = "self";
 

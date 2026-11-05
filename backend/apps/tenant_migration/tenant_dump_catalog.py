@@ -87,8 +87,9 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-l21a: events/0067 (renumbered) participation, event_reimbursements/0006; re-pinned.
 # lane/r2-l21b: events/0068-0069, payments/0038, accounts/0055 (renumbered) judging money and event grants; re-pinned.
 # lane/r2-l22: shop/0001-0002, makerspaces/0125-0126, payments/0040, procurement/0010 (renumbered) shop; re-pinned.
+# lane/r2-l25: analytics/0001 (re-chained) connection models; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "63d0cb83e12d8c55f8a14b9879bb8a5ff4f6028ebbfada3c110b8bd5b0a05918"
+CATALOG_SCHEMA_SHA256 = "0ced19e479bbbe2844a92d662deb404732a4b646eb07f143b5548a72b7de8d56"
 
 
 def catalog_models(apps_registry=apps):

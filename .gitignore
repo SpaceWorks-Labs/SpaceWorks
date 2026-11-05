@@ -100,7 +100,8 @@ frontend/src/test/staffActor.ts
 
 # Plans, prompts, hand-offs, lane notes and research notes never enter the repo (owner
 # decision #148b). scripts/ci/check_rules.py refuses any that are tracked anyway (git add -f).
-# Note-like names only: code such as HandoverWizard.tsx stays addable.
+# Note-like names only: code such as HandoverWizard.tsx stays addable, and help articles
+# (product content) stay addable whatever they are called.
 *handoff*.md
 *HANDOFF*.md
 *Handoff*.md
@@ -109,13 +110,15 @@ HANDOVER*.md
 **/PLAN.md
 PLAN-*.md
 *-PLAN.md
-*-plan.md
+docs/**/*-plan.md
 LANE-*
 *PROMPT*.md
 *-prompt.md
+*.prompt.md
 /plans/
 /handover/
 /briefs/
 /prompts/
 research/
 docs/design-revamp/
+!frontend/src/help-content/**/*.md

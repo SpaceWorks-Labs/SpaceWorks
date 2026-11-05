@@ -130,13 +130,18 @@ def check_twin_docs(root: str) -> list[str]:
 
 
 # #148b: build-programme paperwork lives outside the repository. Note-like files only, so a
-# component such as HandoverWizard.tsx or a help article such as job-handover.md is never caught.
+# component such as HandoverWizard.tsx is never caught. Help articles are product content, so
+# the name rules skip them: a space's guide may well have a "choose-a-plan" article.
+HELP_CONTENT = ("frontend", "src", "help-content")
 NOTE_SUFFIXES = {".md", ".markdown", ".txt", ".rst"}
 PLANNING_ROOT_DIRS = {"plans", "handover", "briefs", "prompts"}
 PLANNING_NAMES = (
     (re.compile(r"handoff", re.I), "a hand-off note"),
     (re.compile(r"HANDOVER"), "a hand-over note"),
-    (re.compile(r"(^|[-_.])plan([-_.]|$)", re.I), "a plan"),
+    (re.compile(r"(^|[-_.])PLAN([-_.]|$)"), "a plan"),
+    # Lower case only as the whole name or its last word (plan.md, events-plan.md), the
+    # long-standing docs/*-plan.md convention; plan-limits.md is a product doc.
+    (re.compile(r"(^|-)plan\.[a-z]+$"), "a plan"),
     (re.compile(r"(^|[-_.])prompts?([-_.]|$)", re.I), "a prompt"),
     (re.compile(r"^(LANE|RECONCILIATION)-"), "a lane note"),
     (re.compile(r"^(stage|p)\d+[a-z]?-"), "a phase or lane note"),
@@ -157,7 +162,7 @@ def planning_reason(path: str) -> str | None:
     if any(part.startswith("LANE-") for part in parts[:-1]):
         return "a lane folder"
     name = parts[-1]
-    if PurePosixPath(name).suffix.lower() not in NOTE_SUFFIXES:
+    if parts[:3] == HELP_CONTENT or PurePosixPath(name).suffix.lower() not in NOTE_SUFFIXES:
         return None
     for pattern, reason in PLANNING_NAMES:
         if pattern.search(name):

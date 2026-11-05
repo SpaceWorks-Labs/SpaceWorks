@@ -8,7 +8,7 @@ from .capability_definitions_modules import module_family_features
 from .capability_definitions_w7_events import event_features
 from .capability_definitions_wp3 import wp3_features
 from .capability_definitions_wp4 import definitions as wp4_definitions
-from .capability_definitions_yuyu import definitions as yuyu_definitions
+from .capability_definitions_parity import definitions as parity_definitions
 from .capability_definitions_events_programme import programme_features
 from .capability_definitions_r2_l17 import definitions as r2_l17_definitions
 from .capability_definitions_r2_l1 import definitions as r2_l1_definitions
@@ -255,7 +255,7 @@ FEATURE_DEFINITIONS += programme_features(FeatureDefinition)
 FEATURE_DEFINITIONS += module_family_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp3_features(FeatureDefinition)
 FEATURE_DEFINITIONS += wp4_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += yuyu_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += parity_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l17_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l1_definitions(FeatureDefinition)
 FEATURE_DEFINITIONS += r2_l2_definitions(FeatureDefinition)

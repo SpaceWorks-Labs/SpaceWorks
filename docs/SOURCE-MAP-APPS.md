@@ -71,7 +71,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   eligibility, batched SQL and membership-source locks. No separable-domain imports or RBAC
   grants. `admin_links.py` routes owner-link admin mutations through `services_console.change_link`;
   the original admin barrel preserves registration/import compatibility.
-- `backend/apps/makerspaces/capability_definitions_yuyu.py` — the 2026-10 parity programme's feature definitions
+- `backend/apps/makerspaces/capability_definitions_parity.py` — the 2026-10 parity programme's feature definitions
   (the file name is historical),
   composed by the canonical capability catalogue and installer area discovery.
 - `backend/apps/organizations/` — `Organization` (platform entity, creatable before any makerspace, NOT a

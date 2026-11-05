@@ -6254,7 +6254,7 @@ responsibility; local purges never delete shared global organizations or foreign
 ### Submission stages, content rules and shortlist gates (release 2 r2-submit-content; #177-#180)
 
 - **Every hackathon event has at least one submission stage; "Single submission" is today's behaviour.**
-  Migration 0070 turned each existing window into ONE stage (opens, deadline, grace, late policy copied, files
+  Migration events/0073 turned each existing window into ONE stage (opens, deadline, grace, late policy copied, files
   and links both accepted) and recorded every existing snapshot and current pointer against it, so existing
   events behave exactly as before. An event that never wrote a plan gets that stage on its first write.
   The config's `submission_*` window and `late_policy` are a MIRROR of the plan (first opening, last deadline,

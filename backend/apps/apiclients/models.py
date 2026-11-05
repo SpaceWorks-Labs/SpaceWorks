@@ -34,6 +34,9 @@ class ApiClient(models.Model):
         choices=[
             ("browser", "Browser"),
             ("server", "Server"),
+            # Another space's backend reading this space's public catalogue, events and
+            # stats (docs/api-guide.md): signed like a server, never anything private.
+            ("peer", "Another space (public read-only)"),
         ],
         default="server",
     )
@@ -91,6 +94,13 @@ class ApiClient(models.Model):
         from apps.apiclients.scope_registry_reads import read_scope_vocabulary
         from apps.apiclients.scope_grants import validate_grantable_scopes
 
+        if self.client_type == "peer":
+            if self.makerspace_id is None:
+                raise ValidationError({"makerspace": "A peer client belongs to the space whose public data it reads."})
+            try:
+                validate_grantable_scopes(self.scopes, privileged=True, client_type="peer")
+            except ValueError as exc:
+                raise ValidationError({"scopes": str(exc)}) from exc
         if set(self.scopes or ()) & read_scope_vocabulary():
             if self.client_type != "server" or self.makerspace_id is None:
                 raise ValidationError({"scopes": "Staff read scopes require a tenant-bound server client."})
@@ -128,7 +138,9 @@ class ApiClient(models.Model):
         from apps.apiclients.scope_grants import validate_grantable_scopes
 
         try:
-            issued_scopes = validate_grantable_scopes(issued_scopes, privileged=True)
+            issued_scopes = validate_grantable_scopes(
+                issued_scopes, privileged=True, client_type=client_type
+            )
         except ValueError as exc:
             raise ValidationError({"scopes": str(exc)}) from exc
         obj = cls(

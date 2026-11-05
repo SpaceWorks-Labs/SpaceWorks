@@ -16,6 +16,7 @@ TARGET_MODES = frozenset({TARGET_GLOBAL, TARGET_TENANT_SLUG, TARGET_TENANT_TOKEN
 
 PUBLIC_READ_SCOPES = frozenset({PUBLIC_READ, PUBLIC_ALL})
 PUBLIC_WRITE_SCOPES = frozenset({PUBLIC_WRITE, PUBLIC_ALL})
+PUBLIC_ALL_SCOPES = PUBLIC_READ_SCOPES | PUBLIC_WRITE_SCOPES
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +28,9 @@ class ScopeRegistryEntry:
     server_only: bool = False
     tenant_bound: bool = False
     required_scopes: frozenset[str] = frozenset()
+    # Public entries only (scope_registry_areas): the area and whether it reads or writes.
+    area: str | None = None
+    access: str | None = None
 
 
 _READ = ("GET", "HEAD")
@@ -218,13 +222,28 @@ if getattr(settings, "EMAIL_PROVIDER_WEBHOOKS_ENABLED", False):
     _ROUTE_DEFINITIONS += (("email-provider-webhook", _WRITE, frozenset(), TARGET_GLOBAL, False, False),)
 
 
+def _public_entry(view_name, scopes, target_mode, tenant_apps_admitted, legacy_v1):
+    """Add the route's area scope to a public entry; raise for an unlisted public route."""
+    from .scope_registry_areas import area_for, area_scope
+    access = {PUBLIC_READ_SCOPES: "read", PUBLIC_WRITE_SCOPES: "write"}.get(scopes)
+    if access is None:
+        if scopes & PUBLIC_ALL_SCOPES:
+            raise ValueError(f"Public API-client route {view_name} mixes read and write scopes")
+        return ScopeRegistryEntry(scopes, target_mode, tenant_apps_admitted, legacy_v1)
+    area = area_for(view_name)
+    if area is None:
+        raise ValueError(f"Public API-client route {view_name} has no area in scope_registry_areas")
+    return ScopeRegistryEntry(scopes | {area_scope(area, access)}, target_mode, tenant_apps_admitted,
+                              legacy_v1, area=area, access=access)
+
+
 def _build_registry():
     registry = {}
     for definition in _ROUTE_DEFINITIONS:
         view_name, methods, scopes, target_mode, tenant_apps_admitted, legacy_v1 = definition
         if target_mode not in TARGET_MODES:
             raise ValueError(f"Unknown API-client target mode: {target_mode}")
-        entry = ScopeRegistryEntry(scopes, target_mode, tenant_apps_admitted, legacy_v1)
+        entry = _public_entry(view_name, scopes, target_mode, tenant_apps_admitted, legacy_v1)
         for method in methods:
             key = (view_name, method)
             if key in registry:

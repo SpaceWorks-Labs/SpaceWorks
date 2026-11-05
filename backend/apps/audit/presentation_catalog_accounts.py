@@ -30,6 +30,8 @@ ENTRIES = (
     P("organization.member_departed", "Organization member departed", ("status",)),
     P("api_client.created", "Api client created", ("api_key_request_id", "scopes")),
     P("api_client.deleted", "Api client deleted"),
+    P("api_client.revoked", "Api client revoked"),
+    P("api_client.reactivated", "Api client reactivated"),
     P("api_client.scopes_changed", "Api client scopes changed", ("previous_scopes", "scopes")),
     P("api_client.secret_rotated", "Api client secret rotated",
       ("grace_window_opened", "previous_secret_valid_until")),

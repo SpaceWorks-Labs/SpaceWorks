@@ -18,7 +18,7 @@ from .scope_registry_exclusions import OWNER_SESSION_EXCLUSIONS, STAFF_ACCOUNT_E
 from .scope_registry_reads import read_scope_vocabulary
 from .scope_registry_public_pages import is_global_target, resolve_handle_target
 from .scope_registry_requests import _request_match, resolve_view_name
-from .scope_registry_verdicts import ScopeObservation, target_allows
+from .scope_registry_verdicts import PEER_CLIENT_TYPE, ScopeObservation, peer_may_reach, target_allows
 
 # Split across siblings to stay under the size ceiling: `scope_registry_exclusions`
 # (session-only view names), `scope_registry_requests` (URL match caching) and
@@ -28,6 +28,11 @@ from .scope_registry_verdicts import ScopeObservation, target_allows
 # functions that use them must see the override.
 
 LEGACY_SCOPE = "legacy:v1"
+# `public:<area>:read|write` -- derived from the built registry so a tombstoned domain's
+# routes take their area scopes with them (scope_registry_areas).
+AREA_SCOPES = frozenset(
+    f"public:{entry.area}:{entry.access}" for entry in SCOPE_REGISTRY.values() if entry.area
+)
 SCOPE_VOCABULARY = frozenset(
     {
         LEGACY_SCOPE,
@@ -35,7 +40,7 @@ SCOPE_VOCABULARY = frozenset(
         PUBLIC_WRITE,
         PUBLIC_ALL,
     }
-) | read_scope_vocabulary()
+) | read_scope_vocabulary() | AREA_SCOPES
 BROWSER_SCOPES = frozenset(
     {
         LEGACY_SCOPE,
@@ -43,7 +48,7 @@ BROWSER_SCOPES = frozenset(
         PUBLIC_WRITE,
         PUBLIC_ALL,
     }
-)
+) | AREA_SCOPES
 
 
 def lookup(view_name, method):
@@ -152,6 +157,8 @@ def classify(request, client):
             view_name, method, False, target_resolution, True, target_id
         )
     verdict = scope_allows(entry, client.scopes)
+    if getattr(client, "client_type", None) == PEER_CLIENT_TYPE and not peer_may_reach(entry, method):
+        verdict = False
     return ScopeObservation(
         view_name, method, verdict, target_resolution, True, target_id
     )
@@ -239,7 +246,7 @@ def unregistered_protected_routes():
 
 
 __all__ = [
-    "BROWSER_SCOPES", "LEGACY_SCOPE",
+    "AREA_SCOPES", "BROWSER_SCOPES", "LEGACY_SCOPE",
     "PUBLIC_ALL", "PUBLIC_READ", "PUBLIC_WRITE", "SCOPE_REGISTRY",
     "SCOPE_VOCABULARY", "TARGET_GLOBAL", "TARGET_PUBLIC_HANDLE", "TARGET_MODES", "TARGET_TENANT_SLUG",
     "TARGET_TENANT_TOKEN", "ScopeObservation", "ScopeRegistryEntry", "classify",

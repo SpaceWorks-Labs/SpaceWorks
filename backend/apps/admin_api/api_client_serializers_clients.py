@@ -3,10 +3,14 @@ from rest_framework import serializers
 from apps.apiclients.models import ApiClient, ApiKeyRequest
 from apps.apiclients.origin_validation import validate_exact_origins
 from apps.apiclients.scope_grants import (
+    CLIENT_TYPE_SCOPES,
+    PEER_SCOPE_ERROR,
     actor_may_grant_privileged_scopes,
     validate_grantable_scopes,
 )
 from apps.apiclients.scope_registry import BROWSER_SCOPES
+
+TENANT_CLIENT_TYPES = frozenset({"server", "peer"})
 
 
 class ApiClientSerializer(serializers.ModelSerializer):
@@ -71,14 +75,19 @@ class ApiClientSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"scopes": "Browser clients may only use public/read scopes."}
             )
+        if client_type == "peer" and not set(scopes or []).issubset(CLIENT_TYPE_SCOPES["peer"]):
+            raise serializers.ValidationError({"scopes": PEER_SCOPE_ERROR})
         return attrs
 
     def validate(self, attrs):
         # Trust knobs remain global-only. Scope validation instead applies the tenant
         # grant ceiling, so tenant input is explicit and never silently discarded.
         if not self._actor_may_set_privileged_fields():
-            for field in ("client_type", "rate_limit_tier"):
-                attrs.pop(field, None)
+            attrs.pop("rate_limit_tier", None)
+            # A Space Manager may choose a server or a peer (read-only) client: both
+            # only narrow what the scopes already allow. Browser clients stay global-only.
+            if attrs.get("client_type") not in TENANT_CLIENT_TYPES:
+                attrs.pop("client_type", None)
         return self.validate_client_type_scope_ceiling(attrs)
 
     def get_backend_base_url(self, _obj) -> str:
@@ -100,6 +109,10 @@ class ApiClientScopeOptionSerializer(serializers.Serializer):
     group = serializers.CharField()
     grantable = serializers.BooleanField()
     lock_reason = serializers.CharField(allow_null=True)
+    client_types = serializers.ListField(
+        child=serializers.ChoiceField(choices=["server", "browser", "peer"]),
+        help_text="Client types this scope may be granted to.",
+    )
 
 
 class ApiClientScopeCatalogResponseSerializer(serializers.Serializer):

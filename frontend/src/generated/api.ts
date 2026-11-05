@@ -534,6 +534,14 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/stage-milestones/shortlist/",
   "/api/v1/admin/events/{id}/stage-responses/{response_id}/",
   "/api/v1/admin/events/{id}/stage-responses/{response_id}/finance/",
+  "/api/v1/admin/events/{id}/submission-stages/",
+  "/api/v1/admin/events/{id}/submission-stages/{stage_id}/extensions/",
+  "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/",
+  "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/apply/",
+  "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/preview/",
+  "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/promote/",
+  "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/publish/",
+  "/api/v1/admin/events/{id}/submission-stages/{stage_id}/triage/",
   "/api/v1/admin/events/{id}/submissions/",
   "/api/v1/admin/events/{id}/submissions/integrity/",
   "/api/v1/admin/events/{id}/submissions/{submission_id}/",
@@ -1908,6 +1916,8 @@ export type AccentChoiceEnum = "inherit" | "maker_teal" | "workshop_orange" | "c
 
 export type AccentPresetEnum = "maker_teal" | "workshop_orange" | "citron" | "sky_blue" | "warm_yellow";
 
+export type AcceptedFamiliesEnum = "archives" | "deck" | "embroidery" | "fab-2d" | "fab-3dprint" | "fab-cnc" | "firmware" | "hardware-cad" | "hardware-pcb" | "images" | "source" | "video";
+
 export type AcceptedMakerspace = {
   "id": number;
   "slug": string;
@@ -2553,6 +2563,7 @@ export type Amend = {
   "patch": {
   [key: string]: unknown;
 };
+  "stage_id"?: number;
 };
 
 export type Analytics = {
@@ -3155,6 +3166,11 @@ export type AssignmentRead = {
   "batch_projects": Array<{
   [key: string]: unknown;
 }>;
+  "answers"?: Array<{
+  [key: string]: unknown;
+}>;
+  "team_feedback"?: string;
+  "share_feedback"?: boolean;
 };
 
 export type AssignmentReadPage = {
@@ -3716,6 +3732,8 @@ export type BindingCreate = {
 export type BlankEnum = "";
 
 export type BlockedActionsEnum = "rsvp" | "check_in" | "claim_submit";
+
+export type BlockedEnum = "previous_stage_required" | "shortlist_pending" | "not_shortlisted";
 
 export type Board = {
   "machine_type_id": number;
@@ -4675,6 +4693,19 @@ export type BulkIssue = {
   "all_attended"?: boolean;
   "publish_event_details"?: boolean;
   "confirmed_count": number;
+};
+
+export type BulkTriage = {
+  "stage_id": number;
+  "updated": number;
+  "triage": string;
+};
+
+export type BulkTriageInput = {
+  "operation_id": string;
+  "submission_ids": Array<number>;
+  "triage": TriageEnum;
+  "reason": string;
 };
 
 export type CadenceEnum = "daily" | "weekly" | "monthly";
@@ -6114,6 +6145,8 @@ export type ContainerScanHistoryItem = {
   "actor": number | null;
   "created_at": string;
 };
+
+export type ContentModeEnum = "files_and_links" | "files_only" | "links_only" | "presentation";
 
 export type ContentType12dEnum = "image/png" | "image/jpeg" | "image/webp";
 
@@ -7656,6 +7689,7 @@ export type EventAnalyticsExtras = {
   "waitlist": WaitlistConversion;
   "series": Array<SeriesTurnout>;
   "short_link_visits": Array<VisitDay> | null;
+  "submission_stages"?: Array<StageFunnel>;
 };
 
 export type EventAttendanceMark = {
@@ -8627,6 +8661,23 @@ export type ExtendStageAssignmentCommand = {
   "due_at": string;
 };
 
+export type Extension = {
+  "id": number;
+  "stage_id": number;
+  "team_id": number;
+  "team_name": string;
+  "until": string;
+  "reason": string;
+  "created_at": string;
+};
+
+export type ExtensionInput = {
+  "operation_id": string;
+  "team_id": number;
+  "until": string;
+  "reason": string;
+};
+
 export type FabLabHealthReport = {
   "rows": Array<Array<unknown>>;
   "typed_rows": Array<FabLabHealthRow>;
@@ -9397,6 +9448,9 @@ export type GalleryEntryRead = {
   "members": Array<GalleryMemberRead>;
   "content_sha256": string;
   "awards"?: Array<{
+  [key: string]: unknown;
+}>;
+  "answers"?: Array<{
   [key: string]: unknown;
 }>;
 };
@@ -14757,6 +14811,9 @@ export type OptionsRead = {
   "results_email": boolean;
   "submission_receipt_email": boolean;
   "finalists_email": boolean;
+  "stage_reminder_email": boolean;
+  "shortlist_email": boolean;
+  "entry_fee_stage": number;
   "refund_on_disqualification": boolean;
   "entry_fee": string | null;
   "team_fee": string | null;
@@ -15119,6 +15176,9 @@ export type OrganizerProject = {
   "triage": string;
   "allowed_actions": Array<string>;
   "assets": Array<{
+  [key: string]: unknown;
+}>;
+  "stages"?: Array<{
   [key: string]: unknown;
 }>;
 };
@@ -15887,6 +15947,32 @@ export type PaperEnum = "a4" | "letter";
 export type PaperSizeEnum = "A4" | "LETTER" | "custom";
 
 export type PartialModeEnum = "percent" | "pro_rata";
+
+export type ParticipantStage = {
+  "id": number;
+  "position": number;
+  "name": string;
+  "description": string;
+  "opens_at": string | null;
+  "deadline": string;
+  "grace_minutes": number;
+  "effective_deadline": string;
+  "extended": boolean;
+  "status": ParticipantStageStatusEnum;
+  "rules": StageRules;
+  "custom_fields": Array<StageField>;
+  "requires_previous": boolean;
+  "shortlist_after": boolean;
+  "shortlist_label": string;
+  "submitted": boolean;
+  "snapshot_id": number | null;
+  "submitted_at": string | null;
+  "blocked": BlockedEnum | NullEnum | null;
+  "shortlist_status": ShortlistStatusEnum | NullEnum | null;
+  "feedback"?: Array<string>;
+};
+
+export type ParticipantStageStatusEnum = "upcoming" | "open" | "late" | "closed";
 
 export type ParticipatingOrganization = {
   "id": number;
@@ -17484,6 +17570,9 @@ export type PatchedOptionsInput = {
   "refund_on_disqualification"?: boolean;
   "entry_fee"?: string | null;
   "team_fee"?: string | null;
+  "stage_reminder_email"?: boolean;
+  "shortlist_email"?: boolean;
+  "entry_fee_stage"?: number;
 };
 
 export type PatchedOrganizationMembershipUpdate = {
@@ -17867,6 +17956,9 @@ export type PatchedRoundInput = {
   "visibility"?: RoundInputVisibilityEnum;
   "fresh_eyes"?: boolean;
   "panel"?: Array<number>;
+  "share_feedback"?: boolean;
+  "judge_reminders"?: boolean;
+  "submission_stage_id"?: number | null;
 };
 
 export type PatchedRoundWrite = {
@@ -19007,6 +19099,8 @@ export type PolicySettings = {
   "claim_due_at"?: string;
   "attendance_required"?: boolean;
   "require_project_submission"?: boolean;
+  "required_submission"?: RequiredSubmissionEnum;
+  "required_submission_stage"?: number | null;
   "permitted_venue_sources"?: Array<PermittedVenueSourcesEnum>;
   "category_limits"?: {
   [key: string]: number;
@@ -19817,6 +19911,7 @@ export type ProgrammeChargeRead = {
   "payment_id": number | null;
   "status": string;
   "currency": string;
+  "before_stage"?: number | null;
 };
 
 export type ProgrammeChargesRead = {
@@ -19858,6 +19953,8 @@ export type ProgrammeDetail = {
   "claim_due_at"?: string;
   "attendance_required"?: boolean;
   "require_project_submission"?: boolean;
+  "required_submission"?: RequiredSubmissionEnum;
+  "required_submission_stage"?: number | null;
   "permitted_venue_sources"?: Array<PermittedVenueSourcesEnum>;
   "category_limits"?: {
   [key: string]: number;
@@ -19898,6 +19995,8 @@ export type ProgrammeFinanceDetail = {
   "claim_due_at"?: string;
   "attendance_required"?: boolean;
   "require_project_submission"?: boolean;
+  "required_submission"?: RequiredSubmissionEnum;
+  "required_submission_stage"?: number | null;
   "permitted_venue_sources"?: Array<PermittedVenueSourcesEnum>;
   "category_limits"?: {
   [key: string]: number;
@@ -20019,6 +20118,9 @@ export type ProjectRequirements = {
   "slots": Array<ProjectSlot>;
   "tracks": Array<ProjectTrack>;
   "prizes": Array<ProjectPrize>;
+  "stages"?: Array<ParticipantStage>;
+  "active_stage_id"?: number | null;
+  "timezone"?: string;
 };
 
 export type ProjectResponse = {
@@ -20309,9 +20411,11 @@ export type PublicEvent = {
   "promo_codes_enabled": boolean;
   "ticket_selection_required": boolean;
   "accent_preset": string;
+  "timezone_name": string;
   "website": PublicWebsite | null;
   "delivery_mode": DeliveryMode6a4Enum | NullEnum | null;
   "indexable": boolean;
+  "submission_stages": Array<PublicStage>;
   "public_token": string;
   "title": string;
   "description": string;
@@ -20360,9 +20464,11 @@ export type PublicEventCode = {
   "promo_codes_enabled": boolean;
   "ticket_selection_required": boolean;
   "accent_preset": string;
+  "timezone_name": string;
   "website": PublicWebsite | null;
   "delivery_mode": DeliveryMode6a4Enum | NullEnum | null;
   "indexable": boolean;
+  "submission_stages": Array<PublicStage>;
   "public_token": string;
   "title": string;
   "description": string;
@@ -20718,9 +20824,11 @@ export type PublicOrganizationEvent = {
   "promo_codes_enabled": boolean;
   "ticket_selection_required": boolean;
   "accent_preset": string;
+  "timezone_name": string;
   "website": PublicWebsite | null;
   "delivery_mode": DeliveryMode6a4Enum | NullEnum | null;
   "indexable": boolean;
+  "submission_stages": Array<PublicStage>;
   "public_token": string;
   "title": string;
   "description": string;
@@ -21153,6 +21261,16 @@ export type PublicSponsorsSection = {
   "type": TypeCf6Enum;
   "enabled": boolean;
   "payload": PublicSponsors;
+};
+
+export type PublicStage = {
+  "position": number;
+  "name": string;
+  "opens_at": string | null;
+  "deadline": string;
+  "filters": Array<{
+  [key: string]: unknown;
+}>;
 };
 
 export type PublicStatsBrand = {
@@ -22709,6 +22827,8 @@ export type RequestTimelineResponse = {
   "events": Array<TimelineEvent>;
 };
 
+export type RequiredSubmissionEnum = "none" | "any_stage" | "stage" | "final_stage" | "shortlisted_at" | "finalist";
+
 export type RequirementCompletion = {
   "operation_id": string;
   "expected_version": number;
@@ -22799,6 +22919,8 @@ export type RestrictUser = {
 };
 
 export type RestrictUserStatusEnum = "restricted" | "suspended";
+
+export type ResubmissionEnum = "until_deadline" | "once";
 
 export type Resubmit = {
   "note"?: string;
@@ -23202,6 +23324,9 @@ export type RoundInput = {
   "visibility"?: RoundInputVisibilityEnum;
   "fresh_eyes"?: boolean;
   "panel"?: Array<number>;
+  "share_feedback"?: boolean;
+  "judge_reminders"?: boolean;
+  "submission_stage_id"?: number | null;
 };
 
 export type RoundInputModeEnum = "weighted_1_5" | "top3" | "pairwise";
@@ -23243,6 +23368,9 @@ export type RoundRead = {
   "fresh_eyes"?: boolean;
   "panel"?: Array<number>;
   "advanced_from_id"?: number | null;
+  "submission_stage_id"?: number | null;
+  "share_feedback"?: boolean;
+  "judge_reminders"?: boolean;
 };
 
 export type RoundReadPage = {
@@ -23527,6 +23655,7 @@ export type ScoreInput = {
   [key: string]: number;
 };
   "notes"?: string;
+  "team_feedback"?: string;
   "submit"?: boolean;
 };
 
@@ -24541,12 +24670,80 @@ export type ShortLink = {
   "total_visits": number;
 };
 
+export type Shortlist = {
+  "stage_id": number;
+  "label": string;
+  "pending_triage": number;
+  "stage_entries": Array<StageEntryRow>;
+  "candidates": number;
+  "email_enabled": boolean;
+  "current": ShortlistCurrent | null;
+  "allowed_actions": Array<string>;
+};
+
+export type ShortlistApplyInput = {
+  "selection": SelectionEnum;
+  "top_n"?: number;
+  "source_round_id"?: number | null;
+  "submission_ids"?: Array<number>;
+  "operation_id": string;
+  "fingerprint": string;
+};
+
 export type ShortlistCommand = {
   "operation_id": string;
   "expected_version": number;
   "participant_ids": Array<number>;
   "published": boolean;
   "reason_code": string;
+};
+
+export type ShortlistCurrent = {
+  "id": number;
+  "selection": string;
+  "top_n": number | null;
+  "source_round_id": number | null;
+  "created_at": string;
+  "published_at": string | null;
+  "entries": Array<ShortlistEntry>;
+};
+
+export type ShortlistEntry = {
+  "submission_id": number;
+  "team_id": number;
+  "snapshot_id": number;
+  "title": string;
+  "source_rank": number | null;
+};
+
+export type ShortlistPlan = {
+  "stage_id": number;
+  "source_round_id": number | null;
+  "selection": string;
+  "top_n": number | null;
+  "tied_at_cutoff": boolean;
+  "fingerprint": string;
+  "entries": Array<ShortlistEntry>;
+  "candidates": number;
+  "not_shortlisted": number;
+  "email_enabled": boolean;
+};
+
+export type ShortlistPreviewInput = {
+  "selection": SelectionEnum;
+  "top_n"?: number;
+  "source_round_id"?: number | null;
+  "submission_ids"?: Array<number>;
+};
+
+export type ShortlistPromoteInput = {
+  "operation_id": string;
+  "withdrawn_submission_id": number;
+};
+
+export type ShortlistPublishInput = {
+  "operation_id": string;
+  "shortlist_id": number;
 };
 
 export type ShortlistSignalRead = {
@@ -24564,6 +24761,8 @@ export type ShortlistSignalReadPage = {
   "previous": string | null;
   "results": Array<ShortlistSignalRead>;
 };
+
+export type ShortlistStatusEnum = "pending" | "shortlisted" | "not_shortlisted";
 
 export type SideEnum = "front" | "back";
 
@@ -25290,6 +25489,43 @@ export type StaffSettlement = {
   "corrected": boolean;
 };
 
+export type StaffStage = {
+  "id": number | null;
+  "position": number;
+  "version": number;
+  "name": string;
+  "description": string;
+  "opens_at": string | null;
+  "deadline": string | null;
+  "grace_minutes": number;
+  "late_policy": string;
+  "resubmission": string;
+  "requires_previous": boolean;
+  "content_mode": string;
+  "required_link_kinds": Array<string>;
+  "min_files": number;
+  "max_files": number | null;
+  "max_links": number | null;
+  "accepted_families": Array<string>;
+  "max_bytes_per_file": number | null;
+  "video_hosts": Array<string>;
+  "custom_fields": Array<{
+  [key: string]: unknown;
+}>;
+  "shortlist_after": boolean;
+  "shortlist_label": string;
+  "public_after_publish"?: boolean;
+  "submissions"?: number;
+  "pending_triage"?: number;
+  "shortlist"?: {
+  [key: string]: unknown;
+};
+  "extensions"?: Array<{
+  [key: string]: unknown;
+}>;
+  "warnings"?: Array<string>;
+};
+
 export type StaffWaitlistEntry = {
   "id": number;
   "product": number;
@@ -25413,6 +25649,16 @@ export type StageCreateInput = {
   "assignment_strategy"?: AssignmentStrategyEnum;
 };
 
+export type StageCustomFieldInput = {
+  "key": string;
+  "label": string;
+  "type": Type188Enum;
+  "required"?: boolean;
+  "choices"?: Array<string>;
+  "help"?: string;
+  "visible_to"?: VisibleToEnum;
+};
+
 export type StageDefinition = {
   "id": number;
   "slug": string;
@@ -25478,6 +25724,24 @@ export type StageDraftCommand = {
   "creation_operation_id"?: string;
 };
 
+export type StageEntryRow = {
+  "submission_id": number;
+  "team_id": number;
+  "team_name": string;
+  "snapshot_id": number;
+  "triage": string;
+  "submitted_at": string | null;
+};
+
+export type StageField = {
+  "key": string;
+  "label": string;
+  "type": Type188Enum;
+  "required": boolean;
+  "choices"?: Array<string> | null;
+  "help"?: string | null;
+};
+
 export type StageFile = {
   "asset_id": number;
   "version": number;
@@ -25536,6 +25800,15 @@ export type StageFileCreated = {
   "upload": StageUploadDescriptor | null;
 };
 
+export type StageFunnel = {
+  "position": number;
+  "name": string;
+  "submitted": number;
+  "eligible": number;
+  "shortlisted": number | null;
+  "advanced": number | null;
+};
+
 export type StageInput = {
   "operation_id": string;
   "expected_version": number;
@@ -25574,6 +25847,34 @@ export type StageOwnerResponse = {
   "answer_review": StageAnswerReview;
   "omitted_question_ids": Array<string>;
   "allowed_actions": Array<string>;
+};
+
+export type StagePlan = {
+  "event_id": number;
+  "fingerprint": string;
+  "stages": Array<StaffStage>;
+  "timezone": string;
+  "event_ends_at": string;
+  "presets": Array<{
+  [key: string]: unknown;
+}>;
+  "families": Array<string>;
+  "link_kinds": Array<string>;
+  "video_hosts": Array<string>;
+  "field_types": Array<string>;
+  "field_visibility": Array<string>;
+  "max_stages": number;
+  "answer_limits": {
+  [key: string]: number;
+};
+  "admission_enabled": boolean;
+};
+
+export type StagePlanInput = {
+  "operation_id": string;
+  "expected_fingerprint": string;
+  "preset"?: string;
+  "stages": Array<SubmissionStageInput>;
 };
 
 export type StageResponseCommand = {
@@ -25642,6 +25943,19 @@ export type StageReviewInput = {
 };
   "notes"?: string;
   "recusal_code"?: RecusalCodeEnum;
+};
+
+export type StageRules = {
+  "content_mode": ContentModeEnum;
+  "required_link_kinds": Array<string>;
+  "min_files": number;
+  "max_files": number | null;
+  "max_links": number | null;
+  "accepted_families": Array<string>;
+  "max_bytes_per_file": number | null;
+  "video_hosts": Array<string>;
+  "resubmission": ResubmissionEnum;
+  "late_policy": LatePolicyEnum;
 };
 
 export type StageSettings = {
@@ -26036,6 +26350,36 @@ export type SubmissionIntegrity = {
   "snapshot_id": number | null;
   "check_state": CheckStateEnum;
   "flags": Array<IntegrityFlag>;
+};
+
+export type SubmissionStageInput = {
+  "id"?: number | null;
+  "name": string;
+  "description"?: string;
+  "opens_at"?: string | null;
+  "deadline"?: string | null;
+  "grace_minutes"?: number;
+  "late_policy"?: LatePolicyEnum;
+  "resubmission"?: ResubmissionEnum;
+  "requires_previous"?: boolean;
+  "content_mode"?: ContentModeEnum;
+  "required_link_kinds"?: Array<string>;
+  "min_files"?: number;
+  "max_files"?: number | null;
+  "max_links"?: number | null;
+  "accepted_families"?: Array<AcceptedFamiliesEnum>;
+  "max_bytes_per_file"?: number | null;
+  "video_hosts"?: Array<VideoHostsEnum>;
+  "custom_fields"?: Array<StageCustomFieldInput>;
+  "shortlist_after"?: boolean;
+  "shortlist_label"?: string;
+  "public_after_publish"?: boolean;
+};
+
+export type Submit = {
+  "operation_id": string;
+  "expected_version": number;
+  "stage_id"?: number;
 };
 
 export type SubscriptionKeys = {
@@ -26813,6 +27157,7 @@ export type Triage = {
   "expected_version": number;
   "triage": TriageEnum;
   "reason": string;
+  "stage_id"?: number;
 };
 
 export type TriageEnum = "pending" | "eligible" | "ineligible" | "hidden";
@@ -26829,6 +27174,8 @@ export type TwilioCallback = {
 };
 
 export type Type07aEnum = "about";
+
+export type Type188Enum = "short_text" | "long_text" | "choice" | "url";
 
 export type Type247Enum = "team";
 
@@ -27202,9 +27549,13 @@ export type VersionInput = {
 
 export type ViaEnum = "space_manager" | "module_grant" | "fixed_exception";
 
+export type VideoHostsEnum = "google" | "loom" | "vimeo" | "youtube";
+
 export type Visibility68aEnum = "draft" | "published";
 
 export type VisibilityE49Enum = "draft" | "published";
+
+export type VisibleToEnum = "staff_and_judges" | "staff_only" | "public";
 
 export type VisitDay = {
   "day": string;

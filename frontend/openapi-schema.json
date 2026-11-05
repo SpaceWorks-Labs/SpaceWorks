@@ -55194,6 +55194,1154 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/submission-stages/": {
+            "get": {
+                "operationId": "api_v1_admin_events_submission_stages_retrieve",
+                "description": "The event's submission stages, with the presets and choices the editor offers.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StagePlan"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "api_v1_admin_events_submission_stages_update",
+                "description": "Replace the ordered stage list: add, edit, remove and reorder in one command. A stage with submissions, a shortlist, an extension or a round cannot be removed (stage_in_use); editing it never changes a frozen snapshot.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StagePlanInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StagePlanInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StagePlanInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StagePlan"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submission-stages/{stage_id}/extensions/": {
+            "post": {
+                "operationId": "api_v1_admin_events_submission_stages_extensions_create",
+                "description": "Give one team a later deadline for this stage (S2). Late snapshots still say late.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "stage_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExtensionInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExtensionInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExtensionInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Extension"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/": {
+            "get": {
+                "operationId": "api_v1_admin_events_submission_stages_shortlist_retrieve",
+                "description": "The stage's current shortlist and whether it is published (#179).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "stage_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shortlist"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/apply/": {
+            "post": {
+                "operationId": "api_v1_admin_events_submission_stages_shortlist_apply_create",
+                "description": "Apply the previewed shortlist (plan_changed if it moved). Closes the stage.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "stage_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistApplyInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistApplyInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistApplyInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shortlist"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/preview/": {
+            "post": {
+                "operationId": "api_v1_admin_events_submission_stages_shortlist_preview_create",
+                "description": "Preview a shortlist (changes nothing). Refused with triage_pending while any of the stage's submissions is untriaged.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "stage_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPreviewInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPreviewInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPreviewInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShortlistPlan"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/promote/": {
+            "post": {
+                "operationId": "api_v1_admin_events_submission_stages_shortlist_promote_create",
+                "description": "S12: a shortlisted team withdrew before the next stage opened; promote the next ranked team(s) from the shortlist's source round as a published amendment.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "stage_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPromoteInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPromoteInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPromoteInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shortlist"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submission-stages/{stage_id}/shortlist/publish/": {
+            "post": {
+                "operationId": "api_v1_admin_events_submission_stages_shortlist_publish_create",
+                "description": "Publish the stage's current shortlist, once. It opens the next stage to the chosen teams; both groups are emailed when the event's shortlist email is on.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "stage_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPublishInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPublishInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShortlistPublishInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Shortlist"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/submission-stages/{stage_id}/triage/": {
+            "post": {
+                "operationId": "api_v1_admin_events_submission_stages_triage_create",
+                "description": "Triage many of this stage's submissions at once (S5).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "stage_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event submissions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkTriageInput"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkTriageInput"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkTriageInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BulkTriage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/submissions/": {
             "get": {
                 "operationId": "api_v1_admin_events_submissions_retrieve",
@@ -183268,17 +184416,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/Command"
+                                "$ref": "#/components/schemas/Submit"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/Command"
+                                "$ref": "#/components/schemas/Submit"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/Command"
+                                "$ref": "#/components/schemas/Submit"
                             }
                         }
                     },
@@ -183439,17 +184587,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/Command"
+                                "$ref": "#/components/schemas/Submit"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/Command"
+                                "$ref": "#/components/schemas/Submit"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/Command"
+                                "$ref": "#/components/schemas/Submit"
                             }
                         }
                     },
@@ -202488,6 +203636,14 @@
                     },
                     {
                         "in": "query",
+                        "name": "field.<key>",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "S7: filter by a public choice field of the final stage."
+                    },
+                    {
+                        "in": "query",
                         "name": "page",
                         "schema": {
                             "type": "integer"
@@ -207199,6 +208355,24 @@
                     }
                 }
             },
+            "AcceptedFamiliesEnum": {
+                "enum": [
+                    "archives",
+                    "deck",
+                    "embroidery",
+                    "fab-2d",
+                    "fab-3dprint",
+                    "fab-cnc",
+                    "firmware",
+                    "hardware-cad",
+                    "hardware-pcb",
+                    "images",
+                    "source",
+                    "video"
+                ],
+                "type": "string",
+                "description": "* `archives` - archives\n* `deck` - deck\n* `embroidery` - embroidery\n* `fab-2d` - fab-2d\n* `fab-3dprint` - fab-3dprint\n* `fab-cnc` - fab-cnc\n* `firmware` - firmware\n* `hardware-cad` - hardware-cad\n* `hardware-pcb` - hardware-pcb\n* `images` - images\n* `source` - source\n* `video` - video"
+            },
             "AcceptedMakerspace": {
                 "type": "object",
                 "properties": {
@@ -210286,6 +211460,11 @@
                     "patch": {
                         "type": "object",
                         "additionalProperties": {}
+                    },
+                    "stage_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The stage to amend; omitted means the project's furthest stage."
                     }
                 },
                 "required": [
@@ -212696,6 +213875,21 @@
                             "type": "object",
                             "additionalProperties": {}
                         }
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "description": "S7: the stage's custom answers a judge may read ({label, value})."
+                    },
+                    "team_feedback": {
+                        "type": "string"
+                    },
+                    "share_feedback": {
+                        "type": "boolean",
+                        "description": "S4: whether this round releases team feedback."
                     }
                 },
                 "required": [
@@ -215038,6 +216232,15 @@
                 ],
                 "type": "string",
                 "description": "* `rsvp` - rsvp\n* `check_in` - check_in\n* `claim_submit` - claim_submit"
+            },
+            "BlockedEnum": {
+                "enum": [
+                    "previous_stage_required",
+                    "shortlist_pending",
+                    "not_shortlisted"
+                ],
+                "type": "string",
+                "description": "* `previous_stage_required` - previous_stage_required\n* `shortlist_pending` - shortlist_pending\n* `not_shortlisted` - not_shortlisted"
             },
             "Board": {
                 "type": "object",
@@ -219565,6 +220768,56 @@
                     "confirmed_count",
                     "expected_version",
                     "operation_id"
+                ]
+            },
+            "BulkTriage": {
+                "type": "object",
+                "properties": {
+                    "stage_id": {
+                        "type": "integer"
+                    },
+                    "updated": {
+                        "type": "integer"
+                    },
+                    "triage": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "stage_id",
+                    "triage",
+                    "updated"
+                ]
+            },
+            "BulkTriageInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "submission_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 500,
+                        "minItems": 1
+                    },
+                    "triage": {
+                        "$ref": "#/components/schemas/TriageEnum"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 1000
+                    }
+                },
+                "required": [
+                    "operation_id",
+                    "reason",
+                    "submission_ids",
+                    "triage"
                 ]
             },
             "CadenceEnum": {
@@ -225412,6 +226665,16 @@
                     "id",
                     "source"
                 ]
+            },
+            "ContentModeEnum": {
+                "enum": [
+                    "files_and_links",
+                    "files_only",
+                    "links_only",
+                    "presentation"
+                ],
+                "type": "string",
+                "description": "* `files_and_links` - files_and_links\n* `files_only` - files_only\n* `links_only` - links_only\n* `presentation` - presentation"
             },
             "ContentType12dEnum": {
                 "enum": [
@@ -231838,6 +233101,13 @@
                             "$ref": "#/components/schemas/VisitDay"
                         },
                         "nullable": true
+                    },
+                    "submission_stages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StageFunnel"
+                        },
+                        "description": "S16: per submission stage, submitted / eligible / shortlisted / advanced."
                     }
                 },
                 "required": [
@@ -237002,6 +238272,70 @@
                     "reason_code"
                 ]
             },
+            "Extension": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "stage_id": {
+                        "type": "integer"
+                    },
+                    "team_id": {
+                        "type": "integer"
+                    },
+                    "team_name": {
+                        "type": "string"
+                    },
+                    "until": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "reason",
+                    "stage_id",
+                    "team_id",
+                    "team_name",
+                    "until"
+                ]
+            },
+            "ExtensionInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "team_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "until": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 1000
+                    }
+                },
+                "required": [
+                    "operation_id",
+                    "reason",
+                    "team_id",
+                    "until"
+                ]
+            },
             "FabLabHealthReport": {
                 "type": "object",
                 "properties": {
@@ -241555,6 +242889,14 @@
                             "additionalProperties": {}
                         },
                         "description": "Award badges ({prize, rank}); only after results are published (L21b)."
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "description": "S7: the final stage's public custom answers ({key, label, value})."
                     }
                 },
                 "required": [
@@ -264296,6 +265638,15 @@
                     "finalists_email": {
                         "type": "boolean"
                     },
+                    "stage_reminder_email": {
+                        "type": "boolean"
+                    },
+                    "shortlist_email": {
+                        "type": "boolean"
+                    },
+                    "entry_fee_stage": {
+                        "type": "integer"
+                    },
                     "refund_on_disqualification": {
                         "type": "boolean"
                     },
@@ -264327,6 +265678,7 @@
                     "allowed_actions",
                     "currency",
                     "entry_fee",
+                    "entry_fee_stage",
                     "event_id",
                     "finalists_email",
                     "id",
@@ -264334,6 +265686,8 @@
                     "refund_on_disqualification",
                     "results_email",
                     "results_email_sent",
+                    "shortlist_email",
+                    "stage_reminder_email",
                     "submission_receipt_email",
                     "team_fee",
                     "version"
@@ -265926,6 +267280,14 @@
                             "type": "object",
                             "additionalProperties": {}
                         }
+                    },
+                    "stages": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "description": "#178/S5: per stage, its current snapshot, triage, submitted time and lateness."
                     }
                 },
                 "required": [
@@ -269290,6 +270652,138 @@
                 ],
                 "type": "string",
                 "description": "* `percent` - A fixed percentage\n* `pro_rata` - Pro rata of unused term time"
+            },
+            "ParticipantStage": {
+                "type": "object",
+                "description": "#178: one submission stage as the team sees it.",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "position": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "grace_minutes": {
+                        "type": "integer"
+                    },
+                    "effective_deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Deadline plus grace, or the team's extension (S2)."
+                    },
+                    "extended": {
+                        "type": "boolean"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/ParticipantStageStatusEnum"
+                    },
+                    "rules": {
+                        "$ref": "#/components/schemas/StageRules"
+                    },
+                    "custom_fields": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StageField"
+                        }
+                    },
+                    "requires_previous": {
+                        "type": "boolean"
+                    },
+                    "shortlist_after": {
+                        "type": "boolean"
+                    },
+                    "shortlist_label": {
+                        "type": "string"
+                    },
+                    "submitted": {
+                        "type": "boolean"
+                    },
+                    "snapshot_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "blocked": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/BlockedEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "shortlist_status": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/ShortlistStatusEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
+                    },
+                    "feedback": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "S4: judges' released feedback for this stage, never with a judge's name."
+                    }
+                },
+                "required": [
+                    "blocked",
+                    "custom_fields",
+                    "deadline",
+                    "description",
+                    "effective_deadline",
+                    "extended",
+                    "grace_minutes",
+                    "id",
+                    "name",
+                    "opens_at",
+                    "position",
+                    "requires_previous",
+                    "rules",
+                    "shortlist_after",
+                    "shortlist_label",
+                    "shortlist_status",
+                    "snapshot_id",
+                    "status",
+                    "submitted",
+                    "submitted_at"
+                ]
+            },
+            "ParticipantStageStatusEnum": {
+                "enum": [
+                    "upcoming",
+                    "open",
+                    "late",
+                    "closed"
+                ],
+                "type": "string",
+                "description": "* `upcoming` - upcoming\n* `open` - open\n* `late` - late\n* `closed` - closed"
             },
             "ParticipatingOrganization": {
                 "type": "object",
@@ -278077,6 +279571,18 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
                         "nullable": true
+                    },
+                    "stage_reminder_email": {
+                        "type": "boolean"
+                    },
+                    "shortlist_email": {
+                        "type": "boolean"
+                    },
+                    "entry_fee_stage": {
+                        "type": "integer",
+                        "maximum": 10,
+                        "minimum": 1,
+                        "description": "S17: the stage position the entry fee is paid before."
                     }
                 }
             },
@@ -279453,6 +280959,20 @@
                         },
                         "description": "Judge role assignment IDs; empty means every active judge.",
                         "maxItems": 2000
+                    },
+                    "share_feedback": {
+                        "type": "boolean",
+                        "description": "S4: release judges' team feedback (off)."
+                    },
+                    "judge_reminders": {
+                        "type": "boolean",
+                        "description": "S15: remind judges with open work (off)."
+                    },
+                    "submission_stage_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "The submission stage this round judges; empty means the last stage."
                     }
                 }
             },
@@ -283986,6 +285506,21 @@
                     "require_project_submission": {
                         "type": "boolean"
                     },
+                    "required_submission": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RequiredSubmissionEnum"
+                            }
+                        ],
+                        "description": "G11: which submission earns the grant.\n\n* `none` - none\n* `any_stage` - any_stage\n* `stage` - stage\n* `final_stage` - final_stage\n* `shortlisted_at` - shortlisted_at\n* `finalist` - finalist"
+                    },
+                    "required_submission_stage": {
+                        "type": "integer",
+                        "maximum": 10,
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "The stage position for 'stage' and 'shortlisted_at'."
+                    },
                     "permitted_venue_sources": {
                         "type": "array",
                         "items": {
@@ -287227,6 +288762,11 @@
                     },
                     "currency": {
                         "type": "string"
+                    },
+                    "before_stage": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Entry fee only (S17): due before this stage position."
                     }
                 },
                 "required": [
@@ -287396,6 +288936,21 @@
                     "require_project_submission": {
                         "type": "boolean"
                     },
+                    "required_submission": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RequiredSubmissionEnum"
+                            }
+                        ],
+                        "description": "G11: which submission earns the grant.\n\n* `none` - none\n* `any_stage` - any_stage\n* `stage` - stage\n* `final_stage` - final_stage\n* `shortlisted_at` - shortlisted_at\n* `finalist` - finalist"
+                    },
+                    "required_submission_stage": {
+                        "type": "integer",
+                        "maximum": 10,
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "The stage position for 'stage' and 'shortlisted_at'."
+                    },
                     "permitted_venue_sources": {
                         "type": "array",
                         "items": {
@@ -287539,6 +289094,21 @@
                     },
                     "require_project_submission": {
                         "type": "boolean"
+                    },
+                    "required_submission": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RequiredSubmissionEnum"
+                            }
+                        ],
+                        "description": "G11: which submission earns the grant.\n\n* `none` - none\n* `any_stage` - any_stage\n* `stage` - stage\n* `final_stage` - final_stage\n* `shortlisted_at` - shortlisted_at\n* `finalist` - finalist"
+                    },
+                    "required_submission_stage": {
+                        "type": "integer",
+                        "maximum": 10,
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "The stage position for 'stage' and 'shortlisted_at'."
                     },
                     "permitted_venue_sources": {
                         "type": "array",
@@ -287993,6 +289563,20 @@
                         "items": {
                             "$ref": "#/components/schemas/ProjectPrize"
                         }
+                    },
+                    "stages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ParticipantStage"
+                        }
+                    },
+                    "active_stage_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "description": "The event's time zone (S13)."
                     }
                 },
                 "required": [
@@ -289101,6 +290685,11 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "timezone_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The event's time zone (S13: deadlines show in it)."
+                    },
                     "website": {
                         "allOf": [
                             {
@@ -289127,6 +290716,14 @@
                         "type": "boolean",
                         "readOnly": true,
                         "description": "False for unlisted events: pages must send noindex, nofollow."
+                    },
+                    "submission_stages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicStage"
+                        },
+                        "readOnly": true,
+                        "description": "#178: the hackathon's submission stage deadlines (event detail only; empty elsewhere)."
                     },
                     "public_token": {
                         "type": "string",
@@ -289284,9 +290881,11 @@
                     "show_registration_count",
                     "starts_at",
                     "status",
+                    "submission_stages",
                     "tags",
                     "ticket_selection_required",
                     "ticket_types",
+                    "timezone_name",
                     "title",
                     "website"
                 ]
@@ -289374,6 +290973,11 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "timezone_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The event's time zone (S13: deadlines show in it)."
+                    },
                     "website": {
                         "allOf": [
                             {
@@ -289400,6 +291004,14 @@
                         "type": "boolean",
                         "readOnly": true,
                         "description": "False for unlisted events: pages must send noindex, nofollow."
+                    },
+                    "submission_stages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicStage"
+                        },
+                        "readOnly": true,
+                        "description": "#178: the hackathon's submission stage deadlines (event detail only; empty elsewhere)."
                     },
                     "public_token": {
                         "type": "string",
@@ -289565,9 +291177,11 @@
                     "show_registration_count",
                     "starts_at",
                     "status",
+                    "submission_stages",
                     "tags",
                     "ticket_selection_required",
                     "ticket_types",
+                    "timezone_name",
                     "title",
                     "website"
                 ]
@@ -290862,6 +292476,11 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "timezone_name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The event's time zone (S13: deadlines show in it)."
+                    },
                     "website": {
                         "allOf": [
                             {
@@ -290888,6 +292507,14 @@
                         "type": "boolean",
                         "readOnly": true,
                         "description": "False for unlisted events: pages must send noindex, nofollow."
+                    },
+                    "submission_stages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicStage"
+                        },
+                        "readOnly": true,
+                        "description": "#178: the hackathon's submission stage deadlines (event detail only; empty elsewhere)."
                     },
                     "public_token": {
                         "type": "string",
@@ -291060,9 +292687,11 @@
                     "show_registration_count",
                     "starts_at",
                     "status",
+                    "submission_stages",
                     "tags",
                     "ticket_selection_required",
                     "ticket_types",
+                    "timezone_name",
                     "title",
                     "website"
                 ]
@@ -292759,6 +294388,41 @@
                     "id",
                     "payload",
                     "type"
+                ]
+            },
+            "PublicStage": {
+                "type": "object",
+                "properties": {
+                    "position": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "description": "S7: public choice fields ({key, label, choices}); the last stage's filter the gallery."
+                    }
+                },
+                "required": [
+                    "deadline",
+                    "filters",
+                    "name",
+                    "opens_at",
+                    "position"
                 ]
             },
             "PublicStatsBrand": {
@@ -299399,6 +301063,18 @@
                     "truncated"
                 ]
             },
+            "RequiredSubmissionEnum": {
+                "enum": [
+                    "none",
+                    "any_stage",
+                    "stage",
+                    "final_stage",
+                    "shortlisted_at",
+                    "finalist"
+                ],
+                "type": "string",
+                "description": "* `none` - none\n* `any_stage` - any_stage\n* `stage` - stage\n* `final_stage` - final_stage\n* `shortlisted_at` - shortlisted_at\n* `finalist` - finalist"
+            },
             "RequirementCompletion": {
                 "type": "object",
                 "properties": {
@@ -299778,6 +301454,14 @@
                 ],
                 "type": "string",
                 "description": "* `restricted` - restricted\n* `suspended` - suspended"
+            },
+            "ResubmissionEnum": {
+                "enum": [
+                    "until_deadline",
+                    "once"
+                ],
+                "type": "string",
+                "description": "* `until_deadline` - until_deadline\n* `once` - once"
             },
             "Resubmit": {
                 "type": "object",
@@ -301293,6 +302977,20 @@
                         },
                         "description": "Judge role assignment IDs; empty means every active judge.",
                         "maxItems": 2000
+                    },
+                    "share_feedback": {
+                        "type": "boolean",
+                        "description": "S4: release judges' team feedback (off)."
+                    },
+                    "judge_reminders": {
+                        "type": "boolean",
+                        "description": "S15: remind judges with open work (off)."
+                    },
+                    "submission_stage_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "The submission stage this round judges; empty means the last stage."
                     }
                 },
                 "required": [
@@ -301446,6 +303144,16 @@
                     "advanced_from_id": {
                         "type": "integer",
                         "nullable": true
+                    },
+                    "submission_stage_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "share_feedback": {
+                        "type": "boolean"
+                    },
+                    "judge_reminders": {
+                        "type": "boolean"
                     }
                 },
                 "required": [
@@ -302478,6 +304186,11 @@
                     "notes": {
                         "type": "string",
                         "default": "",
+                        "maxLength": 4000
+                    },
+                    "team_feedback": {
+                        "type": "string",
+                        "description": "S4: written for the team; shown to it only if the round shares feedback.",
                         "maxLength": 4000
                     },
                     "submit": {
@@ -306635,6 +308348,96 @@
                     "visits_30d"
                 ]
             },
+            "Shortlist": {
+                "type": "object",
+                "properties": {
+                    "stage_id": {
+                        "type": "integer"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "pending_triage": {
+                        "type": "integer"
+                    },
+                    "stage_entries": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StageEntryRow"
+                        },
+                        "description": "Live submissions of the stage, for picks and triage."
+                    },
+                    "candidates": {
+                        "type": "integer"
+                    },
+                    "email_enabled": {
+                        "type": "boolean"
+                    },
+                    "current": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ShortlistCurrent"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "allowed_actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "allowed_actions",
+                    "candidates",
+                    "current",
+                    "email_enabled",
+                    "label",
+                    "pending_triage",
+                    "stage_entries",
+                    "stage_id"
+                ]
+            },
+            "ShortlistApplyInput": {
+                "type": "object",
+                "properties": {
+                    "selection": {
+                        "$ref": "#/components/schemas/SelectionEnum"
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "maximum": 1000,
+                        "minimum": 1
+                    },
+                    "source_round_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "submission_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 2000
+                    },
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "fingerprint": {
+                        "type": "string",
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "fingerprint",
+                    "operation_id",
+                    "selection"
+                ]
+            },
             "ShortlistCommand": {
                 "type": "object",
                 "properties": {
@@ -306668,6 +308471,193 @@
                     "participant_ids",
                     "published",
                     "reason_code"
+                ]
+            },
+            "ShortlistCurrent": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "selection": {
+                        "type": "string"
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "source_round_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "published_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "entries": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ShortlistEntry"
+                        }
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "entries",
+                    "id",
+                    "published_at",
+                    "selection",
+                    "source_round_id",
+                    "top_n"
+                ]
+            },
+            "ShortlistEntry": {
+                "type": "object",
+                "properties": {
+                    "submission_id": {
+                        "type": "integer"
+                    },
+                    "team_id": {
+                        "type": "integer"
+                    },
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "source_rank": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "snapshot_id",
+                    "source_rank",
+                    "submission_id",
+                    "team_id",
+                    "title"
+                ]
+            },
+            "ShortlistPlan": {
+                "type": "object",
+                "properties": {
+                    "stage_id": {
+                        "type": "integer"
+                    },
+                    "source_round_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "selection": {
+                        "type": "string"
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "tied_at_cutoff": {
+                        "type": "boolean"
+                    },
+                    "fingerprint": {
+                        "type": "string"
+                    },
+                    "entries": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ShortlistEntry"
+                        }
+                    },
+                    "candidates": {
+                        "type": "integer"
+                    },
+                    "not_shortlisted": {
+                        "type": "integer"
+                    },
+                    "email_enabled": {
+                        "type": "boolean",
+                        "description": "S11: when false, teams are NOT emailed on publish."
+                    }
+                },
+                "required": [
+                    "candidates",
+                    "email_enabled",
+                    "entries",
+                    "fingerprint",
+                    "not_shortlisted",
+                    "selection",
+                    "source_round_id",
+                    "stage_id",
+                    "tied_at_cutoff",
+                    "top_n"
+                ]
+            },
+            "ShortlistPreviewInput": {
+                "type": "object",
+                "properties": {
+                    "selection": {
+                        "$ref": "#/components/schemas/SelectionEnum"
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "maximum": 1000,
+                        "minimum": 1
+                    },
+                    "source_round_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "submission_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 2000
+                    }
+                },
+                "required": [
+                    "selection"
+                ]
+            },
+            "ShortlistPromoteInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "withdrawn_submission_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "operation_id",
+                    "withdrawn_submission_id"
+                ]
+            },
+            "ShortlistPublishInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "shortlist_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "operation_id",
+                    "shortlist_id"
                 ]
             },
             "ShortlistSignalRead": {
@@ -306738,6 +308728,15 @@
                     "previous",
                     "results"
                 ]
+            },
+            "ShortlistStatusEnum": {
+                "enum": [
+                    "pending",
+                    "shortlisted",
+                    "not_shortlisted"
+                ],
+                "type": "string",
+                "description": "* `pending` - pending\n* `shortlisted` - shortlisted\n* `not_shortlisted` - not_shortlisted"
             },
             "SideEnum": {
                 "enum": [
@@ -309887,6 +311886,149 @@
                     "reference"
                 ]
             },
+            "StaffStage": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "position": {
+                        "type": "integer"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "grace_minutes": {
+                        "type": "integer"
+                    },
+                    "late_policy": {
+                        "type": "string"
+                    },
+                    "resubmission": {
+                        "type": "string"
+                    },
+                    "requires_previous": {
+                        "type": "boolean"
+                    },
+                    "content_mode": {
+                        "type": "string"
+                    },
+                    "required_link_kinds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "min_files": {
+                        "type": "integer"
+                    },
+                    "max_files": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "max_links": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "accepted_families": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "max_bytes_per_file": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "video_hosts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "custom_fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    },
+                    "shortlist_after": {
+                        "type": "boolean"
+                    },
+                    "shortlist_label": {
+                        "type": "string"
+                    },
+                    "public_after_publish": {
+                        "type": "boolean"
+                    },
+                    "submissions": {
+                        "type": "integer"
+                    },
+                    "pending_triage": {
+                        "type": "integer"
+                    },
+                    "shortlist": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    },
+                    "extensions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    },
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "S13: ambiguous_deadline_time when a deadline is 00:00 or 12:00 event time."
+                    }
+                },
+                "required": [
+                    "accepted_families",
+                    "content_mode",
+                    "custom_fields",
+                    "deadline",
+                    "description",
+                    "grace_minutes",
+                    "id",
+                    "late_policy",
+                    "max_bytes_per_file",
+                    "max_files",
+                    "max_links",
+                    "min_files",
+                    "name",
+                    "opens_at",
+                    "position",
+                    "required_link_kinds",
+                    "requires_previous",
+                    "resubmission",
+                    "shortlist_after",
+                    "shortlist_label",
+                    "version",
+                    "video_hosts"
+                ]
+            },
             "StaffWaitlistEntry": {
                 "type": "object",
                 "properties": {
@@ -310366,6 +312508,53 @@
                     "operation_id"
                 ]
             },
+            "StageCustomFieldInput": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]{0,39}$"
+                    },
+                    "label": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/Type188Enum"
+                    },
+                    "required": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "choices": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 80
+                        },
+                        "maxItems": 20
+                    },
+                    "help": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 300
+                    },
+                    "visible_to": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/VisibleToEnum"
+                            }
+                        ],
+                        "default": "staff_and_judges",
+                        "description": "S7: who may read the answer. Public choice fields filter the gallery.\n\n* `staff_and_judges` - staff_and_judges\n* `staff_only` - staff_only\n* `public` - public"
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "type"
+                ]
+            },
             "StageDefinition": {
                 "type": "object",
                 "properties": {
@@ -310631,6 +312820,73 @@
                     "operation_id"
                 ]
             },
+            "StageEntryRow": {
+                "type": "object",
+                "properties": {
+                    "submission_id": {
+                        "type": "integer"
+                    },
+                    "team_id": {
+                        "type": "integer"
+                    },
+                    "team_name": {
+                        "type": "string"
+                    },
+                    "snapshot_id": {
+                        "type": "integer"
+                    },
+                    "triage": {
+                        "type": "string"
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "snapshot_id",
+                    "submission_id",
+                    "submitted_at",
+                    "team_id",
+                    "team_name",
+                    "triage"
+                ]
+            },
+            "StageField": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/Type188Enum"
+                    },
+                    "required": {
+                        "type": "boolean"
+                    },
+                    "choices": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "nullable": true
+                    },
+                    "help": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "key",
+                    "label",
+                    "required",
+                    "type"
+                ]
+            },
             "StageFile": {
                 "type": "object",
                 "properties": {
@@ -310861,6 +313117,39 @@
                     "version"
                 ]
             },
+            "StageFunnel": {
+                "type": "object",
+                "properties": {
+                    "position": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "submitted": {
+                        "type": "integer"
+                    },
+                    "eligible": {
+                        "type": "integer"
+                    },
+                    "shortlisted": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "advanced": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "advanced",
+                    "eligible",
+                    "name",
+                    "position",
+                    "shortlisted",
+                    "submitted"
+                ]
+            },
             "StageInput": {
                 "type": "object",
                 "properties": {
@@ -311005,6 +313294,124 @@
                     "selected_revision",
                     "state",
                     "version"
+                ]
+            },
+            "StagePlan": {
+                "type": "object",
+                "properties": {
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "fingerprint": {
+                        "type": "string"
+                    },
+                    "stages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StaffStage"
+                        }
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "event_ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "presets": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    },
+                    "families": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "link_kinds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "video_hosts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "field_types": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "field_visibility": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "max_stages": {
+                        "type": "integer"
+                    },
+                    "answer_limits": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    },
+                    "admission_enabled": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "admission_enabled",
+                    "answer_limits",
+                    "event_ends_at",
+                    "event_id",
+                    "families",
+                    "field_types",
+                    "field_visibility",
+                    "fingerprint",
+                    "link_kinds",
+                    "max_stages",
+                    "presets",
+                    "stages",
+                    "timezone",
+                    "video_hosts"
+                ]
+            },
+            "StagePlanInput": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_fingerprint": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "preset": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 40
+                    },
+                    "stages": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SubmissionStageInput"
+                        }
+                    }
+                },
+                "required": [
+                    "expected_fingerprint",
+                    "operation_id",
+                    "stages"
                 ]
             },
             "StageResponseCommand": {
@@ -311204,6 +313611,65 @@
                         "$ref": "#/components/schemas/RecusalCodeEnum"
                     }
                 }
+            },
+            "StageRules": {
+                "type": "object",
+                "properties": {
+                    "content_mode": {
+                        "$ref": "#/components/schemas/ContentModeEnum"
+                    },
+                    "required_link_kinds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "min_files": {
+                        "type": "integer"
+                    },
+                    "max_files": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "max_links": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "accepted_families": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "max_bytes_per_file": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "video_hosts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "resubmission": {
+                        "$ref": "#/components/schemas/ResubmissionEnum"
+                    },
+                    "late_policy": {
+                        "$ref": "#/components/schemas/LatePolicyEnum"
+                    }
+                },
+                "required": [
+                    "accepted_families",
+                    "content_mode",
+                    "late_policy",
+                    "max_bytes_per_file",
+                    "max_files",
+                    "max_links",
+                    "min_files",
+                    "required_link_kinds",
+                    "resubmission",
+                    "video_hosts"
+                ]
             },
             "StageSettings": {
                 "type": "object",
@@ -312821,6 +315287,160 @@
                     "flags",
                     "snapshot_id",
                     "submission_id"
+                ]
+            },
+            "SubmissionStageInput": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 2000
+                    },
+                    "opens_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "grace_minutes": {
+                        "type": "integer",
+                        "maximum": 1440,
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "late_policy": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/LatePolicyEnum"
+                            }
+                        ],
+                        "default": "reject"
+                    },
+                    "resubmission": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ResubmissionEnum"
+                            }
+                        ],
+                        "default": "until_deadline"
+                    },
+                    "requires_previous": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "content_mode": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContentModeEnum"
+                            }
+                        ],
+                        "default": "files_and_links"
+                    },
+                    "required_link_kinds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 16
+                        },
+                        "description": "Link kinds: cad, demo, firmware, other, pcb, repo, slides, video",
+                        "maxItems": 8
+                    },
+                    "min_files": {
+                        "type": "integer",
+                        "maximum": 100,
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "max_files": {
+                        "type": "integer",
+                        "maximum": 100,
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "max_links": {
+                        "type": "integer",
+                        "maximum": 30,
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "accepted_families": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AcceptedFamiliesEnum"
+                        },
+                        "maxItems": 12
+                    },
+                    "max_bytes_per_file": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "video_hosts": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/VideoHostsEnum"
+                        },
+                        "maxItems": 4
+                    },
+                    "custom_fields": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StageCustomFieldInput"
+                        }
+                    },
+                    "shortlist_after": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "shortlist_label": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 60
+                    },
+                    "public_after_publish": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "S18: this stage's work may join the gallery once published."
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            },
+            "Submit": {
+                "type": "object",
+                "properties": {
+                    "operation_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expected_version": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "stage_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The stage to submit (#178); omitted means the team's active stage."
+                    }
+                },
+                "required": [
+                    "expected_version",
+                    "operation_id"
                 ]
             },
             "SubscriptionKeys": {
@@ -316010,6 +318630,11 @@
                     "reason": {
                         "type": "string",
                         "maxLength": 1000
+                    },
+                    "stage_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "S5: the stage to triage; omitted means the project's furthest stage."
                     }
                 },
                 "required": [
@@ -316071,6 +318696,16 @@
                 ],
                 "type": "string",
                 "description": "* `about` - about"
+            },
+            "Type188Enum": {
+                "enum": [
+                    "short_text",
+                    "long_text",
+                    "choice",
+                    "url"
+                ],
+                "type": "string",
+                "description": "* `short_text` - short_text\n* `long_text` - long_text\n* `choice` - choice\n* `url` - url"
             },
             "Type247Enum": {
                 "enum": [
@@ -317568,6 +320203,16 @@
                 "type": "string",
                 "description": "* `space_manager` - space_manager\n* `module_grant` - module_grant\n* `fixed_exception` - fixed_exception"
             },
+            "VideoHostsEnum": {
+                "enum": [
+                    "google",
+                    "loom",
+                    "vimeo",
+                    "youtube"
+                ],
+                "type": "string",
+                "description": "* `google` - google\n* `loom` - loom\n* `vimeo` - vimeo\n* `youtube` - youtube"
+            },
             "Visibility68aEnum": {
                 "enum": [
                     "draft",
@@ -317583,6 +320228,15 @@
                 ],
                 "type": "string",
                 "description": "* `draft` - draft\n* `published` - published"
+            },
+            "VisibleToEnum": {
+                "enum": [
+                    "staff_and_judges",
+                    "staff_only",
+                    "public"
+                ],
+                "type": "string",
+                "description": "* `staff_and_judges` - staff_and_judges\n* `staff_only` - staff_only\n* `public` - public"
             },
             "VisitDay": {
                 "type": "object",

@@ -228,6 +228,47 @@ net; the gross is the ledger expense. The Space Manager's `admin/makerspace/<id>
 holds the record-only prize-tax proposal (off; 30% above 10,000) and the accepted payee country/method
 pairs, inside the deployment ceiling. A sponsorship charge may be earmarked to one event's prize pool.
 
+## Money modes: free, offline, online
+
+Owner decision #184 makes three modes a release gate for every chargeable area, decided **per area**
+by `charge_tracking_enabled(space, area)` = `charges.enabled` AND `charges.<area>`; the online rail is
+`online_payments_enabled(space, area)` on top. The areas are `loans`, `machines`, `bookings`,
+`events`, `membership`, `shop` and `donations` (`payments.availability.CHARGE_DOMAINS`). ID cards are
+always free (C-20) and have no charge path at all; hackathon prizes, payouts and reimbursements are
+money out and only ever recorded.
+
+| Mode | Switches | What happens |
+|---|---|---|
+| Completely free | `charges.enabled` off, or the area's `charges.<area>` off | Nothing is priced or charged, no money UI shows, every flow completes with no payment step (below) |
+| Paid, offline | tracking on, no `payments` rail | A pending charge (`provider=unclaimed`) is recorded; staff mark it paid with a receipt |
+| Paid, online | tracking on plus `payments`, `payments.enabled`, `payments.<area>` and credentials | The same charge with a hosted checkout or native intent; webhooks settle it; refunds go through a staff-approved case |
+
+A mixed space is normal: lending free while machines are paid. Each seam reads only its own area's
+key, so one area's mode never reaches another.
+
+**Free mode, area by area.**
+- *Lending:* deposits, rental and late fees raise nothing; a damage or lost charge is refused with
+  404 `charges_off` and the loan's Charges panel (`charges_enabled: false`) hides the step.
+- *Machines:* no quote is required or sent (`send_quote` refuses, the job is accepted instead),
+  `prepay` reads false, a prepaid quote approved after charges went off queues at once, and the
+  job-flow sweep queues a prepaid job that has no charge. Metered sessions do not bill.
+  `charges.machines` needs only the `machines` module, so sessions bill without `machine_service`.
+- *Bookings and event registrations:* confirmed with no charge.
+- *Event orders and passes:* the order quote is zeroed (no booking fee, no promo; notes
+  `["charges_off"]`), so the order is placed at 0 and seated at once. Venue fees resolve **Free**.
+- *Membership:* joining activates at once whatever the payment timing; the request's first-term price
+  and joining fee are stored as 0, dues and renewals raise nothing.
+- *Shop:* the shop records every sale (#94), so with `charges.shop` off it sells nothing
+  (`charges_off`) and shows no prices or basket.
+- *Donations:* gifts, pledges and sponsor charges are refused (`charges_off`); a pledge period due
+  while off is skipped, never back-charged.
+
+**What the UI reads.** The tenant bootstrap carries `charges_tracked: {area: bool}` and the frontend's
+`useChargesOn(area)` hides that area's prices, previews, fees and payment copy; the console's
+`useStaffChargesOn` does the same from the staff makerspace record. The public price preview
+answers 404 `charges_off` for a free area. Installing a module turns its default-on `charges.<area>`
+key back on, so a new module never starts untracked by accident.
+
 ## Pricing: paid and free everywhere
 
 Release 2, lane L15 (decisions #84 and #85, answers A1-A14). One pattern for every area: **rate
@@ -317,6 +358,8 @@ quote before anything is written.
 Four switches on the core ledger, each off by default (#128 C-14): `finance.donations`,
 `finance.recurring_donations`, `finance.tax_exempt_receipts`, `finance.sponsors`; the online rail
 for gifts and sponsor money is `payments.donations` (needs the `payments` module and credentials).
+Whether gift and sponsor money is recorded at all is `charges.donations` (default on, #184 G10): with it
+or `charges.enabled` off, every gift, pledge and sponsor charge is refused (`charges_off`).
 
 - **Giving.** `public/<slug>/donations` is the page (intro, suggested amounts, minimum, open
   campaigns and funds with their goal and the amount raised). Anyone gives: a signed-in person as

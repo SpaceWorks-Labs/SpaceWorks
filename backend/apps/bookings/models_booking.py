@@ -34,7 +34,8 @@ class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields)
     )
     name = models.TextField()
     email = models.TextField()
-    phone = models.TextField()
+    # Optional (#165 auto): the booking form asks for none and a member account may hold none.
+    phone = models.TextField(blank=True)
     member = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -87,7 +88,7 @@ class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields)
         self.phone = (self.phone or "").strip()
         errors = {
             field: "This field may not be blank."
-            for field in ("name", "email", "phone")
+            for field in ("name", "email")
             if not getattr(self, field)
         }
         if errors:

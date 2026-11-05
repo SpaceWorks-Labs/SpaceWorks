@@ -3,9 +3,11 @@ import { ActionControl } from "./ActionControl";
 import { IdentityChip } from "./IdentityChip";
 import { OverflowMenu } from "./OverflowMenu";
 import type { Action, Identity, PageHeaderProps } from "./types";
-export type PageHeaderDetailSlots = { back?: Action; identity?: Identity; status?: ReactNode };
+export type PageHeaderDetailSlots = { back?: Action; identity?: Identity; status?: ReactNode;
+  /** Set the title in the Unbounded accent (one accent per layout). */
+  accentTitle?: boolean };
 export function PageHeader({ eyebrow, title, subtitle, meta, primary, secondary, overflow = [],
-  back, identity, status, headingLevel = 1, stickyPrimaryOnMobile = false }: PageHeaderProps & PageHeaderDetailSlots) {
+  back, identity, status, headingLevel = 1, stickyPrimaryOnMobile = false, accentTitle = false }: PageHeaderProps & PageHeaderDetailSlots) {
   const Heading = headingLevel === 2 ? "h2" : "h1";
   const mobileActions = secondary ? "menu" in secondary ? secondary.menu : [secondary] : [];
   return <header className="mb-6 min-w-0">
@@ -15,7 +17,7 @@ export function PageHeader({ eyebrow, title, subtitle, meta, primary, secondary,
       <div className="flex min-w-0 flex-1 items-center gap-3">
         {identity ? <IdentityChip identity={identity} label={title} /> : null}
         <div className="min-w-0">
-          <Heading className="title-page break-words">{title}</Heading>
+          <Heading className={`title-page break-words${accentTitle ? " font-accent" : ""}`}>{title}</Heading>
           {subtitle ? <p className="mt-2 text-base text-muted">{subtitle}</p> : null}
           {meta || status ? <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">{status}{meta}</div> : null}
         </div>

@@ -28,6 +28,7 @@ import { EventProgrammePanel } from "./eventProgramme/EventProgrammePanel";
 import { EventAddonPanel } from "./eventProgramme/EventAddonPanel";
 import { EventParticipationSection } from "./eventParticipation/EventParticipationSection";
 import { ProgrammeSessionBoundary } from "./eventProgramme/sessionScope";
+import { ScreenHelp } from "../help/HelpLink";
 
 type Action = "publish" | "cancel" | "complete";
 
@@ -103,6 +104,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
         danger={tabs.section === "settings" && event?.status === "published" && access.publish ? [{ title: "Cancel event", consequence: "Registrants are notified and registration closes.", action: { label: "Cancel event", onClick: () => setConfirm("cancel") } }] : []}
         aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={checkable && access.checkIn ? () => tabs.select("checkin") : undefined} /> : undefined}
         main={event ? <div className="grid gap-6">
+          {tabs.section && sections[tabs.section] ? <ScreenHelp screen={`events.${tabs.section}`} /> : null}
           {tabs.active === "overview" ? <>
             {canSaveEssentials ? <EventEssentialsEditor event={event} access={access} values={values} setValues={setValues} save={saveOccurrence} pending={update.isPending} /> : null}
             <EventOrganizationAudience event={event} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} />

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { ScreenHelp } from "../../help/HelpLink";
 import { collectAtDesk, guestPayLink } from "./staffTicketingApi";
 
 const METHODS = [["cash", "Cash"], ["upi", "UPI"], ["bank_transfer", "Bank transfer"], ["card_machine", "Card machine"], ["cheque", "Cheque"], ["other", "Other"]] as const;
@@ -15,7 +16,8 @@ export function DeskCollectPanel({ registrationId, onCollected }: { registration
   const error = collect.error ?? link.error;
   const url = collect.data?.checkout_url || link.data?.pay_link;
   return <section className="grid gap-3 rounded-xl border border-line p-3" aria-label="Collect payment">
-    <p className="text-sm font-semibold text-ink">This ticket is not paid yet</p>
+    <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-ink">This ticket is not paid yet</p>
+      <ScreenHelp screen="events.desk-collect" className="" /></div>
     <div className="flex flex-wrap items-end gap-2">
       <label className="grid gap-1 text-sm">Received as<select className="desk-input" value={method} onChange={event => setMethod(event.target.value)}>
         {METHODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>

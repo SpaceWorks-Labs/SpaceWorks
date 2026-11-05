@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
 import { Card, ErrorText, StatusBadge } from "../../../components/ui";
+import { PageHelp } from "../../help/PageHelp";
 
 type Criterion = { key: string; label: string; guidance?: string };
 type ReviewStage = { id: number; event_id: number; event_title?: string; name: string; position: number; blind: boolean;
@@ -20,7 +21,10 @@ export function ApplicationReviewsPage() {
     queryFn: () => memberRequest<ReviewStage[]>("/admin/my-application-reviews/") });
   const [current, setCurrent] = useState<ReviewStage | null>(null);
   return <div className="mx-auto grid max-w-3xl gap-4 p-4">
-    <h1 className="font-display text-2xl text-ink">Application reviews</h1>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h1 className="font-display text-2xl text-ink">Application reviews</h1>
+      <PageHelp article="member/event-participation" topic="reviewing applications" className="" />
+    </div>
     {stages.error ? <ErrorText message={stages.error.message} /> : null}
     {stages.data?.length === 0 ? <p className="text-muted">You have no open review stages.</p> : null}
     {current ? <StageWorkspace stage={current} onBack={() => setCurrent(null)} /> : <ul className="grid gap-2">

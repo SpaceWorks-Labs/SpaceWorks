@@ -226,7 +226,9 @@ Checks run is not a test run. Its four jobs are the required status checks on `m
   `CATALOG_SCHEMA_SHA256` fails here.
 - **`rules`** — `scripts/ci/check_rules.py`: the 300-line ceiling over tracked, non-migration, non-test,
   non-generated source files in `backend/apps`, `backend/config` and `frontend/src` (its `ALLOWLIST`
-  holds the accepted exceptions, today only `config/settings.py`), plus `CLAUDE.md` == `AGENTS.md`.
+  holds the accepted exceptions, today only `config/settings.py`), plus `CLAUDE.md` == `AGENTS.md`, plus
+  no tracked plans, prompts, hand-offs, lane notes or research notes (#148b; `planning_reason` lists the
+  folders and note names it refuses, help articles excepted, and `.gitignore` carries the same patterns).
 
 Run the rules locally with `python scripts/ci/check_rules.py` from anywhere in the repo; it measures
 tracked files only, so local test trees never affect it. The backend and contracts commands need Linux

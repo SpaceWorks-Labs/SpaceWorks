@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { FlowLayout } from "../../../components/layouts/FlowLayout";
 import { StructuredApiError } from "../../../lib/api";
+import { ScreenHelp } from "../../help/HelpLink";
 import {
   lifecycleApi, lifecycleKeys, toCsv, type ImportPreview, type ImportResult,
 } from "../membershipLifecycleApi";
@@ -87,6 +88,7 @@ export function MemberImportWizard({ makerspaceId, open, onClose, sheetsEnabled 
         next: { label: "Import", pending: apply.isPending, disabled: !preview.data?.counts.create && !preview.data?.counts.update,
           disabledReason: "Nothing to import.", onClick: () => apply.mutate() } }}
     work={step === "upload" ? <div className="grid gap-4">
+      <ScreenHelp screen="members.import" />
       <ImportIntro />
       {sheetsEnabled ? <SourcePicker value={source} onChange={(next) => { setSource(next); fresh(); }} /> : null}
       {sheet ? <SheetLinkField url={url} onUrl={(next) => { setUrl(next); fresh(); }} />

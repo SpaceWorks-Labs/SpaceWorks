@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card } from "../../../components/ui";
+import { ScreenHelp } from "../../help/HelpLink";
 import { panelField, panelInput } from "../eventPanelStyles";
 import { useVenueFee, type VenueFeeInput } from "./staffTicketingApi";
 
@@ -18,7 +19,8 @@ export function EventVenueFeeForm({ eventId, disabled = false }: { eventId: numb
   const error = save.error || charge.error;
   return <Card><form className="grid gap-4" aria-label="Venue fee" onSubmit={event => { event.preventDefault();
     save.mutate({ ...values, amount: values.mode === "custom" ? values.amount ?? "0.00" : null }); }}>
-    <h3 className="title-section">Venue fee for hosting</h3>
+    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="title-section">Venue fee for hosting</h3>
+      <ScreenHelp screen="events.venue-fees" className="" /></div>
     {fee.data ? <p className="text-sm text-muted">{fee.data.payer_name} pays {fee.data.quote_total}
       {fee.data.status === "charged" ? " · charged" : fee.data.status === "free" ? " · nothing to charge" : " · charged when the event is published"}.</p> : null}
     <label className={panelField}>Payer account number

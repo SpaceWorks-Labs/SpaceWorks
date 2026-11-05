@@ -9,6 +9,7 @@ import { SetupChecklist } from "./SetupChecklist";
 import { StaffTabContent } from "./StaffTabContent";
 import { PiiAccessBanner } from "./PiiAccessBanner";
 import { StaffScreenHelp } from "../help/HelpLink";
+import { StaffHelpContext } from "../help/staffHelpContext";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { getStaffAccess, STAFF_TAB_KEYS, TAB_LABELS } from "./staffAccess";
 import {
@@ -126,6 +127,7 @@ export function StaffWorkspace({
 
   return (
     <StaffListContext.Provider value={{ ownerName: user.username, canShare: canManageMakerspace, actions, isSuperadmin }}>
+    <StaffHelpContext.Provider value={{ makerspace: activeMakerspace, singleTenant: singleTenantLocked, platform: isSuperadmin }}>
       <StaffShell activeMakerspace={activeMakerspace} allowedTabs={moduleAllowedTabs} activeTab={routeTabDenied ? "" : activeTab}
         guestOnly={guestOnly} singleTenantLocked={singleTenantLocked} handoutOnly={handoutOnly} grantOnly={grantOnly} user={user}
         roleName={activeRoleName} isSuperadmin={isSuperadmin} makerspaces={makerspaces} setSelected={setSelected}
@@ -181,6 +183,7 @@ export function StaffWorkspace({
             />
           )}
       </StaffShell>
+    </StaffHelpContext.Provider>
     </StaffListContext.Provider>
   );
 }

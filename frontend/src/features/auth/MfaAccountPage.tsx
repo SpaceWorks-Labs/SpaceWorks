@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { clearAccessToken, refreshAccessToken, setAccessToken, staffRequest } from "../../lib/api";
 import { CenteredCardLayout, SettingsLayout } from "../../components/layouts";
 import { ErrorBlock } from "../../components/ui";
+import { HelpLink } from "../help/HelpLink";
 import { MfaAuthenticatorSection, type MfaStatus } from "./MfaAuthenticatorSection";
 import { MfaRecoveryCodes } from "./MfaRecoveryCodes";
 import { MfaFlow } from "./MfaFlow";
@@ -66,8 +67,11 @@ export function MfaAccountPage() {
   const data = status.data;
   const hasPasskey = (passkeys.data?.passkeys.length ?? 0) > 0;
   const busy = enroll.isPending || change.isPending;
+  // Staff enrol here (the console sends them with ?return=); the guide's two-step article covers staff too.
+  const helpSpace = tenant?.mode === "single" ? { slug: tenant.slug, enabled_features: tenant.bootstrap?.features ?? [] } : undefined;
   return <SettingsLayout standalone state={status.isLoading || !data ? { status: "loading" } : { status: "ready" }}
-    header={{ title: "Account security", subtitle: person ? "Two-step sign-in, passkeys and the devices you sign in from." : "Two-step sign-in for the platform account." }}
+    header={{ title: "Account security", subtitle: person ? "Two-step sign-in, passkeys and the devices you sign in from." : "Two-step sign-in for the platform account.",
+      meta: <HelpLink article="member/two-step-sign-in" makerspace={helpSpace} singleTenant platform={context === "platform"} className="-ml-2" /> }}
     sections={[
       { id: "two-step", title: "Authenticator app", rows: data ? <div className="grid gap-4">
         <MfaAuthenticatorSection status={data} hasPasskey={hasPasskey} passkeysOffered={person && passkeys.data?.passkeys_allowed !== false}

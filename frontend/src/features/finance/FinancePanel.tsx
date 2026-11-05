@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Tabs } from "../../components/ui";
 import { capabilityOn } from "../../lib/features";
+import { ScreenHelp } from "../help/HelpLink";
 import { StructuredApiError } from "../../lib/api";
 import { FinanceOverview } from "./FinanceOverview";
 import { LedgerEntriesSection } from "./LedgerEntriesSection";
@@ -53,6 +54,7 @@ export function FinancePanel({ makerspace, canViewFinance, canRecordPayment }: {
         ? "Finance shows the money for the areas you manage. You don't manage one in this space."
         : "No finance screens are switched on for this space. A Space Manager turns them on under Features."}</p> : null}
     {sections.length ? <Tabs tabs={sections} activeKey={active ?? ""} label="Finance sections" onChange={setChosen} /> : null}
+    {active ? <ScreenHelp screen={`finance.${active}`} /> : null}
     {active === "overview" && access.data ? <FinanceOverview makerspaceId={makerspace.id} /> : null}
     {active === "entries" && access.data ? <LedgerEntriesSection makerspaceId={makerspace.id} access={access.data} /> : null}
     {active === "events" && access.data ? <EventMoneySection makerspaceId={makerspace.id} access={access.data} /> : null}

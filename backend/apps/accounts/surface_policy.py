@@ -81,7 +81,7 @@ def validate_account_token(user, token):
 
 
 def _platform_route(name):
-    return name in PLATFORM_ROUTES or bool(name and name.startswith("admin-staff-account"))
+    return name in PLATFORM_ROUTES
 
 
 def _delegated(user, targets, name, *, native=False):

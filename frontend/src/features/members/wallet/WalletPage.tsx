@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CenteredCardLayout } from "../../../components/layouts";
 import { Badge, EmptyState, ErrorText, SegmentedControl } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
+import { PageHelp } from "../../help/PageHelp";
 import { MemberAuthPanel } from "../MemberAuthPanel";
 import { CardHolderSettings } from "./CardHolderSettings";
 import { HolographicCard } from "./HolographicCard";
@@ -23,6 +24,7 @@ export function WalletPage() {
   return <CenteredCardLayout width="wide" title="My cards" body="Your member, programme and event cards in one place."
     state={restoring || identity.isLoading || cards.isLoading ? { status: "loading" } : { status: "ready" }}
     primary={{ label: "Back to my account", href: "/member/account" }}
+    footer={<PageHelp article="member/member-card" topic="your cards" className="flex justify-center" />}
     content={<div className="grid gap-6">
       {cards.error ? <ErrorText message={cards.error.message} onRetry={() => void cards.refetch()} /> : null}
       {cards.data && !rows.length ? <EmptyState message="No cards yet. A card appears here once a space, programme or event issues one to you." /> : null}

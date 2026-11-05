@@ -86,7 +86,7 @@ export function AccountLinkFlow({ open, onClose }: { open: boolean; onClose: () 
   const grace = Boolean(result?.grace_opened);
   const staff: Action | undefined = result?.roles_gained.length ? { label: "Open the staff console", href: "/admin" } : undefined;
   const back: Action = { label: "Back to your account", onClick: onClose };
-  return <FlowLayout presentation="dialog" open={open} title="Link your staff account" state={state}
+  return <FlowLayout presentation="dialog" open={open} title="Link your staff account" accentTitle state={state}
     subject="Bring a second account's roles and history into the one you're signed in to."
     steps={steps} current={step} footer={footers[step]} onCancel={close} error={callout}
     leaveGuard={intent && !result ? "Your link request will be cancelled. Nothing has been linked." : undefined}

@@ -51,4 +51,34 @@ export const STAFF_SCREEN_HELP: Readonly<Record<string, string>> = {
   exports: "space-manager/backups-and-exports",
   backups: "space-manager/backups-and-exports",
   migration: "superadmin/tenant-migration",
+  analytics: "space-manager/insights-and-audit",
+  "platform-analytics": "superadmin/platform-dashboard",
+};
+
+// One line per sub-screen inside a tab (a sub-tab, drawer section or dialog) whose topic has an
+// article of its own: `<tab>.<sub-screen>` -> the article and the topic its link names. The
+// screen mounts `<ScreenHelp screen="..." />`. A sub-screen covered by its tab's article needs
+// no line (the tab's link already opens it).
+export const STAFF_SUBSCREEN_HELP: Readonly<Record<string, { article: string; topic: string }>> = {
+  "cards.programmes": { article: "space-manager/id-programmes", topic: "ID programmes" },
+  "members.import": { article: "space-manager/member-import", topic: "importing members" },
+  "events.certificates": { article: "event-manager/cards-certificates-feedback", topic: "certificates and event cards" },
+  "events.applications": { article: "event-manager/applications-and-review", topic: "applications and review stages" },
+  "events.crew": { article: "event-manager/attendance-and-crew", topic: "the event crew" },
+  "events.checkin-lists": { article: "event-manager/check-in", topic: "check-in lists" },
+  "events.orders": { article: "event-manager/paid-ticketing", topic: "ticket orders" },
+  "events.desk-collect": { article: "event-manager/paid-ticketing", topic: "desk payments" },
+  "events.series-passes": { article: "event-manager/paid-ticketing", topic: "series passes" },
+  "events.venue-fees": { article: "event-manager/venue-fees", topic: "venue fees" },
+  "events.judging-extras": { article: "event-manager/judging-extras", topic: "finalists, prizes and fees" },
+  "finance.donations": { article: "finance/donations-and-sponsors", topic: "donations" },
+  "finance.sponsors": { article: "finance/donations-and-sponsors", topic: "sponsors" },
+  "finance.price-drop": { article: "finance/price-drop-refunds", topic: "lowering a price" },
+  "pages.sponsors": { article: "finance/donations-and-sponsors", topic: "the sponsors section" },
+  "shop.orders": { article: "shop-manager/orders-and-returns", topic: "shop orders and returns" },
+  "shop.pos": { article: "shop-manager/front-desk-sales", topic: "selling at the desk" },
+  "shop.cash": { article: "shop-manager/front-desk-sales", topic: "cashing up" },
+  "shop.catalogue": { article: "shop-manager/products-and-stock", topic: "shop products" },
+  "shop.stock": { article: "shop-manager/products-and-stock", topic: "shop stock" },
+  "shop.reports": { article: "space-manager/insights-and-audit", topic: "shop reports" },
 };

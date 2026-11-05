@@ -5,6 +5,8 @@
    non-generated source file under backend/apps, backend/config and frontend/src must
    be 300 lines or fewer, unless it is on the small explicit ALLOWLIST below.
 2. CLAUDE.md and AGENTS.md are one document under two names: byte-identical.
+3. No plans, prompts, hand-offs, lane notes or research notes in the repository (owner
+   decision #148b): no tracked file may match the patterns in ``planning_reason``.
 
 Only tracked files are measured, so the local-only test trees (backend/tests/,
 frontend/src/**/*.test.ts(x)) never affect the result.
@@ -15,6 +17,7 @@ Exit status is 0 when every rule holds and 1 otherwise.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import PurePosixPath
@@ -126,9 +129,65 @@ def check_twin_docs(root: str) -> list[str]:
     return ["twins"]
 
 
+# #148b: build-programme paperwork lives outside the repository. Note-like files only, so a
+# component such as HandoverWizard.tsx is never caught. Help articles are product content, so
+# the name rules skip them: a space's guide may well have a "choose-a-plan" article.
+HELP_CONTENT = ("frontend", "src", "help-content")
+NOTE_SUFFIXES = {".md", ".markdown", ".txt", ".rst"}
+PLANNING_ROOT_DIRS = {"plans", "handover", "briefs", "prompts"}
+PLANNING_NAMES = (
+    (re.compile(r"handoff", re.I), "a hand-off note"),
+    (re.compile(r"HANDOVER"), "a hand-over note"),
+    (re.compile(r"(^|[-_.])PLAN([-_.]|$)"), "a plan"),
+    # Lower case only as the whole name or its last word (plan.md, events-plan.md), the
+    # long-standing docs/*-plan.md convention; plan-limits.md is a product doc.
+    (re.compile(r"(^|-)plan\.[a-z]+$"), "a plan"),
+    (re.compile(r"(^|[-_.])prompts?([-_.]|$)", re.I), "a prompt"),
+    (re.compile(r"^(LANE|RECONCILIATION)-"), "a lane note"),
+    (re.compile(r"^(stage|p)\d+[a-z]?-"), "a phase or lane note"),
+)
+# Folders that held only programme paperwork when #148 removed them.
+PLANNING_DIRS = {("docs", "plans"), ("docs", "design-revamp")}
+
+
+def planning_reason(path: str) -> str | None:
+    """Why a tracked path is planning paperwork (#148b), or None when it is not."""
+    parts = PurePosixPath(path).parts
+    if parts[0] in PLANNING_ROOT_DIRS:
+        return f"the top-level {parts[0]}/ folder"
+    if parts[:2] in PLANNING_DIRS:
+        return f"the {'/'.join(parts[:2])}/ folder"
+    if any(part.lower() == "research" for part in parts[:-1]):
+        return "a research/ folder"
+    if any(part.startswith("LANE-") for part in parts[:-1]):
+        return "a lane folder"
+    name = parts[-1]
+    if parts[:3] == HELP_CONTENT or PurePosixPath(name).suffix.lower() not in NOTE_SUFFIXES:
+        return None
+    for pattern, reason in PLANNING_NAMES:
+        if pattern.search(name):
+            return reason
+    return None
+
+
+def check_no_planning_files(root: str) -> list[str]:
+    print("[paperwork] no plans, prompts, hand-offs, lane notes or research notes (#148b)")
+    out = subprocess.run(["git", "-C", root, "ls-files", "-z"], check=True, capture_output=True)
+    found = [(path, planning_reason(path)) for path in out.stdout.decode("utf-8").split("\0") if path]
+    found = [(path, reason) for path, reason in found if reason]
+    if not found:
+        print("  ok")
+        return []
+    print(f"  FAIL: {len(found)} planning file(s) tracked; keep them outside the repository (git rm --cached):")
+    for path, reason in sorted(found):
+        print(f"    {path}  ({reason})")
+        annotate(path, f"Planning paperwork ({reason}) is never committed (owner decision #148b)")
+    return ["paperwork"]
+
+
 def main() -> int:
     root = repo_root()
-    failures = check_ceiling(root) + check_twin_docs(root)
+    failures = check_ceiling(root) + check_twin_docs(root) + check_no_planning_files(root)
     if failures:
         print(f"Rules failed: {', '.join(failures)}")
         return 1

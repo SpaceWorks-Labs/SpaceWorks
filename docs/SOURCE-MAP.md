@@ -814,6 +814,24 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `staff/BookableSpaceMachine.tsx`; `staff/panels/{ConsumablesPanel,VendorsPanel,MarkBoughtDialog,
   ItemWaitlist,RequestCancelDialog,InventoryLendingFlags}.tsx`, `staff/LoanReservationPolicySettings.tsx`.
 
+### Release 2 r2-submit-content (submission stages, #177-#180)
+
+- `events/submissions/models_stages.py` -- `SubmissionStage`, `SubmissionStageEntry`, `SnapshotStage`,
+  `StageShortlist`/`Entry`/`Announcement`, `StageExtension`; migrations `events/0069`-`0070` (backfill, guards).
+- `events/submissions/stage_runtime.py` -- windows, gates, active stage, per-stage current snapshots (the one
+  place stage windows are computed); `stage_submit.py` -- draft and submit enforcement, freezing, recording;
+  `stage_rules.py` -- plan validation and answer limits; `stage_presets.py` -- the presets (data only).
+- `events/submissions/stage_service.py`, `stage_config.py` -- the staff editor and the config mirror;
+  `stage_projection.py` -- staff and participant shapes; `stage_shortlists.py`, `stage_staff.py`,
+  `stage_triage.py` -- shortlist gates, extensions, per-stage triage; `views_stages.py`,
+  `serializers_stages.py`, routes in `urls_admin.py`, catalogue `accounts/programme_route_catalog_submit_content.py`.
+- `events/submissions/stage_judging.py` -- round stage, finalist carry-over, the award invariant;
+  `stage_evidence.py` -- stage-aware submission evidence (reimbursement G11 and any stage-based money);
+  `stage_notices.py` -- reminders and shortlist notices; `stage_public.py` -- event page and calendar deadlines;
+  `stage_gallery.py` -- public field filters.
+- Registries: `tenant_migration/catalog_r2_submit_content.py`, `audit_references_r2_submit_content.py`,
+  `audit/presentation_catalog_r2_submit_content.py`, `accounts/merge_registry_rows_submit_content.py`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

@@ -5549,6 +5549,63 @@ responsibility; local purges never delete shared global organizations or foreign
   publishable entries; badges and "awards first" read only the currently announced result's public awards.
 - **Native event grants (#173).** See "Sign-in, sessions and native grants".
 
+### Submission stages, content rules and shortlist gates (release 2 r2-submit-content; #177-#180)
+
+- **Every hackathon event has at least one submission stage; "Single submission" is today's behaviour.**
+  Migration 0070 turned each existing window into ONE stage (opens, deadline, grace, late policy copied, files
+  and links both accepted) and recorded every existing snapshot and current pointer against it, so existing
+  events behave exactly as before. An event that never wrote a plan gets that stage on its first write.
+  The config's `submission_*` window and `late_policy` are a MIRROR of the plan (first opening, last deadline,
+  grace, late policy); through the config they write through to a single stage and are refused with several
+  (`submission_window_by_stage`).
+- **Stage 1 opens at once (its `opens_at` is shown, never enforced, as the single window always was); later
+  stages open at their `opens_at`.** Every stage closes at deadline + grace, or at the team's latest extension
+  (S2, `StageExtension`, append-only) when later; its own late policy (S1) may accept flagged late work. A
+  snapshot after the stage deadline is `late` even under an extension (`SnapshotStage.extension`). Once a
+  shortlist is APPLIED to a stage, the stage takes no more submissions.
+- **Drafts may be incomplete; a stage's rules bite at SUBMIT.** A draft edit is refused only for content the
+  team's active stage takes no part of (`submission_files_disabled`, `submission_links_disabled`, a file family
+  or size the stage refuses). Submit enforces the mode (files and links / files only / links only /
+  presentation, which needs nothing), required link kinds, min/max files, max links (within the hard caps 100
+  and 30), accepted families, per-file size, video hosts and required custom fields, each with a typed 400.
+- **A snapshot freezes its stage.** The stage's rules, custom fields and answers are copied into the snapshot
+  document (`project.stage`); editing or reordering a stage later never alters a snapshot and applies to the
+  next submit or amendment. A stage with submissions, a shortlist, an extension or a round can be edited and
+  moved but never removed (`stage_in_use`).
+- **Each stage has its own current snapshot (`SubmissionStageEntry`).** Re-submitting a stage supersedes only
+  that stage's previous snapshot (its scores are invalidated); other stages keep their judging. The project's
+  `current_snapshot` is its furthest stage's. Withdrawal and an admission reopen clear every stage. Triage
+  belongs to the stage entry (S5); the project's `triage` mirrors its furthest stage for older readers.
+- **Gates.** A stage may require the previous one. A stage with `shortlist_after` opens the NEXT stage only to
+  the teams in its PUBLISHED shortlist (`shortlist_pending` before, `not_shortlisted` 403 for the rest, who keep
+  every earlier snapshot). The first stage is open only to eligible (accepted, confirmed) teams through the
+  roster check, so with admission on the pipeline starts at L21a's application review.
+- **Shortlists reuse the finalists engine (#179).** Top N from a FINALIZED round on that stage (ties at the
+  cutoff all advance) or hand-picked from its eligible submissions; preview writes nothing, apply recomputes
+  under the event lock with the fingerprint (`plan_changed`), publish happens once and needs the full event
+  manager. A shortlist refuses while any of the stage's entries is untriaged (`triage_pending`). Results are
+  emailed only with the event's `shortlist_email` switch (OFF by default, C-37); the publish dialog says how
+  many teams will NOT be told (S11). Shortlist rows and announcements are append-only.
+- **Judging follows the stage.** A round judges `submission_stage` (empty = the last stage, so every existing
+  round judges what it did before); on a multi-stage event it refuses to open while the stage has untriaged
+  entries. An award must point at the work of the stage its round judges (S17). Finalists advanced from a round
+  on another stage carry over by team.
+- **The gallery shows final-stage work only**, so a team eliminated at an earlier gate never appears there.
+  Custom-field answers are read by staff (all), judges (`staff_and_judges` and `public`) and the gallery
+  (`public` only); a public choice field of the final stage filters the gallery (S7).
+- **Money.** The one entry fee is due from `entry_fee_stage` on (default the first stage; S17); earlier stages
+  are free, and no stage ever has its own fee. The team fee still gates every stage. Travel grants read
+  `required_submission` (none / any stage / stage N / final stage / shortlisted at N / finalist; G11), with
+  `require_project_submission` kept as its yes/no mirror and frozen into each award.
+- **Authority and audit.** The stage editor, shortlists, extensions and bulk triage need the hackathon manager
+  (the authority that edits the submission window); participants read their stages in the project payload.
+  Audited: `event.submission_stages.updated`, `event.submission_stage.shortlist_applied`, `..._published`,
+  `..._extension_granted`, and stage ids on submit, amend and triage.
+- **Reminders** (`stage_deadline_reminder`, 24 hours before a stage deadline, `stage_reminder_email`, OFF by
+  default) ride the per-minute deadline sweep and the judging notice source; recipients are recomputed at
+  delivery (teams that may enter the stage and have not submitted it). Stage deadlines appear on the public
+  event page and in the event's and a registered member's calendar feeds.
+
 ## Backup, restore and tenant migration (Phase 5A/5B and Lane D D1-D4/D6 built)
 
 - **A restored `DataExportJob` download bearer is never usable.** The download route is anonymous,

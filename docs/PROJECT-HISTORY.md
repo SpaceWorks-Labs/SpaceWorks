@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 r2-submit-content, submission stages (#177-#180).** The organiser sets what a
+  hackathon submission takes (files and links, files only, links only, presentation; required link kinds,
+  min/max files, max links, file families, size, video hosts, custom fields) per STAGE, from presets (Single
+  submission, Idea -> Final, Idea -> Prototype -> Final, Hardware build, Design sprint, Full pipeline,
+  Ideathon, Case competition). Each stage has its own window, late policy, resubmission mode, extensions and
+  triage, and may end in a shortlist gate on the finalists engine. Rounds judge a chosen stage, the gallery
+  shows the final stage, the entry fee is due from a chosen stage and travel grants can require a stage, a
+  shortlist or the finals. Every existing event became one "Submission" stage with today's rules.
+
 - **2026-11-04 -- release 2 L6, paid ticketing v2 and venue fees (#69, #71, #94, #128 C-20, #169).**
   Multi-ticket orders (one `event_order` Payment, one registration per attendee claimed by signing in),
   checkout seat holds, tiers, pay-what-you-want, group and hidden tickets, promo limits and a booking fee,

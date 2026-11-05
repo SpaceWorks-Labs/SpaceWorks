@@ -55,6 +55,7 @@ RULES = {
     ('events.MentorRoundCheckin', 'mentor_round_team_checkin'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
     ('events.MentorTeamAssignment', 'mentor_team_live_unique'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
     ('events.OfficeHoursBooking', 'office_hours_live_team_slot'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
+    ('events.OfficeHoursBooking', 'office_hours_live_drop_in_slot'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
     ('events.ResultAnnouncement', 'field:result'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
     ('events.ResultPublicationState', 'field:current_announcement'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),
     ('events.SubmissionAsset', 'field:object_key'): _policy(REMAP, "Typed owners, canonical object keys or reconstructed coordination keys follow the target allocation; duplicate tuples refuse."),

@@ -11,25 +11,36 @@ GitHub member sign-in is available through browser OAuth with PKCE, verified pri
 > integrations and overall implementation status. The rules these areas impose live in
 > `docs/INVARIANTS.md`; when a feature landed is in `docs/PROJECT-HISTORY.md`.
 
-## Events programme integration checkpoint - 2026-10-18
+## Release 2 (combined tree, 2026-11-05)
 
-GF4 on `lane/events-g2` integrates EV2-A/B/C/D/E and EV3 handoffs: canonical admission,
-prepared A/C/F/P forms, encrypted ordinary registration, source-aware entitlements,
-check-in/feedback, ordered erasure/deletion, dedicated asset accounting/import publication,
-durable cleanup/recovery, owned seed installation, released sections and the SPA consumers.
-The Events setup area now leaves all five programme features off; account/credential
-settings travel through shared Compose anchors without new generated secrets.
+Every release-2 lane is merged into one combined tree; the full regression, the flow audit and the
+version bump run in the release phase, so treat this as built, not yet released. What it adds, in short:
 
-**Authored integration is not an enableable release.** PostgreSQL/migration/backfill,
-real providers/storage/browser/vendor/PDF/physical QR and integrated owner QA evidence
-remain required. Keep every programme capability and event config off. Generated
-schema/client/catalogue digest were intentionally not refreshed in GF4.
+- **Accounts.** One account per person; nine built-in roles (Technician and Shop Manager are new); staff
+  roles granted to people or by emailed invitation; mandatory staff two-step sign-in with a 3-day grace;
+  passkeys, unusual-sign-in checks, security alerts, IP blocking, Turnstile and breached-password checks;
+  per-space security rows with platform locks. Native apps get a clean break (see the
+  [mobile PRD](mobile/MOBILE-APP-PRD.md)) and event-role grants for judges, mentors and crew.
+- **Money.** The pricing kernel, tax, the finance ledger, refund cases, price-drop refunds, donations and
+  sponsors, paid ticketing v2 and venue fees, and the per-space shop.
+- **Operations.** ID cards and ID programmes, repairs and the Technician, maintenance under each parent,
+  machine sessions, machines and loans depth, the public stats page, the help centre, Google Sheets
+  imports and per-space Metabase analytics.
+- **Platform.** The superadmin is always on; one backup and restore flow with per-space restore points;
+  the Postgres RLS backstop; per-space key rotation and emergency re-key.
+- **Still open at the release phase:** the `backend/config/settings.py` split (the only file over 300
+  lines), the full regression with RLS forced on, the end-to-end flow audit and the README screenshots.
+  Lanes still being built outside this tree: per-event submission content and multi-stage submissions,
+  hackathon money, and the People's choice award.
 
-Separate reimbursement/staged-forms (decisions 34/35), Pages/shared-handle and cloud
-programmes retain their own integration contracts. Missing dependencies or absent domain
-code are not accepted as a complete combined programme. See the [closure ledger](events/integration-status.md),
+## Events programme status
+
+The hackathon programme (hackathons, Mentor Desk, mentor rounds, volunteering, project gallery) ships as
+ordinary per-space switches, off for a new space. Release 2 added applications for any event, review
+stages, crew, finalists, prize payouts and team fees. Runtime and browser evidence is recorded by the
+release-phase flow audit. See the [closure ledger](events/integration-status.md),
 [operator runbook](events/operations.md), [source map](SOURCE-MAP-EVENTS-PROGRAMME.md)
-and [acceptance checklist](events/acceptance.md) for exact boundaries and verification.
+and [acceptance checklist](events/acceptance.md).
 
 ## Admin control plane (superadmin-only)
 
@@ -194,8 +205,9 @@ OAuth publishing remains outside this programme. Native backend contracts and ph
 protocols are implemented; external Android/iOS app builds and real-provider/device release checks
 remain separate work. See the [mobile PRD](mobile/MOBILE-APP-PRD.md).
 
-**2026-10-18 reconciliation.** Native staff use fixed-tenant staff accounts with password/MFA/
-attestation; self-deletion/restore are member-only. Canonical personal envelopes now incorporate
+**2026-10-18 reconciliation, as amended by release 2.** Native staff use a staff step-up grant on
+the person's own account, fixed to one space, with two-step sign-in and attestation; any person may
+delete their account (one account per person). Canonical personal envelopes now incorporate
 Twilio SMS, Twilio/Meta WhatsApp, durable STOP/sender history, BSUID correlation and per-device
 push with optional inbox links. Reports use canonical delivery/mapped history rather than the
 retired addressed send table. Destructive integrations 0043 is unsupplied and sending activation
@@ -205,8 +217,8 @@ remains held pending [replay sign-off](notification-reconciliation-rollout.md).
 
 **Wave 6 platform monitoring lane (uncommitted; coordinator verification pending).**
 The central staff console adds a superadmin-only platform dashboard and read-only
-problem checks, plus scoped Usage & limits for makerspace managers. Hidden tenants
-are excluded from platform monitoring. Checks run every 15 minutes in beat and
+problem checks, plus scoped Usage & limits for makerspace managers. No tenant can be
+hidden from the platform (#110). Checks run every 15 minutes in beat and
 cron; beat completion telemetry now shares the scheduler journal. Implementation,
 thresholds and unsupported MFA/TLS signals: [platform monitoring](platform-monitoring.md).
 
@@ -278,7 +290,7 @@ Stack (in use):
 - **Database:** PostgreSQL 16 (via `docker-compose.yml`)
 - **Styling:** Tailwind CSS 4 (CSS-first; `src/index.css` uses `@import "tailwindcss"` + `@config
   "../tailwind.config.ts"`; PostCSS via `@tailwindcss/postcss`) with CSS-variable light/dark theme tokens.
-  Light default; dark toggle persisted locally.
+  The theme follows the OS theme until the user chooses; the choice is persisted locally (#77).
 - **API documentation:** drf-spectacular / OpenAPI (snapshot `frontend/openapi-schema.json` + generated
   `frontend/src/generated/api.ts`; regenerate both when routes/models change — spectacular needs
   `--format openapi-json`).

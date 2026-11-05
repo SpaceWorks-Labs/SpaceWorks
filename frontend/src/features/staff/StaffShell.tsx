@@ -39,7 +39,13 @@ export function StaffShell(props: Props) {
   });
   const types = useQuery<MachineCollection<MachineType>>({ queryKey: machineKeys.types(space?.id ?? -1), queryFn: skipToken, enabled: false });
   const notices = usePlatformNotices(true, props.isSuperadmin ? "platform" : currentSessionContext());
-  const pausedNotice = space ? spaceNotice(notices.data, { id: space.id }) : undefined;
+  // A paused space is unservable, so it is missing from the account's spaces: match the route's
+  // /m/<slug>/admin, or a person whose only staff spaces are paused, to show the paused page.
+  const routeSlug = /^\/m\/([^/]+)\/admin/.exec(location.pathname)?.[1];
+  const onlyPaused = !props.isSuperadmin && props.makerspaces.length === 0
+    ? notices.data?.spaces.find(row => row.state === "suspended") : undefined;
+  const pausedNotice = space ? spaceNotice(notices.data, { id: space.id })
+    : (routeSlug ? spaceNotice(notices.data, { slug: decodeURIComponent(routeSlug) }) : onlyPaused);
   const path = (tab: string, subPath = "") => consoleSessionHref(staffTabPath(tab, guestOnly, props.isSuperadmin ? undefined : space?.slug, singleTenantLocked, subPath), props.isSuperadmin ? "platform" : currentSessionContext());
   // `requests` passes the tab gate for any hardware action, but each queue needs accept_request or
   // issue_request. With neither, the page would be a dead end: hide it and open the front desk instead.
@@ -82,10 +88,10 @@ export function StaffShell(props: Props) {
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),
     } : hasGrants ? { name: "Assigned resources", subtitle: "Resource staff", avatar: { kind: "icon", icon: "Calendar", tone: "neutral" }, menu: [], locked: true }
     : undefined;
-  if (space && pausedNotice?.state === "suspended") {
-    const canSwitch = !singleTenantLocked && props.makerspaces.length > 1;
+  if (pausedNotice?.state === "suspended") {
+    const canSwitch = !singleTenantLocked && props.makerspaces.length > (space ? 1 : 0);
     const signOut = { label: "Sign out", onClick: () => void props.signOut() };
-    return <PausedSpacePage name={space.name} reason={pausedNotice.reason} primary={canSwitch ? { label: "Switch space", onClick: () => props.setSelected(null) } : signOut}
+    return <PausedSpacePage name={space?.name ?? pausedNotice.name} reason={pausedNotice.reason} primary={canSwitch ? { label: "Switch space", onClick: () => props.setSelected(null) } : signOut}
       escape={canSwitch ? signOut : undefined} />;
   }
   if (space && activeTab === "requests" && noQueues && redirectTab) return <Navigate replace to={path(redirectTab)} />;

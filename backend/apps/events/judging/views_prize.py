@@ -8,7 +8,7 @@ from .api_common import MemberView, PrivateView, paginated, schema
 from .prize_access import finance_event, read_key
 from .serializers import CommandInput
 from .serializers_prize import (
-    AwardSplitRead, ClaimInput, ClaimRead, ForfeitInput, FulfilInput, MyPrizeRead, OutcomeRead, PrizePoolRead,
+    AwardSplitRead, PrizeClaimInput, ClaimRead, ForfeitInput, FulfilInput, MyPrizeRead, OutcomeRead, PrizePoolRead,
     PublicPrizeRead, RecoveryResolveInput, RevealInput, RevealRead, ShareRespondInput, SplitInput, StaffClaimRow,
 )
 
@@ -103,7 +103,7 @@ class MemberShareDecline(MemberShareConfirm):
 
 
 class MemberPrizeClaim(MemberView):
-    @schema(request=ClaimInput, response=ClaimRead,
+    @schema(request=PrizeClaimInput, response=ClaimRead,
             description="Give where to be paid (the space's accepted payee templates) and, optionally, a PAN. "
                         "Encrypted; returned masked. 409 claim_window_closed after the window.")
     def post(self, request, pk, makerspace_id, award_id):

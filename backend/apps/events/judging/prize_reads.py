@@ -35,6 +35,8 @@ def my_prizes(actor, makerspace_id):
     from .payout_split import award_status
     from .prize_claims import claim_deadline, claim_projection
     from .prize_shares import leader_of
+    from .prize_tax import tax_settings
+    from apps.payments.event_payouts.templates import template_descriptors
     snapshots = SubmissionSnapshot.objects.filter(sealed_member_ids__contains=[actor.pk],
                                                   submission__event__makerspace_id=makerspace_id).values("pk")
     rows = []
@@ -64,7 +66,9 @@ def my_prizes(actor, makerspace_id):
                      "value_text": award.prize.value_text, "status": award_status(award),
                      "my_share": _share(share), "my_payout": _payout(payout),
                      "claim": claim_projection(claim) if claim else None, "claim_deadline": claim_deadline(event),
-                     "is_leader": is_leader, "allowed_actions": actions})
+                     "is_leader": is_leader, "allowed_actions": actions,
+                     "tax_id_requested": tax_settings(event.makerspace).prize_tds_enabled,
+                     "payee_templates": template_descriptors(makerspace_id) if "claim" in actions else []})
     return rows
 
 

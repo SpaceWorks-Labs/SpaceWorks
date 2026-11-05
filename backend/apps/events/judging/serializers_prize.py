@@ -4,6 +4,8 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from apps.payments.event_payouts.serializers_responses import PayeeTemplate
+
 from .serializers import ClosedSerializer, CommandInput
 
 MONEY = dict(max_digits=12, decimal_places=2)
@@ -23,7 +25,7 @@ class ShareRespondInput(CommandInput):
     pass
 
 
-class ClaimInput(CommandInput):
+class PrizeClaimInput(CommandInput):
     country = serializers.RegexField(r"^[A-Z]{2}$")
     method = serializers.ChoiceField(choices=("bank_transfer", "upi", "paypal", "wise", "cash", "cheque", "other"))
     details = serializers.DictField(child=serializers.CharField(max_length=200, allow_blank=True))
@@ -143,6 +145,8 @@ class MyPrizeRead(ClosedSerializer):
     claim_deadline = serializers.DateTimeField(allow_null=True)
     is_leader = serializers.BooleanField()
     allowed_actions = serializers.ListField(child=serializers.CharField())
+    tax_id_requested = serializers.BooleanField(help_text="The space records prize tax (#181): ask for a PAN.")
+    payee_templates = PayeeTemplate(many=True, help_text="Where this space can pay a winner (claim action only).")
 
 
 class PublicPrizeRead(ClosedSerializer):

@@ -26,7 +26,7 @@ from .ports import runtime
 from .prize_shares import award_total, has_standing_payout, leader_of, require_claims
 from .prize_tax import clean_pan, mask_pan
 from .serializers import CommandInput, validated
-from .serializers_prize import ClaimInput
+from .serializers_prize import PrizeClaimInput
 
 
 @contextmanager
@@ -68,7 +68,7 @@ def submit(event_id, award_id, *, actor, data):
     from apps.payments.event_payouts.templates import TEMPLATE_VERSION, configured_templates, template_key, validate_details
     from apps.payments.event_payouts.validation import PayoutValidationError
     from .payouts import _published_award
-    values = validated(ClaimInput, data)
+    values = validated(PrizeClaimInput, data)
     pan = clean_pan(values.get("pan", ""))
     event = runtime_event(event_id)
     with claim_key(event.makerspace_id), mutation(event_id, actor, owner=True) as (event, _):

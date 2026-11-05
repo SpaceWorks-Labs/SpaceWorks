@@ -9,7 +9,8 @@ the seats are held for `HOLD_MINUTES`, the shortest hosted-checkout session a pr
 allows. A free order settles at once.
 
 Orders run on events open to members or to any account, without approval. Approval and
-invitation events keep the single-registration flow, whose charge is raised on approval.
+invitation events keep the single-registration flow, whose charge is raised on approval; with
+`events.accepted_addons` on, a CONFIRMED registration there may order add-ons alone (hack-money G9).
 """
 
 import logging
@@ -28,9 +29,25 @@ HOLD_MINUTES = 30
 ORDER_AUDIENCES = ("members", "accounts")
 
 
-def require_orderable(event, member):
+def addons_only(event, member, request):
+    """Hack-money G9 (`events.accepted_addons`): on an event that reviews registrations, a person
+    already CONFIRMED there may order add-ons alone (a T-shirt, meals, a hardware kit). No seat is
+    sold, so the approval and capacity rules that keep seat orders off such events are untouched."""
+    from apps.makerspaces.platform import feature_enabled
+    if request is None or request.get("tickets") or not request.get("addons"):
+        return False
+    if not event.registration_requires_approval or not feature_enabled(event.makerspace, "events.accepted_addons"):
+        return False
+    return member is not None and event.registrations.filter(member=member, status__in=("registered", "attended")).exists()
+
+
+def require_orderable(event, member, request=None):
     from .capacity import registration_is_open
     from .registration_access import require_registration_access
+    if addons_only(event, member, request):
+        if event.ends_at <= timezone.now():
+            raise OrderRefused("sold_out", "This event has ended.")
+        return
     if event.registration_audience not in ORDER_AUDIENCES or event.registration_requires_approval:
         raise OrderRefused("order_not_payable", "This event takes single registrations only.")
     if not registration_is_open(event, timezone.now()):
@@ -85,8 +102,9 @@ def place_order(event, *, member, actor, request, digest=None):
     from .orders_codes import spend
     from .orders_quote import build_quote
     event.makerspace = require_module_locked(event.makerspace, "events")
-    require_orderable(event, member)
-    priced = build_quote(event, member, request, lock=True)
+    require_orderable(event, member, request)
+    only_addons = addons_only(event, member, request)
+    priced = build_quote(event, member, request, lock=True, addons_only=only_addons)
     verify_digest(priced.quote, digest)
     attendees = [str(email).strip().lower() for email in request.get("attendees") or () if str(email).strip()]
     order = EventOrder.objects.create(
@@ -101,7 +119,8 @@ def place_order(event, *, member, actor, request, digest=None):
     for promo in priced.access_promos:
         spend(promo, 1)
     from .orders_attendees import create_seats
-    create_seats(order, attendees=attendees, buyer_attends=bool(request.get("buyer_attends", True)))
+    if not only_addons:  # G9: an add-on-only order sells no seat
+        create_seats(order, attendees=attendees, buyer_attends=bool(request.get("buyer_attends", True)))
     record(actor, "event.order_created", makerspace=event.makerspace, target=order,
            meta={"order_id": order.pk, "event_id": event.pk, "seats": priced.seats, "total": str(order.total),
                  "promo_id": getattr(priced.promo, "pk", None)})
@@ -110,7 +129,7 @@ def place_order(event, *, member, actor, request, digest=None):
         settle_locked(order, actor=actor)
         return order, None
     payment = _payment(order, actor)
-    if feature_enabled(event.makerspace, "events.seat_holds"):
+    if priced.seats and feature_enabled(event.makerspace, "events.seat_holds"):
         EventCheckoutHold.objects.create(makerspace=event.makerspace, order=order, event=event, seats=priced.seats,
                                          expires_at=timezone.now() + timedelta(minutes=HOLD_MINUTES))
     _schedule_checkout(payment)

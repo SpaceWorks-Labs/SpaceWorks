@@ -77,11 +77,11 @@ AUTHORITY_FIELDS = {
     **{('events.StageShortlistAnnouncement', name): _REFERENCE for name in ('event', 'shortlist', 'published_by')},
 }
 
+# The stage-position, stage-entry and shortlist-entry constraints include their tenant-owned parent
+# column (event, submission, shortlist) and carry no deployment-global risk, so only the two
+# OneToOne scopes are registered.
 UNIQUE_CONSTRAINTS = (
-    ('events.SubmissionStage', 'ev_stage_position'),
-    ('events.SubmissionStageEntry', 'ev_stage_entry_once'),
     ('events.SnapshotStage', 'field:snapshot'),
-    ('events.StageShortlistEntry', 'ev_shortlist_entry_once'),
     ('events.StageShortlistAnnouncement', 'field:shortlist'),
 )
 

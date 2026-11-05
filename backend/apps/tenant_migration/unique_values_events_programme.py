@@ -69,4 +69,4 @@ RULES.update({key: _policy(REMAP, "Typed owners, canonical object keys or recons
 from .catalog_r2_l21b import UNIQUE_CONSTRAINTS as _L21B_UNIQUE  # noqa: E402
 RULES.update({key: _policy(REMAP, "Typed owners or OneToOne scopes follow the target allocation; duplicate tuples refuse.") for key in _L21B_UNIQUE})
 from .catalog_r2_submit_content import UNIQUE_CONSTRAINTS as _SC_UNIQUE  # noqa: E402
-RULES.update({key: _policy(REMAP, "Typed owners, stage positions or OneToOne scopes follow the target allocation; duplicate tuples refuse.") for key in _SC_UNIQUE})
+RULES.update({key: _policy(REMAP, "OneToOne scopes follow the target allocation; duplicate tuples refuse.") for key in _SC_UNIQUE})

@@ -46,7 +46,7 @@ class HostingRequestRowSerializer(serializers.ModelSerializer):
         return {"id": space.pk, "name": space.name, "slug": space.slug} if space else None
 
 
-class RevisionSerializer(serializers.Serializer):
+class OnboardingRevisionSerializer(serializers.Serializer):
     kind = serializers.CharField()
     note = serializers.CharField(allow_blank=True)
     changed_fields = serializers.ListField(child=serializers.CharField())
@@ -54,14 +54,14 @@ class RevisionSerializer(serializers.Serializer):
 
 
 class HostingRequestDetailSerializer(HostingRequestRowSerializer):
-    revisions = RevisionSerializer(many=True, read_only=True)
+    revisions = OnboardingRevisionSerializer(many=True, read_only=True)
 
     class Meta(HostingRequestRowSerializer.Meta):
         fields = (*HostingRequestRowSerializer.Meta.fields, "revisions")
         read_only_fields = fields
 
 
-class ApproveSerializer(serializers.Serializer):
+class OnboardingApproveSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
     slug = serializers.SlugField(max_length=50, required=False, allow_blank=True, default="")
     organization_id = serializers.IntegerField(required=False, allow_null=True, default=None)
@@ -69,24 +69,24 @@ class ApproveSerializer(serializers.Serializer):
     invite_manager = serializers.BooleanField(default=True)
 
 
-class SpaceRefSerializer(serializers.Serializer):
+class OnboardingSpaceRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     slug = serializers.CharField()
 
 
-class ApproveResultSerializer(serializers.Serializer):
+class OnboardingApproveResultSerializer(serializers.Serializer):
     request = HostingRequestRowSerializer()
-    makerspace = SpaceRefSerializer()
+    makerspace = OnboardingSpaceRefSerializer()
     invitation = serializers.CharField(
         help_text="The Space Manager invitation mail: an email delivery status, `skipped` or `unavailable`.")
 
 
-class NoteSerializer(serializers.Serializer):
+class OnboardingChangesNoteSerializer(serializers.Serializer):
     note = serializers.CharField(min_length=10, max_length=2000)
 
 
-class RejectSerializer(serializers.Serializer):
+class OnboardingRejectSerializer(serializers.Serializer):
     reason = serializers.CharField(min_length=10, max_length=2000)
 
 
@@ -127,24 +127,24 @@ class HostingRequestApproveView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveSuperAdmin]
 
     @extend_schema(tags=TAGS, summary="Approve a request: create the space and invite its Space Manager",
-                   request=ApproveSerializer, responses={200: ApproveResultSerializer, **errors(400, 401, 403, 404, 409)})
+                   request=OnboardingApproveSerializer, responses={200: OnboardingApproveResultSerializer, **errors(400, 401, 403, 404, 409)})
     def post(self, request, pk):
         _managed()
         get_object_or_404(HostingRequest, pk=pk)
-        body = ApproveSerializer(data=request.data)
+        body = OnboardingApproveSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         row, space, invitation = onboarding.approve(request.user, pk, **body.validated_data)
-        return Response(ApproveResultSerializer({"request": row, "makerspace": space, "invitation": invitation}).data)
+        return Response(OnboardingApproveResultSerializer({"request": row, "makerspace": space, "invitation": invitation}).data)
 
 
 class HostingRequestChangesView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveSuperAdmin]
 
-    @extend_schema(tags=TAGS, summary="Ask the applicant for changes", request=NoteSerializer,
+    @extend_schema(tags=TAGS, summary="Ask the applicant for changes", request=OnboardingChangesNoteSerializer,
                    responses={200: HostingRequestRowSerializer, **errors(400, 401, 403, 404, 409)})
     def post(self, request, pk):
         _managed()
-        body = NoteSerializer(data=request.data)
+        body = OnboardingChangesNoteSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         return Response(HostingRequestRowSerializer(workflow.request_changes(request.user, pk, body.validated_data["note"])).data)
 
@@ -152,10 +152,10 @@ class HostingRequestChangesView(RecentReauthenticationMixin, APIView):
 class HostingRequestRejectView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveSuperAdmin]
 
-    @extend_schema(tags=TAGS, summary="Reject a hosting request with a reason", request=RejectSerializer,
+    @extend_schema(tags=TAGS, summary="Reject a hosting request with a reason", request=OnboardingRejectSerializer,
                    responses={200: HostingRequestRowSerializer, **errors(400, 401, 403, 404, 409)})
     def post(self, request, pk):
         _managed()
-        body = RejectSerializer(data=request.data)
+        body = OnboardingRejectSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         return Response(HostingRequestRowSerializer(workflow.reject(request.user, pk, body.validated_data["reason"])).data)

@@ -39,7 +39,7 @@ class ArchiveNowView(_ControlView):
         except DjangoValidationError as exc:
             raise SpaceControlConflict("space_not_active", " ".join(exc.messages)) from exc
 
-    @extend_schema(tags=TAGS, summary="Archive a space now", request=s.EmptySerializer,
+    @extend_schema(tags=TAGS, summary="Archive a space now", request=s.SpaceControlEmptySerializer,
                    responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
@@ -62,14 +62,14 @@ class UnarchiveView(_ControlView):
                 purge_due_at=None, archive_on=None, scheduled_at=None, scheduled_by=None,
                 schedule_note="", reminders_sent=[])
 
-    @extend_schema(tags=TAGS, summary="Unarchive a space", request=s.EmptySerializer,
+    @extend_schema(tags=TAGS, summary="Unarchive a space", request=s.SpaceControlEmptySerializer,
                    responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
 
 
 class PurgeView(_ControlView):
-    request_serializer = s.PurgeRequestSerializer
+    request_serializer = s.SpacePurgeRequestSerializer
 
     def run(self, actor, pk, data):
         from apps.makerspaces import lifecycle
@@ -85,11 +85,11 @@ class PurgeView(_ControlView):
         except DjangoValidationError as exc:
             raise _conflict(exc) from exc
 
-    @extend_schema(tags=TAGS, summary="Permanently delete (purge) an archived space", request=s.PurgeRequestSerializer,
+    @extend_schema(tags=TAGS, summary="Permanently delete (purge) an archived space", request=s.SpacePurgeRequestSerializer,
                    responses={204: OpenApiResponse(description="Purged."), **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         get_object_or_404(Makerspace, pk=makerspace_id)
-        body = s.PurgeRequestSerializer(data=request.data)
+        body = s.SpacePurgeRequestSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         try:
             self.run(request.user, makerspace_id, body.validated_data)

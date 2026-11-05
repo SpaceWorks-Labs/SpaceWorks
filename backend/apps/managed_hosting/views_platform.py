@@ -70,22 +70,22 @@ class PlanDetailView(_Platform):
 class SpacePlanView(_Platform):
     @extend_schema(tags=TAGS, summary="Read a space's hosting plan",
                    description="Answers `null` when the space has no plan (the fair-use defaults apply).",
-                   responses={200: s.PlanAssignmentSerializer, **errors(401, 403, 404)})
+                   responses={200: s.HostingPlanAssignmentSerializer, **errors(401, 403, 404)})
     def get(self, request, makerspace_id):
         get_object_or_404(Makerspace, pk=makerspace_id)
         row = SpacePlanAssignment.objects.select_related("plan").filter(makerspace_id=makerspace_id).first()
-        return Response(s.PlanAssignmentSerializer(row).data if row else None)
+        return Response(s.HostingPlanAssignmentSerializer(row).data if row else None)
 
     @extend_schema(tags=TAGS, summary="Assign a hosting plan (with an optional trial)",
-                   request=s.PlanAssignRequestSerializer,
-                   responses={200: s.PlanAssignmentSerializer, **errors(400, 401, 403, 404)})
+                   request=s.HostingPlanAssignRequestSerializer,
+                   responses={200: s.HostingPlanAssignmentSerializer, **errors(400, 401, 403, 404)})
     def put(self, request, makerspace_id):
         get_object_or_404(Makerspace, pk=makerspace_id)
-        body = s.PlanAssignRequestSerializer(data=request.data)
+        body = s.HostingPlanAssignRequestSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         row = plans.assign(request.user, makerspace_id, body.validated_data["plan_id"],
                            trial_days=body.validated_data["trial_days"])
-        return Response(s.PlanAssignmentSerializer(row).data)
+        return Response(s.HostingPlanAssignmentSerializer(row).data)
 
     @extend_schema(tags=TAGS, summary="Remove a space's hosting plan (fair-use defaults apply again)",
                    responses={204: OpenApiResponse(description="Removed."), **errors(401, 403, 404)})
@@ -115,10 +115,10 @@ class InvoiceListCreateView(RecentReauthenticationMixin, GenericAPIView):
         page = self.paginate_queryset(rows)
         return self.get_paginated_response(s.HostingInvoiceSerializer(page, many=True).data)
 
-    @extend_schema(tags=TAGS, summary="Record a hosting invoice for a space", request=s.InvoiceCreateSerializer,
+    @extend_schema(tags=TAGS, summary="Record a hosting invoice for a space", request=s.HostingInvoiceCreateSerializer,
                    responses={201: s.HostingInvoiceSerializer, **errors(400, 401, 403, 404)})
     def post(self, request):
-        body = s.InvoiceCreateSerializer(data=request.data)
+        body = s.HostingInvoiceCreateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         get_object_or_404(Makerspace, pk=body.validated_data["makerspace_id"])
         row = billing.create_invoice(request.user, body.validated_data)
@@ -126,38 +126,38 @@ class InvoiceListCreateView(RecentReauthenticationMixin, GenericAPIView):
 
 
 class InvoicePaymentView(_Platform):
-    @extend_schema(tags=TAGS, summary="Record an offline payment receipt", request=s.RecordPaymentSerializer,
+    @extend_schema(tags=TAGS, summary="Record an offline payment receipt", request=s.HostingInvoicePaymentSerializer,
                    responses={200: s.HostingInvoiceSerializer, **errors(400, 401, 403, 404, 409)})
     def post(self, request, pk):
         get_object_or_404(HostingInvoice, pk=pk)
-        body = s.RecordPaymentSerializer(data=request.data)
+        body = s.HostingInvoicePaymentSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         return Response(s.HostingInvoiceSerializer(billing.record_payment(request.user, pk, **body.validated_data)).data)
 
 
 class InvoiceVoidView(_Platform):
-    @extend_schema(tags=TAGS, summary="Void an open hosting invoice", request=s.VoidSerializer,
+    @extend_schema(tags=TAGS, summary="Void an open hosting invoice", request=s.HostingInvoiceVoidSerializer,
                    responses={200: s.HostingInvoiceSerializer, **errors(400, 401, 403, 404, 409)})
     def post(self, request, pk):
         get_object_or_404(HostingInvoice, pk=pk)
-        body = s.VoidSerializer(data=request.data)
+        body = s.HostingInvoiceVoidSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         return Response(s.HostingInvoiceSerializer(billing.void(request.user, pk, body.validated_data["reason"])).data)
 
 
 class BillingSettingsView(_Platform):
     @extend_schema(tags=TAGS, summary="Read hosting billing settings",
-                   responses={200: s.BillingSettingsSerializer, **errors(401, 403, 404)})
+                   responses={200: s.HostingBillingSettingsSerializer, **errors(401, 403, 404)})
     def get(self, request):
-        return Response(s.BillingSettingsSerializer(PlatformHostingBillingSettings.load()).data)
+        return Response(s.HostingBillingSettingsSerializer(PlatformHostingBillingSettings.load()).data)
 
     @extend_schema(tags=TAGS, summary="Change hosting billing settings (secrets are write-only)",
-                   request=s.BillingSettingsSerializer,
-                   responses={200: s.BillingSettingsSerializer, **errors(400, 401, 403, 404)})
+                   request=s.HostingBillingSettingsSerializer,
+                   responses={200: s.HostingBillingSettingsSerializer, **errors(400, 401, 403, 404)})
     def patch(self, request):
         with transaction.atomic():
             row = PlatformHostingBillingSettings.objects.select_for_update().get(pk=PlatformHostingBillingSettings.load().pk)
-            body = s.BillingSettingsSerializer(row, data=request.data, partial=True)
+            body = s.HostingBillingSettingsSerializer(row, data=request.data, partial=True)
             body.is_valid(raise_exception=True)
             data = dict(body.validated_data)
             for field in PlatformHostingBillingSettings.SECRET_FIELDS:
@@ -168,5 +168,5 @@ class BillingSettingsView(_Platform):
             row.updated_by = request.user
             row.save()
             audit.record(request.user, "managed_hosting.billing_settings_updated", makerspace=None, target=row,
-                         meta={"fields": sorted(set(request.data) & set(s.BillingSettingsSerializer.Meta.fields))})
-        return Response(s.BillingSettingsSerializer(row).data)
+                         meta={"fields": sorted(set(request.data) & set(s.HostingBillingSettingsSerializer.Meta.fields))})
+        return Response(s.HostingBillingSettingsSerializer(row).data)

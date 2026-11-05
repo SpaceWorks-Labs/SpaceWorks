@@ -34,20 +34,20 @@ class SpacePlanUsageView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="Read this space's hosting plan and usage against it",
-                   responses={200: s.PlanUsageSerializer, **errors(401, 403, 404)})
+                   responses={200: s.HostingPlanUsageSerializer, **errors(401, 403, 404)})
     def get(self, request, makerspace_id):
-        return Response(s.PlanUsageSerializer(plan_usage(_space(request, makerspace_id))).data)
+        return Response(s.HostingPlanUsageSerializer(plan_usage(_space(request, makerspace_id))).data)
 
 
 class SpaceInvoiceListView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="List this space's hosting invoices",
-                   responses={200: s.SpaceInvoiceSerializer(many=True), **errors(401, 403, 404)})
+                   responses={200: s.SpaceHostingInvoiceSerializer(many=True), **errors(401, 403, 404)})
     def get(self, request, makerspace_id):
         space = _space(request, makerspace_id)
         rows = HostingInvoice.objects.filter(makerspace=space).prefetch_related("receipts").exclude(status="void")
-        return Response(s.SpaceInvoiceSerializer(rows, many=True).data)
+        return Response(s.SpaceHostingInvoiceSerializer(rows, many=True).data)
 
 
 class SpaceInvoiceCheckoutView(APIView):
@@ -56,12 +56,12 @@ class SpaceInvoiceCheckoutView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, summary="Open an online checkout for a hosting invoice", request=None,
-                   responses={200: s.CheckoutSerializer, **errors(401, 403, 404, 409)})
+                   responses={200: s.HostingCheckoutSerializer, **errors(401, 403, 404, 409)})
     def post(self, request, makerspace_id, invoice_id):
         space = _space(request, makerspace_id)
         require_online_billing()
         get_object_or_404(HostingInvoice, pk=invoice_id, makerspace=space)
-        return Response(s.CheckoutSerializer({"url": online.start_checkout(space.pk, invoice_id)}).data)
+        return Response(s.HostingCheckoutSerializer({"url": online.start_checkout(space.pk, invoice_id)}).data)
 
 
 class _ProviderCallbackView(APIView):

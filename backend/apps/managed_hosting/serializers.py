@@ -27,7 +27,7 @@ class HostingPlanSerializer(serializers.ModelSerializer):
         return validate_modules(value)
 
 
-class PlanAssignmentSerializer(serializers.Serializer):
+class HostingPlanAssignmentSerializer(serializers.Serializer):
     makerspace_id = serializers.IntegerField()
     plan = HostingPlanSerializer()
     assigned_at = serializers.DateTimeField()
@@ -38,12 +38,12 @@ class PlanAssignmentSerializer(serializers.Serializer):
         return obj.trial_expired_at is not None
 
 
-class PlanAssignRequestSerializer(serializers.Serializer):
+class HostingPlanAssignRequestSerializer(serializers.Serializer):
     plan_id = serializers.IntegerField()
     trial_days = serializers.IntegerField(min_value=0, max_value=365, required=False, allow_null=True, default=None)
 
 
-class ReceiptSerializer(serializers.ModelSerializer):
+class HostingInvoiceReceiptSerializer(serializers.ModelSerializer):
     recorded_by = serializers.SerializerMethodField()
 
     class Meta:
@@ -59,7 +59,7 @@ class HostingInvoiceSerializer(serializers.ModelSerializer):
     makerspace = serializers.SerializerMethodField()
     overdue = serializers.SerializerMethodField()
     online_payable = serializers.SerializerMethodField()
-    receipts = ReceiptSerializer(many=True, read_only=True)
+    receipts = HostingInvoiceReceiptSerializer(many=True, read_only=True)
 
     class Meta:
         model = HostingInvoice
@@ -78,7 +78,7 @@ class HostingInvoiceSerializer(serializers.ModelSerializer):
         return obj.status == HostingInvoice.Status.OPEN and online_billing_enabled()
 
 
-class SpaceInvoiceSerializer(HostingInvoiceSerializer):
+class SpaceHostingInvoiceSerializer(HostingInvoiceSerializer):
     """The Space Manager's view: who recorded a receipt stays the platform's business."""
 
     def to_representation(self, instance):
@@ -88,7 +88,7 @@ class SpaceInvoiceSerializer(HostingInvoiceSerializer):
         return data
 
 
-class InvoiceCreateSerializer(serializers.Serializer):
+class HostingInvoiceCreateSerializer(serializers.Serializer):
     makerspace_id = serializers.IntegerField()
     amount_minor = serializers.IntegerField(min_value=1)
     currency = serializers.RegexField(r"^[A-Za-z]{3}$")
@@ -98,19 +98,21 @@ class InvoiceCreateSerializer(serializers.Serializer):
     period_end = serializers.DateField(required=False, allow_null=True, default=None)
 
 
-class RecordPaymentSerializer(serializers.Serializer):
+class HostingInvoicePaymentSerializer(serializers.Serializer):
     method = serializers.ChoiceField(choices=("bank_transfer", "cash", "cheque", "card_offline", "other"))
     reference = serializers.CharField(max_length=200)
     received_on = serializers.DateField()
     note = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
 
 
-class VoidSerializer(serializers.Serializer):
+class HostingInvoiceVoidSerializer(serializers.Serializer):
     reason = serializers.CharField(min_length=3, max_length=300)
 
 
-class BillingSettingsSerializer(serializers.ModelSerializer):
+class HostingBillingSettingsSerializer(serializers.ModelSerializer):
     online_billing_switch = serializers.SerializerMethodField()
+    provider = serializers.CharField(max_length=16, required=False, allow_blank=True,
+                                     help_text="`stripe`, `razorpay`, or blank for none.")
     stripe_secret_key = serializers.CharField(write_only=True, required=False, allow_blank=True)
     stripe_webhook_secret = serializers.CharField(write_only=True, required=False, allow_blank=True)
     razorpay_key_secret = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -123,6 +125,11 @@ class BillingSettingsSerializer(serializers.ModelSerializer):
         read_only_fields = ("updated_at",)
         extra_kwargs = {"grace_days": {"min_value": 0, "max_value": 365}}
 
+    def validate_provider(self, value):
+        if value not in ("", "stripe", "razorpay"):
+            raise serializers.ValidationError("Choose stripe, razorpay or none.")
+        return value
+
     def get_online_billing_switch(self, obj) -> bool:
         return online_billing_enabled()
 
@@ -133,23 +140,23 @@ class BillingSettingsSerializer(serializers.ModelSerializer):
         return data
 
 
-class CheckoutSerializer(serializers.Serializer):
+class HostingCheckoutSerializer(serializers.Serializer):
     url = serializers.URLField()
 
 
-class PlanUsageRowSerializer(serializers.Serializer):
+class HostingPlanUsageRowSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()
     used = serializers.IntegerField(allow_null=True)
     limit = serializers.IntegerField(allow_null=True)
-    unit = serializers.CharField()
+    unit = serializers.CharField(help_text="`bytes` or `count`.")
     percent = serializers.FloatField(allow_null=True)
-    level = serializers.ChoiceField(choices=("ok", "warning", "limit"))
+    level = serializers.CharField(help_text="`ok`, `warning` (from 80 %) or `limit` (100 %).")
 
 
-class PlanUsageSerializer(serializers.Serializer):
+class HostingPlanUsageSerializer(serializers.Serializer):
     plan = serializers.DictField(allow_null=True)
     trial_ends_at = serializers.DateTimeField(allow_null=True)
     read_only_reason = serializers.CharField(allow_null=True)
-    resources = PlanUsageRowSerializer(many=True)
+    resources = HostingPlanUsageRowSerializer(many=True)
     warnings = serializers.ListField(child=serializers.CharField())

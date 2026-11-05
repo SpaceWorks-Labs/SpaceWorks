@@ -63,7 +63,7 @@ class _ControlView(RecentReauthenticationMixin, APIView):
     """
 
     permission_classes = [IsActiveSuperAdmin]
-    request_serializer = s.EmptySerializer
+    request_serializer = s.SpaceControlEmptySerializer
 
     def control(self, request, makerspace_id):
         get_object_or_404(Makerspace, pk=makerspace_id)
@@ -80,12 +80,12 @@ CONTROL_ERRORS = errors(400, 401, 403, 404, 409)
 
 
 class SuspendView(_ControlView):
-    request_serializer = s.ReasonSerializer
+    request_serializer = s.SpaceControlReasonSerializer
 
     def run(self, actor, pk, data):
         services_access.suspend(actor, pk, data["reason"])
 
-    @extend_schema(tags=TAGS, summary="Pause (suspend) a space", request=s.ReasonSerializer,
+    @extend_schema(tags=TAGS, summary="Pause (suspend) a space", request=s.SpaceControlReasonSerializer,
                    responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
@@ -95,19 +95,19 @@ class UnsuspendView(_ControlView):
     def run(self, actor, pk, data):
         services_access.unsuspend(actor, pk)
 
-    @extend_schema(tags=TAGS, summary="Unblock a paused space", request=s.EmptySerializer,
+    @extend_schema(tags=TAGS, summary="Unblock a paused space", request=s.SpaceControlEmptySerializer,
                    responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
 
 
 class ReadOnlyView(_ControlView):
-    request_serializer = s.ReasonSerializer
+    request_serializer = s.SpaceControlReasonSerializer
 
     def run(self, actor, pk, data):
         services_access.set_read_only(actor, pk, data["reason"])
 
-    @extend_schema(tags=TAGS, summary="Put a space in read-only mode", request=s.ReasonSerializer,
+    @extend_schema(tags=TAGS, summary="Put a space in read-only mode", request=s.SpaceControlReasonSerializer,
                    responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
@@ -117,20 +117,20 @@ class ReadOnlyLiftView(_ControlView):
     def run(self, actor, pk, data):
         services_access.lift_read_only(actor, pk)
 
-    @extend_schema(tags=TAGS, summary="End read-only mode for a space", request=s.EmptySerializer,
+    @extend_schema(tags=TAGS, summary="End read-only mode for a space", request=s.SpaceControlEmptySerializer,
                    responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
 
 
 class ScheduleView(_ControlView):
-    request_serializer = s.ScheduleRequestSerializer
+    request_serializer = s.SpaceScheduleRequestSerializer
 
     def run(self, actor, pk, data):
         services_schedule.schedule(actor, pk, **data)
 
     @extend_schema(tags=TAGS, summary="Schedule a space's archive and its purge after a grace period",
-                   request=s.ScheduleRequestSerializer, responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
+                   request=s.SpaceScheduleRequestSerializer, responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
 
@@ -139,7 +139,7 @@ class ScheduleCancelView(_ControlView):
     def run(self, actor, pk, data):
         services_schedule.cancel(actor, pk)
 
-    @extend_schema(tags=TAGS, summary="Cancel a scheduled archive or purge", request=s.EmptySerializer,
+    @extend_schema(tags=TAGS, summary="Cancel a scheduled archive or purge", request=s.SpaceControlEmptySerializer,
                    responses={200: s.HealthCardSerializer, **CONTROL_ERRORS})
     def post(self, request, makerspace_id):
         return self.control(request, makerspace_id)
@@ -149,18 +149,18 @@ class TransferOwnershipView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveSuperAdmin]
 
     @extend_schema(tags=TAGS, summary="Assign a new Space Manager (transfer ownership)",
-                   request=s.TransferRequestSerializer,
-                   responses={200: s.TransferResultSerializer, **errors(400, 401, 403, 404, 409, 423)})
+                   request=s.SpaceTransferRequestSerializer,
+                   responses={200: s.SpaceTransferResultSerializer, **errors(400, 401, 403, 404, 409, 423)})
     def post(self, request, makerspace_id):
         get_object_or_404(Makerspace, pk=makerspace_id)
-        body = s.TransferRequestSerializer(data=request.data)
+        body = s.SpaceTransferRequestSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         try:
             outcome, delivery = services_ownership.transfer_ownership(request.user, makerspace_id, **body.validated_data)
         except DjangoValidationError as exc:
             raise PermissionDenied(" ".join(exc.messages)) from exc
         card = health.card(Makerspace.objects.get(pk=makerspace_id))
-        return Response(s.TransferResultSerializer(
+        return Response(s.SpaceTransferResultSerializer(
             {"status": outcome, "card": card, "invitation_email_status": delivery}).data, status=status.HTTP_200_OK)
 
 

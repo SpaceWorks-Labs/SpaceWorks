@@ -21,7 +21,7 @@ from .services_schedule import is_archived
 TAGS = ["Platform announcements"]
 
 
-class AnnouncementSerializer(serializers.ModelSerializer):
+class PlatformAnnouncementSerializer(serializers.ModelSerializer):
     makerspaces = serializers.SerializerMethodField()
     created_by = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
@@ -43,7 +43,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         return announcements.status(obj)
 
 
-class AnnouncementCreateSerializer(serializers.Serializer):
+class PlatformAnnouncementCreateSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=120)
     body = serializers.CharField(max_length=4000)
     severity = serializers.ChoiceField(choices=PlatformAnnouncement.Severity.choices, default="info")
@@ -62,43 +62,43 @@ class AnnouncementCreateSerializer(serializers.Serializer):
 
 class AnnouncementListCreateView(RecentReauthenticationMixin, GenericAPIView):
     permission_classes = [IsActiveSuperAdmin]
-    serializer_class = AnnouncementSerializer
+    serializer_class = PlatformAnnouncementSerializer
 
     @extend_schema(tags=TAGS, summary="List platform announcements",
-                   responses={200: AnnouncementSerializer(many=True), **errors(401, 403)})
+                   responses={200: PlatformAnnouncementSerializer(many=True), **errors(401, 403)})
     def get(self, request):
         page = self.paginate_queryset(PlatformAnnouncement.objects.select_related("created_by"))
-        return self.get_paginated_response(AnnouncementSerializer(page, many=True).data)
+        return self.get_paginated_response(PlatformAnnouncementSerializer(page, many=True).data)
 
     @extend_schema(tags=TAGS, summary="Create a banner announcement (and optional email to Space Managers)",
-                   request=AnnouncementCreateSerializer, responses={201: AnnouncementSerializer, **errors(400, 401, 403)})
+                   request=PlatformAnnouncementCreateSerializer, responses={201: PlatformAnnouncementSerializer, **errors(400, 401, 403)})
     def post(self, request):
-        body = AnnouncementCreateSerializer(data=request.data)
+        body = PlatformAnnouncementCreateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
         row = announcements.create(request.user, body.validated_data)
-        return Response(AnnouncementSerializer(row).data, status=status.HTTP_201_CREATED)
+        return Response(PlatformAnnouncementSerializer(row).data, status=status.HTTP_201_CREATED)
 
 
 class AnnouncementDetailView(APIView):
     permission_classes = [IsActiveSuperAdmin]
 
     @extend_schema(tags=TAGS, summary="Read a platform announcement",
-                   responses={200: AnnouncementSerializer, **errors(401, 403, 404)})
+                   responses={200: PlatformAnnouncementSerializer, **errors(401, 403, 404)})
     def get(self, request, pk):
-        return Response(AnnouncementSerializer(get_object_or_404(PlatformAnnouncement, pk=pk)).data)
+        return Response(PlatformAnnouncementSerializer(get_object_or_404(PlatformAnnouncement, pk=pk)).data)
 
 
 class AnnouncementCancelView(RecentReauthenticationMixin, APIView):
     permission_classes = [IsActiveSuperAdmin]
 
     @extend_schema(tags=TAGS, summary="Cancel a platform announcement", request=None,
-                   responses={200: AnnouncementSerializer, **errors(401, 403, 404, 409)})
+                   responses={200: PlatformAnnouncementSerializer, **errors(401, 403, 404, 409)})
     def post(self, request, pk):
         get_object_or_404(PlatformAnnouncement, pk=pk)
-        return Response(AnnouncementSerializer(announcements.cancel(request.user, pk)).data)
+        return Response(PlatformAnnouncementSerializer(announcements.cancel(request.user, pk)).data)
 
 
-class NoticeAnnouncementSerializer(serializers.Serializer):
+class PlatformNoticeAnnouncementSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     title = serializers.CharField()
     body = serializers.CharField()
@@ -108,7 +108,7 @@ class NoticeAnnouncementSerializer(serializers.Serializer):
     makerspace_ids = serializers.ListField(child=serializers.IntegerField())
 
 
-class NoticeSpaceSerializer(serializers.Serializer):
+class PlatformNoticeSpaceSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     slug = serializers.CharField()
@@ -117,21 +117,21 @@ class NoticeSpaceSerializer(serializers.Serializer):
     since = serializers.DateTimeField(allow_null=True)
 
 
-class NoticesSerializer(serializers.Serializer):
-    announcements = NoticeAnnouncementSerializer(many=True)
-    spaces = NoticeSpaceSerializer(many=True)
+class PlatformNoticesSerializer(serializers.Serializer):
+    announcements = PlatformNoticeAnnouncementSerializer(many=True)
+    spaces = PlatformNoticeSpaceSerializer(many=True)
 
 
 class PlatformNoticesView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Live announcements and paused or read-only spaces for this account",
-                   responses={200: NoticesSerializer, **errors(401)})
+                   responses={200: PlatformNoticesSerializer, **errors(401)})
     def get(self, request):
-        return Response(NoticesSerializer(notices.notices_for(request.user)).data)
+        return Response(PlatformNoticesSerializer(notices.notices_for(request.user)).data)
 
 
-class AvailabilitySerializer(serializers.Serializer):
+class SpacePausedStateSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=("active", "paused"))
 
 
@@ -144,7 +144,7 @@ class PublicAvailabilityView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    @extend_schema(tags=TAGS, summary="Whether a public space is paused", responses={200: AvailabilitySerializer,
+    @extend_schema(tags=TAGS, summary="Whether a public space is paused", responses={200: SpacePausedStateSerializer,
                                                                                     **errors(404)})
     def get(self, request, makerspace_slug):
         space = Makerspace.objects.filter(slug=str(makerspace_slug or "").strip()).first()
@@ -152,4 +152,4 @@ class PublicAvailabilityView(APIView):
                 Makerspace.LifecycleState.ACTIVE, Makerspace.LifecycleState.SUSPENDED):
             raise Http404()
         paused = space.lifecycle_state == Makerspace.LifecycleState.SUSPENDED
-        return Response(AvailabilitySerializer({"state": "paused" if paused else "active"}).data)
+        return Response(SpacePausedStateSerializer({"state": "paused" if paused else "active"}).data)

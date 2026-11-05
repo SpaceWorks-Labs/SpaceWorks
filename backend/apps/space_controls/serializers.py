@@ -5,31 +5,31 @@ from rest_framework import serializers
 STATES = ("active", "read_only", "suspended", "archived", "scheduled", "importing", "aborted")
 
 
-class UsageRowSerializer(serializers.Serializer):
+class SpaceHealthUsageRowSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()
     used = serializers.IntegerField(allow_null=True)
     limit = serializers.IntegerField(allow_null=True)
-    unit = serializers.ChoiceField(choices=("bytes", "count"))
+    unit = serializers.CharField(help_text="`bytes` or `count`.")
     percent = serializers.FloatField(allow_null=True)
 
 
-class UsageSerializer(serializers.Serializer):
+class SpaceHealthUsageSerializer(serializers.Serializer):
     managed = serializers.BooleanField()
-    resources = UsageRowSerializer(many=True)
+    resources = SpaceHealthUsageRowSerializer(many=True)
 
 
-class SuspensionSerializer(serializers.Serializer):
+class SpaceSuspensionSerializer(serializers.Serializer):
     at = serializers.DateTimeField()
     reason = serializers.CharField()
     by = serializers.CharField(allow_null=True)
 
 
-class ReadOnlySerializer(SuspensionSerializer):
+class SpaceReadOnlyStateSerializer(SpaceSuspensionSerializer):
     source = serializers.ChoiceField(choices=("manual", "trial_expired", "payment_overdue"))
 
 
-class ScheduleSerializer(serializers.Serializer):
+class SpaceScheduleStateSerializer(serializers.Serializer):
     archive_on = serializers.DateTimeField(allow_null=True)
     purge_due_at = serializers.DateTimeField(allow_null=True)
     purge_grace_days = serializers.IntegerField()
@@ -39,35 +39,35 @@ class ScheduleSerializer(serializers.Serializer):
     reminders_sent = serializers.ListField(child=serializers.CharField())
 
 
-class DrillSerializer(serializers.Serializer):
+class SpaceHealthDrillSerializer(serializers.Serializer):
     outcome = serializers.ChoiceField(choices=("passed", "failed"))
     finished_at = serializers.DateTimeField(allow_null=True)
 
 
-class BackupsSerializer(serializers.Serializer):
+class SpaceHealthBackupsSerializer(serializers.Serializer):
     last_backed_up_at = serializers.DateTimeField(allow_null=True)
-    last_drill = DrillSerializer(allow_null=True)
+    last_drill = SpaceHealthDrillSerializer(allow_null=True)
 
 
-class SecuritySerializer(serializers.Serializer):
+class SpaceHealthSecuritySerializer(serializers.Serializer):
     blocked_accounts = serializers.IntegerField()
     locked_settings = serializers.IntegerField()
 
 
-class ManagerSerializer(serializers.Serializer):
+class SpaceHealthManagerSerializer(serializers.Serializer):
     membership_id = serializers.IntegerField()
     user_id = serializers.IntegerField()
     name = serializers.CharField(allow_null=True)
     email = serializers.CharField(allow_blank=True)
 
 
-class PlanSummarySerializer(serializers.Serializer):
+class SpaceHealthPlanSerializer(serializers.Serializer):
     key = serializers.CharField()
     name = serializers.CharField()
     trial_ends_at = serializers.DateTimeField(allow_null=True)
 
 
-class ProblemSerializer(serializers.Serializer):
+class SpaceHealthProblemSerializer(serializers.Serializer):
     key = serializers.CharField()
     status = serializers.ChoiceField(choices=("ok", "warn", "error"))
     message = serializers.CharField()
@@ -83,18 +83,18 @@ class HealthCardSerializer(serializers.Serializer):
     lifecycle_state = serializers.CharField()
     created_at = serializers.DateTimeField()
     archived_at = serializers.DateTimeField(allow_null=True)
-    suspended = SuspensionSerializer(allow_null=True)
-    read_only = ReadOnlySerializer(allow_null=True)
-    schedule = ScheduleSerializer(allow_null=True)
-    usage = UsageSerializer()
+    suspended = SpaceSuspensionSerializer(allow_null=True)
+    read_only = SpaceReadOnlyStateSerializer(allow_null=True)
+    schedule = SpaceScheduleStateSerializer(allow_null=True)
+    usage = SpaceHealthUsageSerializer()
     usage_peak_percent = serializers.FloatField(allow_null=True)
     last_activity_at = serializers.DateTimeField(allow_null=True)
-    backups = BackupsSerializer()
-    security = SecuritySerializer()
+    backups = SpaceHealthBackupsSerializer()
+    security = SpaceHealthSecuritySerializer()
     open_issues = serializers.IntegerField()
     modules = serializers.ListField(child=serializers.CharField())
-    managers = ManagerSerializer(many=True)
-    plan = PlanSummarySerializer(
+    managers = SpaceHealthManagerSerializer(many=True)
+    plan = SpaceHealthPlanSerializer(
         allow_null=True, required=False,
         help_text="Present only while MANAGED_PLANS_ENABLED is on (the managed-hosting limiter, #187A).")
 
@@ -106,35 +106,35 @@ class HealthCardSerializer(serializers.Serializer):
 
 
 class HealthCardDetailSerializer(HealthCardSerializer):
-    problems = ProblemSerializer(many=True)
+    problems = SpaceHealthProblemSerializer(many=True)
 
 
-class ReasonSerializer(serializers.Serializer):
+class SpaceControlReasonSerializer(serializers.Serializer):
     reason = serializers.CharField(min_length=10, max_length=500)
 
 
-class EmptySerializer(serializers.Serializer):
+class SpaceControlEmptySerializer(serializers.Serializer):
     pass
 
 
-class ScheduleRequestSerializer(serializers.Serializer):
+class SpaceScheduleRequestSerializer(serializers.Serializer):
     archive_on = serializers.DateTimeField(required=False, allow_null=True, default=None)
     purge_grace_days = serializers.IntegerField(min_value=1, max_value=3650, default=90)
     note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
 
 
-class PurgeRequestSerializer(serializers.Serializer):
+class SpacePurgeRequestSerializer(serializers.Serializer):
     confirm_slug = serializers.CharField(max_length=50)
 
 
-class TransferRequestSerializer(serializers.Serializer):
+class SpaceTransferRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
     previous_membership_id = serializers.IntegerField(required=False, allow_null=True, default=None)
     previous_outcome = serializers.ChoiceField(choices=("keep_staff", "revoke", "keep_manager"), default="keep_staff")
     previous_roles = serializers.ListField(child=serializers.CharField(max_length=64), required=False, default=list)
 
 
-class TransferResultSerializer(serializers.Serializer):
+class SpaceTransferResultSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=("transferred", "invited"))
     card = HealthCardSerializer()
     invitation_email_status = serializers.CharField(required=False, allow_null=True)

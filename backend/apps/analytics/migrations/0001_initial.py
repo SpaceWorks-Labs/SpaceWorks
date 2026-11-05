@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("makerspaces", "0119_l3_member_cards"),
+        ("makerspaces", "0127_help_centre_default_on"),
         ("tenant_rls", "0001_initial"),
     ]
 

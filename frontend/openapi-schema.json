@@ -129610,7 +129610,7 @@
                         "schema": {
                             "type": "boolean"
                         },
-                        "description": "Also count archived and not-serving (importing/aborted) spaces. Default false."
+                        "description": "Also count archived, not-serving (importing/aborted) and directory-hidden spaces. Default false."
                     },
                     {
                         "in": "query",
@@ -129747,7 +129747,7 @@
                         "schema": {
                             "type": "boolean"
                         },
-                        "description": "Also count archived and not-serving (importing/aborted) spaces. Default false."
+                        "description": "Also count archived, not-serving (importing/aborted) and directory-hidden spaces. Default false."
                     },
                     {
                         "in": "query",
@@ -247664,13 +247664,43 @@
                         "items": {
                             "$ref": "#/components/schemas/GalleryEntryRead"
                         }
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GalleryFieldFilter"
+                        },
+                        "description": "S7: the public choice fields to offer as field.<key> filters; empty while search is off."
                     }
                 },
                 "required": [
                     "count",
+                    "filters",
                     "next",
                     "previous",
                     "results"
+                ]
+            },
+            "GalleryFieldFilter": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "choices": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "choices",
+                    "key",
+                    "label"
                 ]
             },
             "GalleryGrantInput": {
@@ -273042,7 +273072,7 @@
                     "excluded_reason": {
                         "type": "string",
                         "nullable": true,
-                        "description": "archived, importing or aborted; null when live."
+                        "description": "archived, importing, aborted or directory_hidden; null when counted by default."
                     },
                     "directory_hidden": {
                         "type": "boolean"

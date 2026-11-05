@@ -68,6 +68,10 @@ EVENT_SOURCES = {
     **_many(_EV, ("crew_invited", "crew_decided"), "events.crew"),
     (_EV, "finalists_announced"): "events.finalists",
     (_EV, "prize_payout_recorded"): "events.prize_payouts",
+    # Submission stages (#178-#180) live inside hackathon programmes; People's choice has its own switch (#181).
+    **_many(_EV, ("stage_deadline_reminder", "stage_shortlisted", "stage_not_shortlisted", "stage_promoted",
+                  "judge_reminder"), "events.hackathons"),
+    (_EV, "peoples_choice_open"): "events.peoples_choice",
     # Members.
     (_MB, "broadcast"): "membership.broadcasts",
     (_MB, "vouched"): "membership.vouching",

@@ -1100,8 +1100,9 @@ deployment telemetry with no tenant (IP blocks, unusual sign-in alerts, platform
 backups) is shown as platform-only figures, never attributed to a space; (4) only an active platform
 superadmin in a browser session reads it (`IsActiveSuperAdmin` + `_platform_context_for_view`, both
 routes `PLATFORM_ONLY_ROUTES`), and every CSV export is audited as `platform.overview_exported`.
-The space set is every space except archived and importing/aborted ones, which a toggle adds back;
-directory-hidden live spaces are always counted (#110: nothing is hidden from the superadmin). A
+The space set is every space except archived, importing/aborted and directory-hidden ones
+(`platform_overview.exclusion_reason`), which one toggle adds back; nothing is hidden from the
+superadmin (#110), since the toggle and `excluded_count` always disclose the left-out spaces. A
 block follows its switch per space: a space with it off shows "off" and adds nothing; a block off in
 every space is omitted and listed in `hidden_blocks`. The builder holds no actor (authority is the
 view's), so the Celery task computes it; results are cached per (period, toggle) for 10 minutes and

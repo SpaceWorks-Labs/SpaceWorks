@@ -21,11 +21,14 @@ BLOCKS = (PEOPLE, LENDING, MACHINES, EVENTS, BOOKINGS, MEMBERSHIP, OPERATIONS)
 
 
 def exclusion_reason(space):
-    """Why a space is left out by default: archived, or not serving (importing/aborted)."""
+    """Why a space is left out by default: archived, not serving (importing/aborted), or hidden
+    from the central directory. The one toggle adds all three back (#183A)."""
     if space.archived_at is not None:
         return "archived"
     if not is_servable(space):
         return space.lifecycle_state
+    if space.hidden_from_central_directory:
+        return "directory_hidden"
     return None
 
 

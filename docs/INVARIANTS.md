@@ -1146,7 +1146,7 @@ distinct `vendor_contact` value into an encrypted vendor row, and a sweep test o
 and should be built only if the owner decides vendors can be named individuals. Until then, do not
 re-raise the question from a grep for "contact" columns; this entry is the answer.
 
-**Seven fixed per-makerspace roles (replaces Part L).** `makerspaces/role_catalog.py` defines
+**Fixed per-makerspace roles (replaces Part L; seven at first, nine since release 2 added Technician and Shop Manager).** `makerspaces/role_catalog.py` defines
 Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover and Member.
 Names, slugs and grants are immutable; role CRUD and the capabilities editor/API are removed. Each
 membership has a primary `assigned_role` plus `MembershipAdditionalRole` rows. Space Manager and Member

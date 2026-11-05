@@ -7,6 +7,8 @@ import { PlatformStripeConnectPanel } from "./PlatformStripeConnectPanel";
 import { AccountsSection } from "./platformParity/AccountsSection";
 import { ChatTemplatesSection } from "./platformParity/ChatTemplatesSection";
 import { IpAccessSection } from "./platformParity/IpAccessSection";
+import { LOGIN_METHODS } from "./platformParity/providerSpecs";
+import { Provider, ProvidersSection } from "./platformParity/ProvidersSection";
 import { RequestsSection } from "./platformParity/RequestsSection";
 import { RestoreDrillsSection } from "./platformParity/RestoreDrillsSection";
 import { SelfhostMovesSection } from "./platformParity/SelfhostMovesSection";
@@ -18,8 +20,10 @@ type Props = { platformHosting: boolean; unavailableApps?: readonly string[] };
 export function PlatformSettingsPanel({ platformHosting, unavailableApps = [] }: Props) {
   const [search] = useSearchParams();
   const available = [{ key: "deployment", label: "Deployment", rows: <PlatformDeploymentSection /> },{ key: "email", label: "Email", rows: <PlatformEmailPanel embedded /> },
-    { key: "sign-in", label: "Sign-in providers", rows: <PlatformSocialAuthPanel embedded /> },
+    { key: "sign-in", label: "Sign-in providers", rows: <><PlatformSocialAuthPanel embedded />
+      <section aria-label="Sign-in methods" className="grid gap-3 py-4"><h3 className="title-panel">Sign-in methods</h3><Provider spec={LOGIN_METHODS} /></section></> },
     ...(platformHosting ? [{ key: "stripe", label: "Stripe Connect", rows: <PlatformStripeConnectPanel embedded /> }] : []),
+    { key: "providers", label: "Messaging & apps", rows: <ProvidersSection /> },
     { key: "requests", label: "Requests", rows: <RequestsSection /> },
     { key: "accounts", label: "Accounts", rows: <AccountsSection /> },
     { key: "ip-access", label: "IP access", rows: <IpAccessSection /> },

@@ -19,7 +19,8 @@ def aps_payload(title, body, data):
     return aps
 
 
-def send_apns(settings_row, token, environment, title, body, data):
+def apns_authorization(settings_row):
+    """The signed APNs provider token; also the console's local key check (#190)."""
     try:
         private_key = settings_row.get_apns_private_key()
         if not private_key or not settings_row.apns_team_id or not settings_row.apns_key_id or not settings_row.apns_topic:
@@ -32,6 +33,11 @@ def send_apns(settings_row, token, environment, title, body, data):
     # it a bad .p8 escaped as an unclassified exception instead of a configuration error.
     except (InvalidToken, ValueError, TypeError, jwt.PyJWTError) as exc:
         raise PushProviderError("APNs configuration is unavailable.") from exc
+    return authorization
+
+
+def send_apns(settings_row, token, environment, title, body, data):
+    authorization = apns_authorization(settings_row)
     host = "api.sandbox.push.apple.com" if environment == "development" else "api.push.apple.com"
     try:
         with httpx.Client(http2=True, timeout=10) as client:

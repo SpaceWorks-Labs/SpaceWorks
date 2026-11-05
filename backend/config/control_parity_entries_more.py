@@ -5,7 +5,7 @@ from config.control_parity import KEY_ROTATION, RAW_REPAIR, SERVER, host, web
 PS = "Platform settings"
 S = "Space console"
 MOVES = "Platform settings → Self-host moves"
-CREDENTIALS = host(f"Platform provider credentials (keys, service accounts) are entered once at setup: {SERVER}")
+PROVIDERS = f"{PS} → Messaging & apps"
 
 MORE_ENTRIES = (
     # Money
@@ -74,10 +74,13 @@ MORE_ENTRIES = (
                                                           "admin-platform-selfhost-move-download-url")),
     # Integrations & messaging
     ("payments.platformstripeconnectsettings", web(f"{PS} → Stripe Connect", "admin-platform-payment-settings")),
-    ("integrations.platformsmssettings", CREDENTIALS),
-    ("integrations.platformpushsettings", CREDENTIALS),
-    ("integrations.platformwhatsappsettings", CREDENTIALS),
-    ("accounts.platformattestationsettings", CREDENTIALS),
+    ("integrations.platformsmssettings", web(f"{PROVIDERS} → SMS", "admin-platform-sms-settings",
+                                             "admin-platform-sms-settings-test")),
+    ("integrations.platformpushsettings", web(f"{PROVIDERS} → Push", "admin-platform-push-settings",
+                                              "admin-platform-push-settings-test")),
+    ("integrations.platformwhatsappsettings", web(f"{PROVIDERS} → WhatsApp", "admin-platform-whatsapp-settings",
+                                                  "admin-platform-whatsapp-settings-test")),
+    ("accounts.platformattestationsettings", web(f"{PROVIDERS} → App attestation", "admin-platform-attestation-settings")),
     ("integrations.platformemailsettings", web(f"{PS} → Email", "admin-platform-email-settings")),
     ("integrations.emailtemplate", web(f"{S} → Email templates", "admin-email-templates", "admin-email-template-detail")),
     ("integrations.machinetypeemailtemplate", web(f"{S} → Machines → Types → Email", "admin-machine-type-email-template-detail")),

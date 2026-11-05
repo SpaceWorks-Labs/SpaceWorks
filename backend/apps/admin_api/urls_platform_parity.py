@@ -1,6 +1,8 @@
 """#190 parity: the web superadmin console's own paths for what was /control/-only.
 
-IP rules and automatic blocks, account disable / re-enable / two-step reset, single sign-on
+IP rules and automatic blocks, account disable / re-enable / two-step reset, platform provider
+credentials (SMS, push, WhatsApp, app attestation), sign-in methods, mobile app identities, a
+space's keys and capability purge, single sign-on
 (OIDC) providers, request queues (archive, API key and web address requests), a space's
 chat templates, restore drills (run one now, settings) and self-host move requests (decide,
 export, delete the file, one-use download link). Mounted at api/v1/admin/.
@@ -21,6 +23,10 @@ from apps.admin_api.views_platform_queues import (
     SubdomainRequestRejectView,
 )
 from apps.integrations.views_platform_chat_templates import ChatTemplateDetailView, ChatTemplateListCreateView
+from apps.integrations.views_platform_credentials import (
+    PlatformAttestationSettingsView, PlatformLoginMethodsView, PlatformPushSettingsView, PlatformPushTestView,
+    PlatformSmsSettingsView, PlatformSmsTestView, PlatformWhatsAppSettingsView, PlatformWhatsAppTestView,
+)
 from apps.backup.views_drills import RestoreDrillListView, RestoreDrillSettingsView
 from apps.separability.registry import runtime_active
 
@@ -74,6 +80,16 @@ urlpatterns = [
          name="admin-platform-chat-templates"),
     path("platform/spaces/<int:makerspace_id>/chat-templates/<int:pk>", ChatTemplateDetailView.as_view(),
          name="admin-platform-chat-template"),
+    path("platform/sms-settings", PlatformSmsSettingsView.as_view(), name="admin-platform-sms-settings"),
+    path("platform/sms-settings/test", PlatformSmsTestView.as_view(), name="admin-platform-sms-settings-test"),
+    path("platform/push-settings", PlatformPushSettingsView.as_view(), name="admin-platform-push-settings"),
+    path("platform/push-settings/test", PlatformPushTestView.as_view(), name="admin-platform-push-settings-test"),
+    path("platform/whatsapp-settings", PlatformWhatsAppSettingsView.as_view(), name="admin-platform-whatsapp-settings"),
+    path("platform/whatsapp-settings/test", PlatformWhatsAppTestView.as_view(),
+         name="admin-platform-whatsapp-settings-test"),
+    path("platform/attestation-settings", PlatformAttestationSettingsView.as_view(),
+         name="admin-platform-attestation-settings"),
+    path("platform/login-methods", PlatformLoginMethodsView.as_view(), name="admin-platform-login-methods"),
     path("platform/restore-drills", RestoreDrillListView.as_view(), name="admin-platform-restore-drills"),
     path("platform/restore-drills/settings", RestoreDrillSettingsView.as_view(),
          name="admin-platform-restore-drill-settings"),

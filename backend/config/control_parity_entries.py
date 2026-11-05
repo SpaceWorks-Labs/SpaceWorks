@@ -70,6 +70,8 @@ ENTRIES = (
     ("accounts.ipautoblock.unblock_selected", web(f"{PS} → IP access → Lift now", "admin-platform-ip-block-unblock")),
     ("accounts.oidcprovider", web(f"{PS} → Single sign-on", "admin-platform-oidc-providers", "admin-platform-oidc-provider")),
     ("accounts.nativeappregistration", host(f"Mobile app identities are set once with the server's attestation setup: {SERVER}")),
+    ("accounts.platformloginmethods", web(f"{PS} → Sign-in providers → Sign-in methods", "admin-platform-login-methods")),
+    ("accounts.platformsocialauthsettings", web(f"{PS} → Sign-in providers", "admin-platform-social-auth-settings")),
     ("view:accounts_nativeappregistration_mobile_readiness", web(f"{PS} → Deployment (mobile readiness)", "admin-platform-mobile-readiness")),
     ("axes.accessattempt", host("Recovery command: manage.py axes_reset_username <name> (or the lockout lifts by itself)")),
     ("axes.accessattempt.cleanup_expired_attempts", host("Recovery command: manage.py axes_reset (expired lockouts also clear by themselves)")),

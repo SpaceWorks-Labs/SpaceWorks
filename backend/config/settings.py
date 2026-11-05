@@ -1832,3 +1832,10 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "shop_codes": "10/hour",
 })
 # --- end lane L22
+
+# --- lane r2-platform-overview (#183A): stable OpenAPI names for the overview's metric unit and timing.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "OverviewMetricUnitEnum": [(value, value) for value in ("count", "hours", "bytes", "percent", "money")],
+    "OverviewMetricTimingEnum": [("period", "period"), ("snapshot", "snapshot")],
+})
+# --- end lane r2-platform-overview

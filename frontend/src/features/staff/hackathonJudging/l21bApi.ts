@@ -10,7 +10,8 @@ import type { Scope } from './types';
 export type FinalistPreview = FinalistPreviewRead;
 export type FinalistAdvance = FinalistAdvanceRead;
 export type RoundProgress = ProgressRead;
-export type ProgrammeOptions = OptionsRead;
+/** #178/#179/S17 fields are hand-typed until the OpenAPI client is regenerated. */
+export type ProgrammeOptions = OptionsRead & { stage_reminder_email?: boolean; shortlist_email?: boolean; entry_fee_stage?: number };
 export type PrizePayout = PayoutRead;
 export type FinalistSelection = { source_round_id: number; target_round_id: number; selection: 'top_n' | 'manual'; top_n?: number; snapshot_ids?: number[] };
 

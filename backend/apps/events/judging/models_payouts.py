@@ -19,7 +19,10 @@ class HackathonPrizePayout(AppendOnly):
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
     kind = models.CharField(max_length=8, default="payout", choices=(("payout", "Payout"), ("reversal", "Reversal")))
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversal")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)  # gross: the ledger expense
+    # Hack-money G7 (#181, record only): tax deducted at source and what reached the winner.
+    tds_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3)
     method = models.CharField(max_length=16)
     reference = models.CharField(max_length=64, blank=True)
@@ -31,6 +34,9 @@ class HackathonPrizePayout(AppendOnly):
     class Meta:
         constraints = [
             models.CheckConstraint(condition=Q(amount__gt=0), name="ev_payout_amount_positive"),
+            models.CheckConstraint(condition=Q(tds_amount__gte=0, tds_amount__lt=models.F("amount")), name="ev_payout_tds_bounds"),
+            models.CheckConstraint(condition=Q(net_amount__isnull=True) | Q(net_amount=models.F("amount") - models.F("tds_amount")),
+                                   name="ev_payout_net_shape"),
             models.CheckConstraint(condition=Q(kind__in=("payout", "reversal")), name="ev_payout_kind"),
             models.CheckConstraint(condition=(Q(kind="payout") & Q(reverses__isnull=True))
                                    | (Q(kind="reversal") & Q(reverses__isnull=False)), name="ev_payout_reversal_shape"),

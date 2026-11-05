@@ -20,6 +20,10 @@ class HackathonProgrammeOptions(EventOwned):
     # DUE case. Off by default; a pending fee is always voided. Staff still decide every case.
     refund_on_withdrawal = models.BooleanField(default=False)
     refund_if_not_shortlisted = models.BooleanField(default=False)
+    # Hack-money G6: show prize names, kinds and amounts on the public event page (off by default).
+    show_prize_amounts = models.BooleanField(default=False)
+    # Hack-money G4: days after results are announced in which winners claim; after it staff may forfeit.
+    prize_claim_days = models.PositiveSmallIntegerField(null=True, blank=True)
     entry_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     team_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)

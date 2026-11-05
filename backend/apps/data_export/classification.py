@@ -96,6 +96,8 @@ extend_r2_l18(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS.update(R2_L18_OMITTED)
 from .classification_r2_l22 import extend as extend_r2_l22  # noqa: E402
 extend_r2_l22(EXPORTED_MODEL_FIELDS)
+from .classification_hackmoney import extend as extend_hackmoney  # noqa: E402
+extend_hackmoney(EXPORTED_MODEL_FIELDS)
 from .classification_messaging import EXPORTED_FIELDS as MESSAGING_FIELDS, OMITTED_MODELS as MESSAGING_OMITTED
 EXPORTED_MODEL_FIELDS.update(MESSAGING_FIELDS)
 OMITTED_MODELS.update(MESSAGING_OMITTED)

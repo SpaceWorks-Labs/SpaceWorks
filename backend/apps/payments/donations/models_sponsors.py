@@ -99,12 +99,17 @@ class SponsorshipCharge(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     description = models.CharField(max_length=200, blank=True, default="")
+    # Hack-money G8: a payment may be for one event, and earmarked for that event's prize pool.
+    event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    earmark = models.CharField(max_length=12, default="general", choices=[("general", "General"), ("prize_pool", "Prize pool")])
     created_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at", "-pk"]
-        constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name="sponsorship_charge_amount_positive")]
+        constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name="sponsorship_charge_amount_positive"),
+                       models.CheckConstraint(condition=Q(earmark="general") | Q(event__isnull=False),
+                                              name="sponsorship_charge_earmark_event")]
 
 
 class SponsorEventLink(models.Model):

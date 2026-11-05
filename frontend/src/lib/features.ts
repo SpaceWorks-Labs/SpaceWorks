@@ -204,6 +204,10 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.paid_teams", parent_module: "events", label: "Paid team registration" },
   { key: "events.saved_views", parent_module: "events", label: "Saved views and exports for event lists" },
   { key: "events.gallery_search", parent_module: "events", label: "Gallery search and awards" },
+  // Hack-money (#180): prize splits and claims, refundable deposits, add-ons for accepted participants.
+  { key: "events.prize_claims", parent_module: "events", label: "Prize splits and winner claims" },
+  { key: "events.deposits", parent_module: "events", label: "Refundable hackathon deposits" },
+  { key: "events.accepted_addons", parent_module: "events", label: "Add-ons for accepted participants" },
   // L24 (#163A): price-drop refunds.
   { key: "charges.price_drop_refunds", parent_module: null, label: "Price-drop refunds" },
   // L22 (#128 C-7, #129, #135, #137): the per-space shop.

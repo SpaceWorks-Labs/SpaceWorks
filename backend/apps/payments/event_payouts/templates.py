@@ -30,7 +30,17 @@ ROUTING_FIELDS = {
 
 
 def configured_templates(makerspace_id):
-    """Deployment-owned per-host allowlist; never accept a member's policy."""
+    """Deployment-owned per-host allowlist, narrowed by the Space Manager's own choice (hack-money G13,
+    `space_templates`); never a member's policy."""
+    from .space_templates import narrow
+    from django.conf import settings
+    enabled, documents = operator_templates(makerspace_id)
+    policy = getattr(settings, "EVENT_PAYOUT_TENANT_POLICIES", {}).get(str(makerspace_id), {})
+    return narrow(makerspace_id, enabled, documents, bool(policy))
+
+
+def operator_templates(makerspace_id):
+    """The operator's per-host policy exactly as configured."""
     from django.conf import settings
     policy = getattr(settings, "EVENT_PAYOUT_TENANT_POLICIES", {}).get(str(makerspace_id), {})
     enabled = set()

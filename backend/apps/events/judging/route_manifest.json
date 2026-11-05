@@ -1389,6 +1389,395 @@
         429,
         503
       ]
+    },
+    {
+      "name": "events-programme-admin-prize-split",
+      "path": "/api/v1/admin/events/{pk}/prize-awards/{award_id}/split/",
+      "view": "prize.AdminPrizeSplit",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts; events.prize_claims",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-fulfil",
+      "path": "/api/v1/admin/events/{pk}/prize-awards/{award_id}/fulfil/",
+      "view": "prize.PrizeFulfil",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-forfeit",
+      "path": "/api/v1/admin/events/{pk}/prize-awards/{award_id}/forfeit/",
+      "view": "prize.PrizeForfeit",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-outcomes",
+      "path": "/api/v1/admin/events/{pk}/prize-outcomes/",
+      "view": "prize.PrizeOutcomes",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-recovery-resolve",
+      "path": "/api/v1/admin/events/{pk}/prize-outcomes/{outcome_id}/resolve/",
+      "view": "prize.PrizeRecoveryResolve",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-claims",
+      "path": "/api/v1/admin/events/{pk}/prize-claims/",
+      "view": "prize.PrizeClaims",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts; masked only",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-claim-verify",
+      "path": "/api/v1/admin/events/{pk}/prize-shares/{share_id}/verify/",
+      "view": "prize.PrizeClaimVerify",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts; events.prize_claims",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-pool",
+      "path": "/api/v1/admin/events/{pk}/prize-pool/",
+      "view": "prize.PrizePool",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-prize-split",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/prize-awards/{award_id}/split/",
+      "view": "prize.MemberPrizeSplit",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member, winning team leader; events.prize_claims",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-prize-share-confirm",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/prize-shares/{share_id}/confirm/",
+      "view": "prize.MemberShareConfirm",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member exact owner; events.prize_claims",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-prize-share-decline",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/prize-shares/{share_id}/decline/",
+      "view": "prize.MemberShareDecline",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member exact owner; events.prize_claims",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-prize-claim",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/prize-awards/{award_id}/claim/",
+      "view": "prize.MemberPrizeClaim",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member of the winning snapshot; events.prize_claims",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-prize-claim-remove",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/events/{pk}/prize-awards/{award_id}/claim/remove/",
+      "view": "prize.MemberPrizeClaimRemove",
+      "methods": [
+        "POST"
+      ],
+      "authority": "active member exact owner; events.prize_claims",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-member-my-prizes",
+      "path": "/api/v1/member/makerspaces/{makerspace_id}/prizes/",
+      "view": "prize.MyPrizes",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "active member exact owner; events.prize_claims",
+      "source_target": "makerspace_id -> Makerspace",
+      "api_client": "public:read / public:write + owner checks",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-public-prizes",
+      "path": "/api/v1/public/event-programmes/{public_token}/prizes/",
+      "view": "prize.PublicPrizes",
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "authority": "public live gate; show_prize_amounts",
+      "source_target": "public_token -> Event.makerspace_id",
+      "api_client": "public:read",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
+    },
+    {
+      "name": "events-programme-admin-prize-claim-reveal",
+      "path": "/api/v1/admin/events/{pk}/prize-shares/{share_id}/reveal/",
+      "view": "prize.PrizeClaimReveal",
+      "methods": [
+        "POST"
+      ],
+      "authority": "record_payment or manage_events in the space (C-38); events.prize_payouts; events.prize_claims; audited per release",
+      "source_target": "pk -> Event.makerspace_id",
+      "api_client": "staff scope with current staff/delegated context and exact resource target",
+      "no_store": true,
+      "errors": [
+        400,
+        401,
+        403,
+        404,
+        409,
+        410,
+        413,
+        423,
+        429,
+        503
+      ]
     }
   ],
   "binary_owned_by_B": {

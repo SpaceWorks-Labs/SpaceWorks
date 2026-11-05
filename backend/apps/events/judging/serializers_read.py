@@ -23,7 +23,7 @@ class PrizeRead(TrackRead):
         model = HackathonPrize
         fields = ("id", "event_id", "version", "allowed_actions", "name", "description", "website_section_id",
                   "track_id", "sponsor_id", "criteria", "form", "eligibility_rules", "order", "award_count", "winner_selection_mode",
-                  "amount_per_winner")
+                  "amount_per_winner", "kind", "value_text", "estimated_value", "funding")
 
 
 class CalculationRow(ClosedSerializer):

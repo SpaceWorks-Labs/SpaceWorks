@@ -10,6 +10,7 @@ from . import views_scoring as scoring
 from . import views_sponsors as sponsors
 from . import views_l21b as l21b
 from . import views_money as money
+from . import views_prize as prize
 from .views_signals import ShortlistSignals
 from .views_sponsor_discovery import AssignedSponsorListView
 
@@ -76,6 +77,23 @@ urlpatterns = [
     # Hack-money (#180): team-charge retry (G15).
     route(ADMIN, "team-charges/missing/", money.MissingTeamCharges, "admin-team-charges-missing"),
     route(ADMIN, "team-charges/<int:team_id>/raise/", money.TeamChargeRaise, "admin-team-charges-raise"),
+    # Hack-money (#180 G3-G6/G8/G16, #181 G7): prize splits, claims, outcomes and the prize pool.
+    route(ADMIN, "prize-awards/<int:award_id>/split/", prize.AdminPrizeSplit, "admin-prize-split"),
+    route(ADMIN, "prize-awards/<int:award_id>/fulfil/", prize.PrizeFulfil, "admin-prize-fulfil"),
+    route(ADMIN, "prize-awards/<int:award_id>/forfeit/", prize.PrizeForfeit, "admin-prize-forfeit"),
+    route(ADMIN, "prize-outcomes/", prize.PrizeOutcomes, "admin-prize-outcomes"),
+    route(ADMIN, "prize-outcomes/<int:outcome_id>/resolve/", prize.PrizeRecoveryResolve, "admin-prize-recovery-resolve"),
+    route(ADMIN, "prize-claims/", prize.PrizeClaims, "admin-prize-claims"),
+    route(ADMIN, "prize-shares/<int:share_id>/verify/", prize.PrizeClaimVerify, "admin-prize-claim-verify"),
+    route(ADMIN, "prize-shares/<int:share_id>/reveal/", prize.PrizeClaimReveal, "admin-prize-claim-reveal"),
+    route(ADMIN, "prize-pool/", prize.PrizePool, "admin-prize-pool"),
+    route(MEMBER, "prize-awards/<int:award_id>/split/", prize.MemberPrizeSplit, "member-prize-split"),
+    route(MEMBER, "prize-shares/<int:share_id>/confirm/", prize.MemberShareConfirm, "member-prize-share-confirm"),
+    route(MEMBER, "prize-shares/<int:share_id>/decline/", prize.MemberShareDecline, "member-prize-share-decline"),
+    route(MEMBER, "prize-awards/<int:award_id>/claim/", prize.MemberPrizeClaim, "member-prize-claim"),
+    route(MEMBER, "prize-awards/<int:award_id>/claim/remove/", prize.MemberPrizeClaimRemove, "member-prize-claim-remove"),
+    route("member/makerspaces/<int:makerspace_id>/", "prizes/", prize.MyPrizes, "member-my-prizes"),
+    route(PUBLIC, "prizes/", prize.PublicPrizes, "public-prizes"),
     route(MEMBER, "resume-consents/", sponsors.ResumeConsents, "member-resume-consents"),
     route(MEMBER, "resume-consents/<int:consent_id>/revoke/", sponsors.ResumeConsentRevoke, "member-resume-consent-revoke"),
     route(MEMBER, "teams/<int:team_id>/gallery-consent/", gallery.GalleryConsentDetail, "member-gallery-consent-detail"),

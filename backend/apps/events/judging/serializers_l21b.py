@@ -117,6 +117,9 @@ class PayoutInput(CommandInput):
     reference = serializers.CharField(max_length=64, allow_blank=True, default="")
     paid_on = serializers.DateField()
     receipt_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
+    tds_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False,
+                                          allow_null=True, help_text="Prize tax deducted (#181, record only). Omit "
+                                          "to use the space's proposal; 0 records none.")
 
 
 class PayoutReverseInput(CommandInput):
@@ -132,7 +135,9 @@ class PayoutRead(ClosedSerializer):
     recipient_id = serializers.IntegerField(allow_null=True)
     kind = serializers.CharField()
     reverses_id = serializers.IntegerField(allow_null=True)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, help_text="Gross: the ledger expense.")
+    tds_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    net_amount = serializers.DecimalField(max_digits=12, decimal_places=2, help_text="What reached the winner.")
     currency = serializers.CharField()
     method = serializers.CharField()
     reference = serializers.CharField(allow_blank=True)
@@ -142,6 +147,20 @@ class PayoutRead(ClosedSerializer):
     allowed_actions = serializers.ListField(child=serializers.CharField())
 
 
+class PrizeTaxProposal(ClosedSerializer):
+    enabled = serializers.BooleanField()
+    rate = serializers.DecimalField(max_digits=5, decimal_places=2)
+    threshold = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+
+class PrizeShareRow(ClosedSerializer):
+    id = serializers.IntegerField()
+    member_id = serializers.IntegerField(allow_null=True)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    state = serializers.CharField()
+    paid = serializers.BooleanField()
+
+
 class PrizePayableAwardRead(ClosedSerializer):
     id = serializers.IntegerField()
     prize_name = serializers.CharField()
@@ -149,6 +168,13 @@ class PrizePayableAwardRead(ClosedSerializer):
     title = serializers.CharField()
     amount_per_winner = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
     paid = serializers.BooleanField()
+    kind = serializers.CharField()
+    funding = serializers.CharField()
+    value_text = serializers.CharField(allow_blank=True)
+    status = serializers.ChoiceField(choices=("owed", "paid", "part_paid", "fulfilled", "sponsor_paid", "forfeited"))
+    open_recoveries = serializers.IntegerField()
+    tax_proposal = PrizeTaxProposal()
+    shares = PrizeShareRow(many=True)
 
 
 class PrizePayoutPage(ClosedSerializer):

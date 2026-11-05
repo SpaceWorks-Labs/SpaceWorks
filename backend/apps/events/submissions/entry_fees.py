@@ -68,6 +68,10 @@ def on_disqualified(*, event, project, actor):
     close_charge(event=event, subject_type="submission_fee", subject_id=project.pk, actor=actor,
                  reason_code="submission_disqualified", audit_action="event.submission.fee_closed",
                  open_due=bool(option(event, "refund_on_disqualification")))
+    # Hack-money G16: a prize already paid to this project is owed back. Opening a recovery never
+    # charges anyone; staff record repayment (a ledger receipt) or waive it.
+    from apps.events.judging.prize_outcomes import open_recoveries_locked
+    open_recoveries_locked(event=event, project=project, actor=actor)
 
 
 def on_withdrawn(*, event, project, actor):

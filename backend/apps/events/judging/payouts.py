@@ -47,37 +47,47 @@ def _published_award(event, award_id):
 
 def record_payout(event_id, *, actor, data):
     values = validated(PayoutInput, data)
+    from .prize_access import read_key
+    from .prize_claims import runtime_event
     # owner=True: the authority here is RECORD_PAYMENT or MANAGE_EVENTS in the space (C-38), checked next.
-    with mutation(event_id, actor, owner=True) as (event, _):
+    # read_key: best effort, so a paid winner's routing details can be cleared (G4).
+    with read_key(runtime_event(event_id).makerspace_id), mutation(event_id, actor, owner=True) as (event, _):
         require_recorder(actor, event)
 
         def run():
             award = _published_award(event, values["award_id"])
+            _require_payable(award)
             snapshot = runtime().snapshot(award.submission_snapshot_id)
             recipient = values.get("recipient_id") or _leader(snapshot)
             if recipient not in snapshot.member_ids:
                 raise ValidationError({"recipient_id": "Pay a member of the winning team."})
-            if HackathonPrizePayout.objects.filter(award=award, kind="payout", reversal__isnull=True).exists():
-                raise ProgrammeError("payout_exists", "This award already has a recorded payout. Reverse it first.")
             if values["expected_version"] != 0:
                 raise ProgrammeError("stale_version", "A new payout uses expected_version 0.", current_version=0)
-            amount = values.get("amount") or award.prize.amount_per_winner
-            if not amount:
-                raise ValidationError({"amount": "This prize has no amount; enter what was paid."})
+            from .payout_split import payout_amount
+            amount = payout_amount(award, recipient, values.get("amount"))
+            from .prize_tax import proposed_tds
+            tds = values["tds_amount"] if values.get("tds_amount") is not None else proposed_tds(event.makerspace, amount)
+            if tds >= amount:
+                raise ValidationError({"tds_amount": "Tax deducted must be less than the gross prize."})
             from apps.payments.ledger_api import record_expense
             from .options import currency
             money = currency(event.makerspace)
             payout = HackathonPrizePayout(makerspace=event.makerspace, event=event, award=award, prize=award.prize,
-                                          recipient_id=recipient, amount=amount, currency=money,
+                                          recipient_id=recipient, amount=amount, tds_amount=tds,
+                                          net_amount=amount - tds, currency=money,
                                           method=values["method"], reference=values["reference"],
                                           paid_on=values["paid_on"], recorded_by=actor)
             # A LedgerConflict (409) rolls the whole payout back with the event transaction.
             payout.ledger_entry = record_expense(
                 event.makerspace, "events", None, amount, money, values["method"], values["reference"],
                 values.get("receipt_id"), SOURCE_KIND, f"award:{award.pk}:{_attempt(award)}", actor,
-                category="prize", description=f"Prize: {award.prize_name}"[:300], entry_date=values["paid_on"],
+                category="prize", description=_description(award, tds, money), entry_date=values["paid_on"],
                 event=event)
             payout.save()
+            from .models_prize_money import HackathonPrizeShare
+            from .prize_claims import clear_locked
+            for share in HackathonPrizeShare.objects.filter(award=award, member_id=recipient):
+                clear_locked(share)
             record(actor, "event.prize.payout_recorded", makerspace=event.makerspace, target=payout,
                    meta={"event_id": event.pk, "award_id": award.pk, "prize_id": award.prize_id,
                          "ledger_entry_id": payout.ledger_entry_id})
@@ -85,6 +95,20 @@ def record_payout(event_id, *, actor, data):
             payout_recorded_notice(payout)
             return projection(payout)
         return command(event, actor, values, path="prize-payouts", run=run)
+
+
+def _require_payable(award):
+    """Hack-money G5/G8: only a cash prize the space pays is a payout; the rest are fulfilled."""
+    if award.prize.funding == "sponsor_direct":
+        raise ProgrammeError("sponsor_direct", "The sponsor pays this prize directly; record it as fulfilled.")
+    if award.prize.kind != "cash":
+        raise ProgrammeError("non_cash_prize", "Record a non-cash prize as handed over or shipped.")
+
+
+def _description(award, tds, currency):
+    """The ledger records the GROSS prize; a deduction is a memo for staff who file it outside SpaceWorks."""
+    memo = f" (gross; tax deducted {tds} {currency.upper()})" if tds else ""
+    return f"Prize: {award.prize_name}{memo}"[:300]
 
 
 def _leader(snapshot):
@@ -117,7 +141,7 @@ def reverse_payout(event_id, payout_id, *, actor, data):
             row = HackathonPrizePayout.objects.create(
                 makerspace=event.makerspace, event=event, award=payout.award, prize=payout.prize,
                 recipient_id=payout.recipient_id, kind="reversal", reverses=payout, amount=payout.amount,
-                currency=payout.currency, method=payout.method, reference=payout.reference, paid_on=payout.paid_on,
+                tds_amount=payout.tds_amount, net_amount=payout.net_amount, currency=payout.currency, method=payout.method, reference=payout.reference, paid_on=payout.paid_on,
                 ledger_entry=payout.ledger_entry, recorded_by=actor)
             record(actor, "event.prize.payout_reversed", makerspace=event.makerspace, target=row,
                    meta={"event_id": event.pk, "payout_id": payout.pk, "ledger_entry_id": payout.ledger_entry_id})
@@ -145,9 +169,10 @@ def payable_awards(event):
         return []
     paid = set(HackathonPrizePayout.objects.filter(event=event, kind="payout", reversal__isnull=True)
                .values_list("award_id", flat=True))
+    from .payout_split import award_extras
     return [{"id": award.pk, "prize_name": award.prize_name, "rank": award.rank,
              "title": runtime().snapshot(award.submission_snapshot_id).title,
-             "amount_per_winner": award.prize.amount_per_winner, "paid": award.pk in paid}
+             "amount_per_winner": award.prize.amount_per_winner, "paid": award.pk in paid, **award_extras(award)}
             for award in EventAward.objects.select_related("prize").filter(
                 result_id=state.current_announcement.result_id).order_by("prize_id", "rank")]
 
@@ -156,6 +181,8 @@ def projection(row, *, recorder=True):
     reversible = recorder and row.kind == "payout" and not HackathonPrizePayout.objects.filter(reverses=row).exists()
     return {"id": row.pk, "event_id": row.event_id, "award_id": row.award_id, "prize_id": row.prize_id,
             "prize_name": row.award.prize_name, "recipient_id": row.recipient_id, "kind": row.kind,
-            "reverses_id": row.reverses_id, "amount": row.amount, "currency": row.currency, "method": row.method,
+            "reverses_id": row.reverses_id, "amount": row.amount, "tds_amount": row.tds_amount,
+            "net_amount": row.net_amount if row.net_amount is not None else row.amount - row.tds_amount,
+            "currency": row.currency, "method": row.method,
             "reference": row.reference, "paid_on": row.paid_on, "ledger_entry_id": row.ledger_entry_id,
             "created_at": row.created_at, "allowed_actions": ["reverse"] if reversible else []}

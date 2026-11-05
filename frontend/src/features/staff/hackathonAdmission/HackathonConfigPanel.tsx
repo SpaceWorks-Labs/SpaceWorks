@@ -6,6 +6,7 @@ import { CommandSession } from '../../events/hackathonAdmission/transport'
 import { MlhPresetPicker, type ProgrammeMlhPreset } from './MlhPresetPicker'
 import { RubricEditor } from './RubricEditor'
 import { useHackathonConfig } from './useAdmissionAdmin'
+import { useStagePlan } from '../submissionStages/api'
 import type { Config } from './types'
 
 export type ProgrammeFormEditor = ComponentType<{ value: unknown; onChange: (value: unknown) => void }>
@@ -14,14 +15,17 @@ const defaults: Partial<Config> = { enabled: false, review_mode: 'rolling', revi
   team_eligibility: 'confirmed', attendance_required: true, late_policy: 'reject', submission_grace_minutes: 0,
   review_rubric: { revision: 1, criteria: [] }, application_form: [], offer_capacity: null }
 const dateFields = ['application_opens_at', 'application_closes_at', 'team_lock_at', 'submission_opens_at', 'submission_deadline'] as const
+const WINDOW_KEYS = ['submission_opens_at', 'submission_deadline', 'submission_grace_minutes', 'late_policy']
 
 export function HackathonConfigPanel({ eventId, FormEditor, mlhPresets }: { eventId: number; FormEditor: ProgrammeFormEditor; mlhPresets: readonly ProgrammeMlhPreset[] }) {
   const query = useHackathonConfig(eventId), client = useQueryClient(), commands = useRef(new CommandSession())
+  const multiStage = (useStagePlan(eventId).data?.stages.length ?? 1) > 1 // #178: each stage then owns its window.
   const [draft, setDraft] = useState<Partial<Config>>(defaults), [body, setBody] = useState(''), [dirty, setDirty] = useState(false)
   useEffect(() => { if (query.data && !dirty) { setDraft({ ...defaults, ...query.data }); setBody(query.data.coc?.body ?? '') } }, [query.data, dirty])
   const set = <K extends keyof Config>(key: K, value: Config[K]) => { setDraft(d => ({ ...d, [key]: value })); setDirty(true) }
   const save = useMutation({ mutationFn: () => {
-    const { id: _id, event_id: _event, version, state: _state, coc: _coc, counts: _counts, allowed_actions: _actions, ...editable } = draft
+    const { id: _id, event_id: _event, version, state: _state, coc: _coc, counts: _counts, allowed_actions: _actions, ...all } = draft
+    const editable = multiStage ? Object.fromEntries(Object.entries(all).filter(([key]) => !WINDOW_KEYS.includes(key))) : all
     return commands.current.send('/api/v1/admin/events/' + eventId + '/hackathon/', 'PATCH', {
       ...editable, expected_version: query.data?.version ?? 0,
       ...(body !== query.data?.coc?.body ? { coc_body: body } : {}) }, true)
@@ -57,12 +61,13 @@ export function HackathonConfigPanel({ eventId, FormEditor, mlhPresets }: { even
         <label className="flex min-h-11 items-center gap-3 text-sm text-ink"><input type="checkbox" checked={draft.attendance_required} onChange={e => set('attendance_required', e.target.checked)} />Require every member to check in before project submission</label>
       </fieldset>
       <fieldset className="grid gap-3"><legend className="title-section mb-3">Application and submission windows</legend>
-        {dateFields.map(key => <label className="grid gap-1 text-sm text-ink" key={key}>{key.replace(/_/g, ' ')} (UTC)
+        {multiStage ? <p className="text-sm text-muted">This event has several submission stages. Each stage's window, grace and late policy are set in Submission stages below.</p> : null}
+        {dateFields.filter(key => !multiStage || !WINDOW_KEYS.includes(key)).map(key => <label className="grid gap-1 text-sm text-ink" key={key}>{key.replace(/_/g, ' ')} (UTC)
           <input type="datetime-local" className="desk-input" value={draft[key] ? new Date(draft[key]!).toISOString().slice(0, 16) : ''}
             onChange={e => set(key, e.target.value ? new Date(e.target.value + 'Z').toISOString() : null)} /></label>)}
-        <label className="grid gap-1 text-sm text-ink">Late submission policy<select className="desk-input" value={draft.late_policy} onChange={e => set('late_policy', e.target.value as Config['late_policy'])}>
+        {multiStage ? null : <><label className="grid gap-1 text-sm text-ink">Late submission policy<select className="desk-input" value={draft.late_policy} onChange={e => set('late_policy', e.target.value as Config['late_policy'])}>
           <option value="reject">Reject late submissions</option><option value="accept_flagged">Accept and flag late submissions</option></select></label>
-        <label className="grid gap-1 text-sm text-ink">Submission grace minutes<input type="number" className="desk-input" min={0} max={1440} value={draft.submission_grace_minutes} onChange={e => set('submission_grace_minutes', Number(e.target.value))} /></label>
+        <label className="grid gap-1 text-sm text-ink">Submission grace minutes<input type="number" className="desk-input" min={0} max={1440} value={draft.submission_grace_minutes} onChange={e => set('submission_grace_minutes', Number(e.target.value))} /></label></>}
       </fieldset>
       <fieldset className="grid gap-3"><legend className="title-section mb-3">Project file limits</legend>
         <label className="grid gap-1 text-sm text-ink">Storage budget in bytes (blank uses the deployment limit)<input type="number" min={1} step={1} className="desk-input" value={draft.storage_budget_bytes ?? ''} onChange={e => set('storage_budget_bytes', e.target.value ? Number(e.target.value) : null)} /></label>

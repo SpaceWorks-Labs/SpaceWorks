@@ -8,6 +8,7 @@ import type { MoreSection } from '../eventDrawerTabs'
 import type { eventAccess } from '../eventStaffPermissions'
 import { ErrorBlock } from '../../../components/ui'
 import { HackathonConfigPanel } from '../hackathonAdmission/HackathonConfigPanel'
+import { StageEditorPanel } from '../submissionStages/StageEditorPanel'
 import { VolunteerManager } from '../mentorDesk/VolunteerManager'
 import { ContributorSetupPanel } from '../mentorDesk/ContributorSetupPanel'
 import { RoleLifecycleActions } from '../mentorDesk/RoleLifecycleActions'
@@ -35,6 +36,7 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   if (!account.data) return <p role="status">Loading your programme access…</p>
   const scope = { makerspaceId, eventId: event.id, accountId: account.data.id }
   if (section === 'programme-setup') return <div className="grid gap-8"><HackathonConfigPanel eventId={event.id} FormEditor={ProgrammeDraftForm} mlhPresets={[]} />
+    {access.hackathon ? <StageEditorPanel eventId={event.id} /> : null}
     <ProgrammeFormEditor eventId={event.id} formKey="application" /></div>
   if (section === 'applications') return <AdmissionWorkspace event={event} canManage={access.hackathon} />
   if (section === 'volunteers') return <VolunteerManager scope={scope}

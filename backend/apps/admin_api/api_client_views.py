@@ -194,13 +194,12 @@ class ApiClientDetailView(RecentReauthenticationMixin, generics.RetrieveUpdateDe
                     meta={"previous_scopes": previous_scopes, "scopes": instance.scopes},
                 )
             if was_active != instance.is_active:
-                # Revoking keeps the row (and its audit trail); deleting removes it.
-                audit.record(
-                    self.request.user,
-                    "api_client.reactivated" if instance.is_active else "api_client.revoked",
-                    makerspace=makerspace,
-                    target=instance,
-                )
+                # Revoking keeps the row (and its audit trail); deleting removes it. Literal
+                # actions, so the audit catalogue labels each one.
+                if instance.is_active:
+                    audit.record(self.request.user, "api_client.reactivated", makerspace=makerspace, target=instance)
+                else:
+                    audit.record(self.request.user, "api_client.revoked", makerspace=makerspace, target=instance)
         sync_makerspace_origins(instance.makerspace)
         audit.record(
             self.request.user,

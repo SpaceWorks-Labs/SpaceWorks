@@ -6,6 +6,13 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-04 -- release 2 L24, price-drop refunds and prepaid-job difference cases (#163A, #171).**
+  A price lowered after payment previews and opens one staff-approved `price_drop` refund case per
+  paid, not-yet-used booking, ticket, prepaid job or membership term (`charges.price_drop_refunds`,
+  off by default); the Space Manager or a finance admin approves. A member cancelling a prepaid job
+  before it starts opens a `job_cancelled` case, and a prepaid job cheaper than its quote a
+  `quote_difference` case (always on with machine charging). Nothing refunds automatically; a rise
+  never charges more (payments/0036).
 - **2026-11-04 -- release 2 L18, donations, sponsors and calendar sync (#94, #96, #128 C-14).** A donation
   page per space with campaigns and funds; anyone gives (signed in, or a guest confirmed by an emailed
   code) as one `donation` Payment (never taxed, may have no account) in the ledger's `donations` area,

@@ -31,6 +31,7 @@ from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace, MakerspaceMembership
 from apps.payments.models import Payment
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 
 EVENT_VALIDATION_ERROR_SCHEMA = {'type': 'object', 'additionalProperties': {}}
@@ -131,6 +132,7 @@ class EventDetailView(APIView):
         tags=['Admin events'],
         summary='Update an event',
         request=EventWriteSerializer,
+        parameters=[PREVIEW_PARAMETER],
         responses={
             200: EventAdminSerializer,
             400: EVENT_ERROR_400,
@@ -140,6 +142,7 @@ class EventDetailView(APIView):
             **{code: ErrorSerializer for code in (401, 403, 404, 423, 503)},
         },
     )
+    @previewable(prepare=lambda view, request, pk, *args, **kwargs: _prepared(request, pk))
     def patch(self, request, pk, *args, **kwargs):
         event = _manageable_event(request.user, pk, VIEW)
         serializer = EventWriteSerializer(event, data=request.data, partial=True)
@@ -169,6 +172,15 @@ class EventDetailView(APIView):
             event = set_online(event, actor=request.user, delivery_mode=online.get("delivery_mode"),
                                join_url_value=online.get("join_url"))
         return Response(EventAdminSerializer(event, context={"request": request}).data)
+
+
+def _prepared(request, pk):
+    """A previewed event save prepares its credential material before the rollback transaction (L24).
+
+    Only for an event the caller may see; anything else 404s here, before any preparation.
+    """
+    from .credentials.preparation import prepare_event_credentials
+    return prepare_event_credentials([_manageable_event(request.user, pk, VIEW).pk])
 
 
 class _EventActionView(APIView):

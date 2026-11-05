@@ -33,6 +33,9 @@ export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged"
   donation_returned: "Gift returned to the giver",
   submission_disqualified: "Project disqualified",
   team_rejected: "Team rejected",
+  price_drop: "Price lowered after payment",
+  job_cancelled: "Prepaid job cancelled before it started",
+  quote_difference: "Job cost less than its prepaid quote",
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {

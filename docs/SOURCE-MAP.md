@@ -570,6 +570,13 @@ is the shared step-1 for a caller already holding the Payment lock. The report i
 `operations/reports_refunds.py`. Frontend: `features/staff/refunds/` (queue, decision
 dialog, policy panel with `RefundPolicyCard` and per-plan `RefundMembershipPolicies`), `staff/RefundReceiptFields.tsx` (shared receipt inputs) and
 `members/MemberRefundRequest.tsx`.
+Price-drop refunds (release 2 L24, #163A/#171): `payments/price_drop/` -- `triggers.py` (the one
+call every price save makes), `hook.py` (collect for a preview, or open the cases and audit),
+`preview.py` (`?price_drop_preview=1` dry-run decorator), `shares.py` (baseline and difference
+arithmetic), `approval.py` (Space Manager or finance admin decides a difference case), and one
+finder per area (`find_bookings.py`, `find_jobs.py`, `find_tickets.py`, `find_membership.py`).
+Prepaid-job cases live in `machines/job_refunds.py` (cancelled before start; cheaper than quoted).
+Frontend: `features/staff/priceDrop/` (the preview dialog and the save guard every price form uses).
 Money, tax and the finance ledger (release 2 L5): the tax engine is `payments/tax/` (`models_tax.py`
 settings and FY counters, `engine.py` splits, `apportion.py` credit notes, `gstin.py`, `snapshot.py`
 the per-charge freeze called from `services.create_payment`, `document_tax.py` the per-document plan,

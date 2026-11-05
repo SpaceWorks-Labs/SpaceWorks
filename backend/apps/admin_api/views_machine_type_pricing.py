@@ -17,6 +17,7 @@ from apps.machines.models import MachineType, MakerspaceMachineTypePricing
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
 from apps.payments.models import MakerspacePaymentSettings
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 
 def _authorize(actor, makerspace_id):
@@ -45,7 +46,8 @@ class MachineTypePricingListView(APIView):
 class MachineTypePricingDetailView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=["Admin machines"], summary="Set makerspace machine-type pricing", request=MachineTypePricingSetSerializer, responses={200: MachineTypePricingSerializer, 400: OpenApiResponse(description="Invalid price."), 403: OpenApiResponse(description="Space-manager identity required."), 404: OpenApiResponse(description="Machine type not found.")})
+    @extend_schema(tags=["Admin machines"], summary="Set makerspace machine-type pricing", request=MachineTypePricingSetSerializer, parameters=[PREVIEW_PARAMETER], responses={200: MachineTypePricingSerializer, 400: OpenApiResponse(description="Invalid price."), 403: OpenApiResponse(description="Space-manager identity required."), 404: OpenApiResponse(description="Machine type not found.")})
+    @previewable
     def put(self, request, makerspace_id, machine_type_id):
         _authorize(request.user, makerspace_id)
         machine_type = get_object_or_404(_types(makerspace_id), pk=machine_type_id)
@@ -62,4 +64,7 @@ class MachineTypePricingDetailView(APIView):
                 row.updated_by = request.user
                 row.save(update_fields=[*serializer.validated_data.keys(), "updated_by", "updated_at"])
             audit.record(request.user, "machine_type_pricing.set" if created else "machine_type_pricing.updated", makerspace=row.makerspace, target=row, target_type="machine_type_pricing", meta={"machine_type_id": machine_type.pk, "payment_enabled": row.payment_enabled, "rate_per_unit": str(row.rate_per_unit), "flat_fee": str(row.flat_fee)})
+            # Lane L24: a lowered type price opens refund cases for prepaid jobs not yet started.
+            from apps.payments.price_drop.triggers import after_machine_price
+            after_machine_price(request.user, row.makerspace, row)
         return Response(MachineTypePricingSerializer(row).data)

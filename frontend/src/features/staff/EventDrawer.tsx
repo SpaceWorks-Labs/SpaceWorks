@@ -8,6 +8,7 @@ import { opsQueryState, opsStatusLabel } from "./opsPresentation";
 import { EventOrganizationAudience } from "./EventOrganizationAudience";
 import { emptyEventForm, payloadFor, valuesFor } from "./EventFormFields";
 import { EventRegistrationRoster } from "./EventRegistrationRoster";
+import { usePriceDropCheck } from "./priceDrop/usePriceDropCheck";
 import { EventCheckInTab } from "./EventCheckInTab";
 import { EventDrawerMore } from "./EventDrawerMore";
 import { EventEssentialsEditor } from "./EventEssentialsEditor";
@@ -56,8 +57,10 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
   const lifecycle = confirm === "publish" ? publish : confirm === "cancel" ? cancel : complete;
   const readOnly = event?.status === "cancelled" || event?.status === "completed";
   const actionError = update.error || publish.error || cancel.error || complete.error;
+  // Lane L24: a cheaper event price may owe paid seats without a ticket type a refund.
+  const drop = usePriceDropCheck(makerspaceId);
   // Sends only the fields that changed, so a grant-limited editor never sends what they may not touch.
-  const saveOccurrence = (onSaved?: () => void) => {
+  const saveOccurrence = async (onSaved?: () => void) => {
     if (!event) return;
     const next = payloadFor(values);
     const current = payloadFor(valuesFor(event));
@@ -65,6 +68,8 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
       Object.entries(next).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(current[key as keyof typeof current])),
     ) as EventPatch;
     if (!Object.keys(changed).length) { onSaved?.(); return; }
+    const cheaper = changed.payment_amount !== undefined && Number(changed.payment_amount) < Number(event.payment_amount);
+    if (cheaper && !(await drop.check(`/admin/events/${event.id}/`, "PATCH", changed))) return;
     if (onSaved) update.mutate(changed, { onSuccess: onSaved }); else update.mutate(changed);
   };
 
@@ -109,7 +114,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
           {surfaces.checkInTab ? <EventCheckInTab event={event} makerspaceId={makerspaceId} active={tabs.active === "checkin"} checkable={checkable} canManageStation={access.manager} /> : null}
           <EventDrawerMore event={event} makerspaceId={makerspaceId} access={access} surfaces={surfaces} section={tabs.section} sectionTabs={tabs.sectionTabs}
             readOnly={readOnly} onWebsitePublication={setWebsitePublication}
-            settings={{ values, setValues, save: () => saveOccurrence(), pending: update.isPending, invalidate: invalidateEvent, resetField: field => update.mutate({ inherit_fields: [field] }), complete: () => setConfirm("complete") }} />
+            settings={{ values, setValues, save: () => { void saveOccurrence(); }, pending: update.isPending, invalidate: invalidateEvent, resetField: field => update.mutate({ inherit_fields: [field] }), complete: () => setConfirm("complete") }} />
           {tabs.section && sections[tabs.section] ? <EventProgrammePanel event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} features={enabledFeatures} /> : null}
           {(tabs.section === "stage-forms" || tabs.section === "reimbursements") && sections[tabs.section]
             ? <EventAddonPanel key={`${event.id}:${tabs.section}`} event={event} makerspaceId={makerspaceId} section={tabs.section} access={access} /> : null}
@@ -117,6 +122,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
           {actionError ? <p role="alert" className="text-sm text-danger">{eventErrorText(actionError)}</p> : null}
         </div> : null} />
     </div>
+    {drop.dialog}
     <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Confirm"} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => { const options = { onSettled: () => setConfirm(null) }; if (confirm === "publish") publish.mutate(websitePublication, options); else lifecycle.mutate(undefined, options); }} />
   </ProgrammeSessionBoundary>;
 }

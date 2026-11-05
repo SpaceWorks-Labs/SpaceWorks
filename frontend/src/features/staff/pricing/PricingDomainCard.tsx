@@ -4,6 +4,7 @@ import { Receipt } from "lucide-react";
 
 import { SegmentedControl } from "../../../components/ui";
 import { SettingsEditorActions } from "../SettingsEditorActions";
+import { usePriceDropCheck } from "../priceDrop/usePriceDropCheck";
 import { PricingImpactDialog } from "./PricingImpactDialog";
 import { PricingLendingFields } from "./PricingLendingFields";
 import { PricingRateRows } from "./PricingRateRows";
@@ -30,6 +31,7 @@ export function PricingDomainCard({ makerspaceId, domain }: { makerspaceId: numb
     mutationFn: (data: PricingDefault) => pricingApi.save(makerspaceId, domain, toWrite(data, draft!)),
     onSuccess: data => { client.setQueryData(key, data); setImpact(null); },
   });
+  const drop = usePriceDropCheck(makerspaceId);
 
   if (card.isLoading) return <p role="status" className="text-sm text-muted">Loading prices…</p>;
   if (card.error) return <p role="alert" className="text-sm text-danger">{pricingError(card.error)}</p>;
@@ -44,6 +46,15 @@ export function PricingDomainCard({ makerspaceId, domain }: { makerspaceId: numb
     const next = validateDraft(data, draft);
     setProblems(next);
     if (!Object.keys(next).length) preview.mutate(data);
+  };
+  // Lane L24: a lower booking or machine rate may owe paid, not-yet-used items a refund.
+  const confirmSave = async () => {
+    if (domain === "bookings" || domain === "machines") {
+      setImpact(null);
+      const path = `/admin/makerspace/${makerspaceId}/pricing/${domain}`;
+      if (!(await drop.check(path, "PUT", toWrite(data, draft)))) return;
+    }
+    save.mutate(data);
   };
 
   return <div className="grid min-w-0 gap-4">
@@ -79,8 +90,10 @@ export function PricingDomainCard({ makerspaceId, domain }: { makerspaceId: numb
     {Object.keys(problems).length ? <p role="alert" className="text-sm text-danger">
       Some prices need fixing. Check the messages above, then save again.</p> : null}
     {preview.error ? <p role="alert" className="text-sm text-danger">{pricingError(preview.error)}</p> : null}
-    {impact ? <PricingImpactDialog impact={impact} areaLabel={data.label} pending={save.isPending}
-      error={save.error ? pricingError(save.error) : null} onConfirm={() => save.mutate(data)}
+    {save.error && !impact ? <p role="alert" className="text-sm text-danger">{pricingError(save.error)}</p> : null}
+    {impact ? <PricingImpactDialog impact={impact} areaLabel={data.label} pending={save.isPending || drop.checking}
+      error={save.error ? pricingError(save.error) : null} onConfirm={() => { void confirmSave(); }}
       onClose={() => { setImpact(null); save.reset(); }} /> : null}
+    {drop.dialog}
   </div>;
 }

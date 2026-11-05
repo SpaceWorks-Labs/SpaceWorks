@@ -3370,6 +3370,36 @@ makerspace's rows. Code lives in `apps/tenant_rls/`.
   belong to whoever edits the item (machine scope included). The public quote reads only publicly
   shown items and never returns hidden counts, storage, box, QR or requester data.
 
+## Price-drop refunds and prepaid-job difference cases (release 2, lane L24; #163A, #171)
+
+- **Nothing refunds automatically.** A price LOWERED after payment opens a `price_drop`
+  `RefundCase` per paid, not-yet-used item; a prepaid machine job that costs less than its quote
+  opens a `quote_difference` case; a member cancelling a prepaid job before it starts opens a
+  `job_cancelled` case. Every one goes through `add_due_share` (one active case per charge, R1:
+  an open case grows instead) and waits for a staff decision. Money moves only on approval.
+- **Who decides.** A difference case (`price_drop`, `quote_difference`, or any case carrying an
+  L24 share) is approved or declined by the Space Manager or a finance admin (`view_finance` AND
+  `record_payment`) -- `payments/price_drop/approval.require_decider`, called from
+  `services_refund_decisions._lock_case`; the area managers who decide cancellation cases cannot.
+  `job_cancelled` is decided like a staff cancellation (subject authority, machine scope).
+  Approving a difference case never ends a membership term.
+- **The frozen quote decides; a rise charges nothing.** Items are re-priced under the price just
+  saved with the inputs of their frozen quote (bookings: `booking_quote`; jobs: `quote_preview`
+  with the quote's minutes, material and machine; tickets: L6's `paid_ticket_price` and the order
+  line's `unit_amount`; terms: the term's frozen `price`). Only a LOWER price finds anything. The
+  difference is rounded down, capped at the refundable balance, and scaled onto the charge (tax on
+  top; a promo seat gets its promo share). An item's baseline is lowered by every earlier L24 share
+  (declined ones included), so a repeat save offers nothing and a second drop only the rest.
+- **One seam, preview = save.** Every price save calls `price_drop/triggers.py` inside its own
+  transaction after writing the price. `?price_drop_preview=1` on those endpoints runs the same save
+  and rolls it back (`price_drop/preview.previewable`), so the preview and the cases cannot
+  disagree. One `pricing.price_drop_refunds_opened` audit row per save names the cases.
+- **Switches.** `charges.price_drop_refunds` (default off) gates the price-drop cases, the preview
+  (404 when off) and the one relaxation of the L6 ticket freeze: a SOLD fixed-price ticket may be
+  LOWERED (never raised) while it is on. The #171 job cases are always on wherever machine charging
+  (`charge_tracking_enabled(space, "machines")`) is on. A cancelled prepaid job's still-PENDING
+  charge is voided instead (nothing will be made).
+
 ## Folded modules: maintenance, To-Buy, warranty and repairs per parent (#97, #128 C-9/C-8/C-10)
 
 - **The `maintenance` and `procurement` module keys are retired.** Their surfaces, and warranty,

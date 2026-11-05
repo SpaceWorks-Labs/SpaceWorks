@@ -32,7 +32,8 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
   const [amount, setAmount] = useState(() => suggestedAmount(refundCase));
   const [note, setNote] = useState("");
   const [keepMembership, setKeepMembership] = useState(false);
-  const membership = refundCase.area === "membership";
+  // A price-difference refund never ends the term (lane L24), so it has no keep-membership choice.
+  const membership = refundCase.area === "membership" && refundCase.reason_code !== "price_drop";
   const receipt = useRefundReceipt();
   const [problem, setProblem] = useState<string | null>(null);
   const money = (value: string) => formatMoney(value, refundCase.payment.currency);
@@ -70,6 +71,8 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
         { label: "Why", value: REASON_LABELS[refundCase.reason_code] },
       ]} />
       <PolicySnapshotLine snapshot={refundCase.policy_snapshot} />
+      {refundCase.needs_finance_approval ? <p className="text-sm text-muted">A price difference: only the Space Manager or a
+        finance admin (view finance and record payments) can approve or decline it.</p> : null}
       {refundCase.member_reason ? <blockquote className="border-l-2 border-line pl-3 text-sm text-ink">
         “{refundCase.member_reason}”</blockquote> : null}
       <SegmentedControl label="Decision" value={mode} fullWidth onChange={(value) => { setMode(value as Mode); setProblem(null); }}

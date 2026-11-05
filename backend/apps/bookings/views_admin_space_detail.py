@@ -31,6 +31,7 @@ from apps.hardware_requests.view_helpers import (
 )
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.models import Makerspace
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 
 SCOPED_ERROR_RESPONSES = {400: ERROR_400, 401: ERROR_401, 403: ERROR_403, 404: ERROR_404}
@@ -107,12 +108,14 @@ class BookableSpaceDetailView(APIView):
         tags=['Admin bookings'],
         summary='Update a bookable space',
         request=BookableSpaceWriteSerializer,
+        parameters=[PREVIEW_PARAMETER],
         responses={
             200: BookableSpaceAdminSerializer,
             **VALIDATED_ERROR_RESPONSES,
             409: ERROR_409,
         },
     )
+    @previewable
     def patch(self, request, pk, *args, **kwargs):
         space = manageable_space(request.user, pk, "edit_details")
         serializer = BookableSpaceWriteSerializer(

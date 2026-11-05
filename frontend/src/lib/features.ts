@@ -204,6 +204,8 @@ export const FEATURE_DEFINITIONS: readonly FeatureDefinition[] = [
   { key: "events.paid_teams", parent_module: "events", label: "Paid team registration" },
   { key: "events.saved_views", parent_module: "events", label: "Saved views and exports for event lists" },
   { key: "events.gallery_search", parent_module: "events", label: "Gallery search and awards" },
+  // L24 (#163A): price-drop refunds.
+  { key: "charges.price_drop_refunds", parent_module: null, label: "Price-drop refunds" },
 ];
 
 export function featureEnabled(features: Iterable<string>, key: string) {

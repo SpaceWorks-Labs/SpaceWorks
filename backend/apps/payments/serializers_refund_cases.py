@@ -25,12 +25,14 @@ class RefundCaseSerializer(serializers.ModelSerializer):
     payment = serializers.SerializerMethodField()
     refund = RefundSerializer(read_only=True, allow_null=True)
     refundable_balance = serializers.SerializerMethodField()
+    #: Lane L24: a price-difference case is decided by the Space Manager or a finance admin.
+    needs_finance_approval = serializers.SerializerMethodField()
 
     class Meta:
         model = RefundCase
         fields = ("id", "payment", "kind", "area", "reason_code", "member_reason", "due_amount",
                   "policy_snapshot", "status", "approved_amount", "decision_note", "refund",
-                  "refundable_balance", "created_at", "decided_at")
+                  "refundable_balance", "needs_finance_approval", "created_at", "decided_at")
         read_only_fields = fields
 
     @extend_schema_field(RefundCasePaymentSerializer)
@@ -43,6 +45,11 @@ class RefundCaseSerializer(serializers.ModelSerializer):
             "status": payment.status, "amount": payment.amount, "currency": payment.currency,
             "member_name": name,
         }).data
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_needs_finance_approval(self, case) -> bool:
+        from apps.payments.price_drop.approval import needs_finance_approval
+        return needs_finance_approval(case)
 
     @extend_schema_field(serializers.DecimalField(max_digits=12, decimal_places=2))
     def get_refundable_balance(self, case):

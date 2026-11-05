@@ -27,6 +27,7 @@ from apps.makerspaces.guards import require_module, require_module_locked
 from apps.makerspaces.membership_plan_policy import sync_plan_features
 from apps.makerspaces.membership_plan_services import cancel_term, create_term
 from apps.makerspaces.models import MakerspaceMembership, MembershipPlan, MembershipTerm
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 _MANAGE = rbac.Action.MANAGE_MEMBERS
 INVALID = OpenApiResponse(description="Invalid input.")
@@ -83,9 +84,10 @@ class MembershipPlanDetailView(APIView):
     @extend_schema(
         tags=["Admin memberships"], description="Requires manage_makerspace in this makerspace; manage_members alone cannot change plan definitions or prices.",
         summary="Update a membership plan",
-        request=MembershipPlanSerializer,
+        request=MembershipPlanSerializer, parameters=[PREVIEW_PARAMETER],
         responses={200: MembershipPlanSerializer, 400: INVALID, **ERRORS},
     )
+    @previewable
     def patch(self, request, pk):
         row = get_object_or_404(
             rbac.scope_by_action(request.user, rbac.Action.MANAGE_MAKERSPACE,
@@ -102,6 +104,10 @@ class MembershipPlanDetailView(APIView):
                 audit.record(request.user, "membership_plan.updated", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "fields": sorted(serializer.validated_data)})
                 sync_plan_features(makerspace)
+                if {"amount", "renewal_amount"} & set(serializer.validated_data):
+                    # Lane L24: a lowered plan price opens refund cases for paid terms not yet started.
+                    from apps.payments.price_drop.triggers import after_plan_price
+                    after_plan_price(request.user, row)
         except IntegrityError as exc:
             raise ValidationError({"name": "A plan with this name or slug already exists."}) from exc
         return Response(MembershipPlanSerializer(row).data)

@@ -5,6 +5,8 @@ import { CASE_STATUS_LABELS, REASON_LABELS, caseTone, formatDuration, type Refun
 /** One plain sentence explaining how the due figure was reached. */
 export function policySentence(snapshot: unknown): string | null {
   if (!snapshot || typeof snapshot !== "object") return null;
+  const difference = differenceSentence(snapshot as { shares?: unknown });
+  if (difference) return difference;
   const value = snapshot as Record<string, string | number | undefined>;
   switch (value.rule) {
     case "event_cancelled_full": return "The space cancelled the event, so the full amount is owed.";
@@ -28,6 +30,16 @@ export function policySentence(snapshot: unknown): string | null {
   }
 }
 
+/** Lane L24: the shares a price drop, a cheaper prepaid job or a cancelled prepaid job added. */
+function differenceSentence(snapshot: { shares?: unknown }): string | null {
+  const shares = Array.isArray(snapshot.shares) ? snapshot.shares as { source?: string }[] : [];
+  const sources = new Set(shares.map(share => share?.source));
+  if (sources.has("price_drop")) return "The price was lowered after this was paid. The amount is the difference.";
+  if (sources.has("quote_difference")) return "The prepaid job cost less than its quote. The amount is the difference.";
+  if (sources.has("job_cancelled")) return "The member cancelled this prepaid job before it started.";
+  return null;
+}
+
 export function PolicySnapshotLine({ snapshot }: { snapshot: unknown }) {
   const sentence = policySentence(snapshot);
   return sentence ? <p className="text-sm text-muted">{sentence}</p> : null;
@@ -39,6 +51,7 @@ export function RefundCaseRow({ row, onOpen }: { row: RefundCase; onOpen?: () =>
   return <ListRow title={`${row.payment.member_name || "Member"} · ${row.payment.subject_label}`} onClick={onOpen}
     meta={<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <span>{REASON_LABELS[row.reason_code]}</span>
+      {row.needs_finance_approval && row.status === "open" ? <span>Space Manager or finance approves</span> : null}
       <span>Paid {money(row.payment.amount)}</span>
       {row.refund?.status === "failed" ? <span className="text-danger">Provider refused the last attempt</span> : null}
       <RelativeTime date={row.created_at} />

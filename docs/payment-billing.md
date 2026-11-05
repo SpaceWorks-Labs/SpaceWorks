@@ -344,3 +344,42 @@ for gifts and sponsor money is `payments.donations` (needs the `payments` module
   (`public/<slug>/sponsors`, the Pages `sponsors` section, `public/<slug>/events/<token>/sponsors`)
   shows public fields only; an event's sponsors link to `events.EventSponsor` rows (picked from
   `sponsors/event-sponsors`), never copies.
+
+## Price-drop refunds
+
+Lane L24 (#163A, #171). **Nothing is ever refunded automatically**: each refund below is a
+`RefundCase` in the refund queue that a person approves.
+
+**A price lowered after people paid** (`charges.price_drop_refunds`, off by default). When staff
+save a LOWER price, every paid item that has not been used yet and would now cost less gets a
+refund case (`price_drop`) for the difference:
+
+- upcoming bookings of rooms and machine time (a room's price, its override, or the bookings rate
+  card);
+- tickets for events not yet held (a ticket type's price, or the event's own price). A SOLD
+  fixed-price ticket may be lowered while the switch is on -- never raised; pay-what-you-want
+  tickets and series passes are never re-priced;
+- prepaid machine jobs whose quote was paid but which have not started (the machines rate card, a
+  machine or material-pool price, or a machine type's price row);
+- membership terms paid but not started yet, including a renewal paid early (a plan's price or
+  renewal price; the joining fee is not re-priced).
+
+The difference comes from the frozen quote, never today's list: the item is re-priced with the
+inputs it was quoted with, the difference is rounded down and never exceeds what is left to refund
+on the charge, and a second drop offers only the further difference. A RISE never charges anyone
+more. Before saving, the price forms show the affected items and the total difference: every
+price-saving endpoint accepts `?price_drop_preview=1`, which runs the save, lists the items and
+rolls it back (404 while the switch is off).
+
+**Prepaid machine jobs** (#171, always on wherever machine charging is on):
+
+- a member cancels a prepaid job before it starts: a `job_cancelled` case for what is left on the
+  charge (an unpaid prepay charge is voided instead);
+- a prepaid job comes in cheaper than its quote -- at completion, or a member-fault failure under
+  the space's failure charge: a `quote_difference` case for the difference.
+
+**Who approves.** A price-difference case (`price_drop`, `quote_difference`) is approved or
+declined by the Space Manager or a finance admin (`view_finance` plus `record_payment`); approving
+it never ends a membership. A `job_cancelled` case is decided like any staff cancellation, by the
+job's Machine Manager. Each save that opens cases writes one `pricing.price_drop_refunds_opened`
+audit row; each case writes its own `payment.refund_case_opened`.

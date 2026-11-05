@@ -21,6 +21,7 @@ from apps.payments.pricing.components import components
 from apps.payments.pricing.http import ITEM_ACTIONS, require_domain, require_pricing, space_for
 from apps.payments.pricing.rates import RateCard
 from apps.payments.pricing.serializers_rules import PriceOverrideCardSerializer, PriceOverrideWriteSerializer
+from apps.payments.price_drop.preview import PREVIEW_PARAMETER, previewable
 
 TAGS = ["Pricing"]
 
@@ -93,8 +94,9 @@ class PriceOverrideView(APIView):
                                "is written to the item's own price field. Audited `pricing.override_set` / "
                                "`pricing.override_cleared`. 400 `component_not_allowed` for a component this "
                                "item type does not take.",
-                   parameters=PARAMS, request=PriceOverrideWriteSerializer,
+                   parameters=[*PARAMS, PREVIEW_PARAMETER], request=PriceOverrideWriteSerializer,
                    responses={200: PriceOverrideCardSerializer, **errors(400, 401, 403, 404, 423)})
+    @previewable
     def put(self, request, makerspace_id, target_type, target_id):
         space, target = _resolve(request, makerspace_id, target_type, target_id)
         body = PriceOverrideWriteSerializer(data=request.data)

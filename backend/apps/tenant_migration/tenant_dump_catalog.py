@@ -92,8 +92,9 @@ class TenantDumpCatalogError(AssertionError):
 # release 2 combined tree (int-stage-r2final): gap-cards makerspaces/0128, events/0071, id_programmes/0002 email format; final re-pin.
 # lane/r2-submit-content: events/0072-0074, event_reimbursements/0007 (renumbered) submission stages; re-pinned.
 # lane/r2-hack-money: events/0075-0077, payments/0041-0043, event_reimbursements/0008 (renumbered) prize money, deposits, crew pool; re-pinned.
+# lane/r2-peoples-choice: events/0078-0079 (renumbered) People's choice config, ballots, results, standings; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "a81b1af86b44aedf46e779757fa3ccbbef78a45db59bf40981d1a125d135e99a"
+CATALOG_SCHEMA_SHA256 = "85e5885fd22787678bc7c2a1c295523869467deab45a96f7b506eb5d1574057f"
 
 
 def catalog_models(apps_registry=apps):

@@ -13,6 +13,7 @@ from django.utils import timezone
 from apps.audit.services import record
 from apps.events.submissions.gallery_models import GalleryConsent, GalleryEntry
 from apps.events.submissions.gallery_projection import live_entry
+from apps.events.submissions.stage_gallery import final_stage_entries
 from .boundary import command, mutation
 from .errors import ProgrammeError, invalid, require_version
 from .feature import PEOPLES_CHOICE, enabled, require_capability
@@ -24,10 +25,10 @@ from .serializers_peoples_choice import PeoplesChoiceStandingsRead
 
 
 def _live_entries(event):
-    """team_id -> (entry, snapshot) for every live public gallery project."""
+    """team_id -> (entry, snapshot) for every live public gallery project of the final stage."""
     found = {}
-    for entry in GalleryEntry.objects.filter(event=event, hidden_at__isnull=True).select_related(
-            "event", "publication").order_by("pk"):
+    rows = GalleryEntry.objects.filter(event=event, hidden_at__isnull=True).select_related("event", "publication")
+    for entry in final_stage_entries(event.pk, rows).order_by("pk"):
         try:
             snapshot, _consent = live_entry(entry)
         except Http404:

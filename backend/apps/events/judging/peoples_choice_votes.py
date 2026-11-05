@@ -1,5 +1,8 @@
 """People's choice ballots (#181 S3): one per person per event, cast on a live public gallery project.
 
+Only final-stage gallery work can be chosen (`stage_gallery.final_stage_entries`, #178/#180 S18): an
+earlier stage made public early is shown in the gallery but never stands for the award.
+
 Abuse protection, in layers: the vote route has its own per-account throttle; the database holds
 one ballot per (event, voter); a voter may never choose a project of a team they are on; a staff
 void keeps the row, so a voided voter cannot simply vote again. A ballot may be changed until
@@ -12,6 +15,7 @@ from django.utils import timezone
 from apps.audit.services import record
 from apps.events.submissions.gallery_models import GalleryEntry
 from apps.events.submissions.gallery_projection import live_entry
+from apps.events.submissions.stage_gallery import final_stage_entries
 from .boundary import command, mutation
 from .errors import ProgrammeError
 from .feature import PEOPLES_CHOICE, require_capability
@@ -50,8 +54,8 @@ def own_team_ids(event, member_id):
 
 
 def _entry_for_team(event, team_id):
-    return (GalleryEntry.objects.filter(event=event, snapshot__submission__team_id=team_id, hidden_at__isnull=True)
-            .order_by("-pk").values_list("public_id", flat=True).first())
+    rows = GalleryEntry.objects.filter(event=event, snapshot__submission__team_id=team_id, hidden_at__isnull=True)
+    return final_stage_entries(event.pk, rows).order_by("-pk").values_list("public_id", flat=True).first()
 
 
 def ballot_projection(event, voter):
@@ -84,8 +88,8 @@ def cast(event_id, *, actor, data):
             reason = refusal(event, config, result, actor, vote)
             if reason:
                 raise ProgrammeError(reason, MESSAGES[reason], status=403)
-            entry = GalleryEntry.objects.select_related("event", "publication").filter(
-                event=event, public_id=values["entry_public_id"]).first()
+            entry = final_stage_entries(event.pk, GalleryEntry.objects.select_related("event", "publication").filter(
+                event=event, public_id=values["entry_public_id"])).first()  # Never an early-stage entry.
             if entry is None:
                 raise Http404
             snapshot, _consent = live_entry(entry)  # Only a live, consented, eligible public project.

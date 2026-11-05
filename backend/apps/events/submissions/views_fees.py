@@ -24,6 +24,8 @@ def charge_read():
         "payment_id": serializers.IntegerField(allow_null=True),
         "status": serializers.CharField(help_text="not_required, not_raised, or the payment status."),
         "currency": serializers.CharField(allow_blank=True),
+        "before_stage": serializers.IntegerField(allow_null=True, required=False,
+                                                 help_text="Entry fee only (S17): due before this stage position."),
     })
 
 

@@ -49,9 +49,15 @@ class ProgrammeBoundary(ProgrammeReceipts):
             elif not internal:
                 self.participant(event, actor)
                 members = (actor.pk,)
+            # #178: the context window is the LAST stage's (the end of all submission); each stage's own
+            # window is checked by the submit path.
+            from .models_stages import SubmissionStage
+            last = SubmissionStage.objects.filter(event=event).order_by("-position").first()
+            deadline, grace, late = ((last.deadline, last.grace_minutes, last.late_policy) if last else
+                                     (config.submission_deadline, config.submission_grace_minutes, config.late_policy))
             yield SubmissionContext(event=event, team_id=team_id, member_ids=members, leader_id=leader,
-                deadline=config.submission_deadline or event.ends_at, grace_seconds=config.submission_grace_minutes*60,
-                late_policy=config.late_policy, managed=not limits.is_self_host(), budget_bytes=config.storage_budget_bytes,
+                deadline=deadline or event.ends_at, grace_seconds=grace*60,
+                late_policy=late, managed=not limits.is_self_host(), budget_bytes=config.storage_budget_bytes,
                 upload_policy=config.upload_policy, upload_policy_version=config.upload_policy_version)
 
     def roster(self, event_id, team_id, *, eligible):

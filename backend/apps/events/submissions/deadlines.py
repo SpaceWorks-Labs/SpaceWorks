@@ -1,6 +1,4 @@
 """Idempotent event-clock deadline task; G registers worker and cloud schedules."""
-from datetime import timedelta
-
 from django.utils import timezone
 from apps.audit.services import record
 from .models_projects import HackathonSubmission
@@ -14,12 +12,14 @@ def lock_event_submissions(*, event_id, now=None, limit=100):
     count = 0
     for identity, team_id in identities:
         with boundary().locked(actor=None, event_id=event_id, team_id=team_id, action="deadline_lock") as context:
-            if now <= context.deadline + timedelta(seconds=context.grace_seconds):
+            from .stage_runtime import team_cutoff
+            cutoff = team_cutoff(context)  # The last stage, or this team's later extension (#178, S2).
+            if now <= cutoff:
                 continue
             project = HackathonSubmission.objects.select_for_update().get(pk=identity, event_id=event_id)
             if project.state != "submitted" or not project.current_snapshot_id:
                 continue
-            project.state, project.locked_at = "locked", context.deadline + timedelta(seconds=context.grace_seconds)
+            project.state, project.locked_at = "locked", cutoff
             project.version += 1
             project.save(update_fields=["state", "locked_at", "version"])
             record(None, "event.submission_locked", makerspace=context.event.makerspace, target=project,

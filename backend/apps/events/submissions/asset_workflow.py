@@ -67,6 +67,8 @@ def initialize_asset(*, actor, event_id, team_id, operation_id, data, participan
             project, _ = HackathonSubmission.objects.get_or_create(event_id=event_id, team_id=team_id)
             if project.state not in {"draft", "submitted"}:
                 raise SubmissionError("submission_locked", 409)
+            from .stage_submit import check_upload  # #177/#180: the active stage's file rules.
+            check_upload(project, ctx, data["group"], data["bytes"])
             rows = cls.objects.filter(event_id=event_id, team_id=team_id)
             owner = {"team_id": team_id, "submission": project}
             owner_key = f"team-{team_id}"

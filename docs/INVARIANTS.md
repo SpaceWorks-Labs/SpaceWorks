@@ -676,8 +676,9 @@ one `transaction.atomic()` suspends immutability triggers **transaction-scoped**
 **Superadmin space controls (#185, #190; `apps/space_controls/`).** Suspend, read-only, transfer
 ownership, scheduled archive/purge, announcements and health cards; superadmin-only, recent re-auth on
 every write, audited (`space_control.*`), the web console primary and `/control/` the fallback.
-- **Suspended is a lifecycle state.** `Makerspace.LifecycleState.SUSPENDED` makes the space unservable,
-  so rbac, origin scoping, public lookups and `servable_queryset` sweeps refuse it with no new code.
+- **Suspended is a lifecycle state.** `Makerspace.LifecycleState.SUSPENDED` makes the space unservable
+  (except for the admitted superadmin, below), so rbac, origin scoping, public lookups and
+  `servable_queryset` sweeps refuse it with no new code.
   `is_servable(..., allow_archived=True)` (the capability/settlement path) admits a suspended space like
   an archived one, and `lookup.get_makerspace_by_public_code(allow_archived=True)` finds it: **money a
   payer already sent must settle** in a paused space exactly as in an archived one.
@@ -702,8 +703,15 @@ every write, audited (`space_control.*`), the web console primary and `/control/
     confirmed by `AdminSourceGateMixin`. A Celery job queued by a confirmed superadmin action carries
     the actor in a publish header and re-verifies it on the worker. Everyone else is refused exactly as
     before. The web console shows a warning banner and confirms before the first write (once per space
-    every ten minutes). A paused space stays unservable, so its own screens still 404 for the
-    superadmin too; the bypass covers every write that reaches the gate.
+    every ten minutes).
+  - **Reads: a paused space is servable for the superadmin only.** `servability.admit_superadmin(user)`
+    runs in the authenticated late gate (`accounts.authentication._assert_source_gate`) and for a Celery
+    job inheriting a confirmed bypass; `ServabilityScopeMiddleware` / `request_scope()` bound it to one
+    request or job. While admitted, `is_servable`, `servable_q`/`servable_queryset` and
+    `unservable_makerspace_ids` treat SUSPENDED like ACTIVE, so rbac (through the pinned
+    `archived_makerspace_ids`), lookups and every servable query open the paused space to the superadmin
+    and to nobody else. Archived spaces stay unservable. A control that must know the real state (pause,
+    archive) checks `lifecycle_state` explicitly; archiving a paused space ends the pause first.
 - **Notices name only the viewer's own spaces.** `platform-notices` lists, per announcement, the viewer's
   spaces it reaches (`makerspace_ids`) and those where it reaches them as a member
   (`member_makerspace_ids`); member pages show only the latter. Never another target space's id.

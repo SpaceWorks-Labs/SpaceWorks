@@ -28,6 +28,7 @@ from apps.makerspaces.models import (
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.accounts.admin_staff_lifecycle import ReadOnlyMembershipInlineMixin
 from apps.makerspaces.admin_staff_accounts import MakerspaceStaffAccountAdminMixin
+from apps.space_controls.admin_actions import SPACE_CONTROL_ACTIONS, MakerspaceSpaceControlsAdminMixin
 
 
 class ArchivedFilter(admin.SimpleListFilter):
@@ -67,6 +68,7 @@ class MakerspaceAdmin(
     MakerspaceStaffAccountAdminMixin,
     MakerspaceOwnerAdminMixin,
     MakerspaceLifecycleActionsMixin,
+    MakerspaceSpaceControlsAdminMixin,
     MakerspaceImageAdminMixin,
     MakerspaceCapabilityAdminMixin,
     MakerspaceConsoleLinksAdminMixin,
@@ -77,7 +79,7 @@ class MakerspaceAdmin(
 ):
     form = MakerspaceAdminForm
     actions = ["archive_makerspaces", "unarchive_makerspaces", "purge_makerspaces",
-               "approve_archive_requests", "decline_archive_requests"]
+               "approve_archive_requests", "decline_archive_requests", *SPACE_CONTROL_ACTIONS]
     list_display = (
         "name", "public_code", "slug", "location", "public_inventory_enabled",
         "frontend_domain", "hidden_from_central_directory", "frontend_mode",

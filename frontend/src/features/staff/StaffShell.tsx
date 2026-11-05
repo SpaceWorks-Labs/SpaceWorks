@@ -13,6 +13,10 @@ import { useUnreadNotifications } from "./useUnreadNotifications";
 import { collectionResults, machineKeys, type MachineCollection, type MachineType } from "./machinesApi";
 import { machineTypeSegment, staffTabPath } from "./staffTabs";
 import { visibleRequestTabs } from "./panels/requestTabs";
+import { PlatformNoticeBanners } from "../platformNotices/PlatformNoticeBanners";
+import { PausedSpacePage } from "../platformNotices/PausedSpacePage";
+import { SuperadminSpaceGuard } from "../platformNotices/SuperadminSpaceGuard";
+import { spaceNotice, usePlatformNotices } from "../platformNotices/platformNoticesApi";
 
 type Props = { activeMakerspace?: Makerspace; allowedTabs: readonly string[]; activeTab: string;
   guestOnly: boolean; singleTenantLocked: boolean; handoutOnly: boolean; grantOnly?: boolean; user: StaffAuthUser;
@@ -35,6 +39,14 @@ export function StaffShell(props: Props) {
     queryKey: ["dashboard", space?.id], queryFn: skipToken, enabled: false,
   });
   const types = useQuery<MachineCollection<MachineType>>({ queryKey: machineKeys.types(space?.id ?? -1), queryFn: skipToken, enabled: false });
+  const notices = usePlatformNotices(true, props.isSuperadmin ? "platform" : currentSessionContext());
+  // A paused space is unservable, so it is missing from the account's spaces: match the route's
+  // /m/<slug>/admin, or a person whose only staff spaces are paused, to show the paused page.
+  const routeSlug = /^\/m\/([^/]+)\/admin/.exec(location.pathname)?.[1];
+  const onlyPaused = !props.isSuperadmin && props.makerspaces.length === 0
+    ? notices.data?.spaces.find(row => row.state === "suspended") : undefined;
+  const pausedNotice = space ? spaceNotice(notices.data, { id: space.id })
+    : (routeSlug ? spaceNotice(notices.data, { slug: decodeURIComponent(routeSlug) }) : onlyPaused);
   const path = (tab: string, subPath = "") => consoleSessionHref(staffTabPath(tab, guestOnly, props.isSuperadmin ? undefined : space?.slug, singleTenantLocked, subPath), props.isSuperadmin ? "platform" : currentSessionContext());
   // `requests` passes the tab gate for any hardware action, but each queue needs accept_request or
   // issue_request. With neither, the page would be a dead end: hide it and open the front desk instead.
@@ -42,7 +54,7 @@ export function StaffShell(props: Props) {
   const redirectTab = ["direct", "handover"].find(key => allowedTabs.includes(key));
   // "granted" (Assigned resources) is a global tab: event/booking grant holders reach it with no workspace selected.
   const tabs = space ? allowedTabs.filter(key => key !== "requests" || !noQueues || !redirectTab)
-    : allowedTabs.filter(key => ["organizations", "platform-dashboard", "granted"].includes(key));
+    : allowedTabs.filter(key => ["organizations", "platform-dashboard", "platform-spaces", "granted"].includes(key));
   // Full-access staff (Space Manager, superadmin) get the task-grouped menu; narrower roles
   // keep their existing, already short one.
   const spaceManager = !!space && (props.isSuperadmin || props.actions.includes("manage_makerspace"));
@@ -77,6 +89,13 @@ export function StaffShell(props: Props) {
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),
     } : hasGrants ? { name: "Assigned resources", subtitle: "Resource staff", avatar: { kind: "icon", icon: "Calendar", tone: "neutral" }, menu: [], locked: true }
     : undefined;
+  // #195: the superadmin is never shown the paused page; they get the warning banner instead.
+  if (!props.isSuperadmin && pausedNotice?.state === "suspended") {
+    const canSwitch = !singleTenantLocked && props.makerspaces.length > (space ? 1 : 0);
+    const signOut = { label: "Sign out", onClick: () => void props.signOut() };
+    return <PausedSpacePage name={space?.name ?? pausedNotice.name} reason={pausedNotice.reason} primary={canSwitch ? { label: "Switch space", onClick: () => props.setSelected(null) } : signOut}
+      escape={canSwitch ? signOut : undefined} />;
+  }
   if (space && activeTab === "requests" && noQueues && redirectTab) return <Navigate replace to={path(redirectTab)} />;
   return <>
     <AppShell variant="staff" workspace={workspace} nav={nav} activeKey={activeKey}
@@ -87,6 +106,8 @@ export function StaffShell(props: Props) {
       {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
           Both pills share the job-status query keys, so this adds no polling. */}
       {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}
+      <SuperadminSpaceGuard notice={props.isSuperadmin && space ? spaceNotice(notices.data, { id: space.id }) : undefined} />
+      <PlatformNoticeBanners data={notices.data} space={space ? { id: space.id } : undefined} />
       {props.children}
     </AppShell>
     {makerspaceTools && space ? <CommandPalette key={space.id} makerspaceId={space.id} makerspaceSlug={space.slug} allowedTabs={allowedTabs}

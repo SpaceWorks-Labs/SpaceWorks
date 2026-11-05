@@ -76,6 +76,13 @@ def install_module(makerspace, key, actor=None):
             f"{', '.join(unavailable)} is not shipped by this deployment "
             "(TOMBSTONED_APPS). Enabling it would have no effect."
         )
+    from apps.managed_hosting.enforcement import disallowed_modules
+    blocked = disallowed_modules(makerspace, with_dependencies({key}))  # #187A; [] with plans off
+    if blocked:
+        raise ModuleInstallError(
+            f"{', '.join(blocked)} is not included in this space's hosting plan. "
+            "Ask the platform operator to change the plan."
+        )
     with transaction.atomic():
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         before = set(locked.enabled_modules or [])

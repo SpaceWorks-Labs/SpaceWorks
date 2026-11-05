@@ -7,6 +7,8 @@ type Props = {
   errors: Record<string, string>;
   /** The invite page owns the organization choice and renders this field itself. */
   showOrganizationName?: boolean;
+  /** Only the open request form asks for the expected size; the invitation form does not send it. */
+  showExpectedMembers?: boolean;
 };
 
 /**
@@ -14,7 +16,7 @@ type Props = {
  * honeypot the backend checks first: a filled value gets the same acknowledgement and stores
  * nothing, so it is rendered display:none, out of the tab order and out of autofill.
  */
-export function HostingRequestFields({ value, onChange, errors, showOrganizationName = true }: Props) {
+export function HostingRequestFields({ value, onChange, errors, showOrganizationName = true, showExpectedMembers = false }: Props) {
   const input = (key: HostingFormKey) => ({
     className: "desk-input",
     value: value[key],
@@ -41,6 +43,9 @@ export function HostingRequestFields({ value, onChange, errors, showOrganization
       <Field label="Space website (optional)" error={errors.space_website_url}>
         <input {...input("space_website_url")} type="url" maxLength={200} placeholder="https://" autoComplete="url" />
       </Field>
+      {showExpectedMembers ? <Field label="Expected members (optional)" hint="Roughly how many people will use the space." error={errors.expected_members}>
+        <input {...input("expected_members")} type="number" min={1} max={100000} step={1} inputMode="numeric" />
+      </Field> : null}
     </div>
     <Field label="About your space" error={errors.description}
       hint={`${descriptionLength}/2000 characters · at least 20. What you make, who uses it and what you'd run on Space Works.`}>

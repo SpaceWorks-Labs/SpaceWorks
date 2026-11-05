@@ -83,6 +83,7 @@ from .presentation_catalog_ip_security import ENTRIES as _IP_SECURITY
 from .presentation_catalog_staff_roles import ENTRIES as _STAFF_ROLES
 from .presentation_catalog_r2_l25 import ENTRIES as _R2_L25
 from .presentation_catalog_platform_overview import ENTRIES as _PLATFORM_OVERVIEW
+from .presentation_catalog_r2_superadmin import ENTRIES as _R2_SUPERADMIN
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -113,6 +114,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_SUBMIT_CONTENT,
     _PLATFORM_OVERVIEW,
     _R2_PEOPLES_CHOICE,
+    _R2_SUPERADMIN,
 )
 
 

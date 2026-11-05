@@ -567,8 +567,12 @@ availability holds; the `/control/` admin and its `_managed_item` sidebar entry 
 add form's hidden `hosting_request` field is rendered and honoured only when `admin_available()`.
 - **One writer.** `hosting_requests/workflow.py` is the only code that assigns `HostingRequest.status`
   (literal `ALLOWED` pairs; anything else is `HostingRequestConflict`, 409 `invalid_transition`; field
-  problems are 400; unknown/expired tokens 404). Approval only **marks** a request accepted and emails the
-  applicant; nothing is provisioned. Rejection needs a 10–2000 character reason that is emailed and kept
+  problems are 400; unknown/expired tokens 404). The `/control/` accept action only **marks** a request
+  accepted and emails the applicant. The web console's **Approve** (#185 item 5,
+  `space_controls/onboarding.py`) accepts through the same workflow, then creates the space exactly as the
+  `/control/` add form does (a `Makerspace` save, `assign_owner_organization`, `link_created_makerspace`),
+  turns on the space's `email` module and sends the applicant a Space Manager invitation; all of it
+  commits together, and the invitation mail goes after commit. No trial (#185). Rejection needs a 10–2000 character reason that is emailed and kept
   after redaction (the reject form warns not to include personal details).
 - **Changes requested and resubmit (R2 L2, X31).** Only the superadmin, from `/control/`
   ("Request changes"), moves `submitted -> changes_requested` with a 10–2000 character note; the
@@ -617,8 +621,10 @@ add form's hidden `hosting_request` field is rendered and honoured only when `ad
 - **Reserved `/hosting`.** `hosting` is a reserved top-level segment. On the central origin `/hosting`
   shadows any pre-existing public handle named `hosting` (accepted; such a profile stays reachable only
   through `/m/…` or a redirect).
-- **Named exceptions.** *Console parity:* review is `/control/`-only by owner decision #47; there is no
-  React superadmin review surface. *Audit:* unverified public submissions and the retention sweep's
+- **Named exceptions.** *Console parity:* owner decision #190 supersedes #47: review (list, history,
+  approve-and-create, request changes, reject) is in the web superadmin console's Spaces tab, with
+  `/control/` as the fallback. `expected_members` (the size the applicant expects) is optional and
+  informs the review only. *Audit:* unverified public submissions and the retention sweep's
   deletions/redactions are deliberately unaudited (the sweep logs counts only); verification, every later
   transition, invitation creation/cancellation and the makerspace link are audited with literal actions
   and no free text.
@@ -715,6 +721,80 @@ one `transaction.atomic()` suspends immutability triggers **transaction-scoped**
   tables and every workflow-consumption audit are absent. Purge deletes the two now-`PROTECT` photo
   sidecars (`EvidenceUploadFinalization`, `EvidenceObjectRetentionState`) explicitly before the
   photos and never deletes receipts: they are FK-free, have **no** purge hatch, and keep reconciling.
+
+**Superadmin space controls (#185, #190; `apps/space_controls/`).** Suspend, read-only, transfer
+ownership, scheduled archive/purge, announcements and health cards; superadmin-only, recent re-auth on
+every write, audited (`space_control.*`), the web console primary and `/control/` the fallback.
+- **Suspended is a lifecycle state.** `Makerspace.LifecycleState.SUSPENDED` makes the space unservable
+  (except for the admitted superadmin, below), so rbac, origin scoping, public lookups and
+  `servable_queryset` sweeps refuse it with no new code.
+  `is_servable(..., allow_archived=True)` (the capability/settlement path) admits a suspended space like
+  an archived one, and `lookup.get_makerspace_by_public_code(allow_archived=True)` finds it: **money a
+  payer already sent must settle** in a paused space exactly as in an archived one.
+- **One write guard.** `space_controls.write_policy.assert_space_writable` runs inside the source gate's
+  single `_assert_gate_state`, which every tenant write already passes (gate middleware, late DRF guard,
+  `tenant_write`, Celery `TenantGateTask`, `fanout_tenant_write`, notification and email delivery). Its
+  refusals subclass `SourceMigrationGateClosed` (`space_suspended`, `space_read_only`, HTTP 423), so every
+  existing frozen-tenant handler applies. Never patch a view to check these states.
+  - SUSPENDED refuses every write in every context except permits: `CONTROL_ROUTES` (the superadmin's own
+    controls), `SETTLEMENT_ROUTES` (payment and hosting-invoice webhooks) and `SETTLEMENT_OPERATIONS`
+    sweeps. Queued messages are held, never dropped, and go after unblocking.
+  - READ-ONLY is enforced only where `enforcing_read_only()` is active: unsafe HTTP requests (exports,
+    PII windows, opt-outs and the controls excepted) and fan-out sweeps not in `READ_ONLY_OPERATIONS`
+    (renewals, bulk imports). Delivery, expiry, retention and settlement continue. New sweeps default
+    to "skip in read-only"; add an operation to the allowlist only if it creates nothing.
+  - **The superadmin is never switched off (#195, applying #110/#190).** `superadmin_bypass` admits a
+    live platform superadmin's writes in either state, and audits each one once per space and request
+    or job as `space_control.superadmin_bypass` with `bypass_space_control` = `read_only` | `suspended`.
+    The gate middleware recognises a valid platform-superadmin bearer token before authentication
+    (`pending`: it admits only the middleware's own boundary check); the authenticated late DRF guard
+    (`assert_request_write_allowed(request, user=...)`) confirms it or revokes it; `/control/` is
+    confirmed by `AdminSourceGateMixin`. A Celery job queued by a confirmed superadmin action carries
+    the actor in a publish header and re-verifies it on the worker. Everyone else is refused exactly as
+    before. The web console shows a warning banner and confirms before the first write (once per space
+    every ten minutes).
+  - **Reads: a paused space is servable for the superadmin only.** `servability.admit_superadmin(user)`
+    runs in the authenticated late gate (`accounts.authentication._assert_source_gate`) and for a Celery
+    job inheriting a confirmed bypass; `ServabilityScopeMiddleware` / `request_scope()` bound it to one
+    request or job. While admitted, `is_servable`, `servable_q`/`servable_queryset` and
+    `unservable_makerspace_ids` treat SUSPENDED like ACTIVE, so rbac (through the pinned
+    `archived_makerspace_ids`), lookups and every servable query open the paused space to the superadmin
+    and to nobody else. Archived spaces stay unservable. A control that must know the real state (pause,
+    archive) checks `lifecycle_state` explicitly; archiving a paused space ends the pause first.
+- **Notices name only the viewer's own spaces.** `platform-notices` lists, per announcement, the viewer's
+  spaces it reaches (`makerspace_ids`) and those where it reaches them as a member
+  (`member_makerspace_ids`); member pages show only the latter. Never another target space's id.
+- **Reasons never enter the audit log** (append-only). A paused space's private reason is shown only to
+  the superadmin; everyone else gets the generic sentence. Mail to Space Managers is platform mail
+  (`makerspace=None`), sent after commit, so a paused space's gate or `email` module can never mute it.
+- **Schedules** (`SpaceControlState.archive_on` / `purge_due_at`) run hourly as the superadmin who set
+  them, re-validated at run time (held and audited once otherwise), through `direct_archive` and
+  `lifecycle.purge`, so the archival-money and two-key rules are unchanged. Reminders: 7/1 days before
+  an archive, 30/7/1 before a purge; one mail when several thresholds are already past. Unarchiving or
+  pausing clears a purge that no longer applies. Lock order: makerspace -> control state.
+- **Transfer ownership** composes the staff-role services only (grant/change/restore/revoke, invitations),
+  so the last-manager, Space-Manager-is-superadmin-only, quota and tenant-gate rules still hold.
+- **Data.** Every new model is OMITTED from tenant export and dumps; user FKs are `SET_NULL` and in the
+  merge registry; RLS polices the per-space rows through their direct makerspace FK.
+
+**Managed hosting (off by default; #187A, `apps/managed_hosting/`).** `MANAGED_PLANS_ENABLED` (default
+false) AND a managed deployment are both required; `MANAGED_BILLING_ONLINE_ENABLED` (also false) adds
+online checkout. **With the switch off nothing is visible or enforced** (#187B): every route 404s,
+`/config` has no `managed_plans` key, health cards have no `plan` key, `/control/` hides the lists, and
+every hook returns its old answer first. Keep it that way: a new hook must check `plans_enabled()` before
+any query.
+- **Built on the fair-use limits.** `limits_core.resource_limit`: per-space override > plan > the
+  deployment default. Plan-only monthly keys (`email_monthly`, `sms_monthly`, `whatsapp_monthly`,
+  `events_monthly`) are enforced at the seams the daily caps use; `allowed_modules` at
+  `module_install.install_module`. At 100 % the refusal is `plan_limit_reached` (DRF 400 with `limit`);
+  from 80 % the Space Manager's usage shows `warning`.
+- **Trials and non-payment reuse #185's read-only mode** with `source=trial_expired` /
+  `payment_overdue`; an automatic lift undoes only its own source, never a manual read-only.
+  Non-payment enforcement runs only while the superadmin's `auto_enforce_enabled` is on (default off).
+- **Money never moves without the payer acting.** No stored card, no automatic charge: the Space Manager
+  opens a checkout; the provider's signed callback settles the invoice once (unique online receipt).
+  Provider keys are Fernet ciphertext, write-only in the API. Receipts are append-only; invoices outlive
+  a purge with a name/id snapshot (the platform's own finance records).
 
 **Archiving a makerspace must never strand its members' money (phase 1 of the five open items).**
 `Payment.makerspace` outlives archival and `member_payment_queryset` deliberately never filtered

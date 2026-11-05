@@ -126,6 +126,16 @@ def dispatch_email(
                 "daily_email_limit_check_failed",
                 extra={"makerspace_id": makerspace.pk},
             )
+        from apps.managed_hosting.enforcement import monthly_refusal
+        refusal = monthly_refusal(makerspace, "email_monthly")  # #187A; None with plans off
+        if refusal:
+            return _create_email_log(
+                makerspace=makerspace, to_email=to_email, subject=subject,
+                text_body=text_body if persist_body else "", html_body=html_body if persist_body else "",
+                stream=stream, event=event, audience=audience, connection_kind=connection,
+                recipient_id=recipient_id, feature=feature, source_kind=source_kind, source_id=source_id,
+                source_metadata=source_metadata or {}, status=EmailLog.Status.FAILED, error=refusal,
+            )
 
     # persist_body=False keeps the rendered body OUT of the stored row (e.g. password
     # reset emails embed a live recovery token in the body - persisting it would leave a

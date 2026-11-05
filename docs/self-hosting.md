@@ -568,6 +568,24 @@ end means Secure cookies, the HTTPS redirect and CSRF behave exactly as on the p
 `Strict-Transport-Security` here so your browser does not pin `localhost` to HTTPS. TLS ends at Caddy; the hop
 to Django is plain HTTP on the private Compose network.
 
+## Operating your spaces (superadmin controls)
+
+Everything below is in the web superadmin console under **Platform → Spaces** (each action asks you to
+confirm your identity and is audited); `/control/` → Makerspaces offers the same actions as a fallback.
+
+| Need | Do this | What people see |
+|---|---|---|
+| Stop a space for now (abuse, dispute, unpaid) | **Suspend** with a reason | Staff and members get "This space is paused"; public pages go offline; scheduled jobs and outgoing messages stop. Nothing is deleted; payments already made still settle. **Unblock** restores everything. |
+| Freeze changes but keep it readable | **Make read-only** with a reason | A banner explains it; everyone can still view and export, nothing new can be created. **Lift read-only** to end it. |
+| The Space Manager is leaving | **Transfer ownership** to the new manager's email | The new person becomes Space Manager at once if they already belong to the space (otherwise they get an invitation); the old manager stays as staff with the roles you pick, is revoked, or stays a co-manager. |
+| Close a space down | **Schedule archive & purge** (date + grace period, 90 days by default) | Space Managers get reminder emails before archiving and 30, 7 and 1 days before deletion. **Cancel schedule** stops it at any time before it runs. |
+| Tell space teams something | **Announcements** | A banner in every chosen space's staff console (optionally members too) between the start and end, plus an optional email to Space Managers. |
+| See how a space is doing | **Health** | State, usage against the limits, last activity, last backup and drill, blocked accounts, open problems, modules on. |
+
+Before purging, export what anyone may need: the purge is permanent. Suspension and read-only also
+apply on a single-space self-host; managed-only items (onboarding requests and the managed-hosting
+limiter, which stays off unless `MANAGED_PLANS_ENABLED` is set on a managed platform) never appear here.
+
 ## Custom domain (self-host)
 
 On a self-hosted instance (the default — `PLATFORM_DOMAIN_SUFFIX` is **blank**) you own both DNS and

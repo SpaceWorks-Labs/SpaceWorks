@@ -156,6 +156,8 @@ from .classification_r2_l25 import OMITTED_MODELS as R2_L25_OMITTED  # noqa: E40
 OMITTED_MODELS.update(R2_L25_OMITTED)
 # Lane r2-submit-content (G11): which submission earns travel money.
 EXPORTED_MODEL_FIELDS["event_reimbursements.ReimbursementProgramme"] += " required_submission required_submission_stage"
+from .classification_r2_superadmin import OMITTED_MODELS as R2_SUPERADMIN_OMITTED  # noqa: E402
+OMITTED_MODELS.update(R2_SUPERADMIN_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

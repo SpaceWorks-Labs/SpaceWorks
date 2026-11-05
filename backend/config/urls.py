@@ -175,6 +175,12 @@ urlpatterns = [
     path("api/v1/admin/", include("apps.admin_api.urls")),
     path("api/v1/admin/", include("apps.organizations.urls_admin")),
     path("api/v1/admin/", include("apps.hosting_requests.urls_staff")),
+    # #185: superadmin space controls (health, lifecycle, onboarding, announcements) and notices.
+    path("api/v1/admin/", include("apps.space_controls.urls_admin")),
+    path("api/v1/", include("apps.space_controls.urls")),
+    # #187A: the managed-hosting limiter; every route 404s while MANAGED_PLANS_ENABLED is off.
+    path("api/v1/admin/", include("apps.managed_hosting.urls_admin")),
+    path("api/v1/managed-hosting/", include("apps.managed_hosting.urls_webhooks")),
     # Release 2 L3: the shared card engine (designs, jobs, member-card extras).
     path("api/v1/admin/", include("apps.card_designs.urls_admin")),
     path("api/v1/member/", include("apps.card_designs.urls_member")),

@@ -22,6 +22,8 @@ def apply_applicant_fields(row, data):
     for name in APPLICANT_FIELDS:
         setattr(row, name, str(data.get(name) or "").strip())
     row.applicant_email = normalize_email(data.get("applicant_email"))
+    members = data.get("expected_members")
+    row.expected_members = members if type(members) is int and members > 0 else None
 
 
 def invitation_row(*, kind, makerspace, organization, actor, invitee_email, space_name, note,

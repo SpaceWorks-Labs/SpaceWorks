@@ -17,6 +17,7 @@ from apps.tenant_migration.gate_locks import (
 )
 from apps.tenant_migration.gate_policy import HTTP_EXEMPTIONS, PROVIDER_INGRESS_ROUTES
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
+from apps.space_controls.superadmin_bypass import mark_dispatched
 
 
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
@@ -49,6 +50,13 @@ class SourceMigrationGateMiddleware:
             # remains protected by its own inner tenant_write transaction.
             return self.get_response(request)
         makerspace_ids = _makerspace_ids(request, match)
+        from apps.space_controls import superadmin_bypass
+        from apps.space_controls.write_policy import http_context
+        bypass = superadmin_bypass.for_request(request, match.url_name or "")
+        with http_context(request.path_info, match.url_name or ""), superadmin_bypass.scope(bypass):
+            return self._dispatch(request, match, makerspace_ids)
+
+    def _dispatch(self, request, match, makerspace_ids):
         try:
             refusal_exempt = match.view_name in HTTP_EXEMPTIONS
             if makerspace_ids:
@@ -56,8 +64,10 @@ class SourceMigrationGateMiddleware:
                     lock = shared_boundary if refusal_exempt else boundary_tenant_write
                     for makerspace_id in makerspace_ids:
                         locks.enter_context(lock(makerspace_id))
+                    mark_dispatched()
                     return self.get_response(request)
             with unscoped_writer_shared_boundary():
+                mark_dispatched()
                 return self.get_response(request)
         except SourceMigrationGateClosed as exc:
             return _locked_response(exc)

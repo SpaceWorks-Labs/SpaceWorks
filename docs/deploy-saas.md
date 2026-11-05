@@ -85,6 +85,21 @@ SPACEWORKS_COMPOSE_LAYER=saas scripts/spaceworks-compose.sh bundled \
   run --rm --no-deps backend --role management python manage.py recompute_storage
 ```
 
+### Onboarding requests and the managed-hosting limiter
+
+- **Onboarding.** Applicants use `/hosting` (name, contact, expected size). Review them in the superadmin
+  console under **Platform → Spaces → Onboarding**: **Approve** creates the space and its owner
+  organization, turns on Email for it and invites the applicant as Space Manager. No trial is created.
+- **Limiter (off).** `MANAGED_PLANS_ENABLED=True` turns on plan tiers, a plan per space, optional trials
+  and recorded hosting invoices (**Platform → Spaces → Plans / Invoices / Billing settings**).
+  `MANAGED_BILLING_ONLINE_ENABLED=True` plus the platform's own Stripe or Razorpay keys (entered in
+  Billing settings, stored encrypted) lets Space Managers pay invoices online; point the provider's
+  webhook at `/api/v1/managed-hosting/webhooks/stripe` or `/razorpay`. Non-payment only restricts a
+  space (read-only after the grace period) once you switch **Auto-enforce** on. Leave both variables
+  unset to keep the platform exactly as before.
+- Suspend, read-only, transfer, scheduled archive/purge, announcements and health cards are described
+  in [self-hosting.md](self-hosting.md#operating-your-spaces-superadmin-controls).
+
 ## 4. Provision a platform subdomain
 
 As an authenticated active superadmin, call the provisioning endpoint for a makerspace:

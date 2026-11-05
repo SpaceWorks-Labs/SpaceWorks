@@ -125,6 +125,8 @@ uses the registry rather than scalar JSONField choices. Follow the independent
 [slack](#slack) · [mattermost](#mattermost) · [discord](#discord) · [webhook](#webhook) — **Reports**: [reports](#reports) · [analytics](#analytics) —
 **Payments**: [payments](#payments) — **Accounts**: [member_accounts](#member_accounts) —
 **Mobile apps**: [mobile](#mobile) · **Connected devices**: [devices](#devices) — **Shop**: [shop](#shop)
+**Platform (not modules)**: [superadmin space controls](#superadmin-space-controls-platform-always-on) ·
+[managed hosting (off by default)](#managed-hosting-off-by-default)
 
 ---
 
@@ -1105,6 +1107,54 @@ turning one on cannot start charging anyone by itself. They only put a card rail
 matching `charges.<area>` switch records: with `charges.<area>` off, turning `payments.<area>` on records
 nothing and offers nothing (the two are deliberately independent switches, the A6 rule). `inventory.self_checkout` and `presence.geofence`
 belong to no module: they are standalone capabilities that apply whenever you enable them.
+
+## Superadmin space controls (platform, always on)
+
+Not a module: there is no switch, because these are the platform operator's controls over a hosted
+space (#185). They live in the web superadmin console's **Spaces** tab (#190), with `/control/` as the
+fallback, and every action is superadmin-only, needs a fresh identity check and is audited.
+
+- **Pause (suspend)**: staff and members see "This space is paused", the public pages go offline,
+  scheduled jobs and outbound messages for the space stop, nothing is deleted. Money a payer already
+  sent still settles. **Unblock** restores everything; queued messages then go out. The Space Managers
+  are emailed both times.
+- **Read-only**: everyone can view and export, but nothing new can be created (no loans, bookings, jobs,
+  sign-ups or payments) — a banner says why. Reminders, deliveries and settlement keep running.
+- **Transfer ownership**: name a new Space Manager by email; the previous one is kept as staff with the
+  roles you choose, revoked, or kept as a co-manager. Someone without a row in the space gets an
+  invitation, and the previous manager is untouched until they accept.
+- **Scheduled archive and purge**: archive on a chosen date, then purge after a grace period (90 days
+  by default), with reminder emails 30, 7 and 1 days before deletion. Cancellable until it runs.
+  Archive now, unarchive and purge (type the slug) are there too.
+- **Onboarding** (managed deployments only): review "host my space" requests; **Approve** creates the
+  space, its owner organization and emails the applicant a Space Manager invitation. No trial.
+- **Announcements**: a banner (and optionally an email to Space Managers) for every space or chosen
+  spaces, with a start and an end; optionally shown to members too.
+- **Health cards**: lifecycle state, usage against the fair-use limits, last activity, backups and
+  restore drills, blocked accounts and locked security settings, open problems, modules on. No billing.
+
+**What purge deletes:** the space-control row and the announcement targets go with the space; the
+audit history of every control stays.
+
+## Managed hosting (off by default)
+
+The managed-hosting limiter (#187A). **Off unless the deployment sets `MANAGED_PLANS_ENABLED=True` on a
+managed platform** (`PLATFORM_DOMAIN_SUFFIX` set). **When it is off, nothing of it is visible or
+enforced anywhere** and a self-hosted install behaves exactly as without it.
+
+When on, the superadmin defines plan tiers that bundle limits (members, staff, storage, products,
+assets, machines, bookings, API clients, published events, plus monthly emails, SMS, WhatsApp messages
+and new events) and the modules a plan allows, and gives each space a plan with an optional trial.
+The Space Manager sees usage against the plan: a warning from 80 %, a hard stop at 100 % with a clear
+message. A trial that ends puts the space in read-only mode until a plan is chosen. Hosting billing
+records invoices (fee, due date, paid, offline receipt); with the second switch
+`MANAGED_BILLING_ONLINE_ENABLED` and the platform's own Stripe or Razorpay keys, the Space Manager can
+also pay online. Money never moves unless the payer opens the checkout. An overdue invoice turns the
+space read-only after a grace period **only** when the superadmin enables auto-enforcement (off by default).
+
+**Without it:** the fair-use limits in `MANAGED_RESOURCE_LIMITS` and each space's overrides apply as
+before. **What purge deletes:** a space's plan assignment; its invoices and receipts are kept as the
+platform's records (with the space's name), and its rows are never part of a tenant export.
 
 ## The help centre (`platform.help_centre`)
 

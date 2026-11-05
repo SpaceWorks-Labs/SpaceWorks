@@ -6,6 +6,9 @@ import type { Makerspace } from "./panels/shared";
 import { adminQueryState } from "./adminPresentation";
 import { STICKY_FIRST_COLUMN } from "./matrixColumns";
 import { getTenantUsage, usageAmount, type TenantUsage } from "./platformMonitoringApi";
+import { useManagedPlans } from "./platformSpaces/plansApi";
+import { SpacePlanUsage } from "./hostingPlan/SpacePlanUsage";
+import { SpaceInvoices } from "./hostingPlan/SpaceInvoices";
 
 export function UsageTable({ data }: { data: TenantUsage }) {
   return <div role="region" aria-label="Resource usage against effective limits"><DataTable data={data.resources} getRowId={row => row.key}
@@ -23,11 +26,17 @@ export function UsageTable({ data }: { data: TenantUsage }) {
 export function TenantUsagePanel({ makerspace }: { makerspace: Makerspace }) {
   const [showTable, setShowTable] = useState(false);
   const query = useQuery({ queryKey: ["makerspace-usage", makerspace.id], queryFn: () => getTenantUsage(makerspace.id), refetchInterval: 60_000 });
+  // The managed limiter (#187A) exists only when /config says so; otherwise nothing of it renders.
+  const managed = useManagedPlans();
+  const planSections = managed ? [
+    { title: "Hosting plan", content: <SpacePlanUsage makerspaceId={makerspace.id} />, empty: { message: "No plan information yet." } },
+    { title: "Invoices", content: <SpaceInvoices makerspaceId={makerspace.id} />, empty: { message: "No hosting invoices yet." } },
+  ] : [];
   return <DashboardLayout header={{ title: "Usage & limits", eyebrow: makerspace.name,
     subtitle: "Daily and monthly counters reset with their quota period.",
     secondary: { label: "Refresh usage", onClick: () => { void query.refetch(); }, disabled: query.isFetching, disabledReason: "Usage is refreshing." } }}
     state={adminQueryState(query, "usage")} stats={[]}
-    main={query.data ? [{ title: "Resource allowances", empty: { message: "No resource counters yet. Refresh usage to check again." },
+    main={[...planSections, ...(query.data ? [{ title: "Resource allowances", empty: { message: "No resource counters yet. Refresh usage to check again." },
       isEmpty: !query.data.resources.length,
       action: { label: showTable ? "Show as cards" : "Show as table", onClick: () => setShowTable(!showTable) },
       content: <>
@@ -44,5 +53,5 @@ export function TenantUsagePanel({ makerspace }: { makerspace: Makerspace }) {
             </div></Card>;
           })}
         </div>}
-      </> }] : []} />;
+      </> }] : [])]} />;
 }

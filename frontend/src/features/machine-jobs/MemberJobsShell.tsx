@@ -38,6 +38,7 @@ export function MemberJobsShell({ children }: { children: (context: MemberJobsCo
   const memberHome = path("member");
   return <div style={brandStyle}>
     <MemberPortalTabs modules={bootstrap?.modules ?? []} active="overview"
+      space={{ id: bootstrap?.makerspace.id, slug: makerspaceSlug || undefined }}
       workspace={bootstrap ? { name: bootstrap.makerspace.name, subtitle: "Member area",
         avatar: logo ? { kind: "image", src: logo } : { kind: "avatar", name: bootstrap.makerspace.name, seed: makerspaceSlug }, locked: true } : undefined}
       user={{ name: member.identity.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }],

@@ -32,6 +32,9 @@ class AdminSourceGateMixin:
 
     def _assert_source_gate(self, request, *, object_id=None, queryset=None):
         from apps.tenant_migration.gate_runtime import assert_write_allowed
+        from apps.space_controls.superadmin_bypass import confirm
+
+        confirm(request.user)  # #195: a superadmin's write in a paused/read-only space is audited
 
         lookup = self.resolve_hidden_lookup()
         if lookup is None:

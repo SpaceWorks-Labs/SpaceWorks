@@ -75,4 +75,11 @@ def resource_limit(makerspace, key) -> int | None:
         if value is None or value == -1:
             return None
         return int(value)
+    # #187A: a managed-hosting plan sits between the override and the deployment default.
+    # With MANAGED_PLANS_ENABLED off this is NOT_SET and nothing changes.
+    from apps.managed_hosting.enforcement import NOT_SET, plan_limit
+
+    planned = plan_limit(makerspace, key)
+    if planned is not NOT_SET:
+        return planned
     return settings.MANAGED_RESOURCE_LIMITS.get(key)

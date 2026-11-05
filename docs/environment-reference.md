@@ -87,6 +87,8 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | `PLATFORM_ORIGIN_HOST` | `''` | Managed mode: host a tenant's custom domain must resolve to (by CNAME) before it is verified. Blank skips the resolution check. |
 | `PLATFORM_STAFF_ORIGINS` | `[]` | Exact platform-console origins allowed for platform API password login; tenant staff login supplies its makerspace slug and must match a verified custom origin. Member provider switches do not disable staff/platform passwords. |
 | `PLATFORM_SUBDOMAIN_AUTO_TLS` | `False` | Guided platforms enable TLS admission for registered, verified, non-archived tenant subdomains. Unknown/pending/archived domains remain denied. Compared during restore preflight without blocking a target's TLS choice. |
+| `MANAGED_PLANS_ENABLED` | `False` | Managed hosting limiter (#187A), **off by default**: superadmin plan tiers, a plan per space, trials, recorded hosting billing and its optional non-payment enforcement. Also needs a managed deployment (`PLATFORM_DOMAIN_SUFFIX`). Off = nothing visible or enforced; self-host is unchanged. |
+| `MANAGED_BILLING_ONLINE_ENABLED` | `False` | Second switch, also off: lets a Space Manager pay a hosting invoice online through the platform's own Stripe/Razorpay account (keys are set encrypted in the superadmin console). Never charges without the payer opening the checkout. Meaningless unless `MANAGED_PLANS_ENABLED` is on. |
 
 ## Database
 

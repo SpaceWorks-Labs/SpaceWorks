@@ -1,12 +1,14 @@
 import { StructuredApiError } from "../../lib/api/errors";
+import type * as Api from "../../generated/api";
 import type { HostingRequestBody } from "./hostingApi";
 
-export type HostingFormValue = Required<HostingRequestBody>;
+/** Every field as the text the input holds; `expected_members` is converted to a number on submit. */
+export type HostingFormValue = Omit<Required<Api.HostingRequestSubmit>, "expected_members"> & { expected_members: string };
 export type HostingFormKey = keyof HostingFormValue;
 
 export const EMPTY_HOSTING_FORM: HostingFormValue = {
   applicant_name: "", applicant_email: "", applicant_phone: "", space_name: "", location: "",
-  space_website_url: "", description: "", proposed_slug: "", new_organization_name: "", website: "",
+  space_website_url: "", description: "", proposed_slug: "", new_organization_name: "", website: "", expected_members: "",
 };
 
 export const HOSTING_ACK = "Check your email to confirm your request.";
@@ -26,8 +28,10 @@ export function hostingRequestBody(form: HostingFormValue, { includeOrganization
   for (const key of OPTIONAL) {
     if (key === "new_organization_name" && !includeOrganization) continue;
     const value = form[key].trim();
-    if (value) body[key as Exclude<HostingFormKey, "website">] = value;
+    if (value) body[key as Exclude<HostingFormKey, "website" | "expected_members">] = value;
   }
+  const members = Number(form.expected_members.trim());
+  if (form.expected_members.trim() && Number.isInteger(members) && members > 0) body.expected_members = members;
   return body;
 }
 

@@ -246,7 +246,12 @@ def check_quota(makerspace, key, *, adding=1) -> None:
     ``transaction.atomic()`` so the makerspace row lock serializes creators.
     """
     from apps.makerspaces import limits
+    from apps.managed_hosting.enforcement import check_monthly
 
+    if key == "events":
+        # #187A: a plan's monthly allowance applies even where the base limit is unlimited;
+        # a no-op while MANAGED_PLANS_ENABLED is off.
+        check_monthly(makerspace, "events_monthly", adding=adding)
     limit = limits.resource_limit(makerspace, key)
     if limit is None:
         return
@@ -262,8 +267,12 @@ def check_quota(makerspace, key, *, adding=1) -> None:
     # to upgrade to FOR UPDATE (which would wait on commit-time FOR KEY SHARE holders).
     locked = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     current = counter(locked)
+    from apps.managed_hosting.enforcement import plan_limit_error, plan_name_for_limit
     if current + adding > limit:
         resource = RESOURCE_LABELS.get(key, key.replace("_", " "))
+        plan_name = plan_name_for_limit(locked, key)
+        if plan_name is not None:
+            raise plan_limit_error(plan_name, resource, limit)
         message = (
             f"You've reached the free {resource} limit for this space — "
             "ask the operator to raise it or self-host."

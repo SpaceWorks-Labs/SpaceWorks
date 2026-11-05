@@ -63,7 +63,7 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   const gate = enrolmentRequired ? "required" : mfaGate(user);
   if (gate === "required") return <MfaEnrollmentScreen memberHref={memberHref} onSignOut={session.signOut} />;
   const routeTab = tabFromStaffPath(location.pathname, guestOnly);
-  const globalRoute = routeTab === "organizations" || (isSuperadmin && routeTab === "platform-dashboard")
+  const globalRoute = routeTab === "organizations" || (isSuperadmin && (routeTab === "platform-dashboard" || routeTab === "platform-spaces"))
     || (!isSuperadmin && consoleSpaceIds(user).size === 0);
   if (isSuperadmin && recovery.data?.mode === "quarantined") {
     return <RecoveryQuarantinePanel state={recovery.data} onAcknowledged={(next) => {

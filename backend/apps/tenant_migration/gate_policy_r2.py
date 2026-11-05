@@ -19,6 +19,7 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     from .gate_policy_r2_l21a import gate_tasks as l21a_tasks
     from .gate_policy_r2_l22 import gate_tasks as l22_tasks
     from .gate_policy_r2_platform_overview import gate_tasks as platform_overview_tasks
+    from .gate_policy_r2_superadmin import gate_tasks as superadmin_tasks
 
     l2_tasks(internal, fanout)
     l11_tasks(exemptions)
@@ -33,3 +34,4 @@ def gate_tasks(exemptions, internal, fanout, resolvers=None):
     l21a_tasks(resolvers if resolvers is not None else {})
     l22_tasks(internal)
     platform_overview_tasks(exemptions)
+    superadmin_tasks(exemptions)

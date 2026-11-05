@@ -3,7 +3,7 @@ import {
   ArrowLeftRight, ShoppingCart, Tags, Container, BookOpen, ShieldCheck, QrCode, ScanLine,
   Upload, Cog, Monitor, Users, Calendar, CalendarClock, CreditCard, ChartNoAxesCombined,
   ScrollText, CircleAlert, Building2, Network, Settings, Mail, KeyRound, Download,
-  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, CalendarCheck, Undo2, Lock, Landmark, type LucideIcon,
+  DatabaseBackup, Gauge, Puzzle, MoveRight, Globe, LayoutGrid, CalendarCheck, Undo2, Lock, Landmark, type LucideIcon,
   PackageMinus, HardHat,
   Store,
 } from "lucide-react";
@@ -22,7 +22,7 @@ export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "insights", label: "Insights", tabs: ["reports", "analytics", "audit", "accountability"] },
   { key: "organizations", label: "Organizations", caption: "Across venues", tabs: ["organizations", "organized", "organization-analytics"] },
   { key: "settings", tabs: ["settings", "security", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
-  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform", "platform-analytics"] },
+  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform-spaces", "platform", "platform-analytics"] },
 ];
 export const SIDEBAR_LABELS: Readonly<Record<string, string>> = {
   dashboard: "Home", notifications: "Inbox", handover: "Job pickups", inventory: "Items",
@@ -38,7 +38,7 @@ const ICONS: Record<string, LucideIcon> = {
   audit: ScrollText, accountability: CircleAlert, organizations: Building2, organized: Calendar, granted: CalendarCheck,
   "organization-analytics": Network, settings: Settings, security: Lock, users: Users, emailtemplates: Mail,
   "email-logs": Mail, api: KeyRound, exports: Download, backups: DatabaseBackup, usage: Gauge,
-  modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, platform: Settings,
+  modules: Puzzle, migration: MoveRight, "platform-dashboard": Globe, "platform-spaces": LayoutGrid, platform: Settings,
   consumables: PackageMinus, repairs: HardHat, analytics: ChartNoAxesCombined, "platform-analytics": ChartNoAxesCombined,
   shop: Store,
 };
@@ -61,7 +61,7 @@ export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
   { key: "shop", label: "Shop", tabs: ["shop"] },
   { key: "money", label: "Money", tabs: ["payments", "refunds", "finance", "reports", "analytics"] },
   { key: "settings", label: "Space settings", tabs: ["settings", "security", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
-  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform", "platform-analytics"] },
+  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform-spaces", "platform", "platform-analytics"] },
 ];
 const SPACE_MANAGER_LABELS: Readonly<Record<string, string>> = { settings: "Settings hub" };
 

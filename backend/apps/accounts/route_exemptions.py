@@ -61,3 +61,7 @@ def route_exemption(route, name):
     if name and route.startswith(("api/v1/member/", "api/v1/memberships/")):
         return "member API (no staff account access)"
     return None
+# r2-superadmin-controls (#185, #187A): the public paused check and the platform's own
+# hosting-invoice provider callbacks.
+PUBLIC_ROUTES |= {"public-makerspace-availability"}
+PROVIDER_ONLY_ROUTES |= {"managed-hosting-stripe-webhook", "managed-hosting-razorpay-webhook"}

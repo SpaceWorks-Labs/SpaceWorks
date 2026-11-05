@@ -1,0 +1,76 @@
+import { useState } from "react";
+import { ListRow, RelativeTime, StatusPill } from "../../../components/ui";
+import { ApiKeyApproveDialog } from "./ApiKeyApproveDialog";
+import { QueueDecisionDialog } from "./QueueDecisionDialog";
+import { QUEUE_TONES, QueueList } from "./QueueList";
+import type { ApiKeyRequest, ArchiveRequest, SubdomainRequest } from "./requestsApi";
+
+const ARCHIVE_STATUSES = { pending: "Waiting", approved: "Approved", declined: "Declined", withdrawn: "Withdrawn" };
+const DECIDED_STATUSES = { pending: "Waiting", approved: "Approved", rejected: "Rejected" };
+const label = (statuses: Record<string, string>, status: string) => statuses[status] ?? status;
+
+type Acting =
+  | { kind: "archive"; row: ArchiveRequest; decision: "approve" | "decline" }
+  | { kind: "api-key"; row: ApiKeyRequest; decision: "approve" | "reject" }
+  | { kind: "subdomain"; row: SubdomainRequest; decision: "approve" | "reject" };
+
+function Decide({ status, name, onApprove, onRefuse, refuse = "Reject" }: { status: string; name: string; onApprove: () => void; onRefuse: () => void; refuse?: string }) {
+  return <div className="flex flex-wrap items-center gap-2">
+    <StatusPill label={label({ ...ARCHIVE_STATUSES, ...DECIDED_STATUSES }, status)} tone={QUEUE_TONES[status] ?? "neutral"} />
+    {status === "pending" ? <>
+      <button type="button" className="desk-button" aria-label={`Approve ${name}`} onClick={onApprove}>Approve…</button>
+      <button type="button" className="desk-button-danger-outline" aria-label={`${refuse} ${name}`} onClick={onRefuse}>{refuse}…</button>
+    </> : null}
+  </div>;
+}
+
+function ActingDialog({ acting, onClose }: { acting: Acting; onClose: () => void }) {
+  if (acting.kind === "api-key" && acting.decision === "approve") return <ApiKeyApproveDialog row={acting.row} onClose={onClose} />;
+  if (acting.kind === "archive") {
+    return acting.decision === "approve"
+      ? <QueueDecisionDialog kind="archive-requests" id={acting.row.id} decision="approve" title="Approve this archive request" confirm="Archive space"
+        danger note="optional" done="Space archived." onClose={onClose}
+        message={`Approving archives ${acting.row.makerspace_name} now. Members and staff lose access; its data is kept.`} />
+      : <QueueDecisionDialog kind="archive-requests" id={acting.row.id} decision="decline" title="Decline this archive request" confirm="Decline request"
+        note="required" done="Archive request declined." onClose={onClose}
+        message={`${acting.row.makerspace_name} stays as it is. The note is recorded with the decision.`} />;
+  }
+  if (acting.kind === "api-key") {
+    return <QueueDecisionDialog kind="api-key-requests" id={acting.row.id} decision="reject" title="Reject this API key request" confirm="Reject request"
+      danger done="API key request rejected." onClose={onClose} message={`No API client is issued to ${acting.row.makerspace_name} for "${acting.row.label}".`} />;
+  }
+  return acting.decision === "approve"
+    ? <QueueDecisionDialog kind="subdomain-requests" id={acting.row.id} decision="approve" title="Approve this web address" confirm="Approve address"
+      done="Web address approved." onClose={onClose}
+      message={`Gives ${acting.row.makerspace_name} the address "${acting.row.requested_label}" now, with its certificate.`} />
+    : <QueueDecisionDialog kind="subdomain-requests" id={acting.row.id} decision="reject" title="Reject this web address" confirm="Reject address"
+      danger done="Web address rejected." onClose={onClose} message={`${acting.row.makerspace_name} keeps its current address.`} />;
+}
+
+/** The three platform request queues that used to be decided only in /control/. */
+export function RequestsSection() {
+  const [acting, setActing] = useState<Acting | null>(null);
+  return <div className="grid gap-6">
+    <QueueList<ArchiveRequest> kind="archive-requests" title="Archive requests" resource="archive requests" statuses={ARCHIVE_STATUSES}
+      renderRow={row => <ListRow title={row.makerspace_name}
+        meta={<>asked <RelativeTime date={row.requested_at} exact />{row.reason ? ` · "${row.reason}"` : ""}
+          {row.resolved_at ? <> · decided <RelativeTime date={row.resolved_at} exact /></> : null}
+          {row.resolution_note ? ` · note: "${row.resolution_note}"` : ""}</>}
+        right={<Decide status={row.status} name={`the archive request of ${row.makerspace_name}`} refuse="Decline"
+          onApprove={() => setActing({ kind: "archive", row, decision: "approve" })} onRefuse={() => setActing({ kind: "archive", row, decision: "decline" })} />} />} />
+    <QueueList<ApiKeyRequest> kind="api-key-requests" title="API key requests" resource="API key requests" statuses={DECIDED_STATUSES}
+      renderRow={row => <ListRow title={row.label}
+        meta={<>{row.makerspace_name} · asked <RelativeTime date={row.created_at} exact />{row.reason ? ` · "${row.reason}"` : ""}
+          {row.allowed_origins.length ? ` · origins: ${row.allowed_origins.join(", ")}` : " · no origins"}
+          {row.resolved_at ? <> · decided <RelativeTime date={row.resolved_at} exact /></> : null}</>}
+        right={<Decide status={row.status} name={`the API key "${row.label}" for ${row.makerspace_name}`}
+          onApprove={() => setActing({ kind: "api-key", row, decision: "approve" })} onRefuse={() => setActing({ kind: "api-key", row, decision: "reject" })} />} />} />
+    <QueueList<SubdomainRequest> kind="subdomain-requests" title="Web address requests" resource="web address requests" statuses={DECIDED_STATUSES}
+      renderRow={row => <ListRow title={row.requested_label}
+        meta={<>{row.makerspace_name} · asked <RelativeTime date={row.created_at} exact />
+          {row.decided_at ? <> · decided <RelativeTime date={row.decided_at} exact /></> : null}</>}
+        right={<Decide status={row.status} name={`the address ${row.requested_label} for ${row.makerspace_name}`}
+          onApprove={() => setActing({ kind: "subdomain", row, decision: "approve" })} onRefuse={() => setActing({ kind: "subdomain", row, decision: "reject" })} />} />} />
+    {acting ? <ActingDialog acting={acting} onClose={() => setActing(null)} /> : null}
+  </div>;
+}

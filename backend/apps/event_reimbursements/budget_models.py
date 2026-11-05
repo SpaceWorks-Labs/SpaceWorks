@@ -9,13 +9,17 @@ class ReimbursementBudgetPool(Versioned):
     programme = models.ForeignKey("event_reimbursements.ReimbursementProgramme", on_delete=models.CASCADE,
                                  related_name="pools")
     currency = models.CharField(max_length=3)
+    # Hack-money G14: an optional second pool that only crew awards reserve from.
+    audience = models.CharField(max_length=12, default="participants",
+                                choices=[(v, v) for v in ("participants", "crew")])
     total_minor = models.PositiveBigIntegerField(default=0)
     reserved_minor = models.PositiveBigIntegerField(default=0)
     committed_minor = models.PositiveBigIntegerField(default=0)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=("programme", "currency"), name="reimb_unique_pool_currency"),
+            models.UniqueConstraint(fields=("programme", "currency", "audience"), name="reimb_unique_pool_audience"),
+            models.CheckConstraint(condition=models.Q(audience__in=("participants", "crew")), name="reimb_pool_audience"),
             models.CheckConstraint(condition=models.Q(total_minor__gte=models.F("reserved_minor")
                 + models.F("committed_minor")), name="reimb_budget_never_overdrawn"),
             models.CheckConstraint(condition=models.Q(version__gte=1), name="reimb_pool_version_positive"),

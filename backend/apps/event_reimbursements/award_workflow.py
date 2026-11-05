@@ -6,7 +6,8 @@ from apps.events import event_authority
 from apps.payments.event_payouts.errors import require
 from apps.payments.event_payouts.validation import minor
 from .award_models import GrantAward, GrantAwardRevision
-from .budget_models import ReimbursementBudgetPool, BudgetReservation
+from .budget_models import BudgetReservation
+from .pools import lock_pools, pool_for
 from .budget_service import reserve_locked, release_locked
 from .calculations import percentage_cap
 from .config_models import ReimbursementProgramme
@@ -54,9 +55,10 @@ def decide(*, request, event_id, request_id, data):
         if ctx.replay:
             return ctx.replay
         programme = ReimbursementProgramme.objects.select_for_update().get(event=ctx.event)
-        pool = ReimbursementBudgetPool.objects.select_for_update().get(programme=programme, currency=programme.currency)
+        pools = lock_pools(programme)
         row = GrantRequest.objects.select_for_update().get(pk=request_id, programme=programme)
         award = GrantAward.objects.select_for_update().filter(request=row).first()
+        pool = pool_for(pools, programme, row.kind, award)  # G14: crew awards use the crew pool
         ctx.cas(row)
         require(pool.version == data["expected_pool_version"], "stale_pool_version")
         require(data.get("expected_award_version") == (award.version if award else None), "stale_award_version")
@@ -108,9 +110,10 @@ def respond(*, event_id, actor, data, accept, request=None):
         if ctx.replay:
             return ctx.replay
         programme = ReimbursementProgramme.objects.select_for_update().get(event=ctx.event)
-        pool = ReimbursementBudgetPool.objects.select_for_update().get(programme=programme, currency=programme.currency)
+        pools = lock_pools(programme)
         row = GrantRequest.objects.select_for_update().get(programme=programme, member=actor)
         award = GrantAward.objects.select_for_update().get(request=row)
+        pool = pool_for(pools, programme, row.kind, award)
         ctx.cas(award)
         require(data["award_revision"] == award.revisions.order_by("-revision").first().revision, "stale_award_version")
         require(award.state == "offered" and timezone.now() < award.accept_by, "award_offer_closed")

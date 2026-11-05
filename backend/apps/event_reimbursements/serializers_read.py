@@ -6,6 +6,7 @@ from .serializers_finance import PolicySettings
 
 
 class PoolDetail(s.Serializer):
+    audience = s.ChoiceField(choices=("participants", "crew"), help_text="Hack-money G14: crew awards use the crew pool.")
     id = s.IntegerField()
     version = s.IntegerField()
     currency = s.CharField()

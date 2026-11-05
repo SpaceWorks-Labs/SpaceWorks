@@ -15,7 +15,6 @@ from apps.makerspaces.guards import require_module_locked
 from apps.makerspaces.servability import servable_q
 from apps.tenant_migration.gate_runtime import boundary_tenant_write
 from .config_models import ReimbursementProgramme
-from .budget_models import ReimbursementBudgetPool
 from .request_models import GrantRequest
 from .award_models import GrantAward
 from .claim_models import ReimbursementClaim, ReimbursementWorkItem
@@ -45,9 +44,11 @@ def sweep_one(*, event_id, award_id=None, request_id=None, work_id=None):
             return False
         if programme.approved_by_id != programme_seed.approved_by_id:
             return False
-        pool = ReimbursementBudgetPool.objects.select_for_update().get(programme=programme, currency=programme.currency)
+        from .pools import lock_pools
+        pools = lock_pools(programme)  # G14: crew awards hold the crew pool
         grant = GrantRequest.objects.select_for_update().get(pk=grant_seed.pk, programme=programme)
         award = GrantAward.objects.select_for_update().filter(request=grant).first()
+        pool = pools[award.pool_id] if award else None
         claim = ReimbursementClaim.objects.select_for_update().filter(award=award).first() if award else None
         work = ReimbursementWorkItem.objects.select_for_update().filter(pk=work_id, event=event, state="pending").first() if work_id else None
         if work_id and (work is None or work.due_at > timezone.now()):

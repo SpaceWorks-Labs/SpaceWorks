@@ -62,10 +62,10 @@ def _open(round, event):
         round.algorithm_version = PAIRWISE_VERSION
         round.configuration |= {"guidance": draft.get("guidance", ""), "pairwise": {
             **DEFAULTS, **draft.get("pairwise", {}), "seed": f"round-{round.pk}"}}
-    from apps.events.submissions.stage_judging import narrow_to_finalists, require_triaged, round_stage_id
+    from apps.events.submissions.stage_judging import narrow_to_finalists, require_triaged, round_stage_id, stage_snapshots
     stage_id = round_stage_id(round)  # #178: the round's stage; empty means the last stage.
     require_triaged(round, stage_id)
-    snapshots = [s for s in runtime().snapshots(round.event_id, stage_id=stage_id)
+    snapshots = [s for s in stage_snapshots(round.event_id, stage_id)
                  if s.event_id == round.event_id and s.eligible and s.current]
     from .finalists import current_finalist_ids
     from .round_settings import frozen_settings

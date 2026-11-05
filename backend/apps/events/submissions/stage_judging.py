@@ -10,6 +10,14 @@ from rest_framework.exceptions import ValidationError
 from .stage_runtime import last_stage_id
 
 
+def stage_snapshots(event_id, stage_id):
+    """The port's current snapshots of one stage; an event without stages keeps the unstaged call."""
+    from apps.events.judging.ports import runtime
+    if stage_id is None:
+        return runtime().snapshots(event_id)
+    return runtime().snapshots(event_id, stage_id=stage_id)
+
+
 def round_stage_id(round):
     return round.submission_stage_id or last_stage_id(round.event_id)
 

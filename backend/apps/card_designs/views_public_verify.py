@@ -38,6 +38,7 @@ class CardVerificationSerializer(serializers.Serializer):
     holder = HolderSerializer(allow_null=True)
     note = serializers.CharField(allow_blank=True)
     checked_at = serializers.DateTimeField()
+    timezone = serializers.CharField(help_text="The issuing space's time zone, for the 'Checked at' footnote.")
 
 
 HEADERS = {"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",

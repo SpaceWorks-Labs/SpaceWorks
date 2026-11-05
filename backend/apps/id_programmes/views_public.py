@@ -71,6 +71,24 @@ class PublicProgrammeJoinView(APIView):
         return Response({"state": _state(request.user, programme), "card_id": card.pk}, status=status.HTTP_201_CREATED)
 
 
+class PublicProgrammePrefillView(APIView):
+    """Opt-in Saved-details prefill for the join form: the owner's own values, never stored."""
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "id_join"
+
+    @extend_schema(tags=TAGS, summary="Fill the join form from my Saved details (only when I ask)",
+                   parameters=PUBLIC_API_AUTH_PARAMETERS, request=None,
+                   responses={200: OpenApiTypes.OBJECT, **errors(401, 403, 404, 429)})
+    def get(self, request, slug, programme_slug):
+        from .prefill import values_for
+        programme = join.programme_by_slug(slug, programme_slug)
+        join.require_joiner(request.user)
+        response = Response({"values": values_for(request.user, programme)})
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
 class PublicProgrammeJoinPhotoView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [ScopedRateThrottle]

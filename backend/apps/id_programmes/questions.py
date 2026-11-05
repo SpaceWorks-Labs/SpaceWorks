@@ -8,6 +8,8 @@ import re
 
 from rest_framework.exceptions import ValidationError
 
+from .prefill import allowed as prefill_allowed
+
 KEY = re.compile(r"^[a-z0-9_]{1,40}$")
 TYPES = ("text", "choice", "email", "phone")
 PLACEMENTS = ("front", "back", "hidden")
@@ -35,8 +37,8 @@ def validate_schema(value):
         if placement not in PLACEMENTS:
             raise ValidationError({"form_schema": f"Question {index + 1}: place the answer front, back or hidden."})
         saved = question.get("saved_details_key", "")
-        if not isinstance(saved, str) or len(saved) > 40:
-            raise ValidationError({"form_schema": f"Question {index + 1}: unknown Saved-details key."})
+        if not isinstance(saved, str) or (saved and not prefill_allowed(saved)):
+            raise ValidationError({"form_schema": f"Question {index + 1}: choose a Saved detail that may fill it."})
         seen.add(key)
         clean.append({"key": key, "label": label.strip(), "type": kind, "required": bool(question.get("required")),
                       "options": options if kind == "choice" else [], "placement": placement,

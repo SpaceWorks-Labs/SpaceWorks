@@ -122,8 +122,11 @@ def attach(response, request):
     """Set the remembered-device cookie a completed web sign-in stashed, if any."""
     token = getattr(getattr(request, "_request", request), _PENDING, None)
     if token:
+        # The refresh cookie's SameSite/Secure policy (None + Secure by default), so a split
+        # deployment whose console and API are cross-site still sends it on sign-in.
         response.set_cookie(DEVICE_COOKIE, token, max_age=COOKIE_MAX_AGE, httponly=True,
-                            secure=settings.AUTH_COOKIE_SECURE, samesite="Lax", path=settings.AUTH_COOKIE_PATH)
+                            secure=settings.AUTH_COOKIE_SECURE, samesite=settings.AUTH_COOKIE_SAMESITE,
+                            path=settings.AUTH_COOKIE_PATH)
     return response
 
 

@@ -3152,8 +3152,8 @@ Owner decisions #62, #66, #74, #110c, #111 Q9-Q11, #128 C-1/C-2 and #135 Q-A1-Q-
 - **The switch only tightens.** `security.login_risk_check` and `security.remembered_device_days` are
   registry rows (strictest across the person's staff spaces; members get the platform defaults). The risk
   check's platform default is on, so a space cannot switch it off; the days only shorten.
-- **Remembered devices (`accounts/device_memory.py`).** Web: the `sw_device` cookie, HttpOnly, Lax,
-  `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_PATH`, 400 days, value `signing.dumps({"d": <128-bit hex>},
+- **Remembered devices (`accounts/device_memory.py`).** Web: the `sw_device` cookie, HttpOnly, with the refresh cookie's
+  `AUTH_COOKIE_SAMESITE` (None by default, so split cross-site deployments keep it), `AUTH_COOKIE_SECURE`, `AUTH_COOKIE_PATH`, 400 days, value `signing.dumps({"d": <128-bit hex>},
   salt="accounts.device")`; native: the same value as `device_trust` on every device completion (password,
   social, phone, `mfa/verify`), sent back in `X-Device-Trust`. The table keeps only `KnownDevice.device_hmac`
   and a coarse label ("Firefox on Windows"). A row is created or slid forward only when a sign-in COMPLETES

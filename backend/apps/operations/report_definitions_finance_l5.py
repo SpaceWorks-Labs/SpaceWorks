@@ -15,6 +15,7 @@ from apps.operations.reports_money_methods import FIELDS as METHOD_FIELDS
 from apps.operations.reports_tax_gst import TABLE_FIELDS
 from apps.operations.reports_tax_returns import B3_FIELDS, REGISTER_FIELDS, SUMMARY_FIELDS
 from apps.payments.reports_finance_ledger import EVENT_FIELDS, FIELDS as LEDGER_FIELDS
+from apps.operations.reports_prizes_owed import FIELDS as PRIZE_FIELDS
 
 _LEDGER = "apps.payments.reports_finance_ledger."
 # Charts for the L5 finance reports (the chart-spec completeness contract): money per area and
@@ -58,6 +59,11 @@ L5_FINANCE_REPORT_DEFINITIONS = (
                      required_action=rbac.Action.MANAGE_EVENTS, title="Money per event against budget",
                      deployment_aggregate=False, required_feature="finance.ledger", schedulable=False,
                      chart_spec=EVENT_CHART),
+    # Hack-money G6: announced prizes not yet settled, and recoveries owed back (finance-events scope).
+    ReportDefinition("prizes-owed", "apps.operations.reports_prizes_owed.build_prizes_owed", PRIZE_FIELDS,
+                     ("events",), required_action=rbac.Action.MANAGE_EVENTS, title="Prizes owed",
+                     alternate_actions=(rbac.Action.VIEW_FINANCE,), deployment_aggregate=False,
+                     required_feature="events.prize_payouts", schedulable=False, chart_spec=table("prize")),
     ReportDefinition("receipts-payments", _OPS + "reports_bookkeeping_fy.build_receipts_payments", RP_FIELDS,
                      required_action=rbac.Action.VIEW_FINANCE, title="Receipts and payments by financial year",
                      deployment_aggregate=False, required_feature="finance.ledger", chart_spec=RP_CHART),

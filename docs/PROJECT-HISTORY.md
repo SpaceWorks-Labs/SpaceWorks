@@ -6,6 +6,15 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 docs pass (ACC-final folded in).** CLAUDE.md/AGENTS.md, INVARIANTS and the
+  sibling docs brought to the combined release-2 tree: one account per person, nine built-in roles, staff
+  two-step sign-in and the per-space security rows, the pricing and shop Hard Rules, the OS-following theme,
+  Codex off (#119), the SpaceWorks-Labs names (#107) and the mobile clean break. INVARIANTS gains
+  **Release 2 owner decisions on record**: every #128 answer, the #77 answers (platform Q8 billing out of
+  scope; Q9 org self-creation kept as built; D2 and D5 kept as built with the Helm chart unpublished; E1/E2
+  confirmed) and the #161-#181 product rules. `docs/machine-integrations/INTEGRATION.md` is new; the
+  report-builder notes folded into `docs/SOURCE-MAP-REPORTS.md`.
+
 - **2026-11-05 -- release 2 ID-card gaps (M7-M9, P19-P28).** In-browser photo crop everywhere a card photo
   is taken; staff photo capture with the holder's consent; optional server photo clean-up UI; card email as
   PDF or PNG (holder's choice); the organisation approval level written from the space's approval-levels
@@ -51,6 +60,23 @@
   cash-up with the two-person check, returns and uncollected orders through refund cases, per-product
   tax classes with HSN, low-stock To-Buy drafts, receipts at 80 mm and A4, shop reports, and the new
   built-in Shop Manager role. Every sale is a `shop_order` Payment in the ledger.
+- **2026-11-05 -- release 2 L20, the in-app help centre (#128 C-31).** A help centre for everyone at
+  `/help` with role-gated guide articles (members, each staff role, operators) and Help links on staff
+  screens; makerspaces `0127` turns it on for existing spaces. Known gap: the member sign-in screen has no
+  "Forgot password?" link (the reset page is `/reset-password`).
+
+- **2026-11-05 -- release 2 L21b, judging extras and hackathon money (#128 C-37..C-39, #173).** Finalists
+  and per-round judging settings, score-next/progress/outliers, per-event hackathon email switches (off for
+  new events), prize payouts recorded through the ledger, an entry fee and leader-pays team registration,
+  saved staff views with filtered CSV, gallery search and awards, and native event-role grants
+  (`POST auth/device/event-grant`, `session_authority=native_event`) so judges, mentors and crew can use
+  their desks in the apps.
+
+- **2026-11-05 -- release 2 L21a, applications, review stages and crew (#128 C-32..C-36).** Applications for
+  any event (`events.applications`) with review stages, attendance confirmation and re-accept; paid places
+  are charged after confirming; "free the place on No" is a per-event switch; event crew and custom
+  check-in lists.
+
 - **2026-11-04 -- release 2 L24, price-drop refunds and prepaid-job difference cases (#163A, #171).**
   A price lowered after payment previews and opens one staff-approved `price_drop` refund case per
   paid, not-yet-used booking, ticket, prepaid job or membership term (`charges.price_drop_refunds`,
@@ -86,6 +112,30 @@
   social and phone native completions; retention, deletion and the subject export for the new rows.
   accounts `0054` lets a staff device grant follow any primary method (the 0041 check still said password).
 
+- **2026-11-04 -- release 2 L8, the row-level-security backstop and per-space key rotation (#120, #128
+  C-25/C-26).** New `tenant_rls` app: Postgres RLS policies generated from the data-export classification
+  refuse another space's rows inside a request or job bound to a makerspace (report-only with a warning on
+  owner-role installs; the app always starts). Per-space key rotation, emergency re-key and search-key
+  rotation from `/control/`, and publishable-key rotation with a grace window
+  (`PUBLISHABLE_KEY_ROTATION_GRACE_HOURS`, default 72).
+
+- **2026-11-04 -- release 2 L13, Google Sheets as an import source.** Member and ID-programme imports read a
+  public Google Sheet (CSV export) through an SSRF-pinned fetch with the upload caps, and apply only the
+  sheet that was previewed (sha256 check). Switches `membership.import_sheets` and
+  `membership.id_programmes_import_sheets`, off by default.
+
+- **2026-11-04 -- release 2 L3, ID cards (#128 C-12/C-20/C-21/C-28..C-30, #132).** A card engine and
+  free-canvas designer, digital member cards with a public validity check (`/verify/c/<token>`), ID
+  programmes under membership, event badges and tickets that every organizer of the event edits with no
+  approval, wallet passes, door scans, a card font library (cards only) and six templates. Cards carry no
+  fee.
+
+- **2026-11-04 -- release 2 U-B and S-D, staff roles on people and the security screens (#63, #65, #66).**
+  Staff roles are granted to existing people (staff-track memberships) or by an emailed invitation accepted
+  while signed in with a code; sessions are person or platform only; one console sign-in; `/control/`
+  disable and re-enable account; the "Link your staff account" merge flow. S-D adds the staff two-step
+  enrolment, known devices, login-code and "this wasn't me" screens.
+
 - **2026-11-03 -- release 2 S-C, IP blocking, Turnstile and breached passwords (#62, #66, #110c,
   #128 C-2, #157).** `LoginIPGuardMiddleware` on every sign-in view: superadmin allow/deny rules (allow
   wins, cached 60 s, deny-self guard) and automatic blocks of one source failing against many accounts
@@ -96,6 +146,20 @@
   `captcha_failed`, `turnstile_site_key` in `/api/v1/config`, CSP only when configured); per-space
   `security.captcha_on_sign_in` and `security.staff_ip_allowlist` (staff routes only,
   `staff_network_refused`); daily telemetry retention.
+- **2026-11-03 -- release 2 L26, the public stats page (#170).** Settings › Public stats picks the
+  sections (events, machines and printing, lending, community), their order, a fixed period and headline
+  numbers; a TV mode refreshes on its own; community counts under 3 are suppressed.
+
+- **2026-11-03 -- release 2 L23, metered machine sessions (#158).** `machines.sessions` (off by default):
+  a member starts a session by scanning the machine's QR (certified and checked in), staff start, stop and
+  correct sessions, and a device hook is ready for integrated machines. Billing uses the frozen hourly rate,
+  per minute with an optional minimum; charges are pending until staff confirm; sessions auto-stop at the
+  type's maximum, at check-out and at closing time.
+
+- **2026-11-03 -- release 2 L19, watch-friendly push (#116, #128 C-27).** Native push payload v3 reads well
+  when mirrored to a watch; `push_categories` offers only Open, Mark seen and Snooze actions;
+  `mobile.watch_actions` defaults on.
+
 - **2026-11-02 -- release 2 L16, Technician role, issue reporting and repairs (#93, #98, #102, #103,
   #128 C-3/C-4/C-5/C-6b/C-9).** The Technician is the 8th built-in role (assigned repair jobs,
   maintenance runs and service state within their coverage; no inventory, money or settings). Members
@@ -124,6 +188,32 @@
   registration, passwordless sign-in, second factor, re-authentication, RP ID only from a verified origin,
   `security.passkeys_allowed`.
 
+- **2026-11-02 -- release 2 U-C, merges and deletion on one account per person (#65, #66, #162(2)).**
+  Interactive account merge (a person proves a former staff account with its password and factor, or two
+  emailed codes), deletion and purge across both membership tracks, and the session-authority limit in
+  rbac: native member grants and claim sessions see no staff authority.
+
+- **2026-11-02 -- release 2 L10/L11, machine-integration foundations and backup operations (#76, #77,
+  #128 C-22..C-24).** L10: `MachineTypeIntegration`, `PrinterStatusSnapshot` and the off-by-default
+  `machines.integrations` routes a future device agent would use (no agent ships; see
+  `docs/machine-integrations/INTEGRATION.md`). L11: backup key rotation, restore drills on a throwaway
+  database, station-credential revocation after a restore and the self-host move.
+
+- **2026-11-01 -- release 2 U-A2, one sign-in door (#63, #66).** `POST auth/login` takes username and
+  password only; tokens are `person` or `platform`; the frozen auth payload carries `staff_roles`,
+  `makerspaces[].tracks` and `session_authority`; two refresh cookies; native staff grants are step-ups on
+  the person; every device grant was revoked at the cutover; apps older than
+  `MIN_NATIVE_APP_VERSION_IOS`/`_ANDROID` get 426 `native_app_update_required`.
+
+- **2026-11-01 -- release 2 U-D, unified-accounts portability (#128 C-18, #160).** Backup capture reads
+  both membership tracks, space archives use `tenant_slice_v2`, the portable format is version 2 and carries
+  staff credentials (C-18), and import decisions grant staff roles explicitly; an imported email that
+  already exists refuses until the superadmin decides.
+
+- **2026-11-01 -- release 2 S0, the login-security contract (#62, #128 C-2, #157).** The schema and
+  names for passkeys, login risk, IP access and the per-space security policy, frozen before the doors were
+  built; `MakerspaceSecurityPolicy` stores the per-space rows.
+
 - **2026-10-31 -- release 2 L15, paid and free everywhere (#84, #85).** One pricing kernel
   (`payments/pricing`, `quote()`) behind every charge and every preview: per-area rate cards (free or
   paid, caps, grace, billing increments), per-item prices, loan rental at checkout or at return, staff-set
@@ -132,6 +222,26 @@
   `Payment.pricing_snapshot`, and a public price preview with a `price_changed` digest. Switches
   `charges.pricing`, `charges.discounts`, `loans.fee_waivers` (payments/0033-0034). Kiosk, direct and
   self-checkout handouts are charged like reviewed loans.
+
+- **2026-10-31 -- release 2 U-A1, one account per person (#63, #65, #66).** Membership tracks (`community`
+  | `staff`), the identity seam `accounts/staff_identity.py`, the merge registry with system check
+  `accounts.E003`, and the in-place conversion of staff accounts (accounts `0049`/`0050`, gated by
+  `ACCOUNT_UNIFICATION_ACK`).
+
+- **2026-10-31 -- release 2 L4 and L5, membership lifecycle and money (#59, #94, #100, #128 C-5/C-13/C-15/
+  C-16).** L4: plan types and rules, a renewal desk, term history, fixed member numbers, records, titles,
+  consent, erasure, imports as pending invitations, insights and the financial year. L5: GST/tax, offline
+  claims with an optional two-person check, pay links, disputes, capture flags, the finance ledger with
+  receipts and bookkeeping reports; spending is always recorded.
+
+- **2026-10-31 -- README rewrite and plan clean-up (#148).** The README became a short overview with a
+  `docs/README.md` index; plans, prompts and hand-off notes were removed from the repository.
+
+- **2026-10-30 -- release 2 L2 and P1b B2, communications and per-space restore (#110a, #111, #113,
+  #114, #144, #145).** L2: broadcasts with undo, inbox snooze and browser alerts, the organization email
+  sender and invite digests. B2: one backup and restore flow for the whole platform or one space, nightly
+  per-space archives, preview and confirm with re-auth, a mandatory safety backup, and restoring one space
+  from a whole-platform backup; `superadmin_access_enabled` dropped.
 
 - **2026-10-29 -- release 2 L1, the public event surface (#21 gaps 10/12, #69, #71, #73, #77).**
   Short `/e/<code>` links with a PII-free visit counter (`events.short_links`); "who can find"
@@ -146,6 +256,16 @@
   published only through the existing finalize/publish step. Pairwise comparisons count as judging
   work for judge certificates; the Tinkerspace showcase seeds a pairwise hackathon. D19's KiCad viewer
   was dropped by the owner: KiCad files stay download-only and X3 is not applicable.
+- **2026-10-29 -- release 2 L17, folded modules and the settings authority (#97, #101, #128 C-8..C-11).**
+  Maintenance, To-Buy and warranty became capabilities under each parent (machines, bookings, inventory);
+  the `maintenance` and `procurement` module keys are retired; every module setting is written through
+  `settings_authority.assert_setting_write`.
+
+- **2026-10-28 -- P1b A/C/D and P2, superadmin always on (#110, #111, #114, #115, #123).** The superadmin
+  is always on in every servable space and works in the React console as any space's Space Manager, with PII
+  masked outside a 30-minute window; per-space security locks with a platform floor; dependency alerts
+  closed (server-side `.xlsx` reader, `cryptography>=50`); three over-ceiling files split.
+
 - **2026-10-27 -- P1b B1: backup teardown for "superadmin always on" (#110/#111).** Archive
   recipients, challenges, custody states, custody alarms and B1 activation are gone; every archive is
   encrypted to the platform key (backup/0030-0031). Lane E sovereign slices, delayed merge, B1 restore
@@ -176,14 +296,14 @@
   makerspaces and organizations ("Join" only when the inviter governs the organization); email
   confirmation before review; `/control/` accept/reject and a pre-filled, re-auth-safe "Create makerspace";
   daily 48-hour delete / 90-day redaction. Platform-level, no module key, inert on self-host.
-- **2026-10-18 -- mobile/integration reconciliation.** Member/staff/platform account kinds retained;
+- **2026-10-18 -- mobile/integration reconciliation (its account kinds were reversed in release 2).** Member/staff/platform account kinds retained;
   native staff require password/MFA/attestation and fixed tenant; deletion/restore stay member-only.
   Personal envelopes incorporate SMS, Twilio/Meta WhatsApp and mobile sender/consent/STOP/BSUID
   protections. Push uses envelope-owned device children; reports read canonical/mapped history and
   the frontend uses consolidated channels. The former Meta missing-module blocker is resolved.
   Destructive integrations 0043 and sending activation remain held pending replay sign-off.
 
-- **2026-10-17 — account split.** Separate member/tenant-staff/platform identity, kind-bound auth and browser contexts, audited admin-issued staff lifecycle, shared chat binding and credential-free tenant staff transport; purge/backup shells preserve signed audit actors.
+- **2026-10-17 — account split (reversed in release 2 by one account per person).** Separate member/tenant-staff/platform identity, kind-bound auth and browser contexts, audited admin-issued staff lifecycle, shared chat binding and credential-free tenant staff transport; purge/backup shells preserve signed audit actors.
 
 - **2026-10-17 — personal notification delivery.** Transactional envelopes/outbox, encrypted
   per-space channel configuration, provider-proven connections, multi-select category choices and

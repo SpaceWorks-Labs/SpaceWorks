@@ -94,8 +94,9 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-hack-money: events/0075-0077, payments/0041-0043, event_reimbursements/0008 (renumbered) prize money, deposits, crew pool; re-pinned.
 # lane/r2-peoples-choice: events/0078-0079 (renumbered) People's choice config, ballots, results, standings; re-pinned.
 # lanes r2-gap-misc, r2-gap-money, r2-superadmin-controls: makerspaces/0129-0131 (chained), space_controls/0001, managed_hosting/0001, hosting_requests/0003; re-pinned.
+# lane/r2-gap-api: apiclients/0009-0010 personal tokens, app connections and the peer client type; re-pinned.
 # Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "a5bee2bffe5b5360f413acf1bd9a7d4874895e84ab9a1721f5531a44387b6ab6"
+CATALOG_SCHEMA_SHA256 = "d263bab56719e5e6690edd393b105df26b90ee2966f7f57e46620dcfbfd3733f"
 
 
 def catalog_models(apps_registry=apps):

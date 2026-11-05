@@ -56,7 +56,7 @@ export function HostingRequestPage() {
         if (!submit.isPending) submit.mutate(hostingRequestBody(form), { onSuccess: () => setForm(EMPTY_HOSTING_FORM) });
       }}>
         <h2 id="hosting-form-title" className="title-panel">Your request</h2>
-        <HostingRequestFields value={form} onChange={set} errors={errors} />
+        <HostingRequestFields value={form} onChange={set} errors={errors} showExpectedMembers />
         {submit.error ? <p role="alert" className="text-sm text-danger">
           {hostingErrorText(submit.error, "Hosting requests aren't open right now.")}
         </p> : null}

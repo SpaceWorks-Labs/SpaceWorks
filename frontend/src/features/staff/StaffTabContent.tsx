@@ -15,7 +15,7 @@ import { StaffPanelErrorBoundary } from "./StaffPanelErrorBoundary";
 import { PlatformProgrammeDashboard } from "./eventProgramme/PlatformProgrammeDashboard";
 import { GrantedResourcesPanel } from "./GrantedResourcesPanel";
 import { ConsumablesPanel, RepairsPanel } from "./StaffTabLoaders";
-import { ShopPanel } from "./StaffTabLoaders";
+import { ShopPanel, PlatformSpacesPanel } from "./StaffTabLoaders";
 
 import { PaymentsPanel, RefundQueue, FinancePanel, EventPayoutsSection, DevicesPanel, DashboardPanel, NotificationInbox, DirectLoans, Inventory, Ledger, MachinesPanel, EventsPanel, OrganizedEventsPanel, OrganizationAnalyticsPanel, OrganizationsPanel, BookingsPanel, MembersPanel, MemberCardsPanel, QrTools, RequestsPanel, OperationsReports, AuditLog, BulkImport, ScannerPanel, ContainersPanel, StocktakePanel, StockTransferPanel, ProcurementPanel, WarrantyPanel, AccountabilityPanel, Categories, NeedsFixShelf, HandoverConsole } from "./StaffTabLoaders";
 
@@ -79,6 +79,9 @@ export function StaffTabContent({
 }) {
   if (activeTab === "platform-dashboard" && isSuperadmin && !singleTenantLocked) {
     return <StaffPanelErrorBoundary resetKey="platform-dashboard"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformProgrammeDashboard /></Suspense></StaffPanelErrorBoundary>;
+  }
+  if (activeTab === "platform-spaces" && isSuperadmin && !singleTenantLocked) {
+    return <StaffPanelErrorBoundary resetKey="platform-spaces"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PlatformSpacesPanel /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "organizations") {
     return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;

@@ -3,6 +3,21 @@ export type ApiErrorBody = Record<string, unknown> & {
   code?: unknown;
 };
 
+/** Plain-language copy for refusals any write can hit (r2-superadmin-controls), shown wherever an API error renders. */
+export const SPACE_READ_ONLY_MESSAGE = "This space is read-only: you can view and export, but nothing new can be created.";
+export const SPACE_SUSPENDED_MESSAGE = "This space is paused by the platform operator. Nothing can be changed until it reopens.";
+export const PLAN_LIMIT_MESSAGE = "This space has reached a limit of its hosting plan. A Space Manager can review the plan under Usage & limits.";
+
+function friendlyMessage(status: number, body: ApiErrorBody, code?: string) {
+  if (status === 423 && code === "space_read_only") return SPACE_READ_ONLY_MESSAGE;
+  if (status === 423 && code === "space_suspended") return SPACE_SUSPENDED_MESSAGE;
+  // DRF may wrap the code in a list when the refusal is raised as a ValidationError.
+  const planCode = code ?? (Array.isArray(body.code) ? body.code[0] : undefined);
+  if (planCode !== "plan_limit_reached") return "";
+  const limit = Array.isArray(body.limit) ? body.limit[0] : body.limit;
+  return typeof limit === "string" && limit.trim() ? `${limit.trim()} ${PLAN_LIMIT_MESSAGE}` : PLAN_LIMIT_MESSAGE;
+}
+
 export class StructuredApiError extends Error {
   readonly status: number;
   readonly detail?: string;
@@ -19,11 +34,12 @@ export class StructuredApiError extends Error {
       return [];
     };
     const detail = typeof body.detail === "string" ? body.detail.trim() : "";
-    super(detail || Object.values(body).flatMap(flattenMessages).join(" ") || `Request failed (${status})`);
+    const code = typeof body.code === "string" ? body.code : undefined;
+    super(friendlyMessage(status, body, code) || detail || Object.values(body).flatMap(flattenMessages).join(" ") || `Request failed (${status})`);
     this.name = "StructuredApiError";
     this.status = status;
     this.detail = detail || undefined;
-    this.code = typeof body.code === "string" ? body.code : undefined;
+    this.code = code;
     this.body = body;
     const retryAfter = Number(headers?.get("Retry-After") ?? Number.NaN);
     this.retryAfterSeconds = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : undefined;

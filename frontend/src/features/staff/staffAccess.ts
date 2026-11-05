@@ -1,5 +1,5 @@
 const ALL_TABS = [
-  "platform-dashboard", "usage",
+  "platform-dashboard", "platform-spaces", "usage",
   "dashboard", "notifications", "channels", "requests", "direct", "handover", "inventory", "needsfix", "categories", "machines", "events", "organized", "granted", "bookings", "members", "cards", "tobuy", "transfers",
   "stocktake", "containers", "ledger", "reports", "accountability", "warranty", "bulk", "qr", "scanner", "api", "settings", "security", "emailtemplates", "users", "platform", "audit",
   "devices", "email-logs", "payments", "refunds", "finance", "organizations", "organization-analytics", "modules", "exports", "backups", "migration",
@@ -14,10 +14,11 @@ export const STAFF_TAB_KEYS: readonly string[] = ALL_TABS;
 // What a superadmin sees before choosing a space (surface_policy.PLATFORM_ROUTES). Once a
 // space is chosen they also hold every action there (owner decision #115) and see exactly
 // that space's Space-Manager tabs; `StaffApp` passes `superadmin_actions` only then.
-const PLATFORM_TABS = ["platform-dashboard", "users", "security", "organizations", "modules", "backups", "migration", "platform", "platform-analytics"];
+const PLATFORM_TABS = ["platform-dashboard", "platform-spaces", "users", "security", "organizations", "modules", "backups", "migration", "platform", "platform-analytics"];
 
 export const TAB_LABELS: Record<string, string> = {
   "platform-dashboard": "Platform dashboard",
+  "platform-spaces": "Spaces",
   usage: "Usage & limits",
   dashboard: "Dashboard",
   notifications: "Notifications",
@@ -81,7 +82,7 @@ export const TAB_GROUPS: { label: string; tabs: string[] }[] = [
   { label: "Members", tabs: ["members", "cards"] },
   { label: "Insights", tabs: ["reports", "analytics", "organization-analytics", "accountability", "warranty", "audit"] },
   { label: "Organizations", tabs: ["organizations"] },
-  { label: "Admin", tabs: ["users", "settings", "security", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform", "platform-analytics"] },
+  { label: "Admin", tabs: ["users", "settings", "security", "usage", "emailtemplates", "email-logs", "api", "exports", "backups", "migration", "modules", "platform-dashboard", "platform-spaces", "platform", "platform-analytics"] },
 ];
 
 // Permissions only. Module availability is decided in exactly one place --
@@ -144,10 +145,11 @@ export function getStaffAccess(
   // Central organization governance is independent of makerspace actions. An
   // event grant adds a workspace without replacing that existing global surface.
   const allowedTabs: readonly string[] = isSuperadmin && actions.length === 0
-    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform", "organizations", "platform-analytics"].includes(tab))
+    ? PLATFORM_TABS.filter(tab => !singleTenantLocked || !["platform-dashboard", "platform-spaces", "platform", "organizations", "platform-analytics"].includes(tab))
     : grantOnly ? (singleTenantLocked ? ["granted"] : ["granted", "organizations"]) : governanceOnly ? ["organizations"] : baseTabs.filter((tabName) => {
     if (tabName === "granted") return hasGrants;
     if (tabName === "platform-dashboard") return isSuperadmin && !singleTenantLocked;
+    if (tabName === "platform-spaces") return isSuperadmin && !singleTenantLocked;
     if (tabName === "usage") return canManageMakerspace;
     if (tabName === "dashboard") return handoutOnly || isSuperadmin || canSeeDashboard;
     // Personal rows and read state admit machine-only and handover staff.

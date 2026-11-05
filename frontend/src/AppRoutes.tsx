@@ -14,6 +14,7 @@ import { CenteredCardLayout, PublicLayout } from "./components/layouts";
 import { useTenant } from "./lib/tenant";
 import { publicFamilies, publicHome } from "./lib/publicHome";
 import { NotFoundPage } from "./features/NotFoundPage";
+import { PausedTenantGate, publicTenantSlug } from "./features/platformNotices/PausedTenantGate";
 import { FamilyProfileLink } from "./features/publicPages/FamilyProfileLink";
 import {
   PublicOrganizationPage, OrganizationInvitationRedeemPage, ResetPasswordPage, ConsolePasswordResetPage,
@@ -289,5 +290,6 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="*" element={<NotFoundPage />} />
     </Routes>;
   }
-  return <Suspense fallback={<RouteFallback />}>{routes}</Suspense>;
+  return <Suspense fallback={<RouteFallback />}><PausedTenantGate slug={mode === "central" ? publicTenantSlug(location.pathname) : ""}>{routes}</PausedTenantGate></Suspense>;
 }
+

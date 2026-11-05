@@ -7,7 +7,8 @@ import type * as Api from "../../generated/api";
 // Wire types come from the generated OpenAPI client; these aliases keep the feature's names.
 export type HostingAck = Api.HostingAck;
 export type HostingRequestStatus = "invited" | "pending_verification" | "submitted" | "changes_requested" | "accepted" | "rejected" | "withdrawn";
-export type HostingRequestBody = Api.HostingRequestSubmit;
+/** `expected_members` (1..100000) is hand-added until the OpenAPI snapshot is regenerated. */
+export type HostingRequestBody = Api.HostingRequestSubmit & { expected_members?: number };
 export type HostingInvitationSubmitBody = Api.HostingInvitationSubmit;
 export type HostingRevision = { kind: "changes_requested" | "resubmitted"; note: string; changed_fields: string[]; created_at: string };
 /** X31 adds the review note, history and the editable fields to the applicant's status read. */

@@ -1,6 +1,7 @@
 import { lazy } from "react";
 
 export const AnalyticsPanel = lazy(() => import("./analytics/AnalyticsPanel").then((m) => ({ default: m.AnalyticsPanel })));
+export const PlatformSpacesPanel = lazy(() => import("./platformSpaces/PlatformSpacesPanel").then((m) => ({ default: m.PlatformSpacesPanel })));
 export const PlatformDashboardPanel = lazy(() => import("./PlatformDashboardPanel").then((m) => ({ default: m.PlatformDashboardPanel })));
 export const TenantUsagePanel = lazy(() => import("./TenantUsagePanel").then((m) => ({ default: m.TenantUsagePanel })));
 

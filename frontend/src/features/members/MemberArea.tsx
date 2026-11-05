@@ -164,7 +164,7 @@ export function MemberArea() {
   if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
   return <div style={brandStyle}>
-    <MemberPortalTabs modules={bootstrap.data?.modules ?? []} active={activeTab}
+    <MemberPortalTabs modules={bootstrap.data?.modules ?? []} active={activeTab} space={{ id: makerspaceId >= 0 ? makerspaceId : undefined, slug: resolvedSlug }}
       workspace={bootstrap.data ? { name: bootstrap.data.makerspace.name, subtitle: membership?.membership_status ?? "Member area",
         avatar: spaceLogo ? { kind: "image", src: spaceLogo } : { kind: "avatar", name: bootstrap.data.makerspace.name, seed: resolvedSlug }, locked: true } : undefined}
       // A signed-out visitor gets a way in, not "Your account" and "Sign out".

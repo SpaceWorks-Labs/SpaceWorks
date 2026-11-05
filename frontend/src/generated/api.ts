@@ -21848,6 +21848,7 @@ export type RefundCase = {
   "decision_note": string;
   "refund": Refund | null;
   "refundable_balance": string;
+  "needs_finance_approval": boolean;
   "created_at": string;
   "decided_at": string | null;
 };
@@ -21885,7 +21886,7 @@ export type RefundCasePayment = {
   "member_name": string;
 };
 
-export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived" | "order_unfulfilled" | "ticket_type_changed" | "pass_occurrence_cancelled" | "donation_returned" | "submission_disqualified" | "team_rejected";
+export type RefundCaseReasonCodeEnum = "event_cancelled" | "registration_cancelled" | "booking_cancelled" | "staff_cancelled" | "membership_cancelled" | "member_request" | "capture_flagged" | "fee_waived" | "order_unfulfilled" | "ticket_type_changed" | "pass_occurrence_cancelled" | "donation_returned" | "submission_disqualified" | "team_rejected" | "price_drop" | "job_cancelled" | "quote_difference";
 
 export type RefundCaseStatusEnum = "open" | "approved" | "approval_failed" | "declined" | "withdrawn" | "void";
 

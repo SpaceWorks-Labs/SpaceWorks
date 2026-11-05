@@ -12837,7 +12837,7 @@
         "/api/v1/admin/event-ticket-types/{id}/": {
             "patch": {
                 "operationId": "api_v1_admin_event_ticket_types_partial_update",
-                "description": "Edit a ticket type. Price and audience are frozen once any registration used it (409 ticket_type_referenced); capacity cannot drop below live registrations. Audited.",
+                "description": "Edit a ticket type. Price and audience are frozen once any registration used it (409 ticket_type_referenced), except that with `charges.price_drop_refunds` on a fixed price may be LOWERED, which opens a refund case per paid seat for an event not yet held. Capacity cannot drop below live registrations. Audited.",
                 "parameters": [
                     {
                         "in": "path",
@@ -12846,6 +12846,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "price_drop_preview",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Preview only (needs `charges.price_drop_refunds`): run the save, roll it back, and return `{price_drop: {items, count, truncated, totals}}` -- the paid, not-yet-used items whose price would drop and the difference a refund case would open for. 404 while the switch is off."
                     }
                 ],
                 "tags": [
@@ -13184,6 +13192,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "price_drop_preview",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Preview only (needs `charges.price_drop_refunds`): run the save, roll it back, and return `{price_drop: {items, count, truncated, totals}}` -- the paid, not-yet-used items whose price would drop and the difference a refund case would open for. 404 while the switch is off."
                     }
                 ],
                 "tags": [
@@ -81090,6 +81106,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "price_drop_preview",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Preview only (needs `charges.price_drop_refunds`): run the save, roll it back, and return `{price_drop: {items, count, truncated, totals}}` -- the paid, not-yet-used items whose price would drop and the difference a refund case would open for. 404 while the switch is off."
                     }
                 ],
                 "tags": [
@@ -85517,6 +85541,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "price_drop_preview",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Preview only (needs `charges.price_drop_refunds`): run the save, roll it back, and return `{price_drop: {items, count, truncated, totals}}` -- the paid, not-yet-used items whose price would drop and the difference a refund case would open for. 404 while the switch is off."
                     }
                 ],
                 "tags": [
@@ -86223,6 +86255,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "price_drop_preview",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Preview only (needs `charges.price_drop_refunds`): run the save, roll it back, and return `{price_drop: {items, count, truncated, totals}}` -- the paid, not-yet-used items whose price would drop and the difference a refund case would open for. 404 while the switch is off."
                     },
                     {
                         "in": "path",
@@ -115443,6 +115483,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "price_drop_preview",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Preview only (needs `charges.price_drop_refunds`): run the save, roll it back, and return `{price_drop: {items, count, truncated, totals}}` -- the paid, not-yet-used items whose price would drop and the difference a refund case would open for. 404 while the switch is off."
                     }
                 ],
                 "tags": [
@@ -128304,6 +128352,14 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "price_drop_preview",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Preview only (needs `charges.price_drop_refunds`): run the save, roll it back, and return `{price_drop: {items, count, truncated, totals}}` -- the paid, not-yet-used items whose price would drop and the difference a refund case would open for. 404 while the switch is off."
                     }
                 ],
                 "tags": [
@@ -290682,6 +290738,10 @@
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
                         "readOnly": true
                     },
+                    "needs_finance_approval": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -290704,6 +290764,7 @@
                     "id",
                     "kind",
                     "member_reason",
+                    "needs_finance_approval",
                     "payment",
                     "policy_snapshot",
                     "reason_code",
@@ -290853,10 +290914,13 @@
                     "pass_occurrence_cancelled",
                     "donation_returned",
                     "submission_disqualified",
-                    "team_rejected"
+                    "team_rejected",
+                    "price_drop",
+                    "job_cancelled",
+                    "quote_difference"
                 ],
                 "type": "string",
-                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `staff_cancelled` - Cancelled by staff\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request\n* `capture_flagged` - Unexpected online capture\n* `fee_waived` - Loan fee waived by staff\n* `order_unfulfilled` - Order could not be seated\n* `ticket_type_changed` - Changed to a cheaper ticket\n* `pass_occurrence_cancelled` - Pass occurrence cancelled\n* `donation_returned` - Gift returned to the giver\n* `submission_disqualified` - Project disqualified\n* `team_rejected` - Team rejected"
+                "description": "* `event_cancelled` - Event cancelled by the space\n* `registration_cancelled` - Registration cancelled\n* `booking_cancelled` - Booking cancelled\n* `staff_cancelled` - Cancelled by staff\n* `membership_cancelled` - Membership term cancelled\n* `member_request` - Member request\n* `capture_flagged` - Unexpected online capture\n* `fee_waived` - Loan fee waived by staff\n* `order_unfulfilled` - Order could not be seated\n* `ticket_type_changed` - Changed to a cheaper ticket\n* `pass_occurrence_cancelled` - Pass occurrence cancelled\n* `donation_returned` - Gift returned to the giver\n* `submission_disqualified` - Project disqualified\n* `team_rejected` - Team rejected\n* `price_drop` - Price lowered after payment\n* `job_cancelled` - Prepaid job cancelled before it started\n* `quote_difference` - Actual cost below the prepaid quote"
             },
             "RefundCaseStatusEnum": {
                 "enum": [

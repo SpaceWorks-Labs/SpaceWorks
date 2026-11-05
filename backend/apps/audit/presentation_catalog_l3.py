@@ -30,6 +30,8 @@ ENTRIES = (
     P("card.photo_cleanup_accepted", "Cleaned card photo accepted", ("card_id", "job_id")),
     P("card.verify_optin_changed", "Card check-page choices changed", ("card_id", "holder_kind", "fields")),
     P("card.verify_link_rotated", "Card check link rotated", ("card_id", "holder_kind")),
+    P("card.photo_set_by_staff", "Card photo set by staff (holder agreed)", ("card_id", "holder_kind", "holder_consented")),
+    P("card.email_format_changed", "Card email format chosen", ("card_id", "holder_kind", "format")),
     P("card.scanned_for_checkin", "Card scanned to check in",
       ("place", "event_id", "registration_id", "session_id")),
     P("member_card.auto_issued", "Member card issued automatically", ("card_id",)),

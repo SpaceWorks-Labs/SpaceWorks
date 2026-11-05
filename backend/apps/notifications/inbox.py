@@ -66,7 +66,8 @@ def _write_matrix_inbox(makerspace, feature, event, payload, event_key):
     from apps.integrations.recipients import feature_available
     from apps.makerspaces.servability import is_servable
 
-    if not is_servable(makerspace) or not module_enabled(makerspace, "notifications") or not feature_available(makerspace, feature):
+    if (not is_servable(makerspace) or not module_enabled(makerspace, "notifications")
+            or not feature_available(makerspace, feature, event=event)):
         return
     member_enabled = feature_enabled(makerspace, "notifications.member_inbox")
     selection_payload = payload if member_enabled else replace(payload, emails=(), inbox=())

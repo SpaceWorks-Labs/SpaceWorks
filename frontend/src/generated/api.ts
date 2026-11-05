@@ -1116,6 +1116,7 @@ export const openApiPaths = [
   "/api/v1/auth/account-merge/start",
   "/api/v1/auth/account-merge/{intent_id}/cancel",
   "/api/v1/auth/account-merge/{intent_id}/confirm",
+  "/api/v1/auth/account-merge/{intent_id}/passkey-options",
   "/api/v1/auth/account-merge/{intent_id}/preview",
   "/api/v1/auth/account-merge/{intent_id}/prove",
   "/api/v1/auth/account-merge/{intent_id}/resend",
@@ -2913,6 +2914,8 @@ export type AssignOperator = {
   "user_id": number;
   "access_level": string;
 };
+
+export type AtRiskReasonsEnum = "needed_by_passed" | "eta_after_needed_by" | "needed_by_soon";
 
 export type Attendance2a9Enum = "any" | "attended" | "not_attended";
 
@@ -5915,6 +5918,8 @@ export type CorrectClaimDecisionCommand = {
 };
 
 export type CorrectClaimDecisionCommandOutcomeEnum = "approved" | "partially_approved" | "rejected";
+
+export type CostMethodEnum = "cash" | "upi" | "bank_transfer" | "card" | "cheque" | "online" | "other";
 
 export type Count = {
   "count": number;
@@ -11235,6 +11240,7 @@ export type MachineServiceRequest = {
   "files": Array<ServiceFile>;
   "consumptions": Array<ServiceConsumption>;
   "eta": ServiceRequestEta | null;
+  "at_risk_reasons": Array<AtRiskReasonsEnum>;
   "queued_at": string | null;
   "urgent": boolean;
   "urgent_reason": string;
@@ -11524,6 +11530,8 @@ export type MaintenanceLogList = {
 };
 
 export type MaintenanceLogWrite = {
+  "cost_method"?: CostMethodEnum;
+  "cost_currency"?: string;
   "summary": string;
   "performed_at"?: string;
   "cost"?: string | null;
@@ -11533,8 +11541,11 @@ export type MaintenanceLogWrite = {
 };
 
 export type MaintenanceRun = {
+  "cost_method"?: CostMethodEnum;
+  "cost_currency"?: string;
   "summary": string;
   "parts_note"?: string;
+  "cost"?: string | null;
 };
 
 export type MaintenanceSchedule = {
@@ -13065,6 +13076,10 @@ export type MergeIntent = {
 
 export type MergeIntentStateEnum = "started" | "proved" | "consumed" | "cancelled" | "expired";
 
+export type MergePasskeyOptionsRequest = {
+  "password": string;
+};
+
 export type MergePreview = {
   "source": _Source;
   "privilege_diff": _PrivilegeDiff;
@@ -13078,6 +13093,7 @@ export type MergePreview = {
 export type MergeProveRequest = {
   "password"?: string;
   "otp"?: string;
+  "passkey"?: PasskeyVerifyRequest;
   "survivor_code"?: string;
   "source_code"?: string;
 };
@@ -23758,6 +23774,7 @@ export type SubjectLog = {
   "performed_at"?: string;
   "summary": string;
   "parts_note"?: string;
+  "cost"?: string | null;
 };
 
 export type SubjectSchedule = {
@@ -25292,6 +25309,8 @@ export type WorkOrderCreate = {
 };
 
 export type WorkOrderMove = {
+  "cost_method"?: CostMethodEnum;
+  "cost_currency"?: string;
   "status": WorkOrderMoveStatusEnum;
   "resolution"?: string;
   "cost"?: string | null;

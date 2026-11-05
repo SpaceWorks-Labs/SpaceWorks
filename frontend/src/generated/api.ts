@@ -15428,7 +15428,7 @@ export type OutcomeA1aEnum = "succeeded" | "retryable_failed" | "failed";
 export type OutcomeRead = {
   "id": number;
   "event_id": number;
-  "award_id": number;
+  "award_id": number | null;
   "share_id": number | null;
   "payout_id": number | null;
   "resolves_id": number | null;
@@ -19103,6 +19103,7 @@ export type PeoplesChoicePayableWinnerRead = {
   "title": string;
   "amount_per_winner": string | null;
   "paid": boolean;
+  "tax_proposal": PrizeTaxProposal;
 };
 
 export type PeoplesChoicePayableWinnersRead = {

@@ -274138,7 +274138,8 @@
                         "type": "integer"
                     },
                     "award_id": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true
                     },
                     "share_id": {
                         "type": "integer",
@@ -291376,6 +291377,14 @@
                     },
                     "paid": {
                         "type": "boolean"
+                    },
+                    "tax_proposal": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PrizeTaxProposal"
+                            }
+                        ],
+                        "description": "The space's prize-tax proposal (#181 G7, record only)."
                     }
                 },
                 "required": [
@@ -291383,6 +291392,7 @@
                     "id",
                     "paid",
                     "prize_name",
+                    "tax_proposal",
                     "title"
                 ]
             },

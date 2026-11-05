@@ -149,13 +149,27 @@ def attachment_source_boundary(reference, *, makerspace_id, recipient_id):
         yield
 
 
+def _valid_png(filename, data):
+    import re
+    return (isinstance(filename, str) and filename.endswith(".png") and 1 <= len(filename) <= 255
+            and not re.search(r'[\x00-\x1f\x7f"\\/]', filename) and isinstance(data, bytes)
+            and data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) <= 5 * 1024 * 1024)
+
+
 def render_attachment(reference, *, makerspace_id, recipient_id):
     from .notification_document_transport import validate_document
     from .notification_slack_http import ProviderFailure
     authorized_attachment(reference, makerspace_id=makerspace_id, recipient_id=recipient_id)
-    result = source_for(reference).render(reference, makerspace_id=makerspace_id, recipient_id=recipient_id)
-    if not isinstance(result, tuple) or len(result) != 3 or result[2] != "application/pdf":
+    source = source_for(reference)
+    result = source.render(reference, makerspace_id=makerspace_id, recipient_id=recipient_id)
+    if not isinstance(result, tuple) or len(result) != 3 or result[2] not in ("application/pdf", "image/png"):
         raise DocumentDeliveryError("document_render_failed")
+    if result[2] == "image/png":
+        # Only an EMAIL-ONLY source (the holder's card as PNG images) may attach an image.
+        if source.media_field is not None or not _valid_png(*result[:2]):
+            raise DocumentDeliveryError("document_render_failed")
+        authorized_attachment(reference, makerspace_id=makerspace_id, recipient_id=recipient_id)
+        return result
     try:
         validate_document(result[0], result[1])
     except ProviderFailure:

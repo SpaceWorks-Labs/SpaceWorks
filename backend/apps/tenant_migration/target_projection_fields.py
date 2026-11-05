@@ -73,7 +73,7 @@ TARGET_FIELD_PROJECTION = {
         None, reason="The cleared target domain has no target-side change timestamp."
     ),
     ("makerspaces.Makerspace", "hidden_from_central_directory"): TargetField(
-        False, reason="A hidden row without a domain violates ck_makerspace_hidden_requires_domain."
+        False, reason="Directory visibility on the target is its Space Manager's choice (#192)."
     ),
     ("makerspaces.Makerspace", "archived_at"): TargetField(
         None, reason="Source lifecycle state cannot make the new target tenant unreachable."

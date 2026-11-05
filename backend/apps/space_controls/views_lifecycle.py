@@ -32,9 +32,15 @@ class ArchiveNowView(_ControlView):
     def run(self, actor, pk, data):
         from apps.makerspaces import lifecycle
 
-        space = Makerspace.objects.get(pk=pk)
+        from .services_access import _clear_suspension, locked_space, locked_state
+
         try:
-            with control_context():
+            with transaction.atomic(), control_context():
+                space = locked_space(pk)
+                if space.lifecycle_state == Makerspace.LifecycleState.SUSPENDED:
+                    # Archiving a paused space ends the pause in the same transaction (as a
+                    # scheduled archive does), so it is never both paused and archived.
+                    _clear_suspension(space, locked_state(space))
                 lifecycle.archive(space, actor)
         except DjangoValidationError as exc:
             raise SpaceControlConflict("space_not_active", " ".join(exc.messages)) from exc

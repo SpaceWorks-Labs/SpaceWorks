@@ -47,7 +47,8 @@ def suspend(actor, makerspace_id, reason):
     reason = clean_reason(reason)
     with transaction.atomic(), control_context():
         space = locked_space(makerspace_id)
-        if not is_servable(space):
+        # Explicit state: the superadmin's admission makes a paused space "servable" to them.
+        if space.lifecycle_state != Makerspace.LifecycleState.ACTIVE or not is_servable(space):
             raise SpaceControlConflict("space_not_active", "Only an active space can be paused.")
         state = locked_state(space)
         space.lifecycle_state = Makerspace.LifecycleState.SUSPENDED

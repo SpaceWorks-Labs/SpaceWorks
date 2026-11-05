@@ -241,6 +241,9 @@ def _effective_session_surface(token):
 
 
 def _assert_source_gate(request, user=None):
+    from apps.makerspaces.servability import admit_superadmin
     from apps.tenant_migration.gate_runtime import assert_request_write_allowed
 
+    # #110/#190: a live platform superadmin also reaches paused spaces for this request.
+    admit_superadmin(user)
     assert_request_write_allowed(request, user=user)

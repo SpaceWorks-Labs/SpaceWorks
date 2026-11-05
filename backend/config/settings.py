@@ -252,6 +252,8 @@ MIDDLEWARE = [
     "axes.middleware.AxesMiddleware",
     # Masks tenant PII for a superadmin inside a space's staff routes (owner decision #115).
     "apps.accounts.platform_tenant_pii.PlatformTenantPiiMiddleware",
+    # #185/#195: one request's superadmin admission to paused spaces (set after authentication).
+    "apps.makerspaces.middleware.ServabilityScopeMiddleware",
     # --- lane L8: binds each request's RLS scope once its route is resolved; LAST so every
     # other layer's own lookups run unbound. Views still scope through rbac (backstop only).
     "apps.tenant_rls.middleware.TenantRlsBoundaryMiddleware",

@@ -4,6 +4,20 @@ from django.utils.cache import patch_vary_headers
 from apps.makerspaces import domain_verification, hosting
 
 
+class ServabilityScopeMiddleware:
+    """Bounds the superadmin's paused-space admission (``servability.admit_superadmin``,
+    set once the request is authenticated) to exactly this request."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from apps.makerspaces.servability import request_scope
+
+        with request_scope():
+            return self.get_response(request)
+
+
 class TenantHostValidationMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

@@ -137,9 +137,8 @@ PROJECTED_MODEL_LABELS |= MESSAGING_PROJECTED_LABELS
 
 EXPLICIT_DROP_MODEL_REASONS = {
     "apiclients.ApiClient": "Source clients and their bearer secrets never become target authority.",
-    "apiclients.PersonalAccessToken": "Personal bearer tokens never travel; the person makes new ones.",
-    "apiclients.OAuthAppRegistration": "App registrations are source authority; the target registers its own.",
-    "apiclients.OAuthConsent": "App consent and its MFA proof never travel; the person reconnects.",
+    # #196: PersonalAccessToken, OAuthAppRegistration and OAuthConsent drop through
+    # data_export's platform OMITTED_MODELS; listing them here too made the rule set refuse to build.
     "events.EventCollaborator": "Cross-tenant collaboration grants have no target counterpart.",
     "events.EventSeriesCollaborator": "Cross-tenant series collaboration grants have no target counterpart.",
     "integrations.EmailNotificationMute": "Source delivery suppression does not control target mail.",

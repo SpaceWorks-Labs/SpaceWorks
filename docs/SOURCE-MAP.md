@@ -950,6 +950,35 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `features/repairs/ReportProblem.tsx` (on loans, bookings and machine jobs) and the public
   `TechnicianOptInPage.tsx`.
 
+
+### Release 2 r2-superadmin-controls (#185, #187A, #190)
+
+- `space_controls/` (core, never tombstoned): `models.py` (`SpaceControlState`, `PlatformAnnouncement`,
+  `PlatformAnnouncementTarget`); `write_policy.py` is the ONE paused/read-only write guard, called from
+  `tenant_migration/gate_runtime._assert_gate_state` (and the per-request / per-sweep contexts from
+  `tenant_migration/middleware.py` and `fanout_tenant_write`); `errors.py` (`space_suspended`,
+  `space_read_only`, typed 409s); `services_access.py` (suspend/unblock, read-only on/off: the only
+  writers), `services_schedule.py` + `schedule_mail.py` + `tasks.py` (scheduled archive/purge and
+  reminders), `services_ownership.py` (transfer), `onboarding.py` (approve -> create -> invite),
+  `announcements.py`, `notices.py` (the signed-in banner/paused feed), `health.py` (+ `plan_hook.py`),
+  `notifications.py` (platform mail to Space Managers); views `views_controls.py`, `views_lifecycle.py`,
+  `views_onboarding.py`, `views_announcements.py`; `/control/` fallback `admin_actions.py` (Makerspace
+  list actions) and `admin.py`.
+- `managed_hosting/` (#187A, off by default): `availability.py` (the two switches), `enforcement.py`
+  (the hooks into `makerspaces/limits_core.resource_limit`, `limits_usage.check_quota`,
+  `limits_reservations.reserve_notification_quota`, `integrations/dispatch_outbox.dispatch_email`,
+  `makerspaces/module_install.install_module`), `plans.py`, `usage.py`, `billing.py`, `trials.py`,
+  `online.py` (platform Stripe/Razorpay checkout and signed callbacks), `tasks.py`, views and `admin.py`.
+- `makerspaces`: `LifecycleState.SUSPENDED` (`0129`), `servability.is_servable` settlement path,
+  `config_views` (`managed_plans` key only while on). `hosting_requests`: `expected_members` (`0003`).
+- Registries: `accounts/delegated_route_catalog_superadmin.py`, `accounts/merge_registry_rows_superadmin.py`,
+  `audit/presentation_catalog_r2_superadmin.py`, `data_export/classification_r2_superadmin.py`,
+  `tenant_migration/{catalog,gate_policy}_r2_superadmin.py`, `apiclients/scope_registry_routes.py`.
+- Frontend: `features/staff/platformSpaces/` (the superadmin **Spaces** tab: health, onboarding,
+  announcements, plans, invoices, billing settings), `features/platformNotices/` (banners, the paused
+  page and the public `PausedTenantGate`), `features/staff/hostingPlan/` (the Space Manager's plan usage
+  and invoices inside `TenantUsagePanel`).
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

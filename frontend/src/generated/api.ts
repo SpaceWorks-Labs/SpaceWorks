@@ -11832,6 +11832,7 @@ export type LoanCharges = {
   "request_id": number;
   "currency": string;
   "pricing_enabled": boolean;
+  "charges_enabled": boolean;
   "waivers_enabled": boolean;
   "can_waive": boolean;
   "charges": Array<LoanCharge>;
@@ -27208,6 +27209,7 @@ export type TenantBootstrap = {
   "modules": Array<string>;
   "edition": string;
   "features": Array<string>;
+  "charges_tracked": TenantChargesTracked;
   "workflows": Array<string>;
   "theme": unknown;
   "branding": unknown;
@@ -27291,6 +27293,16 @@ export type TenantBootstrapPublicApi = {
   "base_url": string;
   "publishable_key": string;
   "inventory_path": string;
+};
+
+export type TenantChargesTracked = {
+  "loans": boolean;
+  "machines": boolean;
+  "bookings": boolean;
+  "events": boolean;
+  "membership": boolean;
+  "shop": boolean;
+  "donations": boolean;
 };
 
 export type TenantDeployment = {

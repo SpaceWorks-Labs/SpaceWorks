@@ -106,6 +106,8 @@ FEATURE_EVENTS[F.EVENTS] += ("application_stage_advanced", "attendance_confirmat
                              "attendance_replied", "crew_invited", "crew_decided")
 # Release 2 L21b: published finalists (a per-event switch) and a recorded prize payout to its winner.
 FEATURE_EVENTS[F.EVENTS] += ("finalists_announced", "prize_payout_recorded")
+# r2-peoples-choice (#181): People's choice voting opened (a per-event switch, off by default).
+FEATURE_EVENTS[F.EVENTS] += ("peoples_choice_open",)
 # Release 2 L22: the shop buyer's order notices and the shop staff's alerts (payments matrix).
 FEATURE_EVENTS[F.PAYMENTS] += ("shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
                                "shop_order_cancelled", "shop_order_unfulfilled", "shop_order_reminder",

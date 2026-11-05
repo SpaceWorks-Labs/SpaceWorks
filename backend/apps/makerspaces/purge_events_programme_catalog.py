@@ -119,3 +119,6 @@ from apps.tenant_migration.catalog_r2_l7 import PURGE_ORDER as _L7_PURGE_ORDER  
 PURGE_ORDER = _L7_PURGE_ORDER + PURGE_ORDER  # Pairwise rows are leaves of JudgeAssignment/JudgingRound.
 from apps.tenant_migration.catalog_r2_l21b import PURGE_ORDER as _L21B_PURGE_ORDER  # noqa: E402
 PURGE_ORDER = _L21B_PURGE_ORDER + PURGE_ORDER  # L21b rows are leaves of rounds, awards and snapshots.
+from apps.tenant_migration.catalog_r2_peoples_choice import PURGE_ORDER as _PC_PURGE_ORDER  # noqa: E402
+# People's choice standings follow L21b's payouts (which point at them) and precede snapshots and teams.
+PURGE_ORDER = PURGE_ORDER[:len(_L21B_PURGE_ORDER)] + _PC_PURGE_ORDER + PURGE_ORDER[len(_L21B_PURGE_ORDER):]

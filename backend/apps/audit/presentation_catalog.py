@@ -41,6 +41,7 @@ from .presentation_catalog_r2_l6 import ENTRIES as _R2_L6
 from .presentation_catalog_r2_l18 import ENTRIES as _R2_L18
 from .presentation_catalog_r2_l21a import ENTRIES as _R2_L21A
 from .presentation_catalog_r2_l21b import ENTRIES as _R2_L21B
+from .presentation_catalog_r2_peoples_choice import ENTRIES as _R2_PEOPLES_CHOICE
 from .presentation_catalog_r2_l24 import ENTRIES as _R2_L24
 from .presentation_catalog_r2_l22 import ENTRIES as _R2_L22
 
@@ -106,6 +107,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_L24,
     _R2_L22,
     _R2_L25,
+    _R2_PEOPLES_CHOICE,
 )
 
 

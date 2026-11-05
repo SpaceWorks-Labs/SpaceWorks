@@ -25,7 +25,7 @@ Shop Manager (release 2 L22, #137) holds only `manage_shop`, `sell_shop` and `vi
 catalogue, stock, prices, orders, front desk, cash-ups, returns and its own settings, plus the shop's
 money in the ledger (domain `shop`). It records cash only for shop sales and shop refunds, never other
 money; the Space Manager reaches the shop through `manage_makerspace`. See
-[Shop](INVARIANTS.md#shop).
+[Shop](INVARIANTS.md#shop-release-2-l22-128-c-7-129-135-137).
 
 `view_analytics` (release 2 L25, #163B) opens the space's embedded Metabase dashboards. The Space
 Manager holds it through `manage_makerspace`; it is also organization-grantable. Creating, rotating

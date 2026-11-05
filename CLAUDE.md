@@ -546,7 +546,7 @@ it outright.
 ## Condensed changelog — in `docs/PROJECT-HISTORY.md`
 
 **The condensed changelog lives in `docs/PROJECT-HISTORY.md`** — one line per shipped batch, newest first,
-from Phase 5B (2026-08-17/18) back to the first production deploy (2026-06-19). It was split out with the
+from the release-2 lanes (2026-11) back to the first production deploy (2026-06-19). It was split out with the
 invariants when this file crossed the harness's memory-file size limit; nothing was dropped. Like
 `docs/INVARIANTS.md` it has no `AGENTS.md` twin — both names of this document point at that one path.
 

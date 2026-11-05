@@ -156,4 +156,11 @@ TASK_SOURCES = {
     A + "operations.tasks_reminders.run_reminder_sweep_task": per_row(
         "each ReminderSource's module and capability (reminder_sweeper._source_enabled); "
         "broadcast recovery re-checks the event's source at send"),
+    # Superadmin space controls and managed hosting (#185, #187A): platform operations on spaces.
+    A + "space_controls.tasks.run_space_schedules_task": platform(
+        "superadmin-scheduled archive and purge of whole spaces, with their reminders (#185)"),
+    A + "space_controls.tasks.send_announcement_emails_task": platform(
+        "superadmin platform announcements; not owned by any space switch (#185)"),
+    A + "managed_hosting.tasks.sweep_managed_hosting_task": platform(
+        "managed-hosting trials and billing, behind the deployment flag MANAGED_PLANS_ENABLED (#187A)"),
 }

@@ -4,7 +4,7 @@
 An approved contribution is event-scoped work, not a built-in staff role or automatic ticket.
 
 1. Read the event's visible “volunteers needed” posting: task, dates, requirements and shift
-   availability. Use your member account; you need not become a tenant staff account.
+   availability. Use your own account; you need no staff role.
 2. Open the posting application, review the shared form/CoC, Saved details choices and any
    age-at-event date review. Sensitive save choices default off. Only your submitted answers
    reach the organizer. Drafts create no grant. Submit, then wait for approval or the posting's

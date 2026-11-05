@@ -643,7 +643,8 @@ every servable makerspace: `rbac.can`, `effective_actions`, `scope_by_action`, `
 space-manager-only re-enable. Platform dashboards, reports, ledgers, `/control/` lists and FK widgets,
 API-client reads and organization grants all cover every servable space, and scheduled work
 (`rbac.scope_for_scheduled_work`) runs for every servable space. Platform accounts have no memberships; a
-local manager uses a separate tenant staff account. Only the superadmin manages Space Managers (D7).
+local manager is a person holding the Space Manager role on that space's staff track. Only the
+superadmin manages Space Managers (D7).
 `accounts/rbac_superadmin.py` now holds only the identity helpers; keep its path, which
 `tenant_migration.authority_guards.AUTHORIZATION_SOURCES` pins.
 
@@ -1070,8 +1071,8 @@ and project `chart_spec` onto the strategy's combined fields (no fake tenant dim
 provides `reports/catalog`, `analytics/<key>`, `dashboard` and `reports/<key>/export` through the
 canonical tenant handlers. Each read retains report RBAC, module checks and servability;
 it grants no staff session, device grant or tenant credential access.
-Deferred dashboard widgets and exports use those same platform routes. Tenant staff accounts
-continue to use their separate fixed-tenant session.
+Deferred dashboard widgets and exports use those same platform routes. People with staff roles use their
+own person session; staff routes are admitted per request.
 
 **Platform analytics group by `makerspace_id` across every servable space.** `platform-services`
 (with a server-owned active-superadmin `PlatformContext`) and every other platform analytic
@@ -7671,9 +7672,8 @@ skip as source_changed; absent or revoked tenant ties skip as no_tenant_tie. His
 no_membership outcomes remain readable in analytics. Diagnostic tests require settings authority
 and target only the caller's own verified/consented phone; settings authority authorizes that test
 recipient, while the selected event must still pass feature/matrix gates, consent and sender
-protections. Staff SMS consent uses the same core own-account endpoints, restricted to an active
-staff account's fixed tenant and its own verified phone. Member phone linking cannot verify a
-separate staff account. Platform accounts cannot grant tenant consent. Explicit canonical channel
+protections. Staff SMS consent uses the same core own-account endpoints and the person's own verified
+phone; a staff role adds no separate account to verify. Platform accounts cannot grant tenant consent. Explicit canonical channel
 enables lift the same account/category/channel's legacy false preference in the same transaction;
 conversion never clears an opt-out.
 

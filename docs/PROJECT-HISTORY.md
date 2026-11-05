@@ -6,6 +6,14 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 ID-card gaps (M7-M9, P19-P28).** In-browser photo crop everywhere a card photo
+  is taken; staff photo capture with the holder's consent; optional server photo clean-up UI; card email as
+  PDF or PNG (holder's choice); the organisation approval level written from the space's approval-levels
+  panel, plus programme/event levels that can be cleared; Saved-details prefill on programme joins; the
+  door scanner accepts cards; the badge designer gains redo, a long-name preview, a versioned design file,
+  A6 landscape and custom stock; the printed-card view draws the design in the browser and the public
+  check page follows the verify screens.
+
 - **2026-11-04 -- release 2 S-B, login doors, unusual sign-ins and security alerts (#62, #66, #128 C-2,
   #157, #162(3)).** Staff signing in with Google, Apple, GitHub or OIDC still pass their factor (web and
   device); provider proof is members-only. `mfa/verify` takes `factor` (totp, recovery, passkey with

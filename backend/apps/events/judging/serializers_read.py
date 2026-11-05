@@ -87,6 +87,7 @@ class AssignmentRead(ResultEnvelope):
     answers = serializers.ListField(child=serializers.DictField(), required=False,
                                     help_text="S7: the stage's custom answers a judge may read ({label, value}).")
     team_feedback = serializers.CharField(required=False, allow_blank=True)
+    share_feedback = serializers.BooleanField(required=False, help_text="S4: whether this round releases team feedback.")
 
 
 class ConsentRead(ClosedSerializer):

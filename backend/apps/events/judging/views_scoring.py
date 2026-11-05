@@ -33,7 +33,7 @@ def assignment_projection(actor, row, event):
     return envelope(row, round_id=round.pk, snapshot_id=snapshot.id, title=snapshot.title,
         description=snapshot.description, mode=round.mode, batch=row.batch, configuration=round.configuration,
         scores=own_score.criterion_values if own_score else {}, notes=own_score.notes if own_score else "",
-        team_feedback=own_score.team_feedback if own_score else "",
+        team_feedback=own_score.team_feedback if own_score else "", share_feedback=round.share_feedback,
         asset_ids=list(snapshot.judge_asset_ids), batch_projects=batch_projects,
         answers=[{"label": a[1], "value": a[3]} for a in snapshot.answers if a[4] != "staff_only"],
         allowed_actions=_actions(round.mode, can_score, can_recuse))

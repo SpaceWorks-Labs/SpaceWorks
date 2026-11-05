@@ -38,8 +38,9 @@ class SubmissionStageInput(ClosedSerializer):
     resubmission = serializers.ChoiceField(choices=RESUBMISSION, required=False, default="until_deadline")
     requires_previous = serializers.BooleanField(required=False, default=False)
     content_mode = serializers.ChoiceField(choices=CONTENT_MODES, required=False, default="files_and_links")
-    required_link_kinds = serializers.ListField(child=serializers.ChoiceField(choices=sorted(KINDS)), max_length=8,
-                                                required=False, default=list)
+    # A plain string list (checked below), so the shared LinkKindEnum keeps its OpenAPI name.
+    required_link_kinds = serializers.ListField(child=serializers.CharField(max_length=16), max_length=8,
+                                                required=False, default=list, help_text="Link kinds: " + ", ".join(sorted(KINDS)))
     min_files = serializers.IntegerField(min_value=0, max_value=100, required=False, default=0)
     max_files = serializers.IntegerField(min_value=1, max_value=100, allow_null=True, required=False, default=None)
     max_links = serializers.IntegerField(min_value=1, max_value=30, allow_null=True, required=False, default=None)
@@ -55,6 +56,8 @@ class SubmissionStageInput(ClosedSerializer):
                                                     help_text="S18: this stage's work may join the gallery once published.")
 
     def validate(self, data):
+        if not set(data["required_link_kinds"]) <= KINDS:
+            raise serializers.ValidationError({"required_link_kinds": "Use known link kinds."})
         for key in ("required_link_kinds", "accepted_families", "video_hosts"):
             data[key] = sorted(set(data[key]))
         return data

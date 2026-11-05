@@ -124,6 +124,10 @@ LEGACY_ENTRIES = (
     ("sponsor-perk-reminders", "apps.payments.donations.tasks.remind_perks_task", 1440),
     # Lane L22: lapsed shop holds, missed shop settlements and uncollected-order reminders.
     ("shop-sweep", "apps.shop.tasks.sweep_shop_task", 1),
+    # r2-superadmin-controls (#185, #187A): schedules + reminders, announcement mail, managed hosting.
+    ("space-control-schedules", "apps.space_controls.tasks.run_space_schedules_task", 60),
+    ("platform-announcement-emails", "apps.space_controls.tasks.send_announcement_emails_task", 5),
+    ("managed-hosting-sweep", "apps.managed_hosting.tasks.sweep_managed_hosting_task", 60),
 )
 _RETAINED = frozenset({
     "evidence-object-expiry", "evidence-abandoned-upload-cleanup",

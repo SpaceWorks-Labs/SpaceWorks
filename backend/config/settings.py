@@ -199,6 +199,11 @@ INSTALLED_APPS = [
     "apps.shop",
     # Lane L25 (#163B): per-space read-only analytics logins and Metabase embedding.
     "apps.analytics",
+    # #185: superadmin space controls (suspend, read-only, schedules, announcements); core.
+    "apps.space_controls",
+    # #187A: the managed-hosting limiter (plans, trials, hosting billing); OFF unless
+    # MANAGED_PLANS_ENABLED, and then only on a managed deployment.
+    "apps.managed_hosting",
     # Must stay LAST. Django calls ready() in this order, so being last is what
     # guarantees every other app has registered before finalize() freezes the
     # separability registries.
@@ -970,6 +975,23 @@ CELERY_BEAT_SCHEDULE["shop-sweep"] = {
     "task": "apps.shop.tasks.sweep_shop_task", "schedule": crontab(minute="*"),
 }
 # --- end lane L22
+# --- lane r2-superadmin-controls (#185, #187A): scheduled archive/purge and reminders (hourly),
+# announcement emails (every 5 min), and the managed-hosting sweep (hourly; inert while off).
+CELERY_BEAT_SCHEDULE["space-control-schedules"] = {
+    "task": "apps.space_controls.tasks.run_space_schedules_task", "schedule": crontab(minute=23),
+}
+CELERY_BEAT_SCHEDULE["platform-announcement-emails"] = {
+    "task": "apps.space_controls.tasks.send_announcement_emails_task", "schedule": crontab(minute="*/5"),
+}
+CELERY_BEAT_SCHEDULE["managed-hosting-sweep"] = {
+    "task": "apps.managed_hosting.tasks.sweep_managed_hosting_task", "schedule": crontab(minute=41),
+}
+# The managed-hosting limiter (#187A) is OFF by default: with MANAGED_PLANS_ENABLED false nothing
+# of it is visible or enforced and self-host behaves exactly as before. It also needs a managed
+# deployment (PLATFORM_DOMAIN_SUFFIX). Online hosting checkout is a second switch, also off.
+MANAGED_PLANS_ENABLED = env.bool("MANAGED_PLANS_ENABLED", default=False)
+MANAGED_BILLING_ONLINE_ENABLED = env.bool("MANAGED_BILLING_ONLINE_ENABLED", default=False)
+# --- end lane r2-superadmin-controls
 
 if "tenant_migration" in TOMBSTONED_APPS:
     CELERY_BEAT_SCHEDULE = {

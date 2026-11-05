@@ -79,6 +79,7 @@ from .presentation_catalog_login_security import ENTRIES as _LOGIN_SECURITY
 from .presentation_catalog_ip_security import ENTRIES as _IP_SECURITY
 from .presentation_catalog_staff_roles import ENTRIES as _STAFF_ROLES
 from .presentation_catalog_r2_l25 import ENTRIES as _R2_L25
+from .presentation_catalog_r2_superadmin import ENTRIES as _R2_SUPERADMIN
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -106,6 +107,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_L24,
     _R2_L22,
     _R2_L25,
+    _R2_SUPERADMIN,
 )
 
 

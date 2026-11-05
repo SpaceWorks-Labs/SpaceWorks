@@ -207,3 +207,7 @@ ADMIN_ACTION_EXEMPTIONS = {
 
 from .gate_policy_p2_p_chat import HTTP_ANONYMOUS_PARTICIPANTS as chat_participants
 HTTP_ANONYMOUS_PARTICIPANTS.update(chat_participants)
+from . import gate_policy_r2_superadmin as _superadmin  # noqa: E402  (#185, #187A)
+HTTP_EXEMPTIONS.update(_superadmin.HTTP_EXEMPTIONS)
+HTTP_ANONYMOUS_PARTICIPANTS.update(_superadmin.HTTP_ANONYMOUS_PARTICIPANTS)
+ADMIN_ACTION_EXEMPTIONS.update(_superadmin.ADMIN_ACTION_EXEMPTIONS)

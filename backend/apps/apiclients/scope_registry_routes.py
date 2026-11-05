@@ -238,6 +238,9 @@ def _build_registry():
     return MappingProxyType(registry)
 
 
+# #185: whether a space is paused (the SPA's paused page). Global: a paused space is not
+# servable, so a tenant-slug target could never resolve it.
+_ROUTE_DEFINITIONS += (("public-makerspace-availability", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, False, False),)
 from .scope_registry_programme import definitions as programme_definitions
 _ROUTE_DEFINITIONS += programme_definitions(
     PUBLIC_READ_SCOPES, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, TARGET_TENANT_TOKEN,

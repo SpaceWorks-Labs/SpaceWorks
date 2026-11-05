@@ -152,6 +152,8 @@ from .classification_r2_l21a import extend as extend_r2_l21a  # noqa: E402
 extend_r2_l21a(EXPORTED_MODEL_FIELDS)
 from .classification_r2_l25 import OMITTED_MODELS as R2_L25_OMITTED  # noqa: E402
 OMITTED_MODELS.update(R2_L25_OMITTED)
+from .classification_r2_superadmin import OMITTED_MODELS as R2_SUPERADMIN_OMITTED  # noqa: E402
+OMITTED_MODELS.update(R2_SUPERADMIN_OMITTED)
 EXPORTED_MODELS = frozenset(EXPORTED_MODEL_FIELDS)
 
 NOT_TENANT_MODELS = {

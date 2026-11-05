@@ -57,16 +57,20 @@ export const openApiTags = [
   "Event asset streams",
   "Event certificate library",
   "Event certificates",
+  "Event check-in lists",
   "Event check-in stations",
   "Event credentials",
+  "Event crew",
   "Event forms",
   "Event gallery streams",
   "Event mentoring",
+  "Event participation",
   "Event payouts",
   "Event presentation",
   "Event programme",
   "Event programme judging",
   "Event programme review",
+  "Event programme review stages",
   "Event programme sponsors",
   "Event programme teams",
   "Event reimbursements",
@@ -298,12 +302,21 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/application-decisions/{batch_id}/",
   "/api/v1/admin/events/{id}/application-review/assign/",
   "/api/v1/admin/events/{id}/application-reviews/{review_id}/",
+  "/api/v1/admin/events/{id}/application-stages/",
+  "/api/v1/admin/events/{id}/application-stages/{stage_id}/",
+  "/api/v1/admin/events/{id}/application-stages/{stage_id}/assignment-apply/",
+  "/api/v1/admin/events/{id}/application-stages/{stage_id}/assignment-preview/",
+  "/api/v1/admin/events/{id}/application-stages/{stage_id}/my-reviews/",
+  "/api/v1/admin/events/{id}/application-stages/{stage_id}/my-reviews/{assignment_id}/",
+  "/api/v1/admin/events/{id}/application-stages/{stage_id}/panel/",
+  "/api/v1/admin/events/{id}/application-stages/{stage_id}/progress/",
   "/api/v1/admin/events/{id}/applications/",
   "/api/v1/admin/events/{id}/applications/{application_id}/extend-rsvp/",
   "/api/v1/admin/events/{id}/applications/{application_id}/rsvp-on-behalf/",
   "/api/v1/admin/events/{id}/assets/{asset_id}/download/",
   "/api/v1/admin/events/{id}/assets/{asset_id}/preview/",
   "/api/v1/admin/events/{id}/assigned-sponsors/",
+  "/api/v1/admin/events/{id}/attendance-confirmation/",
   "/api/v1/admin/events/{id}/audience-organizations/",
   "/api/v1/admin/events/{id}/badge-template/",
   "/api/v1/admin/events/{id}/badges.pdf",
@@ -346,8 +359,16 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/check-in/station/reveal/",
   "/api/v1/admin/events/{id}/check-in/station/rotate/",
   "/api/v1/admin/events/{id}/check-ins/",
+  "/api/v1/admin/events/{id}/checkin-lists/",
+  "/api/v1/admin/events/{id}/checkin-lists/{list_id}/",
+  "/api/v1/admin/events/{id}/checkin-lists/{list_id}/lookup/",
+  "/api/v1/admin/events/{id}/checkin-lists/{list_id}/scan/",
   "/api/v1/admin/events/{id}/collaborators/",
   "/api/v1/admin/events/{id}/complete/",
+  "/api/v1/admin/events/{id}/crew/",
+  "/api/v1/admin/events/{id}/crew/catering/",
+  "/api/v1/admin/events/{id}/crew/{crew_id}/decide/",
+  "/api/v1/admin/events/{id}/crew/{crew_id}/remove/",
   "/api/v1/admin/events/{id}/design-seeds/",
   "/api/v1/admin/events/{id}/design-seeds/install/",
   "/api/v1/admin/events/{id}/design-seeds/preview.pdf",
@@ -424,6 +445,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/orders/",
   "/api/v1/admin/events/{id}/organizers/",
   "/api/v1/admin/events/{id}/pairwise-rounds/",
+  "/api/v1/admin/events/{id}/participation-settings/",
   "/api/v1/admin/events/{id}/prizes/",
   "/api/v1/admin/events/{id}/prizes/{prize_id}/",
   "/api/v1/admin/events/{id}/programme/live/",
@@ -435,6 +457,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/registrations/",
   "/api/v1/admin/events/{id}/registrations/{registration_id}/credential/revoke/",
   "/api/v1/admin/events/{id}/registrations/{registration_id}/credential/rotate/",
+  "/api/v1/admin/events/{id}/registrations/{registration_id}/reaccept/",
   "/api/v1/admin/events/{id}/reimbursements/claims/",
   "/api/v1/admin/events/{id}/reimbursements/claims/{claim_id}/",
   "/api/v1/admin/events/{id}/reimbursements/claims/{claim_id}/attendance-attestations/",
@@ -1001,6 +1024,7 @@ export const openApiPaths = [
   "/api/v1/admin/memberships/{id}/unverify",
   "/api/v1/admin/memberships/{id}/verify",
   "/api/v1/admin/memberships/{id}/waiver/witness",
+  "/api/v1/admin/my-application-reviews/",
   "/api/v1/admin/organization-invitations/{id}/",
   "/api/v1/admin/organizations/",
   "/api/v1/admin/organizations/directory/",
@@ -1251,6 +1275,7 @@ export const openApiPaths = [
   "/api/v1/event-checkin-stations/{public_token}/session/",
   "/api/v1/event-checkin-stations/{public_token}/sync/",
   "/api/v1/events/",
+  "/api/v1/events/applications/",
   "/api/v1/events/orders/",
   "/api/v1/events/orders/{id}/",
   "/api/v1/events/{id}/",
@@ -1333,6 +1358,9 @@ export const openApiPaths = [
   "/api/v1/member/event-payouts/{obligation_id}/payee/reveal/",
   "/api/v1/member/event-registrations/{id}/ticket",
   "/api/v1/member/event-speaker-claims/",
+  "/api/v1/member/events/{id}/attendance/",
+  "/api/v1/member/events/{id}/crew-signup/",
+  "/api/v1/member/events/{id}/crew-signup/withdraw/",
   "/api/v1/member/id-programme-invites/accept",
   "/api/v1/member/issues",
   "/api/v1/member/issues/loan-items",
@@ -1573,6 +1601,7 @@ export const openApiPaths = [
   "/api/v1/public/event-codes/{code}/",
   "/api/v1/public/event-codes/{public_token}/",
   "/api/v1/public/event-programmes/{public_token}/context/",
+  "/api/v1/public/event-programmes/{public_token}/crew/",
   "/api/v1/public/event-programmes/{public_token}/gallery/",
   "/api/v1/public/event-programmes/{public_token}/gallery/assets/{public_asset_id}/",
   "/api/v1/public/event-programmes/{public_token}/gallery/{entry_public_id}/",
@@ -2527,6 +2556,8 @@ export type AnswerCount = {
   "count": number;
 };
 
+export type AnswerEnum = "yes" | "no";
+
 export type AnswerReview = {
   "event_date_revision": number;
   "as_of_date": string;
@@ -2657,6 +2688,20 @@ export type Application = {
 };
 };
 
+export type ApplicationCounts = {
+  "event_id": number;
+  "total": number;
+  "by_status": {
+  [key: string]: number;
+};
+  "stages": Array<ApplicationStageCount>;
+};
+
+export type ApplicationCountsPage = {
+  "next_cursor": string | null;
+  "results": Array<ApplicationCounts>;
+};
+
 export type ApplicationInput = {
   "operation_id": string;
   "expected_version": number;
@@ -2692,8 +2737,28 @@ export type ApplicationInput = {
 };
 };
 
+export type ApplicationStageCount = {
+  "stage_id": number;
+  "position": number;
+  "name": string;
+  "standing": number;
+};
+
 export type AppliedRules = {
   "category_caps": CategoryCaps;
+};
+
+export type ApplyInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "seed": string;
+  "strategy": StrategyD33Enum;
+  "fingerprint": string;
+};
+
+export type ApplyResult = {
+  "stage": Stage;
+  "created": number;
 };
 
 export type ApprovalModeE35Enum = "instant" | "approve";
@@ -3017,6 +3082,8 @@ export type AssignmentRun = {
   "unsatisfied_team_ids": Array<number>;
 };
 
+export type AssignmentStrategyEnum = "balanced" | "random";
+
 export type AssignOperator = {
   "user_id": number;
   "access_level": string;
@@ -3039,6 +3106,45 @@ export type AttendanceCorrectionResponse = {
   "registration_id": number;
   "status": string;
   "revoked_certificates": number;
+};
+
+export type AttendanceReplyInput = {
+  "answer": AnswerEnum;
+  "note"?: string;
+};
+
+export type AttendanceReplySummary = {
+  "answer": string | null;
+  "note": string;
+  "replied_at": string | null;
+  "effect": string;
+};
+
+export type AttendanceRound = {
+  "id": number;
+  "kind": string;
+  "state": string;
+  "recipients": number;
+  "sent": number;
+  "created_at": string;
+};
+
+export type AttendanceSendInput = {
+  "kind": AttendanceSendInputKindEnum;
+};
+
+export type AttendanceSendInputKindEnum = "confirmation" | "reminder";
+
+export type AttendanceSummary = {
+  "asked": number;
+  "yes": number;
+  "no": number;
+  "pending": number;
+  "released": number;
+  "left_to_staff": number;
+  "next_send_at": string | null;
+  "free_on_no": boolean;
+  "rounds": Array<AttendanceRound>;
 };
 
 export type AttendedEvent = {
@@ -4854,6 +4960,17 @@ export type CategoryList = {
   "results": Array<Category>;
 };
 
+export type Catering = {
+  "approved": number;
+  "with_needs": number;
+  "needs": Array<CateringNeed>;
+};
+
+export type CateringNeed = {
+  "label": string;
+  "count": number;
+};
+
 export type CertificateAction = {
   "operation_id": string;
   "expected_version": number;
@@ -5109,6 +5226,45 @@ export type Charge = {
 export type ChargeCreate = {
   "amount": string;
   "description"?: string;
+};
+
+export type CheckInList = {
+  "id": number;
+  "event_id": number;
+  "name": string;
+  "kind": string;
+  "after_entry": boolean;
+  "addon_id": number | null;
+  "addon_name": string | null;
+  "per_person": number;
+  "archived": boolean;
+  "archived_at": string | null;
+  "collected": number;
+};
+
+export type CheckInListEligibility = {
+  "registration_id": number;
+  "name": string;
+  "allowed": number;
+  "used": number;
+  "reason": string | null;
+};
+
+export type CheckInListInput = {
+  "name"?: string;
+  "kind"?: CheckInListInputKindEnum;
+  "after_entry"?: boolean;
+  "addon_id"?: number | null;
+  "per_person"?: number;
+  "archive"?: boolean;
+};
+
+export type CheckInListInputKindEnum = "swag" | "meal" | "workshop" | "other";
+
+export type CheckInListScanInput = {
+  "operation_id": string;
+  "registration_id"?: number;
+  "token"?: string;
 };
 
 export type CheckinMethod = {
@@ -6177,6 +6333,62 @@ export type CredentialCommand = {
 
 export type CredentialModeEnum = "legacy" | "v2" | "inert";
 
+export type CrewAddInput = {
+  "member_id": number;
+  "crew_role"?: string;
+};
+
+export type CrewDecisionInput = {
+  "approve": boolean;
+  "expected_version": number;
+};
+
+export type CrewOwn = {
+  "id": number;
+  "version": number;
+  "crew_role": string;
+  "state": string;
+  "show_publicly": boolean;
+  "registration_id": number | null;
+};
+
+export type CrewRow = {
+  "id": number;
+  "version": number;
+  "member_id": number;
+  "name": string;
+  "crew_role": string;
+  "state": string;
+  "origin": string;
+  "show_publicly": boolean;
+  "registration_id": number | null;
+  "has_place": boolean;
+  "created_at": string;
+  "decided_at": string | null;
+};
+
+export type CrewSignupInput = {
+  "crew_role"?: string;
+  "dietary"?: string;
+  "notes"?: string;
+  "show_publicly"?: boolean;
+};
+
+export type CrewSignupState = {
+  "event_id": number;
+  "event_title": string;
+  "starts_at": string;
+  "open": boolean;
+  "approval_required": boolean;
+  "crew": CrewOwn | null;
+};
+
+export type Criterion = {
+  "key": string;
+  "label": string;
+  "guidance"?: string;
+};
+
 export type CriterionInput = {
   "key": string;
   "label": string;
@@ -6393,9 +6605,10 @@ export type DecisionSubjectInput = {
   "outcome": DecisionSubjectInputOutcomeEnum;
   "reason_code": string;
   "review_override_code"?: string;
+  "stage_id"?: number;
 };
 
-export type DecisionSubjectInputOutcomeEnum = "offer" | "waitlist" | "reject";
+export type DecisionSubjectInputOutcomeEnum = "offer" | "waitlist" | "reject" | "advance";
 
 export type DecisionSummary = {
   "schema_version": number;
@@ -7846,6 +8059,8 @@ export type EventRegistrationAdmin = {
   "cancelled_at": string | null;
   "status_before_cancel": string;
   "restore_until": string | null;
+  "is_crew": boolean;
+  "attendance_reply": AttendanceReplySummary | null;
 };
 
 export type EventRegistrationCounts = {
@@ -14674,6 +14889,18 @@ export type OverrideAllocation = {
   "original_amount_minor": number;
 };
 
+export type OwnAttendance = {
+  "event_id": number;
+  "event_title": string;
+  "starts_at": string;
+  "registration_id": number;
+  "answer": string | null;
+  "note": string;
+  "replied_at": string | null;
+  "effect": string;
+  "free_on_no": boolean;
+};
+
 export type OwnClaim = {
   "id": number;
   "method": Method119Enum;
@@ -15343,6 +15570,12 @@ export type PaletteChoices = {
   "warm_yellow": string;
 };
 
+export type PanelInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "reviewer_ids": Array<number>;
+};
+
 export type PaperEnum = "a4" | "letter";
 
 export type PaperSizeEnum = "A4" | "LETTER" | "custom";
@@ -15352,6 +15585,14 @@ export type PartialModeEnum = "percent" | "pro_rata";
 export type ParticipatingOrganization = {
   "id": number;
   "name": string;
+};
+
+export type ParticipationSettings = {
+  "stage_advanced_email"?: boolean;
+  "attendance_free_on_no"?: boolean;
+  "crew_signup_open"?: boolean;
+  "crew_approval_required"?: boolean;
+  "crew_public_section"?: boolean;
 };
 
 export type PartitionEnum = "tenant" | "currency" | "unit";
@@ -15989,6 +16230,15 @@ export type PatchedCertificationTypeUpdate = {
   "is_active"?: boolean;
   "created_at"?: string;
   "updated_at"?: string;
+};
+
+export type PatchedCheckInListInput = {
+  "name"?: string;
+  "kind"?: CheckInListInputKindEnum;
+  "after_entry"?: boolean;
+  "addon_id"?: number | null;
+  "per_person"?: number;
+  "archive"?: boolean;
 };
 
 export type PatchedConfigInput = {
@@ -16926,6 +17176,14 @@ export type PatchedOrganizationProfileUpdate = {
   "is_discoverable"?: boolean;
 };
 
+export type PatchedParticipationSettings = {
+  "stage_advanced_email"?: boolean;
+  "attendance_free_on_no"?: boolean;
+  "crew_signup_open"?: boolean;
+  "crew_approval_required"?: boolean;
+  "crew_public_section"?: boolean;
+};
+
 export type PatchedPasskeyRename = {
   "name"?: string;
 };
@@ -17411,6 +17669,20 @@ export type PatchedStageConfigurationCommand = {
   "schema"?: {
   [key: string]: unknown;
 };
+};
+
+export type PatchedStageUpdateInput = {
+  "operation_id"?: string;
+  "expected_version"?: number;
+  "name"?: string;
+  "reviews_per_application"?: number;
+  "blind"?: boolean;
+  "criteria"?: Array<Criterion>;
+  "guidance"?: string;
+  "opens_at"?: string | null;
+  "closes_at"?: string | null;
+  "assignment_strategy"?: AssignmentStrategyEnum;
+  "state"?: State906Enum;
 };
 
 export type PatchedSubjectScheduleWrite = {
@@ -18041,6 +18313,26 @@ export type PiiAccessStatus = {
   "recent": Array<PiiAccessGrant>;
 };
 
+export type Plan = {
+  "stage_id": number;
+  "strategy": string;
+  "seed": string;
+  "fingerprint": string;
+  "pairs": Array<PlanPair>;
+  "deficits": Array<{
+  [key: string]: unknown;
+}>;
+  "loads": Array<{
+  [key: string]: unknown;
+}>;
+  "applications": number;
+};
+
+export type PlanPair = {
+  "application_id": number;
+  "reviewer_id": number;
+};
+
 export type PlanTypeEnum = "rolling" | "financial_year" | "fixed_end" | "lifetime";
 
 export type PlatformAnalyticsReport = {
@@ -18301,6 +18593,7 @@ export type PolicySettings = {
   "min_distance_km"?: string | null;
   "eligible_countries"?: Array<string>;
   "eligible_cohorts"?: Array<string>;
+  "min_application_stage"?: number | null;
   "award_accept_days"?: number;
   "claim_due_at"?: string;
   "attendance_required"?: boolean;
@@ -19119,6 +19412,7 @@ export type ProgrammeDetail = {
   "min_distance_km"?: string | null;
   "eligible_countries"?: Array<string>;
   "eligible_cohorts"?: Array<string>;
+  "min_application_stage"?: number | null;
   "award_accept_days"?: number;
   "claim_due_at"?: string;
   "attendance_required"?: boolean;
@@ -19158,6 +19452,7 @@ export type ProgrammeFinanceDetail = {
   "min_distance_km"?: string | null;
   "eligible_countries"?: Array<string>;
   "eligible_cohorts"?: Array<string>;
+  "min_application_stage"?: number | null;
   "award_accept_days"?: number;
   "claim_due_at"?: string;
   "attendance_required"?: boolean;
@@ -19205,6 +19500,16 @@ export type ProgrammeTicket = {
 };
 
 export type ProgrammeTicketDeliveryModeEnum = "in_person" | "online" | "hybrid";
+
+export type ProgressRow = {
+  "application_id": number;
+  "alias": string;
+  "state": string;
+  "version": number;
+  "reviews": number;
+  "needed": number;
+  "average": number | null;
+};
 
 export type ProjectBudget = {
   "limit_bytes": number | null;
@@ -19505,6 +19810,12 @@ export type PublicConfig = {
 export type PublicCount = {
   "value": number | null;
   "suppressed": boolean;
+};
+
+export type PublicCrew = {
+  "handle": string;
+  "display_name": string;
+  "crew_role": string;
 };
 
 export type PublicEvent = {
@@ -20863,6 +21174,12 @@ export type RazorpayMobilePaymentIntentResponse = {
 
 export type RazorpayMobilePaymentIntentResponseVendorEnum = "razorpay";
 
+export type ReacceptResult = {
+  "id": number;
+  "status": string;
+  "payment_due": boolean;
+};
+
 export type ReadAll = {
   "updated": number;
 };
@@ -22162,6 +22479,41 @@ export type ReviewAssignInput = {
   [key: string]: unknown;
 }>;
   "reviewer_ids": Array<number>;
+};
+
+export type ReviewerAssignment = {
+  "id": number;
+  "stage_id": number;
+  "state": string;
+  "application": {
+  [key: string]: unknown;
+};
+  "scores": {
+  [key: string]: unknown;
+} | null;
+  "allowed_actions": Array<string>;
+};
+
+export type ReviewerStage = {
+  "id": number;
+  "event_id": number;
+  "event_title"?: string;
+  "position": number;
+  "name": string;
+  "state": string;
+  "blind": boolean;
+  "criteria": Array<Criterion>;
+  "guidance": string;
+  "reviews_per_application": number;
+  "opens_at": string | null;
+  "closes_at": string | null;
+  "assigned"?: number;
+  "submitted"?: number;
+};
+
+export type ReviewerWorkspace = {
+  "stage": ReviewerStage;
+  "assignments": Array<ReviewerAssignment>;
 };
 
 export type ReviewModeEnum = "auto" | "rolling" | "batch";
@@ -23972,6 +24324,29 @@ export type StaffWaitlistEntry = {
   "member_name": string;
 };
 
+export type Stage = {
+  "id": number;
+  "event_id": number;
+  "position": number;
+  "name": string;
+  "state": string;
+  "version": number;
+  "reviews_per_application": number;
+  "blind": boolean;
+  "criteria": Array<Criterion>;
+  "guidance": string;
+  "opens_at": string | null;
+  "closes_at": string | null;
+  "assignment_strategy": string;
+  "assignment_seed": string;
+  "assigned_at": string | null;
+  "frozen": boolean;
+  "panel": Array<{
+  [key: string]: unknown;
+}>;
+  "standing": number;
+};
+
 export type Stage466Enum = "application" | "shortlisted" | "accepted_rsvp" | "pre_event" | "post_event";
 
 export type StageActivationCommand = {
@@ -24025,6 +24400,11 @@ export type StageAssignment = {
   "allowed_actions"?: Array<string>;
 };
 
+export type StageAssignmentPreviewInput = {
+  "seed"?: string;
+  "strategy"?: StrategyD33Enum;
+};
+
 export type StageCommand = {
   "operation_id": string;
   "expected_version": number;
@@ -24040,6 +24420,19 @@ export type StageConfigurationCommand = {
 };
 
 export type StageContext = StageOwnerResponse | StageVirtualContext;
+
+export type StageCreateInput = {
+  "operation_id": string;
+  "expected_version": number;
+  "name": string;
+  "reviews_per_application"?: number;
+  "blind"?: boolean;
+  "criteria"?: Array<Criterion>;
+  "guidance"?: string;
+  "opens_at"?: string | null;
+  "closes_at"?: string | null;
+  "assignment_strategy"?: AssignmentStrategyEnum;
+};
 
 export type StageDefinition = {
   "id": number;
@@ -24262,6 +24655,14 @@ export type StageResponseFinanceDetail = {
 };
   "answer_review": StageAnswerReview;
   "omitted_question_ids": Array<string>;
+};
+
+export type StageReviewInput = {
+  "scores"?: {
+  [key: string]: number;
+};
+  "notes"?: string;
+  "recusal_code"?: RecusalCodeEnum;
 };
 
 export type StageSettings = {
@@ -24549,6 +24950,8 @@ export type StorageGuarantee = {
   "versioned": boolean;
   "object_lock": boolean;
 };
+
+export type StrategyD33Enum = "balanced" | "random";
 
 export type StreamEnum = "hardware" | "printing" | "events" | "bookings" | "maintenance" | "membership" | "devices" | "payments" | "stock" | "certifications";
 

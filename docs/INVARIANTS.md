@@ -7575,6 +7575,10 @@ object key or purge ownership is introduced by these adapters.
 
 ## Container / deployment invariants
 
+**Django enforces the server-only default itself (#189 as revised by #191).** `config.control_plane_access.ControlPlaneReachMiddleware` runs before sessions and logins and answers a plain 404 for `/control`, `/control/*`, `/mfa/control/*` and `/mfa/reauth/*` unless `CONTROL_PLANE_PROXY` is true, the peer is loopback with no `X-Forwarded-For`/`X-Real-IP`/`Forwarded` header, or the request carries `X-SpaceWorks-Control-Tunnel: 1` from a private peer while `CONTROL_PLANE_TUNNEL=on` (set only by `docker/compose.control-tunnel.yml`). Only `control-tunnel-on.caddy` may stamp that header; the opt-in website route strips a client's copy. With the route off, `control-plane-false.caddy` and the website nginx answer 404 for the same paths instead of serving the SPA. `CONTROL_PLANE_PROXY=true` keeps the website route exactly as before (no forced migration). The superadmin, MFA, re-authentication and axes checks behind it never change.
+
+**Every `/control/` write has a web console path or a host-only reason (#190).** `config/control_parity.py` is the list; host-only is limited to platform key rotation, whole-platform restore, recovery commands, platform provider credentials entered at setup, and raw repair of plumbing rows no workflow owns. Console parity paths call the SAME services as the admin actions (`ip_rule_edits`, `staff_account_lifecycle`, `mfa_reset`, `key_request_decisions`, `subdomain_decisions`, `archive_requests`, `selfhost_move`), so the audit rows are the same; `via=console` tells them apart where the action records `via`.
+
 **The control plane reaches the bundled proxy only by operator opt-in.** `CONTROL_PLANE_PROXY` (default
 `false`) is the only switch that routes `/control`, `/control/*` and `/mfa/control/*` through Caddy or the
 website nginx; `CONTROL_PLANE_TUNNEL_PORT` (default empty, TLS layer only) is the only

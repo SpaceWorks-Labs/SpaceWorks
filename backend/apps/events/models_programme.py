@@ -93,6 +93,9 @@ from apps.events.submissions.models_assets import (
 from apps.events.submissions.models_projects import (
     HackathonSubmission, SubmissionSnapshot, SubmissionLink, SnapshotAsset, SnapshotLink, SnapshotTrack, SnapshotPrize, SubmissionIntegrityFlag,
 )
+from apps.events.submissions.models_stages import (
+    SubmissionStage, SubmissionStageEntry, SnapshotStage, StageShortlist, StageShortlistEntry, StageShortlistAnnouncement,
+)
 
 __all__ = [
     'EventContributorRequirementCompletion',
@@ -128,4 +131,6 @@ __all__ = [
     'SubmissionAsset', 'HackathonParticipantAsset', 'EventAssetUsage', 'SubmissionAssetWork',
     'HackathonSubmission', 'SubmissionSnapshot', 'SubmissionLink', 'SnapshotAsset',
     'SnapshotLink', 'SnapshotTrack', 'SnapshotPrize', 'SubmissionIntegrityFlag',
+    'SubmissionStage', 'SubmissionStageEntry', 'SnapshotStage', 'StageShortlist', 'StageShortlistEntry',
+    'StageShortlistAnnouncement',
 ]

@@ -80,5 +80,7 @@ JSON_FIELDS = frozenset({
     ('events.SubmissionSnapshot', 'sealed_member_ids'),
 })
 
-from .catalog_events_programme import EXPORTED_FIELDS
+from .catalog_r2_submit_content import JSON_FIELDS as _SC_JSON  # noqa: E402
+JSON_FIELDS = JSON_FIELDS | _SC_JSON
+from .catalog_events_programme import EXPORTED_FIELDS  # noqa: E402
 JSON_FIELDS = frozenset(edge for edge in JSON_FIELDS if edge[0] in EXPORTED_FIELDS)

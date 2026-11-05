@@ -90,6 +90,8 @@ from .models_programme import (
     BadgePrintCleanupReceipt, EventContributorRequirementCompletion,
     HackathonSubmission, SubmissionSnapshot, SubmissionLink, SnapshotAsset,
     SnapshotLink, SnapshotTrack, SnapshotPrize, SubmissionIntegrityFlag,
+    SubmissionStage, SubmissionStageEntry, SnapshotStage, StageShortlist, StageShortlistEntry,
+    StageShortlistAnnouncement,
 )
 __all__ += models_programme.__all__
 

@@ -69,6 +69,9 @@ class JudgingRound(EventOwned):
                                   choices=(("assigned", "Assigned only"), ("all", "All judges see all")))
     fresh_eyes = models.BooleanField(default=False)
     advanced_from = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    # #178: the submission stage this round judges; empty means the event's last stage.
+    submission_stage = models.ForeignKey("events.SubmissionStage", null=True, blank=True,
+                                         on_delete=models.PROTECT, related_name="+")
 
     class Meta:
         constraints = [

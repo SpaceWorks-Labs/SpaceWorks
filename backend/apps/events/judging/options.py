@@ -15,7 +15,7 @@ from .serializers import validated
 from .serializers_l21b import OptionsInput
 
 FIELDS = ("results_email", "submission_receipt_email", "finalists_email", "refund_on_disqualification",
-          "entry_fee", "team_fee")
+          "entry_fee", "team_fee", "stage_reminder_email", "shortlist_email", "entry_fee_stage")
 
 
 def options_for(event_id):
@@ -74,6 +74,11 @@ def update(event_id, *, actor, data):
             for key, feature in (("entry_fee", ENTRY_FEES), ("team_fee", PAID_TEAMS)):
                 if changes.get(key) and not enabled(event.makerspace, feature):
                     raise ProgrammeError("feature_disabled", "Switch this fee on for the space first.", status=403)
+            if "entry_fee_stage" in changes:  # S17: a stage of this event.
+                from apps.events.submissions.models_stages import SubmissionStage
+                if changes["entry_fee_stage"] > max(1, SubmissionStage.objects.filter(event=event).count()):
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError({"entry_fee_stage": "Choose one of the event's submission stages."})
             for key, value in changes.items():
                 setattr(row, key, value)
             row.version += 1

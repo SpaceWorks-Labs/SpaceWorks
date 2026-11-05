@@ -53,21 +53,29 @@ def _rounds(event_id, values, *, lock=False):
     return source, target
 
 
-def _plan(source, target, values):
-    rows = sorted((r for r in round_calculation(source)["rows"] if r["n"]), key=lambda r: (r["rank"], r["snapshot_id"]))
+def ranked_rows(source):
+    """A finalized round's reviewed projects, best first."""
+    return sorted((r for r in round_calculation(source)["rows"] if r["n"]), key=lambda r: (r["rank"], r["snapshot_id"]))
+
+
+def select_ranked(rows, *, selection, top_n=None, snapshot_ids=()):
+    """Top N with every project tied at the cutoff, or a hand-picked subset. Shared with stage
+    shortlists (#179). Returns (chosen rows, tied at cutoff)."""
     eligible = {r["snapshot_id"]: r for r in rows}
-    tied = False
-    if values["selection"] == "top_n":
-        chosen = []
-        if rows:
-            cutoff = rows[min(values["top_n"], len(rows)) - 1]["rank"]
-            chosen = [r for r in rows if r["rank"] <= cutoff]  # A tie at the cutoff takes every tied project.
-            tied = len(chosen) > values["top_n"]
-    else:
-        missing = [pk for pk in values["snapshot_ids"] if pk not in eligible]
-        if missing:
-            raise ValidationError({"snapshot_ids": "Pick only eligible, reviewed projects from the source round."})
-        chosen = [eligible[pk] for pk in values["snapshot_ids"]]
+    if selection == "top_n":
+        if not rows:
+            return [], False
+        cutoff = rows[min(top_n, len(rows)) - 1]["rank"]
+        chosen = [r for r in rows if r["rank"] <= cutoff]  # A tie at the cutoff takes every tied project.
+        return chosen, len(chosen) > top_n
+    if any(pk not in eligible for pk in snapshot_ids):
+        raise ValidationError({"snapshot_ids": "Pick only eligible, reviewed projects from the source round."})
+    return [eligible[pk] for pk in snapshot_ids], False
+
+
+def _plan(source, target, values):
+    chosen, tied = select_ranked(ranked_rows(source), selection=values["selection"], top_n=values.get("top_n"),
+                                 snapshot_ids=values.get("snapshot_ids", ()))
     finalists = [{"snapshot_id": r["snapshot_id"], "title": runtime().snapshot(r["snapshot_id"]).title,
                   "source_rank": r["rank"]} for r in chosen]
     fingerprint = digest({"source": [source.pk, source.version], "target": [target.pk, target.version],

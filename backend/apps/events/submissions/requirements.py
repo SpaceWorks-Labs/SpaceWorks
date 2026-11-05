@@ -12,7 +12,11 @@ def descriptor(context):
     if context.managed:
         budget = min(MANAGED_ALLOWANCE, budget) if budget is not None else MANAGED_ALLOWANCE
     used, reserved = (usage.used_bytes, usage.reserved_bytes) if usage else (0, 0)
-    return {"version": 1, "deadline": context.deadline, "opens_at": config.submission_opens_at,
+    from .models_projects import HackathonSubmission
+    from .stage_projection import participant_stages
+    project = HackathonSubmission.objects.filter(event=context.event, team_id=context.team_id).first()
+    stages, active = participant_stages(context.event, project, context.team_id)  # #178: per-stage rules.
+    return {"version": 1, "stages": stages, "active_stage_id": active, "timezone": context.event.timezone_name, "deadline": context.deadline, "opens_at": config.submission_opens_at,
         "grace_seconds": context.grace_seconds, "late_policy": context.late_policy,
         "upload_policy": {"name": config.upload_policy, "version": config.upload_policy_version},
         "budget": {"limit_bytes": budget, "used_bytes": used, "reserved_bytes": reserved,

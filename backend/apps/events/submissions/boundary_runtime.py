@@ -10,6 +10,11 @@ from .errors import SubmissionError
 from .ports import SubmissionContext, install_boundary
 
 
+# #178-#180: the stage editor, shortlists, extensions and bulk triage need the hackathon manager,
+# the same authority that edits the submission window.
+STAFF_STAGE_ACTIONS = frozenset({"stage_edit", "stage_shortlist", "stage_extension"})
+
+
 class ProgrammeBoundary(ProgrammeReceipts):
     @contextmanager
     def locked(self, *, actor, event_id, team_id, action):
@@ -32,13 +37,13 @@ class ProgrammeBoundary(ProgrammeReceipts):
             actor = lock_authority(actor, event)
             config = require_programme(event)
             lock_domain_parents(event_id)
-            internal = action in {"asset_worker", "deadline_lock"}
+            internal = action in {"asset_worker", "deadline_lock", "stage_reminder"}
             if actor is None and not internal:
                 raise SubmissionError("not_found", 404)
             if actor is not None and not event_authority._active(actor):
                 raise SubmissionError("not_found", 404)
             members, leader = (), None
-            if action in {"amend", "triage", "admin_read"}:
+            if action in {"amend", "triage", "admin_read"} | STAFF_STAGE_ACTIONS:
                 event_authority.require(actor, event, "manage_hackathon")
                 if team_id is not None:
                     members, leader = self.roster(event_id, team_id, eligible=False)

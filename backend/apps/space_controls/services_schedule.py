@@ -167,9 +167,10 @@ def run_purge(state_id, now=None):
         actor = _runner(state)
         if actor is None:
             return False
-        meta = {"makerspace_id": space.pk, "slug": space.slug}
+        space_id, slug = space.pk, space.slug  # Read before the purge removes the row.
         from apps.makerspaces import lifecycle
         # The control row cascades with the space inside the purge's own savepoint.
         lifecycle.purge(space, actor)
-        audit.record(actor, "space_control.scheduled_purge_ran", makerspace=None, target=None, meta=meta)
+        audit.record(actor, "space_control.scheduled_purge_ran", makerspace=None, target=None,
+                     meta={"makerspace_id": space_id, "slug": slug})
     return True

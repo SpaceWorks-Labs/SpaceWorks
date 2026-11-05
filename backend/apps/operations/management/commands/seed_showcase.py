@@ -37,6 +37,7 @@ from ._showcase_l6 import seed_ticketing
 from ._showcase_l18 import seed_donations
 from ._showcase_l21a import seed_participation
 from ._showcase_l21b import seed_l21b
+from ._showcase_peoples_choice import seed_peoples_choice
 from ._showcase_l22 import seed_shop
 from ._showcase_people import create_members, create_space, create_staff, member_account, restrict
 from ._showcase_requests import RequestSeeder
@@ -101,6 +102,7 @@ class Command(BaseCommand):
         seed_notices(space, staff.manager)
         hackathon = seed_hackathon(space, staff.manager, members)
         seed_l21b(space, staff.manager, hackathon)
+        seed_peoples_choice(space, staff.manager, hackathon)
         seed_events(space, staff.manager)
         build_night = seed_ticketing(space, staff.manager, next(iter(members.values())))
         seed_donations(space, staff.manager, members)

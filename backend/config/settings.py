@@ -1842,5 +1842,7 @@ SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
     "PeoplesChoiceAudienceEnum": [("members", "Any signed-in member"), ("attendees", "Checked-in attendees only")],
     "PeoplesChoiceStateEnum": [("off", "off"), ("scheduled", "scheduled"), ("open", "open"), ("closed", "closed"),
                                ("published", "published")],
+    "PeoplesChoiceRefusalEnum": [(value, value) for value in (
+        "off", "not_open", "closed", "published", "attendees_only", "voided")],
 })
 # --- end lane r2-peoples-choice

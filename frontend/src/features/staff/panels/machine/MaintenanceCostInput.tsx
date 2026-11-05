@@ -1,17 +1,17 @@
 /** How a maintenance cost was paid: the finance ledger's own methods (#102: costs go to the ledger). */
 export const COST_METHODS = [
-  { value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "bank_transfer", label: "Bank transfer" },
+  { value: "", label: "Not recorded" }, { value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "bank_transfer", label: "Bank transfer" },
   { value: "card", label: "Card" }, { value: "cheque", label: "Cheque" }, { value: "online", label: "Online" },
   { value: "other", label: "Other" },
 ];
 
 export type CostValue = { cost: string; method: string };
-export const EMPTY_COST: CostValue = { cost: "", method: "cash" };
+export const EMPTY_COST: CostValue = { cost: "", method: "" };
 
-/** The request fields for a cost: nothing extra when no cost was entered. */
+/** The request fields for a cost: the method only when one was chosen (the server records "other"). */
 export function costBody({ cost, method }: CostValue): { cost: string | null; cost_method?: string } {
   const amount = cost.trim();
-  return amount ? { cost: amount, cost_method: method } : { cost: null };
+  return amount ? { cost: amount, ...(method ? { cost_method: method } : {}) } : { cost: null };
 }
 
 /** Cost plus "Paid by"; a cost above zero is recorded as maintenance spending in the finance ledger. */

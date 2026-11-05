@@ -5,7 +5,8 @@ import { ProgrammeAccess } from "../programme/ProgrammeAccess";
 import { Reimbursements, ReimbursementRequest, ReimbursementClaim, ReimbursementAppeal } from "../reimbursements";
 import { StageForms, StageForm } from "../stagedForms";
 import { MemberPayoutHistory, MemberPayoutDetail } from "../../finance/eventPayouts";
-import { eventAddonPaths, eventPayoutPaths, memberEventAddonHref } from "./routeNames";
+import { MyPrizes } from "../prizes";
+import { eventAddonPaths, eventPayoutPaths, memberEventAddonHref, prizePaths } from "./routeNames";
 
 /** The makerspace comes from the tenant context, never from an unchecked URL label. */
 function useMakerspace() {
@@ -52,6 +53,15 @@ function EventPayoutPage() {
     : <MemberPayoutHistory actorId={user.id} onOpen={id => navigate(`${base}/${id}`)} />}</ProgrammeAccess>;
 }
 
+/** "My prizes" (hack-money G3/G4/G6): this space's prizes for the signed-in member. */
+function PrizesPage() {
+  const space = useMakerspace();
+  if (space.loading) return <p role="status">Loading…</p>;
+  const makerspaceId = space.makerspaceId;
+  if (!makerspaceId) return <p role="alert">Prizes are unavailable here.</p>;
+  return <ProgrammeAccess slug={space.slug}>{user => <MyPrizes scope={{ makerspaceId, actorId: user.id }} />}</ProgrammeAccess>;
+}
+
 function addonKind(path: string): AddonKind {
   return path.includes("stage-responses") ? "response" : path.includes("stage-forms") ? "stages" : "reimbursement";
 }
@@ -60,5 +70,6 @@ export function MemberEventAddonRoutes() {
   return <Routes>
     {eventAddonPaths.map(path => <Route key={path} path={path} element={<EventAddonPage kind={addonKind(path)} />} />)}
     {eventPayoutPaths.map(path => <Route key={path} path={path} element={<EventPayoutPage />} />)}
+    {prizePaths.map(path => <Route key={path} path={path} element={<PrizesPage />} />)}
   </Routes>;
 }

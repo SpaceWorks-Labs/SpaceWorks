@@ -28,6 +28,7 @@ import { useEventVenueSection } from "../bookings/EventVenueBlock";
 import { PageShare } from "../publicPages/PageShare";
 import { PublicSponsorCards } from "../publicPages/PublicSponsorCards";
 import { useEventSponsors } from "../donations/useEventSponsors";
+import { PublicPrizes, usePublicPrizes } from "../events/prizes";
 
 /** WP2 mounts this component on both central and tenant-domain event routes. */
 export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUrl }: { resolvedSlug?: string; resolvedToken?: string; canonicalUrl?: string } = {}) {
@@ -54,6 +55,8 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
     retry: (count, error) => !(error instanceof StructuredApiError && error.status < 500) && count < 2,
   });
   const event = eventQuery.error ? undefined : eventQuery.data;
+  // Hack-money G6: prizes appear only when the organiser shows prize amounts publicly (else 404, no section).
+  const prizes = usePublicPrizes(makerspaceSlug, event?.public_token ?? "", Boolean(bootstrap?.features.includes("events.prize_payouts")));
   const venueSection = useEventVenueSection(makerspaceSlug, event?.public_token, (token) => tenantPath(`bookings/${token}`));
   const error = eventQuery.error instanceof StructuredApiError ? eventQuery.error : null;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
@@ -83,6 +86,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
           // Lane L21a: the opt-in public crew section (public profiles only, #25).
           ...(bootstrap?.features.includes('events.crew') ? [{ id: 'crew', label: 'Crew', content: <PublicCrewSection publicToken={event.public_token} profileHref={handle => `/${encodeURIComponent(handle)}`} /> }] : []),
           ...(bootstrap?.features.includes('events.volunteering') ? [{ id: 'volunteers', label: 'Volunteers needed', content: <PublicVolunteerCards publicToken={event.public_token} onApply={id => window.location.assign(programmeHref(event.public_token, `roles/${id}`, makerspaceSlug))} /> }] : []),
+          ...(prizes.data?.length ? [{ id: 'prizes', label: 'Prizes', content: <PublicPrizes rows={prizes.data} /> }] : []),
           ...(sponsors.length ? [{ id: 'sponsors', label: 'Sponsors', content: <PublicSponsorCards rows={sponsors} /> }] : []),
           ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: 'Projects and results', content: <div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>Project gallery</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>Results</a></div> }] : []), ...venueSection] : []}
         actionCard={{ title: event?.registration_requires_approval ? "Apply to join" : event?.availability === "Full" ? "Join waitlist" : "Join this event",

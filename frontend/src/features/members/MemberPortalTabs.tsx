@@ -14,6 +14,8 @@ export function memberTabs(modules: string[]) {
     if (!modules.includes("membership")) return false;
     if (tab === "loans") return modules.includes("request_workflow");
     if (tab === "events") return modules.includes(tab);
+    // The member inbox is the notifications module's surface: no tab while it is off (#183B).
+    if (tab === "inbox") return modules.includes("notifications");
     return true;
   });
 }

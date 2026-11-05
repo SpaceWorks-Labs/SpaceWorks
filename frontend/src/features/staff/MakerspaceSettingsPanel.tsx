@@ -175,18 +175,19 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       <MakerspaceReminderSettings {...shared} />
       {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? <KioskStationSettings makerspace={makerspace} /> : null}
     </> },
-    { id: "membership", title: "Membership", rows: <>
-      <MakerspaceMembershipSettings {...shared} /><MakerspaceGeofenceSettings {...shared} />
-    </> },
+    // #183B: a section for a module that is off is not shown at all, not shown empty.
+    ...(enabledModules.includes("membership") || enabledModules.includes("presence") ? [{ id: "membership", title: "Membership", rows: <>
+      {enabledModules.includes("membership") ? <MakerspaceMembershipSettings {...shared} /> : null}<MakerspaceGeofenceSettings {...shared} />
+    </> }] : []),
     ...(canManageMakerspace && enabledModules.includes("presence") ? [{ id: "presence", title: "Presence privacy",
       rows: <PresencePrivacySettings key={makerspace.id} makerspaceId={makerspace.id} slug={makerspace.slug} /> }] : []),
-    { id: "bookings", title: "Bookings", rows: <>
-      <MakerspaceBookingSettings {...shared} />
-      {enabledModules.includes("bookings") ? <MakerspaceBookingRulesSettings makerspace={makerspace} /> : null}
-    </> },
+    ...(enabledModules.includes("bookings") ? [{ id: "bookings", title: "Bookings", rows: <>
+      <MakerspaceBookingSettings {...shared} /><MakerspaceBookingRulesSettings makerspace={makerspace} />
+    </> }] : []),
     ...(canManageMakerspace && enabledModules.includes("events") ? [{ id: "events", title: "Events",
       rows: <EventDefaultsSettings key={makerspace.id} makerspaceId={makerspace.id} /> }] : []),
-    { id: "materials", title: "Machines & materials", rows: <MakerspaceFilamentSettings {...shared} /> },
+    ...(enabledModules.includes("machines") || enabledModules.includes("printing")
+      ? [{ id: "materials", title: "Machines & materials", rows: <MakerspaceFilamentSettings {...shared} /> }] : []),
     { id: "money", title: "Money", rows: <>
       <MakerspacePaymentSettings makerspace={settings.data ?? makerspace} />
       {canManageMakerspace ? <BillingDocumentsSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}

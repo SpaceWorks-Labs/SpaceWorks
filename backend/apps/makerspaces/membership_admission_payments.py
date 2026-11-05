@@ -32,13 +32,13 @@ def charge_admission(row, actor, policy):
     row.charge_currency = plan.currency if plan else fee_currency
     if plan and row.joining_fee > 0 and plan.currency != fee_currency:
         raise AdmissionError("membership_currency_mismatch", "The joining fee and plan must use the same currency.")
+    if not charge_tracking_enabled(row.makerspace, "membership"):
+        # #184 G8: membership money is not tracked here, so joining is free whatever the
+        # payment timing -- nothing is recorded as owed, and the first term carries no price.
+        row.first_term_amount, row.joining_fee = 0, 0
     row.save(update_fields=["first_term_amount", "joining_fee", "charge_currency"])
     amount = row.first_term_amount + row.joining_fee
     if amount <= 0:
-        return None
-    if not charge_tracking_enabled(row.makerspace, "membership"):
-        if policy.payment_timing == "before_activation":
-            raise AdmissionError("membership_charge_tracking_required", "Membership charge tracking is required before activation.")
         return None
     from apps.payments.services import create_payment
     payment = create_payment(

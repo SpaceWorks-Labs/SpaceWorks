@@ -14,8 +14,8 @@ RUN python -m scripts.bundle_cjk_fonts \
     && python -m scripts.verify_printable_runtime --bundle
 # Static files belong to each serving image, never a release container filesystem.
 RUN DJANGO_SETTINGS_MODULE=config.settings_build python manage.py collectstatic --noinput \
-    && mkdir -p /var/lib/celery /var/lib/spaceworks/ops /run/spaceworks-host \
-    && chown -R app:app /app/staticfiles /var/lib/celery /var/lib/spaceworks/ops
+    && mkdir -p /var/lib/celery /var/lib/spaceworks/ops /var/lib/spaceworks/models /run/spaceworks-host \
+    && chown -R app:app /app/staticfiles /var/lib/celery /var/lib/spaceworks/ops /var/lib/spaceworks/models
 EXPOSE 8000
 ENTRYPOINT ["python", "/app/scripts/spaceworks_entrypoint.py"]
 CMD ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]

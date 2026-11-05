@@ -927,6 +927,30 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `features/repairs/ReportProblem.tsx` (on loans, bookings and machine jobs) and the public
   `TechnicianOptInPage.tsx`.
 
+### Release 2 r2-peoples-choice (the People's choice award, #181 S3)
+
+- Switch: `events.peoples_choice` in `makerspaces/capability_definitions_r2_peoples_choice.py` (needs
+  `events.project_gallery`); the gate constant is `events/judging/feature.PEOPLES_CHOICE`.
+- Models `events/judging/models_peoples_choice.py` (`PeoplesChoiceConfig`, `PeoplesChoiceVote`, the
+  append-only `PeoplesChoiceResult` and `PeoplesChoiceStanding`); `HackathonPrizePayout.peoples_choice_standing`
+  (`models_payouts.py`). Migrations `events/0070_peoples_choice` and `0071_peoples_choice_guards` (append-only
+  and same-event triggers, the widened payout scope guard).
+- Workflows in `events/judging/`: `peoples_choice.py` (settings, state, the voting-open notice recipients),
+  `peoples_choice_votes.py` (the member ballot and vote), `peoples_choice_ballots.py` (staff ballot list and
+  void), `peoples_choice_results.py` (count, publish once, the public block, gallery badges),
+  `peoples_choice_payouts.py` (paying a winner through L21b's payout row). HTTP: `views_peoples_choice.py`,
+  `serializers_peoples_choice.py`, routes in `judging/urls.py`; route catalogue
+  `accounts/programme_route_catalog_peoples_choice.py`; throttle `peoples_choice_vote` in `config/settings.py`.
+- Seams outside the package: `submissions/gallery_views.py` (the winner badge), `judging/provider_notices.py`
+  (`peoples_choice_open`), `judging/payouts.py` (projection and reversal of a standing payout).
+- Classification: `tenant_migration/catalog_r2_peoples_choice.py` (fields, datasets and ownership predicates,
+  authority, purge order) and `audit_references_r2_peoples_choice.py`, `audit/presentation_catalog_r2_peoples_choice.py`,
+  `accounts/merge_registry_rows_peoples_choice.py`.
+- Frontend: public/member `features/events/peoplesChoice/` (`api.ts`, `PeoplesChoiceVoting.tsx` for the gallery
+  banner and vote buttons, `PeoplesChoiceAward.tsx` for the results and event pages); staff
+  `features/staff/hackathonJudging/PeoplesChoice{Panel,Ballots,Payouts}.tsx` and `peoplesChoiceApi.ts`, mounted in
+  `ManagerExtras.tsx`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

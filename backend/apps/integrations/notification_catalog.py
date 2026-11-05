@@ -93,6 +93,8 @@ FEATURE_EVENTS[F.EVENTS] += ("application_stage_advanced", "attendance_confirmat
                              "attendance_replied", "crew_invited", "crew_decided")
 # Release 2 L21b: published finalists (a per-event switch) and a recorded prize payout to its winner.
 FEATURE_EVENTS[F.EVENTS] += ("finalists_announced", "prize_payout_recorded")
+# Release 2 r2-submit-content (#178/#179): stage deadline reminders and stage shortlist results (per-event switches).
+FEATURE_EVENTS[F.EVENTS] += ("stage_deadline_reminder", "stage_shortlisted", "stage_not_shortlisted")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

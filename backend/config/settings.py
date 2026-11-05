@@ -1899,4 +1899,7 @@ PERSON_CREDENTIAL_RATE_PER_MINUTE = env.int("PERSON_CREDENTIAL_RATE_PER_MINUTE",
 # route, exactly as before (the proxy's CIDR allowlist applies at the edge).
 CONTROL_PLANE_PROXY = env.bool("CONTROL_PLANE_PROXY", default=False)
 CONTROL_PLANE_TUNNEL = env.str("CONTROL_PLANE_TUNNEL", default="off").strip().lower() == "on"
+# #188: `{% load control_copy %}` gives every /control/ list and form its one-line help from
+# config.control_catalog (config is not an app, so the library is registered by path).
+TEMPLATES[0]["OPTIONS"]["libraries"] = {"control_copy": "config.control_templatetags"}
 # --- end lane r2-control-restructure

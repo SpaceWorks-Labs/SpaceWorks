@@ -1,0 +1,6 @@
+{% extends "admin/change_form.html" %}
+{% comment %}
+  #188: every /control/ form opens with its plain-language line from config.control_catalog.
+  Extends the next admin/change_form.html in the loader chain (Unfold's), so nothing else changes.
+{% endcomment %}
+{% block content %}{% include "admin/control/model_help.html" %}{{ block.super }}{% endblock %}

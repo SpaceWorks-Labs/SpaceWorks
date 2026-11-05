@@ -53,6 +53,19 @@ def charge_tracking_enabled(makerspace, domain):
     )
 
 
+#: Every chargeable domain with its own `charges.<domain>` switch (#184).
+CHARGE_DOMAINS = ("loans", "machines", "bookings", "events", "membership", "shop", "donations")
+
+
+def charges_tracked(makerspace):
+    """`{domain: bool}` for the frontend: whether that domain's money UI shows at all (#184 G5).
+
+    Per domain, never one global flag, so a mixed space (free lending, paid machines) hides
+    exactly the free domains' prices. The server still decides every charge itself.
+    """
+    return {domain: charge_tracking_enabled(makerspace, domain) for domain in CHARGE_DOMAINS}
+
+
 #: Which capability domain each payment subject belongs to. Kept beside the two
 #: predicates so a new SubjectType cannot quietly acquire a rail nobody switched on.
 SUBJECT_DOMAINS = {

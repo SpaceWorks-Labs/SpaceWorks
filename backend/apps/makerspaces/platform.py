@@ -161,6 +161,7 @@ def feature_enabled(makerspace, key):
 def bootstrap_payload(makerspace):
     from apps.makerspaces.editions import current_edition
     from apps.integrations.messaging.resolver import resolve_sender
+    from apps.payments.availability import charges_tracked
 
     modules = sorted(key for key in available_modules(makerspace) if is_frontend_exposed(key))
     if not feature_enabled(makerspace, "loans.enabled"):
@@ -234,6 +235,7 @@ def bootstrap_payload(makerspace):
         "modules": modules,
         "edition": current_edition().key,
         "features": features,
+        "charges_tracked": charges_tracked(makerspace),
         "workflows": workflows,
         "theme": theme,
         "branding": branding,

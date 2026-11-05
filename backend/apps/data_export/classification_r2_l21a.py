@@ -47,13 +47,13 @@ NON_CREDENTIAL = {
     ("events.EventCrewMember", "state"): "Workflow state, not a bearer credential.",
     ("events.EventCheckInListScan", "operation_id"): "Idempotency key of one desk scan; authenticates nothing.",
 }
-_EVENT = P(("event", "makerspace"))
+_EVENT = P(("event__makerspace",))
 DATASET_SPECS = {
     "events.AdmissionStage": ("events/admission_stages.csv", _EVENT),
-    "events.AdmissionStageReviewer": ("events/admission_stage_panels.csv", P(("stage", "event", "makerspace"))),
-    "events.AdmissionStageAssignment": ("events/admission_stage_assignments.csv", P(("stage", "event", "makerspace"))),
+    "events.AdmissionStageReviewer": ("events/admission_stage_panels.csv", P(("stage__event__makerspace",))),
+    "events.AdmissionStageAssignment": ("events/admission_stage_assignments.csv", P(("stage__event__makerspace",))),
     "events.AdmissionStageReview": ("events/admission_stage_reviews.csv",
-                                    P(("assignment", "stage", "event", "makerspace"))),
+                                    P(("assignment__stage__event__makerspace",))),
     "events.AdmissionStageEntry": ("events/admission_stage_entries.csv", _EVENT),
     "events.EventParticipationSettings": ("events/participation_settings.csv", P(("makerspace",))),
     "events.EventAttendanceRound": ("events/attendance_rounds.csv", P(("makerspace",))),

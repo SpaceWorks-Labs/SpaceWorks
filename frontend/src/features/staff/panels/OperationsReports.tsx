@@ -53,7 +53,8 @@ export function OperationsReports({
     aggregate ? "/admin/reports/catalog" : `/admin/makerspace/${makerspace.id}/reports/catalog`,
     reportsEnabled,
   );
-  const catalogEntries = reportsEnabled && !catalog.isError ? catalog.data?.results ?? [] : [];
+  // Off-source reports are hidden, not disabled (#183B); the server already drops them.
+  const catalogEntries = reportsEnabled && !catalog.isError ? (catalog.data?.results ?? []).filter(item => item.available !== false) : [];
   useEffect(() => {
     if (!selectedReport || !catalog.data || catalogEntries.some((item) => item.key === selectedReport && item.available !== false)) return;
     const firstAvailable = catalogEntries.find((item) => item.available !== false);

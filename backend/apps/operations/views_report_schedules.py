@@ -22,10 +22,10 @@ from apps.operations.serializers_reports import ReportErrorSerializer
 from apps.operations.views_report_helpers import _makerspace_for_catalog
 
 ERROR_RESPONSES = {
-    400: OpenApiResponse(ReportErrorSerializer, description="Invalid schedule or module disabled."),
+    400: OpenApiResponse(ReportErrorSerializer, description="Invalid schedule."),
     401: OpenApiResponse(ReportErrorSerializer, description="Authentication required."),
     403: OpenApiResponse(ReportErrorSerializer, description="Permission denied."),
-    404: OpenApiResponse(ReportErrorSerializer, description="Makerspace or schedule not found."),
+    404: OpenApiResponse(ReportErrorSerializer, description="Makerspace or schedule not found, or the module is turned off."),
     423: OpenApiResponse(ReportErrorSerializer, description="Tenant writes are frozen."),
     503: OpenApiResponse(ReportErrorSerializer, description="Tenant write gate unavailable."),
 }
@@ -78,11 +78,14 @@ class ReportScheduleListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         makerspace = self._makerspace()
         # Only schedules for reports this actor may run: a MANAGE_MAKERSPACE-only report's
-        # schedule is invisible to a VIEW_AUDIT holder, exactly like the catalog.
+        # schedule is invisible to a VIEW_AUDIT holder, exactly like the catalog. A
+        # schedule whose report source is off is hidden too (kept, skipped by the runner).
+        from .report_sources import definition_live
         keys = [
             definition.key for definition in REPORT_DEFINITIONS
             if not definition.platform_only
             and rbac.can(self.request.user, definition.required_action, makerspace.id)
+            and definition_live(makerspace, definition)
         ]
         rows = ReportSchedule.objects.none()
         for action in {REPORT_REGISTRY[key].required_action for key in keys}:

@@ -115,7 +115,8 @@ def reverse_payout(event_id, payout_id, *, actor, data):
             from apps.payments.ledger_api import void
             void(payout.ledger_entry, actor, values["reason"])
             row = HackathonPrizePayout.objects.create(
-                makerspace=event.makerspace, event=event, award=payout.award, prize=payout.prize,
+                makerspace=event.makerspace, event=event, award=payout.award,
+                peoples_choice_standing=payout.peoples_choice_standing, prize=payout.prize,
                 recipient_id=payout.recipient_id, kind="reversal", reverses=payout, amount=payout.amount,
                 currency=payout.currency, method=payout.method, reference=payout.reference, paid_on=payout.paid_on,
                 ledger_entry=payout.ledger_entry, recorded_by=actor)
@@ -134,7 +135,8 @@ def listing(event_id, *, actor):
     runtime().require_programme(event)
     from .feature import PRIZE_PAYOUTS, require_capability
     require_capability(event, PRIZE_PAYOUTS)
-    rows = HackathonPrizePayout.objects.filter(event=event).select_related("award").order_by("-pk")
+    rows = HackathonPrizePayout.objects.filter(event=event).select_related(
+        "award", "peoples_choice_standing__result").order_by("-pk")
     return [projection(row, recorder=may_record(actor, event.makerspace_id)) for row in rows], payable_awards(event)
 
 
@@ -154,8 +156,11 @@ def payable_awards(event):
 
 def projection(row, *, recorder=True):
     reversible = recorder and row.kind == "payout" and not HackathonPrizePayout.objects.filter(reverses=row).exists()
+    # A People's choice payout (#181) names its winning standing instead of a judged award.
+    name = row.award.prize_name if row.award_id else row.peoples_choice_standing.result.prize_name
     return {"id": row.pk, "event_id": row.event_id, "award_id": row.award_id, "prize_id": row.prize_id,
-            "prize_name": row.award.prize_name, "recipient_id": row.recipient_id, "kind": row.kind,
+            "peoples_choice_standing_id": row.peoples_choice_standing_id,
+            "prize_name": name, "recipient_id": row.recipient_id, "kind": row.kind,
             "reverses_id": row.reverses_id, "amount": row.amount, "currency": row.currency, "method": row.method,
             "reference": row.reference, "paid_on": row.paid_on, "ledger_entry_id": row.ledger_entry_id,
             "created_at": row.created_at, "allowed_actions": ["reverse"] if reversible else []}

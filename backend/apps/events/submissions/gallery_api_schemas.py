@@ -37,6 +37,8 @@ class GalleryEntryRead(ClosedSerializer):
     content_sha256 = serializers.CharField()
     awards = serializers.ListField(child=serializers.DictField(), required=False,
                                    help_text="Award badges ({prize, rank}); only after results are published (L21b).")
+    peoples_choice = serializers.BooleanField(required=False,
+                                              help_text="A published People's choice winner (#181); absent before publication.")
 
 
 class GalleryConsentRead(ClosedSerializer):

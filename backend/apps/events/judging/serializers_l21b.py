@@ -126,7 +126,9 @@ class PayoutReverseInput(CommandInput):
 class PayoutRead(ClosedSerializer):
     id = serializers.IntegerField()
     event_id = serializers.IntegerField()
-    award_id = serializers.IntegerField()
+    award_id = serializers.IntegerField(allow_null=True, help_text="Null for a People's choice payout (#181).")
+    peoples_choice_standing_id = serializers.IntegerField(allow_null=True, required=False,
+                                                         help_text="The People's choice winner paid, else null.")
     prize_id = serializers.IntegerField()
     prize_name = serializers.CharField()
     recipient_id = serializers.IntegerField(allow_null=True)

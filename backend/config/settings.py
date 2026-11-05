@@ -1832,3 +1832,15 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
     "shop_codes": "10/hour",
 })
 # --- end lane L22
+
+# --- lane r2-peoples-choice (release 2, #181 S3): the People's choice vote budget, per account,
+# and a stable OpenAPI name for its audience choice.
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "peoples_choice_vote": "20/hour",
+})
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "PeoplesChoiceAudienceEnum": [("members", "Any signed-in member"), ("attendees", "Checked-in attendees only")],
+    "PeoplesChoiceStateEnum": [("off", "off"), ("scheduled", "scheduled"), ("open", "open"), ("closed", "closed"),
+                               ("published", "published")],
+})
+# --- end lane r2-peoples-choice

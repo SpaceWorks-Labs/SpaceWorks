@@ -253,5 +253,9 @@ ROUTES += L21A_ROUTES
 from .programme_route_catalog_l21b import L21B_ROUTES, L21B_NATIVE_DECISIONS  # noqa: E402
 ROUTES += L21B_ROUTES
 NATIVE_DECISIONS = {**NATIVE_DECISIONS, **L21B_NATIVE_DECISIONS}
+# r2-peoples-choice (#181 S3): settings, count, publish, ballots, payouts, the member vote (all native).
+from .programme_route_catalog_peoples_choice import PEOPLES_CHOICE_ROUTES, PEOPLES_CHOICE_NATIVE_DECISIONS  # noqa: E402
+ROUTES += PEOPLES_CHOICE_ROUTES
+NATIVE_DECISIONS = {**NATIVE_DECISIONS, **PEOPLES_CHOICE_NATIVE_DECISIONS}
 
 BY_NAME = {name: (methods, target) for name, methods, target in ROUTES}

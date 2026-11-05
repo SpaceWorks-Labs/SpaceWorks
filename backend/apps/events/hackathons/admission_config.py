@@ -31,6 +31,9 @@ def update(*, event_id, actor, data):
                 if data["review_rubric"]["revision"] <= config.review_rubric.get("revision", 0):
                     fail("rubric_revision_changed", "Increase the rubric revision.")
                 config.review_round += 1
+        from apps.events.submissions.stage_config import changed_window, refuse_multi_stage, sync_after_save
+        refuse_multi_stage(config, data)  # #178: several stages each own their window.
+        window_changed = changed_window(config, data)
         for key in CONFIG_FIELDS:
             if key in data:
                 setattr(config, key, data[key])
@@ -71,6 +74,7 @@ def update(*, event_id, actor, data):
             validate_rubric(config.review_rubric)
         config.version = 1 if ctx.created_config else config.version + 1
         config.save()
+        sync_after_save(config, actor, window_changed)
         record(ctx, "config_updated", config, version=config.version, enabled=config.enabled,
                offer_capacity=config.offer_capacity)
         ctx.finish("config", config.pk)

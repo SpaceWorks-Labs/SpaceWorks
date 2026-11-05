@@ -23,7 +23,10 @@ def team_snapshot(event_id, team_id, actor, *, snapshot_id=None, leader=False):
         if stored:
             snapshot = runtime().snapshot(stored.snapshot_id)
         else:
-            snapshot = next((s for s in runtime().snapshots(event_id) if s.team_id == team_id and s.current), None)
+            from .stage_judging import stage_snapshots  # #178: consent is given for the final-stage work.
+            from .stage_runtime import last_stage_id
+            snapshot = next((s for s in stage_snapshots(event_id, last_stage_id(event_id))
+                             if s.team_id == team_id and s.current), None)
     if snapshot is None or snapshot.event_id != event_id or snapshot.team_id != team_id:
         raise Http404
     runtime().require_team_member(event_id=event_id, team_id=team_id, member_id=actor.pk,

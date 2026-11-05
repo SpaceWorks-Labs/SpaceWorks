@@ -28,11 +28,13 @@ export type AttendanceCommand = { expected_version: number; registration_id: num
   attended_at: string; venue_evidence_refs: number[]; reason_code: string; note: string };
 export type AllocationCommand = { expected_version: number; asset_id: number; expected_receipt_use_version: number; receipt_total_minor: number;
   original_currency: string; allocations: { claim_uuid: string; line_uuid: string; original_amount_minor: number }[]; reason_code: string; note: string };
+export type RequiredSubmission = "none" | "any_stage" | "stage" | "final_stage" | "shortlisted_at" | "finalist";
 export type PolicySettings = { enabled: boolean; request_phase: "application" | "after_acceptance" | "both";
   request_opens_at: string | null; request_closes_at: string | null; award_mode: "need_based" | "fixed_tier" | "route_cap" | "percentage";
   tier_rules: Record<string, { amount_minor: number }> | { basis_points: number; cap_minor: number };
   allowed_categories: Category[]; exclusions: string[]; min_distance_km: string | null; eligible_countries: string[]; eligible_cohorts: string[];
   award_accept_days: number; claim_due_at: string; attendance_required: boolean; require_project_submission: boolean;
+  required_submission?: RequiredSubmission; required_submission_stage?: number | null;
   permitted_venue_sources: string[]; category_limits: Partial<Record<Category, number>> };
 export type ProgrammeDetail = { initialized: boolean; id?: number; version?: number; policy_revision?: number; currency?: string;
   settings?: PolicySettings; pool?: Pool; allowed_actions: string[] };

@@ -1,7 +1,7 @@
 """L21b entry fee per project (X50). The project stays a draft until its fee is paid or waived.
 
 The team leader raises the charge (``request_entry_fee``) and pays it online or at the desk; the
-submit transition refuses with ``entry_fee_required`` until then. Disqualification voids a pending fee;
+submit transition refuses with ``entry_fee_required`` until then, from the fee's stage on (S17). Disqualification voids a pending fee;
 a PAID fee opens a refund DUE case only when the event's "refund on disqualification" switch is set
 (#59). Nothing is ever refunded automatically. With ``events.entry_fees`` off nothing is charged.
 """
@@ -21,11 +21,22 @@ def entry_fee(event):
     return option(event, "entry_fee")
 
 
-def require_submit_paid(project, event, team):
-    """Called by the submit transition: the entry fee and a paid team's charge must be settled."""
+def fee_stage_position(event):
+    """S17: the position of the stage the one entry fee is paid before (default the first), capped at the last."""
+    from apps.events.judging.options import option
+    from .models_stages import SubmissionStage
+    last = SubmissionStage.objects.filter(event=event).order_by("-position").values_list("position", flat=True).first()
+    return min(option(event, "entry_fee_stage"), last or 1)
+
+
+def require_submit_paid(project, event, team, *, stage=None):
+    """Called by the submit transition: the entry fee (from its stage on) and a paid team's charge must be settled.
+
+    ``stage`` is the stage being submitted (#178); earlier stages are free, and the fee stays ONE fee per project.
+    """
     from apps.events.hackathons.team_payments import team_payment_settled
     from apps.events.programme_charges import PAID_OR_WAIVED, find_charge
-    if entry_fee(event):
+    if entry_fee(event) and (stage is None or stage.position >= fee_stage_position(event)):
         payment = find_charge(event, "submission_fee", project.pk) if project.pk else None
         if payment is None or payment.status not in PAID_OR_WAIVED:
             raise SubmissionError("entry_fee_required", 402)
@@ -39,7 +50,8 @@ def projection(event, project):
     amount = entry_fee(event)
     return {"required": bool(amount), "amount": amount, "payment_id": payment.pk if payment else None,
             "status": payment.status if payment else ("not_raised" if amount else "not_required"),
-            "currency": payment.currency if payment else ""}
+            "currency": payment.currency if payment else "",
+            "before_stage": fee_stage_position(event) if amount else None}
 
 
 @transaction.atomic

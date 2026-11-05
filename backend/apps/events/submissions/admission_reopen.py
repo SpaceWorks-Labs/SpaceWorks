@@ -23,9 +23,15 @@ def reopen_submission_locked(*, team_id, event_id, actor_id, reason, locks):
     from apps.events.judging.lifecycle import invalidate_snapshot_locked
     event = get_object_or_404(Event, pk=event_id)
     actor = get_object_or_404(User, pk=actor_id)
-    invalidate_snapshot_locked(event=event, snapshot_id=row.current_snapshot_id, locks=locks, actor=actor)
+    from .stage_runtime import current_snapshot_ids
+    from .models_stages import SubmissionStageEntry
+    for snapshot_id in current_snapshot_ids(row):  # Every stage's current seal (#178).
+        invalidate_snapshot_locked(event=event, snapshot_id=snapshot_id, locks=locks, actor=actor)
     # Historical snapshot IDs remain reachable only through history permissions;
     # no stale result/gallery can keep treating the previous seal as current.
+    for stage_entry in SubmissionStageEntry.objects.select_for_update().filter(submission=row, current_snapshot__isnull=False):
+        stage_entry.current_snapshot, stage_entry.triage, stage_entry.version = None, "pending", stage_entry.version + 1
+        stage_entry.save(update_fields=["current_snapshot", "triage", "version"])
     row.current_snapshot_id = None
     row.state, row.locked_at, row.triage = "draft", None, "pending"
     row.version += 1

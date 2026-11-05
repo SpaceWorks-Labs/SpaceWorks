@@ -35,6 +35,7 @@ export function JudgeAssignmentEditor({ assignment: row, onSubmit, pending, erro
   onReload?: () => Promise<void>;
 }) {
   const [scores, setScores] = useState(row.scores); const [notes, setNotes] = useState(row.notes);
+  const [feedback, setFeedback] = useState((row as Assignment & { team_feedback?: string }).team_feedback ?? ''); // S4
   const [ranked, setRanked] = useState<string[]>(['', '', '']); const [reason, setReason] = useState('');
   const rankCount = Math.min(3, row.batch_projects.length);
   const ranks = ranked.slice(0, rankCount).map(Number);
@@ -50,9 +51,10 @@ export function JudgeAssignmentEditor({ assignment: row, onSubmit, pending, erro
         <select className="desk-input min-h-11" value={scores[c.key] ?? ''} onChange={e => setScores({ ...scores, [c.key]: Number(e.target.value) })}>
           <option value="">Choose a score</option>{[1, 2, 3, 4, 5].map(score => <option key={score} value={score}>{score} — {c.anchors[String(score)]}</option>)}</select>
       </Field>)}
-      <Field label="Private notes" hint="Visible only to you in this judging assignment."><textarea className="desk-input min-h-24" maxLength={4000} value={notes} onChange={e => setNotes(e.target.value)} /></Field>
-      <div className="flex flex-wrap gap-2"><button type="button" className="desk-button min-h-11" onClick={() => onSubmit('score', { scores, notes, submit: false })}>Save private draft</button>
-        <button type="button" className="desk-button-primary min-h-11" disabled={!rubricValid} onClick={() => onSubmit('score', { scores, notes, submit: true })}>Submit judgment</button></div>
+      <Field label="Private notes" hint="Visible only to you in this judging assignment. Never shown to the team."><textarea className="desk-input min-h-24" maxLength={4000} value={notes} onChange={e => setNotes(e.target.value)} /></Field>
+      <Field label="Feedback for the team" hint="Shown to the team, without your name, only if the organisers share this round's feedback."><textarea className="desk-input min-h-24" maxLength={4000} value={feedback} onChange={e => setFeedback(e.target.value)} /></Field>
+      <div className="flex flex-wrap gap-2"><button type="button" className="desk-button min-h-11" onClick={() => onSubmit('score', { scores, notes, team_feedback: feedback, submit: false })}>Save private draft</button>
+        <button type="button" className="desk-button-primary min-h-11" disabled={!rubricValid} onClick={() => onSubmit('score', { scores, notes, team_feedback: feedback, submit: true })}>Submit judgment</button></div>
     </fieldset> : <fieldset className="grid gap-3" disabled={pending || !row.allowed_actions.includes('rank')}>
       <legend className="mb-3 font-semibold">Rank your batch</legend><p className="text-sm text-muted">Rank {rankCount} distinct projects. Every submitted ballot has a six-point budget; a smaller batch is normalized.</p>
       {Array.from({ length: rankCount }, (_, index) => <Field key={index} label={`Rank ${index + 1}`}><select className="desk-input min-h-11" value={ranked[index]}

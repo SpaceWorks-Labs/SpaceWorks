@@ -25,11 +25,24 @@ def copy_programme_locked(*, source, target, actor, locks):
         HackathonConfig.objects.create(event=target, enabled=False, **copy_fields(config, CONFIG_FIELDS))
         for row in bounded_children(HackathonCocRevision.objects.filter(event=source).order_by("pk")):
             HackathonCocRevision.objects.create(event=target, revision=row.revision, body=row.body)
+    stages = _copy_stages(source, target)
     from apps.events.contributions.clone import copy_definitions_locked, copy_sponsor_tracks_locked
     from apps.events.judging.clone import copy_definitions_locked as copy_judging
     sponsors = copy_definitions_locked(source=source, target=target, actor=actor, locks=locks)
     tracks = copy_judging(source_event_id=source.pk, target_event=target, actor=actor,
-                          sponsor_map=sponsors, locks=locks)
+                          sponsor_map=sponsors, locks=locks, stage_map=stages)
     copy_sponsor_tracks_locked(source=source, target=target, sponsors=sponsors, tracks=tracks)
     record(actor, "event.programme.definitions_copied", makerspace=target.makerspace,
            target=target, meta={"source_event_id": source.pk})
+
+
+def _copy_stages(source, target):
+    """#178: the stage plan travels with the definitions (never entries, shortlists or extensions)."""
+    from copy import deepcopy
+    from apps.events.submissions.models_stages import SubmissionStage
+    from apps.events.submissions.stage_runtime import STAGE_FIELDS
+    mapping = {}
+    for row in bounded_children(SubmissionStage.objects.filter(event=source).order_by("position")):
+        mapping[row.pk] = SubmissionStage.objects.create(event=target, position=row.position,
+            **{key: deepcopy(getattr(row, key)) for key in STAGE_FIELDS}).pk
+    return mapping

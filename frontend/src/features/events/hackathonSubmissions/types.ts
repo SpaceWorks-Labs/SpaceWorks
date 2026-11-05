@@ -13,7 +13,9 @@ export type ProjectRequirements = { version: number; deadline: string; opens_at:
   grace_seconds: number; late_policy: string; budget: { limit_bytes: number | null; used_bytes: number; reserved_bytes: number; remaining_bytes: number | null };
   tracks: { id: number; label: string; version: number; form: unknown }[];
   prizes: { id: number; label: string; version: number; form: unknown; track_id: number | null }[];
-  slots: { group: string; max_bytes: number }[] };
+  slots: { group: string; max_bytes: number }[];
+  /** #178: hand-typed until the OpenAPI client is regenerated. */
+  stages?: import('./stageRules').ParticipantStage[]; active_stage_id?: number | null; timezone?: string };
 
 export type Asset = import('../../../generated/api').AssetResponse;
 export type UploadSpec = { group: string; subtype: string };

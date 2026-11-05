@@ -1,5 +1,4 @@
 """Single writer for project draft/snapshot transitions. No network under locks."""
-from datetime import timedelta
 import hashlib
 import json
 from uuid import UUID
@@ -11,6 +10,7 @@ from .errors import SubmissionError
 from .models_projects import (HackathonSubmission, SubmissionSnapshot, SnapshotAsset,
                               SnapshotLink, SnapshotTrack, SnapshotPrize)
 from .ports import boundary
+from .stage_runtime import last_stage_id
 from .project_validation import PROJECT_FIELDS, validate_project_patch
 from .pii import prepare_documents
 
@@ -44,11 +44,14 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
         project = HackathonSubmission.objects.select_for_update().get(pk=project.pk, event_id=event_id, team_id=team_id)
         if project.version != expected_version and not (expected_version == 0 and created):
             raise SubmissionError("stale_version", 409)
-        cutoff = context.deadline + timedelta(seconds=context.grace_seconds)
+        from .stage_runtime import team_cutoff
+        cutoff = team_cutoff(context)  # The last stage's cutoff, or this team's later extension (S2).
         if action == "save":
             if project.state not in {"draft", "submitted"} or now > cutoff:
                 raise SubmissionError("submission_locked", 409)
             patch = dict(data)
+            from .stage_submit import check_draft
+            check_draft(project, context, patch, now=now)
             if "links" in patch:
                 from .link_workflow import replace_links_locked
                 replace_links_locked(project, patch.pop("links"))
@@ -62,24 +65,30 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
                 raise SubmissionError("leader_required", 403)
             if action == "submit" and project.state not in {"draft", "submitted"}:
                 raise SubmissionError("invalid_transition", 409)
+            from .stage_submit import resolve
+            stage, late, extension = resolve(project, context, data, now, action)  # #178: the stage it freezes.
             if action == "submit":  # L21b: a draft until the entry fee and a paid team's charge are settled.
                 from .entry_fees import require_submit_paid
-                require_submit_paid(project, context.event, project.team)
-            if now > cutoff and action != "amend" and context.late_policy != "accept_flagged":
-                raise SubmissionError("submission_deadline", 409)
+                require_submit_paid(project, context.event, project.team, stage=stage)
             reason = data.get("reason", "")
             if action == "amend" and (not isinstance(reason, str) or not reason.strip() or len(reason) > 1000):
                 raise SubmissionError("amendment_reason_required")
             if action == "amend":
                 amendment = dict(data.get("patch", {}))
+                from .stage_submit import check_draft
+                check_draft(project, context, amendment, now=now)
                 if "links" in amendment:
                     from .link_workflow import replace_links_locked
                     replace_links_locked(project, amendment.pop("links"))
                 for key, value in validate_project_patch(amendment).items():
                     setattr(project, key, value)
-            _snapshot(actor, project, context, port, now, now > cutoff, reason)
-            project.state = "locked" if action == "amend" else "submitted"
-            project.triage, project.triage_reason = "pending", ""
+            furthest, stage_snapshot = _snapshot(actor, project, context, port, now, late, reason, stage=stage, extension=extension)
+            if action == "submit":
+                project.state = "submitted"
+            elif furthest and stage.pk == last_stage_id(context.event.pk):
+                project.state = "locked"  # Amending the final stage locks the project, as before.
+            if furthest:  # The project's triage mirrors its furthest stage's (S5).
+                project.triage, project.triage_reason = "pending", ""
             project.submitted_at = now
         elif action == "lock":
             if now <= cutoff or not project.current_snapshot_id or project.state != "submitted":
@@ -90,13 +99,16 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
                 result = _projection(project)
                 port.store_receipt(event_id=event_id, actor_id=actor.pk, operation_id=str(operation_id), digest=digest, result=result)
                 return result
-            if project.current_snapshot_id:
-                port.invalidate_snapshot(context=context, snapshot_id=project.current_snapshot_id)
+            from .stage_runtime import current_snapshot_ids
+            for snapshot_id in current_snapshot_ids(project):  # Every stage's current work leaves judging.
+                port.invalidate_snapshot(context=context, snapshot_id=snapshot_id)
             project.state = "withdrawn"
         project.version += 1
         project.save()
-        record(actor, f"event.submission_{action}", makerspace=context.event.makerspace, target=project,
-               meta={"version": project.version, "snapshot_id": project.current_snapshot_id})
+        meta = {"version": project.version, "snapshot_id": project.current_snapshot_id}
+        if action in {"submit", "amend"}:
+            meta.update(stage_id=stage.pk, stage_snapshot_id=stage_snapshot, late=late)
+        record(actor, f"event.submission_{action}", makerspace=context.event.makerspace, target=project, meta=meta)
         from .notifications import enqueue_locked
         enqueue_locked(project=project, action=action)
         result = _projection(project)
@@ -104,7 +116,7 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
         return result
 
 
-def _snapshot(actor, project, context, port, now, late, reason):
+def _snapshot(actor, project, context, port, now, late, reason, *, stage, extension):
     document = _canonical_project(project, context, port, final=True)
     validate_project_patch(document)
     if not set(project.public_asset_ids) <= set(project.asset_ids):
@@ -117,24 +129,22 @@ def _snapshot(actor, project, context, port, now, late, reason):
            a.expired_at or a.expires_at and now >= a.expires_at for a in assets):
         raise SubmissionError("asset_not_ready", 409)
     links = list(project.links.filter(version=project.links_version).order_by("pk"))
-    if not assets and not links:
-        raise SubmissionError("submission_content_required")
+    from .stage_submit import check_content, frozen_stage, record
+    answers = check_content(stage, project, assets, links)
     document["asset_ids"] = [a.pk for a in assets]
     document["assets"] = [{"id": a.pk, "sha256": a.sha256, "bytes": a.actual_bytes} for a in assets]
     document["links"] = [{"id": l.pk, "kind": l.kind, "url": l.url, "provider": l.provider,
                            "public_requested": l.public_requested} for l in links]
+    document["stage"] = frozen_stage(stage, answers)
     # A locks roster in the same transaction; superseded D scores cannot survive.
     port.lock_roster(context=context)
-    previous = project.current_snapshot
-    if previous:
-        port.invalidate_snapshot(context=context, snapshot_id=previous.pk)
     from django.db.models import Max
     sequence = (project.snapshots.aggregate(value=Max("sequence"))["value"] or 0) + 1
     snapshot = SubmissionSnapshot.objects.create(
         submission=project, sequence=sequence, submitted_by=actor,
         submitted_at=now, sealed_member_ids=sorted(context.member_ids), project=document,
         content_sha256=canonical_digest({"project": document, "members": sorted(context.member_ids)}),
-        late=late, amendment_of=previous if reason else None, amendment_reason=reason,
+        late=late, amendment_of=_stage_previous(project, stage) if reason else None, amendment_reason=reason,
     )
     for asset in assets:
         SnapshotAsset.objects.create(snapshot=snapshot, asset=asset, public_requested=asset.pk in project.public_asset_ids)
@@ -145,7 +155,17 @@ def _snapshot(actor, project, context, port, now, late, reason):
         SnapshotTrack.objects.create(snapshot=snapshot, track_id=track_id)
     for prize_id in project.prize_ids:
         SnapshotPrize.objects.create(snapshot=snapshot, prize_id=prize_id)
-    project.current_snapshot = snapshot
+    # Only this stage's previous snapshot is superseded; other stages keep their judging (#178).
+    previous, furthest = record(project, stage, snapshot, extension)
+    if previous:
+        port.invalidate_snapshot(context=context, snapshot_id=previous)
+    return furthest, snapshot.pk
+
+
+def _stage_previous(project, stage):
+    from .stage_runtime import entry
+    row = entry(project, stage)
+    return row.current_snapshot if row is not None else None
 
 
 def _canonical_project(project, context, port, *, final):

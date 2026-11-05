@@ -67,6 +67,9 @@ class RoundRead(ResultEnvelope, CalculationRead):
     fresh_eyes = serializers.BooleanField(required=False)
     panel = IdList(required=False)
     advanced_from_id = serializers.IntegerField(allow_null=True, required=False)
+    submission_stage_id = serializers.IntegerField(allow_null=True, required=False)
+    share_feedback = serializers.BooleanField(required=False)
+    judge_reminders = serializers.BooleanField(required=False)
 
 
 class AssignmentRead(ResultEnvelope):
@@ -81,6 +84,10 @@ class AssignmentRead(ResultEnvelope):
     notes = serializers.CharField()
     asset_ids = IdList(required=False)
     batch_projects = serializers.ListField(child=serializers.DictField())
+    answers = serializers.ListField(child=serializers.DictField(), required=False,
+                                    help_text="S7: the stage's custom answers a judge may read ({label, value}).")
+    team_feedback = serializers.CharField(required=False, allow_blank=True)
+    share_feedback = serializers.BooleanField(required=False, help_text="S4: whether this round releases team feedback.")
 
 
 class ConsentRead(ClosedSerializer):

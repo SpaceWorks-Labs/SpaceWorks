@@ -43,6 +43,7 @@ from .presentation_catalog_r2_l21a import ENTRIES as _R2_L21A
 from .presentation_catalog_r2_l21b import ENTRIES as _R2_L21B
 from .presentation_catalog_r2_l24 import ENTRIES as _R2_L24
 from .presentation_catalog_r2_l22 import ENTRIES as _R2_L22
+from .presentation_catalog_r2_submit_content import ENTRIES as _R2_SUBMIT_CONTENT
 
 # Closed name -> callable registry for target links. Phase 10 ships no resolver: a link
 # needs a real route and query-level tenant authorization, which no generic one has.
@@ -106,6 +107,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_L24,
     _R2_L22,
     _R2_L25,
+    _R2_SUBMIT_CONTENT,
 )
 
 

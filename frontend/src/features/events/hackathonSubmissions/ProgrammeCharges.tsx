@@ -21,6 +21,7 @@ export function ProgrammeCharges({ scope, isLeader }: { scope: SubmissionScope; 
   const row = (label: string, charge: ProgrammeChargeRead, action?: ReactNode) => charge.required ? <li className="grid gap-1">
     <span className="font-semibold">{label}: {charge.amount} {charge.currency.toUpperCase()}</span>
     <span className="text-sm text-muted">{PAID.includes(charge.status) ? 'Settled.' : charge.status === 'not_raised' ? 'Not charged yet.' : 'Waiting for payment.'}</span>
+    {beforeStage(charge) > 1 ? <span className="text-sm text-muted">{`Due before you submit stage ${beforeStage(charge)}; earlier stages are free.`}</span> : null}
     {!PAID.includes(charge.status) ? action : null}</li> : null;
   return <section className="grid gap-3 rounded-xl border border-line p-4" aria-label="Fees for this project">
     <h3 className="font-semibold">Fees</h3>
@@ -36,4 +37,9 @@ export function ProgrammeCharges({ scope, isLeader }: { scope: SubmissionScope; 
     </ul>
     <ErrorBlock error={query.error || raise.error || pay.error} />
   </section>;
+}
+
+/** S17: the entry fee is due from this stage position on (hand-typed until the client is regenerated). */
+function beforeStage(charge: ProgrammeChargeRead) {
+  return Number((charge as ProgrammeChargeRead & { before_stage?: number | null }).before_stage ?? 1);
 }

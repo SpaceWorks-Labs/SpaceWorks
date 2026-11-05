@@ -113,6 +113,9 @@ FEATURE_EVENTS[F.PAYMENTS] += ("shop_order_placed", "shop_order_paid", "shop_ord
 # Release 2 GAP2 M2: item maintenance reaches the Inventory Manager's family, rooms the Booking Manager's.
 FEATURE_EVENTS[F.HARDWARE_REQUESTS] += ("maintenance_due_soon", "maintenance_overdue")
 FEATURE_EVENTS[F.BOOKINGS] += ("maintenance_due_soon", "maintenance_overdue")
+# Release 2 r2-submit-content (#178/#179): stage deadline reminders and stage shortlist results (per-event switches).
+FEATURE_EVENTS[F.EVENTS] += ("stage_deadline_reminder", "stage_shortlisted", "stage_not_shortlisted",
+                             "stage_promoted", "judge_reminder")
 
 # Exact default on/off per (feature, channel). Preserves today's behavior: hardware/printing
 # email + hardware Telegram on; bookings email (Part J seam) + bookings Telegram on; Slack/

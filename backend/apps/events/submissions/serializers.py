@@ -18,6 +18,11 @@ class CommandSerializer(ClosedSerializer):
     expected_version = serializers.IntegerField(min_value=0)
 
 
+class SubmitSerializer(CommandSerializer):
+    stage_id = serializers.IntegerField(min_value=1, required=False,
+                                        help_text="The stage to submit (#178); omitted means the team's active stage.")
+
+
 class DeclarationSerializer(ClosedSerializer):
     used = serializers.BooleanField()
     details = serializers.CharField(max_length=5000, allow_blank=True)
@@ -50,11 +55,15 @@ class ProjectPatchSerializer(CommandSerializer):
 class AmendSerializer(CommandSerializer):
     reason = serializers.CharField(max_length=1000)
     patch = serializers.DictField()
+    stage_id = serializers.IntegerField(min_value=1, required=False,
+                                        help_text="The stage to amend; omitted means the project's furthest stage.")
 
 
 class TriageSerializer(CommandSerializer):
     triage = serializers.ChoiceField(choices=["pending", "eligible", "ineligible", "hidden"])
     reason = serializers.CharField(max_length=1000)
+    stage_id = serializers.IntegerField(min_value=1, required=False,
+                                        help_text="S5: the stage to triage; omitted means the project's furthest stage.")
 
 
 class UploadSerializer(ClosedSerializer):
@@ -116,6 +125,16 @@ class ProjectResponseSerializer(serializers.Serializer):
 class ErrorSerializer(serializers.Serializer):
     code = serializers.CharField()
     detail = serializers.CharField()
+    # #177-#180 typed submission errors name what is missing or over a limit.
+    kinds = serializers.ListField(child=serializers.CharField(), required=False,
+                                  help_text="submission_link_required: the link kinds still missing.")
+    fields = serializers.ListField(child=serializers.CharField(), required=False,
+                                   help_text="submission_field_required / _invalid: the custom field keys.")
+    families = serializers.ListField(child=serializers.CharField(), required=False)
+    hosts = serializers.ListField(child=serializers.CharField(), required=False)
+    limit = serializers.CharField(required=False, help_text="The number the request missed or exceeded.")
+    stage = serializers.CharField(required=False, help_text="The stage name (or position for invalid_stage).")
+    reason = serializers.CharField(required=False, help_text="invalid_stage: which rule refused the plan.")
 
 
 class UploadDescriptorSerializer(serializers.Serializer):

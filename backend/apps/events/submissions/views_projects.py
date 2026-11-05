@@ -3,13 +3,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .views_base import PrivateSubmissionView
 from django.utils import timezone
-from datetime import timedelta
 
 from .errors import SubmissionError
 from .models_projects import HackathonSubmission
 from .ports import boundary
 from .project_validation import PROJECT_FIELDS
-from .serializers import (CommandSerializer, ProjectPatchSerializer, ProjectResponseSerializer,
+from .serializers import (CommandSerializer, SubmitSerializer, ProjectPatchSerializer, ProjectResponseSerializer,
                           AmendSerializer, TriageSerializer, ErrorSerializer)
 from .workflow import command
 from .moderation import triage
@@ -34,7 +33,8 @@ class ProjectView(PrivateSubmissionView):
             actions = []
             if request.user.pk in ctx.member_ids:
                 if project.state in {"draft", "submitted"}:
-                    if timezone.now() <= ctx.deadline + timedelta(seconds=ctx.grace_seconds):
+                    from .stage_runtime import team_cutoff
+                    if timezone.now() <= team_cutoff(ctx):  # #178/S2: the last stage, or this team's extension.
                         actions.append("save")
                     if request.user.pk == ctx.leader_id:
                         actions.append("submit")
@@ -58,12 +58,14 @@ class ProjectCommandView(PrivateSubmissionView):
     permission_classes = [IsAuthenticated]
     action = "submit"
 
-    @extend_schema(request=CommandSerializer, responses={200: ProjectResponseSerializer, **ERRORS}, tags=["Event submissions"])
+    @extend_schema(request=SubmitSerializer, responses={200: ProjectResponseSerializer, **ERRORS}, tags=["Event submissions"])
     def post(self, request, pk, team_id, **kwargs):
-        serializer = CommandSerializer(data=request.data)
+        serializer = (SubmitSerializer if self.action == "submit" else CommandSerializer)(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(command(actor=request.user, event_id=pk, team_id=team_id, action=self.action,
-                                **serializer.validated_data))
+        values = dict(serializer.validated_data)
+        data = {"stage_id": values.pop("stage_id")} if "stage_id" in values else None
+        return Response(command(actor=request.user, event_id=pk, team_id=team_id, action=self.action, data=data,
+                                **values))
 
 
 class AmendView(PrivateSubmissionView):

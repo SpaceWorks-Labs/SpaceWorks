@@ -9,7 +9,8 @@ VENUE_SOURCES = ("qr", "venue_station", "offline_sync")
 POLICY_FIELDS = frozenset({"enabled", "request_phase", "request_opens_at", "request_closes_at",
     "award_mode", "tier_rules", "allowed_categories", "exclusions", "min_distance_km",
     "eligible_countries", "eligible_cohorts", "award_accept_days", "claim_due_at", "attendance_required",
-    "require_project_submission", "permitted_venue_sources", "category_limits", "min_application_stage"})
+    "require_project_submission", "permitted_venue_sources", "category_limits", "min_application_stage",
+    "required_submission", "required_submission_stage"})
 
 
 def identifiers(value, pattern, maximum=250):
@@ -113,7 +114,28 @@ def validate_policy(value, *, event):
         minor(limit, zero=True)
     if "tier_rules" in value:
         rules(value["tier_rules"], mode)
+    _required_submission(value, event)
     if value.get("require_project_submission"):
         from apps.events.models import HackathonConfig
         require(HackathonConfig.objects.filter(event=event, enabled=True).exists(), "project_requirement_hackathon_only", status=400)
     return value
+
+
+def _required_submission(value, event):
+    """G11: ``required_submission`` and its legacy yes/no mirror ``require_project_submission`` agree."""
+    from .config_models import REQUIRED_SUBMISSION
+    if "required_submission" in value:
+        mode = value["required_submission"]
+        require(mode in REQUIRED_SUBMISSION, "invalid_required_submission", status=400)
+        position = value.get("required_submission_stage")
+        if mode in ("stage", "shortlisted_at"):
+            from apps.events.submissions.models_stages import SubmissionStage
+            stage = SubmissionStage.objects.filter(event=event, position=position).first() if type(position) is int else None
+            require(stage is not None and (mode == "stage" or stage.shortlist_after), "invalid_required_submission_stage",
+                    status=400)
+        else:
+            value["required_submission_stage"] = None
+        value["require_project_submission"] = mode != "none"
+    elif "require_project_submission" in value:  # A client that only knows the old switch.
+        value["required_submission"] = "any_stage" if value["require_project_submission"] else "none"
+        value["required_submission_stage"] = None

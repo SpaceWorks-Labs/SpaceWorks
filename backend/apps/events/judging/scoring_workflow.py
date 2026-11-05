@@ -61,6 +61,8 @@ def score(event_id, assignment_id, *, actor, data):
                 row.version += 1
             row.criterion_values = values.get("scores", {})
             row.notes = values["notes"]
+            if "team_feedback" in values:  # S4: kept apart from the private notes.
+                row.team_feedback = values["team_feedback"]
             row.saved_at = timezone.now()
             row.submitted_at = row.saved_at if values["submit"] else None
             row.save()

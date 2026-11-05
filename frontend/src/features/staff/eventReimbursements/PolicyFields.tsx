@@ -3,6 +3,7 @@ import { CATEGORIES } from "../../events/reimbursements/types";
 import { localDateTime, utcInstant } from "../../events/stagedForms/formPayload";
 import type { PolicySettings } from "./types";
 import { CommaListField } from "../../events/stagedForms/CommaListField";
+import { RequiredSubmissionField } from "./RequiredSubmissionField";
 
 export function PolicyFields({ value, onChange }: { value: PolicySettings; onChange: (value: PolicySettings) => void }) {
   const change = <K extends keyof PolicySettings>(key: K, next: PolicySettings[K]) => onChange({ ...value, [key]: next });
@@ -25,7 +26,7 @@ export function PolicyFields({ value, onChange }: { value: PolicySettings; onCha
     <Field label="Award acceptance window (days)"><input className="desk-input" type="number" min={1} max={365} required value={value.award_accept_days} onChange={event => change("award_accept_days", event.target.valueAsNumber)} /></Field>
     {tokens("eligible_countries", "Eligible country codes")}{tokens("eligible_cohorts", "Eligible cohort keys")}{tokens("exclusions", "Excluded expenses")}{tokens("permitted_venue_sources", "Permitted venue attendance sources")}
     <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={value.attendance_required} onChange={event => change("attendance_required", event.target.checked)} />Require venue attendance evidence</label>
-    <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={value.require_project_submission} onChange={event => change("require_project_submission", event.target.checked)} />Require project submission evidence</label>
+    <RequiredSubmissionField value={value} onChange={onChange} />
   </section>;
 }
 function RuleFields({ value, onChange }: { value: PolicySettings; onChange: (value: PolicySettings) => void }) {

@@ -31,6 +31,8 @@ class SubmissionIntegrityCheck(models.Model):
     attempts = models.PositiveSmallIntegerField(default=0)
     next_attempt_at = models.DateTimeField()
     checked_at = models.DateTimeField(null=True, blank=True)
+    # #180 S14: the stage-deadline push signal, checked once after the stage closes ("" until then).
+    after_deadline_state = models.CharField(max_length=16, blank=True, default="")
 
     class Meta:
         app_label = "events"

@@ -83,6 +83,8 @@ def decide(*, request, event_id, request_id, data):
                     "policy_revision": programme.finance_policy_revision, "category_caps": programme.category_limits,
                     "allowed_categories": programme.allowed_categories, "exclusions": programme.exclusions,
                     "attendance_required": programme.attendance_required, "require_project_submission": programme.require_project_submission,
+                    "required_submission": programme.required_submission,
+                    "required_submission_stage": programme.required_submission_stage,
                     "permitted_venue_sources": programme.permitted_venue_sources, "claim_due_at": programme.claim_due_at.isoformat()},
                 accept_by=accept_by, reason_code=data["reason_code"])
             if award:

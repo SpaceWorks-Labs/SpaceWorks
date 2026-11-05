@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ErrorBlock, Field } from '../../../components/ui';
 import { useProgrammeOptions, type ProgrammeOptions } from './l21bApi';
+import { useStagePlan } from '../submissionStages/api';
 import type { Scope } from './types';
 
 const SWITCHES = [
@@ -8,6 +9,8 @@ const SWITCHES = [
   ['submission_receipt_email', 'Email the team a receipt when a project is submitted'],
   ['finalists_email', 'Email finalists when finalists are published'],
   ['refund_on_disqualification', 'Open a refund case for a paid entry fee when a project is disqualified'],
+  ['stage_reminder_email', 'Remind teams 24 hours before each submission stage deadline'],
+  ['shortlist_email', 'Email teams whether they were shortlisted when a stage shortlist is published'],
 ] as const;
 
 /** Per-event hackathon emails (off for new events), fees and the one-time results email. */
@@ -24,6 +27,8 @@ export function ProgrammeOptionsPanel({ scope, entryFees, paidTeams }: { scope: 
         <input type="checkbox" checked={Boolean(options[key])}
           onChange={e => save.mutate({ version: options.version, fields: { [key]: e.target.checked } })} />{label}</label>)}
     </fieldset>
+    {entryFees && options.entry_fee ? <EntryFeeStage scope={scope} options={options} pending={save.isPending}
+      onSave={stage => save.mutate({ version: options.version, fields: { entry_fee_stage: stage } })} /> : null}
     {entryFees || paidTeams ? <FeeEditor options={options} entryFees={entryFees} paidTeams={paidTeams} pending={save.isPending}
       onSave={fields => save.mutate({ version: options.version, fields })} /> : null}
     {resultVersion ? <div className="grid gap-2"><p className="text-sm text-muted">{options.results_email_sent
@@ -43,4 +48,13 @@ function FeeEditor({ options, entryFees, paidTeams, pending, onSave }: { options
     <button type="button" className="desk-button-primary min-h-11 justify-self-start"
       onClick={() => onSave({ ...(entryFees ? { entry_fee: value(entry) } : {}), ...(paidTeams ? { team_fee: value(team) } : {}) })}>Save fees</button>
   </fieldset>;
+}
+
+/** S17: one entry fee per project, due before this stage (the first by default). */
+function EntryFeeStage({ scope, options, pending, onSave }: { scope: Scope; options: ProgrammeOptions; pending: boolean; onSave: (stage: number) => void }) {
+  const stages = useStagePlan(scope.eventId).data?.stages ?? [];
+  if (stages.length < 2) return null;
+  return <Field label="Entry fee is due before" hint="Earlier stages are free; the fee is still one fee per project.">
+    <select className="desk-input min-h-11" disabled={pending} value={options.entry_fee_stage ?? 1} onChange={e => onSave(Number(e.target.value))}>
+      {stages.map(stage => <option key={stage.position} value={stage.position}>{`Stage ${stage.position}: ${stage.name}`}</option>)}</select></Field>;
 }

@@ -89,6 +89,15 @@ class VisitDaySerializer(serializers.Serializer):
     count = serializers.IntegerField(min_value=0)
 
 
+class StageFunnelSerializer(serializers.Serializer):
+    position = serializers.IntegerField()
+    name = serializers.CharField()
+    submitted = serializers.IntegerField()
+    eligible = serializers.IntegerField()
+    shortlisted = serializers.IntegerField(allow_null=True)
+    advanced = serializers.IntegerField(allow_null=True)
+
+
 class EventAnalyticsExtrasSerializer(serializers.Serializer):
     event_id = serializers.IntegerField()
     timezone_name = serializers.CharField()
@@ -99,3 +108,5 @@ class EventAnalyticsExtrasSerializer(serializers.Serializer):
     waitlist = WaitlistConversionSerializer()
     series = SeriesTurnoutSerializer(many=True)
     short_link_visits = VisitDaySerializer(many=True, allow_null=True)
+    submission_stages = StageFunnelSerializer(many=True, required=False,
+                                              help_text="S16: per submission stage, submitted / eligible / shortlisted / advanced.")

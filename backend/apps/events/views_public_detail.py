@@ -26,4 +26,5 @@ class PublicEventDetailView(APIView):
         require_module_for_servable(space, "events")
         event = get_object_or_404(_public_events(space).select_related("makerspace__payment_settings", "series", "category"), public_token=public_token)
         from .views_public_codes import robots
-        return robots(Response(PublicEventSerializer(event, context={"request": request}).data), event)
+        context = {"request": request, "submission_stages": True}  # #178: stage deadlines on the event page.
+        return robots(Response(PublicEventSerializer(event, context=context).data), event)

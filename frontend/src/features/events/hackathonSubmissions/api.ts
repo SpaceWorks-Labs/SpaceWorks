@@ -16,10 +16,11 @@ export function useSubmission(scope: SubmissionScope) {
 
 export function useSubmissionCommand(scope: SubmissionScope) {
   const client = useQueryClient();
-  return useMutation({ mutationFn: ({ action, version, project, operationId }: {
-    action: "save" | "submit" | "withdraw"; version: number; project?: Partial<Project>; operationId: string;
+  return useMutation({ mutationFn: ({ action, version, project, operationId, stageId }: {
+    action: "save" | "submit" | "withdraw"; version: number; project?: Partial<Project>; operationId: string; stageId?: number;
   }) => memberRequest<Submission>(`${teamBase(scope)}submission/${action === "save" ? "" : `${action}/`}`, {
     method: action === "save" ? "PATCH" : "POST", headers: { "Idempotency-Key": operationId },
-    body: JSON.stringify({ operation_id: operationId, expected_version: version, ...project }),
+    body: JSON.stringify({ operation_id: operationId, expected_version: version, ...project,
+      ...(action === "submit" && stageId ? { stage_id: stageId } : {}) }),
   }), onSuccess: () => client.invalidateQueries({ queryKey: submissionKey(scope) }) });
 }

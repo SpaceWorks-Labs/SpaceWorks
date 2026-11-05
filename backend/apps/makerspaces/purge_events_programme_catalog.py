@@ -119,3 +119,7 @@ from apps.tenant_migration.catalog_r2_l7 import PURGE_ORDER as _L7_PURGE_ORDER  
 PURGE_ORDER = _L7_PURGE_ORDER + PURGE_ORDER  # Pairwise rows are leaves of JudgeAssignment/JudgingRound.
 from apps.tenant_migration.catalog_r2_l21b import PURGE_ORDER as _L21B_PURGE_ORDER  # noqa: E402
 PURGE_ORDER = _L21B_PURGE_ORDER + PURGE_ORDER  # L21b rows are leaves of rounds, awards and snapshots.
+from apps.tenant_migration.catalog_r2_submit_content import PURGE_ORDER as _SC_PURGE_ORDER, STAGE_PURGE as _SC_STAGE  # noqa: E402
+# Stage rows are leaves of snapshots and submissions; stages follow the judging rounds that point at them.
+_ROUND = PURGE_ORDER.index(('events.JudgingRound', 'event__makerspace')) + 1
+PURGE_ORDER = _SC_PURGE_ORDER + PURGE_ORDER[:_ROUND] + _SC_STAGE + PURGE_ORDER[_ROUND:]

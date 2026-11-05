@@ -6,6 +6,17 @@
 
 ## Condensed changelog (newest first — full detail in `git log`)
 
+- **2026-11-05 -- release 2 r2-submit-content, submission stages (#177-#180).** The organiser sets what a
+  hackathon submission takes (files and links, files only, links only, presentation; required link kinds,
+  min/max files, max links, file families, size, video hosts, custom fields) per STAGE, from presets (Single
+  submission, Idea -> Final, Idea -> Prototype -> Final, Hardware build, Design sprint, Full pipeline,
+  Ideathon, Case competition). Each stage has its own window, late policy, resubmission mode, extensions and
+  triage, and may end in a shortlist gate on the finalists engine. Rounds judge a chosen stage, the gallery
+  shows the final stage, the entry fee is due from a chosen stage and travel grants can require a stage, a
+  shortlist or the finals. Phase 2 adds released judge feedback, promoting the next team after a
+  withdrawal, judge reminders, a push-after-deadline signal, early public stages and a stage funnel.
+  Every existing event became one "Submission" stage with today's rules.
+
 - **2026-11-05 -- release 2 ID-card gaps (M7-M9, P19-P28).** In-browser photo crop everywhere a card photo
   is taken; staff photo capture with the holder's consent; optional server photo clean-up UI; card email as
   PDF or PNG (holder's choice); the organisation approval level written from the space's approval-levels

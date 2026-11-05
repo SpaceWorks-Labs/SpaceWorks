@@ -45,6 +45,11 @@ def validate_project(*, context, project, final):
                 raise SubmissionError("invalid_answers")
             canonical[key] = validate_submission(schema=schema, payload={"answers": answers}).snapshot
     for key in set(supplied) - set(canonical):
+        if key.startswith("stage:"):  # #178 custom stage fields; required ones are enforced at submit.
+            answers = _stage_answers(context, key, supplied[key])
+            if answers:
+                canonical[key] = answers
+            continue
         try:
             group, pk = key.split(":")
             model = {"track": HackathonTrack, "prize": HackathonPrize}[group]
@@ -54,3 +59,16 @@ def validate_project(*, context, project, final):
         if not valid:
             raise SubmissionError("unknown_project_form")
     return {**project, "form_answers": canonical}
+
+
+def _stage_answers(context, key, answers):
+    """Answers to a stage's custom fields. A deleted stage or field drops its stale answers, never the draft."""
+    from .models_stages import SubmissionStage
+    from .stage_rules import field_answer
+    pk = key.split(":", 1)[1]
+    if not isinstance(answers, dict) or not pk.isdigit() or str(int(pk)) != pk:
+        raise SubmissionError("invalid_answers")
+    stage = SubmissionStage.objects.filter(event=context.event, pk=int(pk)).first()
+    fields = {field["key"]: field for field in stage.custom_fields} if stage else {}
+    return {name: value for name, value in ((name, field_answer(fields[name], raw))
+            for name, raw in answers.items() if name in fields) if value is not None}

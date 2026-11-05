@@ -41,6 +41,9 @@ class Snapshot:
     room: str = ""
     judge_asset_ids: tuple[int, ...] = ()
     judge_links: tuple[PublicLink, ...] = ()
+    stage_id: int | None = None  # #178: the submission stage that froze it.
+    # S7: frozen custom-field answers as (key, label, type, value, visible_to); readers filter by audience.
+    answers: tuple[tuple[str, str, str, str, str], ...] = ()
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -100,7 +103,7 @@ class ProgrammePorts(Protocol):
         """Attest G's already-acquired fences, event, authority and parent locks."""
         ...
 
-    def snapshots(self, event_id: int) -> tuple[Snapshot, ...]: ...
+    def snapshots(self, event_id: int, stage_id: int | None = None) -> tuple[Snapshot, ...]: ...
 
     def track_occupancy_locked(self, *, event_id: int, track_ids: tuple[int, ...],
                                exclude_team_id: int, locks: LockedContext) -> dict[int, int]:

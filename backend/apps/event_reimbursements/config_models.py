@@ -5,6 +5,9 @@ from django.db import models
 from .model_base import Versioned
 
 
+REQUIRED_SUBMISSION = ("none", "any_stage", "stage", "final_stage", "shortlisted_at", "finalist")
+
+
 def categories():
     return ["rail", "air", "bus", "ground_transport", "lodging"]
 
@@ -36,6 +39,9 @@ class ReimbursementProgramme(Versioned):
     claim_due_at = models.DateTimeField()
     attendance_required = models.BooleanField(default=True)
     require_project_submission = models.BooleanField(default=False)
+    #: G11 (#180): which submission earns travel money. ``require_project_submission`` stays its yes/no mirror.
+    required_submission = models.CharField(max_length=16, default="none", choices=[(v, v) for v in REQUIRED_SUBMISSION])
+    required_submission_stage = models.PositiveSmallIntegerField(null=True, blank=True)
     permitted_venue_sources = models.JSONField(default=list)
     category_limits = models.JSONField(default=dict)
     finance_policy_revision = models.PositiveBigIntegerField(default=1)
@@ -52,4 +58,9 @@ class ReimbursementProgramme(Versioned):
             models.CheckConstraint(condition=(models.Q(request_opens_at__isnull=True)
                 | models.Q(request_closes_at__isnull=True)
                 | models.Q(request_closes_at__gt=models.F("request_opens_at"))), name="reimb_request_window"),
+            models.CheckConstraint(condition=models.Q(required_submission__in=REQUIRED_SUBMISSION),
+                                   name="reimb_required_submission"),
+            models.CheckConstraint(condition=(~models.Q(required_submission__in=("stage", "shortlisted_at"))
+                | models.Q(required_submission_stage__gte=1, required_submission_stage__lte=10)),
+                name="reimb_required_submission_stage"),
         ]

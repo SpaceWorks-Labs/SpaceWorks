@@ -31,6 +31,11 @@ def _entry(publication, snapshot_id, *, selection_revision=1):
                                             snapshot_id=snapshot_id, metadata_public=True).first()
     if not consent or snapshot.event_id != publication.event_id or not snapshot.current or not snapshot.eligible:
         raise ValidationError({"snapshot_ids": "Select only eligible, explicitly public frozen submissions."})
+    from .stage_gallery import gallery_stage_allowed
+    if not gallery_stage_allowed(publication.event_id, snapshot):
+        # #178/#179: the gallery shows the last stage (or an S18 public stage's passing teams), so a team
+        # eliminated earlier never appears.
+        raise ValidationError({"snapshot_ids": "The gallery shows each project's final-stage submission."})
     items = list(consent.items.filter(active=True))
     if (not {i.asset_id for i in items if i.asset_id} <= set(snapshot.public_asset_ids)
             or not {i.link_id for i in items if i.link_id} <= {link.id for link in snapshot.public_links}):

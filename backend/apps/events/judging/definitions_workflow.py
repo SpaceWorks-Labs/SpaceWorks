@@ -28,6 +28,10 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
             if model is JudgingRound and row.state != "draft":
                 invalid("Open rounds are frozen. Create a new round to change its rubric.")
             _references(event, payload)
+            if payload.get("submission_stage_id") is not None:  # #178: a stage of this event.
+                from apps.events.submissions.models_stages import SubmissionStage
+                if not SubmissionStage.objects.filter(event=event, pk=payload["submission_stage_id"]).exists():
+                    raise Http404
             if model is JudgingRound and "pairwise" in (getattr(row, "mode", None), payload.get("mode")):
                 require_pairwise(event, hide=False)
             for key, value in payload.items():

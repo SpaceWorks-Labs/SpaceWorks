@@ -253,5 +253,9 @@ ROUTES += L21A_ROUTES
 from .programme_route_catalog_l21b import L21B_ROUTES, L21B_NATIVE_DECISIONS  # noqa: E402
 ROUTES += L21B_ROUTES
 NATIVE_DECISIONS = {**NATIVE_DECISIONS, **L21B_NATIVE_DECISIONS}
+# Release 2 r2-submit-content: submission stages, shortlist gates, extensions and stage triage (all native).
+from .programme_route_catalog_submit_content import SUBMIT_CONTENT_NATIVE_DECISIONS, SUBMIT_CONTENT_ROUTES  # noqa: E402
+ROUTES += SUBMIT_CONTENT_ROUTES
+NATIVE_DECISIONS = {**NATIVE_DECISIONS, **SUBMIT_CONTENT_NATIVE_DECISIONS}
 
 BY_NAME = {name: (methods, target) for name, methods, target in ROUTES}

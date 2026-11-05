@@ -103,7 +103,8 @@ def sweep_space(space, now=None):
             done += 1
         except Exception:
             logger.exception("submission_integrity_check_crashed", extra={"check_id": check.pk})
-    return done
+    from .stage_integrity import sweep_after_deadline  # #180 S14: the per-stage push signal.
+    return done + sweep_after_deadline(space, now)
 
 
 @shared_task

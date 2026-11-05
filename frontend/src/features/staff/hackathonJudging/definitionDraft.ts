@@ -6,6 +6,9 @@ export function editableDefinition(row: Track | Prize | Round): Record<string, u
     closes_at: row.closes_at ? new Date(row.closes_at).toISOString().slice(0, 16) + ':00Z' : null,
     minutes_per_view: row.minutes_per_view, judging_minutes: row.judging_minutes,
     visibility: row.visibility ?? 'assigned', fresh_eyes: Boolean(row.fresh_eyes), panel: row.panel ?? [],
+    submission_stage_id: (row as Round & { submission_stage_id?: number | null }).submission_stage_id ?? null,
+    share_feedback: Boolean((row as Round & { share_feedback?: boolean }).share_feedback),
+    judge_reminders: Boolean((row as Round & { judge_reminders?: boolean }).judge_reminders),
     ...(row.mode === 'weighted_1_5' ? { criteria: row.criteria } : {}),
     ...(row.mode === 'pairwise' ? { guidance: row.guidance ?? '', exploration: (row.exploration ?? 0.1).toFixed(2) } : {}) };
   return { name: row.name, description: row.description, ...('award_count' in row ? {

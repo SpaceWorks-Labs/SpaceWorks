@@ -238,7 +238,10 @@
         "coverage_exception": "models.ForeignKey('events.JudgingReason', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
         "visibility": "models.CharField(max_length=12, default='assigned', choices=(('assigned', 'Assigned only'), ('all', 'All judges see all')))",
         "fresh_eyes": "models.BooleanField(default=False)",
-        "advanced_from": "models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT, related_name='+')"
+        "advanced_from": "models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
+        "submission_stage": "models.ForeignKey(\"events.SubmissionStage\", null=True, blank=True, on_delete=models.PROTECT, related_name=\"+\")",
+        "share_feedback": "models.BooleanField(default=False)",
+        "judge_reminders": "models.BooleanField(default=False)"
       },
       "foreign_keys": {
         "event": {
@@ -252,6 +255,10 @@
         "advanced_from": {
           "definition": "models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT, related_name='+')",
           "target": "events.JudgingRound"
+        },
+        "submission_stage": {
+          "definition": "models.ForeignKey(\"events.SubmissionStage\", null=True, blank=True, on_delete=models.PROTECT, related_name=\"+\")",
+          "target": "events.SubmissionStage"
         }
       },
       "user_edges": {},
@@ -776,7 +783,8 @@
         "criterion_values": "models.JSONField(default=dict)",
         "notes": "models.TextField(blank=True, max_length=4000)",
         "submitted_at": "models.DateTimeField(null=True, blank=True)",
-        "saved_at": "models.DateTimeField(null=True, blank=True)"
+        "saved_at": "models.DateTimeField(null=True, blank=True)",
+        "team_feedback": "models.TextField(blank=True, max_length=4000)"
       },
       "foreign_keys": {
         "makerspace": {
@@ -802,7 +810,8 @@
       "tenant_import_reset": {},
       "deployment_backup": "preserve under existing encrypted archive custody",
       "pii_fields": [
-        "notes"
+        "notes",
+        "team_feedback"
       ],
       "pii_scope": "makerspace_id",
       "owned_object_fields": [],
@@ -1646,7 +1655,10 @@
         "refund_on_disqualification": "models.BooleanField(default=False)",
         "entry_fee": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
         "team_fee": "models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)",
-        "updated_at": "models.DateTimeField(auto_now=True)"
+        "updated_at": "models.DateTimeField(auto_now=True)",
+        "stage_reminder_email": "models.BooleanField(default=False)",
+        "shortlist_email": "models.BooleanField(default=False)",
+        "entry_fee_stage": "models.PositiveSmallIntegerField(default=1)"
       },
       "foreign_keys": {
         "event": {
@@ -1657,7 +1669,8 @@
       "user_edges": {},
       "constraints": [
         "ev_options_entry_fee",
-        "ev_options_team_fee"
+        "ev_options_team_fee",
+        "ev_options_fee_stage"
       ],
       "unique_fields": [
         "event"

@@ -168,12 +168,19 @@ class OptionsInput(CommandInput):
                                          allow_null=True, required=False)
     team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
                                         allow_null=True, required=False)
+    stage_reminder_email = serializers.BooleanField(required=False)  # #178: stage deadline reminders.
+    shortlist_email = serializers.BooleanField(required=False)  # #179: shortlisted and not-shortlisted teams.
+    entry_fee_stage = serializers.IntegerField(min_value=1, max_value=10, required=False,
+                                               help_text="S17: the stage position the entry fee is paid before.")
 
 
 class OptionsRead(ResultEnvelope):
     results_email = serializers.BooleanField()
     submission_receipt_email = serializers.BooleanField()
     finalists_email = serializers.BooleanField()
+    stage_reminder_email = serializers.BooleanField()
+    shortlist_email = serializers.BooleanField()
+    entry_fee_stage = serializers.IntegerField()
     refund_on_disqualification = serializers.BooleanField()
     entry_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
     team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)

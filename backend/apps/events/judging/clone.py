@@ -12,7 +12,7 @@ from apps.events.contributions.models_roles import EventSponsor
 from apps.makerspaces.resource_clone import bounded_children
 
 
-def copy_definitions_locked(*, source_event_id, target_event, actor, sponsor_map, locks):
+def copy_definitions_locked(*, source_event_id, target_event, actor, sponsor_map, locks, stage_map=None):
     """G holds sorted source/target event locks and the complete declared fences.
 
     C supplies copied EventSponsor IDs. Existing page-section IDs are cleared;
@@ -46,7 +46,8 @@ def copy_definitions_locked(*, source_event_id, target_event, actor, sponsor_map
     count = 0
     for row in bounded_children(JudgingRound.objects.filter(event=source).order_by("pk")):
         target = JudgingRound.objects.create(event=target_event, key=row.key, mode=row.mode, min_reviews=row.min_reviews,
-            normalization=row.normalization, minutes_per_view=row.minutes_per_view, judging_minutes=row.judging_minutes)
+            normalization=row.normalization, minutes_per_view=row.minutes_per_view, judging_minutes=row.judging_minutes,
+            submission_stage_id=(stage_map or {}).get(row.submission_stage_id))  # #178: the copied stage.
         for criterion in bounded_children(row.criteria.order_by("priority", "pk")):
             JudgingCriterion.objects.create(round=target, key=criterion.key, label=criterion.label,
                 weight=criterion.weight, anchors=deepcopy(criterion.anchors), priority=criterion.priority)

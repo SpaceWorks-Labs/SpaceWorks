@@ -67,6 +67,8 @@ def sweep_asset_deadlines_task():
             done += lock_event_submissions(event_id=config.event_id, limit=100)
         except Exception:
             logger.warning("event_asset_deadline_deferred", extra={"event_id": config.event_id})
+    from .submissions.stage_notices import remind_due_stages  # #178: stage deadline reminders ride this sweep.
+    remind_due_stages()
     return done
 
 

@@ -73,6 +73,8 @@ def progress(round, *, actor=None):
             "recused": assignments.filter(state="recused").count(),
             "skipped": assignments.filter(state="skipped").count(), "visibility": round.visibility,
             "fresh_eyes": round.fresh_eyes, "advanced_from_id": round.advanced_from_id,
+            "submission_stage_id": round.submission_stage_id, "share_feedback": round.share_feedback,
+            "judge_reminders": round.judge_reminders,
             "panel": list(round.panel_seats.order_by("judge_role_assignment_id").values_list("judge_role_assignment_id", flat=True)),
             **calculation}
 

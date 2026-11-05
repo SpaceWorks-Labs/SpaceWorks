@@ -43,6 +43,7 @@ export const openApiTags = [
   "Bulk import",
   "Card designs",
   "Card jobs",
+  "Card photos (staff)",
   "Chat notifications",
   "Containers",
   "Dashboard",
@@ -254,6 +255,7 @@ export const openApiPaths = [
   "/api/v1/admin/event-collaborations/{id}/respond/",
   "/api/v1/admin/event-id-cards/{id}",
   "/api/v1/admin/event-id-cards/{id}/download",
+  "/api/v1/admin/event-id-cards/{id}/photo",
   "/api/v1/admin/event-id-cards/{id}/revoke",
   "/api/v1/admin/event-invites/{id}/revoke/",
   "/api/v1/admin/event-orders/{id}/",
@@ -559,6 +561,7 @@ export const openApiPaths = [
   "/api/v1/admin/id-programme-cards/{id}",
   "/api/v1/admin/id-programme-cards/{id}/download",
   "/api/v1/admin/id-programme-cards/{id}/email",
+  "/api/v1/admin/id-programme-cards/{id}/photo",
   "/api/v1/admin/id-programme-cards/{id}/photo-request",
   "/api/v1/admin/id-programmes/{id}",
   "/api/v1/admin/id-programmes/{id}/approval",
@@ -896,6 +899,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-issues/",
   "/api/v1/admin/makerspaces/{makerspace_id}/booking-machine-types/",
   "/api/v1/admin/makerspaces/{makerspace_id}/bookings/",
+  "/api/v1/admin/makerspaces/{makerspace_id}/card-approval-levels",
   "/api/v1/admin/makerspaces/{makerspace_id}/card-designs",
   "/api/v1/admin/makerspaces/{makerspace_id}/erasure-requests",
   "/api/v1/admin/makerspaces/{makerspace_id}/event-categories/",
@@ -1027,6 +1031,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/work-orders",
   "/api/v1/admin/member-cards/{id}/download",
   "/api/v1/admin/member-cards/{id}/email",
+  "/api/v1/admin/member-cards/{id}/photo",
   "/api/v1/admin/member-cards/{id}/photo-request",
   "/api/v1/admin/member-cards/{id}/print.pdf",
   "/api/v1/admin/member-cards/{id}/reissue",
@@ -1392,6 +1397,8 @@ export const openApiPaths = [
   "/api/v1/member/cards",
   "/api/v1/member/cards/{kind}/{card_id}/download",
   "/api/v1/member/cards/{kind}/{card_id}/email",
+  "/api/v1/member/cards/{kind}/{card_id}/face",
+  "/api/v1/member/cards/{kind}/{card_id}/fonts/{family_slug}/{weight}",
   "/api/v1/member/cards/{kind}/{card_id}/photo",
   "/api/v1/member/cards/{kind}/{card_id}/photo/accept",
   "/api/v1/member/cards/{kind}/{card_id}/photo/cleanup",
@@ -1685,6 +1692,7 @@ export const openApiPaths = [
   "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}",
   "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}/join",
   "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}/join/photo",
+  "/api/v1/public/organizations/{slug}/id-programmes/{programme_slug}/prefill",
   "/api/v1/public/organizations/{slug}/makerspaces/",
   "/api/v1/public/organizations/{slug}/page/",
   "/api/v1/public/organizations/{slug}/page/assets/{asset_id}/",
@@ -2823,7 +2831,32 @@ export type ApplyResult = {
   "created": number;
 };
 
+export type ApprovalGroupLevel = {
+  "group": Group4d3Enum;
+  "available": boolean;
+  "default": boolean;
+  "space": boolean | null;
+};
+
+export type ApprovalLevels = {
+  "groups": Array<ApprovalGroupLevel>;
+  "organisations": Array<ApprovalOrganisation>;
+};
+
+export type ApprovalLevelWrite = {
+  "group": Group4d3Enum;
+  "organization_id"?: number | null;
+  "required": boolean | null;
+};
+
 export type ApprovalModeE35Enum = "instant" | "approve";
+
+export type ApprovalOrganisation = {
+  "id": number;
+  "name": string;
+  "membership": boolean | null;
+  "event": boolean | null;
+};
 
 export type ApprovalRequest = {
   "content_sids"?: Array<string>;
@@ -3526,13 +3559,13 @@ export type BadgeDesign = {
   "operation_id": string;
   "expected_version": number;
   "document": BadgeDocument;
-  "stock": StockEnum;
+  "stock": StockA31Enum;
 };
 
 export type BadgeDesignResult = {
   "id": number;
   "document": BadgeDocument;
-  "stock": StockEnum;
+  "stock": StockA31Enum;
   "event_version"?: number;
 };
 
@@ -3551,7 +3584,7 @@ export type BadgePdfRequest = {
 
 export type BadgePreview = {
   "document": BadgeDocument;
-  "stock": StockEnum;
+  "stock": StockA31Enum;
 };
 
 export type BadgeTemplate = {
@@ -4864,6 +4897,10 @@ export type CardDesignSave = {
 
 export type CardDesignStatusEnum = "draft" | "pending_approval" | "published";
 
+export type CardEmail = {
+  "format"?: Format519Enum;
+};
+
 export type CardFont = {
   "family": string;
   "category": string;
@@ -4927,11 +4964,9 @@ export type CardNote = {
 export type CardPreview = {
   "document": unknown;
   "side"?: SideEnum;
-  "format"?: CardPreviewFormatEnum;
+  "format"?: Format519Enum;
   "long_names"?: boolean;
 };
-
-export type CardPreviewFormatEnum = "png" | "pdf";
 
 export type CardScan = {
   "payload": string;
@@ -4946,6 +4981,7 @@ export type CardSettings = {
   "emergency_contact_name"?: string;
   "emergency_contact_phone"?: string;
   "public_check_on": boolean;
+  "email_format"?: EmailFormatEnum;
 };
 
 export type CardTemplate = {
@@ -4964,6 +5000,7 @@ export type CardVerification = {
   "holder": Holder | null;
   "note": string;
   "checked_at": string;
+  "timezone": string;
 };
 
 export type CashBookReport = {
@@ -7423,6 +7460,8 @@ export type EmailCode = {
   "donor_email": string;
 };
 
+export type EmailFormatEnum = "pdf" | "png";
+
 export type EmailLog = {
   "id": number;
   "to_email": string;
@@ -9045,6 +9084,8 @@ export type Form = {
 } | null;
 };
 
+export type Format519Enum = "pdf" | "png";
+
 export type FormDescriptor = {
   "schema_version": number;
   "form_id": string;
@@ -9543,7 +9584,7 @@ export type GrantsUpdate = {
   "grantee_ids": Array<number>;
 };
 
-export type GroupEnum = "fab-2d" | "fab-3dprint" | "fab-cnc" | "hardware-cad" | "hardware-pcb" | "firmware" | "source" | "embroidery" | "archives" | "video" | "deck" | "images" | "model";
+export type Group4d3Enum = "membership" | "event";
 
 export type Growth = {
   "date": string;
@@ -14265,6 +14306,9 @@ export type MyCard = {
   "wallet_platforms": Array<string>;
   "email_available": boolean;
   "qr_image": string | null;
+  "photo_set": boolean;
+  "photo_cleanup_available": boolean;
+  "photo_aspect": number;
 };
 
 export type MyCardKindEnum = "member_card" | "programme_card" | "event_card";
@@ -16460,6 +16504,7 @@ export type PatchedCardSettings = {
   "emergency_contact_name"?: string;
   "emergency_contact_phone"?: string;
   "public_check_on"?: boolean;
+  "email_format"?: EmailFormatEnum;
 };
 
 export type PatchedCategoryAdmin = {
@@ -19438,7 +19483,7 @@ export type PrintCreate = {
   "expected_version": number;
   "registration_ids": Array<number>;
   "template_revision": number;
-  "stock": StockEnum;
+  "stock": StockA31Enum;
   "include_photo"?: boolean;
 };
 
@@ -23578,7 +23623,7 @@ export type SeedInstall = {
   "theme": ThemeEnum;
   "seed_id": string;
   "seed_version": number;
-  "stock"?: StockEnum | NullEnum | null;
+  "stock"?: Stock88dEnum | NullEnum | null;
   "operation_id": string;
   "expected_version": number;
 };
@@ -23606,7 +23651,7 @@ export type SeedSelection = {
   "theme": ThemeEnum;
   "seed_id": string;
   "seed_version": number;
-  "stock"?: StockEnum | NullEnum | null;
+  "stock"?: Stock88dEnum | NullEnum | null;
 };
 
 export type SegmentChoice = {
@@ -25102,6 +25147,20 @@ export type StaffPaymentSummary = {
   "currency": string;
 };
 
+export type StaffPhotoFinalize = {
+  "object_key": string;
+  "content_type"?: ContentType12dEnum;
+  "holder_consented": boolean;
+};
+
+export type StaffPhotoPresign = {
+  "content_type": ContentType12dEnum;
+};
+
+export type StaffPhotoResult = {
+  "photo_set": boolean;
+};
+
 export type StaffPresenceEnd = {
   "account_id": number;
 };
@@ -25758,7 +25817,9 @@ export type StatusSnapshot = {
 
 export type StatusSnapshotEnum = "stored" | "stale" | "throttled" | "not_integrated";
 
-export type StockEnum = "a6-portrait" | "4x6" | "3x4" | "4x3" | "cr80-portrait" | "cr80-landscape";
+export type Stock88dEnum = "a6-portrait" | "4x6" | "3x4" | "4x3" | "cr80-portrait" | "cr80-landscape";
+
+export type StockA31Enum = "a6-portrait" | "4x6" | "3x4" | "4x3" | "cr80-portrait" | "cr80-landscape" | "a6-landscape" | "custom";
 
 export type StockLabelEnum = "in_stock" | "low" | "sold_out";
 
@@ -26891,7 +26952,7 @@ export type Upload = {
   "filename": string;
   "mime": string;
   "bytes": number;
-  "group": GroupEnum;
+  "group": UploadGroupEnum;
   "subtype"?: string;
 };
 
@@ -26909,6 +26970,8 @@ export type UploadDescriptor = {
 export type UploadDescriptorMethodEnum = "POST" | "MULTIPART";
 
 export type UploadEnum = "put" | "post";
+
+export type UploadGroupEnum = "fab-2d" | "fab-3dprint" | "fab-cnc" | "hardware-cad" | "hardware-pcb" | "firmware" | "source" | "embroidery" | "archives" | "video" | "deck" | "images" | "model";
 
 export type UploadResponse = {
   "asset_id": number;

@@ -105,25 +105,22 @@ class ProjectEvidence:
     event_id: int
 
 
-def canonical_project(*, event, owner_id):
-    from apps.events.models import SubmissionSnapshot
-    from django.db.models import F
-    row = SubmissionSnapshot.objects.filter(submission__event=event,
-        submission__state__in=("submitted", "locked", "under_review", "judged"),
-        submission__triage="eligible", submission__current_snapshot_id=F("pk"),
-        sealed_member_ids__contains=[owner_id]).order_by("-submitted_at", "-pk").first()
-    if row is None:
+def canonical_project(*, event, owner_id, rule=("any_stage", None)):
+    """G11: the snapshot that satisfies the programme's ``required_submission`` rule for this member."""
+    from apps.events.submissions.stage_evidence import submission_evidence
+    snapshot_id = submission_evidence(event=event, owner_id=owner_id, mode=rule[0], position=rule[1])
+    if snapshot_id is None:
         return None
-    return ProjectEvidence(uuid5(NAMESPACE_URL, f"spaceworks:submission-snapshot:{event.pk}:{row.pk}"),
-                           row.pk, owner_id, event.pk)
+    return ProjectEvidence(uuid5(NAMESPACE_URL, f"spaceworks:submission-snapshot:{event.pk}:{snapshot_id}"),
+                           snapshot_id, owner_id, event.pk)
 
 
 def project_evidence(*, claim, programme):
-    from .accepted_policy import project_required
+    from .accepted_policy import project_required, project_rule
     if not project_required(claim.award, programme):
         return None
     require(_project_reader is not None, "project_evidence_provider_required", status=503)
-    value = _project_reader(event=claim.event, owner_id=claim.member_id)
+    value = _project_reader(event=claim.event, owner_id=claim.member_id, rule=project_rule(claim.award, programme))
     from uuid import UUID
     require(isinstance(value, ProjectEvidence) and isinstance(value.reference, UUID) and type(value.snapshot_id) is int
             and value.snapshot_id > 0 and (value.event_id, value.owner_id) == (claim.event_id, claim.member_id),

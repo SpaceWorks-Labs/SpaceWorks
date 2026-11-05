@@ -188,3 +188,6 @@ from .catalog_r2_l21a import FIELD_NAMES as R2_L21A_FIELDS, EXTRA_FIELDS as R2_L
 FIRST_PARTY_FIELD_NAMES.update(R2_L21A_FIELDS)
 for _label, _names in R2_L21A_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_r2_submit_content import REIMBURSEMENT_EXTRA_FIELDS as R2_SUBMIT_CONTENT_EXTRA  # noqa: E402
+for _label, _names in R2_SUBMIT_CONTENT_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

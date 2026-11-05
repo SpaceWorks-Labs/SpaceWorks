@@ -27,6 +27,10 @@ class PolicySettings(ClosedSerializer):
     claim_due_at = s.DateTimeField(required=False)
     attendance_required = s.BooleanField(required=False)
     require_project_submission = s.BooleanField(required=False)
+    required_submission = s.ChoiceField(choices=("none", "any_stage", "stage", "final_stage", "shortlisted_at", "finalist"),
+                                        required=False, help_text="G11: which submission earns the grant.")
+    required_submission_stage = StrictInteger(min_value=1, max_value=10, required=False, allow_null=True,
+                                              help_text="The stage position for 'stage' and 'shortlisted_at'.")
     permitted_venue_sources = s.ListField(child=s.ChoiceField(choices=("qr", "venue_station", "offline_sync")), required=False)
     category_limits = s.DictField(child=StrictInteger(min_value=0, max_value=MAX_MINOR), required=False)
 

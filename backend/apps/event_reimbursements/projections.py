@@ -24,6 +24,7 @@ def programme_detail(row, *, finance=False):
         "request_phase": row.request_phase, "request_opens_at": row.request_opens_at, "request_closes_at": row.request_closes_at,
         "allowed_categories": row.allowed_categories, "exclusions": row.exclusions, "claim_due_at": row.claim_due_at,
         "attendance_required": row.attendance_required, "require_project_submission": row.require_project_submission,
+        "required_submission": row.required_submission, "required_submission_stage": row.required_submission_stage,
         "min_distance_km": str(row.min_distance_km) if row.min_distance_km is not None else None,
         "min_application_stage": row.min_application_stage,
         "award_accept_days": row.award_accept_days, "category_limits": row.category_limits,

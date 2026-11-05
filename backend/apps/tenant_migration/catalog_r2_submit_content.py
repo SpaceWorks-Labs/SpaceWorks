@@ -92,3 +92,9 @@ PURGE_ORDER = (
 )
 #: SubmissionStage is purged after the judging rounds that point at it (PROTECT).
 STAGE_PURGE = (('events.SubmissionStage', 'event__makerspace'),)
+
+#: G11 (#180): reimbursement columns, registered in the first-party field snapshot like L21a's
+#: ``min_application_stage`` (this is not a programme-catalogue model).
+REIMBURSEMENT_EXTRA_FIELDS = {
+    'event_reimbursements.ReimbursementProgramme': frozenset({'required_submission', 'required_submission_stage'}),
+}

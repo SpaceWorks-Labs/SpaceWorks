@@ -5251,7 +5251,7 @@ check-in and payment routes never show easter eggs.
   data and object capture. Portable import remaps artwork keys in rows AND issuance
   JSON through the object manifest, clears source bucket VersionIds and preserves
   checksums. Deployment backups preserve the complete design/snapshot metadata.
-- **Certificates beyond yuyu (r2-idcards-best, #199).** Issuance freezes the kind, award,
+- **Certificates beyond the reference set (r2-idcards-best, #199).** Issuance freezes the kind, award,
   role and place labels into `layout_snapshot["merge"]` (`certificates/merge.py`); rows issued
   before that keep printing `crewRole` as "" and the PDF title "Attendance certificate", so a
   retried render reproduces the stored bytes (`store_immutable_pdf` refuses different bytes).

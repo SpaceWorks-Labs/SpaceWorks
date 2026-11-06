@@ -76,3 +76,6 @@ FK_POLICIES[("machines.MachineSession", "machine_type")] = ForeignKeyPolicy(
 for _l16_model in ("maintenance.TechnicianCoverage", "maintenance.TechnicianDefault"):
     FK_POLICIES[(_l16_model, "machine_type")] = ForeignKeyPolicy(
         ReferenceDisposition.REMAP_RESOLVED, "Use the built-in/custom machine type map.")
+# r2-idcards-best: a signatory's signature is finalised (promoted) artwork, like a revision's artwork.
+FK_POLICIES[("events.EventCertificateSignatory", "signature")] = ForeignKeyPolicy(
+    ReferenceDisposition.REMAP_RESOLVED, "Signatures reference promoted artwork only; remap its retained identity.")

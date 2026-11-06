@@ -14,6 +14,7 @@ Where the floor bites:
   (``staff_identity.require_staff_mfa`` and ``mfa_grace``).
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
 from apps.accounts.login_methods import mfa_login_enabled
@@ -50,7 +51,7 @@ def available(user=None):
 
 def assert_available(user=None):
     if not available(user):
-        raise PermissionDenied("Two-step sign-in is turned off on this deployment.")
+        raise PermissionDenied(gettext("Two-step sign-in is turned off on this deployment."))
 
 
 def credential(user):
@@ -140,7 +141,7 @@ def stamp_claims(user, token):
 
 
 def _mismatch():
-    return AuthenticationFailed("Sign in again and verify MFA.", code="mfa_required")
+    return AuthenticationFailed(gettext("Sign in again and verify MFA."), code="mfa_required")
 
 
 def assert_verified(user, claims=None):
@@ -163,7 +164,7 @@ def assert_verified(user, claims=None):
     if source == BYPASS:
         if enrolled:
             raise _mismatch()
-        raise AuthenticationFailed("Enroll in MFA before continuing.", code="mfa_enrollment_required")
+        raise AuthenticationFailed(gettext("Enroll in MFA before continuing."), code="mfa_enrollment_required")
     if source == PROVIDER and not required(user):
         return
     if not enrolled:

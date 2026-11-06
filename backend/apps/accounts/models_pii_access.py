@@ -7,6 +7,7 @@ reveal in /control/ user admin). Rows are append-only: the only update ever made
 one-way close (``closed_at`` and ``close_reason``), by hand or at expiry.
 """
 
+from django.utils.translation import gettext
 import uuid
 from datetime import timedelta
 
@@ -58,8 +59,8 @@ class PlatformPiiAccessGrant(models.Model):
             stored = type(self).objects.filter(pk=self.pk).values("closed_at").first()
             fields = set(kwargs.get("update_fields") or ())
             if stored is None or stored["closed_at"] is not None or fields != {"closed_at", "close_reason"}:
-                raise ValidationError("PII access grants are append-only; only an open grant may be closed.")
+                raise ValidationError(gettext("PII access grants are append-only; only an open grant may be closed."))
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("PII access grants are never deleted.")
+        raise ValidationError(gettext("PII access grants are never deleted."))

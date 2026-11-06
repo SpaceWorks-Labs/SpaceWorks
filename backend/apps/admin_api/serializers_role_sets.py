@@ -1,5 +1,6 @@
 """Shared projection of valid membership role sets for staff and community lists."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema_field
 from rest_framework import serializers
 
@@ -22,7 +23,7 @@ class RoleSetInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if ("role_id" in attrs) == ("role_ids" in attrs):
-            raise serializers.ValidationError("Provide exactly one of role_id or role_ids.")
+            raise serializers.ValidationError(gettext("Provide exactly one of role_id or role_ids."))
         if "role_ids" in attrs:
             attrs["role_ids"] = list(dict.fromkeys(attrs["role_ids"]))
         return attrs

@@ -13,6 +13,7 @@ PII while a per-person window on that person is open (or while every space the p
 belongs to has an open window). Platform accounts are not tenant data and are not masked.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.utils import timezone
@@ -142,5 +143,5 @@ def require_pii_access(viewer, makerspace_id):
     """Refuse a PII export/report to a superadmin with no open window on this space."""
     if not pii_visible(viewer, makerspace_id):
         from rest_framework.exceptions import PermissionDenied
-        raise PermissionDenied({"detail": "Open a PII access window on this space first.",
+        raise PermissionDenied({"detail": gettext("Open a PII access window on this space first."),
                                 "code": "pii_access_required"})

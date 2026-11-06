@@ -6,6 +6,7 @@ Release 2 (one account per person) keeps exactly two refresh cookies: the person
 cookies are no longer read; logout expires any that a browser still holds (one release).
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
@@ -35,7 +36,7 @@ def cookie_name(context):
         return settings.AUTH_REFRESH_COOKIE
     if context == PLATFORM:
         return "refresh_token_platform"
-    raise AuthenticationFailed("Invalid account context.")
+    raise AuthenticationFailed(gettext("Invalid account context."))
 
 
 def legacy_staff_cookie_names(request):
@@ -47,12 +48,12 @@ def token_context(token):
     kind = token.get("kind")
     if kind in {PERSON, PLATFORM}:
         return kind
-    raise AuthenticationFailed("Invalid account context.")
+    raise AuthenticationFailed(gettext("Invalid account context."))
 
 
 def validate_context(token, context):
     if token_context(token) != context:
-        raise AuthenticationFailed("Invalid account context.")
+        raise AuthenticationFailed(gettext("Invalid account context."))
 
 
 def decode_cookie(raw, context):

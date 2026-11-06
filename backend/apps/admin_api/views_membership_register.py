@@ -4,6 +4,7 @@
 Standings: active, ending_soon (ends within 30 days), grace, lapsed, upcoming, no_term.
 A superadmin without an open PII window sees masked names and emails.
 """
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -36,7 +37,7 @@ class MemberRegisterView(APIView):
         space = staff_space(request.user, makerspace_id, "register_tools")
         standing = request.query_params.get("standing") or None
         if standing is not None and standing not in STANDINGS:
-            raise ValidationError({"standing": f"Use one of: {', '.join(STANDINGS)}."})
+            raise ValidationError({"standing": gettext('Use one of: {value}.').format(value=', '.join(STANDINGS))})
         rows = build_member_register(space.pk, limit=2000, standing=standing).records
         if not pii_visible(request.user, space.pk):
             rows = [{**row, "name": MASK, "email": MASK, "pii_masked": True} for row in rows]

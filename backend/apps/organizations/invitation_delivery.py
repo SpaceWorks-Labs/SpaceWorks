@@ -9,6 +9,7 @@ through `integrations.invite_chat` in the organisation's own makerspace (owner s
 else the first linked servable space). Never to a room. Failures never undo the invitation.
 """
 
+from django.utils.translation import gettext
 import logging
 from urllib.parse import quote
 
@@ -48,7 +49,7 @@ def send(invitation, email, raw_token, actor):
     label = f"You are invited to join {organization.name} on Space Works"
     emailed = chatted = False
     try:
-        log = dispatch_email(to_email=email, subject=label, text_body=f"{label}. Accept it here: {link}",
+        log = dispatch_email(to_email=email, subject=label, text_body=gettext('{label}. Accept it here: {link}').format(label=label, link=link),
                              makerspace=None, connection="platform", stream="governance",
                              event="organization_invitation", audience="member", persist_body=False, sync=True)
         emailed = getattr(log, "status", "") not in {"failed", "skipped"}

@@ -1,4 +1,5 @@
 """Organization membership governance and deletion with durable reference protection."""
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -63,7 +64,7 @@ def self_departure(organization, *, user):
     may select another person's authority.
     """
     if not is_person(user):
-        raise PermissionDenied("Only member accounts hold organization memberships.")
+        raise PermissionDenied(gettext("Only member accounts hold organization memberships."))
     locked = Organization.objects.select_for_update().get(pk=organization.pk)
     target = locked.memberships.select_for_update().filter(user_id=user.pk).first()
     if target is None or target.status == OrganizationMembership.Status.SUSPENDED:
@@ -84,7 +85,7 @@ def update_membership(organization, membership_id, *, actor, **changes):
     if unknown:
         raise ValidationError({field: "This field cannot be edited." for field in unknown})
     if "status" in changes and changes["status"] not in OrganizationMembership.Status.values:
-        raise ValidationError({"status": "Unknown membership status."})
+        raise ValidationError({"status": gettext("Unknown membership status.")})
     if not active_user(actor):
         raise PermissionDenied()
     locked = Organization.objects.select_for_update().get(pk=organization.pk)
@@ -100,13 +101,13 @@ def update_membership(organization, membership_id, *, actor, **changes):
             # A governor can revoke authority they lack, but cannot confer it.
             additions = set(proposed) - set(getattr(target, field) or [])
             if not additions.issubset(possessed):
-                raise PermissionDenied("You cannot grant authority you do not hold.")
+                raise PermissionDenied(gettext("You cannot grant authority you do not hold."))
             changes[field] = proposed
     if (target.status == OrganizationMembership.Status.SUSPENDED
             and changes.get("status") == OrganizationMembership.Status.ACTIVE):
         if (not set(changes.get("governance_actions", target.governance_actions)).issubset(held_governance)
                 or not set(changes.get("granted_actions", target.granted_actions)).issubset(held_grants)):
-            raise PermissionDenied("You cannot reactivate authority you do not hold.")
+            raise PermissionDenied(gettext("You cannot reactivate authority you do not hold."))
     assert_governor_remains(
         locked, replaced_id=target.pk, status=changes.get("status"),
         actions=changes.get("governance_actions"),

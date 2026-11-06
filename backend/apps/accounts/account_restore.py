@@ -1,5 +1,6 @@
 """Archive recovery changes identity availability, never revoked authority."""
 
+from django.utils.translation import gettext
 import hmac
 
 from django.utils import timezone
@@ -42,10 +43,10 @@ def matches(user, fingerprint):
 def restore_locked(user, *, fingerprint, new_password="", social=False):
     """Caller holds User through commit; purge commits its fence under that same lock."""
     if not matches(user, fingerprint):
-        raise ValidationError({"detail": "Invalid or expired restore proof."})
+        raise ValidationError({"detail": gettext("Invalid or expired restore proof.")})
     if social:
         if user.email or user.phone_e164:
-            raise ValidationError({"detail": "Use email or phone recovery for this account."})
+            raise ValidationError({"detail": gettext("Use email or phone recovery for this account.")})
     else:
         from apps.accounts.services_password_reset import validate_recovery_password
         from django.core.exceptions import ValidationError as PasswordError

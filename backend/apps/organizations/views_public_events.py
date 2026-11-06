@@ -1,4 +1,5 @@
 """Optional P5 upcoming/archive event collection, retaining the global target."""
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, PolymorphicProxySerializer, extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -33,7 +34,7 @@ class PublicOrganizationEventListView(APIView):
         organization = _public_organization(slug)
         period = request.query_params.get("period", "upcoming")
         if period not in {"upcoming", "past"}:
-            raise ValidationError({"period": "Choose upcoming or past."})
+            raise ValidationError({"period": gettext("Choose upcoming or past.")})
         paginator = PagePagination()
         rows = public_events_for(organization, period=period)
         page = paginator.paginate_queryset(rows if rows is not None else [], request, view=self)

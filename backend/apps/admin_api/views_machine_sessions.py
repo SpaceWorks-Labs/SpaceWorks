@@ -7,6 +7,7 @@ route answers 404 while `machines.sessions` is off. Staff never override certifi
 check-in: starting for a member runs the member's own checks.
 """
 
+from django.utils.translation import gettext
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -64,7 +65,7 @@ def _session(actor, pk):
     row = get_object_or_404(MachineSession.objects.select_related("makerspace", "machine"), pk=pk)
     _space(actor, row.makerspace_id)
     if not access.can_manage_machine(actor, row.machine):
-        raise PermissionDenied("This machine is outside your management scope.")
+        raise PermissionDenied(gettext("This machine is outside your management scope."))
     return row
 
 
@@ -76,7 +77,7 @@ def _member(space, member_id, *, active=False):
         memberships["makerspace_memberships__status"] = "active"
     member = User.objects.filter(person_q(), pk=member_id, **memberships).first()
     if member is None:
-        raise ValidationError({"member_id": "Choose a member of this makerspace."})
+        raise ValidationError({"member_id": gettext("Choose a member of this makerspace.")})
     return member
 
 
@@ -114,7 +115,7 @@ def _filter(rows, params, space):
         if params.get("until"):
             rows = rows.filter(started_at__lt=local_day_bounds(space, date.fromisoformat(params["until"]))[1])
     except ValueError:
-        raise ValidationError({"since": "Use YYYY-MM-DD dates."})
+        raise ValidationError({"since": gettext("Use YYYY-MM-DD dates.")})
     return rows.distinct()
 
 
@@ -140,7 +141,7 @@ class MachineSessionListView(APIView):
         machine = get_object_or_404(access.scope_machines_for_actor(request.user, Machine.objects.select_related(
             "makerspace", "machine_type").filter(makerspace=space, is_active=True)), pk=payload.validated_data["machine_id"])
         if not access.can_manage_machine(request.user, machine):
-            raise PermissionDenied("This machine is outside your management scope.")
+            raise PermissionDenied(gettext("This machine is outside your management scope."))
         member = _member(space, payload.validated_data["member_id"])
         row = service.start(machine, member, actor=request.user, source=MachineSession.Source.STAFF)
         return Response(render(request, _scoped(request.user, space).get(pk=row.pk)), status=status.HTTP_201_CREATED)

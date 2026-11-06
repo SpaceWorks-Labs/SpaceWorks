@@ -1,5 +1,6 @@
 """Session-bound recent authentication, independent of separable domain apps."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 import hashlib
 import json
@@ -31,7 +32,7 @@ def binding(request):
     user = request.user
     active(user)
     if user.deletion_requested_at is not None:
-        raise AuthenticationFailed("Account is not available.")
+        raise AuthenticationFailed(gettext("Account is not available."))
     token = getattr(request, "auth", None)
     if token is not None:
         from apps.accounts.surface_policy import assert_surface, validate_account_token
@@ -48,7 +49,7 @@ def binding(request):
                     grant__user=user, revoked_at__isnull=True,
                     grant__status="active", grant__revoked_at__isnull=True).first()
             except (ValidationError, ValueError, TypeError) as exc:
-                raise PermissionDenied("A current device session is required.") from exc
+                raise PermissionDenied(gettext("A current device session is required.")) from exc
             staff_grant = family is not None and family.grant.authority in ("staff", "event")
             if (family is None or not registration_is_eligible(family.grant.registration)
                     or token.get("surface") != "member" or not is_person(user)
@@ -57,20 +58,20 @@ def binding(request):
                         token.get("mfa_source") != "verified"
                         or family.grant.authority == "staff"
                         and family.grant.registration.makerspace_id not in (None, family.grant.staff_makerspace_id))):
-                raise PermissionDenied("A current device session is required.")
+                raise PermissionDenied(gettext("A current device session is required."))
             return "device:" + str(family.pk), token["surface"]
         if token.get("surface") not in {"member", "platform"}:
-            raise PermissionDenied("Use a browser session to verify your identity.")
+            raise PermissionDenied(gettext("Use a browser session to verify your identity."))
         from apps.accounts.web_sessions import validate_session
         row = validate_session(user, token)
         if row is None:
-            raise PermissionDenied("Sign in again before verifying your identity.")
+            raise PermissionDenied(gettext("Sign in again before verifying your identity."))
         return row.jti, token["surface"]
     if not getattr(request, "session", None) or not request.session.session_key:
-        raise PermissionDenied("A current browser session is required.")
+        raise PermissionDenied(gettext("A current browser session is required."))
     from apps.accounts.control_mfa import session_verified
     if not is_platform(user) or not user.is_superuser or not session_verified(request):
-        raise PermissionDenied("Complete the control-panel MFA gate first.")
+        raise PermissionDenied(gettext("Complete the control-panel MFA gate first."))
     return "control:" + request.session.session_key, "control"
 
 
@@ -144,7 +145,7 @@ def verify(request, *, password="", code=""):
             if passkeys_usable(user):
                 # A second factor exists: a password alone is not a step-up (reauth/passkey).
                 from apps.accounts.login_security_contract import PASSKEY_REQUIRED
-                raise PermissionDenied({"detail": "Confirm with your passkey.", "code": PASSKEY_REQUIRED})
+                raise PermissionDenied({"detail": gettext("Confirm with your passkey."), "code": PASSKEY_REQUIRED})
         proof = current(request)
         social = bool(mfa and proof and proof.social_verified_at and
                       timezone.now() - timedelta(minutes=5) <= proof.social_verified_at <= timezone.now())
@@ -165,7 +166,7 @@ def verify(request, *, password="", code=""):
         else:
             stamp(request)
     if refusal:
-        raise AuthenticationFailed("Identity verification failed.")
+        raise AuthenticationFailed(gettext("Identity verification failed."))
     return {"verified": True, "expires_in": int(WINDOW.total_seconds())}
 
 
@@ -181,5 +182,5 @@ def require_enrollment_proof(request):
         from apps.accounts.reauthentication_phone import available
         valid_phone = available(request.user)
     if not (valid_social or valid_email or valid_phone):
-        raise PermissionDenied("Verify a fresh linked social identity or confirm the session-bound email link before enrolling.",
+        raise PermissionDenied(gettext("Verify a fresh linked social identity or confirm the session-bound email link before enrolling."),
                                code="reauth_enrollment_required")

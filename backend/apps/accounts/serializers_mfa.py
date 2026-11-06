@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.accounts.login_security_contract import FACTORS, PURPOSE_LOGIN, PURPOSE_RISK
 from apps.accounts.schemas_auth import UserPayloadSerializer
@@ -41,9 +42,9 @@ class MFAVerifySerializer(MFAChallengeSerializer):
     def validate(self, attrs):
         if attrs.get("factor") == "passkey":
             if not attrs.get("webauthn"):
-                raise serializers.ValidationError({"webauthn": "Required for a passkey."})
+                raise serializers.ValidationError({"webauthn": gettext("Required for a passkey.")})
         elif not attrs.get("code"):
-            raise serializers.ValidationError({"code": "This field is required."})
+            raise serializers.ValidationError({"code": gettext("This field is required.")})
         return attrs
 
 

@@ -1,4 +1,5 @@
 """Authenticated stream gateways recheck live account/record status per chunk."""
+from django.utils.translation import gettext
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 
@@ -28,7 +29,7 @@ def stream_response(request, *, key, version_id, size, mime, filename, authorize
                                      limits=(expires_at, token_deadline))
     except PrivateTransportError as exc:
         from rest_framework.response import Response
-        response = Response({"code": exc.code, "detail": "Check the requested byte range.", "fields": {}}, status=exc.status)
+        response = Response({"code": exc.code, "detail": gettext("Check the requested byte range."), "fields": {}}, status=exc.status)
         if exc.status == 416:
             response["Content-Range"] = f"bytes */{size}"
         response["Cache-Control"] = "private, no-store"

@@ -7,6 +7,7 @@ the proof it still holds (a new passkey proves itself). Removing the last factor
 person staff MFA is mandatory for is refused (``last_factor``).
 """
 
+from django.utils.translation import gettext
 import uuid
 
 from django.db import transaction
@@ -33,10 +34,10 @@ def assert_web_person(request):
     from apps.accounts.staff_identity import is_person
     user, token = request.user, getattr(request, "auth", None)
     if not is_person(user):
-        raise PermissionDenied("Passkeys are for personal accounts.")
+        raise PermissionDenied(gettext("Passkeys are for personal accounts."))
     if (getattr(request, "device_grant", None) is not None or is_native_session(user)
             or token is None or token.get("device_grant_id") or token.get("surface") != "member"):
-        raise PermissionDenied("Manage passkeys from the website.")
+        raise PermissionDenied(gettext("Manage passkeys from the website."))
     return user
 
 
@@ -121,7 +122,7 @@ def rename(request, pk, name):
     with transaction.atomic():
         row = WebAuthnCredential.objects.select_for_update().filter(pk=pk, user=user).first()
         if row is None:
-            raise NotFound("Passkey not found.")
+            raise NotFound(gettext("Passkey not found."))
         row.name = (str(name or "").strip() or "Passkey")[:64]
         row.save(update_fields=["name"])
         audit.record(user, "auth.passkey_renamed", target=user)
@@ -152,12 +153,12 @@ def remove(request, pk):
         user = User.objects.select_for_update().get(pk=user.pk)
         row = WebAuthnCredential.objects.select_for_update().filter(pk=pk, user=user).first()
         if row is None:
-            raise NotFound("Passkey not found.")
+            raise NotFound(gettext("Passkey not found."))
         mfa, _ = UserMFA.objects.select_for_update().get_or_create(user=user)
         others = WebAuthnCredential.objects.filter(user=user).exclude(pk=row.pk).exists()
         if required(user) and not totp_enabled(user, mfa) and not (others and passkeys_usable(user)):
-            raise PermissionDenied({"detail": "Staff need a second factor. Set up an authenticator or another "
-                                              "passkey before removing this one.", "code": LAST_FACTOR})
+            raise PermissionDenied({"detail": gettext("Staff need a second factor. Set up an authenticator or another "
+                                              "passkey before removing this one."), "code": LAST_FACTOR})
         row.delete()
         if not others and not totp_enabled(user, mfa):
             mfa.recovery_digests = []

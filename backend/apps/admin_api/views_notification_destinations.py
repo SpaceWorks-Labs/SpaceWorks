@@ -6,6 +6,7 @@ all. Every write is `MANAGE_MAKERSPACE` — a destination holds a bearer secret 
 who sees a machine's alerts, which is makerspace configuration rather than machine work.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -74,7 +75,7 @@ class NotificationDestinationListView(APIView):
         # then SKIP every send — the same reason the matrix omits that column entirely.
         if channel_module_blocks(makerspace, data["channel"]):
             return Response(
-                {"detail": f"The {data['channel']} module is not installed."},
+                {"detail": gettext('The {value} module is not installed.').format(value=data['channel'])},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -98,7 +99,7 @@ class NotificationDestinationListView(APIView):
                 apply_scope(destination, data.get("scope"), makerspace)
             except ScopeTargetError as exc:
                 return Response(
-                    {"detail": "Unknown scope target.", "unknown": exc.missing},
+                    {"detail": gettext("Unknown scope target."), "unknown": exc.missing},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             audit.record(
@@ -156,7 +157,7 @@ class NotificationDestinationDetailView(APIView):
                 apply_scope(destination, data.get("scope"), makerspace)
             except ScopeTargetError as exc:
                 return Response(
-                    {"detail": "Unknown scope target.", "unknown": exc.missing},
+                    {"detail": gettext("Unknown scope target."), "unknown": exc.missing},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             audit.record(

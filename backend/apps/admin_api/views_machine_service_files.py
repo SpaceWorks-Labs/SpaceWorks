@@ -1,5 +1,6 @@
 """Staff-only private attachment endpoints for machine service requests."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -142,7 +143,7 @@ class MachineServiceFileUrlView(APIView):
     def get(self, request, pk, *args, **kwargs):
         file = _manageable_file(request.user, pk, attached=True)
         if file.service_request_id is None or file.attached_at is None:
-            return Response({"detail": "Attachment is not available."}, status=status.HTTP_409_CONFLICT)
+            return Response({"detail": gettext("Attachment is not available.")}, status=status.HTTP_409_CONFLICT)
         try:
             url = service_storage.presigned_get_url(file.object_key)
         except StorageUnavailable:

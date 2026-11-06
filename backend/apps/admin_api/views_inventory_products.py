@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
@@ -178,12 +179,12 @@ class InventoryQuantityAdjustmentView(APIView):
 def _assert_box_in_makerspace(box, makerspace_id):
     """A product may only point at a box in its own makerspace (tenant isolation)."""
     if box is not None and box.makerspace_id != makerspace_id:
-        raise ValidationError({"box": "Box belongs to a different makerspace."})
+        raise ValidationError({"box": gettext("Box belongs to a different makerspace.")})
 
 
 def _assert_category_in_makerspace(category, makerspace_id):
     """A product may only point at a category in its own makerspace."""
     if category is not None and category.makerspace_id != makerspace_id:
         raise ValidationError(
-            {"category": "Category belongs to a different makerspace."}
+            {"category": gettext("Category belongs to a different makerspace.")}
         )

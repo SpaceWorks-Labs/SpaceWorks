@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -90,15 +91,15 @@ class InventoryProductImageView(APIView):
         object_key = serializer.validated_data["object_key"]
         expected_prefix = f"items/{product.makerspace_id}/"
         if not object_key.startswith(expected_prefix):
-            raise ValidationError({"object_key": "Image object key is outside this makerspace."})
+            raise ValidationError({"object_key": gettext("Image object key is outside this makerspace.")})
         if not public_image_storage.is_safe_object_key(object_key):
-            raise ValidationError({"object_key": "Invalid image object key."})
+            raise ValidationError({"object_key": gettext("Invalid image object key.")})
         if object_key and public_image_storage.public_image_key_in_use(
             product.makerspace_id,
             object_key,
             product_id=product.pk,
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
             result = public_image_storage.finalize_upload(object_key)
         except StorageUnavailable:
@@ -120,7 +121,7 @@ class InventoryProductImageView(APIView):
             public_image_storage.delete_object(object_key)
             public_image_storage.delete_object(public_image_storage.staging_key(object_key))
             raise ValidationError(
-                {"object_key": "Uploaded file is not a valid image."}
+                {"object_key": gettext("Uploaded file is not a valid image.")}
             )
         product = InventoryProduct.objects.select_for_update().select_related(
             "makerspace"
@@ -130,7 +131,7 @@ class InventoryProductImageView(APIView):
             object_key,
             product_id=product.pk,
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         old_key = product.image_key
         if object_key != old_key:
             add_storage(product.makerspace, result.size)

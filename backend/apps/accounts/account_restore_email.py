@@ -1,5 +1,6 @@
 """A synchronous, non-persisted restore link using the existing reset queue."""
 
+from django.utils.translation import gettext
 from urllib.parse import urlencode
 
 from django.conf import settings
@@ -21,10 +22,10 @@ def send_restore_link(recipient, token):
         return False
     url = base + "/account/restore#" + urlencode({"email": recipient, "token": token})
     log = dispatch_email(
-        to_email=recipient, subject="Restore your Space Works account",
-        text_body="Your account is archived. To restore it and choose a new password, open:\n\n"
-                  + url + "\n\nThis link works once, for 24 hours, before identity removal begins. "
-                  "Memberships and previous sessions remain revoked. If you did not request this, ignore this email.",
+        to_email=recipient, subject=gettext("Restore your Space Works account"),
+        text_body=gettext("Your account is archived. To restore it and choose a new password, open:\n\n")
+                  + url + gettext("\n\nThis link works once, for 24 hours, before identity removal begins. "
+                  "Memberships and previous sessions remain revoked. If you did not request this, ignore this email."),
         stream="account", event="account_restore", audience="user", connection="platform",
         persist_body=False, sync=True,
     )
@@ -61,5 +62,5 @@ def confirm_email(email, token, new_password):
     if failure:
         raise failure
     if restored is None:
-        raise ValidationError({"detail": "Invalid or expired restore proof."})
+        raise ValidationError({"detail": gettext("Invalid or expired restore proof.")})
     return restored

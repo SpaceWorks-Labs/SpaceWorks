@@ -5,6 +5,7 @@ without the deployment's ``PII_SEARCH_HASH_KEY``; a ``RetiredPublishableKey`` is
 browser key kept only for its grace window. All are deployment-local and never travel.
 """
 
+from django.utils.translation import gettext_lazy
 from django.db import models
 from django.db.models import Q
 
@@ -13,9 +14,9 @@ class KeyRotationJob(models.Model):
     """One background re-encrypt or re-index of one space, with progress the UI polls."""
 
     class Kind(models.TextChoices):
-        ROTATION = "rotation", "Key rotation"
-        EMERGENCY_REKEY = "emergency_rekey", "Emergency re-key"
-        SEARCH_REINDEX = "search_reindex", "Search key rotation"
+        ROTATION = "rotation", gettext_lazy("Key rotation")
+        EMERGENCY_REKEY = "emergency_rekey", gettext_lazy("Emergency re-key")
+        SEARCH_REINDEX = "search_reindex", gettext_lazy("Search key rotation")
 
     class Status(models.TextChoices):
         RUNNING = "running", "Running"

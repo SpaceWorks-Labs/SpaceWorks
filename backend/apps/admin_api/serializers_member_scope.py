@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -20,5 +21,5 @@ class MemberMachineScopeWriteSerializer(serializers.Serializer):
 
     def validate_machine_type_ids(self, value):
         if len(set(value)) != len(value):
-            raise serializers.ValidationError("Duplicate machine type ids are not allowed.")
+            raise serializers.ValidationError(gettext("Duplicate machine type ids are not allowed."))
         return value

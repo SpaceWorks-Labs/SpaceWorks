@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import secrets
 
 from django.conf import settings
@@ -96,14 +97,14 @@ class ApiClient(models.Model):
 
         if self.client_type == "peer":
             if self.makerspace_id is None:
-                raise ValidationError({"makerspace": "A peer client belongs to the space whose public data it reads."})
+                raise ValidationError({"makerspace": gettext("A peer client belongs to the space whose public data it reads.")})
             try:
                 validate_grantable_scopes(self.scopes, privileged=True, client_type="peer")
             except ValueError as exc:
                 raise ValidationError({"scopes": str(exc)}) from exc
         if set(self.scopes or ()) & read_scope_vocabulary():
             if self.client_type != "server" or self.makerspace_id is None:
-                raise ValidationError({"scopes": "Staff read scopes require a tenant-bound server client."})
+                raise ValidationError({"scopes": gettext("Staff read scopes require a tenant-bound server client.")})
             try:
                 validate_grantable_scopes(self.scopes, privileged=True)
             except ValueError as exc:
@@ -132,7 +133,7 @@ class ApiClient(models.Model):
         issued_scopes = list(scopes or [])
         if not issued_scopes:
             raise ValidationError(
-                {"scopes": "At least one API-client scope is required."}
+                {"scopes": gettext("At least one API-client scope is required.")}
             )
         # Every issuance path (including host-side tools) shares the supported catalog.
         from apps.apiclients.scope_grants import validate_grantable_scopes

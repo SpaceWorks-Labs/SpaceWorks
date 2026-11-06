@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import PermissionDenied
@@ -47,5 +48,5 @@ class MakerspaceUsageView(APIView):
             request.user, rbac.Action.MANAGE_MAKERSPACE, servable_queryset(), field="id",
         ), pk=makerspace_id)
         if not rbac.can(request.user, rbac.Action.MANAGE_MAKERSPACE, space.pk):
-            raise PermissionDenied("Not allowed to manage this makerspace.")
+            raise PermissionDenied(gettext("Not allowed to manage this makerspace."))
         return Response(MakerspaceUsageSerializer(usage_snapshot(space)).data)

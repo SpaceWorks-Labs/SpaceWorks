@@ -7,6 +7,7 @@ direct manager), and the SAME predicate filters the list — a row that lists an
 on click is the failure mode `docs/INVARIANTS.md` calls out under Machine scoping.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -110,7 +111,7 @@ class CertificationTypeListCreateView(APIView):
             ),
         )
         if machine_type.makerspace_id not in (None, makerspace_id):
-            raise ValidationError({"machine_type": "Unknown machine type."})
+            raise ValidationError({"machine_type": gettext("Unknown machine type.")})
         if not access.can_create_machine(request.user, makerspace_id, machine_type):
             raise PermissionDenied()
         with certification_type_write():

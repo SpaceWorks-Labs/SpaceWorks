@@ -1,5 +1,6 @@
 """Shared, transactional staff membership attachment helpers."""
 
+from django.utils.translation import gettext
 from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from django.utils.crypto import get_random_string
@@ -48,10 +49,10 @@ def attach_staff_membership(
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         existing_user = User.objects.select_for_update().filter(username=username).first()
         if any(item.slug != "member" for item in roles):
-            raise ValidationError({"roles": "Grant staff roles through the staff-roles API."})
+            raise ValidationError({"roles": gettext("Grant staff roles through the staff-roles API.")})
         from apps.accounts.staff_identity import is_person
         if existing_user is not None and not is_person(existing_user):
-            raise ValidationError({"username": "Community memberships require a member account."})
+            raise ValidationError({"username": gettext("Community memberships require a member account.")})
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed, settings_for
         policy = settings_for(makerspace)
         role = MakerspaceRole.objects.select_for_update().get(
@@ -78,7 +79,7 @@ def attach_staff_membership(
             )
             if existing is not None and _is_superadmin_only_membership(existing):
                 raise PermissionDenied(
-                    "Only a superadmin can change a Space Manager membership."
+                    gettext("Only a superadmin can change a Space Manager membership.")
                 )
         from apps.makerspaces.platform import module_enabled
         has_active_membership = MakerspaceMembership.objects.filter(
@@ -90,7 +91,7 @@ def attach_staff_membership(
         if (policy.configured and module_enabled(makerspace, "membership")
                 and not role.granted_actions and not has_active_membership):
             if not user.is_active or user.access_status != User.AccessStatus.ACTIVE:
-                raise ValidationError({"detail": "Community admission requires an unrestricted active account."})
+                raise ValidationError({"detail": gettext("Community admission requires an unrestricted active account.")})
             from apps.makerspaces.membership_activation import _activate_membership
             membership = _activate_membership(actor, makerspace, user, role, source="staff_create")
             return membership, created

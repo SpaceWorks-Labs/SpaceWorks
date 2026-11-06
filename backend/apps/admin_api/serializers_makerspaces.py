@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.integrations.email_provider_serializers import EmailProviderFields
 from apps.admin_api.serializers_theme import ThemeConfigField
 from rest_framework import serializers
@@ -31,7 +32,7 @@ class MakerspaceSerializer(
 
     def validate_creation_setup(self, value):
         if self.instance is not None:
-            raise serializers.ValidationError("Use setup only when creating a makerspace.")
+            raise serializers.ValidationError(gettext("Use setup only when creating a makerspace."))
         return value
 
     def validate(self, attrs):

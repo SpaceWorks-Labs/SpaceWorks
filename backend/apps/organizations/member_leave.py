@@ -1,5 +1,6 @@
 """Owner-self organization withdrawal, with a timestamp revision and durable replay."""
 
+from django.utils.translation import gettext
 from datetime import UTC, datetime
 
 from django.conf import settings
@@ -89,7 +90,7 @@ class LeaveInput(serializers.Serializer):
 
     def to_internal_value(self, data):
         if isinstance(data, dict) and set(data) - set(self.fields):
-            raise serializers.ValidationError("Unknown field.")
+            raise serializers.ValidationError(gettext("Unknown field."))
         return super().to_internal_value(data)
 
 

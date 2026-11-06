@@ -5,6 +5,7 @@ the uploaded file on the server (CSV, TSV or .xlsx, #123) or, under
 `membership.import_sheets` (L13), a public Google Sheet's CSV export; the preview is a
 dry run that writes nothing, the apply writes the whole file in one transaction.
 """
+from django.utils.translation import gettext
 import json
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
@@ -52,7 +53,7 @@ def _json(raw, default):
     try:
         return json.loads(raw)
     except ValueError as exc:
-        raise ValidationError({"detail": "Mapping and row choices must be JSON."}) from exc
+        raise ValidationError({"detail": gettext("Mapping and row choices must be JSON.")}) from exc
 
 
 def _read(request, space):
@@ -64,11 +65,11 @@ def _read(request, space):
     try:
         rows = rows_from_upload(upload)
     except ValueError as exc:
-        raise ValidationError({"file": str(exc) or "The file could not be read."}) from exc
+        raise ValidationError({"file": str(exc) or gettext("The file could not be read.")}) from exc
     headers = list(rows[0].keys()) if rows else []
     mapping = _json(data.validated_data.get("mapping"), None) or planner.suggest_mapping(headers)
     if not isinstance(mapping, dict) or "email" not in mapping:
-        raise ValidationError({"mapping": "Choose which column holds the email address."})
+        raise ValidationError({"mapping": gettext("Choose which column holds the email address.")})
     return upload, rows, headers, mapping, data.validated_data, sheet
 
 

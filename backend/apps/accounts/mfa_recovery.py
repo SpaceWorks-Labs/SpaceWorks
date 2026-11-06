@@ -1,5 +1,6 @@
 """Host-only recovery of a lost superadmin authenticator; the account returns to password sign-in."""
 
+from django.utils.translation import gettext
 import uuid
 
 from django.db import transaction
@@ -15,7 +16,7 @@ from apps.accounts.services_tokens import blacklist_outstanding_tokens
 def reset_superadmin_mfa(user):
     user = User.objects.select_for_update().get(pk=user.pk)
     if not (user.is_superuser or user.role == User.Role.SUPERADMIN):
-        raise PermissionDenied("Only an existing superadmin may use host MFA recovery.")
+        raise PermissionDenied(gettext("Only an existing superadmin may use host MFA recovery."))
     row, _ = UserMFA.objects.get_or_create(user=user)
     row.secret, row.enabled_at, row.last_step = "", None, -1
     row.recovery_digests, row.version = [], uuid.uuid4()

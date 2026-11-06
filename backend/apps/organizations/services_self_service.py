@@ -1,4 +1,5 @@
 """Bounded organization creation; global governance never grants tenant authority."""
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.conf import settings
@@ -52,12 +53,12 @@ def create_self_service(actor, *, name, slug, description="", website=""):
     if recent >= policy["max_per_day"]:
         raise OrganizationConflict("Your daily organization creation limit has been reached.")
     if not isinstance(name, str) or not isinstance(slug, str):
-        raise ValidationError("A name and slug must be strings.")
+        raise ValidationError(gettext("A name and slug must be strings."))
     if not isinstance(description, str) or len(description) > 10000:
-        raise ValidationError({"description": "Use at most 10,000 characters."})
+        raise ValidationError({"description": gettext("Use at most 10,000 characters.")})
     name, slug = name.strip(), slug.strip()
     if not name or not slug:
-        raise ValidationError("A name and slug are required.")
+        raise ValidationError(gettext("A name and slug are required."))
     try:
         with transaction.atomic():
             row = Organization(

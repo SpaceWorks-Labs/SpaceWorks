@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -91,7 +92,7 @@ def assert_csrf(request, *, surface=None):
     that an attacker origin cannot pass) AND the Origin/Referer to exactly match an
     allowlisted origin. No readable cookie is needed, so this works across separate origins."""
     if settings.AUTH_REFRESH_CSRF_HEADER not in request.headers:
-        raise PermissionDenied("Missing CSRF header.")
+        raise PermissionDenied(gettext("Missing CSRF header."))
     origin = request.headers.get("Origin") or request.headers.get("Referer", "")
     if not _origin_allowed(origin, surface=surface):
-        raise PermissionDenied("Origin not allowed.")
+        raise PermissionDenied(gettext("Origin not allowed."))

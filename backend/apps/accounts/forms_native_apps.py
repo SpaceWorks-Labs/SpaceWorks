@@ -1,5 +1,6 @@
 """Validate public app identity inputs at the control-plane boundary."""
 
+from django.utils.translation import gettext
 import re
 
 from django import forms
@@ -38,5 +39,5 @@ class NativeAppRegistrationForm(forms.ModelForm):
     def clean_min_supported_version(self):
         value = self.cleaned_data.get("min_supported_version")
         if value and not re.fullmatch(VERSION_PATTERN, value):
-            raise forms.ValidationError("Enter a dotted numeric version such as 1.4.0, or leave blank.")
+            raise forms.ValidationError(gettext("Enter a dotted numeric version such as 1.4.0, or leave blank."))
         return value or None

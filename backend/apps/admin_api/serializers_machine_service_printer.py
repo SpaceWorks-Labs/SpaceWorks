@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -36,12 +37,12 @@ class PrinterPoolCreateSerializer(serializers.Serializer):
         attrs = super().validate(attrs)
         if attrs.get("machine_id") is not None and attrs.get("machine_type_id") is not None:
             raise serializers.ValidationError({
-                "machine_type_id": "Choose either machine_id or machine_type_id, not both."
+                "machine_type_id": gettext("Choose either machine_id or machine_type_id, not both.")
             })
         if attrs.get("quantity") is None and attrs.get("initial_grams") is None:
-            raise serializers.ValidationError({"quantity": "quantity or initial_grams is required."})
+            raise serializers.ValidationError({"quantity": gettext("quantity or initial_grams is required.")})
         if attrs.get("quantity") is not None and attrs.get("initial_grams") is not None:
-            raise serializers.ValidationError("Provide only quantity or initial_grams.")
+            raise serializers.ValidationError(gettext("Provide only quantity or initial_grams."))
         return attrs
 
 

@@ -1,5 +1,6 @@
 """Browser login, refresh, logout, and current-user endpoints."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import APIException, AuthenticationFailed
@@ -68,7 +69,7 @@ class RefreshView(TokenRefreshView):
                     from apps.accounts.surface_policy import assert_surface
                     actor = User.objects.filter(pk=token.get("user_id")).first()
                     if actor is None:
-                        raise AuthenticationFailed("Account is not available.")
+                        raise AuthenticationFailed(gettext("Account is not available."))
                     assert_surface(actor, token.get("surface"), request)
         except TokenError as exc:
             audit_events.record_refresh_rejected(cookie, "invalid_token")
@@ -117,7 +118,7 @@ class RefreshView(TokenRefreshView):
                 target=actor,
                 meta={"reason": "restricted_account"},
             )
-            response = Response({"detail": "Account access is restricted."}, status=403)
+            response = Response({"detail": gettext("Account access is restricted.")}, status=403)
             clear_refresh_cookies(response, context=context)
             return response
         serializer = self.get_serializer(data={"refresh": cookie}, context={"request": request, "session_context": context})

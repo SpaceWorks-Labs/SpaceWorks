@@ -1,5 +1,6 @@
 """Password change and anonymous account-recovery endpoints."""
 
+from django.utils.translation import gettext
 from collections.abc import Mapping
 
 from django.contrib.auth.password_validation import validate_password
@@ -108,11 +109,11 @@ class ChangePasswordView(APIView):
             or not user.check_password(current_password)
         ):
             raise serializers.ValidationError(
-                {"current_password": "Current password is incorrect."}
+                {"current_password": gettext("Current password is incorrect.")}
             )
         if new_password == current_password:
             raise serializers.ValidationError(
-                {"new_password": "New password must be different from the current password."}
+                {"new_password": gettext("New password must be different from the current password.")}
             )
         try:
             validate_password(new_password, user=user)
@@ -129,7 +130,7 @@ class ChangePasswordView(APIView):
                 or not locked.check_password(current_password)
             ):
                 raise serializers.ValidationError(
-                    {"current_password": "Current password is incorrect."}
+                    {"current_password": gettext("Current password is incorrect.")}
                 )
             locked.set_password(new_password)
             locked.must_change_password = False
@@ -137,7 +138,7 @@ class ChangePasswordView(APIView):
             audit.record(locked, "user.password_changed", target=locked)
             device_memory.restore(current_device)
             security_alerts.password_changed(locked)
-        return Response({"detail": "Password updated."})
+        return Response({"detail": gettext("Password updated.")})
 
 
 class ForgotPasswordView(APIView):
@@ -208,7 +209,7 @@ class ResetPasswordConfirmView(APIView):
             # Removal condition: last time old links could be issued +
             # PASSWORD_RESET_TIMEOUT. A release count is not a safe clock.
             _confirm_legacy_link(data["uid"], data["token"], data["new_password"])
-        return Response({"detail": "Password updated."})
+        return Response({"detail": gettext("Password updated.")})
 
 
 def _confirm_legacy_link(uid, token, new_password):

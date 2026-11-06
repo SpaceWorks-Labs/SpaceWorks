@@ -1,5 +1,6 @@
 """Single authority for claim-reachable paths and their per-method policies."""
 
+from django.utils.translation import gettext
 from apps.accounts.claim_route_types import (
     Allowed,
     AnonymousRead,
@@ -61,12 +62,12 @@ CLAIM_ROUTES = {
 def policy_for(view_name, method):
     """Fail closed at runtime even before the build guard reports route drift."""
     if view_name == "notification-media":
-        return Refused("Media delivery requires its own single-use capability")
+        return Refused(gettext("Media delivery requires its own single-use capability"))
     if view_name in STAFF_ACCOUNT_REFUSALS:
-        return Refused("Claim sessions cannot manage staff accounts")
+        return Refused(gettext("Claim sessions cannot manage staff accounts"))
     return CLAIM_ROUTES.get(
         (view_name, method.upper()),
-        Refused("unclassified claim route"),
+        Refused(gettext("unclassified claim route")),
     )
 
 

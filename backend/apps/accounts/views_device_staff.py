@@ -8,6 +8,7 @@ factor. The MFA challenge this returns finishes through the ordinary ``auth/mfa/
 makerspace; the member grant it started from keeps working.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
@@ -71,16 +72,16 @@ class DeviceStaffGrantView(APIView):
         challenge = consume_attestation_challenge(
             data["challenge"], platform=grant.platform, app_id=grant.app_id, environment=grant.environment)
         if challenge is None:
-            raise AuthenticationFailed("Invalid device attestation.")
+            raise AuthenticationFailed(gettext("Invalid device attestation."))
         try:
             verified = verify_attestation(challenge, data["challenge"], data["attestation"])
         except AttestationUnavailable:
-            return Response({"detail": "Device attestation is unavailable.", "code": "attestation_unavailable"},
+            return Response({"detail": gettext("Device attestation is unavailable."), "code": "attestation_unavailable"},
                             status=503)
         except AttestationRejected as exc:
-            raise AuthenticationFailed("Invalid device attestation.") from exc
+            raise AuthenticationFailed(gettext("Invalid device attestation.")) from exc
         if challenge.registration.makerspace_id not in (None, space):
-            raise AuthenticationFailed("Device registration is not approved for that makerspace.")
+            raise AuthenticationFailed(gettext("Device registration is not approved for that makerspace."))
         from apps.accounts.mfa_challenges import start
         from apps.accounts.mfa_sessions import context, device_context
         device = device_context(challenge, verified, login_method=grant.login_method)

@@ -1,5 +1,6 @@
 """Boundary validation and schema shapes for password credential endpoints."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -69,7 +70,7 @@ class ResetPasswordConfirmSerializer(RecoveryContextSerializer):
             attrs["method"] = "link"
             return attrs
         raise serializers.ValidationError(
-            {"detail": "Submit either email and code, or uid and token."}
+            {"detail": gettext("Submit either email and code, or uid and token.")}
         )
 
 

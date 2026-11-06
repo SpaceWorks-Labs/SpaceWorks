@@ -14,6 +14,7 @@ never on OPTIONS. Order of decisions for one request:
 It sits before ``AxesMiddleware`` so a refused request never reaches a credential check.
 """
 
+from django.utils.translation import gettext
 import json
 import logging
 
@@ -63,7 +64,7 @@ def _blocked(route, retry_after):
         response = HttpResponse("Too many failed sign-ins from this network. Try again later.",
                                 status=429, content_type="text/plain")
     else:
-        response = JsonResponse({"detail": "Too many failed sign-ins from your network. Try again later.",
+        response = JsonResponse({"detail": gettext("Too many failed sign-ins from your network. Try again later."),
                                  "code": IP_BLOCKED}, status=429)
     if retry_after:
         response["Retry-After"] = str(int(retry_after))

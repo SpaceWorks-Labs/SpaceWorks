@@ -1,5 +1,6 @@
 """Claim policies for routes mounted below ``/api/v1/public/``."""
 
+from django.utils.translation import gettext_lazy
 from apps.accounts.claim_route_types import (
     AnonymousRead,
     Allowed,
@@ -23,7 +24,7 @@ PUBLIC_CLAIM_ROUTES = {
     **_anonymous("public-booking-resource"),
     **_anonymous("public-booking-website"),
     **_anonymous("public-booking-website-image"),
-    **{(name, method): Refused("claim sessions cannot read or rotate account arrival credentials")
+    **{(name, method): Refused(gettext_lazy("claim sessions cannot read or rotate account arrival credentials"))
        for name, methods in (
            ("member-booking-confirmation", ("GET", "HEAD")),
            ("member-booking-confirmation-png", ("GET", "HEAD")),
@@ -38,7 +39,7 @@ PUBLIC_CLAIM_ROUTES = {
     ('member-booking-reschedule', 'POST'): Allowed(tenant=SLUG, audited=True),
     ('member-booking-reschedule', 'OPTIONS'): AnonymousRead(),
     **{('member-booking-feed-settings', method): Refused(
-        'claim sessions cannot manage durable bearer credentials'
+        gettext_lazy('claim sessions cannot manage durable bearer credentials')
     ) for method in ('GET', 'HEAD', 'POST', 'DELETE')},
     ('member-booking-feed-settings', 'OPTIONS'): AnonymousRead(),
     **_anonymous('public-booking-feed'),
@@ -77,7 +78,7 @@ PUBLIC_CLAIM_ROUTES = {
     **_anonymous("public-event-website-schedule"),
     **_anonymous("public-event-website-image"),
     **{("public-event-organization-eligibility", method): Refused(
-        "organization eligibility requires an account session"
+        gettext_lazy("organization eligibility requires an account session")
     ) for method in ("GET", "HEAD")},
     ("public-event-organization-eligibility", "OPTIONS"): AnonymousRead(),
     # The organization directory is deployment-global read-only presentation; a walk-in
@@ -116,13 +117,13 @@ PUBLIC_CLAIM_ROUTES = {
     ("v1:public-inventory-watch", "DELETE"): Allowed(tenant=SLUG, audited=True),
     ("v1:public-inventory-watch", "OPTIONS"): AnonymousRead(),
     ("public-membership-request", "POST"): Refused(
-        "walk-ins cannot satisfy verified-email eligibility"
+        gettext_lazy("walk-ins cannot satisfy verified-email eligibility")
     ),
     ("public-membership-request", "OPTIONS"): AnonymousRead(),
     # A walk-in already holds a membership claim; asking to be invited makes no sense
     # from inside one, and the anonymous path stays open to everyone else.
     ("public-invitation-request", "POST"): Refused(
-        "walk-ins already hold a membership; invitation requests are for outsiders"
+        gettext_lazy("walk-ins already hold a membership; invitation requests are for outsiders")
     ),
     ("public-invitation-request", "OPTIONS"): AnonymousRead(),
     # Hosting a makerspace is platform-level and anonymous; a walk-in's claim session
@@ -131,7 +132,7 @@ PUBLIC_CLAIM_ROUTES = {
        for name in ("public-hosting-request-submit", "public-hosting-request-open", "public-hosting-request-resubmit",
                     "public-hosting-invitation-resolve", "public-hosting-invitation-submit")
        for method, policy in (
-           ("POST", Refused("claim sessions cannot apply to host a makerspace")),
+           ("POST", Refused(gettext_lazy("claim sessions cannot apply to host a makerspace"))),
            ("OPTIONS", AnonymousRead()),
        )},
     ("hardware_requests:request-submit", "POST"): Allowed(

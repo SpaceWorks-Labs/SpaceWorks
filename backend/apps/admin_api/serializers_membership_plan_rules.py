@@ -6,6 +6,7 @@ per-plan overrides) and `membership.public_plans` (public listing, slug and desc
 A write that CHANGES one of them while its switch is off is refused with 403
 `feature_disabled`; reads always show the stored values, so switching off loses nothing.
 """
+from django.utils.translation import gettext
 import re
 
 from rest_framework import serializers
@@ -32,7 +33,7 @@ def _gate(makerspace, attrs, fields, key, instance):
                      if name in attrs and attrs[name] != getattr(instance, name, default))
     if changed:
         raise PermissionDenied({"code": "feature_disabled", "feature": f"membership.{key}",
-                                "detail": f"Turn on membership.{key} to use: {', '.join(changed)}."})
+                                "detail": gettext('Turn on membership.{key} to use: {value}.').format(key=key, value=', '.join(changed))})
 
 
 def validate_plan_rules(attrs, instance, makerspace):
@@ -44,17 +45,17 @@ def validate_plan_rules(attrs, instance, makerspace):
 
     plan_type = value("plan_type") or PlanType.ROLLING
     if plan_type == PlanType.FIXED_END and not value("fixed_end_date"):
-        raise serializers.ValidationError({"fixed_end_date": "A fixed-end plan needs its end date."})
+        raise serializers.ValidationError({"fixed_end_date": gettext("A fixed-end plan needs its end date.")})
     if plan_type != PlanType.FIXED_END and value("fixed_end_date") is not None:
-        raise serializers.ValidationError({"fixed_end_date": "Only a fixed-end plan takes an end date."})
+        raise serializers.ValidationError({"fixed_end_date": gettext("Only a fixed-end plan takes an end date.")})
     rule = value("rejoin_rule")
     if rule == RejoinRule.AFTER_LAPSE and not value("rejoin_after_days"):
-        raise serializers.ValidationError({"rejoin_after_days": "Say how many days without a membership count as a lapse."})
+        raise serializers.ValidationError({"rejoin_after_days": gettext("Say how many days without a membership count as a lapse.")})
     if rule != RejoinRule.AFTER_LAPSE and value("rejoin_after_days") is not None:
-        raise serializers.ValidationError({"rejoin_after_days": "Only the after-a-lapse rule takes a day count."})
+        raise serializers.ValidationError({"rejoin_after_days": gettext("Only the after-a-lapse rule takes a day count.")})
     slug = attrs.get("slug")
     if slug and not _SLUG.match(slug):
-        raise serializers.ValidationError({"slug": "Use lowercase letters, digits and single hyphens."})
+        raise serializers.ValidationError({"slug": gettext("Use lowercase letters, digits and single hyphens.")})
     if plan_type == PlanType.LIFETIME and value("auto_renew"):
-        raise serializers.ValidationError({"auto_renew": "A lifetime plan never renews."})
+        raise serializers.ValidationError({"auto_renew": gettext("A lifetime plan never renews.")})
     return attrs

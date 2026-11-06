@@ -5,6 +5,7 @@ space's own Space Manager, who sees every window on the space -- the same facts 
 log carries -- so a platform PII view is never invisible to the people it concerns.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -59,7 +60,7 @@ def _space(request, makerspace_id, *, superadmin_only):
     if is_platform_superadmin(request.user):
         return space
     if superadmin_only or security_settings.editor_via(request.user, space) is None:
-        raise PermissionDenied("Only a platform superadmin or this space's Space Manager can see PII access.")
+        raise PermissionDenied(gettext("Only a platform superadmin or this space's Space Manager can see PII access."))
     return space
 
 

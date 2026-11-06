@@ -15,6 +15,7 @@ closed: they enrol again before using staff screens (member features keep workin
 Audited as ``auth.mfa_reset`` with the rule used; ``mfa_changed`` is signalled.
 """
 
+from django.utils.translation import gettext
 import uuid
 
 from django.db import transaction
@@ -91,7 +92,7 @@ def reset(actor, person, reason, makerspace=None, *, rule=None):
     from apps.audit import services as audit
     reason = str(reason or "").strip()
     if not 3 <= len(reason) <= 300:
-        raise PermissionDenied({"detail": "Give a reason (3 to 300 characters).", "code": "invalid_reason"})
+        raise PermissionDenied({"detail": gettext("Give a reason (3 to 300 characters)."), "code": "invalid_reason"})
     rule = rule or rule_for(actor, person, makerspace)
     if rule is None:
         raise MfaResetNotAllowed()

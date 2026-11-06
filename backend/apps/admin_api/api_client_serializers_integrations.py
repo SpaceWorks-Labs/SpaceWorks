@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.integrations.smtp_validation import validate_smtp_settings
@@ -82,7 +83,7 @@ class ApiIntegrationSettingsSerializer(EmailProviderFields, serializers.ModelSer
 
     def validate_default_loan_days(self, value):
         if value < 1:
-            raise serializers.ValidationError("Default loan days must be at least 1.")
+            raise serializers.ValidationError(gettext("Default loan days must be at least 1."))
         return value
 
     def validate(self, attrs):

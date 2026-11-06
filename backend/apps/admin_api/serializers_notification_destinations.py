@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.integrations.models_destinations import (
@@ -86,20 +87,20 @@ class NotificationDestinationWriteSerializer(serializers.Serializer):
         if channel == ChatNotificationChannel.TELEGRAM:
             if not chat_id:
                 raise serializers.ValidationError(
-                    {"telegram_chat_id": "A Telegram destination needs a chat id."}
+                    {"telegram_chat_id": gettext("A Telegram destination needs a chat id.")}
                 )
             if webhook:
                 raise serializers.ValidationError(
-                    {"webhook_url": "Telegram destinations use a chat id, not a webhook."}
+                    {"webhook_url": gettext("Telegram destinations use a chat id, not a webhook.")}
                 )
         elif channel in WEBHOOK_CHANNELS:
             if not (webhook or has_stored_webhook):
                 raise serializers.ValidationError(
-                    {"webhook_url": "This channel needs an incoming-webhook URL."}
+                    {"webhook_url": gettext("This channel needs an incoming-webhook URL.")}
                 )
             if chat_id:
                 raise serializers.ValidationError(
-                    {"telegram_chat_id": "Only Telegram destinations carry a chat id."}
+                    {"telegram_chat_id": gettext("Only Telegram destinations carry a chat id.")}
                 )
             if webhook:
                 # Key the SSRF/format failure to the field, like every other error in
@@ -115,16 +116,16 @@ class NotificationDestinationWriteSerializer(serializers.Serializer):
         if channel == ChatNotificationChannel.WEBHOOK:
             if not (secret or has_stored_secret):
                 raise serializers.ValidationError(
-                    {"signing_secret": "A signed webhook needs a signing secret (16+ characters)."}
+                    {"signing_secret": gettext("A signed webhook needs a signing secret (16+ characters).")}
                 )
         elif secret:
             raise serializers.ValidationError(
-                {"signing_secret": "Only signed-webhook destinations carry a signing secret."}
+                {"signing_secret": gettext("Only signed-webhook destinations carry a signing secret.")}
             )
         if existing is not None and existing.channel != channel:
             # Changing a room's channel would leave a credential of the wrong shape and
             # silently repoint an operator's scope links at a different provider.
             raise serializers.ValidationError(
-                {"channel": "A destination's channel cannot be changed."}
+                {"channel": gettext("A destination's channel cannot be changed.")}
             )
         return attrs

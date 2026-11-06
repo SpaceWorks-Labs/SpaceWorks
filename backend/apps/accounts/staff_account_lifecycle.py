@@ -8,6 +8,7 @@ authority: the person's member features keep working, and their staff device gra
 that space are revoked (``services_staff_grants``).
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -22,7 +23,7 @@ from apps.makerspaces.models import MakerspaceMembership
 
 def _reason(reason, default):
     if not isinstance(reason, str) or len(reason) > 200:
-        raise ValidationError({"reason": "Use at most 200 characters."})
+        raise ValidationError({"reason": gettext("Use at most 200 characters.")})
     return reason.strip() or default
 
 
@@ -44,7 +45,7 @@ def revoke(actor, space_id, membership_id, *, reason=""):
         row = target_row(space, membership_id, lock=True)
         require_authority(actor, space, target=row.user)
         if row.status != "active":
-            raise ValidationError({"detail": "This staff row is already revoked."})
+            raise ValidationError({"detail": gettext("This staff row is already revoked.")})
         protect_last_manager(space, row)
         _revoke_row(actor, space, row, reason)
     return target_row(space, row.pk)
@@ -56,10 +57,10 @@ def restore(actor, space_id, membership_id):
         row = target_row(space, membership_id, lock=True)
         require_authority(actor, space, target=row.user)
         if row.status == "active":
-            raise ValidationError({"detail": "This staff row is already active."})
+            raise ValidationError({"detail": gettext("This staff row is already active.")})
         user = row.user
         if not user.is_active or user.access_status != User.AccessStatus.ACTIVE:
-            raise ValidationError({"detail": "This account is disabled or restricted."})
+            raise ValidationError({"detail": gettext("This account is disabled or restricted.")})
         check_staff_quota(space)
         row.status, row.revoked_at, row.revoked_by, row.revocation_reason = "active", None, None, ""
         row.save(update_fields=["status", "revoked_at", "revoked_by", "revocation_reason"])
@@ -74,9 +75,9 @@ def _require_superadmin(actor, target):
     from apps.accounts.staff_identity import is_person
 
     if not is_platform_superadmin(actor):
-        raise PermissionDenied("Only the platform administrator disables accounts.")
+        raise PermissionDenied(gettext("Only the platform administrator disables accounts."))
     if not is_person(target):
-        raise PermissionDenied("Only a personal account is disabled here.")
+        raise PermissionDenied(gettext("Only a personal account is disabled here."))
 
 
 def disable_account(actor, user_id, *, reason=""):
@@ -108,7 +109,7 @@ def disable_account(actor, user_id, *, reason=""):
         revoke_all_credentials(target, reason="account.disabled", actor=actor)
         target = lock_credentials(target)
         if not target.is_active:
-            raise ValidationError({"detail": "This account is already disabled."})
+            raise ValidationError({"detail": gettext("This account is already disabled.")})
         target.is_active = False
         target.save(update_fields=["is_active"])
         rows = MakerspaceMembership.staff_tracks.select_related("makerspace").filter(user=target, status="active")
@@ -128,7 +129,7 @@ def enable_account(actor, user_id):
     with transaction.atomic():
         target = lock_credentials(target)
         if target.is_active:
-            raise ValidationError({"detail": "This account is already enabled."})
+            raise ValidationError({"detail": gettext("This account is already enabled.")})
         target.is_active = True
         target.save(update_fields=["is_active"])
         record(actor, "account.enabled", target=target)

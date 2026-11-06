@@ -1,5 +1,6 @@
 """Single-use second factors anchored to one consumed provider intent."""
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import secrets
@@ -38,7 +39,7 @@ def start_factor(request, parent, subject):
 
     method = second_factor(request.user)
     if method is None:
-        raise PermissionDenied("No second verification factor is available.")
+        raise PermissionDenied(gettext("No second verification factor is available."))
     with transaction.atomic():
         from apps.accounts.models import User
         from apps.accounts.reauthentication import versions
@@ -48,11 +49,11 @@ def start_factor(request, parent, subject):
                 or parent.credential_fingerprint != expected["credential_fingerprint"]
                 or not SocialIdentity.objects.filter(user=request.user, provider=parent.context["provider"],
                                                      provider_sub=subject).exists()):
-            raise AuthenticationFailed("Credentials changed. Start verification again.")
+            raise AuthenticationFailed(gettext("Credentials changed. Start verification again."))
         # Re-evaluate the required factor while the credential owner is locked.
         method = second_factor(request.user)
         if method is None:
-            raise PermissionDenied("No second verification factor is available.")
+            raise PermissionDenied(gettext("No second verification factor is available."))
         raw, challenge = _new(request, "social_reauth_factor", provider=parent.context["provider"],
                               context={"parent_id": parent.pk, "subject": subject, "method": method,
                                        "email": request.user.email, "phone": request.user.phone_e164},
@@ -64,8 +65,8 @@ def start_factor(request, parent, subject):
     try:
         if method == "email_code":
             from apps.integrations.dispatch import dispatch_email
-            log = dispatch_email(to_email=request.user.email, subject="Confirm your identity",
-                                 text_body=f"Your identity verification code is {code}. It expires in 10 minutes.",
+            log = dispatch_email(to_email=request.user.email, subject=gettext("Confirm your identity"),
+                                 text_body=gettext('Your identity verification code is {code}. It expires in 10 minutes.').format(code=code),
                                  stream="account", event="reauth_email_code", audience="staff", connection="platform",
                                  persist_body=False, sync=True)
             if log.status not in {"sent", "delivered"}:
@@ -128,5 +129,5 @@ def confirm_factor(request, *, token, code):
             row.save(update_fields=["consumed_at"])
             stamp(request)
     if failed:
-        raise AuthenticationFailed("Invalid or expired verification code.")
+        raise AuthenticationFailed(gettext("Invalid or expired verification code."))
     return {"verified": True, "mfa_required": False, "expires_in": int(WINDOW.total_seconds())}

@@ -1,5 +1,6 @@
 """Transactional operator writes shared by setup and the recovery command."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -15,7 +16,7 @@ def parse_providers(value):
         return set()
     providers = [part.strip() for part in value.split(",")]
     if any(part not in BUILTIN_PROVIDERS for part in providers):
-        raise ValidationError("Use google,apple,github as a comma list, or none.")
+        raise ValidationError(gettext("Use google,apple,github as a comma list, or none."))
     return set(providers)
 
 
@@ -30,7 +31,7 @@ def setup_login_methods_from_environment(actor):
     changes = {}
     if mfa is not None:
         if mfa.lower() not in ("y", "n", "yes", "no"):
-            raise ValidationError("SETUP_MFA_ENABLED must be y or n.")
+            raise ValidationError(gettext("SETUP_MFA_ENABLED must be y or n."))
         changes["mfa_enabled"] = mfa.lower() in ("y", "yes")
     if providers is not None:
         selected = parse_providers(providers)

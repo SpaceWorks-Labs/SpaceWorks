@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.models_social import (
@@ -37,17 +38,17 @@ class SocialNonceSerializer(serializers.Serializer):
     def validate(self, attrs):
         if (attrs["delivery"] == "web") != (attrs["client_platform"] == "web"):
             raise serializers.ValidationError(
-                "Web delivery requires the web client platform."
+                gettext("Web delivery requires the web client platform.")
             )
         grant = getattr(self.context.get("request"), "device_grant", None)
         has_challenge = bool(attrs.get("challenge"))
         if attrs["delivery"] == SocialDelivery.WEB and has_challenge:
-            raise serializers.ValidationError("Web social login cannot use attestation.")
+            raise serializers.ValidationError(gettext("Web social login cannot use attestation."))
         if attrs["delivery"] == SocialDelivery.DEVICE and (
             (grant is None) != has_challenge
         ):
             raise serializers.ValidationError(
-                "A first device login requires an attestation challenge."
+                gettext("A first device login requires an attestation challenge.")
             )
         return attrs
 
@@ -73,32 +74,32 @@ class SocialLoginSerializer(serializers.Serializer):
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
-            raise serializers.ValidationError("Invalid attestation payload.")
+            raise serializers.ValidationError(gettext("Invalid attestation payload."))
         return value
 
     def validate(self, attrs):
         if (attrs["delivery"] == "web") != (attrs["client_platform"] == "web"):
-            raise serializers.ValidationError("Invalid social delivery platform.")
+            raise serializers.ValidationError(gettext("Invalid social delivery platform."))
         if attrs.get("authorization_code") and attrs["delivery"] == "web":
             from apps.accounts.oidc_browser_attempts import _valid_redirect
             from apps.accounts.social_nonces import request_origin
             if not _valid_redirect(attrs["redirect_uri"], request_origin(self.context["request"])):
-                raise serializers.ValidationError("Apple code exchange must use this site's redirect URI.")
+                raise serializers.ValidationError(gettext("Apple code exchange must use this site's redirect URI."))
         grant = getattr(self.context.get("request"), "device_grant", None)
         has_attestation = bool(attrs.get("challenge")) and bool(
             attrs.get("attestation")
         )
         if bool(attrs.get("challenge")) != bool(attrs.get("attestation")):
             raise serializers.ValidationError(
-                "The challenge and attestation must be presented together."
+                gettext("The challenge and attestation must be presented together.")
             )
         if attrs["delivery"] == SocialDelivery.WEB and has_attestation:
-            raise serializers.ValidationError("Web social login cannot use attestation.")
+            raise serializers.ValidationError(gettext("Web social login cannot use attestation."))
         if attrs["delivery"] == SocialDelivery.DEVICE and (
             (grant is None) != has_attestation
         ):
             raise serializers.ValidationError(
-                "A first device login requires attestation."
+                gettext("A first device login requires attestation.")
             )
         return attrs
 
@@ -118,9 +119,9 @@ class SocialLinkSerializer(serializers.Serializer):
         # A device session links with its own platform; a browser session links as web.
         native = getattr(self.context.get("request"), "device_grant", None) is not None
         if native and value == SocialClientPlatform.WEB:
-            raise serializers.ValidationError("Device linking requires the android or ios client.")
+            raise serializers.ValidationError(gettext("Device linking requires the android or ios client."))
         if not native and value != SocialClientPlatform.WEB:
-            raise serializers.ValidationError("Browser linking requires the web client.")
+            raise serializers.ValidationError(gettext("Browser linking requires the web client."))
         return value
 
 

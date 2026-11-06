@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.models_devices import DeviceEnvironment, DevicePlatform
@@ -30,14 +31,14 @@ class DeviceLoginSerializer(DeviceIdentitySerializer):
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
-            raise serializers.ValidationError("Invalid attestation payload.")
+            raise serializers.ValidationError(gettext("Invalid attestation payload."))
         return value
 
     def validate(self, attrs):
         if attrs["authority"] == "staff" and not attrs.get("makerspace"):
-            raise serializers.ValidationError({"makerspace": "This field is required for a staff grant."})
+            raise serializers.ValidationError({"makerspace": gettext("This field is required for a staff grant.")})
         if attrs["authority"] != "staff" and attrs.get("makerspace"):
-            raise serializers.ValidationError({"makerspace": "Use a makerspace only for a staff grant."})
+            raise serializers.ValidationError({"makerspace": gettext("Use a makerspace only for a staff grant.")})
         return attrs
 
 
@@ -51,7 +52,7 @@ class DeviceStaffGrantSerializer(serializers.Serializer):
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
-            raise serializers.ValidationError("Invalid attestation payload.")
+            raise serializers.ValidationError(gettext("Invalid attestation payload."))
         return value
 
 
@@ -65,7 +66,7 @@ class DeviceEventGrantSerializer(serializers.Serializer):
 
     def validate_attestation(self, value):
         if not isinstance(value, dict) or not value or len(value) > 16:
-            raise serializers.ValidationError("Invalid attestation payload.")
+            raise serializers.ValidationError(gettext("Invalid attestation payload."))
         return value
 
 

@@ -15,6 +15,7 @@ A settings read failure falls back to the platform default, an empty list (allow
 same way the staff session limits fall back to theirs; it is logged as an error.
 """
 
+from django.utils.translation import gettext
 import ipaddress
 import logging
 
@@ -71,5 +72,5 @@ def allowed(request, user, targets):
 def assert_staff_network(request, user, targets):
     """Refuse a staff route from a network the space's staff IP allow-list leaves out."""
     if not allowed(request, user, targets):
-        raise PermissionDenied({"detail": "Staff screens of this space are not available from this network.",
+        raise PermissionDenied({"detail": gettext("Staff screens of this space are not available from this network."),
                                 "code": STAFF_NETWORK_REFUSED})

@@ -1,5 +1,6 @@
 """Single-use social and email proofs bound to a browser session or device family."""
 
+from django.utils.translation import gettext
 import base64
 import hashlib
 import hmac
@@ -69,7 +70,7 @@ def _checked(request, raw, purpose):
              and row.credential_fingerprint == versions(request.user)["credential_fingerprint"]
              and str(row.mfa_version) == (versions(request.user)["mfa_version"] or str(uuid.UUID(int=0))))
     if not valid:
-        raise AuthenticationFailed("Invalid or expired verification intent.")
+        raise AuthenticationFailed(gettext("Invalid or expired verification intent."))
     return row
 
 
@@ -99,7 +100,7 @@ def _provider(key):
         client = row.github_client_id if key == "github" else row.client_id(key, "web")
         return row, endpoint, client
     if not key.startswith("oidc:"):
-        raise PermissionDenied("Use an identity already linked to this account.")
+        raise PermissionDenied(gettext("Use an identity already linked to this account."))
     from apps.accounts.models_oidc import provider_for_slug
     provider = provider_for_slug(key[5:])
     if provider is None:
@@ -112,10 +113,10 @@ def start_social(request, *, provider, redirect_uri=""):
     _member(request)
     _trusted_origin(request)
     if not SocialIdentity.objects.filter(user=request.user, provider=provider).exists():
-        raise PermissionDenied("Use an identity already linked to this account.")
+        raise PermissionDenied(gettext("Use an identity already linked to this account."))
     native = bool(getattr(request, "auth", None) and request.auth.get("device_grant_id"))
     if not native and not _valid_redirect(redirect_uri, request_origin(request)):
-        raise PermissionDenied("Verification must return to this site's origin.")
+        raise PermissionDenied(gettext("Verification must return to this site's origin."))
     try:
         configuration, endpoint, audience = _provider(provider)
     except OidcProviderUnavailable as exc:
@@ -132,7 +133,7 @@ def start_social(request, *, provider, redirect_uri=""):
     if provider == "github":
         from apps.accounts.reauthentication_factors import second_factor
         if second_factor(request.user) is None:
-            raise PermissionDenied("No second verification factor is available.")
+            raise PermissionDenied(gettext("No second verification factor is available."))
     nonce, verifier = secrets.token_urlsafe(48), secrets.token_urlsafe(64)
     state, _ = _new(request, "social_reauth", provider=provider, nonce=nonce,
                     verifier=verifier, redirect_uri=redirect_uri)
@@ -180,7 +181,7 @@ def complete_social(request, *, state, nonce, id_token="", code="", totp=""):
         raise ProviderUnavailable() from exc
     except (SocialTokenError, OidcTokenRejected) as exc:
         audit_events.record_auth_event(request.user, "auth.reauthentication_failed", target=request.user)
-        raise AuthenticationFailed("The provider could not verify this linked identity. Start verification again.") from exc
+        raise AuthenticationFailed(gettext("The provider could not verify this linked identity. Start verification again.")) from exc
     with transaction.atomic():
         from apps.accounts.models import User
         locked = User.objects.select_for_update().get(pk=request.user.pk)
@@ -189,9 +190,9 @@ def complete_social(request, *, state, nonce, id_token="", code="", totp=""):
         if (intent.auth_generation != expected["auth_generation"]
                 or intent.credential_fingerprint != expected["credential_fingerprint"]
                 or str(intent.mfa_version) != (expected["mfa_version"] or str(uuid.UUID(int=0)))):
-            raise AuthenticationFailed("Credentials changed. Start verification again.")
+            raise AuthenticationFailed(gettext("Credentials changed. Start verification again."))
         if not SocialIdentity.objects.filter(user=locked, provider=key, provider_sub=claims["sub"]).exists():
-            raise AuthenticationFailed("The linked identity was revoked. Start verification again.")
+            raise AuthenticationFailed(gettext("The linked identity was revoked. Start verification again."))
         credential = UserMFA.objects.select_for_update().filter(user=request.user).first()
         needs_factor = not fresh or bool(credential and credential.enabled_at)
         if not needs_factor:
@@ -213,24 +214,24 @@ def _trusted_origin(request):
     from apps.makerspaces.cors import member_origin_is_registered, staff_origin_is_registered
     origin = request_origin(request)
     if not origin or not (member_origin_is_registered(origin) or staff_origin_is_registered(origin)):
-        raise PermissionDenied("Use a registered site origin to verify your identity.")
+        raise PermissionDenied(gettext("Use a registered site origin to verify your identity."))
 
 
 def start_email(request):
     _member(request)
     _trusted_origin(request)
     if request.user.has_usable_password() or request.user.email_verified_at is None or not request.user.email:
-        raise PermissionDenied("A verified email address on a passwordless account is required.")
+        raise PermissionDenied(gettext("A verified email address on a passwordless account is required."))
     with transaction.atomic():
         raw, intent = _new(request, "enrollment_email")
     origin = request_origin(request)
     if not origin:
-        raise PermissionDenied("Open this page in the browser to request a confirmation link.")
+        raise PermissionDenied(gettext("Open this page in the browser to request a confirmation link."))
     from apps.integrations.dispatch import dispatch_email
     try:
-        log = dispatch_email(to_email=request.user.email, subject="Confirm authenticator enrollment",
-                             text_body="Confirm enrollment in the same browser session within 15 minutes: "
-                             + origin + "/reauth/confirm#token=" + raw,
+        log = dispatch_email(to_email=request.user.email, subject=gettext("Confirm authenticator enrollment"),
+                             text_body=gettext("Confirm enrollment in the same browser session within 15 minutes: ")
+                             + origin + gettext("/reauth/confirm#token=") + raw,
                              stream="account", event="reauth_enrollment", audience="staff", connection="platform",
                              persist_body=False, sync=True)
         if log.status not in {"sent", "delivered"}:
@@ -252,4 +253,4 @@ def confirm_email(request, token):
 
 def _member(request):
     if not is_person(request.user):
-        raise AuthenticationFailed("Identity verification failed.")
+        raise AuthenticationFailed(gettext("Identity verification failed."))

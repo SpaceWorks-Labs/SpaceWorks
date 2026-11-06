@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import generics
@@ -44,7 +45,7 @@ class ApiKeyRequestListCreateView(RecentReauthenticationMixin, generics.ListCrea
         if makerspace_id:
             # A non-integer value used to reach the ORM and 500 on the int coercion.
             if not makerspace_id.isdigit():
-                raise ValidationError({"makerspace": "Must be a makerspace id."})
+                raise ValidationError({"makerspace": gettext("Must be a makerspace id.")})
             queryset = queryset.filter(makerspace_id=int(makerspace_id))
         return queryset
 

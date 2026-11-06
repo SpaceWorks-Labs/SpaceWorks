@@ -1,5 +1,6 @@
 """Creation-only device authority policy; existing grants retain refresh access."""
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -54,7 +55,7 @@ def authority_for_login(user, *, login_method, staff_makerspace_id=None, event_i
     the issuer or the server-owned MFA context, never from request data."""
     assert_grant_user_allowed(user)
     if not is_person(user):
-        raise AuthenticationFailed("Invalid device authorization.")
+        raise AuthenticationFailed(gettext("Invalid device authorization."))
     if event_id is not None and staff_makerspace_id is None:
         from apps.accounts.services_event_grants import event_authority_for_login
         return event_authority_for_login(user, event_id)
@@ -63,9 +64,9 @@ def authority_for_login(user, *, login_method, staff_makerspace_id=None, event_i
     from apps.accounts.mfa_policy import VERIFIED, source_for
     from apps.accounts.staff_identity import has_staff_role, require_staff_mfa
     if not has_staff_role(user, staff_makerspace_id):
-        raise AuthenticationFailed("Staff access is required for this makerspace.")
+        raise AuthenticationFailed(gettext("Staff access is required for this makerspace."))
     if source_for(user) != VERIFIED:
-        raise AuthenticationFailed("Native staff sessions require a verified second factor.")
+        raise AuthenticationFailed(gettext("Native staff sessions require a verified second factor."))
     require_staff_mfa(user, None)
     return DeviceGrant.Authority.STAFF
 
@@ -117,7 +118,7 @@ def create_device_grant(user, challenge, *, metadata, subject_hash, login_method
     )
     if (registration is None or authority == DeviceGrant.Authority.STAFF
             and registration.makerspace_id not in (None, staff_makerspace_id)):
-        raise AuthenticationFailed("Device registration is no longer approved.")
+        raise AuthenticationFailed(gettext("Device registration is no longer approved."))
     if authority == DeviceGrant.Authority.EVENT:
         from apps.accounts.services_event_grants import assert_registration_for_event
         assert_registration_for_event(registration, event_id)

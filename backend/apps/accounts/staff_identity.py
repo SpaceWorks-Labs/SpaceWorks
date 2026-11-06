@@ -14,6 +14,7 @@ authority (``has_elevated_authority``) adds organization authority and resource 
 mandatory MFA keys on it, with the superadmin exempt (login-security §2).
 """
 
+from django.utils.translation import gettext
 from django.db.models import Exists, OuterRef, Q
 
 PERSON_KIND = "member"
@@ -149,9 +150,9 @@ def require_staff_mfa(user, claims, *, route=None):
     if not mfa_policy.required(user) or mfa_policy.verified_staff_proof(user, claims):
         return
     if mfa_policy.staff_factor_enrolled(user):
-        raise PermissionDenied({"detail": "Verify with your second factor to use staff screens.",
+        raise PermissionDenied({"detail": gettext("Verify with your second factor to use staff screens."),
                                 "code": MFA_REQUIRED})
     if route not in mfa_grace.STRICT_ROUTES and mfa_grace.is_open(user):
         return
-    raise PermissionDenied({"detail": "Set up two-step sign-in to use staff screens.",
+    raise PermissionDenied({"detail": gettext("Set up two-step sign-in to use staff screens."),
                             "code": MFA_ENROLLMENT_REQUIRED})

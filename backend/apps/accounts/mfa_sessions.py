@@ -1,5 +1,6 @@
 """Finish the original login after MFA without accepting client authority claims."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import AuthenticationFailed
 
 from apps.accounts.native_app_identity import eligible_registration_q
@@ -42,7 +43,7 @@ def issue_session(user, data, request):
     device = data.get("device")
     if device:
         if not is_person(user):
-            raise AuthenticationFailed("Device authorization is no longer active.")
+            raise AuthenticationFailed(gettext("Device authorization is no longer active."))
         from apps.accounts.views_device import _reject_browser_headers
         _reject_browser_headers(request)
         assert_mobile_grant_creation_enabled()
@@ -61,7 +62,7 @@ def issue_session(user, data, request):
                 subject_hash=device["subject_hash"], login_method=device.get("login_method"),
                 staff_makerspace_id=device.get("staff_makerspace_id"), event_id=device.get("event_id"))
         if grant is None:
-            raise AuthenticationFailed("Device authorization is no longer active.")
+            raise AuthenticationFailed(gettext("Device authorization is no longer active."))
         access, refresh, _ = issue_device_token_pair(user, grant)
         from apps.accounts.native_event_grants import session_authority_for
         surface = session_authority_for(grant)

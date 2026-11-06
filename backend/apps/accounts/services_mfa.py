@@ -1,5 +1,6 @@
 """Locked MFA credential changes. Refusals commit counters before raising."""
 
+from django.utils.translation import gettext
 import uuid
 
 from django.db import transaction
@@ -22,7 +23,7 @@ def active(user):
     if (not user.is_active or user.is_tenant_dump_stub or user.is_walk_in or user.retired_at is not None
             or user.deletion_requested_at is not None
             or user.access_status != User.AccessStatus.ACTIVE):
-        raise AuthenticationFailed("Account is not available.")
+        raise AuthenticationFailed(gettext("Account is not available."))
     from apps.accounts.principal_guards import refuse_anonymous_requester_credential
     from apps.backup.recovery import assert_token_issuance_allowed
     refuse_anonymous_requester_credential(user)
@@ -72,16 +73,16 @@ def change(user, password, *, disable=False):
         assert_available(user)
     active(user)
     if not user.check_password(password):
-        raise AuthenticationFailed("Password verification failed.")
+        raise AuthenticationFailed(gettext("Password verification failed."))
     row = UserMFA.objects.select_for_update().get(user=user)
     passkeys = has_passkey(user)
     # Recovery codes back a passkey too, so a passkey-only account may regenerate them.
     if not (row.enabled_at or (passkeys and not disable)):
-        raise PermissionDenied("MFA is not enrolled.")
+        raise PermissionDenied(gettext("MFA is not enrolled."))
     if disable and required(user) and not (passkeys and passkeys_usable(user)):
         # Staff MFA is mandatory (#62): a passkey may replace the authenticator, never nothing.
-        raise PermissionDenied({"detail": "Staff need a second factor. Add a passkey before removing "
-                                          "the authenticator.", "code": LAST_FACTOR})
+        raise PermissionDenied({"detail": gettext("Staff need a second factor. Add a passkey before removing "
+                                          "the authenticator."), "code": LAST_FACTOR})
     row.version = uuid.uuid4()
     if disable:
         codes = []

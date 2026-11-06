@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
@@ -43,7 +44,7 @@ class BulkImportSheetView(APIView):
         try:
             rows = sheet_rows_from_upload(serializer.validated_data["file"])
         except ValueError as exc:
-            raise ValidationError({"file": str(exc) or "Uploaded file could not be read."})
+            raise ValidationError({"file": str(exc) or gettext("Uploaded file could not be read.")})
         audit.record(
             request.user,
             "inventory.bulk_import_sheet_read",

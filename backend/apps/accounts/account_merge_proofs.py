@@ -16,6 +16,7 @@ source, so every proof fails), and the survivor's own code is sent either way.
 Refusals commit their counters and audit before raising.
 """
 
+from django.utils.translation import gettext
 import logging
 from datetime import timedelta
 
@@ -85,7 +86,7 @@ def locked_intent(survivor, intent_id):
         # No select_related: ``source`` is nullable and FOR UPDATE refuses an outer join.
         intent = Intent.objects.select_for_update().get(pk=intent_id, survivor=survivor)
     except (Intent.DoesNotExist, ValidationError, ValueError):
-        raise NotFound("Merge not found.") from None
+        raise NotFound(gettext("Merge not found.")) from None
     return intent
 
 

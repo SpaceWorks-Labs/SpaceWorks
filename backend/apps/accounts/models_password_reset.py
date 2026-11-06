@@ -1,5 +1,6 @@
 """Single-row queue and challenge state for account recovery."""
 
+from django.utils.translation import gettext_lazy
 from django.db import models
 
 
@@ -11,7 +12,7 @@ class PasswordResetEnvelopeStatus(models.TextChoices):
     CONSUMED = "consumed", "Consumed"
     DISCARDED = "discarded", "Discarded"
     UNDELIVERABLE = "undeliverable", "Undeliverable"
-    DELIVERY_UNKNOWN = "delivery_unknown", "Delivery unknown"
+    DELIVERY_UNKNOWN = "delivery_unknown", gettext_lazy("Delivery unknown")
 
 
 class PasswordResetEnvelope(models.Model):

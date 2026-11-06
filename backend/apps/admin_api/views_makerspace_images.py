@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -104,16 +105,16 @@ class MakerspaceImageView(APIView):
         expected_prefix = f"makerspace/{makerspace.id}/"
         if not object_key.startswith(expected_prefix):
             raise ValidationError(
-                {"object_key": "Image object key is outside this makerspace."}
+                {"object_key": gettext("Image object key is outside this makerspace.")}
             )
         if not public_image_storage.is_safe_object_key(object_key):
-            raise ValidationError({"object_key": "Invalid image object key."})
+            raise ValidationError({"object_key": gettext("Invalid image object key.")})
         if object_key and public_image_storage.public_image_key_in_use(
             makerspace.id,
             object_key,
             makerspace_field=self.image_field,
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
             result = public_image_storage.finalize_upload(object_key)
         except StorageUnavailable:
@@ -137,7 +138,7 @@ class MakerspaceImageView(APIView):
                 public_image_storage.staging_key(object_key)
             )
             raise ValidationError(
-                {"object_key": "Uploaded file is not a valid image."}
+                {"object_key": gettext("Uploaded file is not a valid image.")}
             )
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         if object_key and public_image_storage.public_image_key_in_use(
@@ -145,7 +146,7 @@ class MakerspaceImageView(APIView):
             object_key,
             makerspace_field=self.image_field,
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         old_key = getattr(makerspace, self.image_field)
         if object_key != old_key:
             add_storage(makerspace, result.size)

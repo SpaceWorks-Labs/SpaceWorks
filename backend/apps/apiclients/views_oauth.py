@@ -6,6 +6,7 @@ The authorization endpoint a third-party app sends the browser to is
 answer. django-oauth-toolkit validates the request (client, redirect URI, PKCE) and mints
 the code; this view only adds the signed-in person and records the consent.
 """
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -70,7 +71,7 @@ def _validated(request):
     except OAuth2Error as exc:
         raise ValidationError({"detail": exc.description or exc.error}) from exc
     except Exception as exc:  # DOT wraps invalid client/redirect as its own fatal error type
-        raise ValidationError({"detail": "This app request is not valid."}) from exc
+        raise ValidationError({"detail": gettext("This app request is not valid.")}) from exc
     application = get_application_model().objects.select_related("spaceworks_registration__makerspace").get(
         client_id=info["client_id"])
     return scopes, {key: info[key] for key in CREDENTIAL_KEYS if info.get(key)}, application
@@ -105,7 +106,7 @@ class ConsentView(RecentReauthenticationMixin, APIView):
         if set(scopes) & person_scopes.STAFF_SCOPES:
             from apps.accounts.staff_identity import has_staff_role
             if not has_staff_role(request.user, registration.makerspace_id):
-                raise ValidationError({"detail": "This app asks for staff access in a space where you hold no role."})
+                raise ValidationError({"detail": gettext("This app asks for staff access in a space where you hold no role.")})
         allow = decision.validated_data["allow"]
         with transaction.atomic():
             if allow:

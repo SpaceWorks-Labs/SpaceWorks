@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError
 from django.db.models import Count
 from drf_spectacular.utils import extend_schema
@@ -41,7 +42,7 @@ class CategoryListCreateView(generics.ListCreateAPIView):
         except IntegrityError:
             raise ValidationError(
                 {
-                    "slug": "A category with this slug already exists in this makerspace."
+                    "slug": gettext("A category with this slug already exists in this makerspace.")
                 }
             )
         audit.record(
@@ -86,7 +87,7 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         except IntegrityError:
             raise ValidationError(
                 {
-                    "slug": "A category with this slug already exists in this makerspace."
+                    "slug": gettext("A category with this slug already exists in this makerspace.")
                 }
             )
         audit.record(

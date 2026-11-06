@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.exceptions import ValidationError
@@ -86,7 +87,7 @@ class InventoryExportView(APIView):
         require_action(request.user, rbac.Action.EDIT_INVENTORY, makerspace_id)
         fmt = request.query_params.get("format", "csv")
         if fmt not in {"csv", "xlsx"}:
-            raise ValidationError({"format": "Use csv or xlsx."})
+            raise ValidationError({"format": gettext("Use csv or xlsx.")})
 
         queryset = rbac.scope_by_action(
             request.user, rbac.Action.EDIT_INVENTORY, InventoryProduct.objects.all(),

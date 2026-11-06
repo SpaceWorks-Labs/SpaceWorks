@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, serializers, status
@@ -62,7 +63,7 @@ class MakerspaceArchiveRequestSerializer(serializers.ModelSerializer):
     def validate_reason(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Explain why this makerspace should be archived.")
+            raise serializers.ValidationError(gettext("Explain why this makerspace should be archived."))
         return value
 
 
@@ -98,7 +99,7 @@ class MakerspaceArchiveRequestListCreateView(generics.ListCreateAPIView):
         # granted MANAGE_MAKERSPACE -- which is exactly the Part L custom-role architecture
         # this project runs on. Authority here is the action, not a built-in role name.
         if not rbac.can(self.request.user, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk):
-            raise PermissionDenied("Managing archive requests requires MANAGE_MAKERSPACE.")
+            raise PermissionDenied(gettext("Managing archive requests requires MANAGE_MAKERSPACE."))
         return makerspace
 
     def get_queryset(self):
@@ -174,7 +175,7 @@ class MakerspaceArchiveRequestWithdrawView(APIView):
         )
         # Same action-based gate as the list/create view above.
         if not rbac.can(request.user, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk):
-            raise PermissionDenied("Managing archive requests requires MANAGE_MAKERSPACE.")
+            raise PermissionDenied(gettext("Managing archive requests requires MANAGE_MAKERSPACE."))
         archive_request = get_object_or_404(
             MakerspaceArchiveRequest,
             pk=pk,

@@ -8,6 +8,7 @@ reachable only from a configured platform origin (``PLATFORM_STAFF_ORIGINS``) an
 username or by an email no person holds, so a person's address never selects it.
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db.models import Q
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
@@ -50,7 +51,7 @@ def resolve_login(attrs, request):
         # Keep Django's password hashing work on unknown identities.
         User().set_password(attrs.get("password", ""))
         if closed:
-            raise PermissionDenied("Password sign-in is not available on this deployment.")
+            raise PermissionDenied(gettext("Password sign-in is not available on this deployment."))
         from django.contrib.auth.signals import user_login_failed
         user_login_failed.send(sender=__name__, credentials={"username": identifier}, request=request)
         raise AuthenticationFailed(_REFUSED, code="no_active_account")

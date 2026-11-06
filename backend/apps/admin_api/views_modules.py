@@ -9,6 +9,7 @@ The generic makerspace PATCH still refuses `enabled_modules`: this audited servi
 the only module writer.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
@@ -126,8 +127,8 @@ class ModuleInstallView(APIView):
         serializer = ModuleActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if not may_install(request.user, makerspace, serializer.validated_data["key"]):
-            raise PermissionDenied({"detail": "This module has a usage limit on this platform; ask the "
-                                    "platform administrator to install it.", "code": "module_install_superadmin_only"})
+            raise PermissionDenied({"detail": gettext("This module has a usage limit on this platform; ask the "
+                                    "platform administrator to install it."), "code": "module_install_superadmin_only"})
         try:
             added = install_module(makerspace, serializer.validated_data["key"], actor=request.user)
         except ModuleInstallError as exc:

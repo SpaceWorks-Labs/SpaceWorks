@@ -14,6 +14,7 @@ can explain them: ``last_manager``, ``self_change``, ``not_community_member``,
 ``space_manager_superadmin_only``, ``already_staff``.
 """
 
+from django.utils.translation import gettext
 from contextlib import contextmanager
 
 from django.shortcuts import get_object_or_404
@@ -80,7 +81,7 @@ def require_authority(actor, space, *, target=None, roles=None):
         raise PermissionDenied()
     if target is not None:
         if not is_person(target):
-            raise PermissionDenied("Staff roles belong to a personal account.")
+            raise PermissionDenied(gettext("Staff roles belong to a personal account."))
         if target.pk == actor.pk:
             raise StaffRoleRefused(SELF_CHANGE, "You cannot change your own staff roles.")
         row = MakerspaceMembership.staff_tracks.filter(user=target, makerspace=space).first()

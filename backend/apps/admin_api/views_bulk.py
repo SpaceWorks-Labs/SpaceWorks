@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.operations.durable_dispatch import dispatch
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
@@ -34,7 +35,7 @@ def _rows_from_upload(uploaded_file):
     try:
         return bulk_import.rows_from_upload(uploaded_file)
     except ValueError as exc:
-        raise ValidationError({"file": str(exc) or "Uploaded file could not be parsed."})
+        raise ValidationError({"file": str(exc) or gettext("Uploaded file could not be parsed.")})
 
 
 def _authorized_makerspace(request, makerspace_id):
@@ -70,7 +71,7 @@ class BulkImportPreviewView(APIView):
             )
         except IntegrityError:
             return Response(
-                {"detail": "Import failed due to a data conflict; no changes were applied."},
+                {"detail": gettext("Import failed due to a data conflict; no changes were applied.")},
                 status=status.HTTP_409_CONFLICT,
             )
         return Response(result)
@@ -103,7 +104,7 @@ class BulkImportApplyView(APIView):
             )
         except IntegrityError:
             return Response(
-                {"detail": "Import failed due to a data conflict; no changes were applied."},
+                {"detail": gettext("Import failed due to a data conflict; no changes were applied.")},
                 status=status.HTTP_409_CONFLICT,
             )
         return Response(result, status=status.HTTP_200_OK)

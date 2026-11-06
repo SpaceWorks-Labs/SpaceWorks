@@ -1,5 +1,6 @@
 """Live account/surface boundary. Route services still decide individual actions."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
 from apps.accounts.delegated_routes import (
@@ -57,18 +58,18 @@ def token_kind(user):
 def _active(user):
     if (not user.is_active or user.retired_at is not None or user.is_tenant_dump_stub
             or user.access_status != "active" or getattr(user, "merged_into_id", None) is not None):
-        raise AuthenticationFailed("Account is not available.")
+        raise AuthenticationFailed(gettext("Account is not available."))
 
 
 def assert_surface(user, surface, request=None):
     _active(user)
     if surface not in _SURFACES.get(token_kind(user), ()):
-        raise AuthenticationFailed("Invalid account context.")
+        raise AuthenticationFailed(gettext("Invalid account context."))
     if surface == "platform" and request is not None:
         from django.conf import settings
         from apps.accounts.social_nonces import request_origin
         if request_origin(request) not in settings.PLATFORM_STAFF_ORIGINS:
-            raise AuthenticationFailed("Invalid account context.")
+            raise AuthenticationFailed(gettext("Invalid account context."))
 
 
 def validate_account_token(user, token):
@@ -76,7 +77,7 @@ def validate_account_token(user, token):
     never names a makerspace: staff authority is resolved per request, not carried."""
     _active(user)
     if token.get("kind") != token_kind(user) or token.get("makerspace") is not None:
-        raise AuthenticationFailed("Invalid account context.")
+        raise AuthenticationFailed(gettext("Invalid account context."))
     assert_surface(user, token.get("surface"))
 
 
@@ -126,13 +127,13 @@ def _staff_admits(user, token, request, targets, *, grant):
     )
     scope = staff_origin_scope(request)
     if scope is AMBIGUOUS_STAFF_ORIGIN_SCOPE:
-        raise PermissionDenied("Staff origin is ambiguous.")
+        raise PermissionDenied(gettext("Staff origin is ambiguous."))
     pins = [] if scope is NO_STAFF_ORIGIN_SCOPE else [scope]
     if grant is not None:
         pins.append(grant.staff_makerspace_id)
     for pin in pins:
         if targets - {pin}:
-            raise PermissionDenied("Account context does not match this makerspace.")
+            raise PermissionDenied(gettext("Account context does not match this makerspace."))
         targets = {pin}
     if not (all(has_staff_role(user, target) for target in targets) if targets else has_staff_role(user)):
         return False
@@ -158,14 +159,14 @@ def enforce_request(user, token, request, *, grant=None):
     native = grant is not None or is_native_session(user) or bool(token.get("device_grant_id"))
     staff_grant = grant if native and getattr(grant, "authority", None) == "staff" else None
     if classification == SIGNED_PROTOCOL:
-        raise PermissionDenied("Provider signature required.")
+        raise PermissionDenied(gettext("Provider signature required."))
     _name, targets, invalid, _recognized = request_route_targets(request)
     if is_platform(user):
         # Owner decision #115: the superadmin also enters every Space-Manager route.
         from apps.accounts.platform_tenant_surface import admits
         if (classification != SHARED_ACCOUNT_UTILITY and not _platform_route(name)
                 and not admits(user, request, classification, targets, invalid, native=native)):
-            raise PermissionDenied("Platform account context is required.")
+            raise PermissionDenied(gettext("Platform account context is required."))
         return
     from apps.accounts.native_event_grants import admits_event_route
     if native and admits_event_route(user, token, request, name, grant):
@@ -173,21 +174,21 @@ def enforce_request(user, token, request, *, grant=None):
     if native and staff_grant is None and (
         (classification == DELEGABLE and name != "payment-document-download") or name in _NATIVE_MEMBER_REFUSED
     ):
-        raise PermissionDenied("Native member sessions cannot use delegated authority.")
+        raise PermissionDenied(gettext("Native member sessions cannot use delegated authority."))
     if classification == SHARED_ACCOUNT_UTILITY:
         return
     if classification == MEMBER_ONLY:
         if invalid:
-            raise PermissionDenied("Invalid account scope.")
+            raise PermissionDenied(gettext("Invalid account scope."))
         return
     # This mixed-audience download revalidates its signed, user-bound grant and
     # own-charge/VIEW_FINANCE authority in the view, including on every retry.
     if name == "payment-document-download":
         if invalid:
-            raise PermissionDenied("Invalid document scope.")
+            raise PermissionDenied(gettext("Invalid document scope."))
         return
     if classification is None and request.path.startswith("/api/v1/auth/"):
-        raise PermissionDenied("Unknown account route.")
+        raise PermissionDenied(gettext("Unknown account route."))
     if _member_surface_path_allowed(request.path):
         return
     if classification in _STAFF_CLASSES and not invalid:
@@ -198,5 +199,5 @@ def enforce_request(user, token, request, *, grant=None):
             # Organization and resource-grant authority is elevated authority too (#62).
             require_staff_mfa(user, token, route=name)
             return
-        raise PermissionDenied("A staff role in this makerspace is required.")
-    raise PermissionDenied("A delegated authority source is required.")
+        raise PermissionDenied(gettext("A staff role in this makerspace is required."))
+    raise PermissionDenied(gettext("A delegated authority source is required."))

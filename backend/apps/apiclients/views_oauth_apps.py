@@ -3,6 +3,7 @@
 The client secret of a confidential app is shown once and stored hashed by
 django-oauth-toolkit. Deleting an app (or switching it off) ends every connection to it.
 """
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -51,11 +52,11 @@ def _clean(data):
     uris = []
     for uri in data["redirect_uris"]:
         if not uri.startswith("https://") and not uri.startswith("http://localhost"):
-            raise ValidationError({"redirect_uris": "Use https:// redirect URIs (http://localhost for development)."})
+            raise ValidationError({"redirect_uris": gettext("Use https:// redirect URIs (http://localhost for development).")})
         uris.append(uri.strip())
     unknown = set(data["allowed_scopes"]) - person_scopes.person_scope_vocabulary() - {"openid"}
     if unknown:
-        raise ValidationError({"allowed_scopes": f"Unknown scope(s): {', '.join(sorted(unknown))}."})
+        raise ValidationError({"allowed_scopes": gettext('Unknown scope(s): {value}.').format(value=', '.join(sorted(unknown)))})
     validate_exact_origins([uri.split("/", 3)[0] + "//" + uri.split("/", 3)[2] for uri in uris])
     return uris
 

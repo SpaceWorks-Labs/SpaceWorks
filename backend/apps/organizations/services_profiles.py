@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -27,7 +28,7 @@ def update_profile(organization, *, actor, **changes):
     from .models_public_pages import OrganizationPublicPage
     page = OrganizationPublicPage.objects.select_for_update().filter(organization=locked).first()
     if page and changes.get("public_profile_enabled") is True and not page.published_revision_id:
-        raise ValidationError({"public_profile_enabled": "Publish the current saved page draft to enable its public profile."})
+        raise ValidationError({"public_profile_enabled": gettext("Publish the current saved page draft to enable its public profile.")})
     if page and changes.get("public_profile_enabled") is True and not locked.public_profile_enabled:
         # Making a builder revision live is page publication, which only an owner
         # account may do. Platform takedown (disable) and profile edits stay open.

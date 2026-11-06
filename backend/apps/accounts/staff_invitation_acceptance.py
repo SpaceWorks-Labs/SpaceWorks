@@ -15,6 +15,7 @@ proves the address for THIS acceptance only. Codes are stored as HMAC digests bo
 the invitation and the person, live 10 minutes and allow 5 failures per invitation.
 """
 
+from django.utils.translation import gettext
 import logging
 from datetime import timedelta
 
@@ -57,7 +58,7 @@ def _open(token, makerspace_slug, *, lock=False):
 def _require_redeemer(user, row):
     if not (is_person(user) and user.is_active and user.access_status == User.AccessStatus.ACTIVE
             and not user.is_walk_in and not user.is_tenant_dump_stub):
-        raise PermissionDenied("Sign in to your own account to accept a staff invitation.")
+        raise PermissionDenied(gettext("Sign in to your own account to accept a staff invitation."))
     if not user.email or user.email.strip().lower() != row.email.strip().lower():
         raise StaffRoleRefused(INVITE_EMAIL_MISMATCH,
                                "This invitation was sent to a different email address. Sign in to that account.")
@@ -77,7 +78,7 @@ def _challenge(user, token, makerspace_slug):
         _require_redeemer(user, row)
         challenges = EmailVerificationChallenge.objects.filter(user=user, email=_key(row))
         if challenges.filter(last_sent_at__gte=now - COOLDOWN).exists():
-            raise ValidationError({"detail": "A code was sent a moment ago. Wait a minute before asking again."})
+            raise ValidationError({"detail": gettext("A code was sent a moment ago. Wait a minute before asking again.")})
         challenges.filter(consumed_at__isnull=True).update(consumed_at=now)
         code = login_codes.new_code()
         EmailVerificationChallenge.objects.create(
@@ -91,9 +92,8 @@ def _challenge(user, token, makerspace_slug):
 def _send_code(address, code, space_name):
     from apps.integrations.dispatch import dispatch_email
     try:
-        dispatch_email(to_email=address, subject=f"Your code to accept a staff role at {space_name}",
-                       text_body=f"Your code is {code}. It expires in 10 minutes and works once.\n\n"
-                                 "If you did not try to accept a staff invitation, ignore this email.",
+        dispatch_email(to_email=address, subject=gettext('Your code to accept a staff role at {space_name}').format(space_name=space_name),
+                       text_body=gettext('Your code is {code}. It expires in 10 minutes and works once.\n\nIf you did not try to accept a staff invitation, ignore this email.').format(code=code),
                        stream="account", event="staff_invitation_code", audience="user",
                        connection="platform", persist_body=False, sync=True)
     except Exception as exc:
@@ -125,7 +125,7 @@ def _complete(user, token, makerspace_slug, code):
             challenge.save(update_fields=["consumed_at"])
             membership = _grant(user, row)
     if failed:
-        raise ValidationError({"detail": "That code is not right or has expired.", "code": "proof_failed"})
+        raise ValidationError({"detail": gettext("That code is not right or has expired."), "code": "proof_failed"})
     from apps.accounts.staff_role_notices import notify_granted
     notify_granted(membership)
     space = row.makerspace

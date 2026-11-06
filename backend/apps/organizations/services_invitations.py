@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import secrets
 from datetime import timedelta
@@ -33,10 +34,10 @@ MAX_EXPIRY_DAYS = 30
 
 def _clean_actions(values, allowed, field):
     if not isinstance(values, list) or any(not isinstance(item, str) for item in values):
-        raise ValidationError({field: "Use a list of action values."})
+        raise ValidationError({field: gettext("Use a list of action values.")})
     unknown = set(values) - set(allowed)
     if unknown:
-        raise ValidationError({field: f"Unknown action value: {sorted(unknown)[0]}."})
+        raise ValidationError({field: gettext('Unknown action value: {value}.').format(value=sorted(unknown)[0])})
     return sorted(set(values))
 
 
@@ -74,7 +75,7 @@ def create_invitation(
     )
     if not 1 <= expires_in_days <= MAX_EXPIRY_DAYS:
         raise ValidationError(
-            {"expires_in_days": f"Use a value from 1 to {MAX_EXPIRY_DAYS}."}
+            {"expires_in_days": gettext('Use a value from 1 to {MAX_EXPIRY_DAYS}.').format(MAX_EXPIRY_DAYS=MAX_EXPIRY_DAYS)}
         )
 
     locked_org = Organization.objects.select_for_update().get(pk=organization.pk)
@@ -83,9 +84,9 @@ def create_invitation(
     )
     held_governance, held_grants = _authority_actions(actor, membership)
     if not set(proposed_governance).issubset(held_governance):
-        raise PermissionDenied("You cannot grant organization authority you do not hold.")
+        raise PermissionDenied(gettext("You cannot grant organization authority you do not hold."))
     if not set(proposed_grants).issubset(held_grants):
-        raise PermissionDenied("You cannot grant makerspace actions you do not hold.")
+        raise PermissionDenied(gettext("You cannot grant makerspace actions you do not hold."))
 
     raw_token = secrets.token_urlsafe(32)
     invitation = OrganizationInvitation.objects.create(
@@ -156,7 +157,7 @@ def redeem_invitation(token, *, actor):
         raise PermissionDenied()
     from apps.accounts.native_session import is_native_session
     if is_native_session(actor):
-        raise PermissionDenied("Use a member browser session for organization authority.")
+        raise PermissionDenied(gettext("Use a member browser session for organization authority."))
     if invitation.redeemed_at is not None:
         raise InvitationRedeemed()
     if invitation.revoked_at is not None:

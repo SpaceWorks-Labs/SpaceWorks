@@ -1,5 +1,6 @@
 """Native access checks and the short User -> DeviceGrant heartbeat transaction."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -32,7 +33,7 @@ def validated_device_grant(user, token, *, lock=False):
             ).exists()
         )
     except (ValidationError, ValueError, TypeError) as exc:
-        raise AuthenticationFailed("Invalid device authorization.") from exc
+        raise AuthenticationFailed(gettext("Invalid device authorization.")) from exc
     if valid and staff:
         # A staff grant lives only as long as the staff role it stepped up to. Outside the
         # heartbeat lock, a lost role is revoked (its own transaction) before refusing.
@@ -46,7 +47,7 @@ def validated_device_grant(user, token, *, lock=False):
         state = event_role_state(user, grant.event_id) if lock else revoke_if_event_role_lost(user, grant.event_id)
         valid = state == EVENT_ACTIVE
     if not valid:
-        raise AuthenticationFailed("Device authorization is no longer active.")
+        raise AuthenticationFailed(gettext("Device authorization is no longer active."))
     return grant
 
 

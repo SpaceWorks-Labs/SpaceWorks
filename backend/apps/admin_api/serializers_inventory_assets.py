@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.boxes.models import Box, QrCode
@@ -17,7 +18,7 @@ class InventoryQuantityAdjustmentSerializer(serializers.Serializer):
             attrs.get("delta_lost", 0),
         ]
         if not any(deltas):
-            raise serializers.ValidationError("At least one quantity delta is required.")
+            raise serializers.ValidationError(gettext("At least one quantity delta is required."))
         return attrs
 
 
@@ -113,7 +114,7 @@ class InventoryAssetAdminUpdateSerializer(serializers.ModelSerializer):
 
     def validate_box(self, value):
         if value is not None and value.makerspace_id != self.instance.makerspace_id:
-            raise serializers.ValidationError("Container is not in this makerspace.")
+            raise serializers.ValidationError(gettext("Container is not in this makerspace."))
         return value
 
     def validate(self, attrs):
@@ -131,7 +132,7 @@ class InventoryAssetAdminUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {
                         "asset_tag": (
-                            "An asset with this tag already exists in this makerspace."
+                            gettext("An asset with this tag already exists in this makerspace.")
                         )
                     }
                 )

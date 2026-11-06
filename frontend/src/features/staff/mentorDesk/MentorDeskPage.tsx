@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from 'react'
 import { Tabs } from '../../../components/ui'
 import { HelpQueue } from '../../events/contributions/HelpQueue'
@@ -14,13 +15,13 @@ export function MentorDeskPage({ scope, teams, categories, rounds, contributorTo
 }) {
   const [tab, setTab] = useState('help')
   const [helpId, setHelpId] = useState<number | null>(null)
-  const tabs = [{ key: 'help', label: 'Help queue' }, { key: 'metrics', label: 'Your metrics' },
-    ...(rounds ? [{ key: 'rounds', label: 'Check-in rounds' }] : []),
-    ...(contributorTools ? [{ key: 'contributors', label: 'Contributors' }] : []),
-    ...(assignmentTools ? [{ key: 'assignments', label: 'Assignments' }] : []),
-    ...(settingsTools ? [{ key: 'settings', label: 'Settings and conflicts' }] : []),
-    ...(attentionTools ? [{ key: 'attention', label: 'Attention' }] : []),
-    ...(importTools ? [{ key: 'import', label: 'Import / practice' }] : [])]
+  const tabs = [{ key: 'help', label: t`Help queue` }, { key: 'metrics', label: t`Your metrics` },
+    ...(rounds ? [{ key: 'rounds', label: t`Check-in rounds` }] : []),
+    ...(contributorTools ? [{ key: 'contributors', label: t`Contributors` }] : []),
+    ...(assignmentTools ? [{ key: 'assignments', label: t`Assignments` }] : []),
+    ...(settingsTools ? [{ key: 'settings', label: t`Settings and conflicts` }] : []),
+    ...(attentionTools ? [{ key: 'attention', label: t`Attention` }] : []),
+    ...(importTools ? [{ key: 'import', label: t`Import / practice` }] : [])]
   return <Tabs tabs={tabs} activeKey={tab} onChange={key => { setTab(key); setHelpId(null) }}>
     {tab === 'help' ? helpId ? <HelpDetail scope={scope} helpId={helpId} surface="admin" onClose={() => setHelpId(null)} /> : <>
       <HelpQueue scope={scope} surface="admin" onOpen={row => setHelpId(row.id)} />

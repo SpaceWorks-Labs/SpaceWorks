@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -48,29 +49,28 @@ export function AccountabilityChargeForm({ makerspaceId, requestId, currency, ro
     onSubmit={event => { event.preventDefault(); save(); }}>
     <p className="text-sm font-semibold text-ink">{rowTitle(row)}</p>
     <fieldset className="grid gap-3" disabled={mutation.isPending}>
-      <legend className="sr-only">Charge for {rowTitle(row)}</legend>
+      <legend className="sr-only">{t`Charge for ${rowTitle(row)}`}</legend>
       <label className="grid gap-1" htmlFor={`${ids}-amount`}>
-        <span className="text-sm font-semibold text-ink">Amount ({currency.toUpperCase()})</span>
+        <span className="text-sm font-semibold text-ink">{t`Amount (${currency.toUpperCase()})`}</span>
         <input id={`${ids}-amount`} className="desk-input" inputMode="decimal" value={noCharge ? "0.00" : amount}
           disabled={noCharge || !canCharge} aria-invalid={Boolean(problem)}
           aria-describedby={problem ? `${ids}-hint ${ids}-error` : `${ids}-hint`}
           onChange={event => { setAmount(event.target.value); setProblem(null); }} />
         <span id={`${ids}-hint`} className="text-xs text-muted">{canCharge ? suggestionHint(row.suggested_source)
-          : "No return photo recorded this item, so it cannot be charged. Save No charge, or decide later."}</span>
+          : t`No return photo recorded this item, so it cannot be charged. Save No charge, or decide later.`}</span>
       </label>
       <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
         <input type="checkbox" checked={noCharge} disabled={!canCharge}
           onChange={event => { setNoCharge(event.target.checked); setProblem(null); }} />
-        No charge
-      </label>
+        {t`No charge`}</label>
       <label className="grid gap-1" htmlFor={`${ids}-note`}>
-        <span className="text-sm font-semibold text-ink">Note for the audit log (optional)</span>
+        <span className="text-sm font-semibold text-ink">{t`Note for the audit log (optional)`}</span>
         <textarea id={`${ids}-note`} className="desk-input min-h-16" maxLength={300} value={note}
           onChange={event => setNote(event.target.value)} />
       </label>
       {error ? <p id={`${ids}-error`} className="text-sm text-danger" role="alert">{error}</p> : null}
       <button className="desk-button-primary w-full sm:w-fit" type="submit">
-        {mutation.isPending ? "Saving…" : saveLabel}
+        {mutation.isPending ? t`Saving…` : saveLabel}
       </button>
     </fieldset>
   </form>;

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import { post, type Page } from "./spacesApi";
@@ -14,7 +15,7 @@ export type AnnouncementBody = Pick<Announcement, "title" | "body" | "severity" 
 };
 
 export const SEVERITY_LABELS: Record<AnnouncementSeverity, string> = {
-  info: "Information", maintenance: "Maintenance", policy: "Policy change", warning: "Warning",
+  info: t`Information`, maintenance: t`Maintenance`, policy: t`Policy change`, warning: t`Warning`,
 };
 
 const BASE = "/admin/platform/announcements";

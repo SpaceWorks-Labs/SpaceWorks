@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
 import { DrillSettingsForm } from "./DrillSettingsForm";
@@ -18,15 +19,15 @@ function Reports() {
   const list = useDrillReports(page);
   const rows = list.data?.results ?? [];
   return <section className="grid gap-3" aria-labelledby="drill-reports-heading">
-    <h3 id="drill-reports-heading" className="title-section">Drill reports</h3>
+    <h3 id="drill-reports-heading" className="title-section">{t`Drill reports`}</h3>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
       : list.isError ? <ErrorText resource="drill reports" onRetry={() => { void list.refetch(); }} />
-      : !rows.length ? <EmptyState message="No drills have run yet." />
+      : !rows.length ? <EmptyState message={t`No drills have run yet.`} />
       : <div className="grid gap-3">{rows.map(report => <ListRow key={report.id}
-        title={report.makerspace_name ?? `Space #${report.makerspace_id} (deleted)`}
+        title={report.makerspace_name ?? t`Space #${report.makerspace_id} (deleted)`}
         meta={<>started <RelativeTime date={report.started_at} exact />
-          {report.finished_at ? <> · finished <RelativeTime date={report.finished_at} exact /></> : null}{checksText(report)}</>}
-        right={<StatusPill label={report.outcome === "passed" ? "Passed" : "Failed"} tone={report.outcome === "passed" ? "success" : "danger"} />} />)}
+          {report.finished_at ? <> {t` · finished `}<RelativeTime date={report.finished_at} exact /></> : null}{checksText(report)}</>}
+        right={<StatusPill label={report.outcome === "passed" ? t`Passed` : t`Failed`} tone={report.outcome === "passed" ? "success" : "danger"} />} />)}
       </div>}
     <Pagination page={page} totalPages={Math.max(1, Math.ceil((list.data?.count ?? 0) / PAGE_SIZE))} onChange={setPage}
       count={list.data?.count} pageSize={PAGE_SIZE} disabled={list.isFetching} />
@@ -42,23 +43,21 @@ export function RestoreDrillsSection() {
       : overview.isError || !data ? <ErrorText resource="drill settings" onRetry={() => { void overview.refetch(); }} />
       : <>
         {data.configured ? null : <p role="note" className="rounded-control border border-line bg-surface px-3 py-2 text-sm text-ink">
-          Restore drills are not set up on this server yet, so none can run. Settings can still be saved.
-        </p>}
+          {t`Restore drills are not set up on this server yet, so none can run. Settings can still be saved.`}</p>}
         <section className="grid gap-3" aria-labelledby="drill-settings-heading">
-          <h3 id="drill-settings-heading" className="title-section">Schedule</h3>
+          <h3 id="drill-settings-heading" className="title-section">{t`Schedule`}</h3>
           <DrillSettingsForm key={JSON.stringify(data.settings)} saved={data.settings} />
         </section>
         <section className="grid gap-3" aria-labelledby="drill-run-heading">
-          <h3 id="drill-run-heading" className="title-section">Run a drill now</h3>
+          <h3 id="drill-run-heading" className="title-section">{t`Run a drill now`}</h3>
           <RunDrillForm configured={data.configured} />
         </section>
       </>}
     <Reports />
     <section className="grid gap-2 rounded-xl border border-line bg-surface p-4" aria-labelledby="drill-server-heading">
-      <h3 id="drill-server-heading" className="title-section">Done on the server</h3>
+      <h3 id="drill-server-heading" className="title-section">{t`Done on the server`}</h3>
       <p className="text-sm text-muted">
-        Platform key rotation (with the private key), whole-platform restore and recovery commands stay on the server by design.
-      </p>
+        {t`Platform key rotation (with the private key), whole-platform restore and recovery commands stay on the server by design.`}</p>
       {data?.key_rotation ? <p className="text-sm text-ink [overflow-wrap:anywhere]">{data.key_rotation}</p> : null}
     </section>
   </div>;

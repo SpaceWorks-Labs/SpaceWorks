@@ -1,6 +1,7 @@
 // Badge stocks and the badge design file (SPEC §3.1, G13). The six frozen stocks have packaged
 // default designs; A6 landscape and a custom size (40-300 mm, 0.1 mm steps) start blank or
 // from an imported file. Mirrors apps/events/certificates/layout.py DESIGN_STOCK_CHOICES.
+import { t } from "@lingui/core/macro";
 import { SAMPLE_LONG, SAMPLE_SHORT } from "../../../components/card-designer/dataFields";
 import { STOCKS, type LayerDocument, type Stock } from "./layout";
 
@@ -45,18 +46,18 @@ export function badgeDesignFile(document: LayerDocument, stock: DesignStock) {
 /** Read a design file (or a bare version-2 document from before files had a kind). The server validates on save. */
 export function parseBadgeDesignFile(text: string): { document: LayerDocument; stock: DesignStock | null } {
   let parsed: unknown;
-  try { parsed = JSON.parse(text); } catch { throw new Error("Choose a valid JSON design file."); }
-  if (!parsed || typeof parsed !== "object") throw new Error("Choose a valid JSON design file.");
+  try { parsed = JSON.parse(text); } catch { throw new Error(t`Choose a valid JSON design file.`); }
+  if (!parsed || typeof parsed !== "object") throw new Error(t`Choose a valid JSON design file.`);
   const value = parsed as { kind?: unknown; version?: unknown; stock?: unknown; document?: unknown; layers?: unknown };
   if (value.kind !== undefined) {
-    if (value.kind !== DESIGN_FILE_KIND) throw new Error("This file is not a Space Works badge design.");
-    if (value.version !== 2) throw new Error("This design file is from a newer version. Update and try again.");
+    if (value.kind !== DESIGN_FILE_KIND) throw new Error(t`This file is not a Space Works badge design.`);
+    if (value.version !== 2) throw new Error(t`This design file is from a newer version. Update and try again.`);
     const stock = typeof value.stock === "string" && (value.stock in DESIGN_STOCKS || value.stock === "custom")
       ? value.stock as DesignStock : null;
     return { document: value.document as LayerDocument, stock };
   }
   if (value.version === 2 && Array.isArray(value.layers)) return { document: parsed as LayerDocument, stock: null };
-  throw new Error("This file is not a Space Works badge design.");
+  throw new Error(t`This file is not a Space Works badge design.`);
 }
 
 /** Preview values for the merge tags: a typical name and a very long one, to test fitting. */

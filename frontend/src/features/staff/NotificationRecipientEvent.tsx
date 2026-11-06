@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -62,7 +63,7 @@ export function EventRecipients({
       });
     },
     onError: (err: unknown) =>
-      setError(err instanceof Error ? err.message : "Could not save recipients."),
+      setError(err instanceof Error ? err.message : t`Could not save recipients.`),
   });
 
   const update = (next: Draft[]) => {
@@ -75,8 +76,8 @@ export function EventRecipients({
       {rules.length === 0 ? (
         <p className="text-sm text-muted">
           {delegated
-            ? "No recipient is selected in your scoped partition."
-            : "Nobody selected — everyone whose role covers this area is notified."}
+            ? t`No recipient is selected in your scoped partition.`
+            : t`Nobody selected — everyone whose role covers this area is notified.`}
         </p>
       ) : null}
       {marker ? (
@@ -85,9 +86,7 @@ export function EventRecipients({
               Manager's row by construction; a shared requester/members row can now hold
               another maintainer's links too, so claiming a manager wrote it would be a
               statement about a colleague that is often false. */}
-          Another policy also applies to this event, scoped outside your machines. Its
-          recipients and scope are hidden; your changes will not replace it.
-        </p>
+          {t`Another policy also applies to this event, scoped outside your machines. Its recipients and scope are hidden; your changes will not replace it.`}</p>
       ) : null}
 
       {rules.map((rule, index) => (
@@ -113,8 +112,7 @@ export function EventRecipients({
       {error ? <p className="text-sm text-danger">{error}</p> : null}
       {hasUnscopedRule ? (
         <p className="text-sm text-danger">
-          Each delegated rule needs at least one machine or machine type.
-        </p>
+          {t`Each delegated rule needs at least one machine or machine type.`}</p>
       ) : null}
       <div className="flex flex-wrap gap-2">
         <button
@@ -125,8 +123,7 @@ export function EventRecipients({
           ])}
           type="button"
         >
-          Add recipient
-        </button>
+          {t`Add recipient`}</button>
         <SettingsEditorActions dirty={drafts !== null} onDiscard={() => { setDrafts(null); setError(""); }} pending={save.isPending} disabled={save.isPending || drafts === null || hasUnscopedRule} onSave={() => save.mutate(rules)} />
 
       </div>
@@ -146,7 +143,7 @@ function RecipientTarget({ data, index, rule, rules, update }: {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <select
-        aria-label={`Recipient ${index + 1} type`}
+        aria-label={t`Recipient ${index + 1} type`}
         className="desk-input"
         onChange={(changed) => replace({
           kind: changed.target.value as RecipientKind,
@@ -155,30 +152,30 @@ function RecipientTarget({ data, index, rule, rules, update }: {
         })}
         value={rule.kind}
       >
-        <option value="role">A role</option>
-        <option value="user">A named member</option>
-        <option value="members">All members</option>
-        <option value="requester">The person it is about</option>
+        <option value="role">{t`A role`}</option>
+        <option value="user">{t`A named member`}</option>
+        <option value="members">{t`All members`}</option>
+        <option value="requester">{t`The person it is about`}</option>
       </select>
       {rule.kind === "role" ? (
         <select
-          aria-label={`Recipient ${index + 1} role`}
+          aria-label={t`Recipient ${index + 1} role`}
           className="desk-input"
           onChange={(changed) => replace({ role_id: Number(changed.target.value) })}
           value={rule.role_id ?? ""}
         >
-          <option value="">Choose a role…</option>
+          <option value="">{t`Choose a role…`}</option>
           {data.roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
         </select>
       ) : null}
       {rule.kind === "user" ? (
         <select
-          aria-label={`Recipient ${index + 1} member`}
+          aria-label={t`Recipient ${index + 1} member`}
           className="desk-input"
           onChange={(changed) => replace({ user_id: Number(changed.target.value) })}
           value={rule.user_id ?? ""}
         >
-          <option value="">Choose a member…</option>
+          <option value="">{t`Choose a member…`}</option>
           {data.members.map((member) => (
             <option key={member.id} value={member.id}>{member.username}</option>
           ))}
@@ -189,8 +186,7 @@ function RecipientTarget({ data, index, rule, rules, update }: {
         onClick={() => update(rules.filter((_, position) => position !== index))}
         type="button"
       >
-        Remove
-      </button>
+        {t`Remove`}</button>
     </div>
   );
 }

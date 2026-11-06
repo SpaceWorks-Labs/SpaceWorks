@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
@@ -62,21 +63,21 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
   const displayNameSaveDisabled = loading || updateDisplayName.isPending || !displayNameChanged;
 
   return <>
-    <SettingsRow label="Logo" helper="Use your makerspace logo on public pages. Without one, the makerspace name becomes the wordmark."><ImageUploader
+    <SettingsRow label={t`Logo`} helper="Use your makerspace logo on public pages. Without one, the makerspace name becomes the wordmark."><ImageUploader
           endpoint={`/admin/makerspace/${makerspace.id}/logo`}
           currentUrl={settings?.logo_url}
-          label="Logo"
+          label={t`Logo`}
           fit="contain"
           onChanged={refreshBranding}
         /></SettingsRow>
-    <SettingsRow label="Cover image" helper="Welcome visitors with a wide banner on your public site."><ImageUploader
+    <SettingsRow label={t`Cover image`} helper="Welcome visitors with a wide banner on your public site."><ImageUploader
           endpoint={`/admin/makerspace/${makerspace.id}/cover`}
           currentUrl={settings?.cover_image_url}
-          label="Cover image (wide banner)"
+          label={t`Cover image (wide banner)`}
           shape="wide"
           onChanged={refreshBranding}
         /></SettingsRow>
-    <SettingsRow label="Registered name" helper="The official name used across Space Works."><form
+    <SettingsRow label={t`Registered name`} helper="The official name used across Space Works."><form
           className="@container grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
@@ -86,8 +87,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
           }}
         >
           <label className="text-sm font-semibold text-ink" htmlFor="registered-name">
-            Registered name
-          </label>
+            {t`Registered name`}</label>
           <input
             id="registered-name"
             className="desk-input"
@@ -96,9 +96,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
             onChange={(event) => setRegisteredNameInput(event.target.value)}
           />
           <p className="text-xs text-muted">
-            The official name of this makerspace. Used across the app and as the public wordmark
-            when no logo or public display name is set.
-          </p>
+            {t`The official name of this makerspace. Used across the app and as the public wordmark when no logo or public display name is set.`}</p>
           <div>
             <SettingsEditorActions dirty={registeredNameChanged} onDiscard={() => setRegisteredNameInput(currentRegisteredName)} pending={updateRegisteredName.isPending} disabled={registeredNameSaveDisabled} />
           </div>
@@ -106,7 +104,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
             <p className="text-sm text-danger">{updateRegisteredName.error.message}</p>
           ) : null}
         </form></SettingsRow>
-    <SettingsRow label="Public display name" helper="Leave blank to use the registered name."><form
+    <SettingsRow label={t`Public display name`} helper="Leave blank to use the registered name."><form
           className="@container grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
@@ -116,8 +114,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
           }}
         >
         <label className="text-sm font-semibold text-ink" htmlFor="public-display-name">
-          Public display name
-        </label>
+          {t`Public display name`}</label>
         <input
           id="public-display-name"
           className="desk-input"
@@ -127,8 +124,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
           onChange={(event) => setDisplayNameInput(event.target.value)}
         />
         <p className="text-xs text-muted">
-          Shown on this makerspace&apos;s public pages. Leave blank to use the registered name (
-          <span className="font-semibold text-ink">{makerspace.name}</span>).
+          {t`Shown on this makerspace's public pages. Leave blank to use the registered name (`}<span className="font-semibold text-ink">{makerspace.name}</span>).
         </p>
         <div>
           <SettingsEditorActions dirty={displayNameChanged} onDiscard={() => setDisplayNameInput(currentDisplayName)} pending={updateDisplayName.isPending} disabled={displayNameSaveDisabled} />

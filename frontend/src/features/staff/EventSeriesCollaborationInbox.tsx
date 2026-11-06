@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -45,12 +47,12 @@ export function EventSeriesCollaborationInbox({ makerspaceId }: { makerspaceId: 
   if (!rows.length) return null;
 
   return <section className="mb-5 rounded-xl border border-line bg-bg p-4" aria-labelledby="series-collaboration-inbox-title">
-    <h3 id="series-collaboration-inbox-title" className="mb-1 font-semibold text-ink">Recurring-series invitations</h3>
-    <p className="mb-3 text-sm text-muted">Accept once to make every current and future occurrence available to your members.</p>
+    <h3 id="series-collaboration-inbox-title" className="mb-1 font-semibold text-ink">{t`Recurring-series invitations`}</h3>
+    <p className="mb-3 text-sm text-muted">{t`Accept once to make every current and future occurrence available to your members.`}</p>
     <ul className="space-y-3 text-sm">{rows.map((row) => <li key={row.id} className="flex flex-wrap items-center justify-between gap-2">
-      <span><span className="font-medium text-ink">{row.series_title}</span><span className="block text-muted">Hosted by {row.host_name}{row.next_occurrence_at ? ` · Next ${new Date(row.next_occurrence_at).toLocaleString()}` : ""}</span></span>
-      {row.status === "invited" ? <span className="flex flex-wrap gap-2"><button type="button" className={`desk-button-primary ${FOCUS}`} disabled={respond.isPending} onClick={() => respond.mutate({ id: row.id, accept: true })}>Accept</button><button type="button" className={`desk-button ${FOCUS}`} disabled={respond.isPending} onClick={() => respond.mutate({ id: row.id, accept: false })}>Decline</button></span> : <span className="text-muted">{row.status}</span>}
+      <span><span className="font-medium text-ink">{row.series_title}</span><span className="block text-muted">{t`Hosted by ${row.host_name}`}{row.next_occurrence_at ? t` · Next ${new Date(row.next_occurrence_at).toLocaleString(formatLocale())}` : ""}</span></span>
+      {row.status === "invited" ? <span className="flex flex-wrap gap-2"><button type="button" className={`desk-button-primary ${FOCUS}`} disabled={respond.isPending} onClick={() => respond.mutate({ id: row.id, accept: true })}>{t`Accept`}</button><button type="button" className={`desk-button ${FOCUS}`} disabled={respond.isPending} onClick={() => respond.mutate({ id: row.id, accept: false })}>{t`Decline`}</button></span> : <span className="text-muted">{row.status}</span>}
     </li>)}</ul>
-    {respond.error ? <p className="mt-2 text-sm text-danger" role="alert">Could not respond to the series invitation.</p> : null}
+    {respond.error ? <p className="mt-2 text-sm text-danger" role="alert">{t`Could not respond to the series invitation.`}</p> : null}
   </section>;
 }

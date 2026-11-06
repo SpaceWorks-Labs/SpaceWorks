@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { SettingsRow } from "../../components/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
     onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updatePublicInventory`),
     onSuccess: async (_data, next) => {
       await (refreshSettings)();
-      toast(`Public inventory turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updatePublicInventory`, undo: async () => {
+      toast(t`Public inventory turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updatePublicInventory`, undo: async () => {
         await ((next: boolean) =>
       staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
         method: "PATCH",
@@ -49,10 +50,10 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
   });
 
   return <>
-    <SettingsRow label="Public inventory" helper="Show the public catalogue. Turning this off keeps your inventory data.">
-      <div className="@container grid gap-3"><Badge label="" tone={publicInventoryEnabled ? "success" : "neutral"}>{publicInventoryEnabled ? "On" : "Off"}</Badge>
+    <SettingsRow label={t`Public inventory`} helper="Show the public catalogue. Turning this off keeps your inventory data.">
+      <div className="@container grid gap-3"><Badge label="" tone={publicInventoryEnabled ? "success" : "neutral"}>{publicInventoryEnabled ? t`On` : t`Off`}</Badge>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={publicInventoryEnabled}
-          disabled={loading || updatePublicInventory.isPending} onChange={event => updatePublicInventory.mutate(event.target.checked)} />Show public inventory</label>
+          disabled={loading || updatePublicInventory.isPending} onChange={event => updatePublicInventory.mutate(event.target.checked)} />{t`Show public inventory`}</label>
         {updatePublicInventory.error ? <p role="alert" className="text-sm text-danger">{updatePublicInventory.error.message}</p> : null}
       </div>
     </SettingsRow>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type {
   ShopMovement, ShopProduct, ShopSettings, ShopStaffVariant, ShopStockMoveKindEnum,
 } from "../../../generated/api";
@@ -70,27 +71,27 @@ export const saveSettings = (ms: number, body: Partial<ShopSettings>) =>
   staffRequest<ShopSettings>(`${space(ms)}/settings/`, json("PATCH", body));
 
 const MESSAGES: Record<string, string> = {
-  setting_not_delegated: "Only the Space Manager can change these shop settings here.",
-  setting_locked: "These settings are locked by the platform and cannot be changed in this space.",
-  cash_session_closed: "Open the cash drawer in Cash-up before taking cash.",
-  cash_session_open: "A cash drawer is already open.",
-  cash_session_check: "A second person must confirm this count.",
-  pickup_code_invalid: "That pickup code does not match this order.",
-  order_not_collectable: "This order cannot be collected yet. Take the payment or mark it ready first.",
-  order_not_payable: "This order has nothing left to pay.",
-  order_not_cancellable: "This order can no longer be cancelled.",
-  return_window_closed: "The returns window for this order has closed.",
-  return_exceeds_sold: "You cannot return more than was sold.",
-  price_changed: "Prices changed. The basket has been re-priced; check the total and sell again.",
-  charges_off: "Shop sales are not being recorded. Turn on “Track shop sales” first.",
+  setting_not_delegated: t`Only the Space Manager can change these shop settings here.`,
+  setting_locked: t`These settings are locked by the platform and cannot be changed in this space.`,
+  cash_session_closed: t`Open the cash drawer in Cash-up before taking cash.`,
+  cash_session_open: t`A cash drawer is already open.`,
+  cash_session_check: t`A second person must confirm this count.`,
+  pickup_code_invalid: t`That pickup code does not match this order.`,
+  order_not_collectable: t`This order cannot be collected yet. Take the payment or mark it ready first.`,
+  order_not_payable: t`This order has nothing left to pay.`,
+  order_not_cancellable: t`This order can no longer be cancelled.`,
+  return_window_closed: t`The returns window for this order has closed.`,
+  return_exceeds_sold: t`You cannot return more than was sold.`,
+  price_changed: t`Prices changed. The basket has been re-priced; check the total and sell again.`,
+  charges_off: t`Shop sales are not being recorded. Turn on “Track shop sales” first.`,
 };
 
 export function staffShopError(error: unknown) {
   if (!error) return "";
-  if (!(error instanceof StructuredApiError)) return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  if (!(error instanceof StructuredApiError)) return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
   if (error.code === "out_of_stock") {
     const available = Number(error.body.available ?? 0);
-    return available > 0 ? `${error.detail ?? "Not enough stock."} Only ${available} left.` : error.detail ?? "Out of stock.";
+    return available > 0 ? t`${error.detail ?? "Not enough stock."} Only ${available} left.` : error.detail ?? t`Out of stock.`;
   }
   return (error.code && MESSAGES[error.code]) || error.detail || error.message;
 }

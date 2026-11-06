@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -55,7 +56,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   if (!unavailable && createOpen) return <BookableSpaceForm mode="create" makerspaceId={makerspaceId}
     onSubmit={payload => create.mutate(payload, { onSuccess: space => { setCreateOpen(false); setSelectedId(space.id);
       void queryClient.invalidateQueries({ queryKey: ["booking-rule-spaces", makerspaceId] }); } })}
-    pending={create.isPending} error={create.error?.message} submitLabel="Create space" onCancel={() => setCreateOpen(false)} />;
+    pending={create.isPending} error={create.error?.message} submitLabel={t`Create space`} onCancel={() => setCreateOpen(false)} />;
   const activeSpaces = spaces.data?.results.filter(space => space.is_active) ?? [];
   const chooseSpace = (spaceId: number) => { setChoosingBooking(false); setBookingSpaceId(spaceId); setSelectedId(spaceId); };
   const openBooking = (spaceId: number, bookingId: number) => setParams(current => {
@@ -64,50 +65,50 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
     return next;
   });
   const tabs = unavailable ? undefined : [
-    { key: "requests", label: "Requests" }, { key: "spaces", label: "Spaces", count: spaces.data?.count },
-    { key: "issues", label: "Issues", count: openIssues.data?.open_count },
+    { key: "requests", label: t`Requests` }, { key: "spaces", label: t`Spaces`, count: spaces.data?.count },
+    { key: "issues", label: t`Issues`, count: openIssues.data?.open_count },
   ];
   const queueBody = view === "requests" ? <BookingQueuePanel makerspaceId={makerspaceId} status={queueStatus}
       onStatus={status => setParam("status", status === "pending" ? null : status)} onOpenBooking={booking => openBooking(booking.space_id, booking.id)} />
     : view === "issues" ? <BookingIssuesList makerspaceId={makerspaceId} onOpenBooking={issue => openBooking(issue.space_id, issue.booking_id)} />
     : null;
-  return <><ListLayout header={{ title: "Bookings",
-    subtitle: "Manage spaces, booking requests and public availability.",
-    primary: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) },
-    secondary: unavailable ? undefined : { label: "New booking", onClick: () => setChoosingBooking(true) },
+  return <><ListLayout header={{ title: t`Bookings`,
+    subtitle: t`Manage spaces, booking requests and public availability.`,
+    primary: unavailable ? undefined : { label: t`New space`, onClick: () => setCreateOpen(true) },
+    secondary: unavailable ? undefined : { label: t`New booking`, onClick: () => setChoosingBooking(true) },
     // Booking rules are keyed on manage_bookings, so a Booking Manager edits them here, not in space settings.
-    overflow: unavailable ? undefined : [{ label: "Booking rules", icon: "Settings", onClick: () => setRulesOpen(true) }, ...domainSettings.actions] }}
+    overflow: unavailable ? undefined : [{ label: t`Booking rules`, icon: "Settings", onClick: () => setRulesOpen(true) }, ...domainSettings.actions] }}
     tabs={tabs} activeTab={view} onTabChange={key => setParams(current => {
       const next = new URLSearchParams(current); next.delete("status"); if (key === "requests") next.delete("view"); else next.set("view", key); return next;
     })}
     state={unavailable || queueBody ? { status: "ready" } : opsQueryState(spaces, "bookable spaces")}
-    stats={[{ label: "Spaces", value: spaces.data?.count ?? 0 }]}
+    stats={[{ label: t`Spaces`, value: spaces.data?.count ?? 0 }]}
     filters={unavailable || queueBody ? undefined : { toolbar: <ListViewControls state={list} makerspaceId={makerspaceId} entity="bookings" searchLabel="Search spaces"
       sorts={[["name", "Name"], ["-name", "Name descending"], ["kind", "Type"]]} /> }}
     filtered={!queueBody && Boolean(list.values.q)} isEmpty={Boolean(unavailable) || (!queueBody && spaces.data?.results.length === 0)}
-    empty={{ message: unavailable ?? "No bookable spaces yet. Create one to start taking bookings.",
-      action: unavailable ? undefined : { label: "New space", onClick: () => setCreateOpen(true) } }}
-    filteredEmpty={{ message: "No spaces match your search. Try another name.", action: { label: "Clear filters", onClick: () => list.setFilter("q", "") } }}
+    empty={{ message: unavailable ?? t`No bookable spaces yet. Create one to start taking bookings.`,
+      action: unavailable ? undefined : { label: t`New space`, onClick: () => setCreateOpen(true) } }}
+    filteredEmpty={{ message: t`No spaces match your search. Try another name.`, action: { label: t`Clear filters`, onClick: () => list.setFilter("q", "") } }}
     body={{ kind: "rows", rows: queueBody ?? spaces.data?.results.map(space => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Calendar", tone: "info" }} onClick={() => setSelectedId(space.id)}
-      meta={<>{space.kind.replace(/_/g, " ")} · {space.location || "No location label"}</>}
+      meta={<>{space.kind.replace(/_/g, " ")} · {space.location || t`No location label`}</>}
       right={<div className="flex flex-wrap items-center gap-2">
-        <StatusPill label={space.approval_mode === "approve" ? "Staff approval" : "Instant"} tone="neutral" />
-        <StatusPill label={space.is_public ? "Public" : "Private"} tone={space.is_public ? "success" : "neutral"} />
-        <StatusPill label={space.is_active ? "Active" : "Inactive"} tone={space.is_active ? "success" : "neutral"} />
-        <button className="desk-button" type="button" onClick={() => setSelectedId(space.id)}>View bookings</button>
+        <StatusPill label={space.approval_mode === "approve" ? t`Staff approval` : t`Instant`} tone="neutral" />
+        <StatusPill label={space.is_public ? t`Public` : t`Private`} tone={space.is_public ? "success" : "neutral"} />
+        <StatusPill label={space.is_active ? t`Active` : t`Inactive`} tone={space.is_active ? "success" : "neutral"} />
+        <button className="desk-button" type="button" onClick={() => setSelectedId(space.id)}>{t`View bookings`}</button>
       </div>} />) }}
     pagination={spaces.data && !queueBody ? { page, pageSize: 24, count: spaces.data.count, onChange: setPage } : undefined} />
-    <Modal open={choosingBooking && !unavailable} title="New booking" onClose={() => setChoosingBooking(false)}>
+    <Modal open={choosingBooking && !unavailable} title={t`New booking`} onClose={() => setChoosingBooking(false)}>
       <div className="grid gap-3">
-        <p className="text-sm text-muted">Choose the space to book.{spaces.data?.next ? " Search the list to find a space on another page." : ""}</p>
+        <p className="text-sm text-muted">{t`Choose the space to book.`}{spaces.data?.next ? t` Search the list to find a space on another page.` : ""}</p>
         {activeSpaces.length ? activeSpaces.map(space => <ListRow key={space.id} title={space.name} identity={{ kind: "icon", icon: "Calendar", tone: "info" }}
           meta={space.location || "No location label"} onClick={() => chooseSpace(space.id)}
-          right={<button className="desk-button" type="button" onClick={() => chooseSpace(space.id)}>Book this space</button>} />)
-          : <EmptyState message="No active spaces on this page. Create a space before taking bookings." />}
+          right={<button className="desk-button" type="button" onClick={() => chooseSpace(space.id)}>{t`Book this space`}</button>} />)
+          : <EmptyState message={t`No active spaces on this page. Create a space before taking bookings.`} />}
       </div>
     </Modal>
-    <Modal open={rulesOpen && !unavailable} title="Booking rules" size="xl" onClose={() => setRulesOpen(false)}>
+    <Modal open={rulesOpen && !unavailable} title={t`Booking rules`} size="xl" onClose={() => setRulesOpen(false)}>
       <MakerspaceBookingRulesSettings makerspace={{ id: makerspaceId }} />
     </Modal>
     {domainSettings.dialog}

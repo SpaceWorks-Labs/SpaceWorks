@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useCorrectAttendance } from "./eventFeedbackApi";
 import { useGenerateEventBadges } from "./eventsBadgeApi";
 import { eventErrorText } from "./eventUi";
@@ -15,8 +16,8 @@ export function EventAttendanceTools({ eventId, makerspaceId, registrationId, on
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a"); link.href = url; link.download = "attendee-badge.pdf"; link.click();
         URL.revokeObjectURL(url);
-      } })}>{print.isPending ? "Preparing badge…" : "Print attended badge"}</button>
-      <button className="desk-button-danger-outline" type="button" disabled={correct.isPending} onClick={() => correct.mutate(registrationId, { onSuccess: onCorrected })}>Correct attendance</button>
+      } })}>{print.isPending ? t`Preparing badge…` : t`Print attended badge`}</button>
+      <button className="desk-button-danger-outline" type="button" disabled={correct.isPending} onClick={() => correct.mutate(registrationId, { onSuccess: onCorrected })}>{t`Correct attendance`}</button>
     </div>
     {correct.error || print.error ? <p className="mt-2 text-sm text-danger" role="alert">{eventErrorText(correct.error || print.error)}</p> : null}
   </div>;

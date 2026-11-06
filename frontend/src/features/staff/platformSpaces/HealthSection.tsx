@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { EmptyState, ErrorText, Field, Pagination, Skeleton } from "../../../components/ui";
@@ -37,20 +38,20 @@ export function HealthSection({ managedPlans }: { managedPlans: boolean }) {
   const rows = list.data?.results ?? [];
   return <div className="grid gap-4">
     <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_14rem]">
-      <Field label="Search spaces">
-        <input className="desk-input" type="search" value={search} placeholder="Name, slug or code"
+      <Field label={t`Search spaces`}>
+        <input className="desk-input" type="search" value={search} placeholder={t`Name, slug or code`}
           onChange={event => { setSearch(event.target.value); setPage(1); }} />
       </Field>
-      <Field label="State">
+      <Field label={t`State`}>
         <select className="desk-input" value={state} onChange={event => { setState(event.target.value); setPage(1); }}>
-          <option value="">Every state</option>
+          <option value="">{t`Every state`}</option>
           {(Object.keys(STATE_LABELS) as SpaceState[]).map(key => <option key={key} value={key}>{STATE_LABELS[key]}</option>)}
         </select>
       </Field>
     </div>
     {list.isLoading ? <Skeleton className="h-40 w-full" />
       : list.isError ? <ErrorText resource="space health" onRetry={() => { void list.refetch(); }} />
-      : !rows.length ? <EmptyState message={term || state ? "No spaces match these filters." : "No spaces yet."} />
+      : !rows.length ? <EmptyState message={term || state ? t`No spaces match these filters.` : t`No spaces yet.`} />
       : <div className="grid gap-4 xl:grid-cols-2">{rows.map(card => <HealthCardView key={card.id} card={card} managedPlans={managedPlans}
         onOpen={kind => setDialog({ card, kind })} onDetails={() => setDetails(card)} />)}</div>}
     <Pagination page={page} totalPages={Math.max(1, Math.ceil((list.data?.count ?? 0) / PAGE_SIZE))} onChange={setPage}

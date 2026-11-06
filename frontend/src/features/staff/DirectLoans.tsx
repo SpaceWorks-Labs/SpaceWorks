@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { KitChecklistCapture, useKitChecklist } from "../inventory/KitChecklist";
 import { featureEnabled } from "../../lib/features";
 import { DirectHandoverWizard } from "./handover/DirectHandoverWizard";
@@ -171,8 +172,8 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
     qr={{ scanned, qrPayloads, onOpenScanner: () => setShowScanner(true), onRemoveScanned: removeScanned, onQrPayloadsChange: setQrPayloads }}
     evidence={{ uploadKey: issueUploadKey, makerspaceId: makerspace.id, disabled: issue.isPending, onUploaded: setIssueEvidenceId, remark: issueRemark, onRemarkChange: setIssueRemark }}>
         <KitChecklistCapture checklist={kits} />
-        {issueEvidenceId === null ? <p className="mt-3 text-sm text-muted">Upload an issue photo before issuing.</p> : null}
-        {!hasIssueContent ? <p className="mt-3 text-sm text-muted">Add at least one item, QR payload, or container before issuing.</p> : null}
+        {issueEvidenceId === null ? <p className="mt-3 text-sm text-muted">{t`Upload an issue photo before issuing.`}</p> : null}
+        {!hasIssueContent ? <p className="mt-3 text-sm text-muted">{t`Add at least one item, QR payload, or container before issuing.`}</p> : null}
         {issue.error ? <p className="mt-3 text-sm text-danger">{issue.error.message}</p> : null}
         {products.error ? <p className="mt-3 text-sm text-danger">{products.error.message}</p> : null}
         {container.error ? <p className="mt-3 text-sm text-danger">{container.error.message}</p> : null}
@@ -182,15 +183,15 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const shown = loans.results;
   const tabHref = (key: string) => { const next = new URLSearchParams(params); next.set("handout", key); return `?${next}`; };
   return <ListLayout standalone={false}
-    header={{ title: "Direct handout", subtitle: "Lend tools straight from the shelf, without a request.", primary: { label: "New handout", icon: "Plus", onClick: () => setGuided(true) } }}
+    header={{ title: t`Direct handout`, subtitle: t`Lend tools straight from the shelf, without a request.`, primary: { label: t`New handout`, icon: "Plus", onClick: () => setGuided(true) } }}
     state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: "Couldn't load direct handouts. Try again.", onRetry: () => void loans.refetch() }}
-    tabs={[{ key: "on-loan", label: "On loan", count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: "Returned", count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: "Claim codes", href: tabHref("claim-codes") }]} activeTab={tab}
+    tabs={[{ key: "on-loan", label: t`On loan`, count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: t`Returned`, count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: t`Claim codes`, href: tabHref("claim-codes") }]} activeTab={tab}
     isEmpty={tab !== "claim-codes" && !shown.length}
-    empty={{ message: tab === "returned" ? "No direct handouts returned yet." : "No tools are out on direct handout. Start one with New handout above.", action: tab === "returned" ? undefined : { label: "New handout", onClick: () => setGuided(true) } }}
+    empty={{ message: tab === "returned" ? t`No direct handouts returned yet.` : t`No tools are out on direct handout. Start one with New handout above.`, action: tab === "returned" ? undefined : { label: t`New handout`, onClick: () => setGuided(true) } }}
     body={{ kind: "rows", rows: tab === "claim-codes" ? <MemberClaimCodes makerspaceId={makerspace.id} members={memberOptions} /> : <DirectLoanList loans={shown} onReturn={returnFlow.openReturnModal} makerspaceId={makerspace.id} /> }}
     pagination={tab === "claim-codes" ? undefined : { page: loans.page, pageSize: loans.pageSize, count: loans.count, onChange: loans.setPage }}
     detail={<>
-      {guided ? <DirectHandoverWizard key={makerspace.id} makerspace={makerspace} onClose={() => setGuided(false)} compactWork={compactWork} compactAction={{ label: "Issue direct handout", disabled: !canIssue, pending: issue.isPending, onClick: () => issue.mutate() }} /> : null}
+      {guided ? <DirectHandoverWizard key={makerspace.id} makerspace={makerspace} onClose={() => setGuided(false)} compactWork={compactWork} compactAction={{ label: t`Issue direct handout`, disabled: !canIssue, pending: issue.isPending, onClick: () => issue.mutate() }} /> : null}
       <DirectLoanReturnModal
         loan={returnFlow.returningLoan} makerspaceId={makerspace.id}
         evidenceId={returnFlow.returnEvidenceId} notes={returnFlow.returnNotes} qrPayload={returnFlow.returnQrPayload}

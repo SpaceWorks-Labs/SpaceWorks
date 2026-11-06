@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Card, StatCard } from "../../components/ui";
 import { EventCheckInOperator } from "./EventCheckInOperator";
 import { EventCheckInList } from "./EventCheckInList";
@@ -11,12 +12,12 @@ import type { StaffEvent } from "./eventsApi";
 export function EventCheckInTab({ event, makerspaceId, active, checkable, canManageStation }: {
   event: StaffEvent; makerspaceId: number; active: boolean; checkable: boolean; canManageStation: boolean;
 }) {
-  if (!checkable) return active ? <Card><h2 className="title-panel">Check-in opens once the event is published</h2>
-    <p className="mt-2 text-sm text-muted">This event is still a draft. When it is published, this tab gives you the attendance scanner, the checked-in list{event.offline_checkin_enabled ? " and offline check-in" : ""}.</p></Card> : null;
+  if (!checkable) return active ? <Card><h2 className="title-panel">{t`Check-in opens once the event is published`}</h2>
+    <p className="mt-2 text-sm text-muted">{t`This event is still a draft. When it is published, this tab gives you the attendance scanner, the checked-in list${event.offline_checkin_enabled ? " and offline check-in" : ""}.`}</p></Card> : null;
   if (!active) return null;
   const counts = event.registration_counts;
   return <>
-    {active ? <StatCard label="Checked in" value={counts.attended} of={counts.registered + counts.attended || undefined} /> : null}
+    {active ? <StatCard label={t`Checked in`} value={counts.attended} of={counts.registered + counts.attended || undefined} /> : null}
     <div className="grid gap-6 lg:grid-cols-2" hidden={!active}>
       <EventCheckInOperator visible={active} makerspaceId={makerspaceId} eventId={event.id} offlineEnabled={event.offline_checkin_enabled} canManageStation={canManageStation} />
       <EventCheckInList eventId={event.id} visible={active} />

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useCallback, useState } from "react";
 import { staffRequest } from "../../lib/api";
 import { useStaffGet } from "./StaffPanels";
@@ -19,15 +20,15 @@ export function useDirectLoanContainer(makerspaceId: number) {
     try {
       const result = await staffRequest<QrResolveResponse>("/admin/qr/resolve", { method: "POST", body: JSON.stringify({ payload }) });
       const target = result.target;
-      if (target.type !== "box") { setScanError("Scanned QR is not a container."); return; }
+      if (target.type !== "box") { setScanError(t`Scanned QR is not a container.`); return; }
       if (!options.some(container => container.id === target.id)) {
-        setScanError("That container isn't available for handout (inactive or not found).");
+        setScanError(t`That container isn't available for handout (inactive or not found).`);
         return;
       }
       setContainerId(String(target.id));
       setScanError("");
     } catch {
-      setScanError("Could not resolve the scanned QR.");
+      setScanError(t`Could not resolve the scanned QR.`);
     } finally {
       setScanning(false);
     }

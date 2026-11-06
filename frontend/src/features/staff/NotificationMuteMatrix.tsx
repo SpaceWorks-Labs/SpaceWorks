@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { NotificationMuteTable } from "./NotificationMuteTable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -63,8 +64,8 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
           recipient-by-event tables into a sideways scroll from tablet up. */}
       <section aria-labelledby={`advanced-mutes-${makerspaceId}`} className="grid min-w-0 gap-4">
         <div>
-          <h4 id={`advanced-mutes-${makerspaceId}`} className="text-sm font-semibold text-ink">Advanced email recipient/event mutes</h4>
-          <p className="mt-2 max-w-prose text-sm text-muted">Checked = muted for that individual email recipient and event. These mutes apply only while the matching feature&apos;s Email channel above is enabled. Return reminders cannot be individually muted.</p>
+          <h4 id={`advanced-mutes-${makerspaceId}`} className="text-sm font-semibold text-ink">{t`Advanced email recipient/event mutes`}</h4>
+          <p className="mt-2 max-w-prose text-sm text-muted">{t`Checked = muted for that individual email recipient and event. These mutes apply only while the matching feature's Email channel above is enabled. Return reminders cannot be individually muted.`}</p>
         </div>
         <div className="grid min-w-0 gap-4">
           {rules.data.catalog.map((entry) => {
@@ -80,8 +81,7 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
                 </h5>
                 {!emailEnabled ? (
                   <p id={disabledMessageId} className="mt-2 text-xs text-warn-ink">
-                    Advanced mutes are read-only while this feature&apos;s Email channel is disabled.
-                  </p>
+                    {t`Advanced mutes are read-only while this feature's Email channel is disabled.`}</p>
                 ) : null}
                 <NotificationMuteTable entry={entry} mutes={rules.data.mutes} emailEnabled={emailEnabled}
                   disabledMessageId={disabledMessageId} pending={updateMute.isPending} onChange={change => updateMute.mutate(change)} />
@@ -145,8 +145,8 @@ function streamLabel(stream: string) {
 }
 
 function audienceLabel(audience: string) {
-  if (audience === "requester") return "Requester emails";
-  if (audience === "staff") return "Staff emails";
+  if (audience === "requester") return t`Requester emails`;
+  if (audience === "staff") return t`Staff emails`;
   return `${humanize(audience)} emails`;
 }
 

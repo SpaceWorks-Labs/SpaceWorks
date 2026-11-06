@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -78,19 +80,17 @@ export function MemberClaimCodes({
 
   return (
     <Card>
-      <h2 className="title-section">Member claim code</h2>
+      <h2 className="title-section">{t`Member claim code`}</h2>
       <p className="text-sm text-muted">
-        Issue only while the walk-in is physically present. Hand over the code or QR;
-        never email or text it.
-      </p>
+        {t`Issue only while the walk-in is physically present. Hand over the code or QR; never email or text it.`}</p>
       <div className="mt-3 flex flex-col gap-2 md:flex-row">
         <select
-          aria-label="Walk-in member"
+          aria-label={t`Walk-in member`}
           className="desk-input w-full"
           value={membershipId}
           onChange={(event) => setMembershipId(event.target.value)}
         >
-          <option value="">Select an eligible walk-in</option>
+          <option value="">{t`Select an eligible walk-in`}</option>
           {walkIns.map((member) => (
             <option key={member.membership_id} value={member.membership_id}>
               {member.display_name || member.username}
@@ -103,23 +103,22 @@ export function MemberClaimCodes({
           disabled={!membershipId || issue.isPending}
           onClick={() => issue.mutate()}
         >
-          {issue.isPending ? "Issuing…" : "Issue claim code"}
+          {issue.isPending ? t`Issuing…` : t`Issue claim code`}
         </button>
       </div>
-      {!walkIns.length ? <EmptyState message="No eligible walk-ins in this member list." /> : null}
+      {!walkIns.length ? <EmptyState message={t`No eligible walk-ins in this member list.`} /> : null}
       {issued ? (
         <div className="mt-4 grid gap-4 rounded-lg border border-line bg-surface p-4 md:grid-cols-[1fr_180px]">
           <div>
-            <p className="text-sm font-semibold text-ink">Hand this to {issued.member_display_name}</p>
+            <p className="text-sm font-semibold text-ink">{t`Hand this to ${issued.member_display_name}`}</p>
             <p className="mt-2 break-all text-lg font-semibold text-ink">{issued.code}</p>
             <p className="mt-2 text-xs text-muted">
-              Expires {new Date(issued.expires_at).toLocaleString()}. This code will not be shown again after you leave this view.
-            </p>
+              {t`Expires ${new Date(issued.expires_at).toLocaleString(formatLocale())}. This code will not be shown again after you leave this view.`}</p>
           </div>
           <img
             className="mx-auto aspect-square w-full max-w-64 rounded-md border border-line bg-panel p-2"
             src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(issued.qr_svg)}`}
-            alt={`Claim code QR for ${issued.member_display_name}`}
+            alt={t`Claim code QR for ${issued.member_display_name}`}
           />
         </div>
       ) : null}
@@ -127,11 +126,11 @@ export function MemberClaimCodes({
         {active.data?.map((claim) => (
           <ListRow key={claim.id} title={claim.member_display_name}
             identity={{ kind: "avatar", name: claim.member_display_name, seed: String(claim.membership_id) }}
-            meta={<span className="flex flex-wrap items-center gap-2"><StatusPill label="Active" tone="success" /><span>Expires <RelativeTime date={claim.expires_at} /></span></span>}
-            right={<button className="desk-button" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(claim.id)}>Revoke</button>} />
+            meta={<span className="flex flex-wrap items-center gap-2"><StatusPill label={t`Active`} tone="success" /><span>{t`Expires `}<RelativeTime date={claim.expires_at} /></span></span>}
+            right={<button className="desk-button" type="button" disabled={revoke.isPending} onClick={() => revoke.mutate(claim.id)}>{t`Revoke`}</button>} />
         ))}
-        {active.isLoading ? <p className="text-sm text-muted">Loading active claim codes…</p> : null}
-        {active.isSuccess && !active.data?.length ? <EmptyState message="No active claim codes." /> : null}
+        {active.isLoading ? <p className="text-sm text-muted">{t`Loading active claim codes…`}</p> : null}
+        {active.isSuccess && !active.data?.length ? <EmptyState message={t`No active claim codes.`} /> : null}
       </div>
       {active.error ? <ErrorBlock error={active.error} resource="claim codes" onRetry={() => void active.refetch()} /> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{error.message}</p> : null}

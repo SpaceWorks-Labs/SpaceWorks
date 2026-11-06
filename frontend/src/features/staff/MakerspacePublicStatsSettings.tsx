@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { SettingsRow } from "../../components/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,17 +34,17 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
     onMutate: () => invalidateToastUndo(`settings-${makerspace.id}-updateHolderNames`),
     onSuccess: async (_data, next) => {
       await invalidateSettings();
-      toast(`Public borrower names turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updateHolderNames`, undo: async () => {
+      toast(t`Public borrower names turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-updateHolderNames`, undo: async () => {
         await patchHolderNames(!next);
         await invalidateSettings();
       } });
     },
   });
 
-  return <SettingsRow label="Public borrower names" helper="When on, the “Out right now” list publishes the borrower’s name on the public stats page. When off, every borrower is shown as Member. Nothing else on the page ever carries a name.">
-    <div className="@container grid gap-3"><Badge label="" tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? "On" : "Off"}</Badge>
+  return <SettingsRow label={t`Public borrower names`} helper="When on, the “Out right now” list publishes the borrower’s name on the public stats page. When off, every borrower is shown as Member. Nothing else on the page ever carries a name.">
+    <div className="@container grid gap-3"><Badge label="" tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? t`On` : t`Off`}</Badge>
       <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={showHolderNames}
-        disabled={loading || updateHolderNames.isPending} onChange={event => updateHolderNames.mutate(event.target.checked)} />Publish borrower names publicly</label>
+        disabled={loading || updateHolderNames.isPending} onChange={event => updateHolderNames.mutate(event.target.checked)} />{t`Publish borrower names publicly`}</label>
       {updateHolderNames.error ? <p role="alert" className="text-sm text-danger">{updateHolderNames.error.message}</p> : null}
     </div>
   </SettingsRow>;

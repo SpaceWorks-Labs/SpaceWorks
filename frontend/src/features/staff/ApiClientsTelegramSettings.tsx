@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog, DangerZone, ErrorBlock, Skeleton, SettingsActions, SettingsRow, StatusPill } from "../../components/ui";
@@ -70,16 +71,16 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
         method: "POST",
         body: JSON.stringify({
           makerspace_id: makerspace.id,
-          message: `Test alert from ${makerspace.name}`,
+          message: t`Test alert from ${makerspace.name}`,
         }),
       }),
   });
   return (
     <div id="telegram-settings" tabIndex={-1} className="scroll-mt-6 rounded-md border border-line bg-surface p-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-      <h3 className="title-section">Telegram</h3>
-      <StatusPill label={settings.data?.telegram_bot_token_set ? "Token saved" : "No token saved"} />
+      <h3 className="title-section">{t`Telegram`}</h3>
+      <StatusPill label={settings.data?.telegram_bot_token_set ? t`Token saved` : t`No token saved`} />
       <div className="mt-3 divide-y divide-line">
-        <SettingsRow label="Telegram group chat ID" htmlFor="telegram-group">
+        <SettingsRow label={t`Telegram group chat ID`} htmlFor="telegram-group">
           <input
             id="telegram-group" className="desk-input"
             value={settingsForm.telegram_group_chat_id}
@@ -88,10 +89,10 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
             }
           />
         </SettingsRow>
-        <SettingsRow label="Telegram bot token" htmlFor="telegram-token">
+        <SettingsRow label={t`Telegram bot token`} htmlFor="telegram-token">
           <input
             id="telegram-token" className="desk-input"
-            placeholder={settings.data?.telegram_bot_token_set ? "Telegram bot token set" : undefined}
+            placeholder={settings.data?.telegram_bot_token_set ? t`Telegram bot token set` : undefined}
             type="password"
             value={settingsForm.telegram_bot_token}
             onChange={(event) =>
@@ -108,22 +109,21 @@ export function ApiClientsTelegramSettings({ makerspace }: { makerspace: Makersp
         disabled={!settings.isSuccess || testTelegram.isPending}
         onClick={() => testTelegram.mutate()}
       >
-        {testTelegram.isPending ? "Sending…" : "Send Telegram test alert"}
+        {testTelegram.isPending ? t`Sending…` : t`Send Telegram test alert`}
       </button>
       {settings.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
-      {settings.error ? <ErrorBlock error={new Error("Couldn't load Telegram settings. Try again.")} onRetry={() => { void settings.refetch(); }} /> : null}
+      {settings.error ? <ErrorBlock error={new Error(t`Couldn't load Telegram settings. Try again.`)} onRetry={() => { void settings.refetch(); }} /> : null}
       {saveSettings.error ? <p className="mt-2 text-sm text-danger">{saveSettings.error.message}</p> : null}
       {clearTelegramToken.error ? <p className="mt-2 text-sm text-danger">{clearTelegramToken.error.message}</p> : null}
       {testTelegram.data ? (
         <p className={`mt-2 text-sm ${testTelegram.data.delivered ? "text-muted" : "text-danger"}`}>
-          Telegram delivered: {testTelegram.data.delivered ? "yes" : "no"}
-          {!testTelegram.data.delivered && testTelegram.data.detail ? ` - ${testTelegram.data.detail}` : ""}
+          {t`Telegram delivered: ${testTelegram.data.delivered ? "yes" : "no"}${!testTelegram.data.delivered && testTelegram.data.detail ? ` - ${testTelegram.data.detail}` : ""}`}
         </p>
       ) : null}
       {testTelegram.error ? <p className="mt-2 text-sm text-danger">{testTelegram.error.message}</p> : null}
-      <DangerZone title="Clear Telegram token" consequence="Stops Telegram alerts for this makerspace until a new token is saved."
-        action={{ label: "Clear Telegram token", disabled: !settings.data?.telegram_bot_token_set || clearTelegramToken.isPending, onClick: () => setConfirmClear(true) }} />
-      <ConfirmDialog open={confirmClear} title="Clear Telegram token?" message="Telegram alerts will stop until a new token is saved." confirmLabel="Clear token" tone="danger"
+      <DangerZone title={t`Clear Telegram token`} consequence="Stops Telegram alerts for this makerspace until a new token is saved."
+        action={{ label: t`Clear Telegram token`, disabled: !settings.data?.telegram_bot_token_set || clearTelegramToken.isPending, onClick: () => setConfirmClear(true) }} />
+      <ConfirmDialog open={confirmClear} title={t`Clear Telegram token?`} message={t`Telegram alerts will stop until a new token is saved.`} confirmLabel={t`Clear token`} tone="danger"
         pending={clearTelegramToken.isPending} onCancel={() => setConfirmClear(false)} onConfirm={() => { clearTelegramToken.mutate(); setConfirmClear(false); }} />
     </div>
   );

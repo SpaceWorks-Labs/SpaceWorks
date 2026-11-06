@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useCallback, useState } from "react";
 import { Plus, Redo2, Undo2 } from "lucide-react";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
@@ -11,7 +12,7 @@ import { alignToPage, hasNameTag, keepOnPage, measurablePaper } from "./designer
 
 const SLOTS: Partial<Record<Layer["type"], string>> = { logo: "logo", certificate_qr: "certificate_verification_qr",
   event_credential_qr: "event_credential_qr", photo: "selected_member_photo" };
-const ZOOMS: { value: string; label: string }[] = [{ value: "fit", label: "Fit" }, { value: "1", label: "100%" },
+const ZOOMS: { value: string; label: string }[] = [{ value: "fit", label: t`Fit` }, { value: "1", label: "100%" },
   { value: "1.5", label: "150%" }, { value: "2", label: "200%" }];
 
 /** The certificate and event badge layer editor. Shares the card designer's undo/redo (50 snapshots,
@@ -58,28 +59,28 @@ export function LayerEditor({ document, onChange, disabled = false, kind = "cert
     : ["text", "logo", "signature", "certificate_qr", "certificate_id"];
   const canvasValues = values ?? (kind === "badge" ? badgeSampleValues(longNames) : undefined);
   return <fieldset className="grid min-w-0 gap-4" disabled={disabled}>
-    <legend className="font-semibold text-ink">Layers ({document.layers.length}/20)</legend>
+    <legend className="font-semibold text-ink">{t`Layers (${document.layers.length}/20)`}</legend>
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" className="desk-button" disabled={!history.canUndo} onClick={history.undo} aria-keyshortcuts="Control+Z Meta+Z">
-        <Undo2 size={16} aria-hidden="true" />Undo</button>
+        <Undo2 size={16} aria-hidden="true" />{t`Undo`}</button>
       <button type="button" className="desk-button" disabled={!history.canRedo} onClick={history.redo} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
-        <Redo2 size={16} aria-hidden="true" />Redo</button>
+        <Redo2 size={16} aria-hidden="true" />{t`Redo`}</button>
       {addTypes.map((type) => <button className="desk-button" key={type} type="button" disabled={document.layers.length >= 20} onClick={() => add(type)}>
-        <Plus size={16} aria-hidden="true" />Add {type === "certificate_qr" ? "verification QR" : type === "certificate_id" ? "certificate ID" : type.replace(/_/g, " ")}</button>)}
+        <Plus size={16} aria-hidden="true" />{t`Add `}{type === "certificate_qr" ? t`verification QR` : type === "certificate_id" ? t`certificate ID` : type.replace(/_/g, " ")}</button>)}
       {kind === "badge" ? <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
         <input type="checkbox" className="h-5 w-5" checked={longNames} onChange={(event) => setLongNames(event.target.checked)} />
-        Preview a long name</label> : null}
+        {t`Preview a long name`}</label> : null}
     </div>
     {!hasNameTag(document) ? <p role="status" className="rounded-control border border-warn bg-warn-soft p-3 text-sm text-warn-ink">
-      No visible layer prints {"{{name}}"}, so every copy would look the same. Add the recipient's name.</p> : null}
+      {t`No visible layer prints ${"{{name}}"}, so every copy would look the same. Add the recipient's name.`}</p> : null}
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <SegmentedControl label="Zoom" value={String(zoom)} options={ZOOMS} onChange={(value) => setZoom(value === "fit" ? "fit" : Number(value) as Zoom)} />
-      <p className="text-xs text-muted">Drag to move (snaps to the centre and other layers; hold Alt to place freely). Corners resize (Shift stretches pictures). The top handle rotates (Shift: 15° steps).</p>
+      <SegmentedControl label={t`Zoom`} value={String(zoom)} options={ZOOMS} onChange={(value) => setZoom(value === "fit" ? "fit" : Number(value) as Zoom)} />
+      <p className="text-xs text-muted">{t`Drag to move (snaps to the centre and other layers; hold Alt to place freely). Corners resize (Shift stretches pictures). The top handle rotates (Shift: 15° steps).`}</p>
     </div>
     <DesignCanvas document={document} selectedId={current?.id} zoom={zoom} values={canvasValues} signatures={signatures}
       onSelect={setSelected} onBegin={() => history.record(document)} onLive={live} onChange={live}
       onDelete={remove} onDuplicate={copy} />
-    <p className="text-xs text-muted">The canvas is a close guide. The PDF preview uses the final fonts, wrapping and pictures.</p>
+    <p className="text-xs text-muted">{t`The canvas is a close guide. The PDF preview uses the final fonts, wrapping and pictures.`}</p>
     <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <LayerList layers={document.layers} selectedId={current?.id} onSelect={setSelected}
         onMove={(from, to) => change(reorder(document.layers, from, to))}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { InputHTMLAttributes } from "react";
 import { Minus, Plus } from "lucide-react";
 
@@ -29,9 +30,9 @@ export function QuantityStepper({ value, onValueChange, min = 0, max, label, dis
   return <span className={`flex w-48 min-w-0 max-w-full shrink-0 items-stretch gap-1 ${className}`}>
     <input {...input} type="number" inputMode="numeric" step={1} min={min} max={max} value={value} disabled={disabled}
       onChange={event => onValueChange(event.target.value)} className="desk-input order-2 w-full min-w-0 flex-1 px-1 text-center tabular-nums" />
-    <button type="button" tabIndex={-1} className={`${button} order-1`} aria-hidden="true" title={`Decrease${suffix}`}
+    <button type="button" tabIndex={-1} className={`${button} order-1`} aria-hidden="true" title={t`Decrease${suffix}`}
       disabled={disabled || base <= min} onClick={() => nudge(-1)}><Minus aria-hidden="true" className="h-4 w-4" /></button>
-    <button type="button" tabIndex={-1} className={`${button} order-3`} aria-hidden="true" title={`Increase${suffix}`}
+    <button type="button" tabIndex={-1} className={`${button} order-3`} aria-hidden="true" title={t`Increase${suffix}`}
       disabled={disabled || (max !== undefined && base >= max)} onClick={() => nudge(1)}><Plus aria-hidden="true" className="h-4 w-4" /></button>
   </span>;
 }

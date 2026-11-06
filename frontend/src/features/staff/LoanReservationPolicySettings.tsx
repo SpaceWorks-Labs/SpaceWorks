@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -29,7 +30,7 @@ export function LoanReservationPolicySettings({ makerspaceId }: { makerspaceId: 
     onSuccess: data => { client.setQueryData(reservationPolicyKey(makerspaceId), data); setForm(data); },
   });
   const dirty = Boolean(form && query.data && JSON.stringify(form) !== JSON.stringify(query.data));
-  return <SettingsQueryState query={query} resource="pickup and waitlist timing">{form ? <SettingsRow label="Pickup and waitlist timing"
+  return <SettingsQueryState query={query} resource="pickup and waitlist timing">{form ? <SettingsRow label={t`Pickup and waitlist timing`}
     helper="Applies when Pickup windows, Loan reservations or the Loan waitlist are switched on in Features.">
     <form className="@container grid gap-3 rounded-md border border-line p-4" onSubmit={event => { event.preventDefault(); save.mutate(form); }}>
       <div className="grid gap-3 @md:grid-cols-3">
@@ -40,6 +41,6 @@ export function LoanReservationPolicySettings({ makerspaceId }: { makerspaceId: 
       </div>
       <div><SettingsEditorActions dirty={dirty} onDiscard={() => setForm(query.data ?? null)} pending={save.isPending} disabled={save.isPending} /></div>
       {save.error ? <p className="text-sm text-danger" role="alert">{save.error.message}</p> : null}
-      {save.isSuccess && !dirty ? <p className="text-sm text-muted" role="status">Pickup and waitlist timing saved.</p> : null}
+      {save.isSuccess && !dirty ? <p className="text-sm text-muted" role="status">{t`Pickup and waitlist timing saved.`}</p> : null}
     </form></SettingsRow> : null}</SettingsQueryState>;
 }

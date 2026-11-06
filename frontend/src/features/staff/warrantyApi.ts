@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../lib/api";
 
 export type WarrantyStatus = "unknown" | "active" | "expiring_soon" | "expired";
@@ -95,7 +96,7 @@ export async function uploadWarrantyDocument(warrantyId: number, file: File) {
       body: file,
       headers: presigned.upload.headers,
     });
-    if (!res.ok) throw new Error(`Storage upload failed (${res.status})`);
+    if (!res.ok) throw new Error(t`Storage upload failed (${res.status})`);
   } else {
     const formData = new FormData();
     Object.entries(presigned.upload.fields ?? {}).forEach(([key, value]) => {
@@ -103,7 +104,7 @@ export async function uploadWarrantyDocument(warrantyId: number, file: File) {
     });
     formData.append("file", file);
     const res = await fetch(presigned.upload.url, { method: "POST", body: formData });
-    if (!res.ok) throw new Error(`Storage upload failed (${res.status})`);
+    if (!res.ok) throw new Error(t`Storage upload failed (${res.status})`);
   }
 
   return staffRequest<WarrantyDocument>(`/admin/warranty/${warrantyId}/documents`, {

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
@@ -46,7 +47,7 @@ export function MakerspaceFilamentSettings({ makerspace, settings, loading }: Pr
     loading || updateThreshold.isPending || invalid || nextNumber === currentNumber;
 
   return (
-    <SettingsRow label="Filament low-stock threshold" helper="Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Filament low-stock threshold`} helper="Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-3  md:items-end"
         onSubmit={(event) => {
@@ -60,18 +61,17 @@ export function MakerspaceFilamentSettings({ makerspace, settings, loading }: Pr
           <div className="flex flex-wrap items-center gap-2">
 
             <Badge label="" tone={currentNumber > 0 ? "success" : "neutral"}>
-              {currentNumber > 0 ? `${currentThreshold}g` : "Off"}
+              {currentNumber > 0 ? `${currentThreshold}g` : t`Off`}
             </Badge>
           </div>
 
           {updateThreshold.error ? (
             <p className="text-sm text-danger">{updateThreshold.error.message}</p>
           ) : null}
-          {invalid ? <p className="text-sm text-danger">Enter zero or a positive gram value.</p> : null}
+          {invalid ? <p className="text-sm text-danger">{t`Enter zero or a positive gram value.`}</p> : null}
         </div>
         <label className="grid gap-1 text-sm font-semibold text-ink">
-          Threshold (g)
-          <input
+          {t`Threshold (g)`}<input
             className="desk-input"
             type="number"
             min={0}

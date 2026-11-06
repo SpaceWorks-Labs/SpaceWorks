@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../lib/api";
 
 // Hand-written mirrors of the release-2 L4 staff routes (`admin_api/urls_membership_lifecycle.py`).
@@ -95,8 +96,8 @@ export const lifecycleApi = {
 };
 
 export const STANDING_LABELS: Record<Standing, string> = {
-  upcoming: "Upcoming", active: "Active", ending_soon: "Ending soon", grace: "In grace", ended: "Ended",
-  lapsed: "Lapsed", cancelled: "Cancelled", no_term: "No term",
+  upcoming: t`Upcoming`, active: t`Active`, ending_soon: t`Ending soon`, grace: t`In grace`, ended: t`Ended`,
+  lapsed: t`Lapsed`, cancelled: t`Cancelled`, no_term: t`No term`,
 };
 
 export function standingTone(standing: Standing): "success" | "warn" | "danger" | "neutral" | "info" {

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -26,34 +27,33 @@ export function SponsorCharges({ makerspaceId, sponsorId, canRecord }: { makersp
     onSuccess: () => { setAmount(""); setDescription(""); setEventId(""); setPrizePool(false); void client.invalidateQueries({ queryKey: key }); } });
   const back = useMutation({ mutationFn: (charge: number) => sponsorApi.returnCharge(makerspaceId, charge),
     onSuccess: () => void client.invalidateQueries({ queryKey: key }) });
-  return <section className="grid gap-3" aria-label="Sponsorship money">
-    <h3 className="title-section">Sponsorship money</h3>
-    <p className="text-sm text-muted">Settle these under Payments (cash, UPI, bank) or send a pay link. A return opens a refund
-      case that staff decide.</p>
+  return <section className="grid gap-3" aria-label={t`Sponsorship money`}>
+    <h3 className="title-section">{t`Sponsorship money`}</h3>
+    <p className="text-sm text-muted">{t`Settle these under Payments (cash, UPI, bank) or send a pay link. A return opens a refund case that staff decide.`}</p>
     {charges.data?.length ? <ul className="grid gap-2">{charges.data.map(charge => <li key={charge.id}
       className="flex flex-wrap items-center gap-3 text-sm">
       <span className="font-semibold tabular-nums text-ink">{charge.currency.toUpperCase()} {charge.amount}</span>
       <span className="text-muted">{charge.description}</span>
-      {charge.event ? <span className="text-xs">{titles.get(charge.event) ?? `Event #${charge.event}`}{charge.earmark === "prize_pool"
-        ? " · prize pool" : ""}</span> : null}
+      {charge.event ? <span className="text-xs">{titles.get(charge.event) ?? t`Event #${charge.event}`}{charge.earmark === "prize_pool"
+        ? t` · prize pool` : ""}</span> : null}
       <span className="ml-auto text-xs">{PAYMENT_STATUS[charge.payment_status] ?? charge.payment_status}</span>
       {canRecord && ["paid_online", "paid_offline"].includes(charge.payment_status) ? <button type="button"
         className="desk-button-ghost" disabled={back.isPending}
-        onClick={() => { if (window.confirm("Open a refund case to return this payment?")) back.mutate(charge.id); }}>Return…</button> : null}
-    </li>)}</ul> : <p className="text-sm text-muted">Nothing recorded yet.</p>}
+        onClick={() => { if (window.confirm(t`Open a refund case to return this payment?`)) back.mutate(charge.id); }}>{t`Return…`}</button> : null}
+    </li>)}</ul> : <p className="text-sm text-muted">{t`Nothing recorded yet.`}</p>}
     {canRecord ? <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); raise.mutate(); }}>
-      <label className="grid gap-1 text-sm font-semibold text-ink">Amount<input className="desk-input tabular-nums" inputMode="decimal"
+      <label className="grid gap-1 text-sm font-semibold text-ink">{t`Amount`}<input className="desk-input tabular-nums" inputMode="decimal"
         required pattern="[0-9]+(\.[0-9]{1,2})?" value={amount} onChange={event => setAmount(event.target.value)} /></label>
-      <label className="grid flex-1 gap-1 text-sm font-semibold text-ink">For<input className="desk-input" maxLength={200}
+      <label className="grid flex-1 gap-1 text-sm font-semibold text-ink">{t`For`}<input className="desk-input" maxLength={200}
         value={description} onChange={event => setDescription(event.target.value)} /></label>
-      <label className="grid gap-1 text-sm font-semibold text-ink">Event (optional)<select className="desk-input" value={eventId}
+      <label className="grid gap-1 text-sm font-semibold text-ink">{t`Event (optional)`}<select className="desk-input" value={eventId}
         onChange={event => { setEventId(event.target.value); if (!event.target.value) setPrizePool(false); }}>
-        <option value="">No particular event</option>
+        <option value="">{t`No particular event`}</option>
         {(events.data?.results ?? []).map(row => <option key={row.id} value={row.id}>{row.title}</option>)}
       </select></label>
       <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" disabled={!eventId} checked={prizePool}
-        onChange={event => setPrizePool(event.target.checked)} />Earmark for this event&apos;s prize pool</label>
-      <button type="submit" className="desk-button" disabled={raise.isPending}>Record as owed</button>
+        onChange={event => setPrizePool(event.target.checked)} />{t`Earmark for this event's prize pool`}</label>
+      <button type="submit" className="desk-button" disabled={raise.isPending}>{t`Record as owed`}</button>
     </form> : null}
     {raise.error || back.error ? <p role="alert" className="text-sm text-danger">{financeError(raise.error || back.error)}</p> : null}
   </section>;
@@ -76,20 +76,20 @@ export function SponsorEventLinks({ makerspaceId, sponsorId, canRecord }: { make
     } });
   const unlink = useMutation({ mutationFn: (row: number) => sponsorApi.unlink(makerspaceId, row),
     onSuccess: () => void client.invalidateQueries({ queryKey: key }) });
-  return <section className="grid gap-3" aria-label="Linked events">
-    <h3 className="title-section">Events</h3>
+  return <section className="grid gap-3" aria-label={t`Linked events`}>
+    <h3 className="title-section">{t`Events`}</h3>
     {links.data?.length ? <ul className="grid gap-2">{links.data.map(row => <li key={row.id} className="flex items-center gap-3 text-sm">
-      <span className="text-ink">{row.event_title}</span><span className="text-muted">as “{row.label}”</span>
+      <span className="text-ink">{row.event_title}</span><span className="text-muted">{t`as “${row.label}”`}</span>
       {canRecord ? <button type="button" className="desk-button-ghost ml-auto" disabled={unlink.isPending}
-        onClick={() => unlink.mutate(row.id)}>Unlink</button> : null}</li>)}</ul>
-      : <p className="text-sm text-muted">Not linked to an event. Add the sponsor on the event first, then link it here.</p>}
+        onClick={() => unlink.mutate(row.id)}>{t`Unlink`}</button> : null}</li>)}</ul>
+      : <p className="text-sm text-muted">{t`Not linked to an event. Add the sponsor on the event first, then link it here.`}</p>}
     {canRecord && open.length ? <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); link.mutate(); }}>
-      <label className="grid gap-1 text-sm font-semibold text-ink">Event sponsor<select className="desk-input" required
+      <label className="grid gap-1 text-sm font-semibold text-ink">{t`Event sponsor`}<select className="desk-input" required
         value={eventSponsor} onChange={event => setEventSponsor(event.target.value)}>
-        <option value="">Choose an event sponsor</option>
+        <option value="">{t`Choose an event sponsor`}</option>
         {open.map(row => <option key={row.id} value={row.id}>{row.event_title}: {row.label}</option>)}
       </select></label>
-      <button type="submit" className="desk-button" disabled={link.isPending || !eventSponsor}>Link</button>
+      <button type="submit" className="desk-button" disabled={link.isPending || !eventSponsor}>{t`Link`}</button>
     </form> : null}
     {link.error || unlink.error ? <p role="alert" className="text-sm text-danger">{financeError(link.error || unlink.error)}</p> : null}
   </section>;

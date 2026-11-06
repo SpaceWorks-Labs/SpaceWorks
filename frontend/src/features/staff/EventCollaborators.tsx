@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Card, EmptyState } from "../../components/ui";
 
 import { PartnerMakerspacePicker } from "./EventPartnerPickers";
@@ -9,9 +10,9 @@ import {
 import { panelRow } from "./eventPanelStyles";
 
 const STATUS_LABEL: Record<string, string> = {
-  invited: "Invited — waiting for them to accept",
-  accepted: "Accepted — their members can register",
-  declined: "Declined",
+  invited: t`Invited — waiting for them to accept`,
+  accepted: t`Accepted — their members can register`,
+  declined: t`Declined`,
 };
 
 /** Host-side collaborator management for one event.
@@ -46,11 +47,9 @@ export function EventCollaborators({ visible = true,
   return (
     <section aria-labelledby="collaborators-title" className="grid gap-4">
       <div>
-        <h3 id="collaborators-title" className="title-section">Partner makerspaces</h3>
+        <h3 id="collaborators-title" className="title-section">{t`Partner makerspaces`}</h3>
         <p className="mt-1 text-sm text-muted">
-          Invite another makerspace and its members can register for this event, even when the
-          event is not public. They must accept the invitation first.
-        </p>
+          {t`Invite another makerspace and its members can register for this event, even when the event is not public. They must accept the invitation first.`}</p>
       </div>
 
       {rows.length ? (
@@ -70,24 +69,23 @@ export function EventCollaborators({ visible = true,
                 disabled={remove.isPending}
                 onClick={() => remove.mutate(row.id)}
               >
-                Remove
-              </button>
+                {t`Remove`}</button>
             </li>
           ))}
         </ul>
       ) : (
-        <EmptyState message="No partner makerspaces yet." />
+        <EmptyState message={t`No partner makerspaces yet.`} />
       )}
 
       <Card>
         <PartnerMakerspacePicker hostId={makerspaceId} selected={[]} disabled={replace.isPending}
-          label="Invite a partner makerspace" helper="Choosing a makerspace sends the invitation straight away."
+          label={t`Invite a partner makerspace`} helper="Choosing a makerspace sends the invitation straight away."
           onChange={(next) => { const slug = next[next.length - 1]?.detail; if (slug) invite(slug); }} />
       </Card>
 
       {error ? (
         <p className="text-sm text-danger" role="alert">
-          {error instanceof Error ? error.message : "Could not update partners."}
+          {error instanceof Error ? error.message : t`Could not update partners.`}
         </p>
       ) : null}
     </section>

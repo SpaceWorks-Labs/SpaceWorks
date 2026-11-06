@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -76,23 +77,23 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
   // Each optional surface is a tab only when the space enables it AND this actor may use it.
   const optionalTabs: BookingDrawerTab[] = space ? [
     ...(space.checkin_enabled && (access.manager || space.staff_permissions?.includes("check_in")) ? [{
-      id: "check-in", label: "Arrivals", content: <BookingArrivalScanner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
+      id: "check-in", label: t`Arrivals`, content: <BookingArrivalScanner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
     ...(access.reservations && space.broadcasts_enabled ? [{
-      id: "broadcasts", label: "Broadcasts", content: <BookingBroadcastsPanel makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
+      id: "broadcasts", label: t`Broadcasts`, content: <BookingBroadcastsPanel makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
     ...(space.report_features?.length ? [{
-      id: "analytics", label: "Analytics", content: <BookingResourceAnalytics makerspaceId={makerspaceId} spaceId={spaceId} features={space.report_features} /> }] : []),
+      id: "analytics", label: t`Analytics`, content: <BookingResourceAnalytics makerspaceId={makerspaceId} spaceId={spaceId} features={space.report_features} /> }] : []),
     ...(space.website_enabled && (access.edit || space.staff_permissions?.includes("publish_page")) ? [{
-      id: "website", label: "Website", content: <BookingWebsiteEditor key={spaceId} space={space} /> }] : []),
+      id: "website", label: t`Website`, content: <BookingWebsiteEditor key={spaceId} space={space} /> }] : []),
     ...(space.passes_enabled && access.edit ? [{
-      id: "passes", label: "Pass designer", content: <BookingPassDesigner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
+      id: "passes", label: t`Pass designer`, content: <BookingPassDesigner key={spaceId} makerspaceId={makerspaceId} spaceId={spaceId} /> }] : []),
     ...additionalTabs,
   ] : additionalTabs;
   const tabs = useOpsTabs("bookingTab", [
-    ...(access.reservations ? [{ key: "requests", label: "Requests", count: bookings.data?.count }, { key: "calendar", label: "Calendar" }] : []),
+    ...(access.reservations ? [{ key: "requests", label: t`Requests`, count: bookings.data?.count }, { key: "calendar", label: t`Calendar` }] : []),
     ...optionalTabs.map(tab => ({ key: tab.id, label: tab.label })),
-    ...(access.reservations ? [{ key: "issues", label: "Issues" }] : []),
-    ...(access.manager || access.edit ? [{ key: "photos", label: "Photos" }] : []),
-    { key: "settings", label: access.manager || access.edit ? "Settings" : "Details" }],
+    ...(access.reservations ? [{ key: "issues", label: t`Issues` }] : []),
+    ...(access.manager || access.edit ? [{ key: "photos", label: t`Photos` }] : []),
+    { key: "settings", label: access.manager || access.edit ? t`Settings` : t`Details` }],
     // Requests first: the basic path is apply -> review -> notify.
     !access.reservations ? optionalTabs[0]?.id ?? "settings" : "requests");
   const [createOpen, setCreateOpen] = useState(initialCreateOpen);
@@ -109,15 +110,15 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
   return (
     <>
       <div onClickCapture={tabs.onClickCapture}>
-        <DetailLayout title={space?.name ?? "Space details"} back={{ label: "Bookings", onClick: onClose }}
+        <DetailLayout title={space?.name ?? t`Space details`} back={{ label: t`Bookings`, onClick: onClose }}
           identity={{ kind: "icon", icon: "Calendar", tone: "info" }}
           state={opsQueryState(spaceQuery, "this space")} tabs={tabs.tabs} activeTab={tabs.active}
-          status={space ? <StatusBadge status={space.is_active ? "active" : "inactive"} label={space.is_active ? "Active" : "Inactive"} /> : undefined}
+          status={space ? <StatusBadge status={space.is_active ? "active" : "inactive"} label={space.is_active ? t`Active` : t`Inactive`} /> : undefined}
           meta={space ? [space.location, space.effective_requester_notifications_enabled ? "Requester emails on" : "Requester emails off"] : undefined}
-          actions={space?.is_active && access.reservations ? { primary: { label: "New booking", onClick: () => setCreateOpen(true) } } : undefined}
-          danger={space?.is_active && access.manager && tabs.active === "settings" ? [{ title: "Deactivate space",
+          actions={space?.is_active && access.reservations ? { primary: { label: t`New booking`, onClick: () => setCreateOpen(true) } } : undefined}
+          danger={space?.is_active && access.manager && tabs.active === "settings" ? [{ title: t`Deactivate space`,
             consequence: "The public page will hide this space and no new bookings can be submitted or approved.",
-            action: { label: "Deactivate space", confirms: true, tone: "danger", onClick: () => setConfirmDeactivate(true) } }] : undefined}
+            action: { label: t`Deactivate space`, confirms: true, tone: "danger", onClick: () => setConfirmDeactivate(true) } }] : undefined}
           main={space ? <div className="grid gap-6">
             {tabs.active === "settings" ? <BookingSpaceSettings makerspaceId={makerspaceId} space={space} access={access} update={update} />
               : optional ? optional.content
@@ -130,7 +131,7 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
             {actionError ? <ErrorBlock error={actionError} /> : null}
           </div> : null} />
       </div>
-      <Modal open={createOpen && access.reservations} onClose={() => setCreateOpen(false)} title="New booking">
+      <Modal open={createOpen && access.reservations} onClose={() => setCreateOpen(false)} title={t`New booking`}>
         {space && createOpen && access.reservations ? <StaffBookingForm recurringEnabled={recurringEnabled || Boolean(space.recurring_enabled)} makerspaceId={makerspaceId} space={space} /> : null}
       </Modal>
       <BookingDecisionDialog key={pendingAction ? `${pendingAction.booking.id}-${pendingAction.action}` : "none"}
@@ -141,15 +142,15 @@ export function BookingDrawer({ makerspaceId, spaceId, onClose, recurringEnabled
           { onSuccess: () => setPendingAction(null), onError: () => setPendingAction(null) })} />
       <ConfirmDialog
         open={pendingAction !== null && pendingAction.action !== "reject" && pendingAction.action !== "cancel"}
-        title={pendingAction ? actionLabel(pendingAction.action) : "Update booking"}
+        title={pendingAction ? actionLabel(pendingAction.action) : t`Update booking`}
         message={pendingAction ? actionLabel(pendingAction.action) + " for " + pendingAction.booking.name + "?" : ""}
-        confirmLabel={pendingAction ? actionLabel(pendingAction.action) : "Confirm"}
+        confirmLabel={pendingAction ? actionLabel(pendingAction.action) : t`Confirm`}
         tone={pendingAction?.action === "approve" || pendingAction?.action === "complete" || pendingAction?.action === "restore" ? "default" : "danger"}
         pending={action.isPending}
         onCancel={() => setPendingAction(null)}
         onConfirm={() => pendingAction && action.mutate({ bookingId: pendingAction.booking.id, action: pendingAction.action }, { onSuccess: () => setPendingAction(null), onError: () => setPendingAction(null) })}
       />
-      <ConfirmDialog open={confirmDeactivate} title="Deactivate space" message="The public page will hide this space and no new bookings can be submitted or approved." confirmLabel="Deactivate" tone="danger" pending={deactivate.isPending} onCancel={() => setConfirmDeactivate(false)} onConfirm={() => deactivate.mutate(undefined, { onSuccess: () => setConfirmDeactivate(false), onError: () => setConfirmDeactivate(false) })} />
+      <ConfirmDialog open={confirmDeactivate} title={t`Deactivate space`} message={t`The public page will hide this space and no new bookings can be submitted or approved.`} confirmLabel={t`Deactivate`} tone="danger" pending={deactivate.isPending} onCancel={() => setConfirmDeactivate(false)} onConfirm={() => deactivate.mutate(undefined, { onSuccess: () => setConfirmDeactivate(false), onError: () => setConfirmDeactivate(false) })} />
     </>
   );
 }

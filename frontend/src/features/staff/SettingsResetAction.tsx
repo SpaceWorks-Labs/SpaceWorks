@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ConfirmDialog, DangerZone } from "../../components/ui";
 
@@ -11,7 +12,7 @@ export function SettingsResetAction({ label, consequence, pending, disabled, onC
   const confirm = async () => {
     setError("");
     try { await onConfirm(); setOpen(false); }
-    catch (failure) { setError(failure instanceof Error ? failure.message : "Couldn't clear these settings. Try again."); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : t`Couldn't clear these settings. Try again.`); }
   };
   return <>
     <DangerZone title={label} consequence={consequence} action={{ label,

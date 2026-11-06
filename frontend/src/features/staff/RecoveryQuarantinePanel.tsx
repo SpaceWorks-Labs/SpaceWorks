@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
@@ -20,18 +21,17 @@ export function RecoveryQuarantinePanel({ state, onAcknowledged }: { state: Reco
     onSuccess: onAcknowledged,
   });
   return <CenteredCardLayout state={{ status: "ready" }} width={480}
-    media={{ icon: "TriangleAlert", tone: "danger" }} eyebrow="Recovery quarantine"
-    title="Staff access is paused" body={state.quarantine_reason}
-    primary={{ label: "Lift quarantine", tone: "danger", pending: acknowledge.isPending, pendingLabel: "Acknowledging…",
+    media={{ icon: "TriangleAlert", tone: "danger" }} eyebrow={t`Recovery quarantine`}
+    title={t`Staff access is paused`} body={state.quarantine_reason}
+    primary={{ label: t`Lift quarantine`, tone: "danger", pending: acknowledge.isPending, pendingLabel: "Acknowledging…",
       disabled: !confirmed, disabledReason: "Review and accept the residual risk first.", onClick: () => acknowledge.mutate() }}
     content={<div className="grid gap-4">
       <div className="rounded-xl border border-danger-line bg-panel p-4 text-sm text-danger">
-        <p className="font-semibold">Residual risk</p><p className="mt-2">{state.residual_risk}</p>
+        <p className="font-semibold">{t`Residual risk`}</p><p className="mt-2">{state.residual_risk}</p>
       </div>
       <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-ink">
         <input className="mt-1" type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-        I reviewed the restore report where one exists and accept this exact residual risk.
-      </label>
+        {t`I reviewed the restore report where one exists and accept this exact residual risk.`}</label>
       {acknowledge.error ? <p className="text-sm text-danger" role="alert">{acknowledge.error.message}</p> : null}
     </div>} />;
 }

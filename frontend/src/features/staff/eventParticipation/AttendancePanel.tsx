@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { Card, ErrorText, Metric } from "../../../components/ui";
 import { useStaffCommand, useStaffQuery, type AttendanceSummary, type Switches } from "./api";
 
@@ -16,26 +18,26 @@ export function AttendancePanel({ eventId, canConfigure }: { eventId: number; ca
   const error = summary.error ?? send.error ?? save.error;
   return <section className="grid gap-4" aria-labelledby="attendance-heading">
     <header className="grid gap-1">
-      <h3 id="attendance-heading" className="text-lg font-semibold text-ink">Are you still coming?</h3>
-      <p className="text-sm text-muted">Ask registered people to confirm. Replies show in the guest list, at the desk and in the export.</p>
+      <h3 id="attendance-heading" className="text-lg font-semibold text-ink">{t`Are you still coming?`}</h3>
+      <p className="text-sm text-muted">{t`Ask registered people to confirm. Replies show in the guest list, at the desk and in the export.`}</p>
     </header>
     {error ? <ErrorText message={error.message} /> : null}
     {data ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <Metric label="Asked" value={data.asked} /><Metric label="Still coming" value={data.yes} />
-      <Metric label="Not coming" value={data.no} /><Metric label="No answer yet" value={data.pending} />
-    </div> : <p role="status">Loading replies…</p>}
+      <Metric label={t`Asked`} value={data.asked} /><Metric label={t`Still coming`} value={data.yes} />
+      <Metric label={t`Not coming`} value={data.no} /><Metric label={t`No answer yet`} value={data.pending} />
+    </div> : <p role="status">{t`Loading replies…`}</p>}
     {data && (data.released || data.left_to_staff) ? <p className="text-sm text-muted">
-      {data.released} place{data.released === 1 ? "" : "s"} released{data.left_to_staff ? `; ${data.left_to_staff} from group orders left for you to handle` : ""}.</p> : null}
+      {data.released} place{data.released === 1 ? "" : "s"} released{data.left_to_staff ? t`; ${data.left_to_staff} from group orders left for you to handle` : ""}.</p> : null}
     <Card><div className="flex flex-wrap items-center gap-2">
       <button type="button" className="desk-button" disabled={send.isPending || waiting}
-        onClick={() => send.mutate({ suffix: "/attendance-confirmation/", body: { kind: "confirmation" } })}>Ask everyone not yet asked</button>
+        onClick={() => send.mutate({ suffix: "/attendance-confirmation/", body: { kind: "confirmation" } })}>{t`Ask everyone not yet asked`}</button>
       <button type="button" className="desk-button" disabled={send.isPending || waiting || !data?.asked}
-        onClick={() => send.mutate({ suffix: "/attendance-confirmation/", body: { kind: "reminder" } })}>Remind people who have not answered</button>
-      {waiting ? <p className="text-sm text-muted" role="status">The next email can go out after {nextAt!.toLocaleString()}.</p> : null}
+        onClick={() => send.mutate({ suffix: "/attendance-confirmation/", body: { kind: "reminder" } })}>{t`Remind people who have not answered`}</button>
+      {waiting ? <p className="text-sm text-muted" role="status">{t`The next email can go out after ${nextAt!.toLocaleString(formatLocale())}.`}</p> : null}
     </div></Card>
     {canConfigure && switches.data ? <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
       <input type="checkbox" checked={switches.data.attendance_free_on_no} disabled={save.isPending}
         onChange={e => save.mutate({ suffix: "/participation-settings/", method: "PATCH", body: { attendance_free_on_no: e.target.checked } })} />
-      Free the place when someone answers No (paid places open a refund case for you to approve)</label> : null}
+      {t`Free the place when someone answers No (paid places open a refund case for you to approve)`}</label> : null}
   </section>;
 }

@@ -1,3 +1,4 @@
+import { formatLocale } from "../../lib/format";
 import { staffRequest } from "../../lib/api";
 
 export type CheckStatus = "ok" | "warn" | "error";
@@ -26,9 +27,9 @@ export const getTenantUsage = (id: number) => staffRequest<TenantUsage>(`/admin/
 
 export function usageAmount(value: number | null, unit: ResourceUsage["unit"]) {
   if (value === null) return "Unavailable";
-  return unit === "bytes" ? `${(value / 1024 ** 2).toLocaleString(undefined, { maximumFractionDigits: 1 })} MiB` : value.toLocaleString();
+  return unit === "bytes" ? `${(value / 1024 ** 2).toLocaleString(formatLocale(), { maximumFractionDigits: 1 })} MiB` : value.toLocaleString(formatLocale());
 }
 
 export function monitoringDate(value: string | null) {
-  return value ? new Date(value).toLocaleString() : "No execution recorded";
+  return value ? new Date(value).toLocaleString(formatLocale()) : "No execution recorded";
 }

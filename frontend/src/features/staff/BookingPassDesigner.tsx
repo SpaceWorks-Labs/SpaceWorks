@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { ErrorText, Field, SettingsSection, Skeleton } from "../../components/ui";
 import { PositionedLayoutEditor } from "../../components/print-layout/PositionedLayoutEditor";
@@ -15,27 +16,27 @@ export function BookingPassDesigner({ makerspaceId, spaceId }: { makerspaceId: n
   const error = query.error ?? save.error ?? preview.error;
   const busy = save.isPending || preview.isPending;
   function change(value: BookingPassTemplate) { setDraft(value); setSaved(false); }
-  if (query.isPending) return <div role="status" aria-label="Loading pass layout..." className="grid gap-3"><span className="sr-only">Loading pass layout...</span><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div>;
-  if (query.error || !draft) return <ErrorText message={query.error?.message ?? "Unable to load pass layout."} />;
+  if (query.isPending) return <div role="status" aria-label={t`Loading pass layout...`} className="grid gap-3"><span className="sr-only">{t`Loading pass layout...`}</span><Skeleton className="h-24 w-full" /><Skeleton className="h-48 w-full" /></div>;
+  if (query.error || !draft) return <ErrorText message={query.error?.message ?? t`Unable to load pass layout.`} />;
   const width = draft.card_width_mm ?? 90;
   const height = draft.card_height_mm ?? 60;
   const elements = draft.elements as PositionedElement[];
   const valid = layoutFits(elements, width, height) && elements.length > 0;
-  return <section aria-label="Booking pass designer" className="grid gap-4">
-    <SettingsSection title="Printable passes" description={DESCRIPTION}>
+  return <section aria-label={t`Booking pass designer`} className="grid gap-4">
+    <SettingsSection title={t`Printable passes`} description={DESCRIPTION}>
       <div className="grid gap-4 py-5">
         {error ? <ErrorText message={error.message} /> : null}
-        {saved ? <p role="status" className="text-sm text-success-ink">Pass layout saved.</p> : null}
+        {saved ? <p role="status" className="text-sm text-success-ink">{t`Pass layout saved.`}</p> : null}
         <fieldset disabled={busy} className="grid min-w-0 gap-4">
-          <legend className="title-section mb-2">Page and card</legend>
+          <legend className="title-section mb-2">{t`Page and card`}</legend>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Paper"><select className="desk-input w-full" value={draft.paper_size} onChange={(e) => change({ ...draft, paper_size: e.target.value as BookingPassTemplate["paper_size"] })}>
-              <option value="A4">A4</option><option value="LETTER">Letter</option><option value="custom">Custom</option>
+            <Field label={t`Paper`}><select className="desk-input w-full" value={draft.paper_size} onChange={(e) => change({ ...draft, paper_size: e.target.value as BookingPassTemplate["paper_size"] })}>
+              <option value="A4">A4</option><option value="LETTER">{t`Letter`}</option><option value="custom">{t`Custom`}</option>
             </select></Field>
-            <Field label="Orientation"><select className="desk-input w-full" value={draft.orientation} onChange={(e) => change({ ...draft, orientation: e.target.value as BookingPassTemplate["orientation"] })}>
-              <option value="portrait">Portrait</option><option value="landscape">Landscape</option>
+            <Field label={t`Orientation`}><select className="desk-input w-full" value={draft.orientation} onChange={(e) => change({ ...draft, orientation: e.target.value as BookingPassTemplate["orientation"] })}>
+              <option value="portrait">{t`Portrait`}</option><option value="landscape">{t`Landscape`}</option>
             </select></Field>
-            {draft.paper_size === "custom" ? (["page_width_mm", "page_height_mm"] as const).map((key) => <Field key={key} label={key === "page_width_mm" ? "Page width (mm)" : "Page height (mm)"}>
+            {draft.paper_size === "custom" ? (["page_width_mm", "page_height_mm"] as const).map((key) => <Field key={key} label={key === "page_width_mm" ? t`Page width (mm)` : t`Page height (mm)`}>
               <input className="desk-input w-full" type="number" min="100" max="500" value={draft[key] ?? ""} onChange={(e) => change({ ...draft, [key]: Number(e.target.value) })} /></Field>) : null}
             {([["card_width_mm", "Card width", 40, 150], ["card_height_mm", "Card height", 30, 120],
               ["margin_mm", "Page margin", 0, 40], ["gap_mm", "Card gap", 0, 30]] as const).map(([key, label, min, max]) =>
@@ -43,7 +44,7 @@ export function BookingPassDesigner({ makerspaceId, spaceId }: { makerspaceId: n
                 const value = Number(e.target.value); if (Number.isFinite(value) && value >= min && value <= max) change({ ...draft, [key]: value });
               }} /></Field>)}
           </div>
-          <fieldset className="grid gap-1"><legend className="mb-1 text-sm font-semibold text-ink">Fields on the pass</legend>
+          <fieldset className="grid gap-1"><legend className="mb-1 text-sm font-semibold text-ink">{t`Fields on the pass`}</legend>
             <div className="flex flex-wrap gap-x-6">{Object.entries(FIELDS).map(([field, label]) => <label key={field} className="flex min-h-11 items-center gap-2 text-sm text-ink">
               <input type="checkbox" checked={elements.some((item) => item.field === field)} onChange={() => {
                 const fields = elements.map((item) => item.field);
@@ -60,8 +61,8 @@ export function BookingPassDesigner({ makerspaceId, spaceId }: { makerspaceId: n
           onChange={(next) => change({ ...draft, elements: next as BookingPassTemplate["elements"] })} />
       </div>
       <div className="flex flex-wrap justify-end gap-2 pt-5">
-        <button type="button" className="desk-button" disabled={busy || !valid} onClick={() => preview.mutate(draft, { onSuccess: downloadPass })}>{preview.isPending ? "Rendering..." : "Download sample PDF"}</button>
-        <button type="button" className="desk-button-primary" disabled={busy || !valid} onClick={() => save.mutate(draft, { onSuccess: () => setSaved(true) })}>{save.isPending ? "Saving..." : "Save pass layout"}</button>
+        <button type="button" className="desk-button" disabled={busy || !valid} onClick={() => preview.mutate(draft, { onSuccess: downloadPass })}>{preview.isPending ? t`Rendering...` : t`Download sample PDF`}</button>
+        <button type="button" className="desk-button-primary" disabled={busy || !valid} onClick={() => save.mutate(draft, { onSuccess: () => setSaved(true) })}>{save.isPending ? t`Saving...` : t`Save pass layout`}</button>
       </div>
     </SettingsSection>
   </section>;

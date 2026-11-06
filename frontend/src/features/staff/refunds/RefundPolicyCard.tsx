@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Card, Field, StatusPill } from "../../../components/ui";
@@ -57,15 +58,15 @@ export function RefundPolicyCard({ title, policy, canEdit, saving, removing, sav
     <div className="grid gap-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="title-section">{title}</h3>
-        <StatusPill label={policy.configured ? "Policy set" : "Staff decide"} tone={policy.configured ? "success" : "neutral"} />
+        <StatusPill label={policy.configured ? t`Policy set` : t`Staff decide`} tone={policy.configured ? "success" : "neutral"} />
       </div>
       {editing ? <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); submit(); }}>
         {membership ? <>
           {input("days", "Full refund if cancelled within (days of the term start)")}
-          <Field label="After that, until the term ends">
+          <Field label={t`After that, until the term ends`}>
             <select className="desk-input" value={mode} onChange={(event) => setMode(event.target.value as "percent" | "pro_rata")}>
-              <option value="pro_rata">Refund the unused part of the term</option>
-              <option value="percent">Refund a fixed percentage</option>
+              <option value="pro_rata">{t`Refund the unused part of the term`}</option>
+              <option value="percent">{t`Refund a fixed percentage`}</option>
             </select>
           </Field>
           {mode === "percent" ? input("percent", "Partial refund (%)") : null}
@@ -76,14 +77,14 @@ export function RefundPolicyCard({ title, policy, canEdit, saving, removing, sav
         </>}
         {input("fee", `Cancellation fee kept (${policy.currency.toUpperCase()})`, "decimal")}
         <div className="flex flex-wrap gap-2">
-          <button className="desk-button-brand" type="submit" disabled={saving}>{saving ? "Saving…" : "Save policy"}</button>
-          <button className="desk-button" type="button" onClick={() => { setEditing(false); onCancel?.(); }}>Cancel</button>
+          <button className="desk-button-brand" type="submit" disabled={saving}>{saving ? t`Saving…` : t`Save policy`}</button>
+          <button className="desk-button" type="button" onClick={() => { setEditing(false); onCancel?.(); }}>{t`Cancel`}</button>
         </div>
       </form> : <PolicySummary policy={policy} />}
       {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
       {canEdit && !editing ? <div className="flex flex-wrap gap-2">
-        <button className="desk-button" type="button" onClick={() => setEditing(true)}>{policy.configured ? "Edit policy" : "Set a policy"}</button>
-        {policy.configured && onRemove ? <button className="desk-button" type="button" disabled={removing} onClick={onRemove}>Remove</button> : null}
+        <button className="desk-button" type="button" onClick={() => setEditing(true)}>{policy.configured ? t`Edit policy` : t`Set a policy`}</button>
+        {policy.configured && onRemove ? <button className="desk-button" type="button" disabled={removing} onClick={onRemove}>{t`Remove`}</button> : null}
       </div> : null}
     </div>
   </Card>;
@@ -91,21 +92,20 @@ export function RefundPolicyCard({ title, policy, canEdit, saving, removing, sav
 
 function PolicySummary({ policy }: { policy: RefundPolicy }) {
   const noun = { events: "registration", bookings: "booking", membership: "membership term" }[policy.area];
-  if (!policy.configured) return <p className="text-sm text-muted">No automatic refund. When a paid {noun} is cancelled,
-    nothing is owed unless you approve a member's request.</p>;
+  if (!policy.configured) return <p className="text-sm text-muted">{t`No automatic refund. When a paid ${noun} is cancelled, nothing is owed unless you approve a member's request.`}</p>;
   const fee = Number(policy.cancellation_fee ?? 0) > 0 ? ` A ${formatMoney(policy.cancellation_fee ?? "0", policy.currency)} fee is kept.` : "";
   if (policy.area === "membership") {
     const days = policy.full_within_days ?? 0;
     return <ul className="grid gap-1 text-sm text-muted">
-      <li><span className="text-ink">Full refund</span> {days > 0 ? `within ${days} day${days === 1 ? "" : "s"} of the term start` : "before the term starts"}</li>
-      <li><span className="text-ink">{policy.partial_mode === "pro_rata" ? "The unused part of the term" : `${policy.partial_percent}% refund`}</span> after that, until the term ends</li>
-      <li>After the term ends: no refund.{fee}</li>
+      <li><span className="text-ink">{t`Full refund`}</span> {days > 0 ? t`within ${days} day${days === 1 ? "" : "s"} of the term start` : t`before the term starts`}</li>
+      <li><span className="text-ink">{policy.partial_mode === "pro_rata" ? t`The unused part of the term` : t`${String(policy.partial_percent)}% refund`}</span> {t` after that, until the term ends`}</li>
+      <li>{t`After the term ends: no refund.${fee}`}</li>
     </ul>;
   }
   return <ul className="grid gap-1 text-sm text-muted">
-    <li><span className="text-ink">Full refund</span> {formatWindow(policy.full_before_minutes ?? 0)}</li>
-    <li><span className="text-ink">{policy.partial_percent}% refund</span> {formatWindow(policy.partial_before_minutes ?? 0)}</li>
-    <li>Later than that: no refund.{fee}</li>
-    {policy.area === "events" ? <li>An event the space cancels is always refunded in full.</li> : null}
+    <li><span className="text-ink">{t`Full refund`}</span> {formatWindow(policy.full_before_minutes ?? 0)}</li>
+    <li><span className="text-ink">{policy.partial_percent}{t`% refund`}</span> {formatWindow(policy.partial_before_minutes ?? 0)}</li>
+    <li>{t`Later than that: no refund.${fee}`}</li>
+    {policy.area === "events" ? <li>{t`An event the space cancels is always refunded in full.`}</li> : null}
   </ul>;
 }

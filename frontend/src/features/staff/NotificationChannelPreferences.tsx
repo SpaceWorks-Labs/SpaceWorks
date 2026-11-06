@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { DataTable } from "../../components/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -79,13 +80,10 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
   return (
     <section aria-labelledby="notification-channel-heading" className="min-w-0">
       <h4 id="notification-channel-heading" className="text-sm font-semibold text-ink">
-        Notification channels
-      </h4>
+        {t`Notification channels`}</h4>
       <p className="mt-2 text-sm text-muted">
-        Checked = enabled for that feature and channel. The Staff email notifications switch and
-        per-member recipient toggles affect staff email only, not Telegram, Slack, or Mattermost.
-      </p>
-      {rules.channels.some(channel => channel.key === "whatsapp") ? <p className="mt-2 text-sm text-muted">WhatsApp also requires an approved template binding for each event and audience. Configure bindings under Communication channels.</p> : null}
+        {t`Checked = enabled for that feature and channel. The Staff email notifications switch and per-member recipient toggles affect staff email only, not Telegram, Slack, or Mattermost.`}</p>
+      {rules.channels.some(channel => channel.key === "whatsapp") ? <p className="mt-2 text-sm text-muted">{t`WhatsApp also requires an approved template binding for each event and audience. Configure bindings under Communication channels.`}</p> : null}
       <SettingsQueryState query={settings} resource="channel setup" />
       {hasMessaging ? <SettingsQueryState query={messaging} resource="messaging channel setup" /> : null}
       <DataTable data={rules.features} getRowId={feature => feature.key} columns={[
@@ -99,14 +97,14 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
                 onChange={event => updatePreference.mutate({ feature: feature.key, channel: channel.key, enabled: event.target.checked })} />
             </label>;
           } })),
-      ]} caption="Notification channels enabled per feature. Checked means enabled." emptyTitle="No notification channels yet." />
+      ]} caption={t`Notification channels enabled per feature. Checked means enabled.`} emptyTitle={t`No notification channels yet.`} />
       {warnings.length ? (
         <div
           className="mt-3 rounded-md border border-warn bg-warn-soft p-3 text-sm text-warn-ink"
           role="status"
           aria-live="polite"
         >
-          <p className="font-semibold">Delivery setup needed</p>
+          <p className="font-semibold">{t`Delivery setup needed`}</p>
           <ul className="mt-1 list-disc pl-5">
             {warnings.map((warning) => (
               <li key={warning}>{warning}</li>

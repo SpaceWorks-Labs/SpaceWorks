@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -24,17 +25,16 @@ export function RevokeWaiverDialog({ makerspaceId, requestId, waiver, onClose }:
     if (!found) mutation.mutate();
   };
   const error = problem ?? (mutation.error ? chargeErrorMessage(mutation.error) : null);
-  return <Modal open onClose={close} title="Revoke fee waiver"
+  return <Modal open onClose={close} title={t`Revoke fee waiver`}
     footer={<div className="desk-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-      <button className="desk-button w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={close}>Keep waiver</button>
+      <button className="desk-button w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={close}>{t`Keep waiver`}</button>
       <button className="desk-button-danger w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={submit}>
-        {mutation.isPending ? "Revoking…" : "Revoke waiver"}</button>
+        {mutation.isPending ? t`Revoking…` : t`Revoke waiver`}</button>
     </div>}>
     <div className="grid gap-4">
-      <p className="text-sm text-muted">Revoking affects only charges not raised yet. Nothing already waived or
-        sent to a refund case is reopened.</p>
+      <p className="text-sm text-muted">{t`Revoking affects only charges not raised yet. Nothing already waived or sent to a refund case is reopened.`}</p>
       <label className="grid gap-1">
-        <span className="text-sm font-semibold text-ink">Reason (required)</span>
+        <span className="text-sm font-semibold text-ink">{t`Reason (required)`}</span>
         <textarea className="desk-input min-h-20" maxLength={500} value={reason} disabled={mutation.isPending}
           aria-required="true" aria-invalid={Boolean(problem)} aria-describedby={error ? errorId : undefined} onChange={event => { setReason(event.target.value); setProblem(null); }} />
       </label>

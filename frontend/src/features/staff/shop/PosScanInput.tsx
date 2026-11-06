@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ScanBarcode } from "lucide-react";
 import { forwardRef, useState } from "react";
 
@@ -21,28 +22,28 @@ export const PosScanInput = forwardRef<HTMLInputElement, { items: TillItem[]; on
     const [text, setText] = useState("");
     const [message, setMessage] = useState("");
     const matches = matchTillItems(items, text);
-    const add = (item: TillItem) => { onAdd(item); setText(""); setMessage(`Added ${item.label}.`); };
+    const add = (item: TillItem) => { onAdd(item); setText(""); setMessage(t`Added ${item.label}.`); };
     return <div className="grid gap-2">
-      <label className="grid gap-1 text-sm font-semibold text-ink" htmlFor="till-scan">Scan or type an item</label>
+      <label className="grid gap-1 text-sm font-semibold text-ink" htmlFor="till-scan">{t`Scan or type an item`}</label>
       <div className="flex items-center gap-2">
         <ScanBarcode aria-hidden="true" size={28} className="shrink-0 text-muted" />
         <input ref={ref} id="till-scan" className="desk-input min-h-14 flex-1 text-lg" autoComplete="off" disabled={disabled}
-          placeholder="SKU, barcode or name, then Enter" value={text} aria-describedby="till-scan-status"
+          placeholder={t`SKU, barcode or name, then Enter`} value={text} aria-describedby="till-scan-status"
           onChange={event => { setText(event.target.value); setMessage(""); }}
           onKeyDown={event => {
             if (event.key !== "Enter") return;
             event.preventDefault();
             if (matches.length === 1) add(matches[0]);
-            else setMessage(matches.length ? `${matches.length} items match. Choose one below.` : `Nothing matches “${text.trim()}”.`);
+            else setMessage(matches.length ? t`${matches.length} items match. Choose one below.` : t`Nothing matches “${text.trim()}”.`);
           }} />
       </div>
       <p id="till-scan-status" role="status" className="min-h-5 text-sm text-muted">{message}</p>
-      {text.trim() && matches.length > 1 ? <ul className="grid gap-2 sm:grid-cols-2" aria-label="Matching items">
+      {text.trim() && matches.length > 1 ? <ul className="grid gap-2 sm:grid-cols-2" aria-label={t`Matching items`}>
         {matches.slice(0, 8).map(item => <li key={item.variantId}>
           <button type="button" className="desk-button min-h-14 w-full justify-between text-left" disabled={item.available <= 0}
             onClick={() => add(item)}>
             <span className="min-w-0 break-words">{item.label}{item.sku ? <span className="block text-xs text-muted">{item.sku}</span> : null}</span>
-            <span className="tabular-nums">{item.available > 0 ? item.price : "Sold out"}</span></button>
+            <span className="tabular-nums">{item.available > 0 ? item.price : t`Sold out`}</span></button>
         </li>)}
       </ul> : null}
     </div>;

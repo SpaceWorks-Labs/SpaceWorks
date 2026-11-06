@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 
@@ -76,6 +77,6 @@ export function percentLevel(percent: number | null): "ok" | "warning" | "limit"
 }
 
 export const STATE_LABELS: Record<SpaceState, string> = {
-  active: "Active", read_only: "Read-only", suspended: "Suspended", archived: "Archived",
-  scheduled: "Scheduled", importing: "Importing", aborted: "Import aborted",
+  active: t`Active`, read_only: t`Read-only`, suspended: t`Suspended`, archived: t`Archived`,
+  scheduled: t`Scheduled`, importing: t`Importing`, aborted: t`Import aborted`,
 };

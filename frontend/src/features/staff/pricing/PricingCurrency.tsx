@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Coins } from "lucide-react";
@@ -28,15 +29,15 @@ export function PricingCurrency({ makerspaceId, canEdit }: { makerspaceId: numbe
   return <form className="flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4"
     onSubmit={event => { event.preventDefault(); if (valid && dirty) save.mutate(); }}>
     <Coins aria-hidden="true" size={20} className="mb-3 text-muted" />
-    <Field label="Currency for new charges" hint="Three-letter code, like INR or USD. Existing charges keep their currency."
+    <Field label={t`Currency for new charges`} hint={t`Three-letter code, like INR or USD. Existing charges keep their currency.`}
       error={value && !valid && (left || value.length >= 3) ? "Enter a three-letter currency code." : undefined}>
       <input className="desk-input w-28 uppercase" maxLength={3} value={value} disabled={!canEdit || save.isPending}
         onBlur={() => setLeft(true)} onChange={event => { setValue(event.target.value.toUpperCase()); save.reset(); }} />
     </Field>
     {canEdit ? <button type="submit" className="desk-button" disabled={!valid || !dirty || save.isPending}>
-      {save.isPending ? "Saving…" : "Save currency"}</button>
-      : <p className="mb-3 text-xs text-muted">Only the Space Manager changes the currency.</p>}
-    {save.isSuccess ? <p role="status" className="mb-3 text-xs text-muted">Currency saved.</p> : null}
+      {save.isPending ? t`Saving…` : t`Save currency`}</button>
+      : <p className="mb-3 text-xs text-muted">{t`Only the Space Manager changes the currency.`}</p>}
+    {save.isSuccess ? <p role="status" className="mb-3 text-xs text-muted">{t`Currency saved.`}</p> : null}
     {save.error ? <p role="alert" className="w-full text-sm text-danger">{pricingError(save.error)}</p> : null}
   </form>;
 }

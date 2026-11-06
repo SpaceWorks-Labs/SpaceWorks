@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -28,7 +29,7 @@ export function useDuplicateEvent(makerspaceId: number, eventId: number) {
     mutationFn: (attachSeries: boolean) => staffRequest<StaffEvent>(`/admin/events/${eventId}/duplicate/`, {
       method: "POST", body: JSON.stringify({ attach_series: attachSeries }),
     }),
-    onSuccess: async (created) => { await invalidate(); toast(`Created draft: ${created.title}`); },
+    onSuccess: async (created) => { await invalidate(); toast(t`Created draft: ${created.title}`); },
   });
 }
 
@@ -56,8 +57,8 @@ export function useRestoreRegistration(makerspaceId: number, eventId: number) {
 export function offerCancellationUndo(row: EventRegistration, restore: (id: number) => Promise<unknown>) {
   const duration = Math.min(300_000, Date.parse(row.restore_until ?? "") - Date.now());
   if (duration > 0) {
-    toast("Registration cancelled. Undo is available for five minutes if admission still allows it.", {
+    toast(t`Registration cancelled. Undo is available for five minutes if admission still allows it.`, {
       duration, undoKey: `event-registration:${row.id}`, undo: () => restore(row.id),
     });
-  } else toast("Registration cancelled.");
+  } else toast(t`Registration cancelled.`);
 }

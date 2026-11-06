@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { fromPairs, toPairs } from "./ShopOptionsEditor";
 import type { ShopAccess } from "./shopAccess";
 import type { ProductDraft, ShopProduct } from "./staffShopApi";
@@ -11,7 +12,7 @@ export type ProductForm = {
   variants: VariantRow[]; parts: BundlePart[];
 };
 
-export const KIND_LABELS: Record<ProductDraft["kind"], string> = { consumable: "Consumable", kit: "Kit", merch: "Merchandise", other: "Other" };
+export const KIND_LABELS: Record<ProductDraft["kind"], string> = { consumable: t`Consumable`, kit: t`Kit`, merch: t`Merchandise`, other: t`Other` };
 
 export function formFromProduct(product?: ShopProduct): ProductForm {
   if (!product) return { name: "", kind: "merch", category: "", unit: "", description: "", is_public: true, is_active: true, max_per_order: "",

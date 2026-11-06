@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { PositionedElement } from "../../../components/print-layout/positionedLayout";
 
 export type Layer = {
@@ -17,8 +18,8 @@ export const COLOUR_TOKENS: Record<string, string> = { ink: "#142C2A", teal: "#0
 export const layerColour = (layer: Layer) => layer.colour ?? COLOUR_TOKENS[layer.colour_token ?? "ink"] ?? COLOUR_TOKENS.ink;
 /** Page sizes in millimetres (width x height). Custom keeps 100-420 mm. */
 export const PAGE_PRESETS = {
-  "a4-landscape": { label: "A4 landscape", size: [297, 210] }, "a4-portrait": { label: "A4 portrait", size: [210, 297] },
-  "letter-landscape": { label: "US Letter landscape", size: [279.4, 215.9] }, "letter-portrait": { label: "US Letter portrait", size: [215.9, 279.4] },
+  "a4-landscape": { label: t`A4 landscape`, size: [297, 210] }, "a4-portrait": { label: t`A4 portrait`, size: [210, 297] },
+  "letter-landscape": { label: t`US Letter landscape`, size: [279.4, 215.9] }, "letter-portrait": { label: t`US Letter portrait`, size: [215.9, 279.4] },
 } as const;
 export type PagePreset = keyof typeof PAGE_PRESETS | "custom";
 export function pagePreset(width: number, height: number): PagePreset {

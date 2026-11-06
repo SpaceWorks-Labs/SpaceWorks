@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { ListFilters, type ListFiltersProps } from "../../components/layouts/ListFilters";
 import { ListSort } from "../../components/layouts/ListSort";
@@ -14,5 +15,5 @@ export function ListViewControls({ state, makerspaceId, entity, sorts, search = 
     sort={<ListSort value={state.values.ordering} onChange={event => state.setFilter("ordering", event.target.value)} options={sorts} />}
     views={savedViews ? <SavedViewsMenu makerspaceId={makerspaceId} entity={entity} state={state.values} onRestore={state.restore} /> : undefined}
     controls={controls} activeCount={activeCount}
-    chips={state.values.id ? [{ key: "id", label: "selected result", onRemove: () => state.setFilter("id", "") }] : []} />;
+    chips={state.values.id ? [{ key: "id", label: t`selected result`, onRemove: () => state.setFilter("id", "") }] : []} />;
 }

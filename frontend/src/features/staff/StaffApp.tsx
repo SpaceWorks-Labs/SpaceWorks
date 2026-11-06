@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { SpaceWorksBadge } from "../../components/SpaceWorksLogo";
@@ -42,14 +43,14 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   useEffect(() => onMfaEnrollmentRequired(() => setEnrolmentRequired(true)), []);
   useEffect(() => { if (user && mfaGate(user) === "none") setEnrolmentRequired(false); }, [user]);
   const memberHref = tenant.mode !== "single" && session.routeMakerspaceSlug ? `/m/${encodeURIComponent(session.routeMakerspaceSlug)}/member` : "/member";
-  if (session.restoring) return <StaffLoading message="Restoring session..." restoring />;
+  if (session.restoring) return <StaffLoading message={t`Restoring session...`} restoring />;
   // MfaFlow is a whole page (CenteredCardLayout owns the main landmark and the h1).
   if (session.mfaChallenge) return <MfaFlow key={session.mfaChallenge.challenge} challenge={session.mfaChallenge} onComplete={session.mfaCompleted} onCancel={() => session.setMfaChallenge(undefined)} />;
   if (!user && session.platform) return <PlatformSignInPanel error={session.login.error?.message} isPending={session.login.isPending} onSubmit={session.login.mutate} />;
   if (!user) {
-    return <MemberAuthPanel eyebrow={guestOnly ? "Front desk" : "Staff console"} makerspaceSlug={session.routeMakerspaceSlug ?? ""}
+    return <MemberAuthPanel eyebrow={guestOnly ? t`Front desk` : t`Staff console`} makerspaceSlug={session.routeMakerspaceSlug ?? ""}
       onAuthenticated={() => { void session.personAuthenticated(); }}
-      footer={<a className="text-sm font-semibold underline" href="/admin?context=platform">Platform administrator? Sign in here</a>} />;
+      footer={<a className="text-sm font-semibold underline" href="/admin?context=platform">{t`Platform administrator? Sign in here`}</a>} />;
   }
   if (user.must_change_password) {
     return <ChangePasswordGate username={user.username} onSignOut={session.signOut} onChanged={() => {
@@ -71,12 +72,12 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
       queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
     }} />;
   }
-  if (singleTenantLocked && makerspaces.isLoading) return <StaffLoading message="Checking makerspace access..." />;
+  if (singleTenantLocked && makerspaces.isLoading) return <StaffLoading message={t`Checking makerspace access...`} />;
   if (singleTenantLocked && !activeMakerspace && (isSuperadmin || !consoleSpaceIds(user).has(tenant.makerspaceId ?? -1))) {
     return <StaffAccessDenied makerspaceName={tenant.bootstrap?.makerspace.name} onSignOut={session.signOut} />;
   }
-  if (!singleTenantLocked && (session.routeMakerspaceSlug || selected !== null) && makerspaces.isLoading) return <StaffLoading message="Opening makerspace..." />;
-  if (!singleTenantLocked && session.routeMakerspace && session.routeMakerspace.id !== selected) return <StaffLoading message="Opening makerspace..." />;
+  if (!singleTenantLocked && (session.routeMakerspaceSlug || selected !== null) && makerspaces.isLoading) return <StaffLoading message={t`Opening makerspace...`} />;
+  if (!singleTenantLocked && session.routeMakerspace && session.routeMakerspace.id !== selected) return <StaffLoading message={t`Opening makerspace...`} />;
   // The superadmin always picks a space; a person only when several are open to them (a grant-only
   // person whose spaces have no console row goes straight to their granted resources).
   if (!singleTenantLocked && !globalRoute && !activeMakerspace && (isSuperadmin || consoleMakerspaces.length > 1)) {

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { SeriesGuestList } from "./eventProgramme/SeriesGuestList";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -55,40 +57,40 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
   const showWebsite = Boolean(query.data?.website_enabled) && (access.edit || access.publish);
   const showSettings = access.edit || access.publish;
   const showPasses = useStaffCapability(makerspaceId, "events.series_passes") && access.manager;
-  const tabs = useOpsTabs("seriesTab", [{ key: "occurrences", label: "Occurrences", count: occurrences.data?.count },
-    ...(access.registrations ? [{ key: "guests", label: "Guests" }] : []),
-    ...(showWebsite ? [{ key: "website", label: "Website" }] : []),
-    ...(showPasses ? [{ key: "passes", label: "Passes" }] : []),
-    ...(access.manager ? [{ key: "team", label: "Team" }] : []),
-    ...(showSettings ? [{ key: "settings", label: "Settings" }] : [])], "occurrences");
+  const tabs = useOpsTabs("seriesTab", [{ key: "occurrences", label: t`Occurrences`, count: occurrences.data?.count },
+    ...(access.registrations ? [{ key: "guests", label: t`Guests` }] : []),
+    ...(showWebsite ? [{ key: "website", label: t`Website` }] : []),
+    ...(showPasses ? [{ key: "passes", label: t`Passes` }] : []),
+    ...(access.manager ? [{ key: "team", label: t`Team` }] : []),
+    ...(showSettings ? [{ key: "settings", label: t`Settings` }] : [])], "occurrences");
   return <>
-    <div onClickCapture={tabs.onClickCapture}><DetailLayout title={query.data?.title ?? "Recurring series"} back={{ label: "All events", onClick: onClose }}
+    <div onClickCapture={tabs.onClickCapture}><DetailLayout title={query.data?.title ?? t`Recurring series`} back={{ label: t`All events`, onClick: onClose }}
       identity={{ kind: "icon", icon: "Calendar", tone: "accent" }}
       status={query.data ? <StatusBadge domain="event" status={query.data.status} label={opsStatusLabel(query.data.status)} /> : undefined}
       meta={query.data ? [`${query.data.future_occurrence_count} active occurrences`, `Revision ${query.data.revision}`] : undefined}
       state={opsQueryState(query, "series")} tabs={tabs.tabs} activeTab={tabs.active}
-      actions={{ primary: !access.publish ? undefined : query.data?.status === "draft" ? { label: "Publish series", confirms: true, onClick: () => setConfirm("publish") } : query.data?.status === "published" ? { label: "Extend now", onClick: () => setConfirm("extend") } : undefined,
-        overflow: query.data?.status === "published" && access.publish ? [{ label: "Complete series", confirms: true, onClick: () => setConfirm("complete") },
-          { label: "Cancel series", confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
+      actions={{ primary: !access.publish ? undefined : query.data?.status === "draft" ? { label: t`Publish series`, confirms: true, onClick: () => setConfirm("publish") } : query.data?.status === "published" ? { label: t`Extend now`, onClick: () => setConfirm("extend") } : undefined,
+        overflow: query.data?.status === "published" && access.publish ? [{ label: t`Complete series`, confirms: true, onClick: () => setConfirm("complete") },
+          { label: t`Cancel series`, confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
       banner={query.data?.last_generation_error_code ? { size: "banner", tone: "danger", lead: `Automatic extension needs attention (${query.data.last_generation_error_code}).`,
-        body: "Correct the schedule in Settings, then use Extend now.", action: query.data.status === "published" && access.publish ? { label: "Extend now", onClick: () => setConfirm("extend") } : undefined } : undefined}
-      danger={tabs.active === "settings" && query.data?.status === "published" && access.publish ? [{ title: "Cancel series", consequence: "Future occurrences close and registrants are notified.", action: { label: "Cancel series", onClick: () => setConfirm("cancel") } }] : []}
+        body: t`Correct the schedule in Settings, then use Extend now.`, action: query.data.status === "published" && access.publish ? { label: t`Extend now`, onClick: () => setConfirm("extend") } : undefined } : undefined}
+      danger={tabs.active === "settings" && query.data?.status === "published" && access.publish ? [{ title: t`Cancel series`, consequence: "Future occurrences close and registrants are notified.", action: { label: t`Cancel series`, onClick: () => setConfirm("cancel") } }] : []}
       main={query.data ? <div className="grid gap-5">
         {access.registrations && tabs.active === "guests" ? <SeriesGuestList seriesId={seriesId} /> : null}
         {showPasses && tabs.active === "passes" ? <SeriesPassTypes seriesId={seriesId} disabled={terminal} /> : null}
         {tabs.active === "occurrences" ? <EventOrganizationAudience event={query.data} pending={update.isPending} onReconfigure={access.edit ? () => update.mutate({ registration_audience: "participating_organizations" }) : undefined} /> : null}
         {showSettings && tabs.active === "settings" ? <div className="grid gap-5">
-        {access.edit ? <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label="Series photo (inherited by occurrences)" shape="wide" disabled={terminal} onChanged={() => query.refetch()} /> : null}
-        <form onSubmit={submit}><h3 className="title-section mb-3">Edit future occurrences</h3><EventSeriesFields organizationAudienceEnabled={query.data.organization_audience_enabled} values={values} setValues={setValues} disabled={terminal} canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />{!terminal ? <div className={pageStickyActions}><button className="desk-button" type="button" disabled={update.isPending} onClick={() => setValues(valuesForSeries(query.data!))}>Discard</button><button className="desk-button-primary" type="submit" disabled={update.isPending}>Save future occurrences</button></div> : null}</form>
-        {query.data.status === "published" && access.publish ? <button className="desk-button justify-self-start" type="button" onClick={() => setConfirm("complete")}>Complete series</button> : null}
+        {access.edit ? <ImageUploader endpoint={`/admin/event-series/${seriesId}/image`} currentUrl={query.data.image_url} label={t`Series photo (inherited by occurrences)`} shape="wide" disabled={terminal} onChanged={() => query.refetch()} /> : null}
+        <form onSubmit={submit}><h3 className="title-section mb-3">{t`Edit future occurrences`}</h3><EventSeriesFields organizationAudienceEnabled={query.data.organization_audience_enabled} values={values} setValues={setValues} disabled={terminal} canEditDetails={access.edit} canEditSchedule={access.publish} canEditPrice={access.manager} />{!terminal ? <div className={pageStickyActions}><button className="desk-button" type="button" disabled={update.isPending} onClick={() => setValues(valuesForSeries(query.data!))}>{t`Discard`}</button><button className="desk-button-primary" type="submit" disabled={update.isPending}>{t`Save future occurrences`}</button></div> : null}</form>
+        {query.data.status === "published" && access.publish ? <button className="desk-button justify-self-start" type="button" onClick={() => setConfirm("complete")}>{t`Complete series`}</button> : null}
         </div> : null}
         {showWebsite && tabs.active === "website" ? <EventWebsiteEditor key={`series:${seriesId}`} target={{ kind: "event-series", id: seriesId, makerspaceId }} canEdit={access.edit} canPublish={access.publish} status={query.data.status} inheritedImage={{ url: query.data.image_url ?? null, alt: query.data.title }} /> : null}
         {update.error || action.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(update.error || action.error)}</p> : null}
-        {tabs.active === "occurrences" ? <section><h2 className="title-panel">Occurrences</h2><p className="mt-1 text-sm text-muted">Choose a date to edit or cancel only that occurrence.</p>
+        {tabs.active === "occurrences" ? <section><h2 className="title-panel">{t`Occurrences`}</h2><p className="mt-1 text-sm text-muted">{t`Choose a date to edit or cancel only that occurrence.`}</p>
           {occurrences.isLoading ? <Skeleton className="mt-3 h-24 w-full" /> : null}
           {occurrences.error ? <ErrorText resource="occurrences" onRetry={() => { void occurrences.refetch(); }} /> : null}
-          {occurrences.data && !occurrences.data.results.length ? <EmptyState message="No occurrences on this page." /> : null}
-          <div className="mt-3 grid gap-3">{occurrences.data?.results.map(row => <ListRow key={row.id} title={new Date(row.starts_at).toLocaleString()} identity={{ kind: "date", date: row.starts_at }} draft={row.status === "draft"} onClick={() => onSelectOccurrence(row.id)} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />)}</div>
+          {occurrences.data && !occurrences.data.results.length ? <EmptyState message={t`No occurrences on this page.`} /> : null}
+          <div className="mt-3 grid gap-3">{occurrences.data?.results.map(row => <ListRow key={row.id} title={new Date(row.starts_at).toLocaleString(formatLocale())} identity={{ kind: "date", date: row.starts_at }} draft={row.status === "draft"} onClick={() => onSelectOccurrence(row.id)} right={<StatusBadge domain="event" status={row.status} label={opsStatusLabel(row.status)} />} />)}</div>
           {occurrences.data ? <Pagination page={occurrencePage} count={occurrences.data.count} pageSize={EVENT_SERIES_PAGE_SIZE} totalPages={Math.ceil(occurrences.data.count / EVENT_SERIES_PAGE_SIZE)} onChange={setOccurrencePage} disabled={occurrences.isFetching} /> : null}
         </section> : null}
         {access.manager ? <>
@@ -96,6 +98,6 @@ export function EventSeriesDrawer({ seriesId, makerspaceId, onClose, onSelectOcc
           {tabs.active === "team" ? <EventStaffAccess target={{ kind: "series", id: seriesId }} /> : null}
         </> : null}
       </div> : null} /></div>
-    <ConfirmDialog open={confirm !== null} title={`${confirm ?? "Change"} recurring series`} message={`This will ${confirm ?? "change"} the series and its applicable occurrences.`} confirmLabel="Confirm" tone={confirm === "cancel" ? "danger" : "default"} pending={action.isPending} onCancel={() => setConfirm(null)} onConfirm={() => action.mutate(undefined, { onSettled: () => setConfirm(null) })} />
+    <ConfirmDialog open={confirm !== null} title={t`${confirm ?? "Change"} recurring series`} message={t`This will ${confirm ?? "change"} the series and its applicable occurrences.`} confirmLabel={t`Confirm`} tone={confirm === "cancel" ? "danger" : "default"} pending={action.isPending} onCancel={() => setConfirm(null)} onConfirm={() => action.mutate(undefined, { onSettled: () => setConfirm(null) })} />
   </>;
 }

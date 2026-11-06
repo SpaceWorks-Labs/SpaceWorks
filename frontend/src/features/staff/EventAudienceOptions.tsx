@@ -1,11 +1,12 @@
+import { t } from "@lingui/core/macro";
 type Audience = "members" | "accounts" | "invite" | "participating_organizations";
 
 /** One wording for who may register, shared by events, series and the space default. */
 export const AUDIENCE_LABELS: Record<Audience, string> = {
-  accounts: "Anyone with an account",
-  members: "Our members",
-  participating_organizations: "Selected organizations",
-  invite: "Invite only",
+  accounts: t`Anyone with an account`,
+  members: t`Our members`,
+  participating_organizations: t`Selected organizations`,
+  invite: t`Invite only`,
 };
 
 export function AudienceOptions({ value, organizationAudienceEnabled }: { value?: string | null; organizationAudienceEnabled: boolean }) {

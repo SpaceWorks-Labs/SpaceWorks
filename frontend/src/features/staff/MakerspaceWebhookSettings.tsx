@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsResetAction } from "./SettingsResetAction";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsEditorActions } from "./SettingsEditorActions";
@@ -39,7 +40,7 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
   );
 
   return (
-    <SettingsQueryState query={settings} resource="webhook"><SettingsRow label="Chat webhooks" helper="Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."><div className="@container grid min-w-0 gap-4">
+    <SettingsQueryState query={settings} resource="webhook"><SettingsRow label={t`Chat webhooks`} helper="Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."><div className="@container grid min-w-0 gap-4">
       <div className="grid max-w-2xl gap-2">
 
 
@@ -47,25 +48,25 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
       <div className="mt-4 grid gap-3 @3xl:grid-cols-3">
         <ProviderCard
           configured={settings.data?.slack_webhook_url_set ?? false}
-          label="Slack"
+          label={t`Slack`}
           makerspaceId={makerspace.id}
           provider="slack"
         />
         <ProviderCard
           configured={settings.data?.mattermost_webhook_url_set ?? false}
-          label="Mattermost"
+          label={t`Mattermost`}
           makerspaceId={makerspace.id}
           provider="mattermost"
         />
         <ProviderCard
           configured={settings.data?.discord_webhook_url_set ?? false}
-          label="Discord"
+          label={t`Discord`}
           makerspaceId={makerspace.id}
           provider="discord"
         />
       </div>
       {settings.isLoading ? (
-        <p className="mt-3 text-sm text-muted">Loading webhook settings…</p>
+        <p className="mt-3 text-sm text-muted">{t`Loading webhook settings…`}</p>
       ) : null}
       {settings.error ? (
         <p className="mt-3 text-sm text-danger">{settings.error.message}</p>
@@ -114,15 +115,13 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-sm font-semibold text-ink">{label}</h4>
         <Badge label="" tone={configured ? "success" : "neutral"}>
-          {configured ? "Configured" : "Not configured"}
+          {configured ? t`Configured` : t`Not configured`}
         </Badge>
       </div>
       <p className="mt-2 text-sm text-muted">
-        Paste an incoming webhook URL. The saved URL is never displayed again.
-      </p>
+        {t`Paste an incoming webhook URL. The saved URL is never displayed again.`}</p>
       <label className="mt-3 block text-sm font-semibold text-ink">
-        {label} incoming webhook URL
-        <input
+        {t`${label} incoming webhook URL`}<input
           autoComplete="new-password"
           className="desk-input mt-1 w-full"
           type="password"
@@ -144,6 +143,6 @@ function ProviderCard({ configured, label, makerspaceId, provider }: ProviderCar
           {clearWebhook.error.message}
         </p>
       ) : null}
-    <SettingsResetAction label={`Clear ${label} webhook`} consequence="Remove this saved webhook. Alerts will stop reaching this destination until it is configured again." pending={clearWebhook.isPending} disabled={!configured || pending} onConfirm={() => clearWebhook.mutateAsync()} /></section>
+    <SettingsResetAction label={t`Clear ${label} webhook`} consequence="Remove this saved webhook. Alerts will stop reaching this destination until it is configured again." pending={clearWebhook.isPending} disabled={!configured || pending} onConfirm={() => clearWebhook.mutateAsync()} /></section>
   );
 }

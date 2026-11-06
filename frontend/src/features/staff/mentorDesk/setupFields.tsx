@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from 'react'
 import { Field } from '../../../components/ui'
 
@@ -13,13 +14,13 @@ export function Toggle({ children, checked, onChange }: { children: ReactNode; c
 export function ids(value: string) {
   if (!value.trim()) return []
   const result = value.split(',').map(x => Number(x.trim()))
-  if (result.some(x => !Number.isSafeInteger(x) || x < 1) || new Set(result).size !== result.length) throw new Error('Use distinct positive IDs separated by commas.')
+  if (result.some(x => !Number.isSafeInteger(x) || x < 1) || new Set(result).size !== result.length) throw new Error(t`Use distinct positive IDs separated by commas.`)
   return result
 }
 export function tags(value: string) { return value.split(',').map(x => x.trim()).filter(Boolean) }
 export function iso(value: string) {
   const date = new Date(value)
-  if (!Number.isFinite(date.getTime())) throw new Error('Choose a valid date and time.')
+  if (!Number.isFinite(date.getTime())) throw new Error(t`Choose a valid date and time.`)
   return date.toISOString()
 }
 export function localDate(value?: string) {

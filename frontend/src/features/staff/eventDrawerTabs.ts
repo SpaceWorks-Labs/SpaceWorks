@@ -1,29 +1,30 @@
+import { t } from "@lingui/core/macro";
 import { useOpsTabs } from "./opsPresentation";
 import type { StaffEvent } from "./eventsApi";
 import type { eventAccess } from "./eventStaffPermissions";
 
 /** Everything past the day-of-event work, in the order the "More" tab lists it. */
 export const MORE_SECTIONS = [
-  { key: "tickets", label: "Tickets & invites" },
-  { key: "speakers", label: "Speakers" },
-  { key: "feedback", label: "Feedback" },
-  { key: "broadcasts", label: "Broadcasts" },
-  { key: "analytics", label: "Analytics" },
-  { key: "website", label: "Website" },
-  { key: "team", label: "Team" },
-  { key: "settings", label: "Settings" },
-  { key: "applications", label: "Applications" },
-  { key: "programme-teams", label: "Teams and projects" },
-  { key: "judging", label: "Judging" },
-  { key: "mentor-desk", label: "Mentor Desk" },
-  { key: "volunteers", label: "Volunteers" },
-  { key: "certificates", label: "Certificates and ID cards" },
-  { key: "programme-setup", label: "Programme setup" },
-  { key: "stage-forms", label: "Stage forms" },
-  { key: "reimbursements", label: "Travel support" },
+  { key: "tickets", label: t`Tickets & invites` },
+  { key: "speakers", label: t`Speakers` },
+  { key: "feedback", label: t`Feedback` },
+  { key: "broadcasts", label: t`Broadcasts` },
+  { key: "analytics", label: t`Analytics` },
+  { key: "website", label: t`Website` },
+  { key: "team", label: t`Team` },
+  { key: "settings", label: t`Settings` },
+  { key: "applications", label: t`Applications` },
+  { key: "programme-teams", label: t`Teams and projects` },
+  { key: "judging", label: t`Judging` },
+  { key: "mentor-desk", label: t`Mentor Desk` },
+  { key: "volunteers", label: t`Volunteers` },
+  { key: "certificates", label: t`Certificates and ID cards` },
+  { key: "programme-setup", label: t`Programme setup` },
+  { key: "stage-forms", label: t`Stage forms` },
+  { key: "reimbursements", label: t`Travel support` },
   // Lane L21a: the event crew and extra check-in lists (swag, meals, workshops).
-  { key: "crew", label: "Crew" },
-  { key: "checkin-lists", label: "Check-in lists" },
+  { key: "crew", label: t`Crew` },
+  { key: "checkin-lists", label: t`Check-in lists` },
 ] as const;
 export type MoreSection = typeof MORE_SECTIONS[number]["key"];
 
@@ -79,7 +80,7 @@ type Choice = { key: string; label: string; count?: number };
  */
 export function useEventDrawerTabs(top: Choice[], sections: Record<MoreSection, boolean>) {
   const available = MORE_SECTIONS.filter((section) => sections[section.key]);
-  const more = available.length ? [{ key: "more", label: "More" }] : [];
+  const more = available.length ? [{ key: "more", label: t`More` }] : [];
   const ops = useOpsTabs("eventTab", [...top, ...more, ...available], "overview");
   const section = ops.active === "more" ? available[0]?.key
     : available.find((choice) => choice.key === ops.active)?.key;

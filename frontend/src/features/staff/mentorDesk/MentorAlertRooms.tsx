@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { MessageSquare } from 'lucide-react'
@@ -25,15 +26,15 @@ export function MentorAlertRooms({ scope }: { scope: EventScope }) {
   if (!query.data) return null
   const rooms = query.data.rooms
   return <Card><section aria-labelledby="mentor-alert-rooms" className="grid gap-3">
-    <h4 id="mentor-alert-rooms" className="flex items-center gap-2 font-semibold"><MessageSquare aria-hidden="true" className="size-4" />Chat alerts for new help requests</h4>
-    <p className="text-sm text-muted">Chosen rooms get a short message when a team asks for help and at least one mentor is on shift: the topic, the team name and a link to Mentor Desk. No buttons and no personal details. Quiet hours apply.</p>
-    {rooms.length ? <fieldset className="grid gap-2"><legend className="sr-only">Rooms</legend>{rooms.map(room => <label key={room.id} className="flex min-h-11 items-center gap-3 text-sm">
+    <h4 id="mentor-alert-rooms" className="flex items-center gap-2 font-semibold"><MessageSquare aria-hidden="true" className="size-4" />{t`Chat alerts for new help requests`}</h4>
+    <p className="text-sm text-muted">{t`Chosen rooms get a short message when a team asks for help and at least one mentor is on shift: the topic, the team name and a link to Mentor Desk. No buttons and no personal details. Quiet hours apply.`}</p>
+    {rooms.length ? <fieldset className="grid gap-2"><legend className="sr-only">{t`Rooms`}</legend>{rooms.map(room => <label key={room.id} className="flex min-h-11 items-center gap-3 text-sm">
       <input type="checkbox" disabled={!room.is_active && !chosen.includes(room.id)} checked={chosen.includes(room.id)}
         onChange={event => setChosen(event.target.checked ? [...chosen, room.id] : chosen.filter(id => id !== room.id))} />
-      <span>{room.label} · {CHANNEL[room.channel]}{room.is_active ? '' : ' (switched off)'}</span></label>)}</fieldset>
-      : <p className="text-sm">This space has no chat rooms yet. Add one in notification settings first.</p>}
-    {save.error ? <p role="alert" className="text-sm text-danger">{save.error instanceof Error ? save.error.message : 'Could not save the rooms.'}</p> : null}
-    {save.isSuccess ? <p role="status" className="text-sm">Rooms saved.</p> : null}
-    {rooms.length ? <button type="button" className="desk-button justify-self-start" disabled={save.isPending} onClick={() => save.mutate(chosen)}>{save.isPending ? 'Saving…' : 'Save rooms'}</button> : null}
+      <span>{room.label} · {CHANNEL[room.channel]}{room.is_active ? '' : t` (switched off)`}</span></label>)}</fieldset>
+      : <p className="text-sm">{t`This space has no chat rooms yet. Add one in notification settings first.`}</p>}
+    {save.error ? <p role="alert" className="text-sm text-danger">{save.error instanceof Error ? save.error.message : t`Could not save the rooms.`}</p> : null}
+    {save.isSuccess ? <p role="status" className="text-sm">{t`Rooms saved.`}</p> : null}
+    {rooms.length ? <button type="button" className="desk-button justify-self-start" disabled={save.isPending} onClick={() => save.mutate(chosen)}>{save.isPending ? t`Saving…` : t`Save rooms`}</button> : null}
   </section></Card>
 }

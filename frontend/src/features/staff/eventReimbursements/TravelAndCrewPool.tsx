@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Field } from "../../../components/ui/Field";
 import { Modal } from "../../../components/ui/Modal";
@@ -29,18 +30,17 @@ export function CrewPoolPanel({ scope }: { scope: EventScope }) {
   const pools = ((programme.data as { pools?: PoolDetail[] } | undefined)?.pools) ?? [];
   const crew = pools.find(pool => pool.audience === "crew");
   if (!programme.data?.initialized) return null;
-  return <section className="grid gap-3 rounded-2xl border border-line bg-panel p-5" aria-label="Crew budget">
-    <h2 className="title-section">Crew budget</h2>
-    {crew ? <p>Crew pool {crew.currency}: total {crew.total_minor}; available {crew.available_minor}; reserved {crew.reserved_minor};
-      committed {crew.committed_minor} minor units. Crew awards reserve from this pool.</p> : <>
-      <p className="text-sm text-muted">Optional. With a crew pool, crew reimbursement awards reserve from it and leave the participant pool alone.</p>
+  return <section className="grid gap-3 rounded-2xl border border-line bg-panel p-5" aria-label={t`Crew budget`}>
+    <h2 className="title-section">{t`Crew budget`}</h2>
+    {crew ? <p>{t`Crew pool ${crew.currency}: total ${crew.total_minor}; available ${crew.available_minor}; reserved ${crew.reserved_minor}; committed ${crew.committed_minor} minor units. Crew awards reserve from this pool.`}</p> : <>
+      <p className="text-sm text-muted">{t`Optional. With a crew pool, crew reimbursement awards reserve from it and leave the participant pool alone.`}</p>
       <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault();
         command.mutate({ path: `${reimbursementAdminPath(scope)}crew-pool/`, body: { expected_version: 0, initial_total_minor: Number(total) } }); }}>
-        <Field label="Crew pool total (minor units)"><input className="desk-input" type="number" required min={0} step={1}
+        <Field label={t`Crew pool total (minor units)`}><input className="desk-input" type="number" required min={0} step={1}
           value={total} onChange={event => setTotal(event.target.value)} /></Field>
-        <button type="submit" className="desk-button" disabled={command.isPending}>Create crew pool</button>
+        <button type="submit" className="desk-button" disabled={command.isPending}>{t`Create crew pool`}</button>
       </form></>}
-    {command.error ? <p role="alert">{commandError(command.error)}</p> : command.isSuccess ? <p role="status">Crew pool created.</p> : null}
+    {command.error ? <p role="alert">{commandError(command.error)}</p> : command.isSuccess ? <p role="status">{t`Crew pool created.`}</p> : null}
   </section>;
 }
 
@@ -51,8 +51,8 @@ export function BookedTravelActions({ scope, row }: { scope: EventScope; row: Sc
   if (!row.budget || (!isBookedTravel(row) && !canBookTravel(row))) return null;
   return <>
     {isBookedTravel(row)
-      ? <button type="button" className="desk-button-ghost justify-self-start" onClick={() => setOpen("cancel")}>Cancel booked travel</button>
-      : <button type="button" className="desk-button justify-self-start" onClick={() => setOpen("record")}>Record booked travel</button>}
+      ? <button type="button" className="desk-button-ghost justify-self-start" onClick={() => setOpen("cancel")}>{t`Cancel booked travel`}</button>
+      : <button type="button" className="desk-button justify-self-start" onClick={() => setOpen("record")}>{t`Record booked travel`}</button>}
     {open ? <BookingModal scope={scope} row={row} cancel={open === "cancel"} onClose={() => setOpen("")} /> : null}
   </>;
 }
@@ -70,22 +70,21 @@ function BookingModal({ scope, row, cancel, onClose }: { scope: EventScope; row:
     ? undo.mutate({ path: `${base}cancel/`, body: { expected_version: row.version, expected_pool_version: poolVersion, reason } }, { onSuccess: onClose })
     : record.mutate({ path: base, body: { expected_version: row.version, expected_pool_version: poolVersion, amount_minor: Number(amount),
       currency: row.currency, vendor, booked_on: bookedOn, method, reference } }, { onSuccess: onClose });
-  return <Modal open title={cancel ? "Cancel booked travel" : "Record booked travel"} onClose={() => { if (!pending) onClose(); }}>
+  return <Modal open title={cancel ? t`Cancel booked travel` : t`Record booked travel`} onClose={() => { if (!pending) onClose(); }}>
     <form className="grid gap-4" onSubmit={event => { event.preventDefault(); submit(); }}>
-      <fieldset disabled={pending} className="grid gap-4"><legend className="sr-only">{cancel ? "Cancel booking" : "Booking"}</legend>
-        {cancel ? <><p>The travel expense is voided and its budget released. The request is closed as declined.</p>
-          <Field label="Reason"><input className="desk-input" required maxLength={300} value={reason} onChange={event => setReason(event.target.value)} /></Field></> : <>
-          <p>Record travel the space booked and paid for directly. The person files no claim and nobody is sent money.
-            Available: {row.budget?.available_minor} minor units ({row.currency}).</p>
-          <Field label={`Cost (minor units, ${row.currency})`}><input className="desk-input" type="number" required min={1} step={1}
+      <fieldset disabled={pending} className="grid gap-4"><legend className="sr-only">{cancel ? t`Cancel booking` : t`Booking`}</legend>
+        {cancel ? <><p>{t`The travel expense is voided and its budget released. The request is closed as declined.`}</p>
+          <Field label={t`Reason`}><input className="desk-input" required maxLength={300} value={reason} onChange={event => setReason(event.target.value)} /></Field></> : <>
+          <p>{t`Record travel the space booked and paid for directly. The person files no claim and nobody is sent money. Available: `}{row.budget?.available_minor} {t` minor units (${row.currency}).`}</p>
+          <Field label={t`Cost (minor units, ${row.currency})`}><input className="desk-input" type="number" required min={1} step={1}
             value={amount} onChange={event => setAmount(event.target.value)} /></Field>
-          <Field label="Vendor" hint="The airline, bus operator or agent the space paid."><input className="desk-input" required maxLength={150}
+          <Field label={t`Vendor`} hint={t`The airline, bus operator or agent the space paid.`}><input className="desk-input" required maxLength={150}
             value={vendor} onChange={event => setVendor(event.target.value)} /></Field>
-          <Field label="Booked on"><input className="desk-input" type="date" required value={bookedOn} onChange={event => setBookedOn(event.target.value)} /></Field>
-          <Field label="Paid by"><select className="desk-input" value={method} onChange={event => setMethod(event.target.value)}>
+          <Field label={t`Booked on`}><input className="desk-input" type="date" required value={bookedOn} onChange={event => setBookedOn(event.target.value)} /></Field>
+          <Field label={t`Paid by`}><select className="desk-input" value={method} onChange={event => setMethod(event.target.value)}>
             {METHODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-          <Field label="Booking reference (optional)"><input className="desk-input" maxLength={64} value={reference} onChange={event => setReference(event.target.value)} /></Field></>}
-        <button type="submit" className="desk-button-primary">{pending ? "Saving…" : cancel ? "Cancel booking" : "Record booking"}</button>
+          <Field label={t`Booking reference (optional)`}><input className="desk-input" maxLength={64} value={reference} onChange={event => setReference(event.target.value)} /></Field></>}
+        <button type="submit" className="desk-button-primary">{pending ? t`Saving…` : cancel ? t`Cancel booking` : t`Record booking`}</button>
       </fieldset>
       {record.error || undo.error ? <p role="alert">{commandError(record.error || undo.error)}</p> : null}
     </form></Modal>;

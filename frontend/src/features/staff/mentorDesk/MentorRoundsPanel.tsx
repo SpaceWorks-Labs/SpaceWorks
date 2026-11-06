@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, useState, type ReactNode } from 'react'
 import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card, Field, StatusPill } from '../../../components/ui'
@@ -12,7 +14,7 @@ export type RoundFormRenderer = (input: { schema: unknown; answers: Record<strin
 
 function asLease(value: Aggregate): Lease {
   const lease = value as Lease
-  if (typeof lease.lease_uuid !== 'string' || !Number.isSafeInteger(lease.generation) || !lease.expires_at) throw new Error('The visit lease was not returned. Refresh this round.')
+  if (typeof lease.lease_uuid !== 'string' || !Number.isSafeInteger(lease.generation) || !lease.expires_at) throw new Error(t`The visit lease was not returned. Refresh this round.`)
   return lease
 }
 
@@ -50,27 +52,27 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
     try { setAnswers(await readRoundDraft(draftScope, team.team_id) ?? {}) } catch (error) { setDraftError(error) }
   }
   const liveLease = lease && Date.parse(lease.expires_at) > Date.now() && row?.state === 'live'
-  return <ListLayout header={{ title: row?.label ?? 'Mentor round', subtitle: 'Use fresh eyes where possible. A saved draft still needs a live visit lease before submission.' }}
+  return <ListLayout header={{ title: row?.label ?? t`Mentor round`, subtitle: t`Use fresh eyes where possible. A saved draft still needs a live visit lease before submission.` }}
     state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
-    empty={{ message: 'No teams are available in this round.' }} isEmpty={!row?.teams?.length}
+    empty={{ message: t`No teams are available in this round.` }} isEmpty={!row?.teams?.length}
     body={{ kind: 'rows', rows: <>
       {(command.error || draftError) ? <p role="alert" className="text-danger">{errorText(command.error ?? draftError)}</p> : null}
       {selected && row ? <Card><h2 className="title-section">{selected.team_alias}</h2>
-        <p role="status" className="my-2 text-sm text-muted">{liveLease ? `Visit active until ${new Date(lease.expires_at).toLocaleTimeString()}` : 'Claim a visit before submitting. Your saved text stays here.'}</p>
+        <p role="status" className="my-2 text-sm text-muted">{liveLease ? t`Visit active until ${new Date(lease.expires_at).toLocaleTimeString(formatLocale())}` : t`Claim a visit before submitting. Your saved text stays here.`}</p>
         {selected.prior_notes.map(note => <div key={note.round_id} className="my-3 text-sm text-muted">{Object.entries(note.notes).map(([key, value]) => <p key={key}>{key}: {String(value)}</p>)}</div>)}
-        <Field label="Reason for a fresh-eyes or conflict exception" hint="Only used when the organizer permits this exception."><textarea className="desk-input" maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field>
+        <Field label={t`Reason for a fresh-eyes or conflict exception`} hint={t`Only used when the organizer permits this exception.`}><textarea className="desk-input" maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field>
         {renderForm({ schema: row.form_schema, answers, onChange: setAnswers, disabled: command.isPending })}
-        <label className="my-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={away} onChange={event => setAway(event.target.checked)} />Team is away from its spot</label>
-        <label className="my-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={nominate} disabled={away} onChange={event => setNominate(event.target.checked)} />Nominate this team for a private follow-up shortlist</label>
+        <label className="my-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={away} onChange={event => setAway(event.target.checked)} />{t`Team is away from its spot`}</label>
+        <label className="my-4 flex min-h-11 items-center gap-3"><input type="checkbox" checked={nominate} disabled={away} onChange={event => setNominate(event.target.checked)} />{t`Nominate this team for a private follow-up shortlist`}</label>
         <div className="mt-4 flex flex-wrap gap-2">
-          {!liveLease ? <ActionControl action={{ label: 'Claim visit', pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/claim/`, version: row.version, fields: { override_reason: reason } }, { onSuccess: value => setLease(asLease(value)) }) }} /> : <>
-            <ActionControl primary action={{ label: 'Submit visit', pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/submit/`, version: lease.version,
+          {!liveLease ? <ActionControl action={{ label: t`Claim visit`, pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/claim/`, version: row.version, fields: { override_reason: reason } }, { onSuccess: value => setLease(asLease(value)) }) }} /> : <>
+            <ActionControl primary action={{ label: t`Submit visit`, pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/submit/`, version: lease.version,
               fields: { lease_uuid: lease.lease_uuid, generation: lease.generation, answers, away, nominate: nominate && !away } }, { onSuccess: () => { setLease(null); setSelected(null); void clearRoundDrafts(draftScope).catch(setDraftError) } }) }} />
-            <ActionControl action={{ label: 'Release visit', pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/release/`, version: lease.version, fields: { lease_uuid: lease.lease_uuid, generation: lease.generation } }, { onSuccess: () => setLease(null) }) }} /></>}
-          <ActionControl action={{ label: 'Save draft on this device', onClick: () => { void saveRoundDraft(draftScope, selected.team_id, row.closes_at, answers).catch(setDraftError) } }} />
+            <ActionControl action={{ label: t`Release visit`, pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/release/`, version: lease.version, fields: { lease_uuid: lease.lease_uuid, generation: lease.generation } }, { onSuccess: () => setLease(null) }) }} /></>}
+          <ActionControl action={{ label: t`Save draft on this device`, onClick: () => { void saveRoundDraft(draftScope, selected.team_id, row.closes_at, answers).catch(setDraftError) } }} />
         </div></Card> : null}
       {row?.teams?.map(team => <Card key={team.team_id}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="title-section">{team.team_alias}</h2><StatusPill label={team.visit_state} tone="neutral" />
-        <ActionControl action={{ label: 'Open visit', disabled: team.visit_state === 'done' || (team.visit_state === 'busy' && !team.lease), disabledReason: team.visit_state === 'done' ? 'This round visit is complete.' : team.visit_state === 'busy' && !team.lease ? 'Another mentor has this visit.' : undefined, onClick: () => { void choose(team) } }} />
+        <ActionControl action={{ label: t`Open visit`, disabled: team.visit_state === 'done' || (team.visit_state === 'busy' && !team.lease), disabledReason: team.visit_state === 'done' ? 'This round visit is complete.' : team.visit_state === 'busy' && !team.lease ? 'Another mentor has this visit.' : undefined, onClick: () => { void choose(team) } }} />
       </div></Card>)}
     </> }} />
 }

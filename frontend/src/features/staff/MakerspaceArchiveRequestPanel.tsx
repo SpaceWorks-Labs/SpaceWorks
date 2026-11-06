@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,10 +11,10 @@ import { StructuredApiError, staffRequest } from "../../lib/api";
 const REASON_MAX_LENGTH = 2000;
 
 const ERROR_MESSAGES: Record<string, string> = {
-  pending_archive_request_exists: "An archive request is already pending for this makerspace.",
-  archive_request_cooldown: "Please wait one hour after the last archive request before filing another.",
-  makerspace_already_archived: "This makerspace has already been archived.",
-  archive_request_not_pending: "This archive request is no longer pending and cannot be withdrawn.",
+  pending_archive_request_exists: t`An archive request is already pending for this makerspace.`,
+  archive_request_cooldown: t`Please wait one hour after the last archive request before filing another.`,
+  makerspace_already_archived: t`This makerspace has already been archived.`,
+  archive_request_not_pending: t`This archive request is no longer pending and cannot be withdrawn.`,
 };
 
 type Props = {
@@ -64,13 +66,9 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
     <section className="min-w-0 rounded-md border border-line bg-bg p-4" aria-labelledby="archive-request-title">
       <div className="grid min-w-0 gap-2">
         <h3 id="archive-request-title" className="text-base font-semibold text-ink">
-          Archive this makerspace
-        </h3>
+          {t`Archive this makerspace`}</h3>
         <p className="max-w-3xl text-sm text-muted">
-          Filing a request does not archive anything. A superadmin must confirm it first. Once
-          archived, this makerspace disappears from the staff console and you lose access to it,
-          so the outcome will arrive by email.
-        </p>
+          {t`Filing a request does not archive anything. A superadmin must confirm it first. Once archived, this makerspace disappears from the staff console and you lose access to it, so the outcome will arrive by email.`}</p>
       </div>
 
       <SettingsQueryState query={requests} resource="archive requests" />
@@ -80,8 +78,8 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
         <div className="mt-4 rounded-md border border-warn bg-surface p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-sm font-semibold text-ink">Pending request</h4>
-              <Badge label="" tone="warn">Pending</Badge>
+              <h4 className="text-sm font-semibold text-ink">{t`Pending request`}</h4>
+              <Badge label="" tone="warn">{t`Pending`}</Badge>
             </div>
             <button
               className="desk-button min-h-11"
@@ -89,12 +87,12 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
               disabled={withdraw.isPending}
               onClick={() => withdraw.mutate(pending.id)}
             >
-              {withdraw.isPending ? "Withdrawing…" : "Withdraw"}
+              {withdraw.isPending ? t`Withdrawing…` : t`Withdraw`}
             </button>
           </div>
           <p className="mt-3 whitespace-pre-wrap text-sm text-ink">{pending.reason}</p>
           <p className="mt-2 text-xs text-muted">
-            Filed by {pending.requested_by_username ?? "a staff member"} on{" "}
+            {t`Filed by `}{pending.requested_by_username ?? t`a staff member`} on{" "}
             <time dateTime={pending.requested_at}>{formatDateTime(pending.requested_at)}</time>
           </p>
         </div>
@@ -107,7 +105,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
             event.preventDefault();
             const trimmedReason = reason.trim();
             if (!trimmedReason) {
-              setFormError("Enter a reason for requesting archival.");
+              setFormError(t`Enter a reason for requesting archival.`);
               return;
             }
             setFormError("");
@@ -115,8 +113,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
           }}
         >
           <label className="grid gap-1 text-sm font-semibold text-ink" htmlFor="archive-request-reason">
-            Reason for archival
-            <textarea
+            {t`Reason for archival`}<textarea
               id="archive-request-reason"
               className="desk-input min-h-28 w-full resize-y focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               value={reason}
@@ -132,7 +129,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
             />
           </label>
           <div id="archive-request-reason-help" className="flex flex-wrap justify-between gap-2 text-xs text-muted">
-            <span>Do not include personal data.</span>
+            <span>{t`Do not include personal data.`}</span>
             <span>{reason.length} / {REASON_MAX_LENGTH}</span>
           </div>
           {formError ? <p className="text-sm text-danger" role="alert">{formError}</p> : null}
@@ -141,7 +138,7 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
             type="submit"
             disabled={create.isPending}
           >
-            {create.isPending ? "Filing request…" : "Request archival"}
+            {create.isPending ? t`Filing request…` : t`Request archival`}
           </button>
         </form>
       ) : null}
@@ -152,9 +149,9 @@ function AuthorizedArchiveRequestPanel({ makerspaceId }: { makerspaceId: number 
 
       {requests.isSuccess ? (
         <div className="mt-6 border-t border-line pt-4">
-          <h4 className="text-sm font-semibold text-ink">Resolved history</h4>
+          <h4 className="text-sm font-semibold text-ink">{t`Resolved history`}</h4>
           {history.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">No resolved archive requests.</p>
+            <p className="mt-2 text-sm text-muted">{t`No resolved archive requests.`}</p>
           ) : (
             <ul className="mt-3 grid gap-3">
               {history.map((request) => <HistoryRow key={request.id} request={request} />)}
@@ -174,16 +171,16 @@ function HistoryRow({ request }: { request: MakerspaceArchiveRequest }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge label="" tone={tone}>{label}</Badge>
         <span className="text-xs text-muted">
-          Requested by {request.requested_by_username ?? "a staff member"} on {formatDateTime(request.requested_at)}
+          {t`Requested by `}{request.requested_by_username ?? t`a staff member`} on {formatDateTime(request.requested_at)}
         </span>
       </div>
       <p className="mt-2 whitespace-pre-wrap text-sm text-ink">{request.reason}</p>
       {request.resolution_note.trim() ? (
-        <p className="mt-2 text-sm text-muted">Resolution note: {request.resolution_note}</p>
+        <p className="mt-2 text-sm text-muted">{t`Resolution note: ${request.resolution_note}`}</p>
       ) : null}
       {request.resolved_at ? (
         <p className="mt-2 text-xs text-muted">
-          Resolved by {request.resolved_by_username ?? "a superadmin"} on {formatDateTime(request.resolved_at)}
+          {t`Resolved by `}{request.resolved_by_username ?? t`a superadmin`} on {formatDateTime(request.resolved_at)}
         </p>
       ) : null}
     </li>
@@ -195,12 +192,12 @@ function errorMessage(error: unknown) {
     if (error.code && ERROR_MESSAGES[error.code]) return ERROR_MESSAGES[error.code];
     return error.detail ?? error.message;
   }
-  return error instanceof Error ? error.message : "Unable to update archive requests.";
+  return error instanceof Error ? error.message : t`Unable to update archive requests.`;
 }
 
 function formatDateTime(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(undefined, {
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(formatLocale(), {
     dateStyle: "medium",
     timeStyle: "short",
   });

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Callout } from "../../../components/ui";
@@ -7,12 +8,12 @@ import {
   listRefundPolicies, refundPolicyKey, removeRefundPolicy, saveRefundPolicy, type PolicyBody, type RefundPolicy,
 } from "./refundsApi";
 
-const AREA_TITLES: Record<RefundPolicy["area"], string> = { events: "Events", bookings: "Bookings", membership: "Memberships" };
+const AREA_TITLES: Record<RefundPolicy["area"], string> = { events: t`Events`, bookings: t`Bookings`, membership: t`Memberships` };
 
 /** Read-only for anyone without manage_makerspace; the API enforces it either way. */
 export function RefundPolicyPanel({ makerspaceId, canEdit }: { makerspaceId: number; canEdit: boolean }) {
   const policies = useQuery({ queryKey: refundPolicyKey(makerspaceId), queryFn: () => listRefundPolicies(makerspaceId) });
-  if (policies.isLoading) return <p className="text-sm text-muted" role="status">Loading refund policy…</p>;
+  if (policies.isLoading) return <p className="text-sm text-muted" role="status">{t`Loading refund policy…`}</p>;
   if (policies.error || !policies.data) return <Callout size="inline" tone="danger" lead="Couldn't load the refund policy."
     body="Try again in a moment." />;
   const defaults = policies.data.filter((row) => row.plan === null);
@@ -21,7 +22,7 @@ export function RefundPolicyPanel({ makerspaceId, canEdit }: { makerspaceId: num
   return <div className="grid gap-4">
     {timed.map((policy) => <AreaCard key={policy.area} makerspaceId={makerspaceId} policy={policy} canEdit={canEdit} />)}
     {membership ? <RefundMembershipPolicies makerspaceId={makerspaceId} canEdit={canEdit}
-      defaultCard={<AreaCard makerspaceId={makerspaceId} policy={membership} canEdit={canEdit} title="All plans" />}
+      defaultCard={<AreaCard makerspaceId={makerspaceId} policy={membership} canEdit={canEdit} title={t`All plans`} />}
       planRules={policies.data.filter((row) => row.plan !== null)} /> : null}
   </div>;
 }

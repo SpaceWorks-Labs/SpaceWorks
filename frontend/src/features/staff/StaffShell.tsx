@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref, currentSessionContext } from "../../lib/api/sessionContext";
 import { useEffect, useState, type ReactNode } from "react";
 import { setDelightSpaceFeatures } from "../../components/delight/spaceDelight";
@@ -69,15 +70,15 @@ export function StaffShell(props: Props) {
       const rows = collectionResults(types.data);
       item.children = rows.slice(0, 8).map(type => ({ key: `machines:${type.id}`, label: type.name,
         href: path("machines", machineTypeSegment(type)), icon: Cog, onSelect: () => props.setTab("machines") }));
-      if (rows.length > 8) item.children.push({ key: "machines:all", label: "All types →", href: path("machines"), icon: Cog });
+      if (rows.length > 8) item.children.push({ key: "machines:all", label: t`All types →`, href: path("machines"), icon: Cog });
       const selectedType = item.children.find(child => child.href?.split("?")[0] === location.pathname);
       if (selectedType) activeKey = selectedType.key;
     }
   }
-  const publicPage = space ? [{ label: "View public page ↗", href: singleTenantLocked ? "/" : `/m/${space.slug}` }] : [];
+  const publicPage = space ? [{ label: t`View public page ↗`, href: singleTenantLocked ? "/" : `/m/${space.slug}` }] : [];
   const menu = !singleTenantLocked ? [
     ...(props.makerspaces.length > 1 ? props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })) : []),
-    ...(props.isSuperadmin ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : []), ...publicPage,
+    ...(props.isSuperadmin ? [{ label: t`Switch makerspace`, onClick: () => props.setSelected(null) }] : []), ...publicPage,
   ] : [];
   const hasGrants = Boolean(user.event_grants?.length || user.booking_grants?.length);
   // A grant-only console (event/booking grants, no makerspace actions) has no makerspace-wide
@@ -85,24 +86,24 @@ export function StaffShell(props: Props) {
   const makerspaceTools = !!space && !props.grantOnly;
   const workspace: ShellWorkspace | undefined = space ? { name: space.name, subtitle: [space.public_code || space.slug, props.roleName].filter(Boolean).join(" · "),
     avatar: { kind: "avatar", name: space.name, seed: space.slug }, menu, locked: singleTenantLocked || props.makerspaces.length === 1 } : props.isSuperadmin ? {
-      name: "Choose a space", subtitle: "Super Admin", avatar: { kind: "icon", icon: "Settings", tone: "neutral" },
+      name: "Choose a space", subtitle: t`Super Admin`, avatar: { kind: "icon", icon: "Settings", tone: "neutral" },
       menu: props.makerspaces.map(row => ({ label: row.name, onClick: () => props.setSelected(row.id) })),
-    } : hasGrants ? { name: "Assigned resources", subtitle: "Resource staff", avatar: { kind: "icon", icon: "Calendar", tone: "neutral" }, menu: [], locked: true }
+    } : hasGrants ? { name: "Assigned resources", subtitle: t`Resource staff`, avatar: { kind: "icon", icon: "Calendar", tone: "neutral" }, menu: [], locked: true }
     : undefined;
   // #195: the superadmin is never shown the paused page; they get the warning banner instead.
   if (!props.isSuperadmin && pausedNotice?.state === "suspended") {
     const canSwitch = !singleTenantLocked && props.makerspaces.length > (space ? 1 : 0);
-    const signOut = { label: "Sign out", onClick: () => void props.signOut() };
-    return <PausedSpacePage name={space?.name ?? pausedNotice.name} reason={pausedNotice.reason} primary={canSwitch ? { label: "Switch space", onClick: () => props.setSelected(null) } : signOut}
+    const signOut = { label: t`Sign out`, onClick: () => void props.signOut() };
+    return <PausedSpacePage name={space?.name ?? pausedNotice.name} reason={pausedNotice.reason} primary={canSwitch ? { label: t`Switch space`, onClick: () => props.setSelected(null) } : signOut}
       escape={canSwitch ? signOut : undefined} />;
   }
   if (space && activeTab === "requests" && noQueues && redirectTab) return <Navigate replace to={path(redirectTab)} />;
   return <>
     <AppShell variant="staff" workspace={workspace} nav={nav} activeKey={activeKey}
       compactNav={props.handoutOnly ? "bottom-tabs" : "drawer"} footerLinks={publicPage}
-      search={makerspaceTools ? { label: "Search and commands", shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
+      search={makerspaceTools ? { label: t`Search and commands`, shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
       status={makerspaceTools ? <JobTrayPill makerspaceId={space.id} /> : null}
-      user={{ name: user.username, role: props.roleName, menu: [{ label: "Account & two-step sign-in", href: `/mfa?context=${encodeURIComponent(currentSessionContext())}` }, ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: "Switch makerspace", onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
+      user={{ name: user.username, role: props.roleName, menu: [{ label: t`Account & two-step sign-in`, href: `/mfa?context=${encodeURIComponent(currentSessionContext())}` }, ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: t`Switch makerspace`, onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
       {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
           Both pills share the job-status query keys, so this adds no polling. */}
       {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}

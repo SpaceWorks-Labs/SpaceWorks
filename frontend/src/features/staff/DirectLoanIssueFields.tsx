@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -30,8 +31,7 @@ export function DirectLoanBorrowerFields({
   return (
     <>
       <label className="block text-sm font-medium text-ink" htmlFor="direct-loan-borrower">
-        Borrowing member
-      </label>
+        {t`Borrowing member`}</label>
       <select
         id="direct-loan-borrower"
         className="desk-input mt-1 w-full"
@@ -39,7 +39,7 @@ export function DirectLoanBorrowerFields({
         disabled={membersLoading}
         onChange={(event) => onBorrowerIdChange(event.target.value)}
       >
-        <option value="">Select an active member</option>
+        <option value="">{t`Select an active member`}</option>
         {memberOptions.map((member) => (
           <option key={member.user_id} value={member.user_id}>
             {member.display_name || member.username}
@@ -63,7 +63,7 @@ export function DirectLoanBorrowerExtras({ makerspaceId, member, onBorrowerIdCha
   const queryClient = useQueryClient();
   const witnessWaiver = useMutation({
     mutationFn: () => {
-      if (!member) throw new Error("Select a member first.");
+      if (!member) throw new Error(t`Select a member first.`);
       return staffRequest(`/admin/memberships/${member.membership_id}/waiver/witness`, { method: "POST", body: JSON.stringify({}) });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["members", makerspaceId] }),
@@ -72,10 +72,9 @@ export function DirectLoanBorrowerExtras({ makerspaceId, member, onBorrowerIdCha
     <>
       {member ? (
         <button className="desk-button mt-2" type="button" disabled={witnessWaiver.isPending} onClick={() => witnessWaiver.mutate()}>
-          Record witnessed waiver acceptance
-        </button>
+          {t`Record witnessed waiver acceptance`}</button>
       ) : null}
-      {witnessWaiver.isSuccess ? <p className="mt-2 text-sm text-success-ink">Waiver acceptance recorded.</p> : null}
+      {witnessWaiver.isSuccess ? <p className="mt-2 text-sm text-success-ink">{t`Waiver acceptance recorded.`}</p> : null}
       {witnessWaiver.error ? <p className="mt-2 text-sm text-danger">{witnessWaiver.error.message}</p> : null}
       <WalkInMemberForm makerspaceId={makerspaceId} onCreated={(userId) => onBorrowerIdChange(String(userId))} />
     </>
@@ -99,7 +98,7 @@ export function DirectLoanContainerField({
 }) {
   return (
     <>
-      <label className="mt-4 block text-sm font-medium text-ink" htmlFor="direct-loan-container">Container (optional)</label>
+      <label className="mt-4 block text-sm font-medium text-ink" htmlFor="direct-loan-container">{t`Container (optional)`}</label>
       <div className="mt-1 flex flex-col gap-2 md:flex-row">
         <select
           id="direct-loan-container"
@@ -108,7 +107,7 @@ export function DirectLoanContainerField({
           disabled={containersLoading}
           onChange={(e) => onContainerIdChange(e.target.value)}
         >
-          <option value="">No container</option>
+          <option value="">{t`No container`}</option>
           {containerOptions.map((container) => (
             <option key={container.id} value={container.id}>{container.label}</option>
           ))}
@@ -118,8 +117,7 @@ export function DirectLoanContainerField({
           className="desk-button"
           onClick={onScanClick}
         >
-          Scan container
-        </button>
+          {t`Scan container`}</button>
       </div>
       {scanError ? <p className="mt-1 text-sm text-danger">{scanError}</p> : null}
     </>
@@ -146,8 +144,8 @@ export function DirectLoanItemLines({
   return (
     <div className="@container mt-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="title-section">Items</h3>
-        <button className="desk-button" type="button" onClick={onAdd}>Add item</button>
+        <h3 className="title-section">{t`Items`}</h3>
+        <button className="desk-button" type="button" onClick={onAdd}>{t`Add item`}</button>
       </div>
       <div className="grid gap-2">
         {lineRows.map((line) => {
@@ -155,18 +153,18 @@ export function DirectLoanItemLines({
           const selectedIndividual = selectedLineProduct?.tracking_mode === "individual";
           return (
             <div key={line.key} className="grid gap-2 @xl:grid-cols-[minmax(0,1fr)_auto_auto] @xl:items-center">
-              <select aria-label="Product" className="desk-input" value={line.productId} disabled={productsLoading} onChange={(e) => onUpdate(line.key, { productId: e.target.value })}>
-                <option value="">Inventory item</option>
+              <select aria-label={t`Product`} className="desk-input" value={line.productId} disabled={productsLoading} onChange={(e) => onUpdate(line.key, { productId: e.target.value })}>
+                <option value="">{t`Inventory item`}</option>
                 {activeProducts.map((product) => (
                   <option key={product.id} value={product.id}>
                     {product.name} | {product.tracking_mode} | {product.available_quantity} available
-                    {product.storage_location ? ` - Shelf: ${product.storage_location}` : ""}
+                    {product.storage_location ? t` - Shelf: ${product.storage_location}` : ""}
                   </option>
                 ))}
               </select>
-              <QuantityStepper aria-label="Quantity" label="quantity" min={1} value={line.quantity} disabled={selectedIndividual} onValueChange={(value) => onUpdate(line.key, { quantity: value })} />
-              <button className="desk-button" type="button" onClick={() => onRemove(line.key)}>Remove</button>
-              {selectedLineProduct ? <p className="text-xs text-muted @xl:col-span-3">{selectedLineProduct.tracking_mode}{selectedIndividual ? " | scan unit QR" : ""}</p> : null}
+              <QuantityStepper aria-label={t`Quantity`} label="quantity" min={1} value={line.quantity} disabled={selectedIndividual} onValueChange={(value) => onUpdate(line.key, { quantity: value })} />
+              <button className="desk-button" type="button" onClick={() => onRemove(line.key)}>{t`Remove`}</button>
+              {selectedLineProduct ? <p className="text-xs text-muted @xl:col-span-3">{selectedLineProduct.tracking_mode}{selectedIndividual ? t` | scan unit QR` : ""}</p> : null}
             </div>
           );
         })}
@@ -192,24 +190,24 @@ export function DirectLoanQrSection({
     <>
       <div className="mt-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="title-section">QR payloads</h3>
-          <button className="desk-button" type="button" onClick={onOpenScanner}>Scan QR</button>
+          <h3 className="title-section">{t`QR payloads`}</h3>
+          <button className="desk-button" type="button" onClick={onOpenScanner}>{t`Scan QR`}</button>
         </div>
         {scanned.length ? (
           <div className="mb-3 flex flex-wrap gap-2">
             {scanned.map((item) => (
               <span key={item.payload} className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-md border border-line bg-surface px-3 py-1 text-sm text-ink [overflow-wrap:anywhere]">
                 {item.label}
-                <button className="desk-button-ghost px-2 text-danger" type="button" onClick={() => onRemoveScanned(item.payload)}>Remove</button>
+                <button className="desk-button-ghost px-2 text-danger" type="button" onClick={() => onRemoveScanned(item.payload)}>{t`Remove`}</button>
               </span>
             ))}
           </div>
         ) : null}
       </div>
       <textarea
-        aria-label="QR payloads"
+        aria-label={t`QR payloads`}
         className="desk-input mt-3 h-24 w-full"
-        placeholder="Optional QR payloads, one per line"
+        placeholder={t`Optional QR payloads, one per line`}
         value={qrPayloads}
         onChange={(e) => onQrPayloadsChange(e.target.value)}
       />
@@ -243,8 +241,7 @@ export function DirectLoanIssueEvidence({
       />
       <label className="block">
         <span className="eyebrow mb-1 block">
-          Issue remark
-        </span>
+          {t`Issue remark`}</span>
         <textarea
           className="desk-input min-h-20 w-full"
           value={remark}

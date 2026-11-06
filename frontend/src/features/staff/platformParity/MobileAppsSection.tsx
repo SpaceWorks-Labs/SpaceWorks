@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
 import { NativeAppForm } from "./NativeAppForm";
@@ -14,20 +15,19 @@ export function MobileAppsSection() {
   const list = useNativeApps(page);
   const rows = list.data?.results ?? [];
   return <div className="grid gap-4">
-    <p className="text-sm text-muted">Only one approved app per platform and environment serves the whole deployment. Revoking an app ends every
-      device sign-in it issued; the record stays for the audit trail.</p>
-    <CollapsibleSection title="Register an app" open={adding} onToggle={() => setAdding(!adding)}><NativeAppForm /></CollapsibleSection>
+    <p className="text-sm text-muted">{t`Only one approved app per platform and environment serves the whole deployment. Revoking an app ends every device sign-in it issued; the record stays for the audit trail.`}</p>
+    <CollapsibleSection title={t`Register an app`} open={adding} onToggle={() => setAdding(!adding)}><NativeAppForm /></CollapsibleSection>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
       : list.isError ? <ErrorText resource="mobile apps" onRetry={() => { void list.refetch(); }} />
-      : !rows.length ? <EmptyState message="No mobile app is registered yet." />
+      : !rows.length ? <EmptyState message={t`No mobile app is registered yet.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id} className="grid gap-2">
         <ListRow title={row.app_id}
-          meta={<>{row.platform === "apple" ? "Apple" : "Android"} · {row.environment} · {row.makerspace ? `space #${row.makerspace}` : "whole deployment"}
-            {" · changed "}<RelativeTime date={row.updated_at} exact />{row.approved_by ? ` · approved by ${row.approved_by}` : ""}</>}
+          meta={<>{row.platform === "apple" ? t`Apple` : t`Android`} · {row.environment} · {row.makerspace ? t`space #${row.makerspace}` : t`whole deployment`}
+            {t` · changed `}<RelativeTime date={row.updated_at} exact />{row.approved_by ? t` · approved by ${row.approved_by}` : ""}</>}
           right={<div className="flex flex-wrap items-center gap-2">
             <StatusPill label={row.status[0].toUpperCase() + row.status.slice(1)} tone={TONES[row.status]} />
-            <button type="button" className="desk-button" aria-expanded={editing === row.id} aria-label={`Edit ${row.app_id}`}
-              onClick={() => setEditing(editing === row.id ? null : row.id)}>Edit</button>
+            <button type="button" className="desk-button" aria-expanded={editing === row.id} aria-label={t`Edit ${row.app_id}`}
+              onClick={() => setEditing(editing === row.id ? null : row.id)}>{t`Edit`}</button>
           </div>} />
         {editing === row.id ? <div className="rounded-xl border border-line bg-panel"><NativeAppForm row={row} onDone={() => setEditing(null)} /></div> : null}
       </div>)}</div>}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { toast } from "../../components/ui/toastStore";
 import { SettingsRow } from "../../components/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ type Props = {
 // Parentless features are never gated by a module. The inventory family (inventory.*,
 // loans.*) is listed under "Inventory" (#97, C-9); the rest under "General".
 const PARENTLESS = new Set(["inventory", "general"]);
-const GROUP_LABELS: Record<string, string> = { inventory: "Inventory", general: "General", machines: "Machines", bookings: "Bookings" };
+const GROUP_LABELS: Record<string, string> = { inventory: t`Inventory`, general: t`General`, machines: t`Machines`, bookings: t`Bookings` };
 
 const MODULE_FEATURES = Object.entries(
   FEATURE_DEFINITIONS.filter(feature => !isSecurityFeature(feature.key)).reduce<Record<string, typeof FEATURE_DEFINITIONS>>((groups, feature) => {
@@ -40,7 +41,7 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
       queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
       queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
       queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
-    })(); toast(next.length ? "Features updated." : "All features turned off.", { undo: async () => { await ((next: string[]) =>
+    })(); toast(next.length ? t`Features updated.` : t`All features turned off.`, { undo: async () => { await ((next: string[]) =>
       staffRequest<Makerspace>(`/admin/makerspaces/${makerspace.id}`, {
         method: "PATCH",
         body: JSON.stringify({ enabled_features: next }),
@@ -59,7 +60,7 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
   };
 
   return (
-    <SettingsRow label="Feature settings" helper="Switch modules on or off under Modules. Each feature below has its own switch; turning one off keeps its data."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Feature settings`} helper="Switch modules on or off under Modules. Each feature below has its own switch; turning one off keeps its data."><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-2">
 
 
@@ -75,7 +76,7 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
           return (
             <fieldset key={module} className="grid gap-2 rounded border border-line p-3">
               <legend className="px-1 text-sm font-semibold text-ink">{GROUP_LABELS[module] ?? module}</legend>
-              {!moduleEnabled ? <p className="text-sm text-muted">Turn the module on under Modules to use these.</p> : null}
+              {!moduleEnabled ? <p className="text-sm text-muted">{t`Turn the module on under Modules to use these.`}</p> : null}
               {features.map((feature) => (
                 <label key={feature.key} className="min-h-11 flex items-start gap-3 text-sm text-ink">
                   <input

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Field, SegmentedControl } from "../../components/ui";
 import type { MembershipPlan, PlanType } from "./membershipPlansApi";
 
@@ -13,10 +14,10 @@ export const emptyRules: PlanRules = {
 };
 
 const TYPES: { value: PlanType; label: string; explain: string }[] = [
-  { value: "rolling", label: "Rolling", explain: "Each term lasts the interval from the day it starts." },
-  { value: "financial_year", label: "Financial year", explain: "Every term ends when the space's financial year ends." },
-  { value: "fixed_end", label: "Fixed end date", explain: "Every term ends on the date you choose." },
-  { value: "lifetime", label: "Lifetime", explain: "One term that never ends and never renews." },
+  { value: "rolling", label: t`Rolling`, explain: "Each term lasts the interval from the day it starts." },
+  { value: "financial_year", label: t`Financial year`, explain: "Every term ends when the space's financial year ends." },
+  { value: "fixed_end", label: t`Fixed end date`, explain: "Every term ends on the date you choose." },
+  { value: "lifetime", label: t`Lifetime`, explain: "One term that never ends and never renews." },
 ];
 
 export function rulesFromPlan(plan: MembershipPlan): PlanRules {
@@ -68,24 +69,24 @@ export function MembershipPlanRulesFields({ value, onChange, planRulesOn, public
   return <div className="grid gap-3 sm:col-span-3 sm:grid-cols-3">
     {planRulesOn ? <>
       <div className="grid gap-1 sm:col-span-3">
-        <SegmentedControl label="Plan type" value={value.plan_type} onChange={(next) => set("plan_type", next as PlanType)}
+        <SegmentedControl label={t`Plan type`} value={value.plan_type} onChange={(next) => set("plan_type", next as PlanType)}
           options={TYPES.map((item) => ({ value: item.value, label: item.label }))} />
         <p className="text-sm text-muted">{type.explain}</p>
       </div>
-      {value.plan_type === "fixed_end" ? <Field label="Ends on"><input className="desk-input" type="date" value={value.fixed_end_date} onChange={(event) => set("fixed_end_date", event.target.value)} /></Field> : null}
-      {chargesOn ? <><Field label="Renewal price" hint="Blank: same as a new term."><input className="desk-input" inputMode="decimal" value={value.renewal_amount} onChange={(event) => set("renewal_amount", event.target.value)} /></Field>
-      <Field label="Joining fee" hint="Blank: the space default."><input className="desk-input" inputMode="decimal" value={value.joining_fee} onChange={(event) => set("joining_fee", event.target.value)} /></Field>
+      {value.plan_type === "fixed_end" ? <Field label={t`Ends on`}><input className="desk-input" type="date" value={value.fixed_end_date} onChange={(event) => set("fixed_end_date", event.target.value)} /></Field> : null}
+      {chargesOn ? <><Field label={t`Renewal price`} hint={t`Blank: same as a new term.`}><input className="desk-input" inputMode="decimal" value={value.renewal_amount} onChange={(event) => set("renewal_amount", event.target.value)} /></Field>
+      <Field label={t`Joining fee`} hint={t`Blank: the space default.`}><input className="desk-input" inputMode="decimal" value={value.joining_fee} onChange={(event) => set("joining_fee", event.target.value)} /></Field>
       {select("rejoin_rule", "Joining fee on rejoin", [["", "Space default"], ["never", "No joining fee"], ["once", "First join only"], ["each_join", "Every join"], ["after_lapse", "Again after a lapse"]])}
-      {value.rejoin_rule === "after_lapse" ? <Field label="Lapse after (days)"><input className="desk-input" inputMode="numeric" value={value.rejoin_after_days} onChange={(event) => set("rejoin_after_days", event.target.value)} /></Field> : null}</> : null}
+      {value.rejoin_rule === "after_lapse" ? <Field label={t`Lapse after (days)`}><input className="desk-input" inputMode="numeric" value={value.rejoin_after_days} onChange={(event) => set("rejoin_after_days", event.target.value)} /></Field> : null}</> : null}
       {select("join_mode", "How people join", [["", "Space default"], ["open", "Open"], ["approval", "Staff approve"], ["invite_only", "Invite only"], ["vouch", "Members vouch"], ["closed", "Closed"]])}
       {chargesOn ? select("payment_timing", "When they pay", [["", "Space default"], ["after_activation", "After activation"], ["before_activation", "Before activation"]]) : null}
       {select("late_renewal", "Late renewal starts", [["backdate", "At the old end date"], ["payment_day", "On the renewal day"]])}
     </> : null}
     {publicPlansOn ? <>
-      <label className="flex min-h-11 items-center gap-2 self-end text-sm"><input className="h-4 w-4" type="checkbox" checked={value.is_public} onChange={(event) => set("is_public", event.target.checked)} />Show on the public page</label>
-      <Field label="Link name" hint="For the plan's own page, e.g. annual-pass."><input className="desk-input" maxLength={80} value={value.slug} onChange={(event) => set("slug", event.target.value)} /></Field>
-      <Field label="Description" className="sm:col-span-3"><textarea className="desk-input min-h-16" value={value.description} onChange={(event) => set("description", event.target.value)} /></Field>
+      <label className="flex min-h-11 items-center gap-2 self-end text-sm"><input className="h-4 w-4" type="checkbox" checked={value.is_public} onChange={(event) => set("is_public", event.target.checked)} />{t`Show on the public page`}</label>
+      <Field label={t`Link name`} hint={t`For the plan's own page, e.g. annual-pass.`}><input className="desk-input" maxLength={80} value={value.slug} onChange={(event) => set("slug", event.target.value)} /></Field>
+      <Field label={t`Description`} className="sm:col-span-3"><textarea className="desk-input min-h-16" value={value.description} onChange={(event) => set("description", event.target.value)} /></Field>
     </> : null}
-    <Field label="Sort order"><input className="desk-input" inputMode="numeric" value={value.sort_order} onChange={(event) => set("sort_order", event.target.value)} /></Field>
+    <Field label={t`Sort order`}><input className="desk-input" inputMode="numeric" value={value.sort_order} onChange={(event) => set("sort_order", event.target.value)} /></Field>
   </div>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { FlowLayout } from "../../components/layouts";
@@ -13,12 +14,12 @@ import {
 } from "./tenantMigrationApi";
 
 const stages = [
-  { key: "disclosure", label: "Review disclosure", summary: "Source · approve the exact identity closure" },
-  { key: "pairings", label: "Pin deployments", summary: "Both · compare fingerprints out of band" },
-  { key: "export", label: "Encrypt export", summary: "Source · encrypt for the target recipient" },
-  { key: "import", label: "Import & resolve", summary: "Target · resolve every identity" },
-  { key: "verify", label: "Verify & materialise", summary: "Target · review the persisted report" },
-  { key: "cutover", label: "Cut over", summary: "Both · signed, one-way cutover" },
+  { key: "disclosure", label: t`Review disclosure`, summary: t`Source · approve the exact identity closure` },
+  { key: "pairings", label: t`Pin deployments`, summary: t`Both · compare fingerprints out of band` },
+  { key: "export", label: t`Encrypt export`, summary: t`Source · encrypt for the target recipient` },
+  { key: "import", label: t`Import & resolve`, summary: t`Target · resolve every identity` },
+  { key: "verify", label: t`Verify & materialise`, summary: t`Target · review the persisted report` },
+  { key: "cutover", label: t`Cut over`, summary: t`Both · signed, one-way cutover` },
 ];
 
 /** The furthest stage the server records say this deployment has reached. */
@@ -54,7 +55,7 @@ export function TenantMigrationPanel({ makerspace }: { makerspace: Makerspace })
   const current = step ?? 0;
   const furthest = Math.max(visited, reached);
   const go = (next: number) => { setStep(next); setVisited(value => Math.max(value, next)); };
-  return <FlowLayout title="Tenant migration" subject={makerspace.name} standalone={false}
+  return <FlowLayout title={t`Tenant migration`} subject={makerspace.name} standalone={false}
     state={step === null ? { status: "loading" } : { status: "ready" }} current={stages[current].key}
     steps={stages.map((stage, index) => ({ ...stage, state: index === current ? "current" : index <= furthest ? "done" : "todo" }))}
     onStepSelect={key => go(stages.findIndex(stage => stage.key === key))}
@@ -69,7 +70,7 @@ export function TenantMigrationPanel({ makerspace }: { makerspace: Makerspace })
         pairings={pairings.data ?? []} active={current === 2 || current === 5} phase={current === 5 ? "cutover" : "export"} />
       <TenantMigrationImports pairings={pairings.data ?? []} active={current >= 3} phase={current === 3 ? "import" : current === 4 ? "verify" : "cutover"} />
     </div>}
-    footer={{ back: current > 0 ? { label: "Previous step", onClick: () => go(current - 1) } : undefined,
-      next: { label: current === stages.length - 1 ? "Review disclosure again" : `Continue to ${stages[current + 1].label.toLowerCase()}`, onClick: () => go((current + 1) % stages.length) } }}
+    footer={{ back: current > 0 ? { label: t`Previous step`, onClick: () => go(current - 1) } : undefined,
+      next: { label: current === stages.length - 1 ? t`Review disclosure again` : t`Continue to ${stages[current + 1].label.toLowerCase()}`, onClick: () => go((current + 1) % stages.length) } }}
     onCancel={() => window.history.back()} leaveGuard="Your saved migration records stay on the server. Unsaved fields will be lost if you leave this task." />;
 }

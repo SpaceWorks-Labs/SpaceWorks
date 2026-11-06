@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { memberRequest } from '../../../lib/api'
@@ -36,24 +37,24 @@ export function MentorWorkspace({ scope, manager, roundsEnabled, ownAssignmentId
   const memberCategories = useQuery({ queryKey: ['member', scope.accountId, 'help-topics', scope.eventId, ...sessionScope()], enabled: !manager, gcTime: 0, retry: false,
     queryFn: () => memberRequest<{ results: { key: string; label: string }[] }>(`/member/makerspaces/${scope.makerspaceId}/events/${scope.eventId}/help-topics/`) })
   const readiness = useProgrammeQuery<Readiness>(scope.eventId, 'readiness')
-  const teams = manager ? (availableTeams.data?.results ?? []).map(row => ({ id: row.id, label: row.name })) : [...new Set(assignments.data?.results.map(row => row.team_id) ?? [])].map(id => ({ id, label: `Team ${id}` }))
-  const mentors = (roles.data?.results ?? []).filter(row => row.role === 'mentor' && row.state === 'approved').map(row => ({ id: row.id, label: `Mentor ${row.id}` }))
+  const teams = manager ? (availableTeams.data?.results ?? []).map(row => ({ id: row.id, label: row.name })) : [...new Set(assignments.data?.results.map(row => row.team_id) ?? [])].map(id => ({ id, label: t`Team ${id}` }))
+  const mentors = (roles.data?.results ?? []).filter(row => row.role === 'mentor' && row.state === 'approved').map(row => ({ id: row.id, label: t`Mentor ${row.id}` }))
   const error = roles.error || assignments.error || categories.error || rounds.error || availableTeams.error || memberCategories.error
   return <div className="grid gap-5">
     {error ? <ErrorBlock error={error} onRetry={() => { if (manager) { void roles.refetch(); void assignments.refetch() }; void categories.refetch(); if (roundsEnabled) void rounds.refetch() }} /> : null}
     <MentorDeskPage scope={scope} teams={teams} categories={categories.data?.results ?? memberCategories.data?.results ?? []}
       rounds={roundsEnabled ? <div className="grid gap-5">
         {manager ? <MentorRoundSetup scope={scope} renderFormBuilder={renderContributorBuilder} /> : null}
-        <Field label="Mentor check-in round"><select className="desk-input" value={roundId} onChange={event => setRoundId(Number(event.target.value))}>
-          <option value={0}>Choose a round</option>{rounds.data?.results.map(row => <option value={row.id} key={row.id}>{row.label}</option>)}</select></Field>
+        <Field label={t`Mentor check-in round`}><select className="desk-input" value={roundId} onChange={event => setRoundId(Number(event.target.value))}>
+          <option value={0}>{t`Choose a round`}</option>{rounds.data?.results.map(row => <option value={row.id} key={row.id}>{row.label}</option>)}</select></Field>
         {roundId ? <MentorRoundsPanel key={roundId} scope={scope} roundId={roundId} sessionId={JSON.stringify(sessionScope())}
           renderForm={props => <RoundAnswerFields {...props} />} /> : null}
       </div> : undefined}
       assignmentTools={manager && readiness.data ? <MentorAssignmentsPanel scope={scope} eventVersion={readiness.data.version} teams={teams} mentors={mentors} completionReady /> : undefined}
       contributorTools={manager ? <VolunteerManager scope={scope} setupTools={<ContributorSetupPanel scope={scope} renderFormBuilder={renderContributorBuilder} />}
         renderRoleTools={row => <RoleLifecycleActions scope={scope} row={row} />} /> : undefined}
-      settingsTools={<div className="grid gap-5">{manager ? <Field label="Mentor profile to configure"><select className="desk-input" value={mentorId} onChange={event => setMentorId(Number(event.target.value))}>
-        <option value={0}>Choose a mentor</option>{mentors.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}</select></Field> : null}
+      settingsTools={<div className="grid gap-5">{manager ? <Field label={t`Mentor profile to configure`}><select className="desk-input" value={mentorId} onChange={event => setMentorId(Number(event.target.value))}>
+        <option value={0}>{t`Choose a mentor`}</option>{mentors.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}</select></Field> : null}
         {mentorId ? <><MentorSettingsPanel key={mentorId} scope={scope} assignmentId={mentorId} /><MentorConflictForm key={`conflict-${mentorId}`} scope={scope} assignmentId={mentorId} /></> : null}
         {manager ? <MentorAlertRooms scope={scope} /> : null}
         {manager ? <><HelpCategoryEditor scope={scope} />{categories.data?.results.map(row => <HelpCategoryEditor key={row.id} scope={scope} initial={row} />)}</> : null}

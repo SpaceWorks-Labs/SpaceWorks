@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -21,9 +22,9 @@ export function QueueDecisionDialog({ kind, id, decision, title, confirm, messag
   const finish = { onSuccess: () => { toast(done); onClose(); } };
   return <ActionDialog title={title} confirmLabel={confirm} message={message} tone={danger ? "danger" : "default"}
     pending={mutation.isPending} error={mutation.error} onCancel={onClose}
-    reason={note === "required" ? { label: "Note", min: 1, max: NOTE_MAX } : undefined}
+    reason={note === "required" ? { label: t`Note`, min: 1, max: NOTE_MAX } : undefined}
     onSubmit={reason => mutation.mutate(note === "required" ? { note: reason } : note === "optional" ? { note: text.trim() } : {}, finish)}>
-    {note === "optional" ? <Field label="Note (optional)" hint={`${text.length}/${NOTE_MAX} characters.`}>
+    {note === "optional" ? <Field label={t`Note (optional)`} hint={`${text.length}/${NOTE_MAX} characters.`}>
       <textarea className="desk-input min-h-20" value={text} maxLength={NOTE_MAX} onChange={event => setText(event.target.value)} />
     </Field> : null}
   </ActionDialog>;

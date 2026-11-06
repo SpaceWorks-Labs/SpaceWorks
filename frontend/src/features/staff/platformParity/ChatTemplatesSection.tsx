@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -11,9 +12,9 @@ type Scope = { spaceId: number; surface: ChatTemplateSurface };
 
 function DeleteDialog({ spaceId, surface, row, onClose }: Scope & { row: ChatTemplate; onClose: () => void }) {
   const remove = useDeleteChatTemplate(spaceId, surface);
-  return <ActionDialog title="Delete this template" confirmLabel="Delete template" tone="danger" pending={remove.isPending}
-    error={remove.error} onCancel={onClose} message={`${row.feature} · ${row.event}: this event goes back to the built-in text.`}
-    onSubmit={() => remove.mutate(row.id, { onSuccess: () => { toast("Template deleted."); onClose(); } })} />;
+  return <ActionDialog title={t`Delete this template`} confirmLabel={t`Delete template`} tone="danger" pending={remove.isPending}
+    error={remove.error} onCancel={onClose} message={t`${row.feature} · ${row.event}: this event goes back to the built-in text.`}
+    onSubmit={() => remove.mutate(row.id, { onSuccess: () => { toast(t`Template deleted.`); onClose(); } })} />;
 }
 
 /** One space's templates: list, add, edit, delete. Shared by the superadmin console and a Space Manager's settings. */
@@ -25,7 +26,7 @@ export function ChatTemplateList({ space, surface = "platform" }: { space: Picke
   const list = useChatTemplates(space.id, page, surface);
   const rows = list.data?.results ?? [];
   return <div className="grid gap-3">
-    <CollapsibleSection title="New template" open={adding} onToggle={() => setAdding(!adding)}><ChatTemplateForm spaceId={space.id} surface={surface} /></CollapsibleSection>
+    <CollapsibleSection title={t`New template`} open={adding} onToggle={() => setAdding(!adding)}><ChatTemplateForm spaceId={space.id} surface={surface} /></CollapsibleSection>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
       : list.isError ? <ErrorText resource="chat templates" onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={`${space.name} uses the built-in text for every event.`} />
@@ -33,11 +34,11 @@ export function ChatTemplateList({ space, surface = "platform" }: { space: Picke
         <ListRow title={`${row.feature} · ${row.event}`}
           meta={<>changed <RelativeTime date={row.updated_at} exact /> · {row.text_body.length > 120 ? `${row.text_body.slice(0, 120)}…` : row.text_body}</>}
           right={<div className="flex flex-wrap items-center gap-2">
-            <StatusPill label={row.is_active ? "In use" : "Not in use"} tone={row.is_active ? "success" : "neutral"} />
-            <button type="button" className="desk-button" aria-label={`Edit the ${row.event} template`} aria-expanded={editing === row.id}
-              onClick={() => setEditing(editing === row.id ? null : row.id)}>Edit</button>
-            <button type="button" className="desk-button-danger-outline" aria-label={`Delete the ${row.event} template`}
-              onClick={() => setDeleting(row)}>Delete…</button>
+            <StatusPill label={row.is_active ? t`In use` : t`Not in use`} tone={row.is_active ? "success" : "neutral"} />
+            <button type="button" className="desk-button" aria-label={t`Edit the ${row.event} template`} aria-expanded={editing === row.id}
+              onClick={() => setEditing(editing === row.id ? null : row.id)}>{t`Edit`}</button>
+            <button type="button" className="desk-button-danger-outline" aria-label={t`Delete the ${row.event} template`}
+              onClick={() => setDeleting(row)}>{t`Delete…`}</button>
           </div>} />
         {editing === row.id ? <div className="rounded-xl border border-line bg-panel">
           <ChatTemplateForm spaceId={space.id} surface={surface} row={row} onDone={() => setEditing(null)} />
@@ -54,10 +55,8 @@ export function ChatTemplatesSection() {
   const [space, setSpace] = useState<PickedSpace | null>(null);
   return <div className="grid gap-4">
     <p className="text-sm text-muted">
-      One message per event, shared by every chat channel (Telegram, Slack, Mattermost, Discord). Chat is a staff room, so never put
-      member-facing details in it. Messages use Django template syntax.
-    </p>
+      {t`One message per event, shared by every chat channel (Telegram, Slack, Mattermost, Discord). Chat is a staff room, so never put member-facing details in it. Messages use Django template syntax.`}</p>
     <SingleSpaceSelect value={space} onChange={setSpace} />
-    {space ? <ChatTemplateList key={space.id} space={space} /> : <EmptyState message="Choose a space to see its chat templates." />}
+    {space ? <ChatTemplateList key={space.id} space={space} /> : <EmptyState message={t`Choose a space to see its chat templates.`} />}
   </div>;
 }

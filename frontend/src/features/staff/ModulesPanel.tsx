@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SettingsLayout, type SettingsLayoutSection } from "../../components/layouts";
@@ -9,7 +10,7 @@ import { adminQueryState } from "./adminPresentation";
 import { DeploymentModules, ModuleSettingsRow, type ModulesResponse } from "./ModuleSettingsRows";
 
 const errorText = (error: unknown) => error instanceof StructuredApiError
-  ? error.detail ?? error.message : "Couldn't change this module. Try again.";
+  ? error.detail ?? error.message : t`Couldn't change this module. Try again.`;
 
 export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
   const client = useQueryClient();
@@ -56,10 +57,10 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
           onChange={action => change.mutate({ key: module.key, action })} />
         {errors[module.key] ? <ErrorText message={errors[module.key]} /> : null}
       </div>)}</> })),
-    ...(modules.data?.deployment ? [{ id: "deployment", title: "Deployment", rows: <DeploymentModules deployment={modules.data.deployment} /> }] : []),
+    ...(modules.data?.deployment ? [{ id: "deployment", title: t`Deployment`, rows: <DeploymentModules deployment={modules.data.deployment} /> }] : []),
   ];
-  return <SettingsLayout header={{ title: "Modules", subtitle: "Switch feature families on for this space. Turning one off keeps its data; turning it back on restores everything. Deleting data is a separate step only the platform administrator can take." }}
+  return <SettingsLayout header={{ title: t`Modules`, subtitle: t`Switch feature families on for this space. Turning one off keeps its data; turning it back on restores everything. Deleting data is a separate step only the platform administrator can take.` }}
     state={adminQueryState(modules, "modules")} isEmpty={groups.length === 0}
-    empty={{ message: "No modules are available yet. Check the deployment configuration." }}
+    empty={{ message: t`No modules are available yet. Check the deployment configuration.` }}
     sections={sections} />;
 }

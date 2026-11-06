@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Makerspace } from "./panels/shared";
 
 export type HubTarget = { section: string } | { tab: string };
@@ -69,13 +70,13 @@ export type ChecklistItem = { id: string; label: string; done: boolean; target: 
 export function setupChecklist(space: Makerspace, options: { channelsReady?: boolean } = {}): ChecklistItem[] {
   const modules = space.enabled_modules ?? [];
   return [
-    { id: "location", label: "Add your address", done: Boolean(space.location?.trim()), target: { section: "general" } },
-    { id: "logo", label: "Upload your logo", done: Boolean(space.logo_url), target: { section: "branding" } },
-    { id: "support", label: "Add a support email", done: Boolean(space.branding_config?.support_email), target: { section: "branding" } },
-    { id: "features", label: "Turn on the features you use", done: Boolean(space.enabled_features?.length), target: { section: "features" } },
+    { id: "location", label: t`Add your address`, done: Boolean(space.location?.trim()), target: { section: "general" } },
+    { id: "logo", label: t`Upload your logo`, done: Boolean(space.logo_url), target: { section: "branding" } },
+    { id: "support", label: t`Add a support email`, done: Boolean(space.branding_config?.support_email), target: { section: "branding" } },
+    { id: "features", label: t`Turn on the features you use`, done: Boolean(space.enabled_features?.length), target: { section: "features" } },
     ...(options.channelsReady !== undefined
-      ? [{ id: "channels", label: "Choose how people get notified", done: options.channelsReady, target: { section: "channels" } }] : []),
+      ? [{ id: "channels", label: t`Choose how people get notified`, done: options.channelsReady, target: { section: "channels" } }] : []),
     ...(modules.includes("membership")
-      ? [{ id: "geofence", label: "Set the check-in area", done: Boolean(space.geofence_enabled), target: { section: "membership" } }] : []),
+      ? [{ id: "geofence", label: t`Set the check-in area`, done: Boolean(space.geofence_enabled), target: { section: "membership" } }] : []),
   ];
 }

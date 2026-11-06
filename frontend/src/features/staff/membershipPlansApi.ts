@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StructuredApiError, staffRequest } from "../../lib/api";
 
 // Hand-written mirrors of `apps/admin_api/serializers_membership_plans.py`. Regenerate
@@ -141,7 +142,7 @@ export function declineInvitationRequest(requestId: number) {
 }
 
 export function planIntervalLabel(plan: Pick<MembershipPlan, "interval" | "custom_days">) {
-  if (plan.interval === "custom_days") return `Every ${plan.custom_days ?? "?"} days`;
+  if (plan.interval === "custom_days") return t`Every ${plan.custom_days ?? "?"} days`;
   return PLAN_INTERVALS.find(([value]) => value === plan.interval)?.[1] ?? plan.interval;
 }
 

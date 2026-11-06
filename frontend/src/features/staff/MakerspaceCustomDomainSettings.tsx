@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
@@ -84,7 +85,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
   const verifyDisabled = loading || verifyDomain.isPending || !currentDomain || domainChanged;
 
   return (
-    <SettingsRow label="Your own domain or frontend"
+    <SettingsRow label={t`Your own domain or frontend`}
       helper="Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
@@ -105,8 +106,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
 
         <div className="grid min-w-0 max-w-xl gap-2">
           <label className="text-sm font-semibold text-ink" htmlFor="custom-domain">
-            Domain
-          </label>
+            {t`Domain`}</label>
           <input
             id="custom-domain"
             className="desk-input"
@@ -127,15 +127,15 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
                   disabled={verifyDisabled}
                   onClick={() => verifyDomain.mutate()}
                 >
-                  {verifyDomain.isPending ? "Checking..." : "Verify domain"}
+                  {verifyDomain.isPending ? t`Checking...` : t`Verify domain`}
                 </button>
-                {token ? <span className="break-all text-xs text-muted">Token: {token}</span> : null}
+                {token ? <span className="break-all text-xs text-muted">{t`Token: ${token}`}</span> : null}
               </div>
             ) : null}
           </div>
         ) : null}
         {domainChanged && trimmedDomain ? (
-          <p className="text-sm text-muted">Save the domain first; the DNS steps and the verification check appear after.</p>
+          <p className="text-sm text-muted">{t`Save the domain first; the DNS steps and the verification check appear after.`}</p>
         ) : null}
         {verifyDetail ? <p role="status" className="text-sm text-ink">{verifyDetail}</p> : null}
         {updateCustomDomain.error ? (

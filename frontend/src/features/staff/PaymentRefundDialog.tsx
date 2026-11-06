@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { FlowLayout } from "../../components/layouts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -66,14 +67,13 @@ export function PaymentRefundDialog({
   return (
     <FlowLayout presentation="dialog" open onCancel={() => { if (!mutation.isPending) onClose(); }} state={{ status: "ready" }}
       title={`${releaseDeposit ? "Release deposit" : "Refund payment"} ${formatMoney(payment.amount, payment.currency)}`}
-      steps={[{ key: "receipt", label: "Refund details", state: "current" }]} current="receipt"
-      footer={{ next: { label: releaseDeposit ? "Record deposit release" : `Refund ${formatMoney(Number.isFinite(Number(amount)) ? amount || "0" : "0", payment.currency)}`,
+      steps={[{ key: "receipt", label: t`Refund details`, state: "current" }]} current="receipt"
+      footer={{ next: { label: releaseDeposit ? t`Record deposit release` : t`Refund ${formatMoney(Number.isFinite(Number(amount)) ? amount || "0" : "0", payment.currency)}`,
         pending: mutation.isPending, pendingLabel: "Recording refund…", disabled: remaining <= 0,
         onClick: () => document.getElementById("payment-refund-form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })) } }}
       work={<>
       <p className="text-sm text-muted">
-        {payment.subject_label} · refunded so far {formatMoney(payment.refunded_amount, payment.currency)} ·
-        remaining {formatMoney(remaining.toFixed(2), payment.currency)}
+        {t`${payment.subject_label} · refunded so far ${formatMoney(payment.refunded_amount, payment.currency)} · remaining ${formatMoney(remaining.toFixed(2), payment.currency)}`}
       </p>
       <form
         id="payment-refund-form"
@@ -85,11 +85,11 @@ export function PaymentRefundDialog({
       >
         {offline ? (
           <>
-            <p className="text-sm text-muted">{releaseDeposit ? "After closing the loan, record the deposit money handed back to the borrower." : "Record money already returned."} This creates a permanent receipt.</p>
+            <p className="text-sm text-muted">{releaseDeposit ? t`After closing the loan, record the deposit money handed back to the borrower.` : t`Record money already returned.`} {t` This creates a permanent receipt.`}</p>
             <RefundReceiptFields state={receiptState} onEdit={() => setValidationError(null)} />
           </>
         ) : null}
-        <Field label="Refund amount" error={validationError ?? undefined}>
+        <Field label={t`Refund amount`} error={validationError ?? undefined}>
           <input
             className="desk-input"
             inputMode="decimal"
@@ -101,7 +101,7 @@ export function PaymentRefundDialog({
             }}
           />
         </Field>
-        <Field label="Reason (optional)">
+        <Field label={t`Reason (optional)`}>
           <input
             className="desk-input"
             maxLength={255}
@@ -120,17 +120,17 @@ export function PaymentRefundDialog({
 }
 
 function RefundList({ refunds }: { refunds: PaymentRow["refunds"] }) {
-  if (!refunds?.length) return <div className="mt-4"><EmptyState message="No refunds recorded yet. Add the refund details above to record one." /></div>;
-  return <section className="mt-4 grid gap-3" aria-label="Refunds">
-    <h2 className="title-panel">Refunds</h2>
+  if (!refunds?.length) return <div className="mt-4"><EmptyState message={t`No refunds recorded yet. Add the refund details above to record one.`} /></div>;
+  return <section className="mt-4 grid gap-3" aria-label={t`Refunds`}>
+    <h2 className="title-panel">{t`Refunds`}</h2>
     {refunds.map(refund => <ListRow key={refund.id} title={formatMoney(refund.amount, refund.currency)}
       meta={<>
-        {refund.corrected ? "Replaced receipt · " : refund.amends ? "Corrected receipt · " : ""}
+        {refund.corrected ? t`Replaced receipt · ` : refund.amends ? t`Corrected receipt · ` : ""}
         <RelativeTime date={refund.created_at} />
         {refund.reason ? ` · ${refund.reason}` : ""}
         {refund.method ? ` · ${refund.method.replace(/_/g, " ")}` : ""}
         {refund.reference ? ` · ${refund.reference}` : ""}
-        {refund.refunded_at ? <span> · Returned <RelativeTime date={refund.refunded_at} /></span> : null}
+        {refund.refunded_at ? <span> {t` · Returned `}<RelativeTime date={refund.refunded_at} /></span> : null}
       </>}
       right={<StatusPill label={refund.status[0].toUpperCase() + refund.status.slice(1)}
         tone={refund.status === "succeeded" ? "success" : refund.status === "failed" ? "danger" : "warn"} />} />)}

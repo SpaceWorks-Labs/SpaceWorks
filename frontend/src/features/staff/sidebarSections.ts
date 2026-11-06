@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import {
   Home, Inbox, ClipboardList, Hand, PackageCheck, Wallet, Boxes, Wrench, ClipboardCheck,
   ArrowLeftRight, ShoppingCart, Tags, Container, BookOpen, ShieldCheck, QrCode, ScanLine,
@@ -14,20 +15,20 @@ import { staffTabPath } from "./staffTabs";
 type Definition = { key: string; label?: string; caption?: string; tabs: string[]; more?: string[] };
 export const SIDEBAR_SECTIONS: readonly Definition[] = [
   { key: "home", tabs: ["dashboard", "notifications", "channels"] },
-  { key: "desk", label: "Front desk", tabs: ["requests", "direct", "handover", "payments", "refunds", "finance"] },
-  { key: "shop", label: "Shop", tabs: ["shop"] },
-  { key: "inventory", label: "Inventory", tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy", "consumables"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
-  { key: "machines", label: "Machines", tabs: ["machines", "devices", "repairs"] },
-  { key: "community", label: "Community", tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
-  { key: "insights", label: "Insights", tabs: ["reports", "analytics", "audit", "accountability"] },
-  { key: "organizations", label: "Organizations", caption: "Across venues", tabs: ["organizations", "organized", "organization-analytics"] },
+  { key: "desk", label: t`Front desk`, tabs: ["requests", "direct", "handover", "payments", "refunds", "finance"] },
+  { key: "shop", label: t`Shop`, tabs: ["shop"] },
+  { key: "inventory", label: t`Inventory`, tabs: ["inventory", "ledger", "scanner", "needsfix", "stocktake", "transfers", "tobuy", "consumables"], more: ["categories", "containers", "warranty", "qr", "bulk"] },
+  { key: "machines", label: t`Machines`, tabs: ["machines", "devices", "repairs"] },
+  { key: "community", label: t`Community`, tabs: ["members", "events", "bookings", "granted"], more: ["cards"] },
+  { key: "insights", label: t`Insights`, tabs: ["reports", "analytics", "audit", "accountability"] },
+  { key: "organizations", label: t`Organizations`, caption: t`Across venues`, tabs: ["organizations", "organized", "organization-analytics"] },
   { key: "settings", tabs: ["settings", "security", "users", "emailtemplates", "email-logs", "api", "exports", "backups", "usage", "modules", "migration"] },
-  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform-spaces", "platform", "platform-analytics"] },
+  { key: "platform", label: t`Platform`, tabs: ["platform-dashboard", "platform-spaces", "platform", "platform-analytics"] },
 ];
 export const SIDEBAR_LABELS: Readonly<Record<string, string>> = {
-  dashboard: "Home", notifications: "Inbox", handover: "Job pickups", inventory: "Items",
-  needsfix: "Repair shelf", tobuy: "To buy", qr: "QR tools",
-  "organization-analytics": "Org analytics", settings: "General", users: "Staff & roles", "email-logs": "Delivery log",
+  dashboard: t`Home`, notifications: t`Inbox`, handover: t`Job pickups`, inventory: t`Items`,
+  needsfix: t`Repair shelf`, tobuy: t`To buy`, qr: t`QR tools`,
+  "organization-analytics": t`Org analytics`, settings: t`General`, users: t`Staff & roles`, "email-logs": t`Delivery log`,
 };
 const ICONS: Record<string, LucideIcon> = {
   dashboard: Home, notifications: Inbox, channels: Settings, requests: ClipboardList, direct: Hand, handover: PackageCheck,
@@ -51,19 +52,19 @@ const ICONS: Record<string, LucideIcon> = {
  * SIDEBAR_SECTIONS appears here as well (sidebarSections.test walks the old list).
  */
 export const SPACE_MANAGER_SECTIONS: readonly Definition[] = [
-  { key: "today", label: "Today", tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover"] },
-  { key: "people", label: "People", tabs: ["users", "members", "cards"], more: ["organizations", "organization-analytics"] },
-  { key: "inventory", label: "Inventory & loans", tabs: ["inventory", "accountability", "needsfix", "tobuy", "consumables", "scanner"],
+  { key: "today", label: t`Today`, tabs: ["dashboard", "notifications", "channels", "requests", "direct", "handover"] },
+  { key: "people", label: t`People`, tabs: ["users", "members", "cards"], more: ["organizations", "organization-analytics"] },
+  { key: "inventory", label: t`Inventory & loans`, tabs: ["inventory", "accountability", "needsfix", "tobuy", "consumables", "scanner"],
     more: ["ledger", "stocktake", "transfers", "categories", "containers", "warranty", "qr", "bulk"] },
-  { key: "machines", label: "Machines", tabs: ["machines", "devices", "repairs"] },
-  { key: "events", label: "Events", tabs: ["events", "granted"], more: ["organized"] },
-  { key: "bookings", label: "Bookings", tabs: ["bookings"] },
-  { key: "shop", label: "Shop", tabs: ["shop"] },
-  { key: "money", label: "Money", tabs: ["payments", "refunds", "finance", "reports", "analytics"] },
-  { key: "settings", label: "Space settings", tabs: ["settings", "security", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
-  { key: "platform", label: "Platform", tabs: ["platform-dashboard", "platform-spaces", "platform", "platform-analytics"] },
+  { key: "machines", label: t`Machines`, tabs: ["machines", "devices", "repairs"] },
+  { key: "events", label: t`Events`, tabs: ["events", "granted"], more: ["organized"] },
+  { key: "bookings", label: t`Bookings`, tabs: ["bookings"] },
+  { key: "shop", label: t`Shop`, tabs: ["shop"] },
+  { key: "money", label: t`Money`, tabs: ["payments", "refunds", "finance", "reports", "analytics"] },
+  { key: "settings", label: t`Space settings`, tabs: ["settings", "security", "emailtemplates", "email-logs", "api", "audit", "exports", "backups", "usage", "modules", "migration"] },
+  { key: "platform", label: t`Platform`, tabs: ["platform-dashboard", "platform-spaces", "platform", "platform-analytics"] },
 ];
-const SPACE_MANAGER_LABELS: Readonly<Record<string, string>> = { settings: "Settings hub" };
+const SPACE_MANAGER_LABELS: Readonly<Record<string, string>> = { settings: t`Settings hub` };
 
 /** Presentation only: the caller supplies the already permission/module-filtered tab set.
  *  `spaceManager` selects the task-grouped menu; every other role keeps SIDEBAR_SECTIONS. */
@@ -82,7 +83,7 @@ export function sidebarSections(moduleAllowedTabs: readonly string[], activeKey:
       // while the Settings family is collapsed (the Space Manager menu lists it under People).
       const staff = !familyOpen && items[0].key !== "users" ? items.filter(child => child.key === "users") : [];
       return { key: section.key, label: spaceManager ? section.label : undefined, items: [{
-        key: "settings-family", label: "Settings", href: items[0].href, icon: Settings,
+        key: "settings-family", label: t`Settings`, href: items[0].href, icon: Settings,
         onSelect: items[0].onSelect, children: familyOpen ? items : undefined,
       }, ...staff] };
     }

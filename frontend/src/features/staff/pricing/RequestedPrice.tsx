@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Booking } from "../bookingsApi";
 
 /**
@@ -12,8 +13,6 @@ export function RequestedPrice({ booking }: { booking: Booking }) {
     ? ` (member discount ${(price.currency ?? "").toUpperCase()} ${price.discount_total})` : "";
   return (
     <span className="mt-1 block text-sm text-muted">
-      Requested price: <span className="font-medium text-ink">{Number(price.total) > 0 ? amount : "Free"}</span>{saved}
-      {" "}&middot; approving charges this price
-    </span>
+      {t`Requested price: `}<span className="font-medium text-ink">{Number(price.total) > 0 ? amount : t`Free`}</span>{t`${saved}${" "}· approving charges this price`}</span>
   );
 }

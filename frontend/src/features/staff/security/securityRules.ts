@@ -4,6 +4,7 @@
  * platform lock (a floor, #111 Q9). The server re-checks every value; this keeps the controls
  * from offering a value it would refuse.
  */
+import { t } from "@lingui/core/macro";
 import type { SecuritySetting } from "../../../lib/api/securitySettings";
 import { parseCidr, within } from "./cidr";
 
@@ -13,7 +14,7 @@ export const INT_RULES: Record<string, IntRule> = {
   "security.staff_session_max_hours": { min: 1, max: 720, unit: "hours" },
   "security.staff_idle_timeout_minutes": { min: 0, max: 1440, unit: "minutes", zeroOff: true },
 };
-const CHOICE_LABELS: Record<string, string> = { off: "Off", after_failures: "After failed attempts", always: "Always" };
+const CHOICE_LABELS: Record<string, string> = { off: t`Off`, after_failures: t`After failed attempts`, always: t`Always` };
 
 export const choiceLabel = (value: unknown) => CHOICE_LABELS[String(value)] ?? String(value);
 export const asList = (value: unknown) => Array.isArray(value) ? value.map(String) : [];

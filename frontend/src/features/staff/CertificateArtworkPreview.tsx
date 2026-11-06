@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { Skeleton } from "../../components/ui";
@@ -17,7 +18,7 @@ export function CertificateArtworkPreview({ eventId, artworkId }: { eventId: num
     setSrc(url);
     return () => URL.revokeObjectURL(url);
   }, [artwork.data]);
-  if (artwork.isError) return <p className="text-sm text-muted">The artwork preview is unavailable. It is still attached and appears in the PDF preview.</p>;
-  if (!src) return <div role="status"><span className="sr-only">Loading certificate artwork…</span><Skeleton className="h-40 w-full" /></div>;
-  return <img className="max-h-64 w-full rounded-lg border border-line bg-surface object-contain" src={src} alt="Certificate artwork" />;
+  if (artwork.isError) return <p className="text-sm text-muted">{t`The artwork preview is unavailable. It is still attached and appears in the PDF preview.`}</p>;
+  if (!src) return <div role="status"><span className="sr-only">{t`Loading certificate artwork…`}</span><Skeleton className="h-40 w-full" /></div>;
+  return <img className="max-h-64 w-full rounded-lg border border-line bg-surface object-contain" src={src} alt={t`Certificate artwork`} />;
 }

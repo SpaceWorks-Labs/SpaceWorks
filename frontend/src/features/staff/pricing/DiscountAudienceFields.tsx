@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -32,25 +33,25 @@ export function DiscountAudienceFields({ makerspaceId, form, problems, membershi
   const audiences = AUDIENCES.filter(([value]) => value !== "plan" || membershipOn || form.audience === "plan");
   return <div className="grid gap-3">
     <fieldset className="grid gap-1">
-      <legend className="text-sm font-semibold text-ink">Who gets it</legend>
+      <legend className="text-sm font-semibold text-ink">{t`Who gets it`}</legend>
       {audiences.map(([value, label]) => <label key={value} className="flex min-h-11 items-center gap-3 text-sm">
         <input type="radio" name="discount-audience" className="h-4 w-4" checked={form.audience === value}
           onChange={() => onChange({ audience: value })} />{label}</label>)}
     </fieldset>
-    {form.audience === "plan" ? <Field label="Membership plan" error={problems.plan}
-      hint={plans.data && !plans.data.length ? "No membership plans yet. Create one in membership settings." : undefined}>
+    {form.audience === "plan" ? <Field label={t`Membership plan`} error={problems.plan}
+      hint={plans.data && !plans.data.length ? t`No membership plans yet. Create one in membership settings.` : undefined}>
       <select className="desk-input" value={form.plan ?? ""} disabled={plans.isLoading}
         onChange={event => onChange({ plan: event.target.value ? Number(event.target.value) : null })}>
-        <option value="">{plans.isLoading ? "Loading plans…" : "Choose a plan"}</option>
+        <option value="">{plans.isLoading ? t`Loading plans…` : t`Choose a plan`}</option>
         {(plans.data ?? []).map(plan => <option key={plan.id} value={plan.id}>{plan.name}{plan.is_active ? "" : " (inactive)"}</option>)}
       </select>
     </Field> : null}
     {plans.error ? <p role="alert" className="text-sm text-danger">{plans.error.message}</p> : null}
-    {form.audience === "member" ? <AsyncSearchPicker label="Member" placeholder="Search active members"
+    {form.audience === "member" ? <AsyncSearchPicker label={t`Member`} placeholder={t`Search active members`}
       helper="Type at least two letters of a name or username." selected={form.member ? [form.member] : []}
       options={options} loading={members.isFetching} onSearch={setTerm}
       error={problems.member ?? (members.error ? members.error.message : null)}
-      emptyText={term.length < 2 ? "Type at least two letters." : "No active members match."}
+      emptyText={term.length < 2 ? t`Type at least two letters.` : t`No active members match.`}
       onChange={next => onChange({ member: next.length ? next[next.length - 1] : null })} /> : null}
   </div>;
 }

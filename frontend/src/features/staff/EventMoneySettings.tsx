@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field, SettingsRow } from "../../components/ui";
@@ -10,7 +11,7 @@ type Draft = { prize_tds_enabled: boolean; prize_tds_rate: string; prize_tds_thr
 
 const pairKey = (pair: string[]) => pair.join(":");
 const METHOD_LABELS: Record<string, string> = {
-  bank_transfer: "Bank transfer", upi: "UPI", paypal: "PayPal", wise: "Wise", cash: "Cash", cheque: "Cheque", other: "Other",
+  bank_transfer: t`Bank transfer`, upi: "UPI", paypal: t`PayPal`, wise: t`Wise`, cash: t`Cash`, cheque: t`Cheque`, other: t`Other`,
 };
 
 export function draftFrom(data: EventMoneySettingsRead): Draft {
@@ -41,34 +42,34 @@ export function EventMoneySettings({ makerspaceId }: { makerspaceId: number }) {
   const dirty = Boolean(draft && data && JSON.stringify(draft) !== JSON.stringify(draftFrom(data)));
   const togglePair = (pair: string) => draft && setDraft({ ...draft, payee_templates: draft.payee_templates.includes(pair)
     ? draft.payee_templates.filter(item => item !== pair) : [...draft.payee_templates, pair].sort() });
-  return <SettingsRow label="Event prizes: tax and payee options" helper="How prize payouts propose tax, and where winners and reimbursed people can be paid."><div className="@container grid min-w-0 gap-4">
-    <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>Configure prize tax and payees</button>
+  return <SettingsRow label={t`Event prizes: tax and payee options`} helper="How prize payouts propose tax, and where winners and reimbursed people can be paid."><div className="@container grid min-w-0 gap-4">
+    <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{t`Configure prize tax and payees`}</button>
     {expanded ? <SettingsQueryState query={settings} resource="event money settings"><>
       {settings.error || save.error ? <p role="alert" className="text-danger">{(settings.error || save.error)?.message}</p> : null}
       {draft && data ? <form className="mt-3 grid gap-4" onSubmit={event => { event.preventDefault(); save.mutate(payloadFrom(draft, data.version)); }}>
-        <fieldset className="grid gap-3"><legend className="font-semibold">Prize tax (TDS)</legend>
+        <fieldset className="grid gap-3"><legend className="font-semibold">{t`Prize tax (TDS)`}</legend>
           <label className="flex min-h-11 items-start gap-3">
             <input type="checkbox" className="mt-1" checked={draft.prize_tds_enabled} onChange={event => setDraft({ ...draft, prize_tds_enabled: event.target.checked })} />
-            <span>Record prize tax (TDS). SpaceWorks proposes the deduction on each prize payout; you deduct and file it yourself. No certificates or filing reports are produced.</span>
+            <span>{t`Record prize tax (TDS). SpaceWorks proposes the deduction on each prize payout; you deduct and file it yourself. No certificates or filing reports are produced.`}</span>
           </label>
-          <Field label="Rate (%)" hint="Default 30%.">
+          <Field label={t`Rate (%)`} hint={t`Default 30%.`}>
             <input className="desk-input min-h-11" inputMode="decimal" disabled={!draft.prize_tds_enabled} value={draft.prize_tds_rate}
               onChange={event => setDraft({ ...draft, prize_tds_rate: event.target.value })} /></Field>
-          <Field label={`Threshold (${data.currency.toUpperCase()})`} hint="A payout above this amount gets a proposed deduction. Default 10,000.">
+          <Field label={t`Threshold (${data.currency.toUpperCase()})`} hint={t`A payout above this amount gets a proposed deduction. Default 10,000.`}>
             <input className="desk-input min-h-11" inputMode="decimal" disabled={!draft.prize_tds_enabled} value={draft.prize_tds_threshold}
               onChange={event => setDraft({ ...draft, prize_tds_threshold: event.target.value })} /></Field>
         </fieldset>
-        <fieldset className="grid gap-2"><legend className="font-semibold">Accepted payee options</legend>
-          <p className="text-sm text-muted">Choose where this space pays winners and reimbursed people. Leave every box empty to keep the deployment operator&apos;s setting.</p>
+        <fieldset className="grid gap-2"><legend className="font-semibold">{t`Accepted payee options`}</legend>
+          <p className="text-sm text-muted">{t`Choose where this space pays winners and reimbursed people. Leave every box empty to keep the deployment operator's setting.`}</p>
           {data.available_payee_templates.length ? <div className="grid gap-1 @md:grid-cols-2">
             {data.available_payee_templates.map(pair => { const id = pairKey(pair);
               return <label key={id} className="flex min-h-11 items-center gap-3">
                 <input type="checkbox" checked={draft.payee_templates.includes(id)} onChange={() => togglePair(id)} />
                 {pair[0]} · {METHOD_LABELS[pair[1]] ?? pair[1]}</label>; })}
-          </div> : <p className="text-sm text-muted" role="status">This deployment offers no payee options to choose from.</p>}
+          </div> : <p className="text-sm text-muted" role="status">{t`This deployment offers no payee options to choose from.`}</p>}
         </fieldset>
         <SettingsEditorActions dirty={dirty} onDiscard={() => setDraft(draftFrom(data))} pending={save.isPending} disabled={save.isPending} />
-        {save.isSuccess ? <p role="status">Prize tax and payee settings saved.</p> : null}
+        {save.isSuccess ? <p role="status">{t`Prize tax and payee settings saved.`}</p> : null}
       </form> : null}
     </></SettingsQueryState> : null}
   </div></SettingsRow>;

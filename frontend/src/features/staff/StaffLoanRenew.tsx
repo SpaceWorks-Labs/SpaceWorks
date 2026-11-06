@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -16,7 +17,7 @@ export function StaffLoanRenew({ makerspaceId, requestId }: { makerspaceId: numb
   });
   return <span>
     <button className="desk-button" type="button" disabled={renew.isPending} onClick={() => renew.mutate()}>
-      {renew.isPending ? "Renewing…" : "Renew loan"}
+      {renew.isPending ? t`Renewing…` : t`Renew loan`}
     </button>
     {renew.error ? <span className="block text-xs text-danger" role="alert">{renew.error.message}</span> : null}
   </span>;

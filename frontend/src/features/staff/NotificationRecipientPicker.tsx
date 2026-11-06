@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
@@ -9,14 +10,14 @@ import { EventRecipients } from "./NotificationRecipientEvent";
 import type { RecipientRulesResponse } from "./notificationDestinationTypes";
 
 const FEATURE_LABELS: Record<string, string> = {
-  events: "Events",
-  bookings: "Bookings",
-  maintenance: "Maintenance",
-  devices: "Devices",
-  members: "Members",
-  payments: "Payments",
-  stock: "Stock and procurement",
-  certifications: "Certifications",
+  events: t`Events`,
+  bookings: t`Bookings`,
+  maintenance: t`Maintenance`,
+  devices: t`Devices`,
+  members: t`Members`,
+  payments: t`Payments`,
+  stock: t`Stock and procurement`,
+  certifications: t`Certifications`,
 };
 
 const RECIPIENTS_KEY = (makerspaceId: number) =>
@@ -54,27 +55,26 @@ export function NotificationRecipientPicker({
   if (!visible) return null;
 
   return (
-    <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">Who gets notified</h3>
-    <SettingsQueryState query={data} resource="recipient"><SettingsRow label="Recipients"><div className="@container min-w-0">
+    <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">{t`Who gets notified`}</h3>
+    <SettingsQueryState query={data} resource="recipient"><SettingsRow label={t`Recipients`}><div className="@container min-w-0">
 
       <p className="mt-2 text-sm text-muted">
         {delegated
-          ? "Pick recipients for maintenance alerts within your machine scope. Every rule must name at least one reachable machine or machine type."
-          : "Pick recipients per event. Leave an event empty to notify everyone whose role covers it, which is the default. A member who has turned notifications off is never mailed, even when selected."}
+          ? t`Pick recipients for maintenance alerts within your machine scope. Every rule must name at least one reachable machine or machine type.`
+          : t`Pick recipients per event. Leave an event empty to notify everyone whose role covers it, which is the default. A member who has turned notifications off is never mailed, even when selected.`}
       </p>
 
-      {data.isLoading ? <p className="mt-3 text-sm text-muted">Loading…</p> : null}
+      {data.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading…`}</p> : null}
       {!data.isLoading && features.length === 0 ? (
         <p className="mt-3 text-sm text-muted">
-          None of the modules with selectable recipients are installed.
-        </p>
+          {t`None of the modules with selectable recipients are installed.`}</p>
       ) : null}
 
       {current ? (
         <>
           <div className="mt-3 grid gap-2 @md:grid-cols-2">
             <label className="grid gap-1 text-sm">
-              <span className="eyebrow">Area</span>
+              <span className="eyebrow">{t`Area`}</span>
               <select
                 className="desk-input"
                 onChange={(changed) => {
@@ -92,7 +92,7 @@ export function NotificationRecipientPicker({
               </select>
             </label>
             <label className="grid gap-1 text-sm">
-              <span className="eyebrow">Event</span>
+              <span className="eyebrow">{t`Event`}</span>
               <select
                 className="desk-input"
                 onChange={(changed) =>

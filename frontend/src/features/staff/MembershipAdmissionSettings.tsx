@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
@@ -41,42 +42,42 @@ export function MembershipAdmissionSettings({ makerspaceId, features = [] }: { m
   if (settings.isError || !value) return <SettingsQueryState query={settings} resource="membership admission" />;
   const update = <K extends keyof AdmissionSettings>(key: K, next: AdmissionSettings[K]) => { setDraft({ ...value, [key]: next }); save.reset(); };
   const activePlans = plans.data?.filter((plan) => plan.is_active) ?? [];
-  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label="Membership admission" helper="Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."><form className="@container grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
+  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label={t`Membership admission`} helper="Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."><form className="@container grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
     <div></div>
     <fieldset disabled={save.isPending} className="grid gap-4">
       <div className="grid gap-3 @md:grid-cols-2">
-        <label className="grid gap-1 text-sm text-ink">Admission recipe<select className="desk-input max-w-full" value={recipe} onChange={(event) => {
+        <label className="grid gap-1 text-sm text-ink">{t`Admission recipe`}<select className="desk-input max-w-full" value={recipe} onChange={(event) => {
           const next = event.target.value as AdmissionRecipe | "";
           setRecipe(next);
           if (next) setDraft(admissionRecipeDraft(value, next));
           save.reset();
-        }}><option value="">Custom settings</option>{ADMISSION_RECIPES.filter(([id]) => chargesOn || !id.startsWith("paid_")).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
-        <label className="grid gap-1 text-sm text-ink">Join mode<select className="desk-input max-w-full" value={value.join_mode} onChange={(event) => update("join_mode", event.target.value as JoinMode)}><option value="open">Open</option><option value="approval">Approval</option><option value="invite_only">Invite-only</option><option value="vouch">Vouch</option><option value="closed">Closed</option></select></label>
-        {chargesOn ? <label className="grid gap-1 text-sm text-ink">Payment timing<select className="desk-input max-w-full" value={value.payment_timing} onChange={(event) => update("payment_timing", event.target.value as PaymentTiming)}><option value="after_activation">Activate then charge</option><option value="before_activation">Pay before activation</option></select></label> : null}
-        <label className="grid gap-1 text-sm text-ink">Default admission plan<select className="desk-input max-w-full" value={value.default_plan ?? ""} disabled={plans.isPending || plans.isError} onChange={(event) => update("default_plan", event.target.value ? Number(event.target.value) : null)}><option value="">No default plan</option>{activePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}{chargesOn ? ` · ${plan.amount} ${plan.currency.toUpperCase()}` : ""}</option>)}</select></label>
-        {chargesOn ? <><label className="grid gap-1 text-sm text-ink">Joining fee<input className="desk-input" type="number" required min="0" step="0.01" value={value.joining_fee} onChange={(event) => update("joining_fee", event.target.value)} /></label>
-        <label className="grid gap-1 text-sm text-ink">Joining fee currency<input className="desk-input" required pattern="[a-zA-Z]{3}" maxLength={3} value={value.joining_fee_currency} onChange={(event) => update("joining_fee_currency", event.target.value.toLowerCase())} /></label>
-        <label className="grid gap-1 text-sm text-ink">Re-join dues<select className="desk-input max-w-full" value={value.rejoin_dues_rule} onChange={(event) => { const rule = event.target.value as AdmissionSettings["rejoin_dues_rule"]; setDraft({ ...value, rejoin_dues_rule: rule, rejoin_after_days: rule === "after_lapse" ? value.rejoin_after_days ?? 365 : null }); save.reset(); }}><option value="once">Once per person</option><option value="each_join">On every re-join</option>{features.includes("membership.plan_rules") || ["never", "after_lapse"].includes(value.rejoin_dues_rule) ? <><option value="never">Never</option><option value="after_lapse">Again after a lapse</option></> : null}</select></label></> : null}
-        <NumberField label="Application expiry (days)" value={value.request_expiry_days} min={1} onChange={(next) => update("request_expiry_days", next)} />
+        }}><option value="">{t`Custom settings`}</option>{ADMISSION_RECIPES.filter(([id]) => chargesOn || !id.startsWith("paid_")).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+        <label className="grid gap-1 text-sm text-ink">{t`Join mode`}<select className="desk-input max-w-full" value={value.join_mode} onChange={(event) => update("join_mode", event.target.value as JoinMode)}><option value="open">{t`Open`}</option><option value="approval">{t`Approval`}</option><option value="invite_only">{t`Invite-only`}</option><option value="vouch">{t`Vouch`}</option><option value="closed">{t`Closed`}</option></select></label>
+        {chargesOn ? <label className="grid gap-1 text-sm text-ink">{t`Payment timing`}<select className="desk-input max-w-full" value={value.payment_timing} onChange={(event) => update("payment_timing", event.target.value as PaymentTiming)}><option value="after_activation">{t`Activate then charge`}</option><option value="before_activation">{t`Pay before activation`}</option></select></label> : null}
+        <label className="grid gap-1 text-sm text-ink">{t`Default admission plan`}<select className="desk-input max-w-full" value={value.default_plan ?? ""} disabled={plans.isPending || plans.isError} onChange={(event) => update("default_plan", event.target.value ? Number(event.target.value) : null)}><option value="">{t`No default plan`}</option>{activePlans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}{chargesOn ? ` · ${plan.amount} ${plan.currency.toUpperCase()}` : ""}</option>)}</select></label>
+        {chargesOn ? <><label className="grid gap-1 text-sm text-ink">{t`Joining fee`}<input className="desk-input" type="number" required min="0" step="0.01" value={value.joining_fee} onChange={(event) => update("joining_fee", event.target.value)} /></label>
+        <label className="grid gap-1 text-sm text-ink">{t`Joining fee currency`}<input className="desk-input" required pattern="[a-zA-Z]{3}" maxLength={3} value={value.joining_fee_currency} onChange={(event) => update("joining_fee_currency", event.target.value.toLowerCase())} /></label>
+        <label className="grid gap-1 text-sm text-ink">{t`Re-join dues`}<select className="desk-input max-w-full" value={value.rejoin_dues_rule} onChange={(event) => { const rule = event.target.value as AdmissionSettings["rejoin_dues_rule"]; setDraft({ ...value, rejoin_dues_rule: rule, rejoin_after_days: rule === "after_lapse" ? value.rejoin_after_days ?? 365 : null }); save.reset(); }}><option value="once">{t`Once per person`}</option><option value="each_join">{t`On every re-join`}</option>{features.includes("membership.plan_rules") || ["never", "after_lapse"].includes(value.rejoin_dues_rule) ? <><option value="never">{t`Never`}</option><option value="after_lapse">{t`Again after a lapse`}</option></> : null}</select></label></> : null}
+        <NumberField label={t`Application expiry (days)`} value={value.request_expiry_days} min={1} onChange={(next) => update("request_expiry_days", next)} />
       </div>
       <SettingsQueryState query={plans} resource="admission plans" />
-      {chargesOn ? null : <p className="text-sm text-muted">Membership charges are off in this space, so membership is free.</p>}
-      {chargesOn && recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn-ink">Choose a priced default plan or joining fee for this paid recipe.</p> : null}
-      <fieldset className="grid gap-3 rounded border border-line p-3"><legend className="text-sm font-semibold text-ink">Vouch rules</legend>
-        <p className="text-sm text-muted">Vouchers must be active, unrestricted members. Vouches record accountability without automatically restricting anyone.</p>
+      {chargesOn ? null : <p className="text-sm text-muted">{t`Membership charges are off in this space, so membership is free.`}</p>}
+      {chargesOn && recipe.startsWith("paid_") && !Number(value.joining_fee) && !activePlans.some((plan) => plan.id === value.default_plan && Number(plan.amount) > 0) ? <p className="text-sm text-warn-ink">{t`Choose a priced default plan or joining fee for this paid recipe.`}</p> : null}
+      <fieldset className="grid gap-3 rounded border border-line p-3"><legend className="text-sm font-semibold text-ink">{t`Vouch rules`}</legend>
+        <p className="text-sm text-muted">{t`Vouchers must be active, unrestricted members. Vouches record accountability without automatically restricting anyone.`}</p>
         <div className="grid gap-3 @md:grid-cols-2">
-          <NumberField label="Vouches required" min={1} value={value.vouches_required} onChange={(next) => update("vouches_required", next)} />
-          <NumberField label="Minimum voucher tenure (days)" min={0} value={value.voucher_min_tenure_days} onChange={(next) => update("voucher_min_tenure_days", next)} />
-          <NumberField label="Pending applicants per voucher" min={1} value={value.voucher_pending_limit} onChange={(next) => update("voucher_pending_limit", next)} />
-          <NumberField label="Vouch expiry (days)" min={1} value={value.vouch_expiry_days} onChange={(next) => update("vouch_expiry_days", next)} />
+          <NumberField label={t`Vouches required`} min={1} value={value.vouches_required} onChange={(next) => update("vouches_required", next)} />
+          <NumberField label={t`Minimum voucher tenure (days)`} min={0} value={value.voucher_min_tenure_days} onChange={(next) => update("voucher_min_tenure_days", next)} />
+          <NumberField label={t`Pending applicants per voucher`} min={1} value={value.voucher_pending_limit} onChange={(next) => update("voucher_pending_limit", next)} />
+          <NumberField label={t`Vouch expiry (days)`} min={1} value={value.vouch_expiry_days} onChange={(next) => update("vouch_expiry_days", next)} />
         </div>
-        <label className="min-h-11 flex gap-2 text-sm text-ink"><input type="checkbox" checked={value.vouch_replaces_approval} onChange={(event) => update("vouch_replaces_approval", event.target.checked)} />Vouches replace staff approval</label>
+        <label className="min-h-11 flex gap-2 text-sm text-ink"><input type="checkbox" checked={value.vouch_replaces_approval} onChange={(event) => update("vouch_replaces_approval", event.target.checked)} />{t`Vouches replace staff approval`}</label>
       </fieldset>
       <MembershipAdmissionExtras value={value} features={features} onChange={(next) => { setDraft(next); save.reset(); }} />
-      <CustomFormBuilder value={value.application_schema} onChange={(schema) => update("application_schema", schema)} legend="Membership application questions" emptyMessage="No application questions. Applicants submit their verified account identity." />
+      <CustomFormBuilder value={value.application_schema} onChange={(schema) => update("application_schema", schema)} legend="Membership application questions" emptyMessage={t`No application questions. Applicants submit their verified account identity.`} />
     </fieldset>
     <SettingsEditorActions dirty={Boolean(draft || recipe)} onDiscard={() => { setDraft(null); setRecipe(""); save.reset(); }} pending={save.isPending} disabled={save.isPending} />
-    {save.isSuccess ? <p role="status" className="text-sm text-success-ink">Admission settings saved.</p> : null}
+    {save.isSuccess ? <p role="status" className="text-sm text-success-ink">{t`Admission settings saved.`}</p> : null}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
   </form></SettingsRow></SettingsQueryState>;
 }

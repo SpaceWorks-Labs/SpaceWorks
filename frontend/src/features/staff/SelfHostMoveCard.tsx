@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ErrorText, Field, KeyValueCard, RelativeTime, StatusPill } from "../../components/ui";
@@ -25,20 +26,18 @@ export function SelfHostMoveCard({ makerspaceId }: { makerspaceId: number }) {
   const current = status.data.request;
   const open = current ? OPEN.has(current.status) : false;
   return <div className="grid gap-3">
-    <p className="text-sm text-muted">Moving takes the whole space to a server you run: inventory, members, history and
-      settings. Staff and members keep their sign-in there. The platform operator reviews the request and runs the
-      export; you do not download anything here.</p>
-    {current ? <KeyValueCard title="Your move request" items={[
-      { label: "Status", value: <StatusPill tone={TONES[current.status]} label={current.status_label} /> },
-      { label: "Requested", value: <RelativeTime date={current.requested_at} /> },
-      ...(current.decision_note ? [{ label: "Operator note", value: current.decision_note }] : []),
+    <p className="text-sm text-muted">{t`Moving takes the whole space to a server you run: inventory, members, history and settings. Staff and members keep their sign-in there. The platform operator reviews the request and runs the export; you do not download anything here.`}</p>
+    {current ? <KeyValueCard title={t`Your move request`} items={[
+      { label: t`Status`, value: <StatusPill tone={TONES[current.status]} label={current.status_label} /> },
+      { label: t`Requested`, value: <RelativeTime date={current.requested_at} /> },
+      ...(current.decision_note ? [{ label: t`Operator note`, value: current.decision_note }] : []),
     ]} /> : null}
     {open ? null : <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); send.mutate(); }}>
-      <Field label="Note for the platform operator" hint="Optional. For example, when you want to move.">
+      <Field label={t`Note for the platform operator`} hint={t`Optional. For example, when you want to move.`}>
         <textarea className="desk-input min-h-20" maxLength={2000} value={note} onChange={(event) => setNote(event.target.value)} />
       </Field>
       <div><button type="submit" className="desk-button" disabled={send.isPending}>
-        {send.isPending ? "Sending…" : "Request a move to self-host"}</button></div>
+        {send.isPending ? t`Sending…` : t`Request a move to self-host`}</button></div>
       {send.error ? <ErrorText message={send.error.message} /> : null}
     </form>}
   </div>;

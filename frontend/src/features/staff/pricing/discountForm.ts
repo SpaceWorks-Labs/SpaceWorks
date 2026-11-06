@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { formatMoney } from "../paymentsApi";
 import { componentLabel, domainLabel, type PriceDiscount, type PricingDomain } from "./pricingApi";
 
@@ -24,7 +25,7 @@ export function toForm(rule: PriceDiscount): DiscountForm {
   const percent = rule.percent_bps !== null && rule.percent_bps !== undefined;
   return {
     name: rule.name, audience: rule.audience, plan: rule.plan ?? null,
-    member: rule.member ? { id: rule.member, label: rule.member_name ?? `Member ${rule.member}` } : null,
+    member: rule.member ? { id: rule.member, label: rule.member_name ?? t`Member ${rule.member}` } : null,
     kind: percent ? "percent" : "amount", value: percent ? String((rule.percent_bps ?? 0) / 100) : rule.amount_off ?? "",
     domains: rule.domains ?? [], components: rule.components ?? [], starts_at: toLocalInput(rule.starts_at),
     ends_at: toLocalInput(rule.ends_at), is_active: rule.is_active ?? true,

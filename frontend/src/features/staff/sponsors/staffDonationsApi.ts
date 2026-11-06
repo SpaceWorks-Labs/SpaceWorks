@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { downloadStaffFile, staffRequest } from "../../../lib/api";
 
 // Hand-written mirrors of `apps/payments/donations/serializers_staff.py` and `serializers_sponsors.py`
@@ -64,9 +65,9 @@ export const donationStaffApi = {
 };
 
 export const GIFT_STATUS: Record<StaffDonation["status"], { label: string; tone: "success" | "warn" | "neutral" }> = {
-  paid: { label: "Received", tone: "success" }, pending: { label: "Waiting for payment", tone: "warn" },
-  cancelled: { label: "Cancelled", tone: "neutral" },
+  paid: { label: t`Received`, tone: "success" }, pending: { label: t`Waiting for payment`, tone: "warn" },
+  cancelled: { label: t`Cancelled`, tone: "neutral" },
 };
 export const SOURCE_LABELS: Record<StaffDonation["source"], string> = {
-  online: "Given online", desk: "Recorded by staff", pledge: "Pledge period",
+  online: t`Given online`, desk: t`Recorded by staff`, pledge: t`Pledge period`,
 };

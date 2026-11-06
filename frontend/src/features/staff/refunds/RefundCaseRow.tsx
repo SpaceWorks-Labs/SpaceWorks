@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ListRow, RelativeTime, StatusPill } from "../../../components/ui";
 import { formatMoney } from "../paymentsApi";
 import { CASE_STATUS_LABELS, REASON_LABELS, caseTone, formatDuration, type RefundCase } from "./refundsApi";
@@ -9,22 +10,22 @@ export function policySentence(snapshot: unknown): string | null {
   if (difference) return difference;
   const value = snapshot as Record<string, string | number | undefined>;
   switch (value.rule) {
-    case "event_cancelled_full": return "The space cancelled the event, so the full amount is owed.";
-    case "staff_cancelled_full": return "Staff cancelled this booking, so the full amount is owed.";
-    case "no_policy": return "No refund policy is set for this area. Decide the amount yourself.";
-    case "no_policy_area": return "Refunds here have no automatic policy. Decide the amount yourself.";
-    case "nothing_left": return "Nothing is left to refund on this charge.";
+    case "event_cancelled_full": return t`The space cancelled the event, so the full amount is owed.`;
+    case "staff_cancelled_full": return t`Staff cancelled this booking, so the full amount is owed.`;
+    case "no_policy": return t`No refund policy is set for this area. Decide the amount yourself.`;
+    case "no_policy_area": return t`Refunds here have no automatic policy. Decide the amount yourself.`;
+    case "nothing_left": return t`Nothing is left to refund on this charge.`;
     case "policy": {
       const band = value.band === "full" || value.band === "never_started" ? "the full amount" : value.band === "partial"
         ? `${value.partial_percent}%` : value.band === "pro_rata" ? "the unused part of the term" : "nothing";
       const fee = Number(value.fee_applied ?? 0) > 0 ? `, minus a ${value.fee_applied} cancellation fee` : "";
       if (value.area === "membership") {
-        if (value.band === "never_started") return `The renewal paid for a term that never started: the policy refunds the full amount${fee}.`;
-        return `Membership term cancelled: the policy refunds ${band}${fee}.`;
+        if (value.band === "never_started") return t`The renewal paid for a term that never started: the policy refunds the full amount${fee}.`;
+        return t`Membership term cancelled: the policy refunds ${band}${fee}.`;
       }
       const minutes = Number(value.minutes_before_start ?? 0);
       const when = minutes > 0 ? `${formatDuration(minutes)} before the start` : "after the start";
-      return `Cancelled ${when}: the policy refunds ${band}${fee}.`;
+      return t`Cancelled ${when}: the policy refunds ${band}${fee}.`;
     }
     default: return null;
   }
@@ -34,9 +35,9 @@ export function policySentence(snapshot: unknown): string | null {
 function differenceSentence(snapshot: { shares?: unknown }): string | null {
   const shares = Array.isArray(snapshot.shares) ? snapshot.shares as { source?: string }[] : [];
   const sources = new Set(shares.map(share => share?.source));
-  if (sources.has("price_drop")) return "The price was lowered after this was paid. The amount is the difference.";
-  if (sources.has("quote_difference")) return "The prepaid job cost less than its quote. The amount is the difference.";
-  if (sources.has("job_cancelled")) return "The member cancelled this prepaid job before it started.";
+  if (sources.has("price_drop")) return t`The price was lowered after this was paid. The amount is the difference.`;
+  if (sources.has("quote_difference")) return t`The prepaid job cost less than its quote. The amount is the difference.`;
+  if (sources.has("job_cancelled")) return t`The member cancelled this prepaid job before it started.`;
   return null;
 }
 
@@ -51,13 +52,13 @@ export function RefundCaseRow({ row, onOpen }: { row: RefundCase; onOpen?: () =>
   return <ListRow title={`${row.payment.member_name || "Member"} · ${row.payment.subject_label}`} onClick={onOpen}
     meta={<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <span>{REASON_LABELS[row.reason_code]}</span>
-      {row.needs_finance_approval && row.status === "open" ? <span>Space Manager or finance approves</span> : null}
-      <span>Paid {money(row.payment.amount)}</span>
-      {row.refund?.status === "failed" ? <span className="text-danger">Provider refused the last attempt</span> : null}
+      {row.needs_finance_approval && row.status === "open" ? <span>{t`Space Manager or finance approves`}</span> : null}
+      <span>{t`Paid ${money(row.payment.amount)}`}</span>
+      {row.refund?.status === "failed" ? <span className="text-danger">{t`Provider refused the last attempt`}</span> : null}
       <RelativeTime date={row.created_at} />
     </span>}
     right={<div className="grid justify-items-end gap-1 text-right">
-      <span className="font-display text-lg tabular-nums text-ink">{shown ? money(shown) : "Staff decide"}</span>
+      <span className="font-display text-lg tabular-nums text-ink">{shown ? money(shown) : t`Staff decide`}</span>
       <StatusPill label={CASE_STATUS_LABELS[row.status]} tone={caseTone(row.status)} />
     </div>} />;
 }

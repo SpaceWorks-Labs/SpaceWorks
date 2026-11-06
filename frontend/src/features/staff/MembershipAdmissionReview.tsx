@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import type { MembershipRequest } from "../../generated/api";
 import { ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { CustomAnswersView } from "../forms/CustomAnswersView";
@@ -7,7 +9,7 @@ import { PaymentReconcileActions, type PaymentSummary } from "./PaymentReconcile
 export type ReviewMembershipRequest = Omit<MembershipRequest, "state"> & AdmissionRequest;
 
 export function MembershipVouchers({ vouches }: { vouches?: AdmissionVouch[] }) {
-  return vouches?.length ? <div className="mt-3"><h4 className="text-sm font-semibold text-ink">Vouchers</h4><ul className="text-sm text-muted">{vouches.map((vouch) => <li key={`${vouch.voucher_id}:${vouch.created_at}`}>{vouch.voucher_name} · recorded {new Date(vouch.created_at).toLocaleDateString()} · expires {new Date(vouch.expires_at).toLocaleDateString()}</li>)}</ul></div> : null;
+  return vouches?.length ? <div className="mt-3"><h4 className="text-sm font-semibold text-ink">{t`Vouchers`}</h4><ul className="text-sm text-muted">{vouches.map((vouch) => <li key={`${vouch.voucher_id}:${vouch.created_at}`}>{t`${vouch.voucher_name} · recorded ${new Date(vouch.created_at).toLocaleDateString(formatLocale())} · expires ${new Date(vouch.expires_at).toLocaleDateString(formatLocale())}`}</li>)}</ul></div> : null;
 }
 
 export function MembershipAdmissionReview({ row, makerspaceId, manageable, canViewFinance, canRecordPayment, canWaive, approvePending, declinePending, selectedRole, onApprove, onDecline }: {
@@ -21,15 +23,15 @@ export function MembershipAdmissionReview({ row, makerspaceId, manageable, canVi
   const name = row.user?.username ?? row.invite_email ?? "Membership request";
   return <article className="grid gap-3">
     <ListRow title={name} identity={{ kind: "avatar", name, seed: String(row.id) }}
-      meta={<>{row.kind === "invite" ? "Invitation" : "Membership application"}{row.expires_at ? <> · Expires <RelativeTime date={row.expires_at} /></> : null}</>}
+      meta={<>{row.kind === "invite" ? t`Invitation` : t`Membership application`}{row.expires_at ? <> {t` · Expires `}<RelativeTime date={row.expires_at} /></> : null}</>}
       right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={row.state.replace(/_/g, " ")} tone={reviewable ? "warn" : row.state === "active" ? "success" : "neutral"} />
       {manageable && cancelable ? <div className="flex flex-wrap gap-2">
-        {reviewable && (row.state !== "invited" || row.user) ? <button className="desk-button-primary" disabled={!selectedRole || approvePending} onClick={onApprove}>Approve</button> : null}
-        <button className="desk-button" disabled={declinePending} onClick={onDecline}>{row.state === "invited" ? "Cancel invitation" : row.state === "awaiting_payment" ? "Cancel application" : "Decline"}</button>
+        {reviewable && (row.state !== "invited" || row.user) ? <button className="desk-button-primary" disabled={!selectedRole || approvePending} onClick={onApprove}>{t`Approve`}</button> : null}
+        <button className="desk-button" disabled={declinePending} onClick={onDecline}>{row.state === "invited" ? t`Cancel invitation` : row.state === "awaiting_payment" ? t`Cancel application` : t`Decline`}</button>
       </div> : null}</div>} />
-    {row.application_answers?.answers.length ? <details><summary className="cursor-pointer text-sm font-semibold text-ink">Application answers</summary><div className="mt-3"><CustomAnswersView snapshot={row.application_answers} /></div></details> : null}
+    {row.application_answers?.answers.length ? <details><summary className="cursor-pointer text-sm font-semibold text-ink">{t`Application answers`}</summary><div className="mt-3"><CustomAnswersView snapshot={row.application_answers} /></div></details> : null}
     <MembershipVouchers vouches={row.vouches} />
-    {row.state === "awaiting_payment" ? <p className="text-sm text-muted">Approved; activation waits for the admission charge to be settled.</p> : null}
+    {row.state === "awaiting_payment" ? <p className="text-sm text-muted">{t`Approved; activation waits for the admission charge to be settled.`}</p> : null}
     {canViewFinance && row.admission_payment ? <PaymentReconcileActions makerspaceId={makerspaceId} payment={row.admission_payment as PaymentSummary} canRecordPayment={canRecordPayment} canWaive={canWaive} invalidateKeys={[["members", makerspaceId], ["member"]]} /> : null}
   </article>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { OverflowMenu, ProgressBar, RelativeTime, StatusPill, type Tone } from "../../../components/ui";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
@@ -32,31 +33,31 @@ export function HealthCardView({ card, managedPlans, onOpen, onDetails }: {
       </div>
       <StatusPill label={STATE_LABELS[card.state] ?? card.state} tone={STATE_TONES[card.state] ?? "neutral"} />
     </header>
-    {card.suspended ? <p className="text-sm text-danger">Suspended: {card.suspended.reason}</p> : null}
-    {card.read_only ? <p className="text-sm text-ink">Read-only{card.read_only.source !== "manual" ? ` (${card.read_only.source.replace(/_/g, " ")})` : ""}: {card.read_only.reason}</p> : null}
+    {card.suspended ? <p className="text-sm text-danger">{t`Suspended: ${card.suspended.reason}`}</p> : null}
+    {card.read_only ? <p className="text-sm text-ink">{t`Read-only${card.read_only.source !== "manual" ? ` (${card.read_only.source.replace(/_/g, " ")})` : ""}: ${card.read_only.reason}`}</p> : null}
     {card.schedule ? <p className="text-sm text-ink">
-      {card.schedule.archive_on ? <>Archives <RelativeTime date={card.schedule.archive_on} exact />. </> : null}
-      {card.schedule.purge_due_at ? <>Purge due <RelativeTime date={card.schedule.purge_due_at} exact />.</> : null}
+      {card.schedule.archive_on ? <>{t`Archives `}<RelativeTime date={card.schedule.archive_on} exact />. </> : null}
+      {card.schedule.purge_due_at ? <>{t`Purge due `}<RelativeTime date={card.schedule.purge_due_at} exact />.</> : null}
     </p> : null}
     <div className="grid gap-1">
-      <div className="flex items-center justify-between gap-2 text-sm"><span className="text-muted">Highest usage</span>
-        <span className="tabular-nums text-ink">{peak === null ? "No limits" : `${Math.round(peak)}%`}{level === "limit" ? " · At limit" : level === "warning" ? " · Near limit" : ""}</span></div>
-      {peak !== null ? <ProgressBar value={peak / 100} label={`${card.name} highest usage`} tone={level === "limit" ? "danger" : level === "warning" ? "warn" : "accent"} /> : null}
+      <div className="flex items-center justify-between gap-2 text-sm"><span className="text-muted">{t`Highest usage`}</span>
+        <span className="tabular-nums text-ink">{peak === null ? t`No limits` : `${Math.round(peak)}%`}{level === "limit" ? t` · At limit` : level === "warning" ? t` · Near limit` : ""}</span></div>
+      {peak !== null ? <ProgressBar value={peak / 100} label={t`${card.name} highest usage`} tone={level === "limit" ? "danger" : level === "warning" ? "warn" : "accent"} /> : null}
     </div>
     <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      <Fact label="Last activity">{card.last_activity_at ? <RelativeTime date={card.last_activity_at} /> : "None yet"}</Fact>
-      <Fact label="Last backup">{card.backups.last_backed_up_at ? <RelativeTime date={card.backups.last_backed_up_at} /> : "Never"}</Fact>
-      <Fact label="Restore drill">{drill ? `${drill.outcome === "passed" ? "Passed" : "Failed"}` : "Never run"}</Fact>
-      <Fact label="Security">{card.security.blocked_accounts} blocked · {card.security.locked_settings} locked</Fact>
-      <Fact label="Open issues">{card.open_issues}</Fact>
-      <Fact label="Modules">{card.modules.length}</Fact>
-      <Fact label="Managers">{card.managers.length ? card.managers.map(row => row.name || row.email).join(", ") : "None"}</Fact>
-      {card.plan ? <Fact label="Plan">{card.plan.name}{card.plan.trial_ends_at ? <> · trial ends <RelativeTime date={card.plan.trial_ends_at} exact /></> : null}</Fact> : null}
+      <Fact label={t`Last activity`}>{card.last_activity_at ? <RelativeTime date={card.last_activity_at} /> : t`None yet`}</Fact>
+      <Fact label={t`Last backup`}>{card.backups.last_backed_up_at ? <RelativeTime date={card.backups.last_backed_up_at} /> : t`Never`}</Fact>
+      <Fact label={t`Restore drill`}>{drill ? `${drill.outcome === "passed" ? "Passed" : "Failed"}` : t`Never run`}</Fact>
+      <Fact label={t`Security`}>{t`${card.security.blocked_accounts} blocked · ${card.security.locked_settings} locked`}</Fact>
+      <Fact label={t`Open issues`}>{card.open_issues}</Fact>
+      <Fact label={t`Modules`}>{card.modules.length}</Fact>
+      <Fact label={t`Managers`}>{card.managers.length ? card.managers.map(row => row.name || row.email).join(", ") : t`None`}</Fact>
+      {card.plan ? <Fact label={t`Plan`}>{card.plan.name}{card.plan.trial_ends_at ? <> {t` · trial ends `}<RelativeTime date={card.plan.trial_ends_at} exact /></> : null}</Fact> : null}
     </dl>
     <div className="flex flex-wrap items-center gap-2">
-      <button type="button" className="desk-button" onClick={onDetails}>Details</button>
-      {card.archived_at === null && card.lifecycle_state === "active" ? <button type="button" className="desk-button" onClick={() => openSpaceConsole(card)}>Open console</button> : null}
-      <OverflowMenu label="Manage" showLabel actions={cardActions(card, managedPlans, onOpen)} />
+      <button type="button" className="desk-button" onClick={onDetails}>{t`Details`}</button>
+      {card.archived_at === null && card.lifecycle_state === "active" ? <button type="button" className="desk-button" onClick={() => openSpaceConsole(card)}>{t`Open console`}</button> : null}
+      <OverflowMenu label={t`Manage`} showLabel actions={cardActions(card, managedPlans, onOpen)} />
     </div>
   </article>;
 }

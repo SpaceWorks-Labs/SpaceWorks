@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import type { Layer, LayerDocument } from "../layout";
 import { CanvasLayer } from "./CanvasLayer";
@@ -82,7 +83,7 @@ export function DesignCanvas({ document, selectedId, zoom, values, signatures, o
   }
 
   return <div ref={holder} className="w-full overflow-auto rounded-control border border-line bg-panel p-3">
-    <div ref={surface} className="relative mx-auto touch-none select-none shadow-sm" role="group" aria-label="Design canvas"
+    <div ref={surface} className="relative mx-auto touch-none select-none shadow-sm" role="group" aria-label={t`Design canvas`}
       // The canvas shows printed paper, so it stays white in both themes.
       style={{ width: page.width * scale, height: page.height * scale, background: "#FFFFFF" }}
       onPointerMove={move} onPointerUp={end} onPointerCancel={end}>

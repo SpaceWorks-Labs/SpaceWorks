@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
@@ -25,7 +26,7 @@ export function EventAddonPanel({ event, makerspaceId, section, access }: {
   const account = useQuery({ queryKey: ["event-addon-actor", ...sessionScope()], queryFn: () => staffRequest<AuthUserPayload>("/auth/me"),
     gcTime: 0, retry: false });
   if (account.error) return <ErrorBlock error={account.error} />;
-  if (!account.data) return <p role="status">Loading your event access…</p>;
+  if (!account.data) return <p role="status">{t`Loading your event access…`}</p>;
   const scope = { actorId: account.data.id, makerspaceId, eventId: event.id };
   return section === "stage-forms" ? <StagePanel scope={scope} event={event} access={access} /> : <SupportPanel scope={scope} />;
 }
@@ -40,25 +41,25 @@ function StagePanel({ scope, event, access }: { scope: Scope; event: StaffEvent;
   const [view, setView] = useState<StageView>({ kind: "list" });
   const list = () => setView({ kind: "list" });
   const authoring = access.edit ? ["stage_create"] : [];
-  if (view.kind === "builder") return <div className="grid gap-2"><Back onClick={list} label="All stage forms" />
+  if (view.kind === "builder") return <div className="grid gap-2"><Back onClick={list} label={t`All stage forms`} />
     <StageFormBuilder scope={scope} stageFormId={view.id} allowedActions={authoring} onCreated={id => setView({ kind: "builder", id })} />
-    {view.id ? <button type="button" className="desk-button justify-self-start" onClick={() => setView({ kind: "activate", id: view.id! })}>Activate for participants</button> : null}</div>;
-  if (view.kind === "activate") return <div className="grid gap-2"><Back onClick={() => setView({ kind: "builder", id: view.id })} label="Back to stage form" />
+    {view.id ? <button type="button" className="desk-button justify-self-start" onClick={() => setView({ kind: "activate", id: view.id! })}>{t`Activate for participants`}</button> : null}</div>;
+  if (view.kind === "activate") return <div className="grid gap-2"><Back onClick={() => setView({ kind: "builder", id: view.id })} label={t`Back to stage form`} />
     <StageActivation scope={scope} stageFormId={view.id} /></div>;
-  if (view.kind === "assignments") return <div className="grid gap-2"><Back onClick={list} label="All stage forms" />
+  if (view.kind === "assignments") return <div className="grid gap-2"><Back onClick={list} label={t`All stage forms`} />
     <StageAssignments scope={scope} onResponse={(id, finance) => setView({ kind: "response", id, finance })} /></div>;
-  if (view.kind === "response") return <div className="grid gap-2"><Back onClick={() => setView({ kind: "assignments" })} label="All assignments" />
+  if (view.kind === "response") return <div className="grid gap-2"><Back onClick={() => setView({ kind: "assignments" })} label={t`All assignments`} />
     <StageResponseDetail scope={scope} responseId={view.id} finance={view.finance} /></div>;
   // The shortlist command is compare-and-set on the event's own version.
   const eventVersion = (event as StaffEvent & { version?: number }).version;
-  if (view.kind === "shortlist") return <div className="grid gap-2"><Back onClick={list} label="All stage forms" />
-    {eventVersion === undefined ? <p role="alert">Reload the event before publishing a shortlist.</p> : <StageMilestones scope={scope} eventVersion={eventVersion}
+  if (view.kind === "shortlist") return <div className="grid gap-2"><Back onClick={list} label={t`All stage forms`} />
+    {eventVersion === undefined ? <p role="alert">{t`Reload the event before publishing a shortlist.`}</p> : <StageMilestones scope={scope} eventVersion={eventVersion}
       allowedActions={access.registrations || access.applications ? ["stage_shortlist"] : []} />}</div>;
   return <div className="grid gap-4">
     <StageFormsManager scope={scope} allowedActions={authoring} onCreate={() => setView({ kind: "builder" })}
       onEdit={id => setView({ kind: "builder", id })} onAssignments={() => setView({ kind: "assignments" })} />
     {access.registrations || access.applications
-      ? <button type="button" className="desk-button justify-self-start" onClick={() => setView({ kind: "shortlist" })}>Publish shortlist</button> : null}
+      ? <button type="button" className="desk-button justify-self-start" onClick={() => setView({ kind: "shortlist" })}>{t`Publish shortlist`}</button> : null}
   </div>;
 }
 
@@ -66,10 +67,10 @@ function SupportPanel({ scope }: { scope: Scope }) {
   const [view, setView] = useState<SupportView>({ kind: "requests" });
   const [receipt, setReceipt] = useState<number | null>(null);
   const tabs: { key: SupportView["kind"]; label: string }[] = [
-    { key: "requests", label: "Requests" }, { key: "claims", label: "Claims" }, { key: "programme", label: "Programme and budget" },
+    { key: "requests", label: t`Requests` }, { key: "claims", label: t`Claims` }, { key: "programme", label: t`Programme and budget` },
   ];
   return <div className="grid gap-4">
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Travel support views">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={t`Travel support views`}>
       {tabs.map(tab => <button key={tab.key} type="button" className="desk-button" aria-pressed={view.kind === tab.key || (tab.key === "claims" && view.kind === "claim")}
         onClick={() => setView({ kind: tab.key } as SupportView)}>{tab.label}</button>)}
     </div>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { lazy, Suspense, useState } from "react";
 
 import { ListLayout } from "../../../components/layouts";
@@ -19,12 +20,12 @@ export function ShopPanel({ makerspace, actions, isSuperadmin }: { makerspace: M
   const access = shopAccess(actions, isSuperadmin, makerspace);
   const views = shopViews(access);
   const [view, setView] = useState<ShopView>(() => views[0]?.key ?? "orders");
-  if (!views.length) return <ListLayout header={{ title: "Shop" }} state={{ status: "ready" }} isEmpty
-    empty={{ message: "Your role does not include the shop. Ask a Space Manager for shop access." }} body={{ kind: "rows", rows: null }} />;
+  if (!views.length) return <ListLayout header={{ title: t`Shop` }} state={{ status: "ready" }} isEmpty
+    empty={{ message: t`Your role does not include the shop. Ask a Space Manager for shop access.` }} body={{ kind: "rows", rows: null }} />;
   const active = views.some(row => row.key === view) ? view : views[0].key;
   const ms = makerspace.id;
   return <div className="grid min-w-0 gap-4">
-    <Tabs label="Shop sections" tabs={views} activeKey={active} onChange={key => setView(key as ShopView)}>
+    <Tabs label={t`Shop sections`} tabs={views} activeKey={active} onChange={key => setView(key as ShopView)}>
       <ScreenHelp screen={`shop.${active}`} />
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         {active === "orders" ? <ShopOrders makerspaceId={ms} access={access} /> : null}

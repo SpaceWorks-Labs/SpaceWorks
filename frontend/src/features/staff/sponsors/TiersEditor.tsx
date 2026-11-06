@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -17,11 +18,10 @@ function TierPerks({ makerspaceId, tier, perks, canRecord }: {
       {tier.amount ? <span className="text-sm tabular-nums text-muted">{tier.currency.toUpperCase()} {tier.amount}</span> : null}</div>
     {tier.description ? <p className="text-sm text-muted">{tier.description}</p> : null}
     {perks.length ? <ul className="list-disc pl-5 text-sm">{perks.map(perk => <li key={perk.id}>{perk.description}</li>)}</ul>
-      : <p className="text-sm text-muted">No perks in this tier yet.</p>}
+      : <p className="text-sm text-muted">{t`No perks in this tier yet.`}</p>}
     {canRecord ? <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); add.mutate(); }}>
-      <label className="grid flex-1 gap-1 text-sm font-semibold text-ink">Add a perk every {tier.name} sponsor gets
-        <input className="desk-input" required maxLength={300} value={description} onChange={event => setDescription(event.target.value)} /></label>
-      <button type="submit" className="desk-button" disabled={add.isPending}>Add</button></form> : null}
+      <label className="grid flex-1 gap-1 text-sm font-semibold text-ink">{t`Add a perk every ${tier.name} sponsor gets`}<input className="desk-input" required maxLength={300} value={description} onChange={event => setDescription(event.target.value)} /></label>
+      <button type="submit" className="desk-button" disabled={add.isPending}>{t`Add`}</button></form> : null}
     {add.error ? <p role="alert" className="text-sm text-danger">{financeError(add.error)}</p> : null}
   </div></Card>;
 }
@@ -41,18 +41,18 @@ export function TiersEditor({ makerspaceId, canRecord }: { makerspaceId: number;
   const templates = (tier: number) => (perks.data ?? []).filter(perk => perk.tier === tier && perk.sponsor === null);
   return <div className="grid gap-4">
     {tiers.error ? <p role="alert" className="text-sm text-danger">{financeError(tiers.error)}</p> : null}
-    {tiers.data && !tiers.data.length ? <EmptyState message="No tiers yet. Tiers are optional." /> : null}
+    {tiers.data && !tiers.data.length ? <EmptyState message={t`No tiers yet. Tiers are optional.`} /> : null}
     {tiers.data?.map(tier => <TierPerks key={tier.id} makerspaceId={makerspaceId} tier={tier} perks={templates(tier.id)}
       canRecord={canRecord} />)}
-    {canRecord ? <form className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end" aria-label="New tier"
+    {canRecord ? <form className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end" aria-label={t`New tier`}
       onSubmit={event => { event.preventDefault(); create.mutate(); }}>
-      <label className="grid gap-1 text-sm font-semibold text-ink">New tier<input className="desk-input" required maxLength={80}
+      <label className="grid gap-1 text-sm font-semibold text-ink">{t`New tier`}<input className="desk-input" required maxLength={80}
         value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} /></label>
-      <label className="grid gap-1 text-sm font-semibold text-ink">Order<input className="desk-input" type="number" min="0"
+      <label className="grid gap-1 text-sm font-semibold text-ink">{t`Order`}<input className="desk-input" type="number" min="0"
         value={form.rank} onChange={event => setForm({ ...form, rank: event.target.value })} /></label>
-      <label className="grid gap-1 text-sm font-semibold text-ink">Suggested amount<input className="desk-input" inputMode="decimal"
+      <label className="grid gap-1 text-sm font-semibold text-ink">{t`Suggested amount`}<input className="desk-input" inputMode="decimal"
         value={form.amount} onChange={event => setForm({ ...form, amount: event.target.value })} /></label>
-      <button type="submit" className="desk-button" disabled={create.isPending}>Add tier</button>
+      <button type="submit" className="desk-button" disabled={create.isPending}>{t`Add tier`}</button>
     </form> : null}
     {create.error ? <p role="alert" className="text-sm text-danger">{financeError(create.error)}</p> : null}
   </div>;

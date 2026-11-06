@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { QueryClient } from "@tanstack/react-query";
 
 import type {
@@ -16,33 +17,33 @@ export const CASE_STATUS_TABS: ReadonlyArray<readonly [RefundCaseStatusEnum | ""
 ];
 
 export const CASE_STATUS_LABELS: Record<RefundCaseStatusEnum, string> = {
-  open: "To decide", approved: "Approved", approval_failed: "Provider refused",
-  declined: "Declined", withdrawn: "Withdrawn", void: "Closed",
+  open: t`To decide`, approved: t`Approved`, approval_failed: t`Provider refused`,
+  declined: t`Declined`, withdrawn: t`Withdrawn`, void: t`Closed`,
 };
 
 export const REASON_LABELS: Record<RefundCase["reason_code"] | "capture_flagged", string> = {
-  event_cancelled: "Event cancelled by the space", registration_cancelled: "Registration cancelled",
-  booking_cancelled: "Booking cancelled", staff_cancelled: "Cancelled by staff",
-  membership_cancelled: "Membership term cancelled",
-  member_request: "Member asked",
-  fee_waived: "Loan fee waived",
-  capture_flagged: "Unexpected online payment",
-  order_unfulfilled: "Order could not be seated",
-  ticket_type_changed: "Changed to a cheaper ticket",
-  pass_occurrence_cancelled: "Pass occurrence cancelled",
-  donation_returned: "Gift returned to the giver",
-  submission_disqualified: "Project disqualified",
-  team_rejected: "Team rejected",
-  price_drop: "Price lowered after payment",
-  job_cancelled: "Prepaid job cancelled before it started",
-  quote_difference: "Job cost less than its prepaid quote",
-  shop_return: "Shop items returned",
-  shop_uncollected: "Shop order not collected",
-  shop_unfulfilled: "Shop order could not be filled",
+  event_cancelled: t`Event cancelled by the space`, registration_cancelled: t`Registration cancelled`,
+  booking_cancelled: t`Booking cancelled`, staff_cancelled: t`Cancelled by staff`,
+  membership_cancelled: t`Membership term cancelled`,
+  member_request: t`Member asked`,
+  fee_waived: t`Loan fee waived`,
+  capture_flagged: t`Unexpected online payment`,
+  order_unfulfilled: t`Order could not be seated`,
+  ticket_type_changed: t`Changed to a cheaper ticket`,
+  pass_occurrence_cancelled: t`Pass occurrence cancelled`,
+  donation_returned: t`Gift returned to the giver`,
+  submission_disqualified: t`Project disqualified`,
+  team_rejected: t`Team rejected`,
+  price_drop: t`Price lowered after payment`,
+  job_cancelled: t`Prepaid job cancelled before it started`,
+  quote_difference: t`Job cost less than its prepaid quote`,
+  shop_return: t`Shop items returned`,
+  shop_uncollected: t`Shop order not collected`,
+  shop_unfulfilled: t`Shop order could not be filled`,
   // Hack-money (#180): G2 withdrawal and shortlist refunds, G10 deposits returned after the event.
-  submission_withdrawn: "Project withdrawn",
-  not_shortlisted: "Team not shortlisted",
-  deposit_returned: "Deposit returned after the event",
+  submission_withdrawn: t`Project withdrawn`,
+  not_shortlisted: t`Team not shortlisted`,
+  deposit_returned: t`Deposit returned after the event`,
 };
 
 export function caseTone(status: RefundCaseStatusEnum): "success" | "warn" | "danger" | "neutral" {
@@ -125,7 +126,7 @@ const CASE_ERRORS: Record<string, string> = {
 
 export function caseErrorMessage(error: unknown) {
   if (error instanceof StructuredApiError && error.code && CASE_ERRORS[error.code]) return CASE_ERRORS[error.code];
-  return error instanceof Error ? error.message : "That did not work. Try again.";
+  return error instanceof Error ? error.message : t`That did not work. Try again.`;
 }
 
 /** "2 days", "6 hours", "30 minutes": a whole unit wherever the figure allows one. */

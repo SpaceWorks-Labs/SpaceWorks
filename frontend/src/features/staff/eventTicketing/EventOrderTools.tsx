@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ScreenHelp } from "../../help/HelpLink";
 import { EventDisclosure } from "../EventDisclosure";
 import { EventAddonsEditor } from "./EventAddonsEditor";
@@ -17,16 +18,16 @@ export function EventOrderTools({ eventId, features, manager, disabled = false }
   const chargesOn = useStaffChargesOn("events");
   const on = (key: string) => features.includes(key) && (chargesOn || key === "events.orders");
   if (!on("events.orders") && !on("events.refund_override") && !on("events.venue_fees")) return null;
-  return <section className="grid gap-4" aria-label="Ticket orders and money">
+  return <section className="grid gap-4" aria-label={t`Ticket orders and money`}>
     <ScreenHelp screen="events.orders" />
     {on("events.orders") ? <>
       <EventOrdersList eventId={eventId} />
-      {chargesOn ? <><EventDisclosure title="Ticket order options"><TicketOrderOptions eventId={eventId} disabled={disabled} /></EventDisclosure>
-      <EventDisclosure title="Sales rules"><EventSalesRules eventId={eventId} transfers={on("events.transfers")} disabled={disabled} /></EventDisclosure></>
-        : <p className="text-sm text-muted">Event charges are off in this space, so events are free.</p>}
+      {chargesOn ? <><EventDisclosure title={t`Ticket order options`}><TicketOrderOptions eventId={eventId} disabled={disabled} /></EventDisclosure>
+      <EventDisclosure title={t`Sales rules`}><EventSalesRules eventId={eventId} transfers={on("events.transfers")} disabled={disabled} /></EventDisclosure></>
+        : <p className="text-sm text-muted">{t`Event charges are off in this space, so events are free.`}</p>}
     </> : null}
-    {on("events.addons") ? <EventDisclosure title="Add-ons"><EventAddonsEditor eventId={eventId} disabled={disabled} /></EventDisclosure> : null}
-    {manager && on("events.refund_override") ? <EventDisclosure title="Refund policy"><EventRefundPolicyForm eventId={eventId} disabled={disabled} /></EventDisclosure> : null}
-    {manager && on("events.venue_fees") ? <EventDisclosure title="Venue fee"><EventVenueFeeForm eventId={eventId} disabled={disabled} /></EventDisclosure> : null}
+    {on("events.addons") ? <EventDisclosure title={t`Add-ons`}><EventAddonsEditor eventId={eventId} disabled={disabled} /></EventDisclosure> : null}
+    {manager && on("events.refund_override") ? <EventDisclosure title={t`Refund policy`}><EventRefundPolicyForm eventId={eventId} disabled={disabled} /></EventDisclosure> : null}
+    {manager && on("events.venue_fees") ? <EventDisclosure title={t`Venue fee`}><EventVenueFeeForm eventId={eventId} disabled={disabled} /></EventDisclosure> : null}
   </section>;
 }

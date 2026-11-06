@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { FlowLayout } from "../../components/layouts";
@@ -125,21 +126,21 @@ export function DirectLoanReturnModal({
   };
 
   return <FlowLayout presentation="dialog" open={Boolean(loan)} standalone={false}
-    title={loan ? `Return ${loan.target_label}` : "Return direct handout"}
+    title={loan ? t`Return ${loan.target_label}` : t`Return direct handout`}
     subject="Check the tools, then record the return photo and notes."
     state={{ status: "ready" }}
-    steps={[{ key: "items", label: "Check items" }, { key: "evidence", label: "Photo and QR" }, { key: "notes", label: "Return notes" }].map((item, index) => ({ ...item, state: index < step ? "done" : index === step ? "current" : "todo" }))}
+    steps={[{ key: "items", label: t`Check items` }, { key: "evidence", label: t`Photo and QR` }, { key: "notes", label: t`Return notes` }].map((item, index) => ({ ...item, state: index < step ? "done" : index === step ? "current" : "todo" }))}
     current={["items", "evidence", "notes"][step]}
     onCancel={() => { if (!pending) onCancel(); }}
-    footer={{ back: step > 0 ? { label: "Back", disabled: pending, onClick: () => setStep(step - 1) } : undefined,
-      next: step < 2 ? { label: "Next", disabled: pending || (step === 0 ? !fullyResolved || !kits.ready : evidenceId === null || (scanRequired && !qrPayload.trim())), onClick: () => setStep(step + 1) }
-        : { label: "Submit return", disabled: !canSubmit, pending, pendingLabel: "Returning…", onClick: () => { if (canSubmit) onSubmit(buildResolutions(), kits.counts); } } }}
+    footer={{ back: step > 0 ? { label: t`Back`, disabled: pending, onClick: () => setStep(step - 1) } : undefined,
+      next: step < 2 ? { label: t`Next`, disabled: pending || (step === 0 ? !fullyResolved || !kits.ready : evidenceId === null || (scanRequired && !qrPayload.trim())), onClick: () => setStep(step + 1) }
+        : { label: t`Submit return`, disabled: !canSubmit, pending, pendingLabel: "Returning…", onClick: () => { if (canSubmit) onSubmit(buildResolutions(), kits.counts); } } }}
     error={error ? { size: "inline", tone: "danger", lead: error } : undefined}
     work={<div className="@container grid gap-4">
       <div hidden={step !== 1}>
         <div className="grid gap-1 text-sm">
 
-          <span className="font-medium text-ink">Return photo</span>
+          <span className="font-medium text-ink">{t`Return photo`}</span>
           <EvidenceUpload
             makerspaceId={makerspaceId}
             evidenceType="return"
@@ -152,7 +153,7 @@ export function DirectLoanReturnModal({
         <KitChecklistCapture checklist={kits} />
         {returnItems.length ? (
           <div className="grid gap-2">
-            <p className="text-sm font-medium text-ink">Return outcomes</p>
+            <p className="text-sm font-medium text-ink">{t`Return outcomes`}</p>
             {returnItems.map((item) =>
               item.tracking_mode === "individual" ? (
                 <div key={item.item_id} className="rounded-md border border-line p-2">
@@ -170,9 +171,9 @@ export function DirectLoanReturnModal({
                           disabled={pending}
                           onChange={(event) => updateAsset(item.item_id, asset.asset_id, event.target.value as AssetOutcome)}
                         >
-                          <option value="returned">Returned</option>
-                          <option value="damaged">Damaged</option>
-                          <option value="missing">Missing</option>
+                          <option value="returned">{t`Returned`}</option>
+                          <option value="damaged">{t`Damaged`}</option>
+                          <option value="missing">{t`Missing`}</option>
                         </select>
                       </label>
                     ))}
@@ -201,32 +202,31 @@ export function DirectLoanReturnModal({
               ),
             )}
             {!fullyResolved ? (
-              <p className="text-xs text-warn-ink">Resolve every outstanding unit before submitting.</p>
+              <p className="text-xs text-warn-ink">{t`Resolve every outstanding unit before submitting.`}</p>
             ) : null}
           </div>
         ) : null}
       </div>
       <div hidden={step !== 1}>
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-ink">Return QR scan{scanRequired ? "" : " (optional)"}</span>
+          <span className="font-medium text-ink">{t`Return QR scan${scanRequired ? "" : " (optional)"}`}</span>
           <div className="flex flex-col gap-2 @lg:flex-row">
             <input
               className="desk-input w-full min-w-0"
               autoComplete="off"
-              aria-label="Return QR scan"
+              aria-label={t`Return QR scan`}
               value={qrPayload}
               disabled={pending}
               onChange={(event) => onQrPayloadChange(event.target.value)}
             />
             <button className="desk-button" type="button" disabled={pending} onClick={() => setShowScanner(true)}>
-              Scan QR
-            </button>
+              {t`Scan QR`}</button>
           </div>
         </label>
       </div>
       <div hidden={step !== 2}>
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-ink">Return notes</span>
+          <span className="font-medium text-ink">{t`Return notes`}</span>
           <textarea
             className="desk-input min-h-24 w-full resize-y"
             value={notes}

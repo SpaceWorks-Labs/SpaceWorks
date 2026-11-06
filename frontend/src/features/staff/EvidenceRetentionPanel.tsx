@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
@@ -13,7 +15,7 @@ import {
 } from "./evidenceRetentionApi";
 
 
-const bytes = (value: number) => new Intl.NumberFormat(undefined, {
+const bytes = (value: number) => new Intl.NumberFormat(formatLocale(), {
   style: "unit",
   unit: "megabyte",
   maximumFractionDigits: 1,
@@ -22,7 +24,7 @@ const bytes = (value: number) => new Intl.NumberFormat(undefined, {
 const errorText = (error: unknown) =>
   error instanceof StructuredApiError
     ? error.detail ?? error.message
-    : "Unable to load evidence retention settings.";
+    : t`Unable to load evidence retention settings.`;
 
 export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number }) {
   const policy = useEvidenceRetentionPolicy(makerspaceId);
@@ -50,16 +52,14 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
   if (!policy.data) return null;
 
   return (
-    <><SettingsRow label="Evidence photo retention" helper="Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window."><div className="@container grid min-w-0 gap-4">
+    <><SettingsRow label={t`Evidence photo retention`} helper="Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window."><div className="@container grid min-w-0 gap-4">
 
 
       <p className="mt-2 text-sm font-semibold text-warn-ink" role="note">
-        Expiry is irreversible in live storage; older backups may still contain historical photos.
-      </p>
+        {t`Expiry is irreversible in live storage; older backups may still contain historical photos.`}</p>
       <form className="mt-3 flex flex-wrap items-end gap-3" onSubmit={submit}>
         <label className="grid gap-1 text-sm font-semibold text-ink">
-          Retention days
-          <input
+          {t`Retention days`}<input
             className="desk-input w-40"
             type="number"
             min="30"
@@ -76,23 +76,22 @@ export function EvidenceRetentionPanel({ makerspaceId }: { makerspaceId: number 
           disabled={update.isPending || policy.data.override_days === null}
           onClick={() => update.mutate({ object_retention_days: null })}
         >
-          Use platform default
-        </button>
+          {t`Use platform default`}</button>
       </form>
       <p className="mt-2 text-xs text-muted">
         {policy.data.override_days === null
-          ? `Inherited platform default: ${policy.data.platform_default_days} days.`
-          : `Tenant override: ${policy.data.override_days} days (platform default ${policy.data.platform_default_days}).`}
-        {` Automatic expiry is ${policy.data.object_expiry_enabled ? "enabled" : "disabled"}.`}
+          ? t`Inherited platform default: ${policy.data.platform_default_days} days.`
+          : t`Tenant override: ${policy.data.override_days} days (platform default ${policy.data.platform_default_days}).`}
+        {t` Automatic expiry is ${policy.data.object_expiry_enabled ? "enabled" : "disabled"}.`}
       </p>
       {update.error ? <p className="mt-2 text-sm text-danger" role="alert">{errorText(update.error)}</p> : null}
       <SettingsQueryState query={preview} resource="retention preview"><div className="mt-3 rounded-lg border border-line bg-surface p-3 text-sm">
-        {preview.isLoading ? <span className="text-muted">Calculating preview…</span> : null}
+        {preview.isLoading ? <span className="text-muted">{t`Calculating preview…`}</span> : null}
         {preview.error ? <span className="text-danger">{errorText(preview.error)}</span> : null}
         {preview.data ? (
           <p>
-            <span className="font-semibold">Preview:</span>{` ${preview.data.object_candidates} photo objects (${bytes(preview.data.candidate_bytes)}) are eligible as of ${new Date(preview.data.as_of).toLocaleString()}.`}
-            {preview.data.has_more ? " The first sweep will continue in bounded batches." : ""}
+            <span className="font-semibold">{t`Preview:`}</span>{t` ${preview.data.object_candidates} photo objects (${bytes(preview.data.candidate_bytes)}) are eligible as of ${new Date(preview.data.as_of).toLocaleString(formatLocale())}.`}
+            {preview.data.has_more ? t` The first sweep will continue in bounded batches.` : ""}
           </p>
         ) : null}
       </div></SettingsQueryState>

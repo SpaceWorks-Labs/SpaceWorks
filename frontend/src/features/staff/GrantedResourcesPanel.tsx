@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import type { ListLayoutProps } from "../../components/layouts";
@@ -23,8 +24,8 @@ export function GrantedResourcesPanel({ eventGrants, bookingGrants, makerspaceId
     ? <GrantedEventsPanel grants={eventGrants} makerspaceId={makerspaceId} />
     : <GrantedBookingSpacesPanel makerspaceId={makerspaceId} />;
   const frame: GrantedListFrame = {
-    header: { title: "Assigned resources", subtitle: "Open an event or a booking resource to use your assigned permissions." },
-    tabs: [{ key: "events", label: "Events" }, { key: "bookings", label: "Booking resources" }],
+    header: { title: t`Assigned resources`, subtitle: t`Open an event or a booking resource to use your assigned permissions.` },
+    tabs: [{ key: "events", label: t`Events` }, { key: "bookings", label: t`Booking resources` }],
     activeTab: tab, onTabChange: setTab,
   };
   return tab === "bookings"

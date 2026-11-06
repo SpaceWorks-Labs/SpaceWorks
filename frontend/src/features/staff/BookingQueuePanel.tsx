@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { ErrorBlock, ListRow, OverflowMenu, Pagination, SegmentedControl, StatusBadge } from "../../components/ui";
@@ -9,12 +11,12 @@ import { useBookingAction, type Booking } from "./bookingsApi";
 import { RequestedPrice } from "./pricing/RequestedPrice";
 
 const STATUS_OPTIONS: { value: QueueStatus; label: string }[] = [
-  { value: "pending", label: "Awaiting review" }, { value: "confirmed", label: "Confirmed" },
-  { value: "rejected", label: "Rejected" }, { value: "cancelled", label: "Cancelled" }, { value: "all", label: "All" },
+  { value: "pending", label: t`Awaiting review` }, { value: "confirmed", label: t`Confirmed` },
+  { value: "rejected", label: t`Rejected` }, { value: "cancelled", label: t`Cancelled` }, { value: "all", label: t`All` },
 ];
 
 function when(booking: Booking) {
-  const format = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+  const format = new Intl.DateTimeFormat(formatLocale(), { dateStyle: "medium", timeStyle: "short" });
   return `${format.format(new Date(booking.starts_at))} – ${format.format(new Date(booking.ends_at))}`;
 }
 
@@ -34,33 +36,33 @@ export function BookingQueuePanel({ makerspaceId, status, onStatus, onOpenBookin
     <section aria-labelledby="booking-queue-title" className="grid gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="booking-queue-title" className="title-panel">Requests <span className="tabular-nums">({data?.count ?? 0})</span></h2>
-          <p className="mt-1 text-sm text-muted">Approve or decline booking requests across all your spaces. Requesters are notified either way.</p>
+          <h2 id="booking-queue-title" className="title-panel">{t`Requests `}<span className="tabular-nums">({data?.count ?? 0})</span></h2>
+          <p className="mt-1 text-sm text-muted">{t`Approve or decline booking requests across all your spaces. Requesters are notified either way.`}</p>
         </div>
-        <SegmentedControl label="Request status" value={status} options={STATUS_OPTIONS}
+        <SegmentedControl label={t`Request status`} value={status} options={STATUS_OPTIONS}
           onChange={value => { onStatus(value as QueueStatus); setPage(1); }} />
       </div>
       {action.error ? <ErrorBlock error={action.error} /> : null}
       <QueryContent state={opsQueryState(queue, "booking requests")} isEmpty={data?.results.length === 0}
-        empty={{ message: status === "pending" ? "Nothing to review. New booking requests appear here." : "No bookings match this filter." }}>
+        empty={{ message: status === "pending" ? t`Nothing to review. New booking requests appear here.` : t`No bookings match this filter.` }}>
         <ul className="grid gap-3">
           {data?.results.map(booking => (
             <li key={booking.id}>
               <ListRow title={booking.name} identity={{ kind: "date", date: booking.starts_at }}
-                meta={<>{booking.space_name ?? "Space"} · {when(booking)}
-                  {booking.decision_reason ? <span className="mt-1 block">Reason: {booking.decision_reason}</span> : null}
+                meta={<>{booking.space_name ?? t`Space`} · {when(booking)}
+                  {booking.decision_reason ? <span className="mt-1 block">{t`Reason: ${booking.decision_reason}`}</span> : null}
                   <RequestedPrice booking={booking} /></>}
                 onClick={() => onOpenBooking(booking)}
                 right={<div className="flex flex-wrap items-center justify-end gap-2">
                   <StatusBadge status={booking.status} label={opsStatusLabel(booking.status)} />
                   {booking.status === "pending" ? <>
                     <button type="button" className="desk-button-brand min-h-11" disabled={action.isPending && actingOn === booking.id}
-                      onClick={() => approve(booking)}>{action.isPending && actingOn === booking.id ? "Approving…" : "Approve"}</button>
-                    <OverflowMenu label={`More actions for ${booking.name}`} actions={[
-                      { label: "Reject with reason", tone: "danger", onClick: () => setRejecting(booking) },
-                      { label: "Open in space", onClick: () => onOpenBooking(booking) },
+                      onClick={() => approve(booking)}>{action.isPending && actingOn === booking.id ? t`Approving…` : t`Approve`}</button>
+                    <OverflowMenu label={t`More actions for ${booking.name}`} actions={[
+                      { label: t`Reject with reason`, tone: "danger", onClick: () => setRejecting(booking) },
+                      { label: t`Open in space`, onClick: () => onOpenBooking(booking) },
                     ]} />
-                  </> : <button type="button" className="desk-button-ghost min-h-11" onClick={() => onOpenBooking(booking)}>Open</button>}
+                  </> : <button type="button" className="desk-button-ghost min-h-11" onClick={() => onOpenBooking(booking)}>{t`Open`}</button>}
                 </div>} />
             </li>
           ))}

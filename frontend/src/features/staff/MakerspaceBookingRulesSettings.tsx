@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { ErrorBlock, Pagination } from "../../components/ui";
 import { SettingsEditorActions } from "./SettingsEditorActions";
@@ -41,13 +42,13 @@ type RuleDraft = Record<NumberRuleField, string> & {
 type FieldErrors = Partial<Record<RuleField, string>>;
 
 const NUMBER_FIELDS: Array<{ key: NumberRuleField; label: string; min: number }> = [
-  { key: "min_booking_duration_minutes", label: "Minimum booking duration (minutes)", min: 1 },
-  { key: "max_booking_duration_minutes", label: "Maximum booking duration (minutes)", min: 1 },
-  { key: "booking_lead_time_minutes", label: "Booking lead time (minutes)", min: 0 },
-  { key: "max_booking_advance_days", label: "Maximum booking advance (days)", min: 1 },
-  { key: "buffer_before_minutes", label: "Buffer before (minutes)", min: 0 },
-  { key: "buffer_after_minutes", label: "Cleanup after (minutes)", min: 0 },
-  { key: "cancellation_cutoff_hours", label: "Cancellation cutoff (hours before start)", min: 0 },
+  { key: "min_booking_duration_minutes", label: t`Minimum booking duration (minutes)`, min: 1 },
+  { key: "max_booking_duration_minutes", label: t`Maximum booking duration (minutes)`, min: 1 },
+  { key: "booking_lead_time_minutes", label: t`Booking lead time (minutes)`, min: 0 },
+  { key: "max_booking_advance_days", label: t`Maximum booking advance (days)`, min: 1 },
+  { key: "buffer_before_minutes", label: t`Buffer before (minutes)`, min: 0 },
+  { key: "buffer_after_minutes", label: t`Cleanup after (minutes)`, min: 0 },
+  { key: "cancellation_cutoff_hours", label: t`Cancellation cutoff (hours before start)`, min: 0 },
 ];
 const RULE_FIELDS: RuleField[] = [...NUMBER_FIELDS.map(({ key }) => key), "approval_mode"];
 
@@ -62,12 +63,12 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
   const activeSpaces = spaces.data?.results.filter((space) => space.is_active) ?? [];
 
   return (
-    <SettingsQueryState query={spaces} resource="booking rules"><SettingsRow label="Booking rules per space" helper="Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts."><div className="@container grid min-w-0 gap-4">
+    <SettingsQueryState query={spaces} resource="booking rules"><SettingsRow label={t`Booking rules per space`} helper="Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts."><div className="@container grid min-w-0 gap-4">
 
 
-      {spaces.isLoading ? <p className="mt-3 text-sm text-muted">Loading bookable spaces…</p> : null}
+      {spaces.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading bookable spaces…`}</p> : null}
       {!spaces.isLoading && activeSpaces.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">No active bookable spaces on this page.</p>
+        <p className="mt-3 text-sm text-muted">{t`No active bookable spaces on this page.`}</p>
       ) : null}
       {activeSpaces.length > 0 ? (
         <div className="mt-4 grid min-w-0 gap-4">
@@ -76,7 +77,7 @@ export function MakerspaceBookingRulesSettings({ makerspace }: { makerspace: Pic
           ))}
         </div>
       ) : null}
-      {spaces.error ? <ErrorBlock error={new Error("Couldn't load booking rules. Try again.")} onRetry={() => { void spaces.refetch(); }} /> : null}
+      {spaces.error ? <ErrorBlock error={new Error(t`Couldn't load booking rules. Try again.`)} onRetry={() => { void spaces.refetch(); }} /> : null}
       {spaces.data ? <Pagination page={page} count={spaces.data.count} pageSize={pageSize} totalPages={Math.ceil(spaces.data.count / pageSize)} onChange={setPage} disabled={spaces.isFetching} /> : null}
     </div></SettingsRow></SettingsQueryState>
   );
@@ -161,9 +162,9 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
           </label>
         ))}
         <label className="grid min-w-0 content-start gap-1 text-sm text-ink">
-          <span className="font-semibold">Approval mode</span>
+          <span className="font-semibold">{t`Approval mode`}</span>
           <select
-            aria-label={`Approval mode for ${space.name}`}
+            aria-label={t`Approval mode for ${space.name}`}
             className="desk-input"
             value={draft.approval_mode}
             disabled={updateRules.isPending}
@@ -172,8 +173,8 @@ function SpaceRuleRow({ makerspaceId, space }: { makerspaceId: number; space: Sp
               approval_mode: event.target.value as SpaceRules["approval_mode"],
             }))}
           >
-            <option value="instant">Instant confirmation</option>
-            <option value="approve">Staff approval required</option>
+            <option value="instant">{t`Instant confirmation`}</option>
+            <option value="approve">{t`Staff approval required`}</option>
           </select>
           {fieldErrors.approval_mode ? (
             <span className="text-xs text-danger">{fieldErrors.approval_mode}</span>

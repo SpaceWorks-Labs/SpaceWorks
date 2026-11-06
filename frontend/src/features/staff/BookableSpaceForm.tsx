@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -99,21 +100,21 @@ export function BookableSpaceForm({ makerspaceId, initialValues = EMPTY_SPACE_FO
         changeAvailability={changeAvailability} chargesOn={chargesOn}
         machineTime={{ available: machineTimeOn !== false, picker: pickerId => <BookableSpaceMachine makerspaceId={makerspaceId} id={pickerId}
           value={values.machine ?? null} onChange={machine => set("machine", machine)} /> }} pagination={<div className="mt-2 flex flex-wrap gap-2">
-          <button className="desk-button-ghost" type="button" disabled={!types.data?.previous || types.isFetching} onClick={() => setTypePage(page => page - 1)}>Previous types</button>
-          <button className="desk-button-ghost" type="button" disabled={!types.data?.next || types.isFetching} onClick={() => setTypePage(page => page + 1)}>Next types</button>
+          <button className="desk-button-ghost" type="button" disabled={!types.data?.previous || types.isFetching} onClick={() => setTypePage(page => page - 1)}>{t`Previous types`}</button>
+          <button className="desk-button-ghost" type="button" disabled={!types.data?.next || types.isFetching} onClick={() => setTypePage(page => page + 1)}>{t`Next types`}</button>
         </div>} />
     </fieldset>
     <CustomFormBuilder value={values.custom_form as CustomFormSchema} onChange={schema => set("custom_form", schema)} disabled={disabled || pending} />
     {error ? <ErrorBlock error={new Error(error)} /> : null}
   </>;
-  if (mode === "create") return <FormPageLayout header={{ title: "New space", subtitle: "Create a place your community can book." }}
-    state={{ status: "ready" }} back={{ label: "Bookings", onClick: onCancel }} form={fields}
+  if (mode === "create") return <FormPageLayout header={{ title: t`New space`, subtitle: t`Create a place your community can book.` }}
+    state={{ status: "ready" }} back={{ label: t`Bookings`, onClick: onCancel }} form={fields}
     submit={{ label: submitLabel, onClick: submitPayload, pending, pendingLabel: "Creating…" }}
-    cancel={onCancel ? { label: "Cancel", onClick: onCancel } : undefined} />;
+    cancel={onCancel ? { label: t`Cancel`, onClick: onCancel } : undefined} />;
   return <form ref={formRef} className="grid gap-6" onSubmit={submit}>
     {fields}
     {!disabled ? mode === "settings" ? dirty || pending ? <SettingsActions pending={pending}
       onDiscard={() => setValues(initialValues)} onSave={() => formRef.current?.requestSubmit()} /> : null
-      : <button className="desk-button-primary w-fit" type="submit" disabled={pending}>{pending ? "Saving…" : submitLabel}</button> : null}
+      : <button className="desk-button-primary w-fit" type="submit" disabled={pending}>{pending ? t`Saving…` : submitLabel}</button> : null}
   </form>;
 }

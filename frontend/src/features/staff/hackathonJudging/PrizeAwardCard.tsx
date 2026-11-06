@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ErrorBlock, StatusPill } from '../../../components/ui';
 import type { PrizePayableAwardRead } from '../../../generated/api';
 import { usePrizeAwardActions } from './hackmoneyApi';
@@ -19,16 +20,16 @@ export function PrizeAwardCard({ scope, award, claims, recording, onRecord }: { 
   const open = award.status === 'owed' || award.status === 'part_paid';
   const unpaidConfirmed = award.shares.filter(share => share.state === 'confirmed' && !share.paid);
   const busy = recording || actions.split.isPending || actions.fulfil.isPending || actions.forfeit.isPending;
-  return <article className="grid gap-3 rounded-xl border border-line p-4" aria-label={`${award.prize_name}, rank ${award.rank}`}>
+  return <article className="grid gap-3 rounded-xl border border-line p-4" aria-label={t`${award.prize_name}, rank ${award.rank}`}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div><p className="font-semibold">{award.prize_name} · rank {award.rank}</p><p className="text-sm text-muted">{award.title}</p></div>
+      <div><p className="font-semibold">{t`${award.prize_name} · rank ${award.rank}`}</p><p className="text-sm text-muted">{award.title}</p></div>
       <div className="flex flex-wrap gap-2"><StatusPill label={label} tone={tone} />
-        {award.open_recoveries ? <StatusPill label={`${award.open_recoveries} owed back`} tone="danger" /> : null}</div>
+        {award.open_recoveries ? <StatusPill label={t`${award.open_recoveries} owed back`} tone="danger" /> : null}</div>
     </div>
-    <p className="text-sm">{KINDS[award.kind] ?? award.kind}{award.funding === 'sponsor_direct' ? ' · paid by the sponsor' : ''}
+    <p className="text-sm">{KINDS[award.kind] ?? award.kind}{award.funding === 'sponsor_direct' ? t` · paid by the sponsor` : ''}
       {award.amount_per_winner && award.kind === 'cash' ? ` · ${award.amount_per_winner}` : ''}{award.value_text ? ` · ${award.value_text}` : ''}</p>
-    {award.shares.length ? <ul className="grid gap-1 text-sm" aria-label="Shares">{award.shares.map(share =>
-      <li key={share.id}>Member #{share.member_id ?? '—'}: {share.amount} · {share.state}{share.paid ? ' · paid' : ''}</li>)}</ul> : null}
+    {award.shares.length ? <ul className="grid gap-1 text-sm" aria-label={t`Shares`}>{award.shares.map(share =>
+      <li key={share.id}>{t`Member #${share.member_id ?? '—'}: ${share.amount} · ${share.state}`}{share.paid ? t` · paid` : ''}</li>)}</ul> : null}
     <ErrorBlock error={actions.split.error || actions.fulfil.error || actions.forfeit.error} />
     {open && cash ? <PayoutForm award={award} recipients={unpaidConfirmed} busy={busy}
       onSubmit={fields => onRecord({ award_id: award.id, ...fields })} /> : null}

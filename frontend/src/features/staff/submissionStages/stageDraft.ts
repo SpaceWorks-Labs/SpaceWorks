@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StructuredApiError } from "../../../lib/api/errors";
 import type { ContentMode, Preset, SavedStage, StageDraft, StageRules } from "./types";
 
@@ -84,16 +85,16 @@ export function stageErrorMessage(error: unknown) {
   const body = error.body;
   if (error.code === "invalid_stage") {
     const reason = REASONS[String(body.reason)] ?? "one of its rules is not allowed";
-    return body.stage ? `Stage ${String(body.stage)}: ${reason}.` : `The stage plan was refused: ${reason}.`;
+    return body.stage ? t`Stage ${String(body.stage)}: ${reason}.` : t`The stage plan was refused: ${reason}.`;
   }
-  if (error.code === "stage_in_use") return "A stage that has submissions, a shortlist, an extension or a judging round cannot be removed. Edit it instead.";
-  if (error.code === "stale_version") return "Someone else changed the stages. Reload to see the latest plan, then make your changes again.";
-  if (error.code === "invalid_stage_count") return `An event needs between 1 and ${String(body.limit ?? 10)} stages.`;
+  if (error.code === "stage_in_use") return t`A stage that has submissions, a shortlist, an extension or a judging round cannot be removed. Edit it instead.`;
+  if (error.code === "stale_version") return t`Someone else changed the stages. Reload to see the latest plan, then make your changes again.`;
+  if (error.code === "invalid_stage_count") return t`An event needs between 1 and ${String(body.limit ?? 10)} stages.`;
   const promote: Record<string, string> = { next_stage_open: "The next stage is already open, so the list can no longer change.",
     not_a_withdrawn_shortlisted_team: "That team has not withdrawn, or is not on the list.",
     no_ranked_source: "This list was hand-picked, so there is no ranked next team.", no_next_team: "There is no next ranked team left." };
   if (error.code && promote[error.code]) return promote[error.code];
-  if (error.code === "submission_window_by_stage") return "This event has several submission stages. Edit each stage's window in the stage editor.";
+  if (error.code === "submission_window_by_stage") return t`This event has several submission stages. Edit each stage's window in the stage editor.`;
   return error.message;
 }
 

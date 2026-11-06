@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -131,47 +132,46 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
     ?? (toggleActive.error ?? archive.error ? planErrorText(toggleActive.error ?? archive.error, "Could not update the plan.") : null);
 
   return (
-    <Panel title="Membership plans">
+    <Panel title={t`Membership plans`}>
       <p className="mb-3 text-sm text-muted">
-        Plans price a membership term. Members are put on a plan from the roster ("Terms"); a plan with terms cannot be deleted, only deactivated.
-      </p>
+        {t`Plans price a membership term. Members are put on a plan from the roster ("Terms"); a plan with terms cannot be deleted, only deactivated.`}</p>
       <PlanPriceNote makerspaceId={makerspaceId} />
-      {chargesOn ? null : <p className="mb-3 text-sm text-muted">Membership charges are off in this space, so membership is free.</p>}
-      {plans.isLoading ? <p className="text-sm text-muted">Loading plans…</p> : null}
+      {chargesOn ? null : <p className="mb-3 text-sm text-muted">{t`Membership charges are off in this space, so membership is free.`}</p>}
+      {plans.isLoading ? <p className="text-sm text-muted">{t`Loading plans…`}</p> : null}
       {plans.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(plans.error, "Could not load plans.")}</p> : null}
-      {plans.data?.length === 0 ? <EmptyState message="No plans yet. Add your first membership plan below." /> : null}
+      {plans.data?.length === 0 ? <EmptyState message={t`No plans yet. Add your first membership plan below.`} /> : null}
       {plans.data?.map((plan) => (
         <ListRow key={plan.id} title={plan.name} identity={{ kind: "icon", icon: "Calendar", tone: "accent" }}
           meta={<>{planIntervalLabel(plan)}{chargesOn ? ` · ${formatMoney(plan.amount, plan.currency)}` : ""}</>}
           right={<div className="flex flex-wrap items-center gap-2">
-            <StatusPill tone={plan.archived_at ? "neutral" : plan.is_active ? "success" : "neutral"} label={plan.archived_at ? "Archived" : plan.is_active ? "Active" : "Inactive"} />
-            {plan.is_public ? <StatusPill tone="info" label="Public" /> : null}
-            <button className="desk-button" type="button" onClick={() => startEdit(plan)}>Edit</button>
+            <StatusPill tone={plan.archived_at ? "neutral" : plan.is_active ? "success" : "neutral"} label={plan.archived_at ? t`Archived` : plan.is_active ? t`Active` : t`Inactive`} />
+            {plan.is_public ? <StatusPill tone="info" label={t`Public`} /> : null}
+            <button className="desk-button" type="button" onClick={() => startEdit(plan)}>{t`Edit`}</button>
             <button className="desk-button" type="button" disabled={toggleActive.isPending} onClick={() => toggleActive.mutate(plan)}>
-              {plan.is_active ? "Deactivate" : "Activate"}
+              {plan.is_active ? t`Deactivate` : t`Activate`}
             </button>
             <button className="desk-button" type="button" disabled={archive.isPending} onClick={() => archive.mutate(plan)}>
-              {plan.archived_at ? "Restore" : "Archive"}
+              {plan.archived_at ? t`Restore` : t`Archive`}
             </button>
           </div>} />
       ))}
       <form
         className="mt-4 grid gap-2 border-t border-line pt-4 sm:grid-cols-3"
-        aria-label={editing ? `Edit plan ${editing.name}` : "New membership plan"}
+        aria-label={editing ? t`Edit plan ${editing.name}` : t`New membership plan`}
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
         }}
       >
-        <Field label="Plan name" className="sm:col-span-3">
+        <Field label={t`Plan name`} className="sm:col-span-3">
           <input className="desk-input" maxLength={120} value={form.name} onChange={(event) => set("name", event.target.value)} />
         </Field>
-        <Field label="Interval">
+        <Field label={t`Interval`}>
           <select className="desk-input max-w-full" value={form.interval} onChange={(event) => set("interval", event.target.value as PlanInterval)}>
             {PLAN_INTERVALS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </Field>
-        <Field label="Custom days" hint={form.interval === "custom_days" ? undefined : "Only for a custom interval."}>
+        <Field label={t`Custom days`} hint={form.interval === "custom_days" ? undefined : t`Only for a custom interval.`}>
           <input
             className="desk-input"
             inputMode="numeric"
@@ -182,19 +182,18 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         </Field>
         <label className="flex min-h-11 items-center gap-2 self-end text-sm text-ink">
           <input className="h-4 w-4" type="checkbox" checked={form.is_active} onChange={(event) => set("is_active", event.target.checked)} />
-          Active
-        </label>
-        {chargesOn ? <><Field label="Amount">
+          {t`Active`}</label>
+        {chargesOn ? <><Field label={t`Amount`}>
           <input className="desk-input" inputMode="decimal" value={form.amount} onChange={(event) => set("amount", event.target.value)} />
         </Field>
-        <Field label="Currency">
+        <Field label={t`Currency`}>
           <input className="desk-input" maxLength={3} value={form.currency} onChange={(event) => set("currency", event.target.value.toLowerCase())} />
         </Field></> : null}
         <div className="flex flex-wrap items-end gap-2">
           <button className="desk-button-primary" type="submit" disabled={save.isPending}>
-            {save.isPending ? "Saving…" : editing ? "Save plan" : "Create plan"}
+            {save.isPending ? t`Saving…` : editing ? t`Save plan` : t`Create plan`}
           </button>
-          {editing ? <button className="desk-button" type="button" onClick={cancelEdit}>Cancel</button> : null}
+          {editing ? <button className="desk-button" type="button" onClick={cancelEdit}>{t`Cancel`}</button> : null}
         </div>
         <MembershipRenewalFields value={renewal} onChange={(value) => { setRenewal(value); setProblem(null); }} />
         <MembershipPlanRulesFields value={rules} onChange={(value) => { setRules(value); setProblem(null); }} planRulesOn={planRulesOn} publicPlansOn={publicPlansOn} chargesOn={chargesOn} />

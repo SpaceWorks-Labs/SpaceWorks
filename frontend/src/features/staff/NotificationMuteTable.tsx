@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { DataTable } from "../../components/ui";
 import { MATRIX_TOGGLE_CELL, STICKY_FIRST_COLUMN } from "./matrixColumns";
 import type { MuteChange, RuleCatalogEntry, RuleMute } from "./notificationRuleTypes";
@@ -18,7 +19,7 @@ export function NotificationMuteTable({ entry, mutes, emailEnabled, disabledMess
           onChange={event => onChange({ target, stream: entry.stream, event: eventName, audience: entry.audience, muted: event.target.checked })} />
       </label>;
     } })),
-  ]} caption={`Muted ${humanize(entry.stream)} emails by recipient and event. Checked means muted.`} emptyTitle="No recipient mutes yet." />;
+  ]} caption={t`Muted ${humanize(entry.stream)} emails by recipient and event. Checked means muted.`} emptyTitle={t`No recipient mutes yet.`} />;
 }
 function humanize(value: string) {
   const label = value.replace(/_/g, " ");

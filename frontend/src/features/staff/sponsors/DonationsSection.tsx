@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -16,14 +17,14 @@ export function DonationsSection({ makerspace, canRecordPayment }: { makerspace:
   const taxOn = capabilityOn(makerspace, "finance.tax_exempt_receipts");
   const campaigns = useQuery({ queryKey: donationStaffKeys.campaigns(makerspace.id),
     queryFn: () => donationStaffApi.campaigns(makerspace.id) });
-  const tabs = [{ key: "gifts", label: "Gifts" }, { key: "campaigns", label: "Campaigns" },
-    ...(capabilityOn(makerspace, "finance.recurring_donations") ? [{ key: "pledges", label: "Pledges" }] : []),
-    { key: "settings", label: "Settings" }];
+  const tabs = [{ key: "gifts", label: t`Gifts` }, { key: "campaigns", label: t`Campaigns` },
+    ...(capabilityOn(makerspace, "finance.recurring_donations") ? [{ key: "pledges", label: t`Pledges` }] : []),
+    { key: "settings", label: t`Settings` }];
   const [chosen, setChosen] = useState("gifts");
   const active = tabs.some(tab => tab.key === chosen) ? chosen : "gifts";
   const rows = campaigns.data ?? [];
-  return <section className="grid gap-4" aria-label="Donations">
-    <Tabs tabs={tabs} activeKey={active} label="Donation sections" onChange={setChosen} />
+  return <section className="grid gap-4" aria-label={t`Donations`}>
+    <Tabs tabs={tabs} activeKey={active} label={t`Donation sections`} onChange={setChosen} />
     {active === "gifts" ? <GiftsList makerspaceId={makerspace.id} campaigns={rows} canRecord={canRecordPayment} taxOn={taxOn} /> : null}
     {active === "campaigns" ? <CampaignsEditor makerspaceId={makerspace.id} campaigns={rows} canRecord={canRecordPayment} /> : null}
     {active === "pledges" ? <PledgesList makerspaceId={makerspace.id} canRecord={canRecordPayment} /> : null}

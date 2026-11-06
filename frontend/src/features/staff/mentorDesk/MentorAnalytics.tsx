@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from '@tanstack/react-query'
 import { ListLayout } from '../../../components/layouts'
 import { Card } from '../../../components/ui'
@@ -12,14 +13,14 @@ export function MentorAnalytics({ scope }: { scope: EventScope }) {
   const query = useQuery({ queryKey: [...programmeKey(scope, 'admin'), 'mentor-analytics'], retry: false,
     queryFn: () => requestFor('admin')<Analytics>(`${basePath(scope, 'admin')}/mentor-analytics/`) })
   const row = query.data
-  return <ListLayout header={{ title: row?.scope === 'own' ? 'Your mentoring' : 'Mentoring overview',
-    subtitle: 'Private service diagnostics. Practice rounds are excluded. These figures do not rank mentors or choose winners.' }}
+  return <ListLayout header={{ title: row?.scope === 'own' ? t`Your mentoring` : t`Mentoring overview`,
+    subtitle: t`Private service diagnostics. Practice rounds are excluded. These figures do not rank mentors or choose winners.` }}
     state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
-    stats={row ? [{ label: 'Completed visits', value: row.completed_checkins }, { label: 'Open requests', value: row.open_help }, { label: 'Expired visit leases', value: row.expired_leases }] : []}
-    empty={{ message: 'Mentoring metrics appear after your first visit.' }}
+    stats={row ? [{ label: t`Completed visits`, value: row.completed_checkins }, { label: t`Open requests`, value: row.open_help }, { label: t`Expired visit leases`, value: row.expired_leases }] : []}
+    empty={{ message: t`Mentoring metrics appear after your first visit.` }}
     body={{ kind: 'rows', rows: row ? Object.entries({ 'First response': row.first_response, 'Help duration': row.help_duration, 'Visit duration': row.visit_duration }).map(([label, value]) => <Card key={label}>
       <h2 className="title-section">{label}</h2><dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-        <div><dt className="text-muted">Samples</dt><dd>{value.n}</dd></div><div><dt className="text-muted">Average</dt><dd>{minutes(value.average_seconds)}</dd></div>
-        <div><dt className="text-muted">Median</dt><dd>{minutes(value.median_seconds)}</dd></div><div><dt className="text-muted">90th percentile</dt><dd>{minutes(value.p90_seconds)}</dd></div>
+        <div><dt className="text-muted">{t`Samples`}</dt><dd>{value.n}</dd></div><div><dt className="text-muted">{t`Average`}</dt><dd>{minutes(value.average_seconds)}</dd></div>
+        <div><dt className="text-muted">{t`Median`}</dt><dd>{minutes(value.median_seconds)}</dd></div><div><dt className="text-muted">{t`90th percentile`}</dt><dd>{minutes(value.p90_seconds)}</dd></div>
       </dl></Card>) : null }} />
 }

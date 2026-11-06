@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../lib/api";
@@ -13,12 +14,11 @@ export function MembershipRefundExtras({ makerspaceId, caseId, keepMembership, o
     queryFn: () => staffRequest<Suggestion>(`/admin/makerspaces/${makerspaceId}/refund-cases/${caseId}/membership-suggestion`), retry: false });
   const data = suggestion.data;
   return <div className="grid gap-2">
-    {data?.applies && data.suggested_amount != null ? <p className="text-sm text-ink">If cancelled today the membership policy suggests{" "}
+    {data?.applies && data.suggested_amount != null ? <p className="text-sm text-ink">{t`If cancelled today the membership policy suggests${" "}`}
       <strong>{data.suggested_amount} {data.currency.toUpperCase()}</strong>{data.band ? ` (${data.band.replace("_", " ")})` : ""}.</p> : null}
     <label className="flex min-h-11 items-center gap-2 text-sm">
       <input className="h-4 w-4" type="checkbox" checked={keepMembership} onChange={(event) => onKeepMembership(event.target.checked)} />
-      Keep the membership (do not end the term this payment bought)
-    </label>
-    {!keepMembership ? <p className="text-sm text-muted">Approving ends that term now, so its card stops verifying. An early-paid term that has not started is cancelled.</p> : null}
+      {t`Keep the membership (do not end the term this payment bought)`}</label>
+    {!keepMembership ? <p className="text-sm text-muted">{t`Approving ends that term now, so its card stops verifying. An early-paid term that has not started is cancelled.`}</p> : null}
   </div>;
 }

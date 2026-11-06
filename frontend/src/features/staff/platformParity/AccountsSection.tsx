@@ -1,22 +1,23 @@
+import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 import { EmptyState, ErrorText, Field, ListRow, Skeleton, StatusPill, type Tone } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog, type ReasonSpec } from "../platformSpaces/ActionDialog";
 import { useAccountAction, useAccountLookup, type AccountAction, type PlatformAccount } from "./accountsApi";
 
-const REASON: ReasonSpec = { label: "Reason", min: 3, max: 300 };
+const REASON: ReasonSpec = { label: t`Reason`, min: 3, max: 300 };
 const ACCESS: Record<PlatformAccount["access_status"], [string, Tone]> = {
   active: ["Access: active", "success"], restricted: ["Access: restricted", "warn"], suspended: ["Access: suspended", "danger"],
 };
 
 type Copy = { title: string; confirm: string; message: string; done: string; danger?: boolean; reason?: boolean };
 const COPY: Record<AccountAction, Copy> = {
-  disable: { title: "Disable this account", confirm: "Disable account", done: "Account disabled.", danger: true, reason: true,
-    message: "Every session ends and its staff roles are revoked." },
-  enable: { title: "Re-enable this account", confirm: "Re-enable account", done: "Account re-enabled.",
-    message: "Staff roles stay revoked; restore them per space." },
-  "reset-two-step": { title: "Reset two-step sign-in", confirm: "Reset two-step", done: "Two-step sign-in reset.", danger: true, reason: true,
-    message: "Every sign-in factor is cleared and sessions end." },
+  disable: { title: t`Disable this account`, confirm: t`Disable account`, done: t`Account disabled.`, danger: true, reason: true,
+    message: t`Every session ends and its staff roles are revoked.` },
+  enable: { title: t`Re-enable this account`, confirm: t`Re-enable account`, done: t`Account re-enabled.`,
+    message: t`Staff roles stay revoked; restore them per space.` },
+  "reset-two-step": { title: t`Reset two-step sign-in`, confirm: t`Reset two-step`, done: t`Two-step sign-in reset.`, danger: true, reason: true,
+    message: t`Every sign-in factor is cleared and sessions end.` },
 };
 
 function AccountDialog({ account, action, onClose }: { account: PlatformAccount; action: AccountAction; onClose: () => void }) {
@@ -35,15 +36,15 @@ function AccountCard({ account, onAction }: { account: PlatformAccount; onAction
     meta={`${account.account_kind.replace(/_/g, " ")} · ${roles} staff ${roles === 1 ? "role" : "roles"}`}
     right={<div className="grid gap-2">
       <div className="flex flex-wrap gap-2">
-        <StatusPill label={account.is_active ? "Enabled" : "Disabled"} tone={account.is_active ? "success" : "danger"} />
+        <StatusPill label={account.is_active ? t`Enabled` : t`Disabled`} tone={account.is_active ? "success" : "danger"} />
         <StatusPill label={access} tone={tone} />
-        <StatusPill label={account.mfa_enabled ? "Two-step on" : "Two-step off"} tone={account.mfa_enabled ? "info" : "neutral"} />
+        <StatusPill label={account.mfa_enabled ? t`Two-step on` : t`Two-step off`} tone={account.mfa_enabled ? "info" : "neutral"} />
       </div>
       <div className="flex flex-wrap gap-2">
         {account.is_active
-          ? <button type="button" className="desk-button-danger-outline" onClick={() => onAction("disable")}>Disable…</button>
-          : <button type="button" className="desk-button" onClick={() => onAction("enable")}>Re-enable…</button>}
-        <button type="button" className="desk-button-danger-outline" onClick={() => onAction("reset-two-step")}>Reset two-step…</button>
+          ? <button type="button" className="desk-button-danger-outline" onClick={() => onAction("disable")}>{t`Disable…`}</button>
+          : <button type="button" className="desk-button" onClick={() => onAction("enable")}>{t`Re-enable…`}</button>}
+        <button type="button" className="desk-button-danger-outline" onClick={() => onAction("reset-two-step")}>{t`Reset two-step…`}</button>
       </div>
     </div>} />;
 }
@@ -61,17 +62,17 @@ export function AccountsSection() {
     if (next === username) void lookup.refetch(); else setUsername(next);
   };
   return <div className="grid gap-4">
-    <p className="text-sm text-muted">Look up an account by its exact user name. Email, phone and name are not shown here.</p>
-    <form className="flex flex-wrap items-end gap-3" aria-label="Find an account" onSubmit={submit}>
-      <Field label="User name" className="min-w-0 flex-1 basis-56">
+    <p className="text-sm text-muted">{t`Look up an account by its exact user name. Email, phone and name are not shown here.`}</p>
+    <form className="flex flex-wrap items-end gap-3" aria-label={t`Find an account`} onSubmit={submit}>
+      <Field label={t`User name`} className="min-w-0 flex-1 basis-56">
         <input className="desk-input" value={input} autoComplete="off" spellCheck={false} onChange={event => setInput(event.target.value)} />
       </Field>
-      <button type="submit" className="desk-button-primary" disabled={!input.trim() || lookup.isFetching}>Find account</button>
+      <button type="submit" className="desk-button-primary" disabled={!input.trim() || lookup.isFetching}>{t`Find account`}</button>
     </form>
     {!username ? null
       : lookup.isLoading ? <Skeleton className="h-20 w-full" />
       : lookup.isError ? <ErrorText resource="the account" onRetry={() => { void lookup.refetch(); }} />
-      : !found ? <EmptyState message={`No account is called "${username}".`} />
+      : !found ? <EmptyState message={t`No account is called "${username}".`} />
       : <AccountCard account={found} onAction={action => setActing({ account: found, action })} />}
     {acting ? <AccountDialog account={acting.account} action={acting.action} onClose={() => setActing(null)} /> : null}
   </div>;

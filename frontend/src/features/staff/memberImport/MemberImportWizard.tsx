@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -17,7 +18,7 @@ const FIELDS: [string, string][] = [
 ];
 type Step = "upload" | "preview" | "result";
 
-const errorText = (error: unknown) => (error instanceof StructuredApiError ? error.message : "The file could not be read.");
+const errorText = (error: unknown) => (error instanceof StructuredApiError ? error.message : t`The file could not be read.`);
 
 type Input = { source: ImportSource; file: File | null; url: string; sheetSha?: string };
 
@@ -74,18 +75,18 @@ export function MemberImportWizard({ makerspaceId, open, onClose, sheetsEnabled 
     state: (key === step ? "current" : all.indexOf(step) > index ? "done" : "todo") as "done" | "current" | "todo",
   }));
   const failure = preview.error ?? apply.error;
-  return <FlowLayout presentation="dialog" open={open} title="Import members"
+  return <FlowLayout presentation="dialog" open={open} title={t`Import members`}
     subject={`${sheetsEnabled ? "CSV, Excel or a public Google Sheet" : "CSV or Excel"}, read on the server. Nobody is linked until they accept.`}
     steps={steps} current={step} onCancel={reset} state={{ status: "ready" }}
     leaveGuard={step === "preview" ? "Leave without importing? Nothing has been saved yet." : undefined}
     error={failure ? { size: "inline", tone: "danger", lead: "Import problem", body: errorText(failure) } : undefined}
-    result={step === "result" && result ? { tone: "success", title: "Import finished",
-      summary: <>Invited {result.counts.invited ?? 0}, record only {result.counts.record_only ?? 0}, updated {result.counts.updated ?? 0}, skipped {result.counts.skipped ?? 0}.</>,
-      next: { label: "Done", onClick: reset }, undo: { label: "Download result CSV", onClick: download } } : undefined}
-    footer={step === "upload" ? { next: { label: "Preview", pending: preview.isPending, disabled: sheet ? Boolean(sheetLinkProblem(url)) : !file,
+    result={step === "result" && result ? { tone: "success", title: t`Import finished`,
+      summary: <>{t`Invited ${result.counts.invited ?? 0}, record only ${result.counts.record_only ?? 0}, updated ${result.counts.updated ?? 0}, skipped ${result.counts.skipped ?? 0}.`}</>,
+      next: { label: t`Done`, onClick: reset }, undo: { label: t`Download result CSV`, onClick: download } } : undefined}
+    footer={step === "upload" ? { next: { label: t`Preview`, pending: preview.isPending, disabled: sheet ? Boolean(sheetLinkProblem(url)) : !file,
       disabledReason: sheet ? "Paste a Google Sheets link first." : "Choose a file first.", onClick: () => preview.mutate() } }
-      : { back: { label: "Back", onClick: () => setStep("upload") },
-        next: { label: "Import", pending: apply.isPending, disabled: !preview.data?.counts.create && !preview.data?.counts.update,
+      : { back: { label: t`Back`, onClick: () => setStep("upload") },
+        next: { label: t`Import`, pending: apply.isPending, disabled: !preview.data?.counts.create && !preview.data?.counts.update,
           disabledReason: "Nothing to import.", onClick: () => apply.mutate() } }}
     work={step === "upload" ? <div className="grid gap-4">
       <ScreenHelp screen="members.import" />

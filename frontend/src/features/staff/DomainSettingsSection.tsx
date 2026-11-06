@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { ErrorBlock, SettingsRow } from "../../components/ui";
@@ -31,9 +32,9 @@ export function DomainSettingsSection({ makerspaceId, domain }: Props) {
   // Separate mutations so a failed toggle and a failed settings save report in their own place.
   const toggle = useUpdateDomainSettings(makerspaceId, domain);
   const save = useUpdateDomainSettings(makerspaceId, domain);
-  if (query.isLoading) return <p className="text-sm text-muted">Loading settings…</p>;
+  if (query.isLoading) return <p className="text-sm text-muted">{t`Loading settings…`}</p>;
   if (!query.data) {
-    return <ErrorBlock error={query.error ?? new Error("Couldn't load these settings.")}
+    return <ErrorBlock error={query.error ?? new Error(t`Couldn't load these settings.`)}
       onRetry={() => { void query.refetch(); }} />;
   }
   const { editable, features, settings } = query.data;
@@ -44,7 +45,7 @@ export function DomainSettingsSection({ makerspaceId, domain }: Props) {
   const lockedFields = new Set(Object.entries(permissions).filter(([, value]) => !value.editable).map(([key]) => key));
   return <div className="grid min-w-0 gap-2">
     {!editable ? <p role="note" className="text-sm text-muted">{READ_ONLY_NOTE[domain]}</p> : null}
-    {features.length ? <SettingsRow label="Features"
+    {features.length ? <SettingsRow label={t`Features`}
       helper="Optional features for this area. Each has its own switch; turning one off keeps its data.">
       <fieldset className="grid min-w-0 gap-2">
         <legend className="sr-only">{DOMAIN_TITLES[domain]} features</legend>
@@ -57,14 +58,14 @@ export function DomainSettingsSection({ makerspaceId, domain }: Props) {
           <span className="grid min-w-0 gap-0.5">
             <span>{feature.label}</span>
             {feature.description ? <span className="text-muted">{feature.description}</span> : null}
-            {!feature.available ? <span className="text-muted">Needs a module that is not installed here.</span> : null}
+            {!feature.available ? <span className="text-muted">{t`Needs a module that is not installed here.`}</span> : null}
           </span>
         </label>
         <SettingLock makerspaceId={makerspaceId} settingKey={feature.key} label={feature.label}
           locked={feature.locked} canLock={canLock} />
         </div>)}
         {toggle.error ? <p role="alert" className="text-sm text-danger">{toggle.error.message}</p> : null}
-        {toggle.isSuccess ? <p role="status" className="text-sm text-muted">Features updated.</p> : null}
+        {toggle.isSuccess ? <p role="status" className="text-sm text-muted">{t`Features updated.`}</p> : null}
       </fieldset>
     </SettingsRow> : null}
     {Object.keys(settings).length ? <DomainSettingsFields key={JSON.stringify(settings)} values={settings}
@@ -74,7 +75,7 @@ export function DomainSettingsSection({ makerspaceId, domain }: Props) {
         locked={permissions[field]?.locked ?? false} canLock={canLock} />}
       pending={save.isPending} error={save.error?.message}
       onSave={(patch) => save.mutate({ settings: patch })} /> : null}
-    {save.isSuccess ? <p role="status" className="text-sm text-muted">Settings saved.</p> : null}
+    {save.isSuccess ? <p role="status" className="text-sm text-muted">{t`Settings saved.`}</p> : null}
   </div>;
 }
 

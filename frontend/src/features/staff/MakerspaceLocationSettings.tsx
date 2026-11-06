@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
 import { useEffect, useState } from "react";
@@ -52,7 +53,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
   const savedMapUrl = currentMapUrl.trim();
 
   return (
-    <SettingsRow label="Location" helper="Public location label and optional Google Maps link shown on public pages."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Location`} helper="Public location label and optional Google Maps link shown on public pages."><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {
@@ -67,7 +68,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
             <div className="flex flex-wrap items-center gap-2">
 
               <Badge label="" tone={savedMapUrl ? "success" : "neutral"}>
-                {savedMapUrl ? "Maps link set" : "Text only"}
+                {savedMapUrl ? t`Maps link set` : t`Text only`}
               </Badge>
             </div>
 
@@ -77,23 +78,23 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
 
         <div className="grid min-w-0 gap-3 @xl:grid-cols-2">
           <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
-            <span>Location label</span>
+            <span>{t`Location label`}</span>
             <input
               className="desk-input"
               value={locationInput}
               onChange={(event) => setLocationInput(event.target.value)}
-              placeholder="Main lab, downtown campus"
+              placeholder={t`Main lab, downtown campus`}
             />
           </label>
           <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
-            <span>Google Maps link</span>
+            <span>{t`Google Maps link`}</span>
             <input
               className="desk-input"
               value={mapUrlInput}
               onChange={(event) => setMapUrlInput(event.target.value)}
               placeholder="https://maps.app.goo.gl/..."
             />
-            <span className="text-xs font-normal text-muted">Open Google Maps → Share → Copy link → paste here</span>
+            <span className="text-xs font-normal text-muted">{t`Open Google Maps → Share → Copy link → paste here`}</span>
           </label>
         </div>
 
@@ -104,8 +105,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
             target="_blank"
             rel="noopener noreferrer"
           >
-            Open in Maps ↗
-          </a>
+            {t`Open in Maps ↗`}</a>
         ) : null}
         {updateLocation.error ? (
           <p className="text-sm text-danger">{updateLocation.error.message}</p>

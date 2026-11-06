@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -26,9 +27,8 @@ export function RefundMembershipPolicies({ makerspaceId, canEdit, defaultCard, p
   return <Card>
     <div className="grid gap-4">
       <div className="grid gap-1">
-        <h3 className="title-section">Memberships</h3>
-        <p className="text-sm text-muted">Cancelling a paid membership term opens a refund for you to approve. Dues and
-          joining fees have no term: members can ask, and you decide.</p>
+        <h3 className="title-section">{t`Memberships`}</h3>
+        <p className="text-sm text-muted">{t`Cancelling a paid membership term opens a refund for you to approve. Dues and joining fees have no term: members can ask, and you decide.`}</p>
       </div>
       {defaultCard}
       {planRules.map((rule) => <PlanCard key={rule.plan} makerspaceId={makerspaceId} policy={rule} canEdit={canEdit} />)}
@@ -36,9 +36,9 @@ export function RefundMembershipPolicies({ makerspaceId, canEdit, defaultCard, p
         onCancel={() => setAdding(null)} onSaved={() => setAdding(null)}
         policy={{ area: "membership", plan: draft.id, plan_name: draft.name, configured: false,
           currency: currency || draft.currency, updated_at: "" }} /> : null}
-      {canEdit && available.length && !draft ? <Field label="Add a rule for one plan">
+      {canEdit && available.length && !draft ? <Field label={t`Add a rule for one plan`}>
         <select className="desk-input" value="" onChange={(event) => setAdding(Number(event.target.value))}>
-          <option value="">Choose a plan…</option>
+          <option value="">{t`Choose a plan…`}</option>
           {available.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
         </select>
       </Field> : null}
@@ -55,7 +55,7 @@ function PlanCard({ makerspaceId, policy, canEdit, startEditing, onCancel, onSav
   const planId = policy.plan as number;
   const save = useMutation({ mutationFn: (body: PolicyBody) => savePlanPolicy(makerspaceId, planId, body) });
   const remove = useMutation({ mutationFn: () => removePlanPolicy(makerspaceId, planId), onSuccess: refresh });
-  return <RefundPolicyCard title={`Plan: ${policy.plan_name}`} policy={policy} canEdit={canEdit}
+  return <RefundPolicyCard title={t`Plan: ${policy.plan_name}`} policy={policy} canEdit={canEdit}
     startEditing={startEditing} onCancel={onCancel}
     saving={save.isPending} removing={remove.isPending} saveError={save.error ?? remove.error}
     onSave={(body, done) => save.mutate(body, { onSuccess: () => { done(); onSaved?.(); void refresh(); } })}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import { post, type Page } from "./parityRequest";
@@ -11,8 +12,8 @@ export type SelfhostMove = {
 export type MoveAction = "approve" | "reject" | "export" | "discard";
 
 export const MOVE_STATUS_LABELS: Record<MoveStatus, string> = {
-  requested: "Requested", approved: "Approved", exporting: "Exporting", exported: "Exported",
-  rejected: "Declined", failed: "Failed", cancelled: "Cancelled",
+  requested: t`Requested`, approved: t`Approved`, exporting: t`Exporting`, exported: t`Exported`,
+  rejected: t`Declined`, failed: t`Failed`, cancelled: t`Cancelled`,
 };
 
 const BASE = "/admin/platform/selfhost-moves";

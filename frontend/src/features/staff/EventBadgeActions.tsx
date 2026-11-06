@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useMemo, useState } from "react";
 
 import { PositionedLayoutEditor } from "../../components/print-layout/PositionedLayoutEditor";
@@ -69,29 +70,29 @@ export function EventBadgeActions({ event, makerspaceId, selectedIds, includeAtt
     <DeskBadgePanel key={event.id} eventId={event.id} eventVersion={(event as StaffEvent & { version?: number }).version}
       registrationIds={selectedIds} canEdit={canEdit} canPrint={canPrint} />
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h4 className="font-semibold text-ink">Attendee badges</h4><p className="text-xs text-muted">Print display fields only. Badges contain no contact details or check-in credentials.</p></div>
-      {canPrint ? <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>Preview</button>
-      <button className="desk-button-primary" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: savePdf })}>{generate.isPending ? "Generating…" : `Download PDF (${selectedIds.length})`}</button></div> : null}
+      <div><h4 className="font-semibold text-ink">{t`Attendee badges`}</h4><p className="text-xs text-muted">{t`Print display fields only. Badges contain no contact details or check-in credentials.`}</p></div>
+      {canPrint ? <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>{t`Preview`}</button>
+      <button className="desk-button-primary" type="button" disabled={generationDisabled} onClick={() => generate.mutate(payload, { onSuccess: savePdf })}>{generate.isPending ? t`Generating…` : t`Download PDF (${selectedIds.length})`}</button></div> : null}
     </div>
-    {canPrint ? <label className="mt-3 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={includeAttended} onChange={(e) => onIncludeAttended(e.target.checked)} />Allow attended registrations</label> : null}
-    {canEdit && templateQuery.isLoading ? <p className="mt-3 text-sm text-muted" role="status">Loading badge template…</p> : null}
-    {canEdit && templateQuery.isError ? <button className="desk-button mt-2" type="button" onClick={() => { void templateQuery.refetch(); }}>Retry badge template</button> : null}
-    {canEdit && draft ? <details className="mt-3"><summary className="cursor-pointer font-semibold text-ink">Badge template</summary>
+    {canPrint ? <label className="mt-3 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={includeAttended} onChange={(e) => onIncludeAttended(e.target.checked)} />{t`Allow attended registrations`}</label> : null}
+    {canEdit && templateQuery.isLoading ? <p className="mt-3 text-sm text-muted" role="status">{t`Loading badge template…`}</p> : null}
+    {canEdit && templateQuery.isError ? <button className="desk-button mt-2" type="button" onClick={() => { void templateQuery.refetch(); }}>{t`Retry badge template`}</button> : null}
+    {canEdit && draft ? <details className="mt-3"><summary className="cursor-pointer font-semibold text-ink">{t`Badge template`}</summary>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <label className="text-sm">Paper<select className="desk-input mt-1 w-full" value={draft.paper_size} onChange={(e) => setDraft({ ...draft, paper_size: e.target.value as BadgeTemplate["paper_size"] })}><option value="A4">A4</option><option value="LETTER">Letter</option></select></label>
-        <label className="text-sm">Orientation<select className="desk-input mt-1 w-full" value={draft.orientation} onChange={(e) => setDraft({ ...draft, orientation: e.target.value as BadgeTemplate["orientation"] })}><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
-        <label className="text-sm">Card width (mm)<input className="desk-input mt-1 w-full" type="number" min="40" max="150" value={draft.card_width_mm} onChange={(e) => setDraft({ ...draft, card_width_mm: Number(e.target.value) })} /></label>
-        <label className="text-sm">Card height (mm)<input className="desk-input mt-1 w-full" type="number" min="30" max="120" value={draft.card_height_mm} onChange={(e) => setDraft({ ...draft, card_height_mm: Number(e.target.value) })} /></label>
+        <label className="text-sm">{t`Paper`}<select className="desk-input mt-1 w-full" value={draft.paper_size} onChange={(e) => setDraft({ ...draft, paper_size: e.target.value as BadgeTemplate["paper_size"] })}><option value="A4">A4</option><option value="LETTER">{t`Letter`}</option></select></label>
+        <label className="text-sm">{t`Orientation`}<select className="desk-input mt-1 w-full" value={draft.orientation} onChange={(e) => setDraft({ ...draft, orientation: e.target.value as BadgeTemplate["orientation"] })}><option value="portrait">{t`Portrait`}</option><option value="landscape">{t`Landscape`}</option></select></label>
+        <label className="text-sm">{t`Card width (mm)`}<input className="desk-input mt-1 w-full" type="number" min="40" max="150" value={draft.card_width_mm} onChange={(e) => setDraft({ ...draft, card_width_mm: Number(e.target.value) })} /></label>
+        <label className="text-sm">{t`Card height (mm)`}<input className="desk-input mt-1 w-full" type="number" min="30" max="120" value={draft.card_height_mm} onChange={(e) => setDraft({ ...draft, card_height_mm: Number(e.target.value) })} /></label>
       </div>
-      <fieldset className="mt-3"><legend className="font-semibold text-ink">Printed fields</legend><div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">{options.map(([value, label]) => <label key={value} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={draft.fields.includes(value)} onChange={() => toggleField(value)} />{label}</label>)}</div></fieldset>
-      {event.custom_form?.length && !event.badge_sensitive_fields_allowed ? <p className="mt-2 text-xs text-muted">Custom answers need permission to manage this event's registrations.</p> : null}
+      <fieldset className="mt-3"><legend className="font-semibold text-ink">{t`Printed fields`}</legend><div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">{options.map(([value, label]) => <label key={value} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={draft.fields.includes(value)} onChange={() => toggleField(value)} />{label}</label>)}</div></fieldset>
+      {event.custom_form?.length && !event.badge_sensitive_fields_allowed ? <p className="mt-2 text-xs text-muted">{t`Custom answers need permission to manage this event's registrations.`}</p> : null}
       <PositionedLayoutEditor widthMm={draft.card_width_mm} heightMm={draft.card_height_mm} gridMm={draft.grid_mm}
         elements={draft.elements} labels={Object.fromEntries(options)} disabled={save.isPending}
         onGridChange={(grid_mm) => setDraft({ ...draft, grid_mm })} onChange={(elements) => setDraft({ ...draft, elements })} />
-      <button className="desk-button mt-3" type="button" disabled={save.isPending || !layoutFits(draft.elements, draft.card_width_mm, draft.card_height_mm)} onClick={() => save.mutate({ ...draft, include_qr: false })}>{save.isPending ? "Saving…" : "Save template"}</button>
-      {save.isSuccess ? <p className="mt-2 text-xs text-success" role="status">Badge template saved.</p> : null}
+      <button className="desk-button mt-3" type="button" disabled={save.isPending || !layoutFits(draft.elements, draft.card_width_mm, draft.card_height_mm)} onClick={() => save.mutate({ ...draft, include_qr: false })}>{save.isPending ? t`Saving…` : t`Save template`}</button>
+      {save.isSuccess ? <p className="mt-2 text-xs text-success" role="status">{t`Badge template saved.`}</p> : null}
     </details> : null}
-    {previewUrl ? <div className="mt-3"><iframe className="h-96 w-full border border-line" src={previewUrl} title="Attendee badge PDF preview" /><button className="desk-button mt-2" type="button" onClick={() => setPreviewUrl(null)}>Close preview</button></div> : null}
+    {previewUrl ? <div className="mt-3"><iframe className="h-96 w-full border border-line" src={previewUrl} title={t`Attendee badge PDF preview`} /><button className="desk-button mt-2" type="button" onClick={() => setPreviewUrl(null)}>{t`Close preview`}</button></div> : null}
     {error ? <p className="mt-2 text-xs text-danger" role="alert">{eventErrorText(error)}</p> : null}
   </div>;
 }

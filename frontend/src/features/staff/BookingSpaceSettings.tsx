@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { BookableSpaceForm, valuesForSpace } from "./BookableSpaceForm";
 import { BookingCloneControl } from "./BookingCloneControl";
 import { BookingDetailsEditor } from "./BookingDetailsEditor";
@@ -27,10 +28,10 @@ export function BookingSpaceSettings({ makerspaceId, space, access, update }: {
   return <div className="grid gap-6">
     {access.manager ? <BookableSpaceForm makerspaceId={makerspaceId} mode="settings" key={space.updated_at} initialValues={valuesForSpace(space)}
       onSubmit={payload => { void saveSettings(payload); }} pending={update.isPending || drop.checking}
-      error={error} submitLabel="Save changes" disabled={!space.is_active} />
+      error={error} submitLabel={t`Save changes`} disabled={!space.is_active} />
       : access.edit ? <BookingDetailsEditor key={space.updated_at} space={space} pending={update.isPending} onSubmit={payload => update.mutate(payload)} />
-      : <p className="whitespace-pre-wrap text-sm text-muted">{space.description || "Use your assigned resource permissions."}</p>}
-    {!space.is_active ? <p className="text-sm text-muted">This space is inactive and read-only.</p> : null}
+      : <p className="whitespace-pre-wrap text-sm text-muted">{space.description || t`Use your assigned resource permissions.`}</p>}
+    {!space.is_active ? <p className="text-sm text-muted">{t`This space is inactive and read-only.`}</p> : null}
     {access.manager ? <PriceOverrideCard makerspaceId={makerspaceId} targetType="bookable_space" targetId={space.id} /> : null}
     {access.manager && space.clone_enabled ? <BookingCloneControl space={space} /> : null}
     {access.manager && space.staff_grants_enabled ? <BookingStaffAccess target={{ id: space.id }} /> : null}

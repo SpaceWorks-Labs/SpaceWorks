@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getJobSession, trackJob } from "../../components/ui/jobStore";
 
@@ -47,37 +48,36 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
   const restores = useQuery({ queryKey: ["restore-operations"], queryFn: listRestores, enabled: hostControls, refetchInterval: 3000 });
   const activeRestore = restores.data?.find((row) => !["completed", "failed", "aborted", "restored_quarantined"].includes(row.stage));
   const restoreDetail = useQuery({ queryKey: ["restore-operation", activeRestore?.id], queryFn: () => getRestore(activeRestore!.id), enabled: Boolean(activeRestore), refetchInterval: 1000 });
-  const createDeployment = useMutation({ onMutate: getJobSession, mutationFn: requestDeploymentBackup, onSuccess: (job, _variables, session) => { trackJob({ key: `backup:${job.id}`, label: "Deployment backup", makerspaceId: 0, status: job.status, endpoint: "/admin/platform/backups", collectionId: job.id }, session); return client.invalidateQueries({ queryKey: deploymentKey }); } });
-  const saveSettings = useMutation({ mutationFn: updateBackupSettings, onSuccess: (data) => { client.setQueryData(["backup-settings"], data); toast("Backup settings saved."); } });
+  const createDeployment = useMutation({ onMutate: getJobSession, mutationFn: requestDeploymentBackup, onSuccess: (job, _variables, session) => { trackJob({ key: `backup:${job.id}`, label: t`Deployment backup`, makerspaceId: 0, status: job.status, endpoint: "/admin/platform/backups", collectionId: job.id }, session); return client.invalidateQueries({ queryKey: deploymentKey }); } });
+  const saveSettings = useMutation({ mutationFn: updateBackupSettings, onSuccess: (data) => { client.setQueryData(["backup-settings"], data); toast(t`Backup settings saved.`); } });
   const download = useMutation({ mutationFn: issueBackupDownload, onSuccess: ({ url }) => window.location.assign(url) });
   const startRestore = useMutation({ mutationFn: ({ archive, kind }: { archive: string; kind: "rollback_in_place" | "disaster" }) => requestRestore(archive, kind), onSuccess: () => { setRestoreOpen(false); return client.invalidateQueries({ queryKey: ["restore-operations"] }); } });
   const decision = useMutation({ mutationFn: ({ id, value }: { id: string; value: "proceed" | "reset" | "abort" }) => decideRestore(id, value), onSuccess: () => client.invalidateQueries({ queryKey: ["restore-operations"] }) });
 
   const available = (deployment.data ?? []).filter(row => row.status === "available");
-  const primary = hostControls && scope === "platform" ? { label: "Create full deployment archive", onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requesting…" } : undefined;
+  const primary = hostControls && scope === "platform" ? { label: t`Create full deployment archive`, onClick: () => createDeployment.mutate(), pending: createDeployment.isPending, pendingLabel: "Requesting…" } : undefined;
   return <>
-    <SettingsLayout header={{ title: "Backup & restore", subtitle: "Keep encrypted copies of your space and review every restore before it changes live data.", primary }}
+    <SettingsLayout header={{ title: t`Backup & restore`, subtitle: t`Keep encrypted copies of your space and review every restore before it changes live data.`, primary }}
       state={{ status: "ready" }} sections={[
-        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: "Deployment information", rows: <ErrorText resource="deployment information" onRetry={() => { void runtime.refetch(); }} /> }] : []),
+        ...(isSuperadmin && runtime.isError ? [{ id: "deployment-status", title: t`Deployment information`, rows: <ErrorText resource="deployment information" onRetry={() => { void runtime.refetch(); }} /> }] : []),
         // Managers no longer request or download archives (owner decision #111 Q2): the
         // superadmin backs up and restores; a manager reads the last backup and keeps their
         // own copy through data export.
-        ...(!isSuperadmin ? [{ id: "this-space", title: "This space", rows: <div className="grid gap-3">
+        ...(!isSuperadmin ? [{ id: "this-space", title: t`This space`, rows: <div className="grid gap-3">
           <BackupStatusCard makerspaceId={makerspaceId} />
-          <p className="text-sm text-muted">The platform backs up and restores this space. For your own copy of its data, use Data export.</p>
+          <p className="text-sm text-muted">{t`The platform backs up and restores this space. For your own copy of its data, use Data export.`}</p>
         </div> }] : []),
-        ...(!isSuperadmin ? [{ id: "self-host-move", title: "Move to your own server", rows: <SelfHostMoveCard makerspaceId={makerspaceId} /> }] : []),
-        ...(isSuperadmin ? [{ id: "scope", title: "What to back up or restore", rows: <label className="grid gap-2 text-sm">Scope
-          <select className="desk-input max-w-full" value={String(scope)} onChange={event => setScope(event.target.value === "platform" ? "platform" : Number(event.target.value))}>
-            <option value="platform">Whole platform</option>
-            {(schedule.data?.spaces ?? []).map(space => <option key={space.makerspace_id} value={space.makerspace_id}>One space: {space.name}</option>)}
+        ...(!isSuperadmin ? [{ id: "self-host-move", title: t`Move to your own server`, rows: <SelfHostMoveCard makerspaceId={makerspaceId} /> }] : []),
+        ...(isSuperadmin ? [{ id: "scope", title: t`What to back up or restore`, rows: <label className="grid gap-2 text-sm">{t`Scope`}<select className="desk-input max-w-full" value={String(scope)} onChange={event => setScope(event.target.value === "platform" ? "platform" : Number(event.target.value))}>
+            <option value="platform">{t`Whole platform`}</option>
+            {(schedule.data?.spaces ?? []).map(space => <option key={space.makerspace_id} value={space.makerspace_id}>{t`One space: ${space.name}`}</option>)}
           </select></label> }] : []),
-        ...(isSuperadmin && scope !== "platform" ? [{ id: "space", title: "This space's restore points", rows: <SpaceBackupSection key={scope} makerspaceId={scope} /> }] : []),
-        ...(isSuperadmin ? [{ id: "schedule", title: "Schedule", rows: <BackupScheduleView onPickSpace={setScope} /> }] : []),
-        ...(deploymentInfo?.mode === "managed" && scope === "platform" ? [{ id: "managed-deployment", title: "Deployment recovery", rows: <DeploymentNotices data={deploymentInfo} /> }] : []),
-        ...(hostControls && scope === "platform" ? [{ id: "deployment", title: "Whole platform", rows: <div className="grid gap-4">
+        ...(isSuperadmin && scope !== "platform" ? [{ id: "space", title: t`This space's restore points`, rows: <SpaceBackupSection key={scope} makerspaceId={scope} /> }] : []),
+        ...(isSuperadmin ? [{ id: "schedule", title: t`Schedule`, rows: <BackupScheduleView onPickSpace={setScope} /> }] : []),
+        ...(deploymentInfo?.mode === "managed" && scope === "platform" ? [{ id: "managed-deployment", title: t`Deployment recovery`, rows: <DeploymentNotices data={deploymentInfo} /> }] : []),
+        ...(hostControls && scope === "platform" ? [{ id: "deployment", title: t`Whole platform`, rows: <div className="grid gap-4">
           <ArchiveDisclosure deployment />
-          <p className="text-sm text-muted">One space from a whole-platform backup: restore via host command (see docs). It becomes a restore point of that space here.</p>
+          <p className="text-sm text-muted">{t`One space from a whole-platform backup: restore via host command (see docs). It becomes a restore point of that space here.`}</p>
           <BackupQuery query={settings} resource="backup settings">{settings.data ? <BackupScheduleSettings deployment={deploymentInfo} key={makerspaceId} data={settings.data} pending={saveSettings.isPending} onSave={(value, onSaved) => saveSettings.mutate(value, { onSuccess: onSaved })} /> : null}</BackupQuery>
           {saveSettings.error ? <ErrorText message={saveSettings.error.message} /> : null}
           <BackupQuery query={deployment} resource="deployment backups"><BackupArchiveRows rows={deployment.data ?? []} onDownload={id => download.mutate(id)} downloading={download.isPending ? download.variables : undefined} /></BackupQuery>
@@ -87,9 +87,9 @@ export function BackupRestorePanel({ makerspaceId, isSuperadmin }: { makerspaceI
           {restoreDetail.isError ? <ErrorText resource="restore report" onRetry={() => { void restoreDetail.refetch(); }} /> : null}
           {decision.error ? <ErrorText message={decision.error.message} /> : null}
         </div> }] : []),
-        ...(download.error ? [{ id: "download-error", title: "Download", rows: <ErrorText message={download.error.message} /> }] : []),
-      ]} danger={hostControls && scope === "platform" ? [{ title: "Restore from a backup", consequence: "A restore replaces live deployment data. Review the archive and recovery kind before starting.",
-        action: { label: "Restore from a backup…", onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
+        ...(download.error ? [{ id: "download-error", title: t`Download`, rows: <ErrorText message={download.error.message} /> }] : []),
+      ]} danger={hostControls && scope === "platform" ? [{ title: t`Restore from a backup`, consequence: "A restore replaces live deployment data. Review the archive and recovery kind before starting.",
+        action: { label: t`Restore from a backup…`, onClick: () => setRestoreOpen(true), disabled: !available.length, disabledReason: "Create a full deployment archive before restoring." } }] : []} />
     {hostControls && restoreOpen ? <BackupRestoreDialog archives={available} pending={startRestore.isPending} error={startRestore.error} onCancel={() => setRestoreOpen(false)} onRestore={(archive, kind) => startRestore.mutate({ archive, kind })} /> : null}
   </>;
 }

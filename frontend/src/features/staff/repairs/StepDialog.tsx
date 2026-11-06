@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Modal } from "../../../components/ui";
@@ -53,8 +54,8 @@ export function StepDialog({ title, submitLabel, fields, makerspaceId, pending, 
       {uploading ? <p role="status" className="text-sm text-muted">{uploading}</p> : null}
       {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
-        <button type="button" className="desk-button-ghost" onClick={onClose}>Cancel</button>
-        <button type="submit" className="desk-button-primary" disabled={missing || pending || !!uploading}>{pending ? "Saving…" : submitLabel}</button>
+        <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
+        <button type="submit" className="desk-button-primary" disabled={missing || pending || !!uploading}>{pending ? t`Saving…` : submitLabel}</button>
       </div>
     </form>
   </Modal>;

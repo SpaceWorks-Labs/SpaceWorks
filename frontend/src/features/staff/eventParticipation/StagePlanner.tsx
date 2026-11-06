@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ErrorText } from "../../../components/ui";
 import { useEventStaffGrants } from "../eventStaffGrantsApi";
@@ -38,46 +39,42 @@ export function StagePlanner({ eventId, stage }: { eventId: number; stage: Stage
     {command.error || planner.error || decisions.error
       ? <ErrorText message={(command.error ?? planner.error ?? decisions.error)!.message} /> : null}
     <fieldset className="grid gap-2">
-      <legend className="text-sm font-semibold text-ink">Reviewer panel</legend>
-      <p className="text-sm text-muted">Panel members see only this stage's review workspace and their own assignments.</p>
+      <legend className="text-sm font-semibold text-ink">{t`Reviewer panel`}</legend>
+      <p className="text-sm text-muted">{t`Panel members see only this stage's review workspace and their own assignments.`}</p>
       {[...people].map(([id, label]) => <label key={id} className="flex min-h-11 items-center gap-3 text-sm text-ink">
         <input type="checkbox" checked={chosen.includes(id)} onChange={e => toggle(id, e.target.checked)} />{label}</label>)}
       <div className="flex flex-wrap items-end gap-2">
-        <label className="grid gap-1 text-sm text-ink">Add by account number
-          <input className="desk-input" inputMode="numeric" value={manual} onChange={e => setManual(e.target.value.replace(/\D/g, ""))} /></label>
+        <label className="grid gap-1 text-sm text-ink">{t`Add by account number`}<input className="desk-input" inputMode="numeric" value={manual} onChange={e => setManual(e.target.value.replace(/\D/g, ""))} /></label>
         <button type="button" className="desk-button" disabled={!manual} onClick={() => {
-          const id = Number(manual); if (id && !chosen.includes(id)) setChosen([...chosen, id]); setManual(""); }}>Add</button>
-        <button type="button" className="desk-button" disabled={command.isPending} onClick={savePanel}>Save panel</button>
+          const id = Number(manual); if (id && !chosen.includes(id)) setChosen([...chosen, id]); setManual(""); }}>{t`Add`}</button>
+        <button type="button" className="desk-button" disabled={command.isPending} onClick={savePanel}>{t`Save panel`}</button>
       </div>
     </fieldset>
     <div className="grid gap-2">
-      <p className="text-sm font-semibold text-ink">Assign reviewers</p>
+      <p className="text-sm font-semibold text-ink">{t`Assign reviewers`}</p>
       <div className="flex flex-wrap items-end gap-2">
-        <label className="grid gap-1 text-sm text-ink">Strategy
-          <select className="desk-input" value={strategy} onChange={e => setStrategy(e.target.value as Stage["assignment_strategy"])}>
-            <option value="balanced">Balanced workload</option><option value="random">Random</option></select></label>
-        <label className="grid gap-1 text-sm text-ink">Seed (kept, so the plan can be reproduced)
-          <input className="desk-input" value={seed} maxLength={64} onChange={e => setSeed(e.target.value.replace(/[^A-Za-z0-9_-]/g, ""))} /></label>
-        <button type="button" className="desk-button" disabled={planner.isPending} onClick={preview}>Preview</button>
+        <label className="grid gap-1 text-sm text-ink">{t`Strategy`}<select className="desk-input" value={strategy} onChange={e => setStrategy(e.target.value as Stage["assignment_strategy"])}>
+            <option value="balanced">{t`Balanced workload`}</option><option value="random">{t`Random`}</option></select></label>
+        <label className="grid gap-1 text-sm text-ink">{t`Seed (kept, so the plan can be reproduced)`}<input className="desk-input" value={seed} maxLength={64} onChange={e => setSeed(e.target.value.replace(/[^A-Za-z0-9_-]/g, ""))} /></label>
+        <button type="button" className="desk-button" disabled={planner.isPending} onClick={preview}>{t`Preview`}</button>
       </div>
       {plan ? <div className="grid gap-2" role="status">
-        <p className="text-sm text-ink">{plan.pairs.length} new assignments for {plan.applications} applications
-          {plan.deficits.length ? `; ${plan.deficits.length} still short of reviewers` : ""}.</p>
+        <p className="text-sm text-ink">{t`${plan.pairs.length} new assignments for ${plan.applications} applications`}{plan.deficits.length ? t`; ${plan.deficits.length} still short of reviewers` : ""}.</p>
         <button type="button" className="desk-button justify-self-start" disabled={command.isPending || !plan.pairs.length}
-          onClick={apply}>Apply this plan</button>
+          onClick={apply}>{t`Apply this plan`}</button>
       </div> : null}
     </div>
     <div className="grid gap-1">
-      <p className="text-sm font-semibold text-ink">Progress</p>
-      {progress.data?.length === 0 ? <p className="text-sm text-muted">No applications are waiting in this stage.</p> : null}
+      <p className="text-sm font-semibold text-ink">{t`Progress`}</p>
+      {progress.data?.length === 0 ? <p className="text-sm text-muted">{t`No applications are waiting in this stage.`}</p> : null}
       <ul className="grid gap-1">{progress.data?.map(row => <li key={row.application_id} className="flex flex-wrap justify-between gap-2 text-sm text-ink">
         <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={advancing.includes(row.application_id)}
           onChange={e => setAdvancing(e.target.checked ? [...advancing, row.application_id]
             : advancing.filter(id => id !== row.application_id))} />{row.alias}</label>
         <span className="text-muted">{row.reviews} of {row.needed} reviews
-          {row.average !== null ? ` · average ${row.average}` : ""}</span></li>)}</ul>
+          {row.average !== null ? t` · average ${row.average}` : ""}</span></li>)}</ul>
       <button type="button" className="desk-button justify-self-start" disabled={!advancing.length || decisions.isPending}
-        onClick={advance}>Advance selected to the next stage</button>
+        onClick={advance}>{t`Advance selected to the next stage`}</button>
     </div>
   </div>;
 }

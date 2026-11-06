@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { staffRequest } from "../../../lib/api";
 
@@ -9,10 +10,10 @@ export function ParticipationChips({ row }: { row: Row }) {
   const reply = row.attendance_reply;
   const label = !reply ? null : reply.answer === "yes" ? "Still coming" : reply.answer === "no" ? "Not coming" : "Asked, no answer";
   return <span className="mt-1 flex flex-wrap gap-1">
-    {row.is_crew ? <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">Crew</span> : null}
+    {row.is_crew ? <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">{t`Crew`}</span> : null}
     {label ? <span title={reply?.note || undefined}
       className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${reply?.answer === "no" ? "border-warn text-warn" : "border-line text-muted"}`}>
-      {label}{reply?.note ? " · note" : ""}</span> : null}
+      {label}{reply?.note ? t` · note` : ""}</span> : null}
   </span>;
 }
 
@@ -36,5 +37,5 @@ export function ReacceptButton({ eventId, row, onDone, onError }: {
     }
   };
   return <button className="desk-button-success" type="button" disabled={pending} onClick={() => void reaccept()}>
-    {due ? "Re-accepted; payment due" : "Re-accept"}</button>;
+    {due ? t`Re-accepted; payment due` : t`Re-accept`}</button>;
 }

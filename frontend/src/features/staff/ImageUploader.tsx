@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { CameraCapture } from "../../components/ui";
@@ -23,7 +24,7 @@ async function getPublicImageMaxBytes() {
       (config) => {
         const cap = Number(config.public_image_max_bytes);
         if (!Number.isFinite(cap) || cap <= 0) {
-          throw new Error("Image upload limit is unavailable.");
+          throw new Error(t`Image upload limit is unavailable.`);
         }
         return cap;
       },
@@ -35,7 +36,7 @@ async function getPublicImageMaxBytes() {
 async function rejectOversizePublicImage(file: File) {
   const cap = await getPublicImageMaxBytes();
   if (file.size > cap) {
-    throw new Error(`Image too large (max ${Math.round(cap / 1048576)} MB).`);
+    throw new Error(t`Image too large (max ${Math.round(cap / 1048576)} MB).`);
   }
 }
 
@@ -64,13 +65,13 @@ export async function uploadPublicImage(
       body: file,
       headers: presigned.headers,
     });
-    if (!res.ok) throw new Error(`Storage upload failed (${res.status})`);
+    if (!res.ok) throw new Error(t`Storage upload failed (${res.status})`);
   } else {
     const formData = new FormData();
     Object.entries(presigned.fields ?? {}).forEach(([k, v]) => formData.append(k, v));
     formData.append("file", file);
     const res = await fetch(presigned.url, { method: "POST", body: formData });
-    if (!res.ok) throw new Error(`Storage upload failed (${res.status})`);
+    if (!res.ok) throw new Error(t`Storage upload failed (${res.status})`);
   }
 
   await request(endpoint, {
@@ -161,7 +162,7 @@ export function ImageUploader({
       onChanged();
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : t`Upload failed.`);
     } finally {
       if (inputRef.current) inputRef.current.value = "";
     }
@@ -181,7 +182,7 @@ export function ImageUploader({
       onChanged();
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Could not remove image.");
+      setError(err instanceof Error ? err.message : t`Could not remove image.`);
     }
   }
 
@@ -217,9 +218,8 @@ export function ImageUploader({
               className="block min-h-11 w-full max-w-full min-w-0 flex-1 basis-56 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-accent"
             />
             {cameraSupported ? (
-              <button className="desk-button min-h-11" type="button" aria-label={`Take ${label} photo`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
-                Camera
-              </button>
+              <button className="desk-button min-h-11" type="button" aria-label={t`Take ${label} photo`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
+                {t`Camera`}</button>
             ) : null}
           </div>
           <CameraCapture open={cameraOpen} onClose={() => setCameraOpen(false)} onCapture={(file) => { void handleFile(file); }} label={label} />
@@ -230,8 +230,7 @@ export function ImageUploader({
               disabled={disabled || status === "uploading"}
               onClick={clearImage}
             >
-              Remove
-            </button>
+              {t`Remove`}</button>
           ) : null}
           {/* ONE persistent live region, not two conditional ones: a role="status" element that is
               inserted at the same moment its text appears is frequently not announced, because the
@@ -241,7 +240,7 @@ export function ImageUploader({
             aria-live="polite"
             className={status === "error" ? "text-xs text-danger" : "tabular-nums text-xs text-muted"}
           >
-            {status === "uploading" ? "Working..." : status === "error" ? error : ""}
+            {status === "uploading" ? t`Working...` : status === "error" ? error : ""}
           </p>
         </div>
       </div>

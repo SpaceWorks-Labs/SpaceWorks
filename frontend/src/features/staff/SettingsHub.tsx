@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, Circle, Users } from "lucide-react";
@@ -43,35 +44,35 @@ export function SettingsHub({ makerspace, sectionIds, allowedTabs, tabHref }: Pr
     {allowedTabs.includes("users") ? <Link to={tabHref("users")}
       className="flex min-h-11 min-w-0 items-center gap-3 rounded-xl border border-line bg-surface p-4 hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <Users aria-hidden="true" size={24} className="shrink-0 text-accent-ink" />
-      <span className="grid min-w-0 flex-1 gap-0.5"><span className="font-semibold text-ink">Staff & roles</span>
-        <span className="text-sm text-muted">Give staff roles to people in this space, invite them by email and choose the machine types they manage.</span></span>
+      <span className="grid min-w-0 flex-1 gap-0.5"><span className="font-semibold text-ink">{t`Staff & roles`}</span>
+        <span className="text-sm text-muted">{t`Give staff roles to people in this space, invite them by email and choose the machine types they manage.`}</span></span>
       <span aria-hidden="true" className="text-muted">→</span>
     </Link> : null}
     {allowedTabs.includes("users") ? <SettingsAuthorityCard makerspaceId={makerspace.id} /> : null}
     <div role="search" className="grid min-w-0 gap-2">
-      <label className="text-sm font-semibold text-ink" htmlFor="settings-hub-search">Search settings</label>
-      <input id="settings-hub-search" type="search" className="desk-input w-full" value={query} placeholder="Try “WhatsApp”, “loan days” or “logo”"
+      <label className="text-sm font-semibold text-ink" htmlFor="settings-hub-search">{t`Search settings`}</label>
+      <input id="settings-hub-search" type="search" className="desk-input w-full" value={query} placeholder={t`Try “WhatsApp”, “loan days” or “logo”`}
         onChange={event => setQuery(event.target.value)} />
     </div>
-    {query.trim() ? <section aria-label="Search results" className="grid min-w-0 gap-1">
-      <p aria-live="polite" className="text-sm text-muted">{results.length ? `${results.length} matching setting${results.length === 1 ? "" : "s"}` : "No settings match. Try another word."}</p>
+    {query.trim() ? <section aria-label={t`Search results`} className="grid min-w-0 gap-1">
+      <p aria-live="polite" className="text-sm text-muted">{results.length ? t`${results.length} matching setting${results.length === 1 ? "" : "s"}` : t`No settings match. Try another word.`}</p>
       <ul className="grid min-w-0 gap-1">{results.map((entry: HubEntry) => <li key={entry.id}>
         <Destination target={entry.target} tabHref={tabHref}><span className="grid min-w-0 gap-0.5">
           <span className="font-semibold text-ink">{entry.title}</span><span className="text-muted">{entry.description}</span></span></Destination>
       </li>)}</ul>
     </section> : <>
-      <section aria-label="Setup checklist" className="grid min-w-0 gap-2">
-        <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="title-section">Setup checklist</h3>
+      <section aria-label={t`Setup checklist`} className="grid min-w-0 gap-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="title-section">{t`Setup checklist`}</h3>
           <span className="text-sm text-muted tabular-nums">{done} of {checklist.length} done</span></div>
-        <ProgressBar value={checklist.length ? done / checklist.length : 0} label="Setup progress" />
+        <ProgressBar value={checklist.length ? done / checklist.length : 0} label={t`Setup progress`} />
         <ul className="grid min-w-0 gap-1 sm:grid-cols-2">{checklist.map(item => <li key={item.id}>
           <Destination target={item.target} tabHref={tabHref}>
             {item.done ? <CheckCircle2 aria-hidden="true" size={20} className="shrink-0 text-success-ink" /> : <Circle aria-hidden="true" size={20} className="shrink-0 text-muted" />}
-            <span className={item.done ? "text-muted" : "font-semibold text-ink"}>{item.label}<span className="sr-only">{item.done ? ": done" : ": to do"}</span></span>
+            <span className={item.done ? "text-muted" : "font-semibold text-ink"}>{item.label}<span className="sr-only">{item.done ? t`: done` : t`: to do`}</span></span>
           </Destination></li>)}</ul>
       </section>
-      {pages.length ? <section aria-label="More settings pages" className="grid min-w-0 gap-1">
-        <h3 className="title-section">More settings</h3>
+      {pages.length ? <section aria-label={t`More settings pages`} className="grid min-w-0 gap-1">
+        <h3 className="title-section">{t`More settings`}</h3>
         <ul className="grid min-w-0 gap-1 sm:grid-cols-2">{pages.map(entry => <li key={entry.id}>
           <Destination target={entry.target} tabHref={tabHref}><span className="grid min-w-0 gap-0.5">
             <span className="font-semibold text-ink">{entry.title}</span><span className="text-muted">{entry.description}</span></span></Destination>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
@@ -46,12 +47,12 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
   });
   if (query.error) return <SettingsQueryState query={query} resource="loan policy" />;
   if (!form) return <SettingsQueryState query={query} resource="loan policy" />;
-  return <SettingsQueryState query={query} resource="loan policy"><SettingsRow label="Loan policy" helper="Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."><form className="@container mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
+  return <SettingsQueryState query={query} resource="loan policy"><SettingsRow label={t`Loan policy`} helper="Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."><form className="@container mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
     event.preventDefault();
     const parts = offsets.trim() ? offsets.split(",").map((part) => part.trim()) : [];
     const numbers = parts.map(Number);
     if (parts.some((part) => !/^-?\d+$/.test(part)) || numbers.length > 100 || new Set(numbers).size !== numbers.length || numbers.some((n) => n < -8760 || n > 8760)) {
-      setProblem("Use up to 100 unique whole-hour offsets between -8760 and 8760.");
+      setProblem(t`Use up to 100 unique whole-hour offsets between -8760 and 8760.`);
       return;
     }
     setProblem("");
@@ -63,15 +64,15 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
       {NUMBERS.map(([field, label, min, max]) => <Field key={field} label={label}>
         <input className="desk-input" type="number" required min={min} max={max} step="1" value={form[field]} disabled={save.isPending} onChange={(event) => setForm({ ...form, [field]: Number(event.target.value) })} />
       </Field>)}
-      <Field label="Renewal mode"><select className="desk-input max-w-full" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
-        <option value="off">Off</option><option value="auto">Automatic within policy</option>
+      <Field label={t`Renewal mode`}><select className="desk-input max-w-full" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
+        <option value="off">{t`Off`}</option><option value="auto">{t`Automatic within policy`}</option>
       </select></Field>
-      <Field label="Reminder offsets in hours" hint="Negative = before due; 0 = due; positive = overdue. Leave empty to disable borrower reminders.">
+      <Field label={t`Reminder offsets in hours`} hint={t`Negative = before due; 0 = due; positive = overdue. Leave empty to disable borrower reminders.`}>
         <input className="desk-input" value={offsets} disabled={save.isPending} onChange={(event) => setOffsets(event.target.value)} />
       </Field>
     </div>
     <div><SettingsEditorActions dirty={JSON.stringify(form) !== JSON.stringify(query.data) || offsets !== (query.data?.loan_reminder_offsets_hours.join(", ") ?? "0")} onDiscard={() => { setForm(query.data ?? null); setOffsets(query.data?.loan_reminder_offsets_hours.join(", ") ?? "0"); setProblem(""); }} pending={save.isPending} disabled={save.isPending} /></div>
     {problem || save.error ? <p className="text-sm text-danger" role="alert">{problem || save.error?.message}</p> : null}
-    {save.isSuccess ? <p className="text-sm text-muted" role="status">Loan policy saved.</p> : null}
+    {save.isSuccess ? <p className="text-sm text-muted" role="status">{t`Loan policy saved.`}</p> : null}
   </form></SettingsRow></SettingsQueryState>;
 }

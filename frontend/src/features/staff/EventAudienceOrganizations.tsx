@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { SettingsSection } from "../../components/ui";
@@ -19,12 +20,12 @@ function AudienceEditor({ event, makerspaceId, disabled }: { event: StaffEvent; 
   const replace = useReplaceAudienceOrganizations(makerspaceId, event.id);
   useEffect(() => setSelected(asOptions(event.audience_organizations)), [event.audience_organizations]);
   const dirty = selected.map((row) => row.id).join() !== asOptions(event.audience_organizations).map((row) => row.id).join();
-  return <SettingsSection title="Selected organizations"
-    description="Members of these organizations, of the organizers, and of the venue's owning organization may register.">
+  return <SettingsSection title={t`Selected organizations`}
+    description={t`Members of these organizations, of the organizers, and of the venue's owning organization may register.`}>
     <div className="grid gap-3">
-      <AudienceOrganizationPicker selected={selected} onChange={setSelected} disabled={disabled || replace.isPending} label="Audience organizations" />
+      <AudienceOrganizationPicker selected={selected} onChange={setSelected} disabled={disabled || replace.isPending} label={t`Audience organizations`} />
       {!disabled && dirty ? <button type="button" className="desk-button-primary justify-self-start" disabled={replace.isPending}
-        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? "Saving…" : "Save audience"}</button> : null}
+        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? t`Saving…` : t`Save audience`}</button> : null}
       {replace.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(replace.error)}</p> : null}
     </div>
   </SettingsSection>;

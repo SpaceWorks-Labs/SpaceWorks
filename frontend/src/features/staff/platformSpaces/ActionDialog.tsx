@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Field, Modal } from "../../../components/ui";
 import { authErrorMessage } from "../../../lib/api/authErrorCopy";
@@ -44,9 +45,9 @@ export function ActionDialog({ title, message, confirmLabel, tone = "default", r
   const formId = `platform-action-${title.replace(/\W+/g, "-").toLowerCase()}`;
   const errorText = actionErrorText(error);
   return <Modal open title={title} onClose={onCancel} footer={<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-    <button type="button" className="desk-button w-full sm:w-auto" disabled={pending} onClick={onCancel}>Cancel</button>
+    <button type="button" className="desk-button w-full sm:w-auto" disabled={pending} onClick={onCancel}>{t`Cancel`}</button>
     <button type="submit" form={formId} className={`${tone === "danger" ? "desk-button-danger" : "desk-button-primary"} w-full sm:w-auto`}
-      disabled={pending || !reasonOk || !canSubmit}>{pending ? "Working…" : confirmLabel}</button>
+      disabled={pending || !reasonOk || !canSubmit}>{pending ? t`Working…` : confirmLabel}</button>
   </div>}>
     <form id={formId} className="grid gap-4" onSubmit={submit} noValidate>
       <div className="text-sm text-muted">{message}</div>

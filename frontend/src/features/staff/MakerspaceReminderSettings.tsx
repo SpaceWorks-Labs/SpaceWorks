@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsRow } from "../../components/ui";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { useEffect, useState } from "react";
@@ -35,7 +36,7 @@ function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { dom
     const hours = parts.map(Number);
     if (parts.some((part) => !/^\d+$/.test(part)) || hours.length > 100
         || hours.some((hour) => hour < 1 || hour > 8760) || new Set(hours).size !== hours.length) {
-      setError("Enter unique whole hours from 1 to 8760, separated by commas, or leave blank to disable.");
+      setError(t`Enter unique whole hours from 1 to 8760, separated by commas, or leave blank to disable.`);
       return;
     }
     setError("");
@@ -46,19 +47,17 @@ function ReminderPolicy({ makerspace, settings, loading, domain }: Props & { dom
     <SettingsRow label={`${label} reminders`}><form onSubmit={save} className="@container grid gap-3 ">
 
       <p className="text-sm text-muted">
-        Email members before confirmed {domain === "event" ? "events" : "bookings"}, using the makerspace timezone.
-        The notification matrix email setting and member opt-out still apply.
-        {domain === "booking" ? " Booking requester emails must also be enabled for the space." : ""}
+        {t`Email members before confirmed ${domain === "event" ? "events" : "bookings"}, using the makerspace timezone. The notification matrix email setting and member opt-out still apply.`}{domain === "booking" ? t` Booking requester emails must also be enabled for the space.` : ""}
       </p>
       <label className="grid gap-1 text-sm text-ink">
-        <span>{label} reminder lead hours</span>
+        <span>{t`${label} reminder lead hours`}</span>
         <input className="desk-input" value={draft} disabled={loading || update.isPending}
           onChange={(event) => { setDraft(event.target.value); setDirty(true); }} aria-describedby={`${domain}-reminder-help`} />
       </label>
-      <p id={`${domain}-reminder-help`} className="text-sm text-muted">For example: 24, 2. Leave blank to disable.</p>
+      <p id={`${domain}-reminder-help`} className="text-sm text-muted">{t`For example: 24, 2. Leave blank to disable.`}</p>
       {error || update.error ? <p role="alert" className="text-sm text-danger">{error || update.error?.message}</p> : null}
       <SettingsEditorActions dirty={dirty} onDiscard={() => { setDraft(current.join(", ")); setDirty(false); setError(""); }} pending={update.isPending} disabled={loading || update.isPending || !dirty} />
-      {update.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">Reminder policy saved.</p> : null}
+      {update.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">{t`Reminder policy saved.`}</p> : null}
     </form></SettingsRow>
   );
 }

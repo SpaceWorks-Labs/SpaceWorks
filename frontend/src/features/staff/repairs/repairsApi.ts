@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../lib/api";
@@ -28,10 +29,10 @@ export type IssueDetail = Issue & {
 type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 
 export const STATE_LABELS: Record<IssueState, string> = {
-  reported: "Reported", triaged: "Triaged", assigned: "Assigned", in_progress: "In progress", fixed: "Fixed",
-  closed: "Closed", rejected: "Rejected",
+  reported: t`Reported`, triaged: t`Triaged`, assigned: t`Assigned`, in_progress: t`In progress`, fixed: t`Fixed`,
+  closed: t`Closed`, rejected: t`Rejected`,
 };
-export const AREA_LABELS: Record<IssueArea, string> = { machines: "Machine", inventory: "Item", rooms: "Room" };
+export const AREA_LABELS: Record<IssueArea, string> = { machines: t`Machine`, inventory: t`Item`, rooms: t`Room` };
 export const OPEN_STATES: IssueState[] = ["reported", "triaged", "assigned", "in_progress"];
 export function stateTone(state: IssueState) {
   return state === "reported" ? "warn" as const : state === "in_progress" ? "accent" as const
@@ -91,7 +92,7 @@ export function useOpenIssue(msId: number) {
 export async function uploadIssuePhoto(msId: number, file: File) {
   const staged = await staffRequest<{ photo_token: string; upload: PrintUpload; max_bytes: number }>(
     `/admin/makerspaces/${msId}/issues/photos`, { method: "POST", body: JSON.stringify({ content_type: file.type }) });
-  if (file.size > staged.max_bytes) throw new Error(`${file.name} is larger than ${Math.floor(staged.max_bytes / 1_048_576)} MB.`);
+  if (file.size > staged.max_bytes) throw new Error(t`${file.name} is larger than ${Math.floor(staged.max_bytes / 1_048_576)} MB.`);
   await uploadToStorage({ ...staged.upload, fields: staged.upload.fields ?? {} }, file);
   return staged.photo_token;
 }

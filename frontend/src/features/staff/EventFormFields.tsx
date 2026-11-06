@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import type { EventPayload, StaffEvent } from "./eventsApi";
 import { EventEssentialFields, EventMoreFields } from "./EventFieldGroups";
@@ -72,12 +73,12 @@ export function EventFields({ values, setValues, disabled = false, approvalLocke
   if (layout === "all") return <div className={grid}><EventEssentialFields {...group} /><EventMoreFields {...group} /></div>;
   return <div className="grid gap-4">
     <div className={grid}><EventEssentialFields {...group} /></div>
-    {moreExtras && values.registration_audience === "participating_organizations" ? <p role="note" className="text-sm text-muted">Choose the participating organizations under More options.</p> : null}
+    {moreExtras && values.registration_audience === "participating_organizations" ? <p role="note" className="text-sm text-muted">{t`Choose the participating organizations under More options.`}</p> : null}
     {/* A required control inside a closed disclosure cannot take focus, so a failed submit opens it. */}
     <details className="rounded-xl border border-line bg-panel" onInvalidCapture={(event) => { event.currentTarget.open = true; }}>
-      <summary className="flex min-h-11 cursor-pointer items-center px-4 py-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">More options</summary>
+      <summary className="flex min-h-11 cursor-pointer items-center px-4 py-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t`More options`}</summary>
       <div className="grid gap-4 border-t border-line p-4">
-        <p className="text-sm text-muted">Description, price, cutoffs, approval, the registration form and partners. Every option can be changed later in the event's settings.</p>
+        <p className="text-sm text-muted">{t`Description, price, cutoffs, approval, the registration form and partners. Every option can be changed later in the event's settings.`}</p>
         <div className={grid}><EventMoreFields {...group} /></div>
         {moreExtras}
       </div>

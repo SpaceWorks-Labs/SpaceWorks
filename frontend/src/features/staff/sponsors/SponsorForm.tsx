@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -22,36 +23,36 @@ export function SponsorForm({ makerspaceId, sponsor, tiers, onClose }: {
     onSuccess: () => { void client.invalidateQueries({ queryKey: ["staff-sponsors", makerspaceId] }); onClose(); },
   });
   const set = (patch: Partial<SponsorInput>) => setForm(current => ({ ...current, ...patch }));
-  return <Modal open onClose={onClose} title={sponsor ? `Edit ${sponsor.name}` : "Add a sponsor"}>
+  return <Modal open onClose={onClose} title={sponsor ? t`Edit ${sponsor.name}` : t`Add a sponsor`}>
     <form className="grid gap-3" onSubmit={event => { event.preventDefault(); save.mutate(); }}>
-      <Field label="Name"><input className="desk-input" required maxLength={150} value={form.name}
+      <Field label={t`Name`}><input className="desk-input" required maxLength={150} value={form.name}
         onChange={event => set({ name: event.target.value })} /></Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Tier"><select className="desk-input" value={form.tier ?? ""}
+        <Field label={t`Tier`}><select className="desk-input" value={form.tier ?? ""}
           onChange={event => set({ tier: event.target.value ? Number(event.target.value) : null })}>
-          <option value="">No tier</option>{tiers.map(tier => <option key={tier.id} value={tier.id}>{tier.name}</option>)}</select></Field>
-        <Field label="Website"><input className="desk-input" type="url" maxLength={300} value={form.website_url}
+          <option value="">{t`No tier`}</option>{tiers.map(tier => <option key={tier.id} value={tier.id}>{tier.name}</option>)}</select></Field>
+        <Field label={t`Website`}><input className="desk-input" type="url" maxLength={300} value={form.website_url}
           onChange={event => set({ website_url: event.target.value })} /></Field>
-        <Field label="From"><input className="desk-input" type="date" value={form.starts_on ?? ""}
+        <Field label={t`From`}><input className="desk-input" type="date" value={form.starts_on ?? ""}
           onChange={event => set({ starts_on: event.target.value || null })} /></Field>
-        <Field label="Until"><input className="desk-input" type="date" value={form.ends_on ?? ""}
+        <Field label={t`Until`}><input className="desk-input" type="date" value={form.ends_on ?? ""}
           onChange={event => set({ ends_on: event.target.value || null })} /></Field>
       </div>
-      <Field label="One line for the sponsor wall"><input className="desk-input" maxLength={300} value={form.blurb}
+      <Field label={t`One line for the sponsor wall`}><input className="desk-input" maxLength={300} value={form.blurb}
         onChange={event => set({ blurb: event.target.value })} /></Field>
       <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={form.show_on_wall}
-        onChange={event => set({ show_on_wall: event.target.checked })} />Show on the public sponsor wall</label>
-      <fieldset className="grid gap-3 sm:grid-cols-3"><legend className="text-sm font-semibold text-ink">Private contact</legend>
-        <Field label="Contact name"><input className="desk-input" maxLength={200} value={form.contact_name}
+        onChange={event => set({ show_on_wall: event.target.checked })} />{t`Show on the public sponsor wall`}</label>
+      <fieldset className="grid gap-3 sm:grid-cols-3"><legend className="text-sm font-semibold text-ink">{t`Private contact`}</legend>
+        <Field label={t`Contact name`}><input className="desk-input" maxLength={200} value={form.contact_name}
           onChange={event => set({ contact_name: event.target.value })} /></Field>
-        <Field label="Contact email"><input className="desk-input" type="email" value={form.contact_email}
+        <Field label={t`Contact email`}><input className="desk-input" type="email" value={form.contact_email}
           onChange={event => set({ contact_email: event.target.value })} /></Field>
-        <Field label="Contact phone"><input className="desk-input" type="tel" maxLength={32} value={form.contact_phone}
+        <Field label={t`Contact phone`}><input className="desk-input" type="tel" maxLength={32} value={form.contact_phone}
           onChange={event => set({ contact_phone: event.target.value })} /></Field>
       </fieldset>
       {save.error ? <p role="alert" className="text-sm text-danger">{financeError(save.error)}</p> : null}
-      <div className="flex justify-end gap-2"><button type="button" className="desk-button-ghost" onClick={onClose}>Cancel</button>
-        <button type="submit" className="desk-button" disabled={save.isPending}>{sponsor ? "Save" : "Add sponsor"}</button></div>
+      <div className="flex justify-end gap-2"><button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
+        <button type="submit" className="desk-button" disabled={save.isPending}>{sponsor ? t`Save` : t`Add sponsor`}</button></div>
     </form>
   </Modal>;
 }

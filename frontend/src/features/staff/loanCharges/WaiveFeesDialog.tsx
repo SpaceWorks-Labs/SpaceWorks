@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -54,42 +55,41 @@ export function WaiveFeesDialog({ makerspaceId, requestId, charges, onClose }: {
   const error = problem ?? (mutation.error ? chargeErrorMessage(mutation.error) : null);
 
   if (result) {
-    return <Modal key="result" open onClose={onClose} title="Fees waived"
-      footer={<div className="flex justify-end"><button className="desk-button-primary w-full sm:w-auto" type="button" onClick={onClose}>Done</button></div>}>
+    return <Modal key="result" open onClose={onClose} title={t`Fees waived`}
+      footer={<div className="flex justify-end"><button className="desk-button-primary w-full sm:w-auto" type="button" onClick={onClose}>{t`Done`}</button></div>}>
       <div className="grid gap-2 text-sm text-ink" role="status">
         <p>{plural(result.waived_payment_ids.length, "pending charge waived", "pending charges waived")}.</p>
         <p>{plural(result.refund_case_ids.length, "refund case opened", "refund cases opened")}
-          {result.refund_case_ids.length ? " for staff approval in Refunds. No money has moved yet." : "."}</p>
-        <p className="text-muted">Fees of these kinds raised later on this loan come to zero.</p>
+          {result.refund_case_ids.length ? t` for staff approval in Refunds. No money has moved yet.` : "."}</p>
+        <p className="text-muted">{t`Fees of these kinds raised later on this loan come to zero.`}</p>
       </div>
     </Modal>;
   }
 
-  return <Modal key="form" open onClose={close} title="Waive loan fees"
+  return <Modal key="form" open onClose={close} title={t`Waive loan fees`}
     footer={<div className="desk-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-      <button className="desk-button w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={close}>Cancel</button>
+      <button className="desk-button w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={close}>{t`Cancel`}</button>
       <button className="desk-button-primary w-full sm:w-auto" type="button" disabled={mutation.isPending} onClick={submit}>
-        {mutation.isPending ? "Waiving…" : "Waive fees"}</button>
+        {mutation.isPending ? t`Waiving…` : t`Waive fees`}</button>
     </div>}>
     <div className="grid gap-4">
       <fieldset className="grid gap-1" disabled={mutation.isPending}>
-        <legend className="mb-1 text-sm font-semibold text-ink">Fees to waive</legend>
+        <legend className="mb-1 text-sm font-semibold text-ink">{t`Fees to waive`}</legend>
         {WAIVER_COMPONENTS.map(([key, label]) => <label key={key} className="flex min-h-11 items-center gap-2 text-sm text-ink">
           <input type="checkbox" checked={chosen.includes(key)} onChange={event => toggle(key, event.target.checked)} />{label}
         </label>)}
       </fieldset>
       <label className="grid gap-1">
-        <span className="text-sm font-semibold text-ink">Reason (required)</span>
+        <span className="text-sm font-semibold text-ink">{t`Reason (required)`}</span>
         <textarea className="desk-input min-h-20" maxLength={500} value={reason} disabled={mutation.isPending}
           aria-required="true" aria-invalid={Boolean(problem) && Boolean(chosen.length)}
           aria-describedby={error ? `${countId} ${errorId}` : countId} onChange={event => { setReason(event.target.value); setProblem(null); }} />
         <span id={countId} className="text-xs text-muted">{reason.length} / 500</span>
       </label>
       <div className="grid gap-1 rounded-xl border border-line p-4 text-sm">
-        <p className="font-semibold text-ink">Before you confirm</p>
+        <p className="font-semibold text-ink">{t`Before you confirm`}</p>
         <p className="text-muted">{WAIVE_SUMMARY}</p>
-        <p className="text-ink" aria-live="polite">On this loan now: {plural(preview.pending, "pending charge", "pending charges")} to waive,
-          {" "}{plural(preview.paid, "paid charge", "paid charges")} to send to a refund case.</p>
+        <p className="text-ink" aria-live="polite">{t`On this loan now: ${plural(preview.pending, "pending charge", "pending charges")} to waive,${" "}${plural(preview.paid, "paid charge", "paid charges")} to send to a refund case.`}</p>
       </div>
       {error ? <p id={errorId} className="text-sm text-danger" role="alert">{error}</p> : null}
     </div>

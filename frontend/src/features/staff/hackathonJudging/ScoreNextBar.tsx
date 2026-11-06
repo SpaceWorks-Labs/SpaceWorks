@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from 'react';
 import { ErrorBlock } from '../../../components/ui';
 import { useNextProject } from './l21bApi';
@@ -11,8 +12,8 @@ export function ScoreNextBar({ scope, assignments }: { scope: Scope; assignments
   return <div className="grid gap-2">
     <div className="flex flex-wrap gap-2">{rounds.map(roundId => <button key={roundId} type="button" className="desk-button-primary min-h-11"
       disabled={next.isPending} onClick={() => next.mutate({ roundId, version: 0 }, { onSuccess: result => setMessage(
-        result.assignment_id ? `Next up: project ${result.snapshot_id}${result.reason === 'started' ? ', which you already started.' : '.'}` : 'Nothing left to score in this round.') })}>
-      Score next project{rounds.length > 1 ? ` (round ${roundId})` : ''}</button>)}</div>
+        result.assignment_id ? t`Next up: project ${String(result.snapshot_id)}${result.reason === 'started' ? ', which you already started.' : '.'}` : t`Nothing left to score in this round.`) })}>
+      {t`Score next project`}{rounds.length > 1 ? t` (round ${roundId})` : ''}</button>)}</div>
     <p role="status" className="text-sm text-muted">{message}</p>
     <ErrorBlock error={next.error} />
   </div>;

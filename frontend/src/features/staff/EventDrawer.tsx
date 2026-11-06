@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { EventReadinessPanel, EventDayPanel } from "./eventProgramme";
 import { useEffect, useState } from "react";
 
@@ -76,32 +77,32 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
 
   const series = event?.series_summary;
   const seriesId = series?.id;
-  const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="relative rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink before:absolute before:-inset-x-1 before:-inset-y-3 hover:bg-info-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" onClick={() => onOpenSeries(seriesId)}>Recurring · {series.title}</button>
-    : <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">Recurring · {series.title}</span> : null;
+  const recurring = series ? onOpenSeries && seriesId ? <button type="button" className="relative rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink before:absolute before:-inset-x-1 before:-inset-y-3 hover:bg-info-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" onClick={() => onOpenSeries(seriesId)}>{t`Recurring · ${series.title}`}</button>
+    : <span className="rounded-full border border-info px-2 py-0.5 text-xs font-semibold text-info-ink">{t`Recurring · ${series.title}`}</span> : null;
   // Every tab and section is gated on the same event staff grant the API enforces (eventDrawerSurfaces).
   const surfaces = eventDrawerSurfaces(event, access, enabledFeatures, enabledModules);
   const { checkable, sections } = surfaces;
   const tabs = useEventDrawerTabs([
-    { key: "overview", label: "Overview" },
-    ...(access.registrations ? [{ key: "registrations", label: "Registrations", count: event ? Object.values(event.registration_counts).reduce((sum, count) => sum + count, 0) : undefined }] : []),
-    ...(surfaces.checkInTab ? [{ key: "checkin", label: "Check-in" }] : []),
+    { key: "overview", label: t`Overview` },
+    ...(access.registrations ? [{ key: "registrations", label: t`Registrations`, count: event ? Object.values(event.registration_counts).reduce((sum, count) => sum + count, 0) : undefined }] : []),
+    ...(surfaces.checkInTab ? [{ key: "checkin", label: t`Check-in` }] : []),
   ], sections);
   const canSaveEssentials = (access.edit || access.publish) && !readOnly;
   return <ProgrammeSessionBoundary error={eventQuery.error}>
     <div onClickCapture={tabs.onClickCapture}>
-      <DetailLayout title={event?.title ?? "Event details"} back={{ label: "All events", onClick: onClose }}
+      <DetailLayout title={event?.title ?? t`Event details`} back={{ label: t`All events`, onClick: onClose }}
         identity={event ? { kind: "date", date: event.starts_at } : undefined}
         status={event ? <StatusBadge domain="event" status={event.status} label={opsStatusLabel(event.status)} /> : undefined}
         meta={event ? [...(recurring ? [recurring] : []), event.is_public ? "Public" : "Private", event.location, `${event.registration_counts.registered + event.registration_counts.attended} / ${event.capacity || "unlimited"} going`] : undefined}
         state={opsQueryState(eventQuery, "event")} tabs={tabs.tabs} activeTab={tabs.active}
-        actions={{ primary: event?.status === "draft" && access.publish ? { label: "Publish", confirms: true, onClick: () => setConfirm("publish") }
-          : event?.status === "published" && access.checkIn ? { label: "Open check-in", targetsTab: "checkin", onClick: () => tabs.select("checkin") }
-          : event?.status === "completed" && sections.feedback && tabs.section !== "feedback" ? { label: "View feedback", onClick: () => tabs.select("feedback") } : undefined,
+        actions={{ primary: event?.status === "draft" && access.publish ? { label: t`Publish`, confirms: true, onClick: () => setConfirm("publish") }
+          : event?.status === "published" && access.checkIn ? { label: t`Open check-in`, targetsTab: "checkin", onClick: () => tabs.select("checkin") }
+          : event?.status === "completed" && sections.feedback && tabs.section !== "feedback" ? { label: t`View feedback`, onClick: () => tabs.select("feedback") } : undefined,
           // Ending an event is routine on event day, so it sits one click away in the header, not only in Settings.
-          overflow: event?.status === "published" && access.publish ? [{ label: "Complete event", confirms: true, onClick: () => setConfirm("complete") },
-            { label: "Cancel event", confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
+          overflow: event?.status === "published" && access.publish ? [{ label: t`Complete event`, confirms: true, onClick: () => setConfirm("complete") },
+            { label: t`Cancel event`, confirms: true, tone: "danger", onClick: () => setConfirm("cancel") }] : undefined }}
         banner={readOnly ? { size: "banner", tone: "warn", lead: `This event is ${event?.status}. It can’t be edited.` } : undefined}
-        danger={tabs.section === "settings" && event?.status === "published" && access.publish ? [{ title: "Cancel event", consequence: "Registrants are notified and registration closes.", action: { label: "Cancel event", onClick: () => setConfirm("cancel") } }] : []}
+        danger={tabs.section === "settings" && event?.status === "published" && access.publish ? [{ title: t`Cancel event`, consequence: "Registrants are notified and registration closes.", action: { label: t`Cancel event`, onClick: () => setConfirm("cancel") } }] : []}
         aside={event && tabs.active === "overview" ? <EventAtAGlance event={event} onCheckIn={checkable && access.checkIn ? () => tabs.select("checkin") : undefined} /> : undefined}
         main={event ? <div className="grid gap-6">
           {tabs.section && sections[tabs.section] ? <ScreenHelp screen={`events.${tabs.section}`} /> : null}
@@ -125,6 +126,6 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
         </div> : null} />
     </div>
     {drop.dialog}
-    <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Confirm"} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => { const options = { onSettled: () => setConfirm(null) }; if (confirm === "publish") publish.mutate(websitePublication, options); else lifecycle.mutate(undefined, options); }} />
+    <ConfirmDialog open={confirm !== null} title={`${confirm ? confirm[0].toUpperCase() + confirm.slice(1) : "Change"} event`} message={t`Are you sure you want to ${confirm ?? "change"} this event?`} confirmLabel={confirm ? confirm[0].toUpperCase() + confirm.slice(1) : t`Confirm`} tone={confirm === "cancel" ? "danger" : "default"} pending={lifecycle.isPending} onCancel={() => setConfirm(null)} onConfirm={() => { const options = { onSettled: () => setConfirm(null) }; if (confirm === "publish") publish.mutate(websitePublication, options); else lifecycle.mutate(undefined, options); }} />
   </ProgrammeSessionBoundary>;
 }

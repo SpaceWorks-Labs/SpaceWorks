@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
 import { capabilityOn } from "../../lib/features";
@@ -25,11 +26,11 @@ export function BookableSpaceMachine({ makerspaceId, id, value, onChange }: {
   const rows = (query.data?.results ?? []).filter(machine => machine.is_active);
   return <>
     <select id={id} className="desk-input w-full" required value={value ?? ""} onChange={event => onChange(event.target.value ? Number(event.target.value) : null)}>
-      <option value="">Choose a machine</option>
-      {value && !rows.some(machine => machine.id === value) ? <option value={value}>Linked machine #{value}</option> : null}
+      <option value="">{t`Choose a machine`}</option>
+      {value && !rows.some(machine => machine.id === value) ? <option value={value}>{t`Linked machine #${value}`}</option> : null}
       {rows.map(machine => <option key={machine.id} value={machine.id}>{machine.name} · {machine.machine_type.name}</option>)}
     </select>
-    {query.isLoading ? <p role="status" className="mt-2 text-sm text-muted">Loading machines…</p> : null}
-    {query.isError ? <p className="mt-2 text-sm text-muted">Machines are unavailable: {query.error.message}</p> : null}
+    {query.isLoading ? <p role="status" className="mt-2 text-sm text-muted">{t`Loading machines…`}</p> : null}
+    {query.isError ? <p className="mt-2 text-sm text-muted">{t`Machines are unavailable: ${query.error.message}`}</p> : null}
   </>;
 }

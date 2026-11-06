@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
@@ -74,8 +75,8 @@ const EMPTY: LoanForm = {
  * `charges.pricing` on, the same columns are edited in Settings > Pricing > Lending instead. */
 export function MakerspaceLoanSettings({ makerspaceId, pricingOn = false }: { makerspaceId: number; pricingOn?: boolean }) {
   if (pricingOn) {
-    return <SettingsRow label="Loans">
-      <p className="text-sm text-ink">Deposit, late fee and rental are set in Settings &gt; Pricing &gt; Lending.</p>
+    return <SettingsRow label={t`Loans`}>
+      <p className="text-sm text-ink">{t`Deposit, late fee and rental are set in Settings > Pricing > Lending.`}</p>
     </SettingsRow>;
   }
   return <LoanSettingsEditor makerspaceId={makerspaceId} />;
@@ -120,7 +121,7 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
   const depositOn = form.loan_deposit_mode !== "none";
 
   return (
-    <SettingsQueryState query={settings} resource="loan"><SettingsRow label="Loans" helper="Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue."><form
+    <SettingsQueryState query={settings} resource="loan"><SettingsRow label={t`Loans`} helper="Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue."><form
       className="@container mt-4 rounded-md border border-line bg-surface p-3"
 
       onSubmit={(event) => {
@@ -131,7 +132,7 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
 
 
       <div className="mt-3 grid gap-2 @md:grid-cols-2">
-        <Field label="Deposit mode" error={problems.loan_deposit_mode}>
+        <Field label={t`Deposit mode`} error={problems.loan_deposit_mode}>
           <select
             className="desk-input"
             value={form.loan_deposit_mode}
@@ -142,8 +143,8 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
           </select>
         </Field>
         <Field
-          label="Deposit amount"
-          hint={form.loan_deposit_mode === "per_product" ? "Ignored: each product's own deposit is summed." : undefined}
+          label={t`Deposit amount`}
+          hint={form.loan_deposit_mode === "per_product" ? t`Ignored: each product's own deposit is summed.` : undefined}
           error={problems.loan_deposit_amount}
         >
           <input
@@ -154,7 +155,7 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
             onChange={(event) => set("loan_deposit_amount", event.target.value)}
           />
         </Field>
-        <Field label="Late fee per day" error={problems.loan_late_fee_per_day}>
+        <Field label={t`Late fee per day`} error={problems.loan_late_fee_per_day}>
           <input
             className="desk-input"
             inputMode="decimal"
@@ -163,7 +164,7 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
             onChange={(event) => set("loan_late_fee_per_day", event.target.value)}
           />
         </Field>
-        <Field label="Late fee cap" hint="0 means no cap." error={problems.loan_late_fee_cap}>
+        <Field label={t`Late fee cap`} hint={t`0 means no cap.`} error={problems.loan_late_fee_cap}>
           <input
             className="desk-input"
             inputMode="decimal"
@@ -172,7 +173,7 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
             onChange={(event) => set("loan_late_fee_cap", event.target.value)}
           />
         </Field>
-        <Field label="Grace days" hint="Days past the due date before late fees start." error={problems.loan_grace_days}>
+        <Field label={t`Grace days`} hint={t`Days past the due date before late fees start.`} error={problems.loan_grace_days}>
           <input
             className="desk-input"
             inputMode="numeric"
@@ -190,14 +191,14 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
             onChange={(event) => set("loan_deposit_blocks_issue", event.target.checked)}
           />
           <span>
-            <span className="font-semibold">Deposit blocks issue</span>
-            <span className="block text-xs text-muted">When on, staff cannot issue a loan until its deposit is paid; the handover is refused with a deposit-required message.</span>
+            <span className="font-semibold">{t`Deposit blocks issue`}</span>
+            <span className="block text-xs text-muted">{t`When on, staff cannot issue a loan until its deposit is paid; the handover is refused with a deposit-required message.`}</span>
           </span>
         </label>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <SettingsEditorActions dirty={JSON.stringify(form) !== JSON.stringify(settings.data ? toForm(settings.data) : EMPTY)} onDiscard={() => { setForm(settings.data ? toForm(settings.data) : EMPTY); setProblems({}); }} pending={save.isPending} disabled={busy} />
-        {save.isSuccess && !save.isPending ? <span className="text-xs text-muted" role="status">Saved.</span> : null}
+        {save.isSuccess && !save.isPending ? <span className="text-xs text-muted" role="status">{t`Saved.`}</span> : null}
       </div>
       {settings.error || save.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">{(settings.error || save.error)?.message}</p>

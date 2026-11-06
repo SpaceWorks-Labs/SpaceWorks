@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SegmentedControl } from "../../components/ui";
 import { useUrlListState } from "../../lib/useUrlListState";
 import { ListViewControls } from "./ListViewControls";
@@ -10,9 +11,8 @@ export function PaymentsFilters({ list, makerspaceId, eventOnly = false }: { lis
   const controls = <ListViewControls state={list} makerspaceId={makerspaceId} entity="payments" search={false} savedViews={!eventOnly}
     sorts={[["due_at", "Due date"], ["-due_at", "Due date descending"], ["-created_at", "Newest"], ["created_at", "Oldest"], ["amount", "Amount ascending"], ["-amount", "Amount descending"]]}
     activeCount={eventOnly ? 0 : Number(Boolean(list.values.subject_type))} controls={eventOnly ? undefined :
-    <label className="grid gap-1 text-sm text-muted">Subject
-      <select className="desk-input" value={list.values.subject_type} onChange={event => list.setFilter("subject_type", event.target.value)}>
-        <option value="">All subjects</option>
+    <label className="grid gap-1 text-sm text-muted">{t`Subject`}<select className="desk-input" value={list.values.subject_type} onChange={event => list.setFilter("subject_type", event.target.value)}>
+        <option value="">{t`All subjects`}</option>
         {PAYMENT_SUBJECTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
     </label>} />;
@@ -20,7 +20,7 @@ export function PaymentsFilters({ list, makerspaceId, eventOnly = false }: { lis
   if (list.values.status !== "pending") return controls;
   return <div className="grid min-w-0 gap-3">
     {controls}
-    <SegmentedControl label="Due" value={list.values.due_state}
+    <SegmentedControl label={t`Due`} value={list.values.due_state}
       options={[["", "All due dates"], ...DUE_OPTIONS].map(([value, label]) => ({ value, label }))}
       onChange={value => list.update({ due_state: value })} />
   </div>;

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { AnalyticsData } from "./panels/AnalyticsData";
 import { AnalyticsPeriodControls } from "./panels/AnalyticsPeriodControls";
@@ -22,8 +23,8 @@ export function PlatformAnalyticsPanels({ spaces }: { spaces?: AnalyticsMakerspa
   const [period, setPeriod] = useState<AnalyticsPeriod>({ start: "", end: "", grain: "day" });
   return <div className="grid min-w-0 gap-6">
     <AnalyticsPeriodControls value={period} onChange={setPeriod} />
-    <PlatformReport reportKey="platform-services" title="Platform services" period={period} />
-    <PlatformReport reportKey="platform-usage" title="Platform usage" period={period} />
+    <PlatformReport reportKey="platform-services" title={t`Platform services`} period={period} />
+    <PlatformReport reportKey="platform-usage" title={t`Platform usage`} period={period} />
     <PlatformSpaceComparison period={period} spaces={spaces} />
     <PlatformAnalyticsPicker period={period} />
   </div>;
@@ -38,9 +39,9 @@ function PlatformReport({ reportKey, title, period }: {
   return <section aria-label={title} className="min-w-0 rounded-xl border border-line bg-panel p-4">
     <h3 className="title-section mb-3">{title}</h3>
     <p className="mb-3 text-sm text-muted">{reportKey === "platform-services"
-      ? "Platform service usage across every makerspace. Connect has no provider-attempt failure history."
-      : "Business activity, module adoption, growth and app adoption across every makerspace. Money and consumption stay separated by currency and unit."}</p>
-    {query.isLoading ? <p role="status">Loading {title.toLowerCase()}…</p> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
+      ? t`Platform service usage across every makerspace. Connect has no provider-attempt failure history.`
+      : t`Business activity, module adoption, growth and app adoption across every makerspace. Money and consumption stay separated by currency and unit.`}</p>
+    {query.isLoading ? <p role="status">{t`Loading ${title.toLowerCase()}…`}</p> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
       <AnalyticsData title={title} rows={rows} spec={spec}
         hint={reportKey === "platform-services" ? "stacked_bar" : "multi_line"} meta={query.data?.meta} />
     </DataState>}

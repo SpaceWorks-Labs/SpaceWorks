@@ -24,6 +24,12 @@ errors, webhooks, rate limits and versioning).
   Swagger UI cannot compute a signature, so use the guide's snippets for signed calls.
   A browser client sends `X-Client-Id` from a registered `Origin`; a public site can
   send `X-Publishable-Key`.
+* **Personal access tokens** (#196): a person creates one at `/account/api-access` (MFA
+  re-auth, scopes no wider than their own permissions, 90-day default expiry) and sends
+  `Authorization: Bearer swpat_...`. Never accepted on sign-in, credential or platform routes.
+* **App connections** (OAuth 2.0 authorization code + PKCE, under `/api/v1/oauth/`): an app a
+  Space Manager registered under *API access* asks the person to consent, then sends its
+  access token as `Authorization: Bearer <token>`; refresh tokens rotate on every use.
 * Public routes under `/api/v1/public/` answer anonymously until the operator turns on
   `API_CLIENT_AUTH_REQUIRED`.
 

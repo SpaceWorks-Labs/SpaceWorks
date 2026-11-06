@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { BellRing } from "lucide-react";
 import { staffRequest } from "../../lib/api";
@@ -39,21 +40,21 @@ export function BrowserAlertsToggle({ makerspaceId }: { makerspaceId: number }) 
       if (subscribed && existing) {
         await staffRequest(path, { method: "DELETE", body: JSON.stringify({ endpoint: existing.endpoint }) });
         await existing.unsubscribe();
-        setSubscribed(false); setMessage("Browser notifications are off for this space.");
+        setSubscribed(false); setMessage(t`Browser notifications are off for this space.`);
       } else {
-        if (await Notification.requestPermission() !== "granted") { setMessage("Your browser blocked notifications. Allow them in its site settings to turn this on."); return; }
+        if (await Notification.requestPermission() !== "granted") { setMessage(t`Your browser blocked notifications. Allow them in its site settings to turn this on.`); return; }
         const subscription = existing ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key.public_key) });
         await staffRequest(path, { method: "POST", body: JSON.stringify(subscription.toJSON()) });
-        setSubscribed(true); setMessage("This browser will show new messages from your inbox.");
+        setSubscribed(true); setMessage(t`This browser will show new messages from your inbox.`);
       }
     } catch {
-      setMessage("Couldn't change browser notifications. Try again.");
+      setMessage(t`Couldn't change browser notifications. Try again.`);
     } finally { setBusy(false); }
   };
   return <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel p-3 text-sm">
     <BellRing aria-hidden="true" className="size-4 text-brand" />
-    <span className="grow">Browser notifications: {subscribed ? "on in this browser" : "off"}</span>
-    <button type="button" className="desk-button" disabled={busy} onClick={() => void toggle()}>{busy ? "Working…" : subscribed ? "Turn off" : "Turn on"}</button>
+    <span className="grow">{t`Browser notifications: `}{subscribed ? t`on in this browser` : "off"}</span>
+    <button type="button" className="desk-button" disabled={busy} onClick={() => void toggle()}>{busy ? t`Working…` : subscribed ? t`Turn off` : t`Turn on`}</button>
     {message ? <p role="status" className="basis-full text-muted">{message}</p> : null}
   </div>;
 }

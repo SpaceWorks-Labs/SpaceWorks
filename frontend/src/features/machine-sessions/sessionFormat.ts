@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { money } from "../payments/usePriceQuote";
 import type { ChargeState, SessionRate, SessionSource } from "./api";
 
@@ -26,7 +28,7 @@ export function rateLine(rate: SessionRate) {
 }
 
 export function when(iso: string | null | undefined) {
-  return iso ? new Date(iso).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+  return iso ? new Date(iso).toLocaleString(formatLocale(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
 }
 
 export const STOP_REASONS: Record<string, string> = {
@@ -37,10 +39,10 @@ export const STOP_REASONS: Record<string, string> = {
 export const SOURCES: Record<SessionSource, string> = { member_qr: "Machine QR", staff: "Staff", device: "Machine report" };
 
 export const CHARGE_LABELS: Record<ChargeState, { text: string; tone: "neutral" | "info" | "warn" | "success" }> = {
-  job: { text: "Billed with the job", tone: "neutral" },
-  none: { text: "Not charged", tone: "neutral" },
-  running: { text: "Running", tone: "info" },
-  raised: { text: "Charge raised", tone: "success" },
-  held: { text: "Waiting for staff check", tone: "warn" },
-  free: { text: "Nothing to pay", tone: "neutral" },
+  job: { text: t`Billed with the job`, tone: "neutral" },
+  none: { text: t`Not charged`, tone: "neutral" },
+  running: { text: t`Running`, tone: "info" },
+  raised: { text: t`Charge raised`, tone: "success" },
+  held: { text: t`Waiting for staff check`, tone: "warn" },
+  free: { text: t`Nothing to pay`, tone: "neutral" },
 };

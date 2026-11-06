@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { CompoundInputProps } from "./types";
 
 export function MoneyInput({ question: q, value, onChange, invalid, describedBy }: CompoundInputProps) {
@@ -6,8 +7,7 @@ export function MoneyInput({ question: q, value, onChange, invalid, describedBy 
   const currency = typeof object.currency === "string" ? object.currency : currencies[0] ?? "";
   const props = { className: "desk-input", "aria-invalid": invalid || undefined, "aria-describedby": describedBy };
   return <div className="grid gap-3 sm:grid-cols-2">
-    <label className="grid gap-1 text-sm">{q.label} amount (minor units)
-      <input {...props} type="text" inputMode="numeric" pattern="[0-9]+" required={q.required}
+    <label className="grid gap-1 text-sm">{t`${q.label} amount (minor units)`}<input {...props} type="text" inputMode="numeric" pattern="[0-9]+" required={q.required}
         value={typeof object.amount_minor === "number" || typeof object.amount_minor === "string" ? object.amount_minor : ""}
         onChange={e => {
           const raw = e.target.value;
@@ -21,6 +21,6 @@ export function MoneyInput({ question: q, value, onChange, invalid, describedBy 
         {currencies.map(code => <option key={code} value={code}>{code}</option>)}
       </select>
     </label>
-    <p className="text-xs text-muted sm:col-span-2">Enter a whole number of the currency’s smallest units. No currency conversion is applied.</p>
+    <p className="text-xs text-muted sm:col-span-2">{t`Enter a whole number of the currency’s smallest units. No currency conversion is applied.`}</p>
   </div>;
 }

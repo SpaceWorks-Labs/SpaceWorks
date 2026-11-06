@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { FormPageLayout } from "../../../components/layouts";
 import { FormV2Fields } from "../../forms/FormV2Fields";
@@ -16,8 +18,8 @@ export function StageForm({ scope, responseId, uploadFiles, onDirtyChange }: { s
   uploadFiles?: UploadFormFiles; onDirtyChange?: (dirty: boolean) => void }) {
   const query = useStageResponse(scope, responseId);
   const [saved, setSaved] = useState<CommandResult | null>(null);
-  if (!query.data) return <div><p role={query.error ? "alert" : "status"}>{query.error ? commandError(query.error) : "Loading form…"}</p>
-    {query.error ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>Retry</button> : null}</div>;
+  if (!query.data) return <div><p role={query.error ? "alert" : "status"}>{query.error ? commandError(query.error) : t`Loading form…`}</p>
+    {query.error ? <button type="button" className="desk-button" onClick={() => void query.refetch()}>{t`Retry`}</button> : null}</div>;
   return <><StageEditor key={`${query.data.id}:${query.data.version}`} scope={scope} response={query.data} uploadFiles={uploadFiles} onSaved={setSaved} onDirtyChange={onDirtyChange} />
     {saved?.form_save_intents ? <FormSaveIntentsNotice actorId={scope.actorId} intents={saved.form_save_intents} /> : saved?.save_operation_id ? <SaveIntentNotice actorId={scope.actorId} operationId={saved.save_operation_id} /> : null}</>;
 }
@@ -47,21 +49,21 @@ function StageEditor({ scope, response, uploadFiles, onSaved, onDirtyChange }: {
   const blocked = closed || uploads.busy;
   const canSave = response.allowed_actions?.includes("stage_save") === true;
   const canSubmit = response.allowed_actions?.includes("stage_submit") === true;
-  return <FormPageLayout header={{ title: response.assignment.title, subtitle: `Due ${new Date(response.assignment.due_at).toLocaleString()}` }}
-    state={{ status: "ready" }} submit={{ label: response.selected_revision ? "Resubmit form" : "Submit form", onClick: () => submit(true), pending: mutation.isPending,
+  return <FormPageLayout header={{ title: response.assignment.title, subtitle: t`Due ${new Date(response.assignment.due_at).toLocaleString(formatLocale())}` }}
+    state={{ status: "ready" }} submit={{ label: response.selected_revision ? t`Resubmit form` : t`Submit form`, onClick: () => submit(true), pending: mutation.isPending,
       disabled: blocked || !canSubmit, disabledReason: uploads.busy ? "Wait for files to finish checking." : "Submission is unavailable. Ask the organizer if you need an extension." }}
     form={<div className="grid gap-5">
-      {closed ? <p role="status">This form is read-only. Your previous submissions remain available.</p> : null}
-      {response.selected_revision ? <p role="status">Submitted revision {response.selected_revision}. A new submission preserves your earlier answers.</p> : null}
-      {!closed ? <div className="grid gap-2"><p className="text-sm text-muted">Saved details are suggestions. Review them before submitting. Saving sensitive details is optional.</p>
-        {prefill.isPending ? <p role="status">Loading saved suggestions…</p> : prefill.error ? <p role="status">Saved suggestions are unavailable. You can fill in this form yourself.</p> : null}
-        {prefill.data ? <button type="button" className="desk-button min-h-11" onClick={() => change(applyStageSuggestions(response.schema, value, prefill.data!))}>Use saved details for empty answers</button> : null}</div> : null}
-      <fieldset disabled={closed || !canSave || mutation.isPending} className="grid min-w-0 gap-4"><legend className="sr-only">Stage answers</legend>
+      {closed ? <p role="status">{t`This form is read-only. Your previous submissions remain available.`}</p> : null}
+      {response.selected_revision ? <p role="status">{t`Submitted revision ${response.selected_revision}. A new submission preserves your earlier answers.`}</p> : null}
+      {!closed ? <div className="grid gap-2"><p className="text-sm text-muted">{t`Saved details are suggestions. Review them before submitting. Saving sensitive details is optional.`}</p>
+        {prefill.isPending ? <p role="status">{t`Loading saved suggestions…`}</p> : prefill.error ? <p role="status">{t`Saved suggestions are unavailable. You can fill in this form yourself.`}</p> : null}
+        {prefill.data ? <button type="button" className="desk-button min-h-11" onClick={() => change(applyStageSuggestions(response.schema, value, prefill.data!))}>{t`Use saved details for empty answers`}</button> : null}</div> : null}
+      <fieldset disabled={closed || !canSave || mutation.isPending} className="grid min-w-0 gap-4"><legend className="sr-only">{t`Stage answers`}</legend>
         <FormV2Fields schema={response.schema} value={value} onChange={change} context="stage" uploadFiles={uploadFiles ?? uploads.upload} />
       </fieldset>
-      {dirty ? <p role="status">You have unsaved answers.</p> : null}
-      <div className="flex flex-wrap gap-3"><button type="button" className="desk-button min-h-11" disabled={blocked || !canSave || mutation.isPending} onClick={() => submit(false)}>Save draft</button>
-        <button type="button" className="desk-button" disabled={!dirty || mutation.isPending || uploads.busy} onClick={() => { if (window.confirm("Discard unsaved answers?")) { setValue(initial); setDirty(false); } }}>Discard changes</button></div>
-      {mutation.error ? <p role="alert">{commandError(mutation.error)}</p> : mutation.isSuccess ? <p role="status">Your form was saved.</p> : null}
+      {dirty ? <p role="status">{t`You have unsaved answers.`}</p> : null}
+      <div className="flex flex-wrap gap-3"><button type="button" className="desk-button min-h-11" disabled={blocked || !canSave || mutation.isPending} onClick={() => submit(false)}>{t`Save draft`}</button>
+        <button type="button" className="desk-button" disabled={!dirty || mutation.isPending || uploads.busy} onClick={() => { if (window.confirm(t`Discard unsaved answers?`)) { setValue(initial); setDirty(false); } }}>{t`Discard changes`}</button></div>
+      {mutation.error ? <p role="alert">{commandError(mutation.error)}</p> : mutation.isSuccess ? <p role="status">{t`Your form was saved.`}</p> : null}
     </div>} />;
 }

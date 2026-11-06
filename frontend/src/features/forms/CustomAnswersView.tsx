@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { CustomAnswerSnapshot, CustomAnswerSnapshotV2, CustomAnswerValue } from "./customFormTypes";
 import type { ReactNode } from "react";
 
@@ -25,7 +26,7 @@ export function CustomAnswersView({ snapshot, viewer, renderFiles }: {
   renderFiles?: (answer: CustomAnswerSnapshotV2["answers"][number]) => ReactNode;
 }) {
   if (!snapshot?.answers.length) {
-    return <p className="text-sm text-muted">No custom answers were submitted.</p>;
+    return <p className="text-sm text-muted">{t`No custom answers were submitted.`}</p>;
   }
 
   return (

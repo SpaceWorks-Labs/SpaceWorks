@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -46,19 +47,19 @@ export function EventConsentRepairForm({ makerspaceSlug, publicToken, waiver, on
     if (!repair.isPending) repair.mutate();
   };
   return <form className="grid gap-4" onSubmit={submit}>
-    <div><h3 className="title-section">Renew registration consent</h3>
-      <p className="mt-1 text-sm text-muted">Your existing registration keeps its place and saved answers.</p></div>
-    <fieldset className="grid gap-2 rounded-xl border border-line bg-panel p-3"><legend className="px-1 text-sm font-semibold">Host waiver</legend>
+    <div><h3 className="title-section">{t`Renew registration consent`}</h3>
+      <p className="mt-1 text-sm text-muted">{t`Your existing registration keeps its place and saved answers.`}</p></div>
+    <fieldset className="grid gap-2 rounded-xl border border-line bg-panel p-3"><legend className="px-1 text-sm font-semibold">{t`Host waiver`}</legend>
       <p className="whitespace-pre-wrap text-sm leading-6">{waiver.body}</p>
       <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={accepted}
         disabled={repair.isPending} onChange={e => setAccepted(e.target.checked)} />
-        I accept this host waiver (version {waiver.version}).</label>
+        {t`I accept this host waiver (version ${waiver.version}).`}</label>
       {validation ? <p role="alert" className="text-sm text-danger">{validation}</p> : null}
     </fieldset>
     {repair.error ? <p role="alert" className="text-sm text-danger">{repair.error instanceof StructuredApiError
-      ? repair.error.detail ?? repair.error.message : "Unable to renew consent. Please try again."}</p> : null}
+      ? repair.error.detail ?? repair.error.message : t`Unable to renew consent. Please try again.`}</p> : null}
     <button className="desk-button-brand w-full sm:w-auto sm:justify-self-start" type="submit" disabled={repair.isPending}>
-      {repair.isPending ? "Saving consent..." : "Save consent"}
+      {repair.isPending ? t`Saving consent...` : t`Save consent`}
     </button>
   </form>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
 import { ListLayout } from "../../components/layouts";
@@ -28,13 +29,13 @@ function JobList({ context }: { context: MemberJobsContext }) {
   // Jobs that need the member float to the top; the server already orders newest first.
   const needsYou = (job: MemberJob) => ["needs_changes", "quote_sent", "awaiting_payment", "ready_to_collect"].includes(job.label) ? 0 : 1;
   const ordered = [...rows].sort((a, b) => needsYou(a) - needsYou(b));
-  return <ListLayout header={{ eyebrow: "Member area", title: "My machine jobs", subtitle: "Everything you've asked the space to make.",
-    primary: { label: "Request a job", href: context.path("machine-jobs/new") } }}
+  return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine jobs`, subtitle: t`Everything you've asked the space to make.`,
+    primary: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}
     state={context.bootstrapError || jobs.isError
       ? { status: "error", error: "Couldn't load your jobs. Try again.", onRetry: () => { void jobs.refetch(); } }
       : !context.ready || jobs.isPending ? { status: "loading" } : { status: "ready" }}
     isEmpty={jobs.isSuccess && !rows.length}
-    empty={{ message: "No machine jobs yet. Send the space a file and it will show up here.", action: { label: "Request a job", href: context.path("machine-jobs/new") } }}
+    empty={{ message: t`No machine jobs yet. Send the space a file and it will show up here.`, action: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}
     body={{ kind: "rows", rows: <ul className="grid gap-3">{ordered.map(job => {
       const label = jobLabel(job.label);
       return <li key={job.id}><ListRow title={job.title} href={context.path(`member/machine-jobs/${job.id}`)}

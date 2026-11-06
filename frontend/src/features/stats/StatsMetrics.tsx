@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { PublicCount, PublicStatsMetric, StatsSectionKey } from "./api";
 import { StatTile, formatNumber } from "./StatsParts";
 
@@ -29,11 +30,11 @@ export function PeriodTiles({ metrics, period }: { metrics: PublicStatsMetric[];
 export function HeadlineRow({ metrics, period, size = "page" }: { metrics: PublicStatsMetric[]; period: string; size?: "page" | "tv" }) {
   if (!metrics.length) return null;
   const tv = size === "tv";
-  return <section aria-label="Headline numbers" className={`grid sm:grid-cols-2 ${tv ? "gap-6 xl:grid-cols-4" : "gap-4 lg:grid-cols-4"}`}>
+  return <section aria-label={t`Headline numbers`} className={`grid sm:grid-cols-2 ${tv ? "gap-6 xl:grid-cols-4" : "gap-4 lg:grid-cols-4"}`}>
     {metrics.map(metric => <div key={metric.key} className={`min-w-0 rounded-xl border border-line bg-panel ${tv ? "p-8" : "p-5"}`}>
       <p className={tv ? "text-2xl text-muted" : "text-sm text-muted"}>{metric.label}</p>
       <p className={`mt-2 break-words font-display font-semibold tabular-nums text-ink ${tv ? "text-heading 2xl:text-display" : "text-display-sub"}`}>{formatMetric(metric)}</p>
-      <p className={tv ? "mt-2 text-xl text-muted" : "mt-1 text-xs text-muted"}>{isSnapshot(metric.key) ? "Right now" : period}</p>
+      <p className={tv ? "mt-2 text-xl text-muted" : "mt-1 text-xs text-muted"}>{isSnapshot(metric.key) ? t`Right now` : period}</p>
     </div>)}
   </section>;
 }

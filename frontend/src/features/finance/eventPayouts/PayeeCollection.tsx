@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
@@ -10,8 +11,8 @@ import type { CommandResult, PayeeContext, PayoutDetail } from "./types";
 
 export function PayeeCollection({ actorId, payout }: { actorId: number; payout: PayoutDetail }) {
   const query = usePayeeContext(actorId, payout.id);
-  if (query.isPending) return <p role="status">Loading enabled payment methods…</p>;
-  if (query.error) return <div role="alert">Payment methods could not be loaded. <button className="desk-button min-h-11" onClick={() => { void query.refetch(); }}>Retry payment methods</button></div>;
+  if (query.isPending) return <p role="status">{t`Loading enabled payment methods…`}</p>;
+  if (query.error) return <div role="alert">{t`Payment methods could not be loaded. `}<button className="desk-button min-h-11" onClick={() => { void query.refetch(); }}>{t`Retry payment methods`}</button></div>;
   if (!query.data) return null;
   return <CollectionForm key={`${scopeIdentity(actorId)}:${payout.id}:${payout.version}:${JSON.stringify(query.data.templates)}:${query.data.allowed_actions?.join()}`}
     actorId={actorId} payout={payout} context={query.data} />;
@@ -67,28 +68,28 @@ function CollectionForm({ actorId, payout, context }: { actorId: number; payout:
       });
     } finally { submitLock.current = false; }
   };
-  return <section className="grid gap-4 rounded-2xl border border-line bg-panel p-5" aria-label="Your payment routing">
-    <h2 className="font-semibold">Your payment routing</h2><p>{context.disclosure}</p>
-    <p className="text-sm text-muted">Routing values are visible only to you and authorized finance staff. Each edit creates a new revision for this reimbursement. Details clear when you leave this window.</p>
-    {payee ? <><p>{payee.masked_details} · {payee.method.replace(/_/g, " ")} · {payee.verified ? "Verified" : "Awaiting finance review"}</p>
-      {payee.correction ? <p role="status">Finance requested a correction: {payee.correction.reason_code.replace(/_/g, " ")} · {payee.correction.note}</p> : null}</> : null}
+  return <section className="grid gap-4 rounded-2xl border border-line bg-panel p-5" aria-label={t`Your payment routing`}>
+    <h2 className="font-semibold">{t`Your payment routing`}</h2><p>{context.disclosure}</p>
+    <p className="text-sm text-muted">{t`Routing values are visible only to you and authorized finance staff. Each edit creates a new revision for this reimbursement. Details clear when you leave this window.`}</p>
+    {payee ? <><p>{payee.masked_details} · {payee.method.replace(/_/g, " ")} · {payee.verified ? t`Verified` : t`Awaiting finance review`}</p>
+      {payee.correction ? <p role="status">{t`Finance requested a correction: ${payee.correction.reason_code.replace(/_/g, " ")} · ${payee.correction.note}`}</p> : null}</> : null}
     {editable ? templates.length ? <form className="grid gap-3" autoComplete="off" onSubmit={event => { event.preventDefault(); void save(); }}>
-      <label className="grid gap-1">Country and payment method<select className="desk-input" value={selection} disabled={request.pending} onChange={event => {
+      <label className="grid gap-1">{t`Country and payment method`}<select className="desk-input" value={selection} disabled={request.pending} onChange={event => {
         setSelection(event.target.value); setDetails({}); setConsent(false);
-      }}><option value="">Choose an enabled method</option>{templates.map(choice => <option key={choice.join(":")} value={choice.join(":")}>{choice[0]} · {choice[1].replace(/_/g, " ")}</option>)}</select></label>
+      }}><option value="">{t`Choose an enabled method`}</option>{templates.map(choice => <option key={choice.join(":")} value={choice.join(":")}>{choice[0]} · {choice[1].replace(/_/g, " ")}</option>)}</select></label>
       {fields.map(field => <label key={field} className="grid gap-1">{fieldLabel(field)}{field === "account_type"
         ? <select className="desk-input" required value={details[field] ?? ""} disabled={request.pending} onChange={event => { setDetails({ ...details, [field]: event.target.value }); setConsent(false); }}>
-          <option value="">Choose account type</option><option value="checking">Checking</option><option value="savings">Savings</option></select>
+          <option value="">{t`Choose account type`}</option><option value="checking">{t`Checking`}</option><option value="savings">{t`Savings`}</option></select>
         : <input className="desk-input" required type={field === "payout_email" ? "email" : "text"} autoComplete="off" spellCheck={false}
           maxLength={field === "delivery_instructions" ? 1000 : 200} disabled={request.pending} value={details[field] ?? ""}
           onChange={event => { setDetails({ ...details, [field]: event.target.value }); setConsent(false); }} />}</label>)}
-      {chosen?.[1] === "paypal" || chosen?.[1] === "wise" ? <p className="text-sm text-muted">Provide only your receiving email. Never provide a password, API key or login code.</p> : null}
-      <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />I checked these details and agree to their use for this reimbursement.</label>
-      <button className="desk-button min-h-11" type="submit" disabled={!valid || request.pending}>{request.pending ? "Saving routing…" : payee ? "Submit corrected routing" : "Submit payment routing"}</button>
-      {dirty ? <button type="button" className="desk-button min-h-11" onClick={() => { setDetails({}); setConsent(false); }}>Discard entered details</button> : null}
-    </form> : <p>No supported payment method is enabled. Contact finance to enable a country template before entering details.</p> : <p>Payment routing is not currently requested.</p>}
+      {chosen?.[1] === "paypal" || chosen?.[1] === "wise" ? <p className="text-sm text-muted">{t`Provide only your receiving email. Never provide a password, API key or login code.`}</p> : null}
+      <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />{t`I checked these details and agree to their use for this reimbursement.`}</label>
+      <button className="desk-button min-h-11" type="submit" disabled={!valid || request.pending}>{request.pending ? t`Saving routing…` : payee ? t`Submit corrected routing` : t`Submit payment routing`}</button>
+      {dirty ? <button type="button" className="desk-button min-h-11" onClick={() => { setDetails({}); setConsent(false); }}>{t`Discard entered details`}</button> : null}
+    </form> : <p>{t`No supported payment method is enabled. Contact finance to enable a country template before entering details.`}</p> : <p>{t`Payment routing is not currently requested.`}</p>}
     {permits(payout, "delete_payee") && permits(context, "delete_payee") ? <>
-      <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={deleteConfirmed} onChange={event => setDeleteConfirmed(event.target.checked)} />Delete routing details when the retention policy permits.</label>
+      <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={deleteConfirmed} onChange={event => setDeleteConfirmed(event.target.checked)} />{t`Delete routing details when the retention policy permits.`}</label>
       <button type="button" className="desk-button-danger-outline min-h-11" disabled={!deleteConfirmed || request.pending} onClick={() => {
         const data = { expected_version: payout.version }; const operation = identity.forPayload({ action: "delete", id: payout.id, data });
         void request.run(async signal => {
@@ -96,8 +97,8 @@ function CollectionForm({ actorId, payout, context }: { actorId: number; payout:
             headers: { "Idempotency-Key": operation }, body: JSON.stringify({ ...data, operation_id: operation }) });
           if (!signal.aborted) await client.invalidateQueries({ queryKey: memberPayoutKey(actorId) }); return result;
         });
-      }}>Delete retained routing details</button></> : null}
-    {request.failed ? <p role="alert">Routing was not changed. Check the template, reload current versions and try again. Unpaid obligations and active retention holds prevent deletion.</p> : null}
-    {request.data ? <p role="status">Routing change recorded. The updated view shows only masked values.</p> : null}
+      }}>{t`Delete retained routing details`}</button></> : null}
+    {request.failed ? <p role="alert">{t`Routing was not changed. Check the template, reload current versions and try again. Unpaid obligations and active retention holds prevent deletion.`}</p> : null}
+    {request.data ? <p role="status">{t`Routing change recorded. The updated view shows only masked values.`}</p> : null}
   </section>;
 }

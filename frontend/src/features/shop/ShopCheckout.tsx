@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -47,34 +49,33 @@ export function ShopCheckout({ slug, shop, lines, session, onSession, onPlaced, 
   });
   if (placed) return <ShopOrderPlaced placed={placed} path={path} />;
   if (!lines.length) return null;
-  if (session === "restoring") return <p role="status" className="text-sm text-muted">Checking your sign-in…</p>;
+  if (session === "restoring") return <p role="status" className="text-sm text-muted">{t`Checking your sign-in…`}</p>;
   const needsAccount = !signedIn && (!shop.guest_checkout || signIn);
   const ready = Boolean(quote) && !quoteQuery.isFetching && (signedIn || guestReady(guest));
   const due = Number(quote?.amount_due ?? 0) > 0;
   const payOnline = shop.pay_online && due;
   return <div className="grid gap-4">
     <ShopPolicyNotes shop={shop} />
-    {shop.pickup_events.length ? <label className="grid gap-1 text-sm font-semibold text-ink">Where will you collect it?
-      <select className="desk-input min-h-11 font-normal" value={String(pickup)} onChange={event => {
+    {shop.pickup_events.length ? <label className="grid gap-1 text-sm font-semibold text-ink">{t`Where will you collect it?`}<select className="desk-input min-h-11 font-normal" value={String(pickup)} onChange={event => {
         setPickup(event.target.value === "space" ? "space" : Number(event.target.value));
       }}>
-        <option value="space">At {shop.name}</option>
+        <option value="space">{t`At ${shop.name}`}</option>
         {shop.pickup_events.map(event => <option key={event.id} value={event.id}>
-          At {event.title} ({new Date(event.starts_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })})</option>)}
+          {t`At ${event.title} (${new Date(event.starts_at).toLocaleString(formatLocale(), { dateStyle: "medium", timeStyle: "short" })})`}</option>)}
       </select></label> : null}
-    {quoteQuery.isLoading ? <p role="status" className="text-sm text-muted">Pricing your basket…</p> : null}
+    {quoteQuery.isLoading ? <p role="status" className="text-sm text-muted">{t`Pricing your basket…`}</p> : null}
     {quoteQuery.error ? <p role="alert" className="text-sm text-danger">{shopErrorMessage(quoteQuery.error, labelFor)}</p> : null}
     {changed ? <p role="alert" className="rounded-xl border border-line bg-surface p-3 text-sm text-ink">
-      Prices changed since you looked. This is the new total; confirm to place the order at this price.</p> : null}
+      {t`Prices changed since you looked. This is the new total; confirm to place the order at this price.`}</p> : null}
     {quote ? <ShopQuoteSummary quote={quote} /> : null}
     {needsAccount ? <MemberAuthPanel embedded makerspaceSlug={slug}
-      context={<p className="text-sm text-muted">{shop.guest_checkout ? "Sign in to order with your account." : "Sign in to order from this shop."}</p>}
+      context={<p className="text-sm text-muted">{shop.guest_checkout ? t`Sign in to order with your account.` : t`Sign in to order from this shop.`}</p>}
       onAuthenticated={() => { setSignIn(false); setChanged(null); onSession("authenticated"); }} />
       : !signedIn ? <GuestIdentityFields slug={slug} value={guest} onChange={setGuest} onSignIn={() => setSignIn(true)} /> : null}
     {place.error && !changed ? <p role="alert" className="text-sm text-danger">{shopErrorMessage(place.error, labelFor)}</p> : null}
     {!needsAccount ? <button type="button" className="desk-button-brand min-h-11 w-full" disabled={!ready || place.isPending}
       onClick={() => place.mutate()}>
-      {place.isPending ? "Placing your order…" : changed ? "Confirm the new total" : payOnline ? "Continue to payment" : due ? "Place order, pay at the desk" : "Place order"}
+      {place.isPending ? t`Placing your order…` : changed ? t`Confirm the new total` : payOnline ? t`Continue to payment` : due ? t`Place order, pay at the desk` : t`Place order`}
     </button> : null}
   </div>;
 }

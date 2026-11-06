@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PublicLayout, CenteredCardLayout } from "../../components/layouts";
 import { EmptyState, StatusPill } from "../../components/ui";
@@ -10,7 +11,7 @@ import { MemberPaymentRows, type MemberPayment } from "./MemberPayments";
 const MAKERSPACE_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Unable to load archived payments.";
+  return error instanceof Error ? error.message : t`Unable to load archived payments.`;
 }
 
 function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSummary }) {
@@ -41,13 +42,12 @@ function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSumma
         <div className="min-w-0 max-w-prose">
           <h2 className="title-panel break-words">{summary.makerspace.name}</h2>
           <p className="mt-1 text-sm text-muted">
-            This makerspace is closed. Outstanding charges can still be settled and receipts remain readable here.
-          </p>
+            {t`This makerspace is closed. Outstanding charges can still be settled and receipts remain readable here.`}</p>
         </div>
-        <StatusPill label={`${summary.pending_count} pending / ${summary.total_count} total`} tone={summary.pending_count ? "warn" : "neutral"} />
+        <StatusPill label={t`${summary.pending_count} pending / ${summary.total_count} total`} tone={summary.pending_count ? "warn" : "neutral"} />
       </div>
       {payments.isLoading ? (
-        <p className="mt-4 text-sm text-muted">Loading payment history…</p>
+        <p className="mt-4 text-sm text-muted">{t`Loading payment history…`}</p>
       ) : null}
       {payments.isError ? (
         <p className="mt-4 text-sm text-danger" role="alert">
@@ -87,7 +87,7 @@ export function ArchivedPayments() {
   const removed = discovery.error instanceof StructuredApiError
     && discovery.error.status === 404;
 
-  if (removed) return <CenteredCardLayout title="Page not found" body="This page is unavailable on this deployment." primary={{ label: "Back to Space Works", href: "/" }} state={{ status: "ready" }} />;
+  if (removed) return <CenteredCardLayout title={t`Page not found`} body="This page is unavailable on this deployment." primary={{ label: t`Back to Space Works`, href: "/" }} state={{ status: "ready" }} />;
 
   if (unauthenticated) {
     return (
@@ -102,8 +102,8 @@ export function ArchivedPayments() {
   }
 
   return <PublicLayout state={discovery.isLoading ? { status: "loading" } : discovery.isError ? { status: "error", error: errorMessage(discovery.error), onRetry: () => void discovery.refetch() } : { status: "ready" }}
-    makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} nav={[]} headerAction={{ label: "Member area", href: "/member" }}
-    header={{ title: "Payments and receipts", eyebrow: "Archived makerspaces", subtitle: "Closed makerspaces no longer appear in the normal member area. Outstanding charges and past receipts remain available here.", primary: { label: "Back to Space Works", href: "/" } }} footer={{ links: [] }}>
-    <div className="grid gap-6">{discovery.data?.length === 0 ? <EmptyState message="No charges outstanding from closed makerspaces." /> : discovery.data?.map(summary => <ArchivedMakerspacePayments key={summary.makerspace.id} summary={summary} />)}</div>
+    makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} nav={[]} headerAction={{ label: t`Member area`, href: "/member" }}
+    header={{ title: t`Payments and receipts`, eyebrow: t`Archived makerspaces`, subtitle: t`Closed makerspaces no longer appear in the normal member area. Outstanding charges and past receipts remain available here.`, primary: { label: t`Back to Space Works`, href: "/" } }} footer={{ links: [] }}>
+    <div className="grid gap-6">{discovery.data?.length === 0 ? <EmptyState message={t`No charges outstanding from closed makerspaces.`} /> : discovery.data?.map(summary => <ArchivedMakerspacePayments key={summary.makerspace.id} summary={summary} />)}</div>
   </PublicLayout>;
 }

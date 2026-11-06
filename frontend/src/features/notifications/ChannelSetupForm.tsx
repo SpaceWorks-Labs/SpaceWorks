@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Callout, Field } from "../../components/ui";
@@ -36,12 +37,12 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
 
   function submit() {
     const missing = provider.credentials.filter(field => !field.optional && !secrets[field.key]?.trim());
-    if (typed && provider.identityCredential && !draft.integration_identity.trim()) missing.push({ key: provider.identityCredential, label: provider.identityLabel ?? "Identity" });
-    if (typed && missing.length) return setProblem(`Enter every required credential to replace them: ${missing.map(field => field.label).join(", ")}.`);
+    if (typed && provider.identityCredential && !draft.integration_identity.trim()) missing.push({ key: provider.identityCredential, label: provider.identityLabel ?? t`Identity` });
+    if (typed && missing.length) return setProblem(t`Enter every required credential to replace them: ${missing.map(field => field.label).join(", ")}.`);
     if (draft.personal_enabled && chat && !draft.integration_identity.trim() && !(typed && provider.derivedIdentity) && !draft.use_platform_sender)
-      return setProblem(provider.installation ? "Install the Slack app before turning on personal messages."
-        : provider.derivedIdentity ? "Enter every required credential before turning on personal messages."
-        : `Enter the ${provider.identityLabel?.toLowerCase()} before turning on personal messages.`);
+      return setProblem(provider.installation ? t`Install the Slack app before turning on personal messages.`
+        : provider.derivedIdentity ? t`Enter every required credential before turning on personal messages.`
+        : t`Enter the ${String(provider.identityLabel?.toLowerCase())} before turning on personal messages.`);
     const body: ChannelWrite = { enabled: draft.enabled, personal_enabled: draft.personal_enabled };
     if (addressed && Boolean(draft.use_platform_sender) !== Boolean(initial.use_platform_sender)) body.use_platform_sender = Boolean(draft.use_platform_sender);
     if (addressed && Boolean(draft.activation_hold) !== Boolean(initial.activation_hold)) body.activation_hold = Boolean(draft.activation_hold);
@@ -74,35 +75,34 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
   return <form className="grid min-w-0 gap-4" aria-label={`${spec.label} settings`} onSubmit={event => { event.preventDefault(); submit(); }}>
     {!moduleInstalled ? <Callout size="inline" tone="warn" lead={`The ${spec.label} module is not installed here.`}
       body="You can prepare these settings, but nothing is sent until the platform administrator installs it." /> : null}
-    {!row ? <p role="note" className="text-sm text-muted">Not set up yet. Until you save, existing rooms and email keep working exactly as today.</p> : null}
+    {!row ? <p role="note" className="text-sm text-muted">{t`Not set up yet. Until you save, existing rooms and email keep working exactly as today.`}</p> : null}
     <fieldset className="grid gap-1"><legend className="sr-only">{spec.label} delivery</legend>
       {toggle("enabled", `Use ${spec.label}`, "Turn the whole channel on or off for this space.")}
       {spec.rooms ? toggle("room_enabled", "Staff rooms", "Post alerts into the group rooms listed under Rooms.") : null}
       {toggle("personal_enabled", "Personal messages", spec.key === "email" ? "Send people their own messages by email." : `Let staff and members receive their own messages on ${spec.label}.`)}
       {spec.key === "email" ? toggle("email_fallback", "Email fallback", "Email a person when none of the channels they chose could deliver.") : null}
     </fieldset>
-    {addressed ? <fieldset className="grid gap-2 rounded-lg border border-line p-3"><legend className="px-1 text-sm font-semibold">Sender</legend>
-      <p className="text-sm text-muted">Saved own credentials take precedence. Incomplete own settings refuse delivery; they never fall back to a platform sender.</p>
+    {addressed ? <fieldset className="grid gap-2 rounded-lg border border-line p-3"><legend className="px-1 text-sm font-semibold">{t`Sender`}</legend>
+      <p className="text-sm text-muted">{t`Saved own credentials take precedence. Incomplete own settings refuse delivery; they never fall back to a platform sender.`}</p>
       {spec.key === "sms" || draft.provider === "meta" ? <label className="flex min-h-11 items-center gap-2 text-sm">
         <input type="checkbox" checked={Boolean(draft.use_platform_sender)} disabled={save.isPending}
-          onChange={event => set({ use_platform_sender: event.target.checked })} />Allow the operator's platform sender
-      </label> : null}
+          onChange={event => set({ use_platform_sender: event.target.checked })} />{t`Allow the operator's platform sender`}</label> : null}
       {initial.credentials_set ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={clearCredentials} disabled={save.isPending || typed}
-        onChange={event => setClearCredentials(event.target.checked)} />Remove saved own credentials on save</label> : null}
+        onChange={event => setClearCredentials(event.target.checked)} />{t`Remove saved own credentials on save`}</label> : null}
       {initial.activation_hold ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={!draft.activation_hold} disabled={save.isPending}
-        onChange={event => set({ activation_hold: !event.target.checked })} />I reviewed the imported sender configuration; release its hold on save</label> : null}
+        onChange={event => set({ activation_hold: !event.target.checked })} />{t`I reviewed the imported sender configuration; release its hold on save`}</label> : null}
     </fieldset> : null}
-    {spec.providers.length > 1 ? <Field label="Provider"><select className="desk-input" value={draft.provider} disabled={save.isPending}
+    {spec.providers.length > 1 ? <Field label={t`Provider`}><select className="desk-input" value={draft.provider} disabled={save.isPending}
       onChange={event => { set({ provider: event.target.value as ProviderKey }); setSecrets({}); }}>
       {spec.providers.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></Field> : null}
     {provider.identityLabel ? <Field label={provider.identityLabel} hint={provider.identityHint}>
       <input className="desk-input" value={draft.integration_identity} maxLength={255} disabled={save.isPending}
         onChange={event => set({ integration_identity: event.target.value })} /></Field> : null}
     {provider.credentials.length ? <fieldset className="grid gap-3 rounded-lg border border-line p-3">
-      <legend className="px-1 text-sm font-semibold text-ink">Credentials</legend>
+      <legend className="px-1 text-sm font-semibold text-ink">{t`Credentials`}</legend>
       <p className="text-sm text-muted">{draft.credentials_set && draft.provider === initial.provider
-        ? "Credentials are saved and never shown again. Fill in every field below only to replace them."
-        : "Stored encrypted. They are never shown again after you save."}</p>
+        ? t`Credentials are saved and never shown again. Fill in every field below only to replace them.`
+        : t`Stored encrypted. They are never shown again after you save.`}</p>
       {provider.credentials.map(field => <Field key={field.key} label={`${field.label}${field.optional ? " (optional)" : ""}`} hint={field.hint}>
         <input className="desk-input" type={field.secret ? "password" : "text"} autoComplete="off" value={secrets[field.key] ?? ""}
           disabled={save.isPending} onChange={event => { setSecrets(current => ({ ...current, [field.key]: event.target.value })); setProblem(""); }} />
@@ -111,7 +111,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
     {addressed ? <ChannelCallbackURLs urls={save.data?.callback_urls ?? row?.callback_urls} /> : null}
     {provider.installation ? <SlackInstallation makerspaceId={makerspaceId} configured={draft.credentials_set} /> : null}
     {spec.key !== "email" && spec.key !== "native_push" ? <div className="grid gap-3 sm:grid-cols-2">
-      {(["daily_limit", "recipient_daily_limit"] as const).map(key => <Field key={key} label={key === "daily_limit" ? "Messages per day (optional)" : "Messages per person per day (optional)"}>
+      {(["daily_limit", "recipient_daily_limit"] as const).map(key => <Field key={key} label={key === "daily_limit" ? t`Messages per day (optional)` : t`Messages per person per day (optional)`}>
         <input className="desk-input" type="number" min={1} value={draft.quotas[key] ?? ""} disabled={save.isPending}
           onChange={event => set({ quotas: { ...draft.quotas, [key]: event.target.value ? Number(event.target.value) : undefined } })} />
       </Field>)}
@@ -124,7 +124,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
       body={`Changing the provider, ${provider.identityLabel?.toLowerCase() ?? "identity"} or credentials disconnects everyone's personal ${CHANNEL_LABELS[spec.key]} connection. They will need to connect again.`} /> : null}
     {problem ? <p role="alert" className="text-sm text-danger">{problem}</p> : null}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
-    {save.isSuccess && !save.isPending ? <p role="status" className="text-sm text-muted">{spec.label} settings saved.</p> : null}
-    <div><button className="desk-button" type="submit" disabled={save.isPending}>{save.isPending ? "Saving…" : `Save ${spec.label}`}</button></div>
+    {save.isSuccess && !save.isPending ? <p role="status" className="text-sm text-muted">{t`${spec.label} settings saved.`}</p> : null}
+    <div><button className="desk-button" type="submit" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Save ${spec.label}`}</button></div>
   </form>;
 }

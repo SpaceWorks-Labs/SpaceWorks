@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { memberFormInput } from '../../forms/conditions'
 import { formSchema } from '../programme/formBridge'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -56,12 +57,12 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
     : value ? { status: 'ready' } : { status: 'loading' }}
     main={<div className="grid gap-6"><Card>
       <p className="mb-4 text-muted">{posting.description}</p>
-      <p className="mb-4 text-sm text-muted">Only the answers you submit go to this event. Choose which details to save for your next registration.</p>
-      {conflict ? <div role="alert" className="mb-4 grid gap-3"><p>Your application changed. Your draft is preserved. Review the current form before reapplying it.</p><button className="desk-button" onClick={() => { setBaseVersion(application?.version ?? 0); setValue(previous => previous ? { ...previous, coc: previous.coc ? { ...previous.coc, accepted: false } : undefined } : previous) }}>Review and keep my draft</button></div> : null}
+      <p className="mb-4 text-sm text-muted">{t`Only the answers you submit go to this event. Choose which details to save for your next registration.`}</p>
+      {conflict ? <div role="alert" className="mb-4 grid gap-3"><p>{t`Your application changed. Your draft is preserved. Review the current form before reapplying it.`}</p><button className="desk-button" onClick={() => { setBaseVersion(application?.version ?? 0); setValue(previous => previous ? { ...previous, coc: previous.coc ? { ...previous.coc, accepted: false } : undefined } : previous) }}>{t`Review and keep my draft`}</button></div> : null}
       {command.error ? <p role="alert" className="mb-4 text-danger">{errorText(command.error)}</p> : null}
       {application?.answer_review?.date_review_required && posting.form?.event_context ? <div className="mb-4">
-        <p className="mb-2 text-sm">The event start date changed to {posting.form.event_context.as_of_date}. Review this date before submitting.</p>
-        <ActionControl action={{ label: 'Confirm updated event date', pending: command.isPending,
+        <p className="mb-2 text-sm">{t`The event start date changed to ${posting.form.event_context.as_of_date}. Review this date before submitting.`}</p>
+        <ActionControl action={{ label: t`Confirm updated event date`, pending: command.isPending,
           onClick: () => {
             const context = posting.form?.event_context
             if (!context) return
@@ -79,10 +80,10 @@ function FormContent({ scope, posting, application, bridge, onSaved, sponsorCons
         {bridge.render({ value, onChange: next => { setValue(next); setDirty(true) }, disabled: locked || command.isPending,
           errors: command.error instanceof StructuredApiError ? command.error.body.fields : undefined })}
         {!locked ? <div className="mt-6 flex flex-wrap gap-3">
-          <ActionControl primary action={{ label: application ? 'Submit application' : 'Save draft', pending: command.isPending, disabled: conflict || Boolean(application && posting.host_waiver?.acceptance_required && (!value?.host_waiver_accepted || value.host_waiver_version !== posting.host_waiver.version)),
+          <ActionControl primary action={{ label: application ? t`Submit application` : t`Save draft`, pending: command.isPending, disabled: conflict || Boolean(application && posting.host_waiver?.acceptance_required && (!value?.host_waiver_accepted || value.host_waiver_version !== posting.host_waiver.version)),
             onClick: () => submit(application ? 'submit' : 'draft') }} />
-          {application ? <ActionControl action={{ label: application.state === 'applied' ? 'Save changes' : 'Save draft', pending: command.isPending, disabled: conflict, onClick: () => submit('draft') }} /> : null}
-        </div> : <p className="mt-4 text-sm text-muted">Your submitted answers are locked.</p>}
+          {application ? <ActionControl action={{ label: application.state === 'applied' ? t`Save changes` : t`Save draft`, pending: command.isPending, disabled: conflict, onClick: () => submit('draft') }} /> : null}
+        </div> : <p className="mt-4 text-sm text-muted">{t`Your submitted answers are locked.`}</p>}
       </form> : null}
       {application?.save_intent ? <div className="mt-4" role="status">{bridge.savedDetailsStatus(application.save_intent)}</div> : null}
       {application ? <RoleOwnerActions scope={scope} row={application} completionReady={completionReady} onSaved={onSaved} /> : null}

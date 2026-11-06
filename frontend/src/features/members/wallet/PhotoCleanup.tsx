@@ -1,6 +1,7 @@
 // Optional background clean-up of the card photo (SPEC §6, Q-I3). It runs on this server as a
 // short job; the cleaned photo is only a candidate until the holder keeps it (the original is
 // then deleted) or keeps the original. Hidden when the server has no clean-up model.
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -29,7 +30,7 @@ export function PhotoCleanup({ card }: { card: MyCard }) {
     setDone(null);
     const queued = await memberRequest<CleanupJob>(`${cardPath(card)}/photo/cleanup`, { method: "POST" });
     const job = await waitForJob(queued.id);
-    if (job.state !== "succeeded") throw new Error("The clean-up didn't finish. Your photo is unchanged; try again later.");
+    if (job.state !== "succeeded") throw new Error(t`The clean-up didn't finish. Your photo is unchanged; try again later.`);
     const { url } = await memberRequest<{ url: string }>(`/member/card-jobs/${job.id}/result`);
     setCandidate({ job: job.id, url });
   } });
@@ -45,18 +46,18 @@ export function PhotoCleanup({ card }: { card: MyCard }) {
   } });
   if (!card.photo_set || !card.photo_cleanup_available) return null;
   return <div className="grid gap-2">
-    <p className="text-sm text-ink">Tidy the background: our server puts you on a plain white background. Nothing changes until you choose.</p>
+    <p className="text-sm text-ink">{t`Tidy the background: our server puts you on a plain white background. Nothing changes until you choose.`}</p>
     {!candidate ? <button type="button" className="desk-button-ghost min-h-11 w-fit" disabled={start.isPending}
-      onClick={() => start.mutate()}>{start.isPending ? "Cleaning up…" : "Clean up the background"}</button> : null}
+      onClick={() => start.mutate()}>{start.isPending ? t`Cleaning up…` : t`Clean up the background`}</button> : null}
     {candidate ? <div className="grid gap-2">
-      <img src={candidate.url} alt="Your photo with a cleaned background" className="h-40 w-auto max-w-full rounded-control border border-line bg-white object-contain" />
+      <img src={candidate.url} alt={t`Your photo with a cleaned background`} className="h-40 w-auto max-w-full rounded-control border border-line bg-white object-contain" />
       <div className="flex flex-wrap gap-2">
         <button type="button" className="desk-button-primary min-h-11" disabled={decide.isPending} onClick={() => decide.mutate(true)}>
-          Use the cleaned photo</button>
+          {t`Use the cleaned photo`}</button>
         <button type="button" className="desk-button min-h-11" disabled={decide.isPending} onClick={() => decide.mutate(false)}>
-          Keep my original</button>
+          {t`Keep my original`}</button>
       </div>
-      <p className="text-xs text-muted">Using the cleaned photo deletes the original.</p>
+      <p className="text-xs text-muted">{t`Using the cleaned photo deletes the original.`}</p>
     </div> : null}
     <p role="status" aria-live="polite" className="text-sm text-success">{done ?? ""}</p>
     {start.error || decide.error ? <ErrorText message={(start.error ?? decide.error)?.message} /> : null}

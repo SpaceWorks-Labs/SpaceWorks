@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
@@ -45,12 +46,12 @@ export function PublicProfilePage() {
   const failure = profile.error instanceof StructuredApiError && profile.error.detail ? profile.error.detail : "Couldn't load this profile. Try again.";
   return <PublicLayout chrome="bar" width="narrow"
     makerspace={{ name: spaceName, slug: single?.slug ?? "", homeHref: "/" }}
-    nav={[]} headerAction={{ label: "Sign in", href: "/member" }} liveStatus={<ThemeToggle />}
+    nav={[]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle />}
     state={!sessionReady || profile.isLoading ? { status: "loading" } : profile.error ? { status: "error", error: failure, onRetry: () => { void profile.refetch(); } } : { status: "ready" }}
-    footer={{ credit: "Powered by Space Works", links: [{ label: "About", href: "/about" }, { label: "License", href: LICENSE_URL, external: true }] }}>
+    footer={{ credit: "Powered by Space Works", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }] }}>
     {/* Chrome-only body: QueryContent inherits the layout's loading and error state. */}
     <QueryContent state={{ status: "ready" }}>
-      {profile.data?.viewer_is_owner && editor.error ? <ErrorBlock error={new Error("Couldn't find your profile editor. Try again.")}
+      {profile.data?.viewer_is_owner && editor.error ? <ErrorBlock error={new Error(t`Couldn't find your profile editor. Try again.`)}
         onRetry={() => { void editor.refetch(); }} /> : null}
       {profile.data ? <PublicProfileView key={profile.data.handle} profile={profile.data} editHref={editor.href}
       tab={search.get("tab") ?? "profile"} onTab={key => setSearch(previous => {

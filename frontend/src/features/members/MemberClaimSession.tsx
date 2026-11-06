@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { DashboardLayout } from "../../components/layouts";
 import { MakerspaceBrand } from "../../components/MakerspaceBrand";
 import { useQuery } from "@tanstack/react-query";
@@ -21,12 +22,12 @@ export function MemberClaimSession({ slug, makerspaceId, modules, geofenceEnable
   const waiver = useQuery({ queryKey: [...key, "waiver"], queryFn: () => memberRequest<{ has_waiver: boolean; body?: string; version?: string }>(`/member/makerspaces/${makerspaceId}/waiver`) });
   const activity = useQuery({ queryKey: [...key, "activity"], queryFn: () => memberRequest<MemberActivity>(`/member/makerspaces/${makerspaceId}/activity`), enabled: modules.includes("membership") });
   const error = waiver.error ?? activity.error;
-  return <DashboardLayout standalone header={{ title: "Temporary member session", eyebrow: "Member area", primary: modules.includes("public_inventory") ? { label: "Browse tools", href: `/m/${slug}` } : undefined }} state={{ status: "ready" }} stats={[]} main={[{ title: "Your access", empty: { message: "Your access details will appear here." }, content: <div className="grid gap-6">
-    <section className="desk-panel p-5"><MakerspaceBrand name={name} logoUrl={logoUrl} fallback="logo" /><p className="mt-3 text-sm text-muted">Your staff-issued claim code opened access for this makerspace. Staff must witness waiver acceptance.</p>
+  return <DashboardLayout standalone header={{ title: t`Temporary member session`, eyebrow: t`Member area`, primary: modules.includes("public_inventory") ? { label: t`Browse tools`, href: `/m/${slug}` } : undefined }} state={{ status: "ready" }} stats={[]} main={[{ title: t`Your access`, empty: { message: t`Your access details will appear here.` }, content: <div className="grid gap-6">
+    <section className="desk-panel p-5"><MakerspaceBrand name={name} logoUrl={logoUrl} fallback="logo" /><p className="mt-3 text-sm text-muted">{t`Your staff-issued claim code opened access for this makerspace. Staff must witness waiver acceptance.`}</p>
     </section>
-    {waiver.data?.has_waiver ? <section className="desk-panel p-5"><h2 className="title-panel">Current waiver ({waiver.data.version})</h2><p className="mt-2 max-w-prose whitespace-pre-wrap break-words text-sm text-muted">{waiver.data.body}</p><p className="mt-3 text-sm text-muted">Ask staff to record witnessed acceptance before borrowing.</p></section> : null}
+    {waiver.data?.has_waiver ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Current waiver (`}{waiver.data.version})</h2><p className="mt-2 max-w-prose whitespace-pre-wrap break-words text-sm text-muted">{waiver.data.body}</p><p className="mt-3 text-sm text-muted">{t`Ask staff to record witnessed acceptance before borrowing.`}</p></section> : null}
     <PresencePanel enabled={modules.includes("presence")} claim member slug={slug} spaceName={name} selfCheckIn={geofenceEnabled} />
-    {activity.isLoading ? <p className="text-sm text-muted">Loading your activity…</p> : null}
+    {activity.isLoading ? <p className="text-sm text-muted">{t`Loading your activity…`}</p> : null}
     {modules.includes("machines") ? <MemberCertifications makerspaceId={makerspaceId} /> : null}
     {activity.data ? <MemberActivityPanel modules={modules} activity={activity.data} makerspaceId={makerspaceId} makerspaceSlug={slug} makerspaceName={name} /> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}

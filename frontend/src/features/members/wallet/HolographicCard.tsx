@@ -1,6 +1,7 @@
 // The printed card with tilt, sheen and flip: the design drawn in the browser from its document
 // (CardFaces); the server PNG is the fallback when that cannot load. Tilt and sheen run only
 // with interface effects on and motion allowed; otherwise flip is an instant swap.
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 
 import { useDelight, useReducedMotion } from "../../../components/delight/DelightProvider";
@@ -81,7 +82,7 @@ export function HolographicCard({ card }: { card: MyCard }) {
     </button>
     <div className="flex flex-wrap justify-center gap-2">
       {card.has_back ? <button type="button" className="desk-button min-h-11" aria-pressed={flipped}
-        onClick={() => setFlipped((value) => !value)}>{flipped ? "Show front" : "Show back"}</button> : null}
+        onClick={() => setFlipped((value) => !value)}>{flipped ? t`Show front` : t`Show back`}</button> : null}
       {needsPermission ? <button type="button" className="desk-button-ghost min-h-11" onClick={async () => {
         const request = (window.DeviceOrientationEvent as unknown as OrientationRequest).requestPermission;
         if (request && (await request().catch(() => "denied")) === "granted") {
@@ -89,7 +90,7 @@ export function HolographicCard({ card }: { card: MyCard }) {
           window.addEventListener("deviceorientation", (event) => schedule({
             x: Math.max(-1, Math.min(1, (event.gamma ?? 0) / 30)), y: Math.max(-1, Math.min(1, ((event.beta ?? 45) - 45) / 30)) }));
         }
-      }}>Tilt with your phone</button> : null}
+      }}>{t`Tilt with your phone`}</button> : null}
     </div>
   </div>;
 }

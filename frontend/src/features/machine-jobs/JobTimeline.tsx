@@ -1,14 +1,16 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { Icon } from "../../components/ui";
 import { TIMELINE_STEPS, type MemberJob } from "./types";
 
-const exact = (iso: string) => new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+const exact = (iso: string) => new Intl.DateTimeFormat(formatLocale(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 const BAD = new Set(["failed", "cancelled", "not_collected"]);
 
 /** Every step the job has reached, oldest first, each with its exact time. */
 export function JobTimeline({ timeline }: { timeline: MemberJob["timeline"] }) {
   const steps = [...timeline].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   if (!steps.length) return null;
-  return <ol className="grid gap-0" aria-label="Job timeline">
+  return <ol className="grid gap-0" aria-label={t`Job timeline`}>
     {steps.map((row, index) => {
       const last = index === steps.length - 1;
       return <li key={`${row.step}-${row.at}`} className="grid grid-cols-[1.5rem_1fr] gap-3" aria-current={last ? "step" : undefined}>

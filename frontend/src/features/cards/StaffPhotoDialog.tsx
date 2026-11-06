@@ -1,6 +1,7 @@
 // Staff take or upload a holder's card photo at the desk (X25). The consent rule holds for
 // staff too: the photo is only attached once staff confirm the holder agreed to it being
 // stored and printed. The photo is cropped to the card's frame before upload.
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { PhotoPicker } from "../../components/photo-crop/PhotoPicker";
@@ -21,7 +22,7 @@ export async function uploadStaffCardPhoto(photoPath: string, photo: Blob) {
       form.append("file", photo);
       return form;
     })() });
-  if (!upload.ok) throw new Error(`Upload failed (${upload.status})`);
+  if (!upload.ok) throw new Error(t`Upload failed (${upload.status})`);
   return staffRequest<{ photo_set: boolean }>(photoPath, { method: "PUT",
     body: JSON.stringify({ object_key: presign.object_key, content_type: type, holder_consented: true }) });
 }
@@ -43,14 +44,13 @@ export function StaffPhotoDialog({ holderName, photoPath, aspect = 18 / 22, onCl
       setState({ busy: false, error: error instanceof Error ? error.message : "The photo couldn't be saved." });
     }
   }
-  return <Modal open={holderName !== null} onClose={close} title={`Card photo for ${holderName ?? ""}`}
-    footer={<div className="flex justify-end"><button type="button" className="desk-button min-h-11" onClick={close}>Close</button></div>}>
+  return <Modal open={holderName !== null} onClose={close} title={t`Card photo for ${holderName ?? ""}`}
+    footer={<div className="flex justify-end"><button type="button" className="desk-button min-h-11" onClick={close}>{t`Close`}</button></div>}>
     <div className="grid gap-3">
-      <p className="text-sm text-muted">Take the photo at the desk or choose one they sent you. It replaces any photo on the card
-        and answers an open photo request.</p>
+      <p className="text-sm text-muted">{t`Take the photo at the desk or choose one they sent you. It replaces any photo on the card and answers an open photo request.`}</p>
       <label className="flex min-h-11 items-start gap-2 text-sm text-ink"><input type="checkbox" className="mt-0.5 h-5 w-5"
         checked={consent} onChange={(event) => setConsent(event.target.checked)} />
-        <span>{holderName} agreed to this photo being stored privately and printed on their card.</span></label>
+        <span>{holderName} {t` agreed to this photo being stored privately and printed on their card.`}</span></label>
       <PhotoPicker aspect={aspect} disabled={!consent} busy={state.busy} onPhoto={(photo) => void upload(photo)} />
       {state.error ? <ErrorText message={state.error} /> : null}
     </div>

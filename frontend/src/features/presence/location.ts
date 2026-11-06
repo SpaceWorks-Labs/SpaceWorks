@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // Browser location for self check-in. The reading is sent once and discarded by the server;
 // GPS is a convenience control (spoofable), never an identity proof.
 export type LocationReading = { latitude: number; longitude: number; accuracy: number };
@@ -29,8 +30,8 @@ export async function locationPermission(source: BrowserLike | undefined = brows
 }
 
 export const LOCATION_FAILURE_TEXT: Record<LocationFailure, string> = {
-  denied: "Location access is blocked for this site. Allow location in your browser settings, then retry.",
-  unavailable: "Your device couldn't find your location. Check that location services are on, then retry.",
-  timeout: "Finding your location took too long. Retry, ideally near a window.",
-  unsupported: "This browser can't share a location.",
+  denied: t`Location access is blocked for this site. Allow location in your browser settings, then retry.`,
+  unavailable: t`Your device couldn't find your location. Check that location services are on, then retry.`,
+  timeout: t`Finding your location took too long. Retry, ideally near a window.`,
+  unsupported: t`This browser can't share a location.`,
 };

@@ -1,5 +1,6 @@
 // The holder's card photo in "My cards": take or choose a photo, crop it to the card's photo
 // frame, upload it with consent, and optionally clean up its background on the server.
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -26,14 +27,14 @@ export function CardPhotoSection({ card }: { card: MyCard }) {
     }
   }
 
-  return <fieldset className="grid gap-2"><legend className="text-sm font-semibold text-ink">Card photo</legend>
-    <p className="text-xs text-muted">{card.photo_set ? "A photo is on this card." : "No photo on this card yet."}
-      {" "}You crop it to the card's photo spot before it is uploaded.</p>
+  return <fieldset className="grid gap-2"><legend className="text-sm font-semibold text-ink">{t`Card photo`}</legend>
+    <p className="text-xs text-muted">{card.photo_set ? t`A photo is on this card.` : t`No photo on this card yet.`}
+      {t`${" "}You crop it to the card's photo spot before it is uploaded.`}</p>
     <label className="flex min-h-11 items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5" checked={consent}
-      onChange={(event) => setConsent(event.target.checked)} />I agree my photo is stored privately and printed on this card.</label>
+      onChange={(event) => setConsent(event.target.checked)} />{t`I agree my photo is stored privately and printed on this card.`}</label>
     <PhotoPicker aspect={card.photo_aspect || 18 / 22} disabled={!consent} busy={state.busy}
       chooseLabel={card.photo_set ? "Change the photo" : "Choose a photo"} onPhoto={(photo) => void upload(photo)} />
-    <p role="status" aria-live="polite" className="text-sm text-success">{state.done ? "Photo saved." : ""}</p>
+    <p role="status" aria-live="polite" className="text-sm text-success">{state.done ? t`Photo saved.` : ""}</p>
     {state.error ? <ErrorText message={state.error} /> : null}
     <PhotoCleanup card={card} />
   </fieldset>;

@@ -1,9 +1,10 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { ActionControl } from "../../../components/ui";
 
 /** Plays the verified original, without transcoding or external embeds. Judge
  * callers supply their assignment-gated authenticated reader, never a presign. */
-export function OriginalVideo({ bytes, playable, load, download, label = "Project demonstration" }: {
+export function OriginalVideo({ bytes, playable, load, download, label = t`Project demonstration` }: {
   bytes: number; playable: boolean; load: (signal: AbortSignal) => Promise<Blob>;
   download: () => void; label?: string;
 }) {
@@ -25,11 +26,11 @@ export function OriginalVideo({ bytes, playable, load, download, label = "Projec
   return <section aria-label={label} className="grid gap-3">
     {url ? <video controls playsInline preload="metadata" src={url} aria-label={label}
       className="max-h-96 w-full rounded-xl border border-line bg-panel" onError={() => setFailed(true)} /> : null}
-    {!playable ? <p className="text-sm text-muted">This codec needs a player on your device. Download the original video to watch it.</p> : null}
-    {failed ? <p role="status" className="text-sm text-muted">The original video could not be loaded. You can retry or download it.</p> : null}
-    <div className="flex flex-wrap gap-3">{playable && !url ? <ActionControl action={{ label: "Load original video", pending,
-      onClick: () => void play(), confirm: bytes >= 50 * 1024 ** 2 ? { title: "Load this large video?",
-        message: "The original video may use significant memory and network data." } : undefined }} /> : null}
-      <ActionControl action={{ label: "Download original video", onClick: download }} /></div>
+    {!playable ? <p className="text-sm text-muted">{t`This codec needs a player on your device. Download the original video to watch it.`}</p> : null}
+    {failed ? <p role="status" className="text-sm text-muted">{t`The original video could not be loaded. You can retry or download it.`}</p> : null}
+    <div className="flex flex-wrap gap-3">{playable && !url ? <ActionControl action={{ label: t`Load original video`, pending,
+      onClick: () => void play(), confirm: bytes >= 50 * 1024 ** 2 ? { title: t`Load this large video?`,
+        message: t`The original video may use significant memory and network data.` } : undefined }} /> : null}
+      <ActionControl action={{ label: t`Download original video`, onClick: download }} /></div>
   </section>;
 }

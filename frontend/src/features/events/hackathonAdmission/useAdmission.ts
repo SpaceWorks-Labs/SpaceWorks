@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { sessionScope } from '../../staff/eventProgramme/sessionScope'
 import { useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -32,7 +33,7 @@ export function useAdmission(publicToken: string, accountId: number) {
     route: keyof ProgrammeContext['routes']; method?: 'POST' | 'PATCH'; body: Record<string, unknown>
   }) => {
     const target = context.data?.routes[route]
-    if (!target || typeof target === 'string') throw new Error('This event action is unavailable.')
+    if (!target || typeof target === 'string') throw new Error(t`This event action is unavailable.`)
     return commands.current.send<Application>(target.url, method, body)
   }, onSuccess: async () => {
     await Promise.all([queryClient.invalidateQueries({ queryKey: key }),

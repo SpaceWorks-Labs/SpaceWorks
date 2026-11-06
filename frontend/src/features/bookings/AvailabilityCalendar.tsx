@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useMemo, useState } from "react";
 
@@ -15,13 +17,13 @@ function windowDates(offset: number) {
 }
 
 function rangeLabel(startsAt: string, endsAt: string) {
-  const format = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+  const format = new Intl.DateTimeFormat(formatLocale(), { dateStyle: "medium" });
   const inclusiveEnd = new Date(new Date(endsAt).getTime() - 1);
   return `${format.format(new Date(startsAt))} – ${format.format(inclusiveEnd)}`;
 }
 
 function intervalLabel(startsAt: string, endsAt: string, timeZone?: string) {
-  const format = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short", timeZone });
+  const format = new Intl.DateTimeFormat(formatLocale(), { dateStyle: "medium", timeStyle: "short", timeZone });
   return `${format.format(new Date(startsAt))} – ${format.format(new Date(endsAt))}`;
 }
 
@@ -37,30 +39,30 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
     <section className="rounded-lg border border-brand bg-brand-soft p-4" aria-labelledby={"availability-" + publicToken}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 id={"availability-" + publicToken} className="title-section">Published availability</h3>
+          <h3 id={"availability-" + publicToken} className="title-section">{t`Published availability`}</h3>
           <p className="eyebrow mt-1">{rangeLabel(window.startsAt, window.endsAt)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="desk-button-ghost" type="button" disabled={offset === 0} onClick={() => setOffset((value) => Math.max(0, value - 1))}>Previous 14 days</button>
-          <button className="desk-button-ghost" type="button" onClick={() => setOffset((value) => value + 1)}>Next 14 days</button>
+          <button className="desk-button-ghost" type="button" disabled={offset === 0} onClick={() => setOffset((value) => Math.max(0, value - 1))}>{t`Previous 14 days`}</button>
+          <button className="desk-button-ghost" type="button" onClick={() => setOffset((value) => value + 1)}>{t`Next 14 days`}</button>
         </div>
       </div>
-      {availability.isLoading ? <p className="mt-3 text-sm text-muted" aria-live="polite">Checking confirmed bookings...</p> : null}
+      {availability.isLoading ? <p className="mt-3 text-sm text-muted" aria-live="polite">{t`Checking confirmed bookings...`}</p> : null}
       {availability.error ? (
         <div className="mt-3" role="alert">
-          <p className="text-sm text-danger">Availability could not be checked. This does not mean the space is free.</p>
-          <button className="desk-button-ghost mt-2" type="button" onClick={() => availability.refetch()}>Retry</button>
+          <p className="text-sm text-danger">{t`Availability could not be checked. This does not mean the space is free.`}</p>
+          <button className="desk-button-ghost mt-2" type="button" onClick={() => availability.refetch()}>{t`Retry`}</button>
         </div>
       ) : null}
       {availability.data?.opening_intervals ? <div className="mt-3 text-sm text-muted">
-        <p className="font-semibold">Opening times ({availability.data.timezone})</p>
-        {availability.data.opening_intervals.length === 0 ? <p>The makerspace is closed in this window.</p> : <ul>{availability.data.opening_intervals.map((interval) => <li key={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</li>)}</ul>}
+        <p className="font-semibold">{t`Opening times (${availability.data.timezone})`}</p>
+        {availability.data.opening_intervals.length === 0 ? <p>{t`The makerspace is closed in this window.`}</p> : <ul>{availability.data.opening_intervals.map((interval) => <li key={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</li>)}</ul>}
       </div> : null}
       {availability.data?.availability === null ? (
-        <p className="mt-3 text-sm text-muted">Availability is not published. You may still submit your selected time for the makerspace to check.</p>
+        <p className="mt-3 text-sm text-muted">{t`Availability is not published. You may still submit your selected time for the makerspace to check.`}</p>
       ) : null}
       {availability.data?.availability?.length === 0 ? (
-        <EmptyState message="No confirmed bookings are published in this window." />
+        <EmptyState message={t`No confirmed bookings are published in this window.`} />
       ) : null}
       {availability.data?.availability?.length ? (
         <ul className="mt-3 grid gap-2">

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "../../components/ui/Card";
@@ -15,14 +16,14 @@ export function PrintStatusPanel({ submitted, tokenStatus, tokenStatusPending, t
     catch { setCopyState("Couldn't copy the link. You can copy it from your browser's address bar."); }
   }
   return <div className="grid gap-4">
-    {submitted ? <p className="text-sm" role="status">Request submitted. This browser keeps its private token; do not share the link.</p> : null}
+    {submitted ? <p className="text-sm" role="status">{t`Request submitted. This browser keeps its private token; do not share the link.`}</p> : null}
     <StatusResult error={tokenStatusError} isPending={tokenStatusPending} status={tokenStatus} onRetry={onRetry} />
     {publicToken && tokenStatus ? <OwnerCancel token={publicToken} title={tokenStatus.title} makerspaceSlug={makerspaceSlug}
       extraKeys={[["public-printer-status", publicToken]]} /> : null}
-    {trackingHref ? <button className="desk-button w-full" type="button" onClick={() => { void copyLink(); }}>Copy tracking link</button> : null}
+    {trackingHref ? <button className="desk-button w-full" type="button" onClick={() => { void copyLink(); }}>{t`Copy tracking link`}</button> : null}
     {copyState ? <p role="status" className="text-sm text-muted">{copyState}</p> : null}
   </div>;
 }
-export function PrintAccessLoadingPanel() { return <section className="mx-auto max-w-screen-sm px-5 py-6"><Card><p className="text-sm text-muted">Loading printer service...</p></Card></section>; }
-export function PrintAccessErrorPanel() { return <section className="mx-auto max-w-screen-sm px-5 py-6"><Card><p className="text-sm text-danger">Could not load printer service. Try again in a moment.</p></Card></section>; }
-export function PrintUnavailablePanel({ catalogPath, tokenStatus, tokenStatusPending, tokenStatusError }: { catalogPath: string; tokenStatus?: PrintStatus; tokenStatusPending: boolean; tokenStatusError: Error | null }) { return <section className="mx-auto max-w-screen-sm px-5 py-6"><Card className="border-brand"><p className="eyebrow text-brand-ink">3D printing</p><h2 className="title-panel mt-2">Printer service is not currently available.</h2>{tokenStatus || tokenStatusPending || tokenStatusError ? <div className="mt-4"><StatusResult error={tokenStatusError} isPending={tokenStatusPending} status={tokenStatus} /></div> : null}<Link className="desk-button mt-4" to={catalogPath}>Back to inventory</Link></Card></section>; }
+export function PrintAccessLoadingPanel() { return <section className="mx-auto max-w-screen-sm px-5 py-6"><Card><p className="text-sm text-muted">{t`Loading printer service...`}</p></Card></section>; }
+export function PrintAccessErrorPanel() { return <section className="mx-auto max-w-screen-sm px-5 py-6"><Card><p className="text-sm text-danger">{t`Could not load printer service. Try again in a moment.`}</p></Card></section>; }
+export function PrintUnavailablePanel({ catalogPath, tokenStatus, tokenStatusPending, tokenStatusError }: { catalogPath: string; tokenStatus?: PrintStatus; tokenStatusPending: boolean; tokenStatusError: Error | null }) { return <section className="mx-auto max-w-screen-sm px-5 py-6"><Card className="border-brand"><p className="eyebrow text-brand-ink">{t`3D printing`}</p><h2 className="title-panel mt-2">{t`Printer service is not currently available.`}</h2>{tokenStatus || tokenStatusPending || tokenStatusError ? <div className="mt-4"><StatusResult error={tokenStatusError} isPending={tokenStatusPending} status={tokenStatus} /></div> : null}<Link className="desk-button mt-4" to={catalogPath}>{t`Back to inventory`}</Link></Card></section>; }

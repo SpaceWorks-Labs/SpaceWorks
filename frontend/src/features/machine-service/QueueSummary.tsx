@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StatusPill } from "../../components/ui";
 import { clockLabel, minutesLabel } from "./ServiceRequestEta";
 import type { MachineQueueSummary } from "./types";
@@ -7,12 +8,12 @@ export function QueueSummary({ summary, now }: { summary: MachineQueueSummary | 
   if (!summary) return null;
   const jobs = `${summary.length} job${summary.length === 1 ? "" : "s"} in line`;
   if (summary.confidence === "unavailable" || summary.eta_minutes == null || !summary.estimated_clear_at) {
-    return <span className="inline-flex flex-wrap items-center gap-2 text-sm text-muted"><StatusPill label="Clear time unavailable" tone="neutral" />{summary.length ? jobs : null}</span>;
+    return <span className="inline-flex flex-wrap items-center gap-2 text-sm text-muted"><StatusPill label={t`Clear time unavailable`} tone="neutral" />{summary.length ? jobs : null}</span>;
   }
   const when = summary.eta_minutes <= 0 ? "Free now"
-    : <>Estimated queue clears in {minutesLabel(summary.eta_minutes)} (around <time dateTime={summary.estimated_clear_at}>{clockLabel(summary.estimated_clear_at, now ?? new Date())}</time>)</>;
+    : <>{t`Estimated queue clears in ${minutesLabel(summary.eta_minutes)} (around `}<time dateTime={summary.estimated_clear_at}>{clockLabel(summary.estimated_clear_at, now ?? new Date())}</time>)</>;
   return <span className="inline-flex flex-wrap items-center gap-2 text-sm text-ink">
-    <span>{when}</span>{summary.confidence === "rough" ? <StatusPill label="Rough estimate" tone="warn" /> : null}
+    <span>{when}</span>{summary.confidence === "rough" ? <StatusPill label={t`Rough estimate`} tone="warn" /> : null}
     {summary.length ? <span className="text-muted">{jobs}</span> : null}
   </span>;
 }

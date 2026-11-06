@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -20,11 +22,11 @@ export function MemberEventCancel({ makerspaceId, makerspaceSlug, registrationId
     ]); },
   });
   if (!["pending_approval", "registered", "waitlisted"].includes(status)) return null;
-  if (!canCancel) return <p className="mt-1 text-sm text-muted">The cancellation deadline has passed. Contact staff.</p>;
+  if (!canCancel) return <p className="mt-1 text-sm text-muted">{t`The cancellation deadline has passed. Contact staff.`}</p>;
   return <div className="mt-1">
-    {cutoffAt ? <p className="text-xs text-muted">Cancel before {new Date(cutoffAt).toLocaleString()}.</p> : null}
+    {cutoffAt ? <p className="text-xs text-muted">{t`Cancel before ${new Date(cutoffAt).toLocaleString(formatLocale())}.`}</p> : null}
     <button className="desk-button-danger" type="button" disabled={cancel.isPending || cancel.isSuccess} onClick={() => cancel.mutate()}>
-      {cancel.isPending ? "Cancelling..." : cancel.isSuccess ? "Registration cancelled" : "Cancel registration"}
+      {cancel.isPending ? t`Cancelling...` : cancel.isSuccess ? t`Registration cancelled` : t`Cancel registration`}
     </button>
     {cancel.error ? <p className="mt-1 text-sm text-danger" role="alert">{cancel.error.message}</p> : null}
   </div>;

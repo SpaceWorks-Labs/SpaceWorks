@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -31,10 +32,10 @@ export function PriceChangedNotice({ makerspaceSlug, error }: { makerspaceSlug: 
   const currency = typeof quote.currency === "string" ? quote.currency : "";
   const lines = (Array.isArray(quote.lines) ? quote.lines : []) as ChangedLine[];
   return <div role="alert" className="grid gap-2 rounded-lg border border-warn bg-warn-soft p-3 text-sm">
-    <p className="font-semibold text-ink">The price changed — please check and confirm again.</p>
+    <p className="font-semibold text-ink">{t`The price changed — please check and confirm again.`}</p>
     {currency && lines.length ? <ul className="grid gap-1">{lines.map((line, index) => typeof line.label === "string" && typeof line.net === "string"
       ? <li key={index} className="flex justify-between gap-3"><span>{line.label}</span><span className="tabular-nums">{money(line.net, currency)}</span></li> : null)}</ul> : null}
     {currency && typeof quote.total === "string"
-      ? <p className="flex justify-between gap-3 font-semibold text-ink"><span>New total</span><span className="tabular-nums">{money(quote.total, currency)}</span></p> : null}
+      ? <p className="flex justify-between gap-3 font-semibold text-ink"><span>{t`New total`}</span><span className="tabular-nums">{money(quote.total, currency)}</span></p> : null}
   </div>;
 }

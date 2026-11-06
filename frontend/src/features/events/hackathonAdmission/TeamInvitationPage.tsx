@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { CenteredCardLayout } from '../../../components/layouts'
@@ -19,9 +20,9 @@ export function TeamInvitationPage({ context, teamId, teamVersion, token, onJoin
   const [agreed, setAgreed] = useState(false)
   const accept = useMutation({ mutationFn: () => commands.current.send(context.routes.member_base + '/teams/' + teamId + '/accept/',
     'POST', { expected_version: teamVersion, token }), onSuccess: onJoined })
-  return <CenteredCardLayout standalone={false} title="Join this hackathon team" state={{ status: 'ready' }}
+  return <CenteredCardLayout standalone={false} title={t`Join this hackathon team`} state={{ status: 'ready' }}
     body="This invitation is private and can be used once. Your own application and eligibility still apply."
     content={<div className="grid gap-3"><label className="flex min-h-11 items-center gap-3 text-sm text-ink"><input type="checkbox" checked={agreed}
-      onChange={e => setAgreed(e.target.checked)} />I want to join this team.</label>{accept.error ? <ErrorText message={accept.error.message} /> : null}</div>}
-    primary={{ label: 'Accept invitation', disabled: !agreed || !token, pending: accept.isPending, onClick: () => accept.mutate() }} />
+      onChange={e => setAgreed(e.target.checked)} />{t`I want to join this team.`}</label>{accept.error ? <ErrorText message={accept.error.message} /> : null}</div>}
+    primary={{ label: t`Accept invitation`, disabled: !agreed || !token, pending: accept.isPending, onClick: () => accept.mutate() }} />
 }

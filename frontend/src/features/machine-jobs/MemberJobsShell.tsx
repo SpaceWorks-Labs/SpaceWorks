@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -33,15 +34,15 @@ export function MemberJobsShell({ children }: { children: (context: MemberJobsCo
   const member = useMemberIdentity();
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || "Makerspace";
   const logo = bootstrap?.branding.logo_url || bootstrap?.makerspace.logo_url || undefined;
-  if (member.signedOut) return <div style={brandStyle}><MemberAuthPanel makerspaceSlug={makerspaceSlug} eyebrow="Your machine jobs"
+  if (member.signedOut) return <div style={brandStyle}><MemberAuthPanel makerspaceSlug={makerspaceSlug} eyebrow={t`Your machine jobs`}
     tenantBrand={bootstrap ? { name, logo } : undefined} onAuthenticated={() => { void member.identity.refetch(); }} /></div>;
   const memberHome = path("member");
   return <div style={brandStyle}>
     <MemberPortalTabs modules={bootstrap?.modules ?? []} active="overview"
       space={{ id: bootstrap?.makerspace.id, slug: makerspaceSlug || undefined }}
-      workspace={bootstrap ? { name: bootstrap.makerspace.name, subtitle: "Member area",
+      workspace={bootstrap ? { name: bootstrap.makerspace.name, subtitle: t`Member area`,
         avatar: logo ? { kind: "image", src: logo } : { kind: "avatar", name: bootstrap.makerspace.name, seed: makerspaceSlug }, locked: true } : undefined}
-      user={{ name: member.identity.data?.username || "Your account", menu: [{ label: "Account & two-step sign-in", href: "/mfa" }],
+      user={{ name: member.identity.data?.username || "Your account", menu: [{ label: t`Account & two-step sign-in`, href: "/mfa" }],
         onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(memberHome); }); } }}>
       {children({ slug: makerspaceSlug, makerspaceId: bootstrap?.makerspace.id, path, ready: !member.loading && Boolean(bootstrap),
         bootstrapError: bootstrapQuery.isError, features: bootstrap?.features ?? [] })}

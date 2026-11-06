@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ListRow, StatusPill } from "../../components/ui";
@@ -21,7 +22,7 @@ function GiftRow({ makerspaceId, gift }: { makerspaceId: number; gift: GiftStatu
       gift.status === "pending" ? "Pay it from your payments" : ""].filter(Boolean).join(" · ")}
     right={<div className="grid justify-items-end gap-2"><StatusPill label={label} tone={tone} />
       {gift.tax_receipt_number ? <button type="button" className="desk-button-ghost" disabled={pdf.isPending}
-        onClick={() => pdf.mutate()}>80G receipt</button> : null}
+        onClick={() => pdf.mutate()}>{t`80G receipt`}</button> : null}
       {pdf.error ? <p role="alert" className="text-xs text-danger">{giveError(pdf.error)}</p> : null}</div>} />;
 }
 
@@ -43,11 +44,11 @@ export function MemberGifts({ makerspaceId, makerspaceSlug }: { makerspaceId: nu
   if (!giving) return null;
   return <section className="grid gap-3" aria-labelledby="member-gifts-heading">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 id="member-gifts-heading" className="title-panel">My gifts</h2>
-      <a className="desk-button" href={path("donate")}>Give again</a>
+      <h2 id="member-gifts-heading" className="title-panel">{t`My gifts`}</h2>
+      <a className="desk-button" href={path("donate")}>{t`Give again`}</a>
     </div>
     {gifts.data?.length ? gifts.data.map(gift => <GiftRow key={gift.id} makerspaceId={makerspaceId} gift={gift} />)
-      : <p className="text-sm text-muted">You haven't given to this space yet.</p>}
+      : <p className="text-sm text-muted">{t`You haven't given to this space yet.`}</p>}
     {pledges.data?.filter(row => row.status !== "cancelled").map(pledge => <PledgeCard key={`${pledge.id}-${pledge.amount}-${pledge.interval}`}
       pledge={pledge} onAction={body => change.mutate({ id: pledge.id, body })} pending={change.isPending} error={change.error} />)}
   </section>;

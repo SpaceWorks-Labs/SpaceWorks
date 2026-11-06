@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { publicV1Request } from "../../../lib/api";
 
@@ -11,7 +12,7 @@ export function PublicCrewSection({ publicToken, profileHref }: { publicToken: s
   const crew = useQuery({ queryKey: ["public-event-crew", publicToken], retry: false,
     queryFn: () => publicV1Request<CrewCard[]>(`/public/event-programmes/${publicToken}/crew/`) });
   if (!crew.data?.length) return null;
-  return <ul className="grid gap-2 sm:grid-cols-2" aria-label="Event crew">
+  return <ul className="grid gap-2 sm:grid-cols-2" aria-label={t`Event crew`}>
     {crew.data.map(card => <li key={card.handle} className="rounded-lg border border-line p-3">
       <a className="font-semibold text-ink hover:underline" href={profileHref(card.handle)}>{card.display_name}</a>
       {card.crew_role ? <p className="text-sm text-muted">{card.crew_role}</p> : null}

@@ -1,8 +1,9 @@
+import { t } from "@lingui/core/macro";
 import { fields } from "./fieldPresentation";
 import type { ExportJob, FieldKey, FormSaveIntent, Prefill, ResumeAsset, SavedDetails, SavedValue, SaveIntent } from "./types";
 
 const keys = new Set([...fields.map(field => field.key), "resume"]);
-function requireShape(condition: unknown): asserts condition { if (!condition) throw new Error("Saved details could not be read. Try again."); }
+function requireShape(condition: unknown): asserts condition { if (!condition) throw new Error(t`Saved details could not be read. Try again.`); }
 function record(value: unknown): Record<string, unknown> { requireShape(value && typeof value === "object" && !Array.isArray(value)); return value as Record<string, unknown>; }
 const integer = (value: unknown, minimum = 0) => typeof value === "number" && Number.isSafeInteger(value) && value >= minimum;
 const uuid = (value: unknown) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { Home, Package, CalendarClock, Calendar, Wallet, Inbox, User } from "lucide-react";
 import { AppShell, type ShellUser, type ShellWorkspace } from "../../components/shell";
@@ -44,14 +45,14 @@ export function MemberPortalTabs({ modules, active, children, workspace, user, s
   // Deeper member pages (member/machine-jobs/12) keep the tenant prefix for the nav links too.
   const base = location.pathname.match(/^((?:\/m\/[^/]+)?\/member)(?:\/.*)?$/)?.[1] ?? "/member";
   const icons = { overview: Home, loans: Package, bookings: CalendarClock, events: Calendar, payments: Wallet, inbox: Inbox, account: User };
-  const items = memberTabs(modules).map(tab => ({ key: tab, label: tab === "overview" ? "Home" : tab[0].toUpperCase() + tab.slice(1),
+  const items = memberTabs(modules).map(tab => ({ key: tab, label: tab === "overview" ? t`Home` : tab[0].toUpperCase() + tab.slice(1),
     href: `${base}/${tab === "account" ? "account-portal" : tab}`, icon: icons[tab] }));
   if (paused?.state === "suspended") {
-    return <PausedSpacePage name={paused.name} reason={paused.reason} primary={{ label: "Find another space", href: "/" }}
-      escape={user.onSignOut ? { label: "Sign out", onClick: user.onSignOut } : undefined} />;
+    return <PausedSpacePage name={paused.name} reason={paused.reason} primary={{ label: t`Find another space`, href: "/" }}
+      escape={user.onSignOut ? { label: t`Sign out`, onClick: user.onSignOut } : undefined} />;
   }
   return <AppShell variant="member" compactNav="bottom-tabs" workspace={workspace} activeKey={active}
-    nav={[{ key: "member", items }]} footerLinks={workspace ? [{ label: "View public page ↗", href: base.startsWith("/m/") ? base.replace(/\/member$/, "") : "/" }] : []}
+    nav={[{ key: "member", items }]} footerLinks={workspace ? [{ label: t`View public page ↗`, href: base.startsWith("/m/") ? base.replace(/\/member$/, "") : "/" }] : []}
     user={user}>
     {/* Below lg the shell pins a bottom tab bar. Sticky save bars sit above it, and a field
         scrolled into view for the on-screen keyboard keeps clear of it. A list row's text keeps

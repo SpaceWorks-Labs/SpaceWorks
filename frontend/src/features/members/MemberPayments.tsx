@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { EmptyState, ListRow, StatusPill } from "../../components/ui";
 import type { MemberPayment as GeneratedMemberPayment } from "../../generated/api";
 import { useState } from "react";
@@ -36,9 +38,9 @@ export function MemberPaymentRows({
   const [dueFilter, setDueFilter] = useState("");
   return (
     <>
-    <label className="grid gap-1 text-xs text-muted sm:max-w-xs"><span>Payment due dates</span>
+    <label className="grid gap-1 text-xs text-muted sm:max-w-xs"><span>{t`Payment due dates`}</span>
       <select className="desk-input" value={dueFilter} onChange={(event) => setDueFilter(event.target.value)}>
-        <option value="">All due dates</option>{DUE_OPTIONS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+        <option value="">{t`All due dates`}</option>{DUE_OPTIONS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </select>
     </label>
     <ul className="mt-3 space-y-2 text-sm text-muted [&>li>div>:first-child]:basis-48">
@@ -50,20 +52,18 @@ export function MemberPaymentRows({
             <PaymentDueBadge payment={payment} />
             {/* No rail behind this charge: the space takes it in person. Offering a
                 payment link here called an endpoint that could not succeed. */}
-            {!payment.checkout_url && payment.status === "pending" && !payment.online_payment_available ? <span>Pay at the space</span> : null}
+            {!payment.checkout_url && payment.status === "pending" && !payment.online_payment_available ? <span>{t`Pay at the space`}</span> : null}
             {payment.settlement ? (
               <span>
-                Received {new Date(payment.settlement.received_at).toLocaleDateString()}
-                {" by "}
-                {payment.settlement.method.replace(/_/g, " ")}
+                {t`Received ${new Date(payment.settlement.received_at).toLocaleDateString(formatLocale())}${" by "}${payment.settlement.method.replace(/_/g, " ")}`}
               </span>
             ) : null}
-            {payment.method_label ? <span>Paid with {payment.method_label}</span> : null}
+            {payment.method_label ? <span>{t`Paid with ${payment.method_label}`}</span> : null}
             {/* Money sent back on this charge. Pending refunds are shown too, so a payer
                 who was told a refund is on its way can see it is recorded. */}
             {(payment.refunds ?? []).filter((refund) => refund.status !== "failed").map((refund, index) => (
               <span key={index} className="break-words">
-                {refund.status === "succeeded" ? "Refunded" : "Refund pending"}{" "}
+                {refund.status === "succeeded" ? t`Refunded` : t`Refund pending`}{" "}
                 <span className="tabular-nums">
                   {refund.amount} {(refund.currency ?? "").toUpperCase()}
                 </span>
@@ -74,7 +74,7 @@ export function MemberPaymentRows({
             ))}
           </span>
           {payment.checkout_url ? (
-            <span className="mt-3 flex"><a className="desk-button-brand w-full sm:w-auto" href={payment.checkout_url}>Pay now</a></span>
+            <span className="mt-3 flex"><a className="desk-button-brand w-full sm:w-auto" href={payment.checkout_url}>{t`Pay now`}</a></span>
           ) : payment.status === "pending" && payment.online_payment_available ? (
             <span className="mt-3 flex">
               <button
@@ -83,8 +83,7 @@ export function MemberPaymentRows({
                 onClick={() => onCheckout(payment.id)}
                 type="button"
               >
-                Generate payment link
-              </button>
+                {t`Generate payment link`}</button>
             </span>
           ) : null}
           {refunds && makerspaceId !== undefined && payment.offline_collection
@@ -93,7 +92,7 @@ export function MemberPaymentRows({
         </>} /></li>
       ))}
     </ul>
-    {payments.length > 0 && !payments.some(payment => !dueFilter || payment.due_state === dueFilter) ? <EmptyState message="No payments match this due date. Choose another filter." /> : null}
+    {payments.length > 0 && !payments.some(payment => !dueFilter || payment.due_state === dueFilter) ? <EmptyState message={t`No payments match this due date. Choose another filter.`} /> : null}
     {makerspaceId ? <PaymentDocuments key={makerspaceId} makerspaceId={makerspaceId} audience="member" /> : null}
     </>
   );

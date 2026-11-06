@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { memberRequest, memberRequestBlob } from "../../../lib/api";
@@ -27,13 +28,13 @@ export function AssetList({ scope, assetIds, publicIds, onConsent, onRemove, dis
     anchor.href = url; anchor.download = `project-file-${id}`; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
-  return <section aria-label="Project files" className="grid gap-3">
+  return <section aria-label={t`Project files`} className="grid gap-3">
     {assetIds.map((id, index) => <Card key={id}><div className="grid gap-3">
-      <p className="text-sm text-ink">File {id}: <span role="status">{queries[index].isError ? "Status unavailable" : queries[index].data?.state ?? "Loading…"}</span></p>
+      <p className="text-sm text-ink">{t`File ${id}: `}<span role="status">{queries[index].isError ? t`Status unavailable` : queries[index].data?.state ?? t`Loading…`}</span></p>
       <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" disabled={disabled} checked={publicIds.includes(id)}
-        onChange={event => onConsent(id, event.target.checked)} />Allow this file in the published project gallery</label>
-      <div className="flex flex-wrap gap-3"><ActionControl action={{ label: `Download file ${id}`, disabled: queries[index].data?.state !== "ready", onClick: () => { void download(id).catch(() => queries[index].refetch()); } }} />
-        <ActionControl action={{ label: `Remove file ${id} from draft`, disabled, onClick: () => onRemove(id) }} /></div>
+        onChange={event => onConsent(id, event.target.checked)} />{t`Allow this file in the published project gallery`}</label>
+      <div className="flex flex-wrap gap-3"><ActionControl action={{ label: t`Download file ${id}`, disabled: queries[index].data?.state !== "ready", onClick: () => { void download(id).catch(() => queries[index].refetch()); } }} />
+        <ActionControl action={{ label: t`Remove file ${id} from draft`, disabled, onClick: () => onRemove(id) }} /></div>
       {queries[index].data?.state === "ready" && ((queries[index].data?.kind === "hardware-pcb" &&
         /^(?:gbr|ger|gt[lsop]|gb[lsop]|gko|gm1|g\d+|drl|xln|zip)$/.test(queries[index].data?.extension ?? "")) ||
         ["stl", "obj", "3mf", "gcode.3mf", "step", "stp", "iges", "igs"].includes(queries[index].data?.extension ?? "")) ?

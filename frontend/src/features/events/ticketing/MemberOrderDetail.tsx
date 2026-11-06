@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Users } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,16 +20,16 @@ function SeatRow({ seat, order, onAssign, onClaim, busy }: {
   const editable = seat.status === "unclaimed" && order.status !== "cancelled" && order.status !== "expired";
   return <li className="grid gap-2 rounded-card border border-line p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <span className="text-sm font-semibold text-ink">{seat.attendee_email || "No one named yet"}</span>
-      <StatusPill label={seat.status === "claimed" ? "Claimed" : seat.status === "void" ? "Cancelled" : seat.invited_at ? "Invited" : "Unclaimed"}
+      <span className="text-sm font-semibold text-ink">{seat.attendee_email || t`No one named yet`}</span>
+      <StatusPill label={seat.status === "claimed" ? t`Claimed` : seat.status === "void" ? t`Cancelled` : seat.invited_at ? t`Invited` : t`Unclaimed`}
         tone={seat.status === "claimed" ? "success" : seat.status === "void" ? "neutral" : "warn"} />
     </div>
     {editable ? <form className="flex flex-wrap gap-2" onSubmit={event => { event.preventDefault(); onAssign(seat.id, email); }}>
-      <label className="sr-only" htmlFor={`seat-${seat.id}`}>Attendee email</label>
+      <label className="sr-only" htmlFor={`seat-${seat.id}`}>{t`Attendee email`}</label>
       <input id={`seat-${seat.id}`} className="desk-input min-w-0 flex-1" type="email" value={email}
         placeholder="attendee@example.com" onChange={event => setEmail(event.target.value)} />
-      <button className="desk-button" type="submit" disabled={busy}>Save</button>
-      {order.status === "paid" ? <button className="desk-button" type="button" disabled={busy} onClick={() => onClaim(seat.id)}>This one is mine</button> : null}
+      <button className="desk-button" type="submit" disabled={busy}>{t`Save`}</button>
+      {order.status === "paid" ? <button className="desk-button" type="button" disabled={busy} onClick={() => onClaim(seat.id)}>{t`This one is mine`}</button> : null}
     </form> : null}
   </li>;
 }
@@ -51,25 +52,25 @@ export function MemberOrderDetail({ makerspaceId, orderId, makerspaceSlug }: { m
   const current = order.data;
   const error = assign.error ?? chase.error ?? cancel.error ?? claim.error;
   const busy = assign.isPending || chase.isPending || cancel.isPending || claim.isPending;
-  return <DetailLayout back={{ label: "My orders", href: tenantPath("member/orders") }} title={current?.event_title ?? "Order"}
+  return <DetailLayout back={{ label: t`My orders`, href: tenantPath("member/orders") }} title={current?.event_title ?? t`Order`}
     state={order.isLoading ? { status: "loading" } : order.error ? { status: "error", error: shopError(order.error) } : { status: "ready" }}
     status={current ? <StatusPill label={ORDER_STATUS[current.status].label} tone={ORDER_STATUS[current.status].tone} /> : null}
     meta={current ? [`Order #${current.id}`, money(current.total, current.currency)] : []}
     banner={current?.payment_disputed ? { size: "banner", tone: "warn", lead: "This payment is disputed with the card provider." } : undefined}
     actions={current?.status === "pending" ? {
-      primary: current.checkout_url ? { label: "Pay now", href: current.checkout_url, external: true } : undefined,
-      overflow: [{ label: "Abandon this order", tone: "danger", onClick: () => cancel.mutate(),
-        confirm: { title: "Abandon this order?", message: "Its places go back on sale.", confirmLabel: "Abandon" } }] }
-      : current?.status === "paid" ? { secondary: { label: "Remind people to claim", onClick: () => chase.mutate(), pending: chase.isPending } } : undefined}
+      primary: current.checkout_url ? { label: t`Pay now`, href: current.checkout_url, external: true } : undefined,
+      overflow: [{ label: t`Abandon this order`, tone: "danger", onClick: () => cancel.mutate(),
+        confirm: { title: t`Abandon this order?`, message: t`Its places go back on sale.`, confirmLabel: t`Abandon` } }] }
+      : current?.status === "paid" ? { secondary: { label: t`Remind people to claim`, onClick: () => chase.mutate(), pending: chase.isPending } } : undefined}
     main={current ? <div className="grid gap-6">
       {error ? <ErrorText message={shopError(error)} /> : null}
-      <section className="grid gap-2"><h2 className="eyebrow">What you bought</h2>
+      <section className="grid gap-2"><h2 className="eyebrow">{t`What you bought`}</h2>
         <dl className="grid gap-1 text-sm">{current.lines.map(line => <div key={line.id} className="flex justify-between gap-4">
           <dt>{line.label}{line.quantity > 1 ? ` × ${line.quantity}` : ""}</dt><dd className="tabular-nums">{money(line.line_total, current.currency)}</dd></div>)}
-          {Number(current.fee_total) > 0 ? <div className="flex justify-between gap-4"><dt>Booking fee</dt><dd className="tabular-nums">{money(current.fee_total, current.currency)}</dd></div> : null}
-          <div className="flex justify-between gap-4 border-t border-line pt-1 font-semibold text-ink"><dt>Total</dt><dd className="tabular-nums">{money(current.total, current.currency)}</dd></div>
+          {Number(current.fee_total) > 0 ? <div className="flex justify-between gap-4"><dt>{t`Booking fee`}</dt><dd className="tabular-nums">{money(current.fee_total, current.currency)}</dd></div> : null}
+          <div className="flex justify-between gap-4 border-t border-line pt-1 font-semibold text-ink"><dt>{t`Total`}</dt><dd className="tabular-nums">{money(current.total, current.currency)}</dd></div>
         </dl></section>
-      <section className="grid gap-2"><h2 className="flex items-center gap-2 eyebrow"><Users aria-hidden="true" size={16} />Places</h2>
+      <section className="grid gap-2"><h2 className="flex items-center gap-2 eyebrow"><Users aria-hidden="true" size={16} />{t`Places`}</h2>
         <ul className="grid gap-2">{current.seats.map(seat => <SeatRow key={seat.id} seat={seat} order={current} busy={busy}
           onAssign={(seatId, email) => assign.mutate({ seatId, email })} onClaim={seatId => claim.mutate(seatId)} />)}</ul>
       </section>

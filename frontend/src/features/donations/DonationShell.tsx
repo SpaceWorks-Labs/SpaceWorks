@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { useParams } from "react-router-dom";
 
@@ -27,7 +28,7 @@ export function DonationShell({ title, subtitle, state, children }: {
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || slug;
   return <div style={brandStyle}>
     <PublicLayout {...publicPageChrome(slug, name, path, bootstrap)} width="narrow" state={state}
-      header={{ eyebrow: name, title, subtitle }} breadcrumb={[{ label: name, href: path() }, { label: "Support" }]}>
+      header={{ eyebrow: name, title, subtitle }} breadcrumb={[{ label: name, href: path() }, { label: t`Support` }]}>
       {children}
     </PublicLayout>
   </div>;

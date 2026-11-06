@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { DetailDrawer, EmptyState, ListRow } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -53,21 +55,21 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
   });
 
   if (directory.isLoading) {
-    return <section className="desk-panel p-5 text-sm text-muted">Loading members…</section>;
+    return <section className="desk-panel p-5 text-sm text-muted">{t`Loading members…`}</section>;
   }
-  if (directory.isError) return <section className="desk-panel p-5"><p role="alert" className="text-sm text-danger">{directory.error instanceof Error ? directory.error.message : "Unable to load members."}</p></section>;
+  if (directory.isError) return <section className="desk-panel p-5"><p role="alert" className="text-sm text-danger">{directory.error instanceof Error ? directory.error.message : t`Unable to load members.`}</p></section>;
 
   const entries = (directory.data?.members ?? []).filter(entry => `${entry.display_name} ${entry.headline}`.toLowerCase().includes(search.toLowerCase()));
   const hidden = directory.data?.hidden_count ?? 0;
 
   return (
     <section className="desk-panel p-5">
-      <h2 className="title-panel">Members</h2>
-      <label className="mt-3 grid gap-1 text-sm sm:max-w-sm">Search members<input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
-      {detail.isLoading ? <p className="text-sm text-muted">Loading profile…</p> : null}
-      {detail.isError ? <p role="alert" className="text-sm text-danger">{detail.error instanceof Error ? detail.error.message : "Unable to load this profile."}</p> : null}
+      <h2 className="title-panel">{t`Members`}</h2>
+      <label className="mt-3 grid gap-1 text-sm sm:max-w-sm">{t`Search members`}<input className="desk-input" type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
+      {detail.isLoading ? <p className="text-sm text-muted">{t`Loading profile…`}</p> : null}
+      {detail.isError ? <p role="alert" className="text-sm text-danger">{detail.error instanceof Error ? detail.error.message : t`Unable to load this profile.`}</p> : null}
       {entries.length === 0 ? (
-        <EmptyState message={search ? "No members match. Try another name." : "No members have shared a profile yet."} />
+        <EmptyState message={search ? t`No members match. Try another name.` : t`No members have shared a profile yet.`} />
       ) : (
         <ul className="mt-3 space-y-2">
           {entries.map(entry => <li key={entry.membership_id}><ListRow title={entry.display_name}
@@ -75,10 +77,10 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
             meta={entry.headline} onClick={() => setOpenId(entry.membership_id)} /></li>)}
         </ul>
       )}
-      {openId !== null ? <DetailDrawer open title={directory.data?.members.find(entry => entry.membership_id === openId)?.display_name || "Member profile"} onClose={() => setOpenId(null)}>{detail.isLoading ? <p role="status">Loading profile...</p> : detail.data ? <ProfileDetail profile={detail.data} /> : null}</DetailDrawer> : null}
+      {openId !== null ? <DetailDrawer open title={directory.data?.members.find(entry => entry.membership_id === openId)?.display_name || t`Member profile`} onClose={() => setOpenId(null)}>{detail.isLoading ? <p role="status">{t`Loading profile...`}</p> : detail.data ? <ProfileDetail profile={detail.data} /> : null}</DetailDrawer> : null}
       {hidden > 0 ? (
         <p className="mt-3 text-sm text-muted">
-          {`${hidden} more ${hidden === 1 ? "member has" : "members have"} not published a profile.`}
+          {t`${hidden} more ${hidden === 1 ? "member has" : "members have"} not published a profile.`}
         </p>
       ) : null}
     </section>
@@ -92,8 +94,8 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
         <p className="text-sm text-muted">{profile.institution}</p>
       ) : null}
       {profile.bio ? <p className="mt-2 text-sm text-ink">{profile.bio}</p> : null}
-      <TagRow label="Interests" values={profile.interests} />
-      <TagRow label="Languages" values={profile.languages} />
+      <TagRow label={t`Interests`} values={profile.interests} />
+      <TagRow label={t`Languages`} values={profile.languages} />
       {profile.education.length ? (
         <ul className="mt-3 space-y-2 text-sm text-muted">
           {profile.education.map((row, index) => {
@@ -106,25 +108,23 @@ function ProfileDetail({ profile }: { profile: MemberProfile }) {
       ) : null}
       {profile.github_contributions !== null ? (
         <p className="mt-3 text-sm text-muted">
-          <span className="tabular-nums">{profile.github_contributions}</span> GitHub contributions in the last year.
-        </p>
+          <span className="tabular-nums">{profile.github_contributions}</span> {t` GitHub contributions in the last year.`}</p>
       ) : null}
       {typeof profile.activity?.events_attended === "number" ? (
         <p className="mt-1 text-sm text-muted">
-          <span className="tabular-nums">{profile.activity.events_attended}</span> events attended here.
-        </p>
+          <span className="tabular-nums">{profile.activity.events_attended}</span> {t` events attended here.`}</p>
       ) : null}
       {profile.activity?.recent_attended_events?.length ? (
         <div className="mt-3">
           {/* "Recent" is load-bearing, not decoration: the backend caps this list, so a
               heading reading "Events attended" would claim to be the full history. The
               count above is the truthful total. */}
-          <h3 className="title-section">Recently attended</h3>
+          <h3 className="title-section">{t`Recently attended`}</h3>
           <ul className="mt-1 space-y-1 text-sm text-muted">
             {profile.activity.recent_attended_events.map((event) => (
               <li key={event.id}>
                 {event.title} ·{" "}
-                <span className="tabular-nums">{new Date(event.starts_at).toLocaleDateString(undefined, {
+                <span className="tabular-nums">{new Date(event.starts_at).toLocaleDateString(formatLocale(), {
                   year: "numeric",
                   month: "short",
                   day: "numeric",

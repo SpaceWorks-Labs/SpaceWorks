@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect } from "react";
 import { FormV2Fields } from "../../forms/FormV2Fields";
 import type { FormSchemaV2, FormState } from "../../forms/types";
@@ -21,8 +22,8 @@ export function InlineStageForm({ scope, context, value, onChange, onBusyChange,
     creation_operation_id: context.creation_operation_id, form_revision_id: context.form_revision_id });
   useEffect(() => { onBusyChange(uploads.busy); return () => onBusyChange(false); }, [uploads.busy, onBusyChange]);
   return <section className="grid gap-4" aria-label={context.title}><h2 className="title-section">{context.title}</h2>
-    <p className="text-sm text-muted">This form is submitted with your application. Review saved suggestions and choose separately whether to save sensitive details.</p>
-    {prefill.data ? <button type="button" className="desk-button justify-self-start" disabled={disabled || uploads.busy} onClick={() => onChange(applyStageSuggestions(context.schema, value, prefill.data!))}>Use saved details for empty answers</button> : prefill.error ? <p role="status">Saved suggestions are unavailable. You can complete this form yourself.</p> : <p role="status">Loading saved suggestions…</p>}
+    <p className="text-sm text-muted">{t`This form is submitted with your application. Review saved suggestions and choose separately whether to save sensitive details.`}</p>
+    {prefill.data ? <button type="button" className="desk-button justify-self-start" disabled={disabled || uploads.busy} onClick={() => onChange(applyStageSuggestions(context.schema, value, prefill.data!))}>{t`Use saved details for empty answers`}</button> : prefill.error ? <p role="status">{t`Saved suggestions are unavailable. You can complete this form yourself.`}</p> : <p role="status">{t`Loading saved suggestions…`}</p>}
     <fieldset disabled={disabled} className="min-w-0"><legend className="sr-only">{context.title} answers</legend><FormV2Fields context="stage" schema={context.schema} value={value} onChange={onChange} uploadFiles={uploads.upload} /></fieldset>
   </section>;
 }

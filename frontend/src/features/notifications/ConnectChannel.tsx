@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Field } from "../../components/ui";
@@ -25,41 +26,40 @@ export function ConnectChannel({ makerspaceId, channel, member = false, onDone }
   const phoneValid = PHONE.test(phone.replace(/[\s-]/g, ""));
   const link = challenge?.connect_url?.startsWith("https://") ? challenge.connect_url : undefined;
 
-  if (!challenge) return <form className="grid min-w-0 gap-3" aria-label={`Connect ${label}`} onSubmit={event => {
+  if (!challenge) return <form className="grid min-w-0 gap-3" aria-label={t`Connect ${label}`} onSubmit={event => {
     event.preventDefault();
     start.mutate({ channel, consent: true, consent_version: CONSENT_VERSION, ...(whatsapp ? { phone_number: phone.replace(/[\s-]/g, "") } : {}) },
       { onSuccess: setChallenge });
   }}>
-    {whatsapp ? <Field label="WhatsApp number" hint="International format with the country code, for example +14155550100.">
+    {whatsapp ? <Field label={t`WhatsApp number`} hint={t`International format with the country code, for example +14155550100.`}>
       <input className="desk-input" type="tel" autoComplete="tel" value={phone} onChange={event => setPhone(event.target.value)} />
     </Field> : null}
     <label className="flex min-h-11 items-start gap-3 text-sm">
       <input className="mt-1 h-4 w-4" type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />
-      <span>I agree to receive notifications from this makerspace on {label}. I can disconnect at any time{whatsapp ? " or reply STOP" : ""}.</span>
+      <span>{t`I agree to receive notifications from this makerspace on ${label}. I can disconnect at any time`}{whatsapp ? t` or reply STOP` : ""}.</span>
     </label>
     {start.error ? <p role="alert" className="text-sm text-danger">{start.error.message}</p> : null}
     <div className="flex flex-wrap gap-2">
       <button className="desk-button" type="submit" disabled={!consent || (whatsapp && !phoneValid) || start.isPending}>
-        {start.isPending ? "Starting…" : whatsapp ? "Send me a code" : `Connect ${label}`}</button>
-      <button className="desk-button" type="button" onClick={onDone}>Cancel</button>
+        {start.isPending ? t`Starting…` : whatsapp ? t`Send me a code` : t`Connect ${label}`}</button>
+      <button className="desk-button" type="button" onClick={onDone}>{t`Cancel`}</button>
     </div>
   </form>;
 
   const finish = () => verify.mutate({ challengeId: challenge.challenge_id, ...(whatsapp ? { code: code.trim() } : {}) }, { onSuccess: onDone });
-  return <div className="grid min-w-0 gap-3" role="group" aria-label={`Finish connecting ${label}`}>
+  return <div className="grid min-w-0 gap-3" role="group" aria-label={t`Finish connecting ${label}`}>
     {challenge.instructions ? <p className="text-sm text-ink">{challenge.instructions}</p> : null}
     {link ? <p className="text-sm"><a className="desk-button inline-flex" href={link} target={challenge.oauth_state ? "_self" : "_blank"} rel="noopener noreferrer">
-      Open {label} to connect ↗</a></p> : null}
-    <p className="text-sm text-muted">This {whatsapp ? "code" : "link"} expires at {new Date(challenge.expires_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.
-      {whatsapp ? " Enter the code we sent to your WhatsApp." : ` When ${label} says you are connected, come back and confirm.`}</p>
-    {whatsapp ? <Field label="Code"><input className="desk-input" inputMode="numeric" autoComplete="one-time-code" value={code}
+      {t`Open ${label} to connect ↗`}</a></p> : null}
+    <p className="text-sm text-muted">{t`This ${whatsapp ? "code" : "link"} expires at ${new Date(challenge.expires_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`}{whatsapp ? t` Enter the code we sent to your WhatsApp.` : t` When ${label} says you are connected, come back and confirm.`}</p>
+    {whatsapp ? <Field label={t`Code`}><input className="desk-input" inputMode="numeric" autoComplete="one-time-code" value={code}
       onChange={event => setCode(event.target.value)} /></Field> : null}
     {verify.error ? <p role="alert" className="text-sm text-danger">{whatsapp ? verify.error.message
-      : `Not connected yet. Finish in ${label}, then confirm again. (${verify.error.message})`}</p> : null}
+      : t`Not connected yet. Finish in ${label}, then confirm again. (${verify.error.message})`}</p> : null}
     <div className="flex flex-wrap gap-2">
       <button className="desk-button" type="button" disabled={verify.isPending || (whatsapp && !code.trim())} onClick={finish}>
-        {verify.isPending ? "Checking…" : whatsapp ? "Verify code" : "I've connected"}</button>
-      <button className="desk-button" type="button" onClick={onDone}>Cancel</button>
+        {verify.isPending ? t`Checking…` : whatsapp ? t`Verify code` : t`I've connected`}</button>
+      <button className="desk-button" type="button" onClick={onDone}>{t`Cancel`}</button>
     </div>
   </div>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { BadgePercent, Coins, HandCoins } from "lucide-react";
 
 import type { PricingPublicQuote } from "./usePriceQuote";
@@ -20,10 +21,10 @@ export function QuoteLines({ data }: { data: PricingPublicQuote }) {
       </li>)}
     </ul>
     {positive(quote.discount_total) ? <p className={`${row} text-success-ink`}>
-      <span className="flex items-center gap-2"><BadgePercent aria-hidden="true" className="h-4 w-4" />Member discount{quote.discount?.name ? ` (${quote.discount.name})` : ""}</span>
+      <span className="flex items-center gap-2"><BadgePercent aria-hidden="true" className="h-4 w-4" />{t`Member discount${quote.discount?.name ? ` (${quote.discount.name})` : ""}`}</span>
       <span className="tabular-nums">−{money(quote.discount_total, quote.currency)}</span>
     </p> : null}
-    {quote.waiver ? <p className="flex items-center gap-2 text-ink"><HandCoins aria-hidden="true" className="h-4 w-4 text-muted" />Fees waived</p> : null}
+    {quote.waiver ? <p className="flex items-center gap-2 text-ink"><HandCoins aria-hidden="true" className="h-4 w-4 text-muted" />{t`Fees waived`}</p> : null}
   </>;
 }
 
@@ -33,12 +34,12 @@ export function QuoteTotals({ data }: { data: PricingPublicQuote }) {
   const taxed = tax.mode !== "none";
   return <dl className="grid gap-1 border-t border-line pt-2">
     {taxed && !tax.inclusive ? <>
-      <div className={row}><dt className="text-muted">Before tax</dt><dd className="tabular-nums">{money(tax.net, quote.currency)}</dd></div>
-      <div className={row}><dt className="text-muted">Tax</dt><dd className="tabular-nums">{money(tax.tax, quote.currency)}</dd></div>
+      <div className={row}><dt className="text-muted">{t`Before tax`}</dt><dd className="tabular-nums">{money(tax.net, quote.currency)}</dd></div>
+      <div className={row}><dt className="text-muted">{t`Tax`}</dt><dd className="tabular-nums">{money(tax.tax, quote.currency)}</dd></div>
     </> : null}
-    <div className={`${row} font-semibold text-ink`}><dt>Total</dt><dd className="tabular-nums">{money(taxed ? tax.gross : quote.total, quote.currency)}</dd></div>
-    {taxed && tax.inclusive ? <div className={`${row} text-xs text-muted`}><dt>Includes tax</dt>
-      <dd className="tabular-nums">{money(tax.tax, quote.currency)} (before tax {money(tax.net, quote.currency)})</dd></div> : null}
+    <div className={`${row} font-semibold text-ink`}><dt>{t`Total`}</dt><dd className="tabular-nums">{money(taxed ? tax.gross : quote.total, quote.currency)}</dd></div>
+    {taxed && tax.inclusive ? <div className={`${row} text-xs text-muted`}><dt>{t`Includes tax`}</dt>
+      <dd className="tabular-nums">{t`${money(tax.tax, quote.currency)} (before tax ${money(tax.net, quote.currency)})`}</dd></div> : null}
   </dl>;
 }
 
@@ -48,17 +49,16 @@ export function QuoteExtras({ data }: { data: PricingPublicQuote }) {
   const currency = quote.currency;
   return <>
     {deposit ? <p className="flex items-center gap-2 text-ink"><Coins aria-hidden="true" className="h-4 w-4 text-muted" />
-      <span>Refundable deposit: <span className="tabular-nums">{money(deposit.amount, currency)}</span>
-        <span className="text-muted"> (not part of the total)</span></span></p> : null}
+      <span>{t`Refundable deposit: `}<span className="tabular-nums">{money(deposit.amount, currency)}</span>
+        <span className="text-muted"> {t` (not part of the total)`}</span></span></p> : null}
     {data.members_total !== null && data.members_total !== undefined
-      ? <p className="text-muted">Members pay <span className="tabular-nums text-ink">{money(data.members_total, currency)}</span></p> : null}
+      ? <p className="text-muted">{t`Members pay `}<span className="tabular-nums text-ink">{money(data.members_total, currency)}</span></p> : null}
     {quote.notes.map(note => <p key={note} className="text-xs text-muted">{note}</p>)}
     {policy ? <div className="grid gap-1 text-xs text-muted">
-      {positive(policy.late_per_day) ? <p>Late returns: {money(policy.late_per_day, currency)} per day
-        {policy.grace_days ? ` after ${policy.grace_days} grace day${policy.grace_days === 1 ? "" : "s"}` : ""}
-        {positive(policy.late_cap) ? `, up to ${money(policy.late_cap!, currency)}` : ""}.</p> : null}
-      {positive(policy.damage_default) ? <p>Damage charge: {money(policy.damage_default, currency)}.</p> : null}
-      {positive(policy.lost_default) ? <p>Lost item charge: {money(policy.lost_default, currency)}.</p> : null}
+      {positive(policy.late_per_day) ? <p>{t`Late returns: ${money(policy.late_per_day, currency)} per day`}{policy.grace_days ? t` after ${policy.grace_days} grace day${policy.grace_days === 1 ? "" : "s"}` : ""}
+        {positive(policy.late_cap) ? t`, up to ${money(policy.late_cap!, currency)}` : ""}.</p> : null}
+      {positive(policy.damage_default) ? <p>{t`Damage charge: ${money(policy.damage_default, currency)}.`}</p> : null}
+      {positive(policy.lost_default) ? <p>{t`Lost item charge: ${money(policy.lost_default, currency)}.`}</p> : null}
       {policy.damage_lost_text ? <p>{policy.damage_lost_text}</p> : null}
     </div> : null}
     {data.refund_summary ? <p className="text-xs text-muted">{data.refund_summary}</p> : null}

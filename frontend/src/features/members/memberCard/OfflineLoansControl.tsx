@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { readStorage } from "../../../lib/safeStorage";
 import { forgetOfflineLoans, OFFLINE_OWNER_KEY, readOfflineLoans, saveOfflineLoans, type OfflineLoan } from "./offlineLoans";
@@ -8,17 +9,17 @@ export function OfflineLoansControl({ space, loans }: { space: string; loans: Of
   const enabled = choice.enabled && choice.owner === owner;
   const [error, setError] = useState("");
   useEffect(() => {
-    if (enabled && !saveOfflineLoans(space, loans)) { setChoice({ owner, enabled: false }); setError("This browser could not save offline loans."); }
+    if (enabled && !saveOfflineLoans(space, loans)) { setChoice({ owner, enabled: false }); setError(t`This browser could not save offline loans.`); }
   }, [space, loans, enabled, owner]);
   return <div className="mt-3 grid gap-2 text-sm">
     <label className="flex min-h-11 items-center gap-3"><input type="checkbox" className="h-5 w-5 shrink-0" checked={enabled} onChange={event => {
       setError("");
       if (event.target.checked) {
         const saved = saveOfflineLoans(space, loans); setChoice({ owner, enabled: saved });
-        if (!saved) setError("This browser could not save offline loans.");
+        if (!saved) setError(t`This browser could not save offline loans.`);
       } else { forgetOfflineLoans(); setChoice({ owner, enabled: false }); }
-    }} />Keep my loans on this device for offline reading</label>
-    {enabled ? <p role="status" className="text-muted">Offline loans show the last saved details. Connect to check current returns and due dates.</p> : null}
+    }} />{t`Keep my loans on this device for offline reading`}</label>
+    {enabled ? <p role="status" className="text-muted">{t`Offline loans show the last saved details. Connect to check current returns and due dates.`}</p> : null}
     {error ? <p role="alert" className="text-danger">{error}</p> : null}
   </div>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui/Field";
@@ -18,18 +19,18 @@ export function useRegistrationSavedDetails(actorId: number, selector: PrefillSe
 
 export function SaveDetailChoice({ fieldKey, sensitive, checked, onChange }: { fieldKey: FieldKey; sensitive: boolean; checked: boolean; onChange: (checked: boolean) => void }) {
   return <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} />
-    <span>Save to my private details{sensitive ? " (sensitive · optional)" : ""}<span className="sr-only">: {fieldKey.replace(/_/g, " ")}</span></span></label>;
+    <span>{t`Save to my private details`}{sensitive ? t` (sensitive · optional)` : ""}<span className="sr-only">: {fieldKey.replace(/_/g, " ")}</span></span></label>;
 }
 
 export function AgeReview({ asOfDate, value, locked, onSourceChange, onReviewed }: {
   asOfDate: string; value: number | null; locked: boolean; onSourceChange: (dateOfBirth: string) => void; onReviewed: () => void;
 }) {
   const [dob, setDob] = useState("");
-  return <fieldset className="grid gap-3"><legend className="font-semibold">Age at event start</legend>
-    <p>The organiser receives your computed age. Your date of birth is privately retained as the source unless the form separately asks you to disclose it.</p>
-    {!locked ? <Field label="Private date of birth"><input className="desk-input" type="date" value={dob} onChange={e => { setDob(e.target.value); onSourceChange(e.target.value); }} /></Field> : null}
-    <p role="status">{value === null ? "Enter a valid date of birth to review your age." : `Age ${value} as of ${asOfDate}${locked ? " · fixed at answer lock" : ""}.`}</p>
-    <button type="button" className="desk-button" disabled={value === null} onClick={onReviewed}>Confirm age and event date</button>
+  return <fieldset className="grid gap-3"><legend className="font-semibold">{t`Age at event start`}</legend>
+    <p>{t`The organiser receives your computed age. Your date of birth is privately retained as the source unless the form separately asks you to disclose it.`}</p>
+    {!locked ? <Field label={t`Private date of birth`}><input className="desk-input" type="date" value={dob} onChange={e => { setDob(e.target.value); onSourceChange(e.target.value); }} /></Field> : null}
+    <p role="status">{value === null ? t`Enter a valid date of birth to review your age.` : t`Age ${value} as of ${asOfDate}${locked ? " · fixed at answer lock" : ""}.`}</p>
+    <button type="button" className="desk-button" disabled={value === null} onClick={onReviewed}>{t`Confirm age and event date`}</button>
   </fieldset>;
 }
 
@@ -48,9 +49,9 @@ export function SaveIntentNotice({ actorId, operationId, initialStatus }: { acto
       client.removeQueries({ queryKey: [...savedDetailsKey(actorId), "prefill"], type: "inactive" });
     }
   }, [actorId, client, operationId, result.data?.state]);
-  if (result.error) return <p role="status">Your event submission succeeded. Saved details status is temporarily unavailable.</p>;
+  if (result.error) return <p role="status">{t`Your event submission succeeded. Saved details status is temporarily unavailable.`}</p>;
   const state = result.data?.state;
-  return <div role="status">{state === "applied" ? "Your chosen details were saved privately." : state === "failed" || state === "conflict" ? <>Your event submission succeeded. Some saved details need review. <a className="underline" href="/member/account/saved-details">Review saved details</a></> : "Your event submission succeeded. Your chosen saved details are being updated."}</div>;
+  return <div role="status">{state === "applied" ? t`Your chosen details were saved privately.` : state === "failed" || state === "conflict" ? <>{t`Your event submission succeeded. Some saved details need review. `}<a className="underline" href="/member/account/saved-details">{t`Review saved details`}</a></> : t`Your event submission succeeded. Your chosen saved details are being updated.`}</div>;
 }
 
 /** G/R mount once after canonical submission; each form polls its own child ID. */
@@ -58,10 +59,10 @@ export function FormSaveIntentsNotice({ actorId, intents, formLabels = {} }: {
   actorId: number; intents: FormSaveIntent[]; formLabels?: Partial<Record<FormSlot, string>>;
 }) {
   if (!intents.length) return null;
-  return <section aria-label="Saved details updates"><ul className="grid gap-3">
+  return <section aria-label={t`Saved details updates`}><ul className="grid gap-3">
     {intents.map((intent, index) => <li key={intent.operation_id} className="rounded-xl border border-line bg-panel p-4 text-ink">
-      <p className="font-semibold">{formLabels[intent.slot] || (intent.slot === "base" ? "Registration form" : `Additional form ${index + 1}`)}</p>
-      {intent.state === "not_requested" ? <p>No details selected for saving.</p> : <SaveIntentNotice actorId={actorId} operationId={intent.operation_id}
+      <p className="font-semibold">{formLabels[intent.slot] || (intent.slot === "base" ? t`Registration form` : t`Additional form ${index + 1}`)}</p>
+      {intent.state === "not_requested" ? <p>{t`No details selected for saving.`}</p> : <SaveIntentNotice actorId={actorId} operationId={intent.operation_id}
         initialStatus={{ operation_id: intent.operation_id, state: intent.state, fields: intent.fields, retryable: intent.state === "pending" }} />}
     </li>)}
   </ul></section>;

@@ -1,5 +1,6 @@
 // "My cards" (/member/cards): every live card of this account. Each shows the ticket view
 // (the QR to show at the desk) or the printed card, plus downloads, email and settings.
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { CenteredCardLayout } from "../../../components/layouts";
@@ -11,9 +12,9 @@ import { CardHolderSettings } from "./CardHolderSettings";
 import { HolographicCard } from "./HolographicCard";
 import { downloadMyCard, useEmailMyCard, useMemberIdentity, useMyCards, useWalletPass, type MyCard } from "./api";
 
-const STATUS = { valid: { label: "Valid", tone: "success" }, expired: { label: "Expired", tone: "warn" },
-  revoked: { label: "Revoked", tone: "danger" } } as const;
-const WALLET_LABELS: Record<string, string> = { apple: "Add to Apple Wallet", google: "Save to Google Wallet" };
+const STATUS = { valid: { label: t`Valid`, tone: "success" }, expired: { label: t`Expired`, tone: "warn" },
+  revoked: { label: t`Revoked`, tone: "danger" } } as const;
+const WALLET_LABELS: Record<string, string> = { apple: t`Add to Apple Wallet`, google: t`Save to Google Wallet` };
 
 export function WalletPage() {
   const { restoring, identity } = useMemberIdentity();
@@ -21,13 +22,13 @@ export function WalletPage() {
   const status = identity.error instanceof StructuredApiError ? identity.error.status : undefined;
   if (status === 401) return <MemberAuthPanel onAuthenticated={() => { void identity.refetch(); }} />;
   const rows = cards.data ?? [];
-  return <CenteredCardLayout width="wide" title="My cards" body="Your member, programme and event cards in one place."
+  return <CenteredCardLayout width="wide" title={t`My cards`} body="Your member, programme and event cards in one place."
     state={restoring || identity.isLoading || cards.isLoading ? { status: "loading" } : { status: "ready" }}
-    primary={{ label: "Back to my account", href: "/member/account" }}
+    primary={{ label: t`Back to my account`, href: "/member/account" }}
     footer={<PageHelp article="member/member-card" topic="your cards" className="flex justify-center" />}
     content={<div className="grid gap-6">
       {cards.error ? <ErrorText message={cards.error.message} onRetry={() => void cards.refetch()} /> : null}
-      {cards.data && !rows.length ? <EmptyState message="No cards yet. A card appears here once a space, programme or event issues one to you." /> : null}
+      {cards.data && !rows.length ? <EmptyState message={t`No cards yet. A card appears here once a space, programme or event issues one to you.`} /> : null}
       {rows.map((card) => <CardEntry key={`${card.kind}-${card.id}`} card={card} />)}
     </div>} />;
 }
@@ -45,24 +46,24 @@ function CardEntry({ card }: { card: MyCard }) {
       <Badge tone={STATUS[card.status].tone}>{STATUS[card.status].label}</Badge>
     </div>
     {card.status === "revoked" ? <p role="status" className="rounded-control border border-danger-line p-3 text-sm text-danger">
-      This card was revoked. Ask staff for a new one.</p> : null}
+      {t`This card was revoked. Ask staff for a new one.`}</p> : null}
     {card.status === "expired" ? <p role="status" className="rounded-control border border-warn p-3 text-sm text-warn-ink">
-      This card has expired. Renew your membership or ask the organiser.</p> : null}
-    {card.photo_request_open ? <p role="status" className="text-sm text-warn-ink">Staff asked for a new photo. Your card stays valid meanwhile.</p> : null}
-    {live ? <SegmentedControl label="Card view" value={view} onChange={(value) => setView(value as "ticket" | "printed")}
-      options={[{ value: "ticket", label: "Ticket" }, { value: "printed", label: "Printed card" }]} /> : null}
+      {t`This card has expired. Renew your membership or ask the organiser.`}</p> : null}
+    {card.photo_request_open ? <p role="status" className="text-sm text-warn-ink">{t`Staff asked for a new photo. Your card stays valid meanwhile.`}</p> : null}
+    {live ? <SegmentedControl label={t`Card view`} value={view} onChange={(value) => setView(value as "ticket" | "printed")}
+      options={[{ value: "ticket", label: t`Ticket` }, { value: "printed", label: t`Printed card` }]} /> : null}
     {live && view === "ticket" ? <TicketView card={card} /> : null}
     {live && view === "printed" ? <HolographicCard card={card} /> : null}
     {live ? <div className="flex flex-wrap gap-2">
-      <button type="button" className="desk-button min-h-11" onClick={() => void downloadMyCard(card, "pdf")}>Download PDF</button>
-      <button type="button" className="desk-button-ghost min-h-11" onClick={() => void downloadMyCard(card, "png")}>Download PNG</button>
-      {card.check_url ? <a className="desk-button-ghost min-h-11" href={card.check_url} target="_blank" rel="noreferrer">Check page</a> : null}
+      <button type="button" className="desk-button min-h-11" onClick={() => void downloadMyCard(card, "pdf")}>{t`Download PDF`}</button>
+      <button type="button" className="desk-button-ghost min-h-11" onClick={() => void downloadMyCard(card, "png")}>{t`Download PNG`}</button>
+      {card.check_url ? <a className="desk-button-ghost min-h-11" href={card.check_url} target="_blank" rel="noreferrer">{t`Check page`}</a> : null}
       {card.email_available ? <button type="button" className="desk-button-ghost min-h-11" disabled={email.isPending || email.isSuccess}
-        onClick={() => email.mutate({ card })}>{email.isSuccess ? "Emailed" : "Email me my card"}</button> : null}
+        onClick={() => email.mutate({ card })}>{email.isSuccess ? t`Emailed` : t`Email me my card`}</button> : null}
       {card.wallet_platforms.map((platform) => <button key={platform} type="button" className="desk-button-ghost min-h-11"
         disabled={wallet.isPending} onClick={() => wallet.mutate(platform)}>{WALLET_LABELS[platform] ?? platform}</button>)}
       <button type="button" className="desk-button-ghost min-h-11" aria-expanded={settings} onClick={() => setSettings((value) => !value)}>
-        Card settings</button>
+        {t`Card settings`}</button>
     </div> : null}
     {email.error || wallet.error ? <ErrorText message={(email.error ?? wallet.error)?.message} /> : null}
     {settings && live ? <CardHolderSettings card={card} /> : null}
@@ -80,9 +81,9 @@ function TicketView({ card }: { card: MyCard }) {
       </dl>
     </div>
     {card.qr_image ? <div className="grid justify-items-center gap-2 border-t border-dashed border-line p-4 sm:border-l sm:border-t-0">
-      <img src={card.qr_image} alt={card.kind === "member_card" ? "Desk QR code" : "Card check QR code"} className="h-40 w-40 rounded-control bg-white p-2" />
+      <img src={card.qr_image} alt={card.kind === "member_card" ? t`Desk QR code` : t`Card check QR code`} className="h-40 w-40 rounded-control bg-white p-2" />
       <p className="max-w-[12rem] text-center text-xs text-muted">{card.kind === "member_card"
-        ? "Show this at the desk. It only holds a private member link." : "Anyone can scan this to check the card is valid."}</p>
+        ? t`Show this at the desk. It only holds a private member link.` : t`Anyone can scan this to check the card is valid.`}</p>
     </div> : null}
   </div>;
 }

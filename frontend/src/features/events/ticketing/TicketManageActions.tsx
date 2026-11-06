@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -14,7 +16,7 @@ type Props = {
 
 function errorMessage(error: unknown) {
   if (error instanceof StructuredApiError) return error.detail ?? error.message;
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }
 
 /** Release 2 L6 (G32, X39): pass my ticket to someone else, or switch to another ticket type.
@@ -34,15 +36,14 @@ function TransferCard({ makerspaceId, registrationId }: { makerspaceId: number; 
   const [email, setEmail] = useState("");
   const transfer = useMutation({ mutationFn: () => transferTicket(makerspaceId, registrationId, email.trim()) });
   return <Card><form className="grid gap-3" onSubmit={e => { e.preventDefault(); transfer.mutate(); }}>
-    <h2 className="title-section">Transfer this ticket</h2>
-    <p className="text-sm text-muted">We email the person a link. Your place becomes theirs only when they accept it while signed in
-      with that address. The offer expires if they do not accept in time.</p>
-    <Field label="Their email address"><input className="desk-input" type="email" required value={email}
+    <h2 className="title-section">{t`Transfer this ticket`}</h2>
+    <p className="text-sm text-muted">{t`We email the person a link. Your place becomes theirs only when they accept it while signed in with that address. The offer expires if they do not accept in time.`}</p>
+    <Field label={t`Their email address`}><input className="desk-input" type="email" required value={email}
       onChange={e => setEmail(e.target.value)} autoComplete="email" /></Field>
     {transfer.error ? <ErrorText message={errorMessage(transfer.error)} /> : null}
-    {transfer.data ? <p role="status" className="text-sm text-ink">Offer sent. It expires {new Date(transfer.data.expires_at).toLocaleString()}.</p> : null}
+    {transfer.data ? <p role="status" className="text-sm text-ink">{t`Offer sent. It expires ${new Date(transfer.data.expires_at).toLocaleString(formatLocale())}.`}</p> : null}
     <button type="submit" className="desk-button justify-self-start" disabled={transfer.isPending || !email.trim()}>
-      {transfer.isPending ? "Sending…" : "Send the transfer offer"}</button>
+      {transfer.isPending ? t`Sending…` : t`Send the transfer offer`}</button>
   </form></Card>;
 }
 
@@ -62,23 +63,22 @@ function ChangeTypeCard({ makerspaceId, makerspaceSlug, registrationId, publicTo
   const result = change.data;
   const checkout = safeCheckoutUrl(result?.checkout_url);
   return <Card><form className="grid gap-3" onSubmit={e => { e.preventDefault(); change.mutate(); }}>
-    <h2 className="title-section">Change ticket type</h2>
-    <p className="text-sm text-muted">A dearer ticket asks you to pay the difference; a cheaper one gives the difference back
-      under the event's refund policy.</p>
-    <Field label="New ticket type"><select className="desk-input" value={choice} required onChange={e => setChoice(Number(e.target.value))}>
-      <option value={0} disabled>Choose a ticket type</option>
+    <h2 className="title-section">{t`Change ticket type`}</h2>
+    <p className="text-sm text-muted">{t`A dearer ticket asks you to pay the difference; a cheaper one gives the difference back under the event's refund policy.`}</p>
+    <Field label={t`New ticket type`}><select className="desk-input" value={choice} required onChange={e => setChoice(Number(e.target.value))}>
+      <option value={0} disabled>{t`Choose a ticket type`}</option>
       {options.map(row => <option key={row.id} value={row.id}>{row.name} · {money(row.amount, shop.data!.currency)}</option>)}
     </select></Field>
     {change.error ? <ErrorText message={errorMessage(change.error)} /> : null}
-    {result?.status === "changed" ? <p role="status" className="text-sm text-ink">Your ticket type is changed.</p> : null}
+    {result?.status === "changed" ? <p role="status" className="text-sm text-ink">{t`Your ticket type is changed.`}</p> : null}
     {result?.status === "payment_required" ? <div role="status" className="grid gap-2 text-sm text-ink">
-      <p>Pay the difference to finish the change.</p>
+      <p>{t`Pay the difference to finish the change.`}</p>
       <div className="flex flex-wrap gap-2">
-        {checkout ? <a className="desk-button" href={checkout}>Pay the difference</a> : null}
-        {result.order ? <a className="desk-button" href={tenantPath(`member/orders/${result.order.id}`)}>View the order</a> : null}
+        {checkout ? <a className="desk-button" href={checkout}>{t`Pay the difference`}</a> : null}
+        {result.order ? <a className="desk-button" href={tenantPath(`member/orders/${result.order.id}`)}>{t`View the order`}</a> : null}
       </div>
     </div> : null}
     <button type="submit" className="desk-button justify-self-start" disabled={change.isPending || !choice}>
-      {change.isPending ? "Changing…" : "Change my ticket"}</button>
+      {change.isPending ? t`Changing…` : t`Change my ticket`}</button>
   </form></Card>;
 }

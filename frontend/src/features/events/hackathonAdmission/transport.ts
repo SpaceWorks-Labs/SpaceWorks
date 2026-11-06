@@ -1,8 +1,9 @@
+import { t } from "@lingui/core/macro";
 import { memberRequest, staffRequest } from '../../../lib/api'
 
 export function apiPath(url: string) {
   if (!url.startsWith('/api/v1/') || /[\\\s?#%]/.test(url) || /\/(?:\.{1,2})(?:\/|$)/.test(url) || url.includes('://')) {
-    throw new Error('Invalid event action URL.')
+    throw new Error(t`Invalid event action URL.`)
   }
   return url.slice('/api/v1'.length)
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { CenteredCardLayout } from "../../components/layouts";
 import { useTenant } from "../../lib/tenant";
@@ -16,7 +17,7 @@ export function PresenceNowPage() {
   if (!bootstrap) {
     const failed = tenant.mode === "central" ? bootstrapQuery.isError : Boolean(tenant.error);
     return <CenteredCardLayout state={failed ? { status: "error", error: "Couldn't load this makerspace. Try again.", onRetry: () => void bootstrapQuery.refetch() } : { status: "loading" }}
-      title="Opening the display…" body="" primary={{ label: "Loading…", disabled: true, disabledReason: "The display is opening." }} />;
+      title={t`Opening the display…`} body="" primary={{ label: t`Loading…`, disabled: true, disabledReason: "The display is opening." }} />;
   }
   const spaceName = bootstrap.branding.display_name || bootstrap.makerspace.name;
   return <div style={brandStyle}><PresenceNowBoard slug={slug} spaceName={spaceName} enabled={bootstrap.modules.includes("presence")} /></div>;

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { memberRequest, tenantPublicRequest } from '../../../lib/api';
 import type { PeoplesChoiceBallotRead, PeoplesChoicePublicRead } from '../../../generated/api';
@@ -8,7 +9,7 @@ export type PeoplesChoiceBallot = PeoplesChoiceBallotRead;
 export type BallotScope = { makerspaceId: number; eventId: number };
 
 function object(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid People’s choice response.');
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(t`Invalid People’s choice response.`);
   return value as Record<string, unknown>;
 }
 const STATES = ['off', 'scheduled', 'open', 'closed', 'published'];
@@ -16,10 +17,10 @@ const STATES = ['off', 'scheduled', 'open', 'closed', 'published'];
 /** Public responses are parsed: a published award only, never a count before publication. */
 export function parsePublic(value: unknown): PeoplesChoicePublic {
   const row = object(value);
-  if (!Number.isSafeInteger(row.event_id) || !STATES.includes(String(row.state))) throw new Error('Invalid People’s choice state.');
+  if (!Number.isSafeInteger(row.event_id) || !STATES.includes(String(row.state))) throw new Error(t`Invalid People’s choice state.`);
   const award = row.award === null ? null : object(row.award);
   if (award && (!Array.isArray(award.winners) || typeof award.prize_name !== 'string' || !Number.isSafeInteger(award.total_votes))) {
-    throw new Error('Invalid People’s choice award.');
+    throw new Error(t`Invalid People’s choice award.`);
   }
   return { event_id: Number(row.event_id), state: row.state as PeoplesChoicePublic['state'],
     audience: row.audience === 'attendees' ? 'attendees' : 'members',
@@ -55,10 +56,10 @@ export function useBallot(scope: BallotScope | null) {
 }
 
 export const REFUSAL_COPY: Record<string, string> = {
-  off: 'People’s choice voting is not running.',
-  not_open: 'People’s choice voting has not opened yet.',
-  closed: 'People’s choice voting has closed. The result appears here once the organisers publish it.',
-  published: 'Voting has ended.',
-  attendees_only: 'Only checked-in attendees can vote in this People’s choice.',
-  voided: 'The organisers voided your vote, so you cannot vote again.',
+  off: t`People’s choice voting is not running.`,
+  not_open: t`People’s choice voting has not opened yet.`,
+  closed: t`People’s choice voting has closed. The result appears here once the organisers publish it.`,
+  published: t`Voting has ended.`,
+  attendees_only: t`Only checked-in attendees can vote in this People’s choice.`,
+  voided: t`The organisers voided your vote, so you cannot vote again.`,
 };

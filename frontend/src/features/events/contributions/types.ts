@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { FormDescriptor, ProgrammeMemberInput } from '../contracts/types'
 
 export interface Page<T> { count: number; next: string | null; previous: string | null; results: T[] }
@@ -29,22 +30,22 @@ export function parseAggregate<T extends Aggregate>(value: T): T {
   if (!value || !Number.isSafeInteger(value.id) || value.id < 1 || !Number.isSafeInteger(value.event_id)
     || !Number.isSafeInteger(value.version) || value.version < 1 || typeof value.state !== 'string'
     || !Array.isArray(value.allowed_actions) || value.allowed_actions.some(x => typeof x !== 'string')) {
-    throw new Error('The programme returned an invalid response. Refresh and try again.')
+    throw new Error(t`The programme returned an invalid response. Refresh and try again.`)
   }
   return value
 }
 
 export function parsePage<T extends Aggregate>(value: Page<T>): Page<T> {
   if (!value || !Number.isSafeInteger(value.count) || value.count < 0 || !Array.isArray(value.results)) {
-    throw new Error('The programme returned an invalid list.')
+    throw new Error(t`The programme returned an invalid list.`)
   }
   // Frozen read-only posting/slot cards intentionally omit aggregate command
   // members. Preserve that shape; never invent a version or an action grant.
   for (const row of value.results) {
-    if (!row || !Number.isSafeInteger(row.id) || row.id < 1) throw new Error('The programme returned an invalid row.')
+    if (!row || !Number.isSafeInteger(row.id) || row.id < 1) throw new Error(t`The programme returned an invalid row.`)
     const readable: Partial<Aggregate> = row
     if ('allowed_actions' in readable) parseAggregate(row)
-    else if (readable.version !== undefined && (!Number.isSafeInteger(readable.version) || readable.version < 1)) throw new Error('The programme returned an invalid version.')
+    else if (readable.version !== undefined && (!Number.isSafeInteger(readable.version) || readable.version < 1)) throw new Error(t`The programme returned an invalid version.`)
   }
   return value
 }

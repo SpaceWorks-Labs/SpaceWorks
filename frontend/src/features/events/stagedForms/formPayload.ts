@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { FormSchemaV2, FormState } from "../../forms/types";
 import type { Prefill } from "../../accountSavedDetails/types";
 import { memberFormInput } from "../../forms/conditions";
@@ -24,7 +25,7 @@ export function applyStageSuggestions(schema: FormSchemaV2, value: FormState, pr
 }
 export function utcInstant(value: string) {
   const instant = new Date(value);
-  if (!value || !Number.isFinite(instant.getTime())) throw new Error("Enter a valid date and time.");
+  if (!value || !Number.isFinite(instant.getTime())) throw new Error(t`Enter a valid date and time.`);
   return instant.toISOString().replace(/\.000Z$/, "Z");
 }
 export function localDateTime(value: string | null) {

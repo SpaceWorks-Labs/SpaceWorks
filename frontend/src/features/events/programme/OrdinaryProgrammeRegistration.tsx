@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { FormPageLayout } from '../../../components/layouts'
@@ -26,20 +27,20 @@ export function OrdinaryProgrammeRegistration({ context, accountId }: { context:
     } })
   const registration = useMutation({ mutationFn: () => {
     const target = context.routes.ordinary_register
-    if (!target) throw new Error('Registration is unavailable.')
+    if (!target) throw new Error(t`Registration is unavailable.`)
     const formInput = schema && !Array.isArray(schema) ? memberFormInput(formSchema(schema), value) : { custom_answers: value.answers }
     return memberRequest<PublicEventRegistrationResponse & { save_intent?: { operation_id: string } }>(target.url.slice('/api/v1'.length), {
       method: 'POST', headers: { 'Idempotency-Key': operation.current }, body: JSON.stringify({ ...formInput, ...selection,
         event_date_revision: context.event.event_date_revision, operation_id: operation.current, expected_version: 0 }),
     })
   } })
-  if (registration.data) return <div className="grid gap-4"><p role="status">Registration received: {registration.data.status.replace(/_/g, ' ')}.</p>
+  if (registration.data) return <div className="grid gap-4"><p role="status">{t`Registration received: ${registration.data.status.replace(/_/g, ' ')}.`}</p>
     {registration.data.save_intent ? <SaveIntentNotice actorId={accountId} operationId={registration.data.save_intent.operation_id} /> : null}
-    <a className="desk-button" href={`/m/${context.makerspace.slug}/member/events/history`}>Tickets and certificates</a>
+    <a className="desk-button" href={`/m/${context.makerspace.slug}/member/events/history`}>{t`Tickets and certificates`}</a>
   </div>
   const errors = registration.error instanceof StructuredApiError ? registration.error.body.fields as Record<string, unknown> : {}
-  return <FormPageLayout header={{ title: 'Register for this event', subtitle: 'Review what you share and what you save privately.' }} state={{ status: 'ready' }}
-    submit={{ label: 'Register', pending: registration.isPending, onClick: () => registration.mutate() }} form={<div className="grid gap-5">
+  return <FormPageLayout header={{ title: t`Register for this event`, subtitle: t`Review what you share and what you save privately.` }} state={{ status: 'ready' }}
+    submit={{ label: t`Register`, pending: registration.isPending, onClick: () => registration.mutate() }} form={<div className="grid gap-5">
       <ErrorBlock error={registration.error || prefill.error} />
       <AdmissionFields requirements={context.admission_requirements as AdmissionRequirements} value={selection} disabled={registration.isPending}
         onChange={next => { setSelection(next); operation.current = crypto.randomUUID() }} />

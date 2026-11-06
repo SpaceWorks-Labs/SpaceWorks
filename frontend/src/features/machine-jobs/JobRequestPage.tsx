@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { FlowLayout, type FlowStep } from "../../components/layouts";
@@ -21,14 +22,14 @@ import { JobTypeStep, extensionList } from "./JobTypeStep";
 import { JOB_STEPS, useJobRequest, type JobStep } from "./useJobRequest";
 import { useMemberIdentity } from "./useMemberIdentity";
 
-const STEP_LABELS: Record<JobStep, string> = { type: "Machine type", files: "Files", details: "Details", confirm: "Confirm and send" };
+const STEP_LABELS: Record<JobStep, string> = { type: t`Machine type`, files: t`Files`, details: t`Details`, confirm: t`Confirm and send` };
 
 /** Where to send a member a refusal names; the member area holds check-in, the waiver and joining. */
 function refusalAction(error: unknown, memberPath: string): Action | undefined {
   if (!(error instanceof StructuredApiError)) return undefined;
-  if (error.code === "presence_required") return { label: "Check in", href: memberPath };
-  if (error.code === "waiver_acceptance_required") return { label: "Read the waiver", href: `${memberPath}#current-waiver` };
-  if (error.code === "membership_required") return { label: "Membership options", href: memberPath };
+  if (error.code === "presence_required") return { label: t`Check in`, href: memberPath };
+  if (error.code === "waiver_acceptance_required") return { label: t`Read the waiver`, href: `${memberPath}#current-waiver` };
+  if (error.code === "membership_required") return { label: t`Membership options`, href: memberPath };
   return undefined;
 }
 
@@ -50,7 +51,7 @@ export function JobRequestPage() {
   const { types, type, step, draft, submit } = flow;
 
   if (member.signedOut) return <div style={brandStyle}><MemberAuthPanel makerspaceSlug={makerspaceSlug}
-    eyebrow="Request a job" tenantBrand={bootstrap ? { name: displayName, logo: bootstrap.branding.logo_url || bootstrap.makerspace.logo_url || undefined } : undefined}
+    eyebrow={t`Request a job`} tenantBrand={bootstrap ? { name: displayName, logo: bootstrap.branding.logo_url || bootstrap.makerspace.logo_url || undefined } : undefined}
     onAuthenticated={() => { void member.identity.refetch(); }} /></div>;
 
   const accepted = type ? extensionList(type) : [];
@@ -64,13 +65,13 @@ export function JobRequestPage() {
       : { status: "ready" as const };
   const steps: FlowStep[] = JOB_STEPS.map((key, position) => ({ key, label: STEP_LABELS[key], required: true,
     state: position < index ? "done" : position === index ? "current" : "todo",
-    summary: key === "type" ? type?.name : key === "files" && flow.models.length ? `${flow.models.length} design file${flow.models.length === 1 ? "" : "s"}`
+    summary: key === "type" ? type?.name : key === "files" && flow.models.length ? t`${flow.models.length} design file${flow.models.length === 1 ? "" : "s"}`
       : key === "details" && position < index ? draft.title.trim() : undefined }));
   const go = (next: JobStep) => { if (!busy) flow.setStep(next); };
-  const nextAction: Action = step === "type" ? { label: "Next: files", disabled: !type, disabledReason: "Choose a machine type.", onClick: () => go("files") }
-    : step === "files" ? { label: "Next: details", disabled: !filesReady(flow.models, accepted), disabledReason: "Add at least one design file this machine accepts.", onClick: () => go("details") }
-      : step === "details" ? { label: "Next: confirm", disabled: Boolean(problem), disabledReason: problem || undefined, onClick: () => go("confirm") }
-        : { label: "Send request", pending: busy, pendingLabel: flow.progress || "Sending…", disabled: !acked,
+  const nextAction: Action = step === "type" ? { label: t`Next: files`, disabled: !type, disabledReason: "Choose a machine type.", onClick: () => go("files") }
+    : step === "files" ? { label: t`Next: details`, disabled: !filesReady(flow.models, accepted), disabledReason: "Add at least one design file this machine accepts.", onClick: () => go("details") }
+      : step === "details" ? { label: t`Next: confirm`, disabled: Boolean(problem), disabledReason: problem || undefined, onClick: () => go("confirm") }
+        : { label: t`Send request`, pending: busy, pendingLabel: flow.progress || "Sending…", disabled: !acked,
           disabledReason: "Tick all three to send your request.", onClick: () => submit.mutate() };
   const error: CalloutProps | undefined = submit.isError && !(submit.error instanceof JobUploadError) ? { size: "panel", tone: "danger",
     lead: "Couldn't send your request.", body: jobErrorMessage(submit.error), action: refusalAction(submit.error, tenantPath("member")) } : undefined;
@@ -90,12 +91,12 @@ export function JobRequestPage() {
         </div>;
 
   return <div style={brandStyle}>
-    <FlowLayout title="Request a job" subject={displayName} state={state} current={step} steps={steps}
+    <FlowLayout title={t`Request a job`} subject={displayName} state={state} current={step} steps={steps}
       isEmpty={closed || (types.isSuccess && !types.data.length)}
-      empty={{ message: `${displayName} isn't taking job requests right now.`, action: { label: "See the machines", href: tenantPath("machines") } }}
+      empty={{ message: t`${displayName} isn't taking job requests right now.`, action: { label: t`See the machines`, href: tenantPath("machines") } }}
       onStepSelect={key => go(key as JobStep)} onCancel={() => navigate(tenantPath("machines"))}
       leaveGuard={flow.models.length || draft.title.trim() ? "Your files and details will be lost." : undefined}
-      footer={{ back: index > 0 ? { label: "Back", disabled: busy, disabledReason: "Wait until your request is sent.", onClick: () => go(JOB_STEPS[index - 1]) } : undefined, next: nextAction }}
+      footer={{ back: index > 0 ? { label: t`Back`, disabled: busy, disabledReason: "Wait until your request is sent.", onClick: () => go(JOB_STEPS[index - 1]) } : undefined, next: nextAction }}
       error={error} pending={busy} work={work} />
     <SiteFooter branding={bootstrap?.branding} />
   </div>;

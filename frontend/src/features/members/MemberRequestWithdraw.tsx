@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -15,11 +16,11 @@ export function MemberRequestWithdraw({ makerspaceId, makerspaceSlug, requestId 
       `/member/makerspaces/${makerspaceId}/requests/${requestId}/withdraw`, { method: "POST", body: JSON.stringify({}) }),
     onSuccess: () => { setConfirming(false); void client.invalidateQueries({ queryKey: ["member", makerspaceSlug, "activity"] }); },
   });
-  if (withdraw.isSuccess) return <p role="status" className="text-sm text-muted">Request withdrawn.</p>;
+  if (withdraw.isSuccess) return <p role="status" className="text-sm text-muted">{t`Request withdrawn.`}</p>;
   return <div className="grid gap-1">
-    <button type="button" className="desk-button-ghost" disabled={withdraw.isPending} onClick={() => setConfirming(true)}>Withdraw</button>
-    <ConfirmDialog open={confirming} title="Withdraw this request?" message="Staff stop preparing it and any items held for you go back on the shelf."
-      confirmLabel="Withdraw request" cancelLabel="Keep it" tone="danger" pending={withdraw.isPending}
+    <button type="button" className="desk-button-ghost" disabled={withdraw.isPending} onClick={() => setConfirming(true)}>{t`Withdraw`}</button>
+    <ConfirmDialog open={confirming} title={t`Withdraw this request?`} message={t`Staff stop preparing it and any items held for you go back on the shelf.`}
+      confirmLabel={t`Withdraw request`} cancelLabel={t`Keep it`} tone="danger" pending={withdraw.isPending}
       onConfirm={() => withdraw.mutate()} onCancel={() => setConfirming(false)} />
     {withdraw.error ? <p role="alert" className="text-sm text-danger">{withdraw.error.message}</p> : null}
   </div>;

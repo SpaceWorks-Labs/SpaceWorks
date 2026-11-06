@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest, staffRequest, StructuredApiError } from "../../../lib/api";
@@ -40,12 +41,12 @@ export function usePrivateCommand<T extends CommonCommand, R = CommandReply>(pre
 }
 export function commandError(error: unknown) {
   if (error instanceof StructuredApiError) {
-    if (error.code?.includes("reauth")) return "Verify your session again, then retry this action.";
-    if ([401, 403, 404].includes(error.status)) return "This content is no longer available for your access.";
-    if (error.code === "stage_incomplete") return "Complete the required stage forms before continuing.";
-    if (error.code === "stage_age_question_unsupported") return "Stage forms cannot ask for date of birth or age.";
-    if (error.status === 409) return "This record changed. Reload and review the current version before trying again.";
-    if (error.status === 423) return "Changes are paused for this record. Try again when it is available.";
+    if (error.code?.includes("reauth")) return t`Verify your session again, then retry this action.`;
+    if ([401, 403, 404].includes(error.status)) return t`This content is no longer available for your access.`;
+    if (error.code === "stage_incomplete") return t`Complete the required stage forms before continuing.`;
+    if (error.code === "stage_age_question_unsupported") return t`Stage forms cannot ask for date of birth or age.`;
+    if (error.status === 409) return t`This record changed. Reload and review the current version before trying again.`;
+    if (error.status === 423) return t`Changes are paused for this record. Try again when it is available.`;
   }
-  return "The action did not complete. Check the fields and try again. Your edits are still here.";
+  return t`The action did not complete. Check the fields and try again. Your edits are still here.`;
 }

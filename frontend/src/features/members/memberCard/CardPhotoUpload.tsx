@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -38,12 +40,12 @@ export function CardPhotoUpload({
   async function upload() {
     if (!file) {
       setStatus("error");
-      setError("Choose a photo first.");
+      setError(t`Choose a photo first.`);
       return;
     }
     if (!consent) {
       setStatus("error");
-      setError("Tick the consent box before uploading your photo.");
+      setError(t`Tick the consent box before uploading your photo.`);
       return;
     }
     setStatus("uploading");
@@ -55,24 +57,23 @@ export function CardPhotoUpload({
       await client.invalidateQueries({ queryKey: memberCardKey(makerspaceId) });
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : t`Upload failed.`);
     }
   }
 
   return (
     <div className="mt-4 rounded-lg border border-line p-3">
-      <h3 className="title-section">Card photo</h3>
+      <h3 className="title-section">{t`Card photo`}</h3>
       <p className="mt-1 text-sm text-muted">
         {photoSet
           ? consentAt
-            ? `Photo on file since ${new Date(consentAt).toLocaleDateString()}.`
-            : "Photo on file."
-          : "No photo on file yet."}
+            ? t`Photo on file since ${new Date(consentAt).toLocaleDateString(formatLocale())}.`
+            : t`Photo on file.`
+          : t`No photo on file yet.`}
       </p>
 
       <label className="mt-3 block text-sm font-medium text-ink" htmlFor={inputId}>
-        Choose a photo
-      </label>
+        {t`Choose a photo`}</label>
       <input
         id={inputId}
         type="file"
@@ -84,9 +85,9 @@ export function CardPhotoUpload({
 
       {file ? (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
-          <span>{cropped ? "Cropped to the card's photo spot." : "Crop it so your face fills the card's photo spot."}</span>
+          <span>{cropped ? t`Cropped to the card's photo spot.` : t`Crop it so your face fills the card's photo spot.`}</span>
           <button className="desk-button-ghost min-h-11" type="button" onClick={() => setCropping(file)}>
-            {cropped ? "Crop again" : "Crop the photo"}
+            {cropped ? t`Crop again` : t`Crop the photo`}
           </button>
         </div>
       ) : null}
@@ -112,7 +113,7 @@ export function CardPhotoUpload({
           disabled={status === "uploading"}
           onClick={() => void upload()}
         >
-          {status === "uploading" ? "Uploading…" : "Upload photo"}
+          {status === "uploading" ? t`Uploading…` : t`Upload photo`}
         </button>
         {photoSet ? (
           <button
@@ -121,7 +122,7 @@ export function CardPhotoUpload({
             disabled={remove.isPending}
             onClick={() => remove.mutate()}
           >
-            {remove.isPending ? "Removing…" : "Remove photo"}
+            {remove.isPending ? t`Removing…` : t`Remove photo`}
           </button>
         ) : null}
       </div>
@@ -134,16 +135,16 @@ export function CardPhotoUpload({
         className={`mt-2 text-xs ${status === "error" ? "text-danger" : "text-muted"}`}
       >
         {status === "uploading"
-          ? "Uploading your photo…"
+          ? t`Uploading your photo…`
           : status === "done"
-            ? "Photo uploaded."
+            ? t`Photo uploaded.`
             : status === "error"
               ? error
               : ""}
       </p>
       {remove.error ? (
         <p className="mt-1 text-xs text-danger" role="alert">
-          {remove.error instanceof Error ? remove.error.message : "Could not remove the photo."}
+          {remove.error instanceof Error ? remove.error.message : t`Could not remove the photo.`}
         </p>
       ) : null}
     </div>

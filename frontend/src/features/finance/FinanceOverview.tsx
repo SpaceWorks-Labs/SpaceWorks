@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Landmark } from "lucide-react";
@@ -34,28 +35,28 @@ export function FinanceOverview({ makerspaceId }: { makerspaceId: number }) {
   const rows = useMemo(() => summary.data?.rows ?? [], [summary.data]);
   return <div className="grid min-w-0 gap-4">
     <div className="flex flex-wrap items-end gap-3">
-      <Field label="From"><input type="date" className="desk-input" value={from} max={to} onChange={event => setFrom(event.target.value)} /></Field>
-      <Field label="To"><input type="date" className="desk-input" value={to} min={from} onChange={event => setTo(event.target.value)} /></Field>
+      <Field label={t`From`}><input type="date" className="desk-input" value={from} max={to} onChange={event => setFrom(event.target.value)} /></Field>
+      <Field label={t`To`}><input type="date" className="desk-input" value={to} min={from} onChange={event => setTo(event.target.value)} /></Field>
     </div>
-    {summary.isLoading ? <p role="status" className="text-sm text-muted">Adding up the money…</p> : null}
+    {summary.isLoading ? <p role="status" className="text-sm text-muted">{t`Adding up the money…`}</p> : null}
     {summary.error ? <p role="alert" className="text-sm text-danger">{financeError(summary.error)}</p> : null}
     <div className="grid gap-3 sm:grid-cols-2">
       {totals(rows).map(([currency, value]) => <article key={currency} className="grid gap-1 rounded-xl border border-line bg-panel p-4">
-        <h3 className="flex items-center gap-2 text-sm font-semibold"><Landmark aria-hidden="true" size={16} />{currency.toUpperCase()} in this range</h3>
-        <p className="text-sm">In: <strong>{formatMoney(String(value.income + value.other_income), currency)}</strong></p>
-        <p className="text-sm">Out: <strong>{formatMoney(String(value.refunds + value.expenses + value.payouts), currency)}</strong></p>
-        <p className="text-sm">Net: <strong className={value.net < 0 ? "text-danger" : ""}>{formatMoney(String(value.net), currency)}</strong></p>
+        <h3 className="flex items-center gap-2 text-sm font-semibold"><Landmark aria-hidden="true" size={16} />{t`${currency.toUpperCase()} in this range`}</h3>
+        <p className="text-sm">{t`In: `}<strong>{formatMoney(String(value.income + value.other_income), currency)}</strong></p>
+        <p className="text-sm">{t`Out: `}<strong>{formatMoney(String(value.refunds + value.expenses + value.payouts), currency)}</strong></p>
+        <p className="text-sm">{t`Net: `}<strong className={value.net < 0 ? "text-danger" : ""}>{formatMoney(String(value.net), currency)}</strong></p>
       </article>)}
     </div>
-    {summary.data && !rows.length ? <p className="text-sm text-muted">No money moved in this range for the areas you see.</p> : null}
+    {summary.data && !rows.length ? <p className="text-sm text-muted">{t`No money moved in this range for the areas you see.`}</p> : null}
     {rows.length ? <div className="overflow-x-auto rounded-xl border border-line">
       <table className="w-full min-w-[44rem] text-sm">
-        <caption className="sr-only">Income and spending by month and area</caption>
+        <caption className="sr-only">{t`Income and spending by month and area`}</caption>
         <thead><tr className="text-left text-muted">
-          <th scope="col" className="p-2">Month</th><th scope="col" className="p-2">Area</th>
-          <th scope="col" className="p-2 text-right">Charges collected</th><th scope="col" className="p-2 text-right">Other income</th>
-          <th scope="col" className="p-2 text-right">Refunds</th><th scope="col" className="p-2 text-right">Expenses</th>
-          <th scope="col" className="p-2 text-right">Payouts</th><th scope="col" className="p-2 text-right">Net</th>
+          <th scope="col" className="p-2">{t`Month`}</th><th scope="col" className="p-2">{t`Area`}</th>
+          <th scope="col" className="p-2 text-right">{t`Charges collected`}</th><th scope="col" className="p-2 text-right">{t`Other income`}</th>
+          <th scope="col" className="p-2 text-right">{t`Refunds`}</th><th scope="col" className="p-2 text-right">{t`Expenses`}</th>
+          <th scope="col" className="p-2 text-right">{t`Payouts`}</th><th scope="col" className="p-2 text-right">{t`Net`}</th>
         </tr></thead>
         <tbody>{rows.map(row => <tr key={`${row.month}-${row.domain}-${row.machine_type}-${row.currency}`} className="border-t border-line">
           <td className="p-2">{row.month}</td>

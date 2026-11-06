@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { API_V1_URL, StructuredApiError, getAccessToken, memberRequest, tenantPublicRequest } from "../../lib/api";
 
 // Hand-written mirrors of `apps/payments/donations/serializers_public.py` (lane L18). Swap for the
@@ -32,7 +33,7 @@ export type GiverFields = {
 export type GiftInput = GiverFields & { amount: string; campaign?: number | null; note?: string };
 export type PledgeInput = GiverFields & { amount: string; interval: Interval; campaign?: number | null };
 
-export const INTERVAL_LABELS: Record<Interval, string> = { monthly: "Every month", quarterly: "Every quarter", yearly: "Every year" };
+export const INTERVAL_LABELS: Record<Interval, string> = { monthly: t`Every month`, quarterly: t`Every quarter`, yearly: t`Every year` };
 
 export const donationKeys = {
   page: (slug: string) => ["donation-page", slug] as const,
@@ -85,7 +86,7 @@ export const donationsApi = {
 
 /** Plain-language errors for the giving forms; field errors join into one line. */
 export function giveError(error: unknown) {
-  if (!(error instanceof StructuredApiError)) return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  if (!(error instanceof StructuredApiError)) return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
   const messages: Record<string, string> = {
     donor_identity_required: "Sign in, or give your name, email and the code we emailed you.",
     amount_below_minimum: "That amount is below the smallest gift here.",
@@ -94,7 +95,7 @@ export function giveError(error: unknown) {
     pan_invalid: "Enter a valid 10-character PAN, like ABCDE1234F.",
     feature_disabled: "Giving is turned off here.",
   };
-  if (error.status === 429) return "Too many tries. Wait a minute and try again.";
+  if (error.status === 429) return t`Too many tries. Wait a minute and try again.`;
   const code = errorCode(error);
   return (code && messages[code]) || error.message;
 }

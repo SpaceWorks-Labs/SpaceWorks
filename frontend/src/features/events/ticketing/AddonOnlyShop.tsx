@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ShoppingBag } from "lucide-react";
@@ -39,15 +40,15 @@ export function AddonOnlyShop({ makerspaceSlug, makerspaceId, publicToken, order
   if (!approval || !shop || !shop.addons.length) return null;
   const chosen = (body().addons ?? []).length > 0;
   return <section className="grid gap-3 rounded-xl border border-line p-4" aria-labelledby="addon-only-title">
-    <h2 id="addon-only-title" className="title-section flex items-center gap-2"><ShoppingBag className="text-accent" aria-hidden="true" />Add-ons for your place</h2>
-    <p className="text-sm text-muted">Your place is confirmed. Add extras to it; you are not buying another seat.</p>
+    <h2 id="addon-only-title" className="title-section flex items-center gap-2"><ShoppingBag className="text-accent" aria-hidden="true" />{t`Add-ons for your place`}</h2>
+    <p className="text-sm text-muted">{t`Your place is confirmed. Add extras to it; you are not buying another seat.`}</p>
     <TicketShopPicker tickets={[]} addons={shop.addons} currency={shop.currency} orderMax={0} basket={basket}
       onChange={next => { setBasket(next); setQuote(null); }} />
     {!quote ? <p className="text-sm text-muted">{policyLine(shop.policy)}</p> : <OrderSummary quote={quote} />}
     {review.error || pay.error ? <ErrorText message={shopError(pay.error ?? review.error)} /> : null}
     {quote ? <button type="button" className="desk-button-brand w-full" disabled={pay.isPending} onClick={() => pay.mutate()}>
-      {pay.isPending ? "Placing order…" : Number(quote.quote.total) > 0 ? "Continue to payment" : "Confirm order"}</button>
+      {pay.isPending ? t`Placing order…` : Number(quote.quote.total) > 0 ? t`Continue to payment` : t`Confirm order`}</button>
       : <button type="button" className="desk-button-brand w-full" disabled={!chosen || review.isPending} onClick={() => review.mutate()}>
-        {review.isPending ? "Pricing…" : "Review add-ons"}</button>}
+        {review.isPending ? t`Pricing…` : t`Review add-ons`}</button>}
   </section>;
 }

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { Link } from "react-router-dom";
 import { useTenantPath } from "../../lib/tenant";
 import { useEffect, useState } from "react";
@@ -104,7 +106,7 @@ function CheckInQr({ makerspaceId, registrationId, title, startsAt, organisation
         setSrc(url);
       })
       .catch((cause) => {
-        if (!cancelled) setError(cause instanceof Error ? cause.message : "Could not load your code.");
+        if (!cancelled) setError(cause instanceof Error ? cause.message : t`Could not load your code.`);
       });
     return () => {
       cancelled = true;
@@ -120,13 +122,13 @@ function CheckInQr({ makerspaceId, registrationId, title, startsAt, organisation
       aria-expanded={open}
       onClick={() => { setError(null); setOpen((value) => !value); }}
     >
-      {open ? "Hide check-in QR" : "Show check-in QR"}
+      {open ? t`Hide check-in QR` : t`Show check-in QR`}
     </button>
     {/* Unmounted rather than hidden, so the blob is released and keyboard users cannot tab
         into an image that is not on screen. */}
-    {open ? <Modal open title="Your event ticket" onClose={() => setOpen(false)}
-      footer={<button type="button" className="desk-button w-full" onClick={() => setOpen(false)}>Done</button>}>
-      {src ? <TicketCard organisation={organisation} title={title} fields={[{ label: "When", value: new Date(startsAt).toLocaleString() }, { label: "Registration", value: registrationId }]} qr={<img src={src} alt="Your check-in QR code" />} caption="Show this code at event check-in." /> : <p role="status">Loading your ticket…</p>}
+    {open ? <Modal open title={t`Your event ticket`} onClose={() => setOpen(false)}
+      footer={<button type="button" className="desk-button w-full" onClick={() => setOpen(false)}>{t`Done`}</button>}>
+      {src ? <TicketCard organisation={organisation} title={title} fields={[{ label: t`When`, value: new Date(startsAt).toLocaleString(formatLocale()) }, { label: t`Registration`, value: registrationId }]} qr={<img src={src} alt={t`Your check-in QR code`} />} caption={t`Show this code at event check-in.`} /> : <p role="status">{t`Loading your ticket…`}</p>}
     </Modal> : null}
     {open && error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
   </div>;
@@ -138,7 +140,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Empty({ children = "Nothing here yet. Check back after your next visit." }: { children?: string }) {
   return <EmptyState message={children} />;
 }
-const REGISTRATION_LABELS: Record<string, string> = { pending_approval: "Awaiting approval", registered: "Confirmed", waitlisted: "Waitlisted", rejected: "Not approved", cancelled: "Cancelled", attended: "Attended" };
+const REGISTRATION_LABELS: Record<string, string> = { pending_approval: t`Awaiting approval`, registered: t`Confirmed`, waitlisted: t`Waitlisted`, rejected: t`Not approved`, cancelled: t`Cancelled`, attended: t`Attended` };
 const statusTone = (status: string) => ["registered", "confirmed", "attended", "completed"].includes(status) ? "success" as const : ["cancelled", "rejected"].includes(status) ? "neutral" as const : "warn" as const;
 
 export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, makerspaceName, modules, section = "all", eventPeriod, features = [] }: {
@@ -156,23 +158,23 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
   const requestRows = (rows: MachineServiceRequest[]) => <MemberServiceRequestRows rows={rows} makerspaceSlug={makerspaceSlug} />;
   return <div className="grid gap-6">
     {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <OfflineLoansControl key={makerspaceId} space={makerspaceSlug} loans={activity.active_hardware_loans} /> : null}
-    {section === "all" || section === "overview" ? <Section title="My activity"><p className="text-sm text-muted">{activity.currently_checked_in ? "You are currently checked in." : "You are not currently checked in."}</p>{activity.accountability.waiver_acceptance_required ? <p className="text-sm text-danger">Accept the current waiver before making facility requests.</p> : null}</Section> : null}
-    {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <Section title="Active hardware loans">{activity.active_hardware_loans.length ? activity.active_hardware_loans.map(loan => <ListRow key={`${loan.label}-${loan.checked_out_at}`} title={loan.label}
+    {section === "all" || section === "overview" ? <Section title={t`My activity`}><p className="text-sm text-muted">{activity.currently_checked_in ? t`You are currently checked in.` : t`You are not currently checked in.`}</p>{activity.accountability.waiver_acceptance_required ? <p className="text-sm text-danger">{t`Accept the current waiver before making facility requests.`}</p> : null}</Section> : null}
+    {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <Section title={t`Active hardware loans`}>{activity.active_hardware_loans.length ? activity.active_hardware_loans.map(loan => <ListRow key={`${loan.label}-${loan.checked_out_at}`} title={loan.label}
       identity={loan.due_at ? { kind: "date", date: loan.due_at } : { kind: "icon", icon: "Wrench", tone: "info" }}
-      meta={loan.due_at ? <>Due <RelativeTime date={loan.due_at} /></> : "No due date"}
-      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={loan.overdue ? "Overdue" : "On loan"} tone={loan.overdue ? "danger" : "info"} />{loan.can_renew && loan.request_id ? <MemberLoanRenew key={loan.due_at} makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} requestId={loan.request_id} /> : null}
-        {loan.request_id && features.includes("inventory.issue_reporting") ? <ReportProblem source={{ makerspace_id: makerspaceId, loan_id: loan.request_id }} /> : null}</div>} />) : <EmptyState message="Nothing out right now. Browse the catalogue to borrow something." action={{ label: "Browse catalogue", href: `/m/${makerspaceSlug}` }} />}</Section> : null}
-    {(section === "all" || section === "overview") && modules.includes("machines") && activity.machine_service_requests ? <><Section title="3D print requests">{requestRows(printerRequests)}</Section>{otherServiceRequests.length ? <Section title="Machine-service requests">{requestRows(otherServiceRequests)}</Section> : null}<div className="flex flex-wrap gap-2"><Link className="desk-button" to={tenantPath("member/machine-jobs")}>All my machine jobs</Link>{features.includes("machines.sessions") ? <Link className="desk-button" to={tenantPath("member/machine-sessions")}>My machine sessions</Link> : null}</div></> : null}
-    {(section === "all" || section === "bookings") && modules.includes("bookings") && activity.bookings ? <Section title="Bookings">{(["upcoming", "past"] as const).map(period => <div key={period} className="grid gap-3"><h3 className="title-section">{period === "upcoming" ? "Upcoming" : "Past"}</h3>{activity.bookings![period].length ? activity.bookings![period].map((item, index) => <ListRow key={index} title={item.space_name} identity={{ kind: "date", date: item.starts_at }} meta={`${new Date(item.starts_at).toLocaleString()} – ${new Date(item.ends_at).toLocaleTimeString()}`} right={<StatusPill label={item.status.replace(/_/g, " ")} tone={statusTone(item.status)} />} />) : <Empty />}</div>)}</Section> : null}
-    {(section === "all" || section === "events") && modules.includes("events") && activity.event_registrations ? <Section title="Event registrations"><MemberCalendarLinks makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} />{registrations.length ? registrations.map(item => <ListRow key={item.registration_id} title={item.event_title} identity={{ kind: "date", date: item.starts_at }}
-      meta={<><span className="tabular-nums">{new Date(item.starts_at).toLocaleString()}</span>{item.status === "pending_approval" ? " · No payment until confirmed" : ""}{item.waitlist_position ? ` · Waitlist ${item.waitlist_position}` : ""}</>}
+      meta={loan.due_at ? <>{t`Due `}<RelativeTime date={loan.due_at} /></> : "No due date"}
+      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={loan.overdue ? t`Overdue` : t`On loan`} tone={loan.overdue ? "danger" : "info"} />{loan.can_renew && loan.request_id ? <MemberLoanRenew key={loan.due_at} makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} requestId={loan.request_id} /> : null}
+        {loan.request_id && features.includes("inventory.issue_reporting") ? <ReportProblem source={{ makerspace_id: makerspaceId, loan_id: loan.request_id }} /> : null}</div>} />) : <EmptyState message={t`Nothing out right now. Browse the catalogue to borrow something.`} action={{ label: t`Browse catalogue`, href: `/m/${makerspaceSlug}` }} />}</Section> : null}
+    {(section === "all" || section === "overview") && modules.includes("machines") && activity.machine_service_requests ? <><Section title={t`3D print requests`}>{requestRows(printerRequests)}</Section>{otherServiceRequests.length ? <Section title={t`Machine-service requests`}>{requestRows(otherServiceRequests)}</Section> : null}<div className="flex flex-wrap gap-2"><Link className="desk-button" to={tenantPath("member/machine-jobs")}>{t`All my machine jobs`}</Link>{features.includes("machines.sessions") ? <Link className="desk-button" to={tenantPath("member/machine-sessions")}>{t`My machine sessions`}</Link> : null}</div></> : null}
+    {(section === "all" || section === "bookings") && modules.includes("bookings") && activity.bookings ? <Section title={t`Bookings`}>{(["upcoming", "past"] as const).map(period => <div key={period} className="grid gap-3"><h3 className="title-section">{period === "upcoming" ? t`Upcoming` : t`Past`}</h3>{activity.bookings![period].length ? activity.bookings![period].map((item, index) => <ListRow key={index} title={item.space_name} identity={{ kind: "date", date: item.starts_at }} meta={`${new Date(item.starts_at).toLocaleString(formatLocale())} – ${new Date(item.ends_at).toLocaleTimeString(formatLocale())}`} right={<StatusPill label={item.status.replace(/_/g, " ")} tone={statusTone(item.status)} />} />) : <Empty />}</div>)}</Section> : null}
+    {(section === "all" || section === "events") && modules.includes("events") && activity.event_registrations ? <Section title={t`Event registrations`}><MemberCalendarLinks makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} />{registrations.length ? registrations.map(item => <ListRow key={item.registration_id} title={item.event_title} identity={{ kind: "date", date: item.starts_at }}
+      meta={<><span className="tabular-nums">{new Date(item.starts_at).toLocaleString(formatLocale())}</span>{item.status === "pending_approval" ? t` · No payment until confirmed` : ""}{item.waitlist_position ? t` · Waitlist ${item.waitlist_position}` : ""}</>}
       right={<div className="grid gap-2"><StatusPill label={REGISTRATION_LABELS[item.status] ?? item.status} tone={statusTone(item.status)} />
-        <Link className="desk-button-ghost" to={tenantPath(`member/events/${item.registration_id}/ticket`)}>Open ticket</Link>
+        <Link className="desk-button-ghost" to={tenantPath(`member/events/${item.registration_id}/ticket`)}>{t`Open ticket`}</Link>
         {item.checkin_token ? <CheckInQr makerspaceId={makerspaceId} registrationId={item.registration_id} title={item.event_title} startsAt={item.starts_at} organisation={makerspaceName} /> : null}
         <MemberEventCancel makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} status={item.status} canCancel={item.can_cancel} cutoffAt={item.cancellation_cutoff_at} />
-        <MemberEventFeedback makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} feedbackPath={item.feedback_path} certificate={item.certificate} /></div>} />) : <EmptyState message={eventPeriod === "past" ? "No past events yet." : "You’re not registered for anything yet. See what’s on."} action={{ label: "See events", href: `/m/${makerspaceSlug}/events` }} />}</Section> : null}
-    {(section === "all" || section === "events") && modules.includes("events") ? <Section title="Certificates"><CertificateApprovals makerspaceId={makerspaceId} /><MyCertificates makerspaceId={makerspaceId} /></Section> : null}
+        <MemberEventFeedback makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} feedbackPath={item.feedback_path} certificate={item.certificate} /></div>} />) : <EmptyState message={eventPeriod === "past" ? t`No past events yet.` : t`You’re not registered for anything yet. See what’s on.`} action={{ label: t`See events`, href: `/m/${makerspaceSlug}/events` }} />}</Section> : null}
+    {(section === "all" || section === "events") && modules.includes("events") ? <Section title={t`Certificates`}><CertificateApprovals makerspaceId={makerspaceId} /><MyCertificates makerspaceId={makerspaceId} /></Section> : null}
     {section === "all" || section === "overview" ? <MemberGifts makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} /> : null}
-    {(section === "all" || section === "overview") && modules.includes("presence") ? <Section title="Recent presence">{activity.recent_presence_sessions.length ? activity.recent_presence_sessions.map(item => <ListRow key={item.started_at} title="Makerspace visit" identity={{ kind: "date", date: item.started_at }} meta={<><RelativeTime date={item.started_at} /> · until {new Date(item.expires_at).toLocaleString()}</>} right={<StatusPill label={item.active ? "Active" : "Ended"} tone={item.active ? "success" : "neutral"} />} />) : <Empty />}</Section> : null}
+    {(section === "all" || section === "overview") && modules.includes("presence") ? <Section title={t`Recent presence`}>{activity.recent_presence_sessions.length ? activity.recent_presence_sessions.map(item => <ListRow key={item.started_at} title={t`Makerspace visit`} identity={{ kind: "date", date: item.started_at }} meta={<><RelativeTime date={item.started_at} /> {t` · until ${new Date(item.expires_at).toLocaleString(formatLocale())}`}</>} right={<StatusPill label={item.active ? t`Active` : t`Ended`} tone={item.active ? "success" : "neutral"} />} />) : <Empty />}</Section> : null}
   </div>;
 }

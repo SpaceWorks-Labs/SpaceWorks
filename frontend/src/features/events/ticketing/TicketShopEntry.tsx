@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useTenant, tenantPath, useOptionalTenant } from "../../../lib/tenant";
 import { useTenantBootstrap } from "../../inventory/usePublicInventory";
 import { EventTicketShop } from "./EventTicketShop";
@@ -8,7 +9,7 @@ export function TicketShopEntry({ makerspaceSlug, publicToken }: { makerspaceSlu
   const mode = useOptionalTenant()?.mode ?? "central";
   const bootstrap = useTenantBootstrap(makerspaceSlug, tenant.mode === "central");
   const makerspaceId = tenant.mode === "single" ? tenant.makerspaceId : bootstrap.data?.makerspace.id;
-  if (!makerspaceId) return <p role="status">Loading tickets…</p>;
+  if (!makerspaceId) return <p role="status">{t`Loading tickets…`}</p>;
   return <EventTicketShop makerspaceSlug={makerspaceSlug} makerspaceId={makerspaceId} publicToken={publicToken}
     ordersHref={orderId => tenantPath(mode, makerspaceSlug, `member/orders/${orderId}`)} />;
 }

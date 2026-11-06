@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { memberRequest, tenantPublicRequest } from '../../../lib/api';
@@ -52,10 +53,10 @@ export function usePublicPrizes(slug: string, token: string, enabled = true) {
 }
 
 export const STATUS_LABELS: Record<string, string> = {
-  owed: 'Owed to you', paid: 'Paid', part_paid: 'Partly paid', fulfilled: 'Handed over',
-  sponsor_paid: 'Paid by the sponsor', forfeited: 'Forfeited',
+  owed: t`Owed to you`, paid: t`Paid`, part_paid: t`Partly paid`, fulfilled: t`Handed over`,
+  sponsor_paid: t`Paid by the sponsor`, forfeited: t`Forfeited`,
 };
-export const KIND_LABELS: Record<string, string> = { cash: 'Cash', item: 'Item', credit: 'Credit', perk: 'Perk' };
+export const KIND_LABELS: Record<string, string> = { cash: t`Cash`, item: t`Item`, credit: t`Credit`, perk: t`Perk` };
 
 export function statusTone(status: string): 'success' | 'warn' | 'danger' | 'neutral' {
   if (status === 'paid' || status === 'fulfilled' || status === 'sponsor_paid') return 'success';

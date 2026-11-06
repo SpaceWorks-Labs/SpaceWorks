@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { ImageUploader } from "../../staff/ImageUploader";
 import { memberRequest } from "../../../lib/api";
@@ -32,15 +33,15 @@ export function ProjectEditor({
     <div className={`rounded-lg border ${profileToneForIdentity(project.id)} p-3`}>
       <input
         className="desk-input w-full"
-        placeholder="Project title"
-        aria-label="Project title"
+        placeholder={t`Project title`}
+        aria-label={t`Project title`}
         value={project.title}
         onChange={(event) => onChange({ ...project, title: event.target.value })}
       />
       <input
         className="desk-input mt-2 w-full"
-        placeholder="Subtitle, e.g. FPGA design for DVCon"
-        aria-label="Project subtitle"
+        placeholder={t`Subtitle, e.g. FPGA design for DVCon`}
+        aria-label={t`Project subtitle`}
         maxLength={200}
         value={project.subtitle ?? ""}
         onChange={(event) => onChange({ ...project, subtitle: event.target.value })}
@@ -48,15 +49,15 @@ export function ProjectEditor({
       <textarea
         className="desk-input mt-2 w-full"
         rows={2}
-        placeholder="What is it?"
-        aria-label="Project description"
+        placeholder={t`What is it?`}
+        aria-label={t`Project description`}
         value={project.description}
         onChange={(event) => onChange({ ...project, description: event.target.value })}
       />
       <input
         className="desk-input mt-2 w-full"
-        placeholder="Tags, comma separated"
-        aria-label="Project tags"
+        placeholder={t`Tags, comma separated`}
+        aria-label={t`Project tags`}
         value={tagsText}
         onChange={(event) => { setTagsText(event.target.value); onChange({ ...project, tags: textToTags(event.target.value).slice(0, 20) }); }}
       />
@@ -67,8 +68,7 @@ export function ProjectEditor({
           checked={Boolean(project.public_visible)}
           onChange={(event) => onChange({ ...project, public_visible: event.target.checked })}
         />
-        Show on my public profile page
-      </label>
+        {t`Show on my public profile page`}</label>
       {/* An image can only be attached to a project that exists server-side — a new one
           has no id to attach it to, so it appears after the first save. */}
       {project.id ? (
@@ -77,22 +77,22 @@ export function ProjectEditor({
             request={memberRequest}
             endpoint={`/member/makerspaces/${makerspaceId}/profile/image`}
             currentUrl={imageUrl}
-            label="Project image"
+            label={t`Project image`}
             extraBody={{ project_id: project.id }}
             clearQuery={`?project_id=${project.id}`}
             onChanged={onImageChanged}
           />
         </div>
       ) : (
-        <p className="mt-2 text-xs text-muted">Save the project to add an image.</p>
+        <p className="mt-2 text-xs text-muted">{t`Save the project to add an image.`}</p>
       )}
       <div className="mt-2 space-y-2">
         {project.links.map((link, index) => (
           <div key={index} className={`flex flex-col gap-2 border-l-2 ${profileToneForIdentity(`${link.label}|${link.url}`)} p-2 sm:flex-row`}>
             <input
               className="desk-input w-full sm:w-40"
-              placeholder="Label"
-              aria-label="Link label"
+              placeholder={t`Label`}
+              aria-label={t`Link label`}
               value={link.label}
               onChange={(event) =>
                 onChange({
@@ -106,7 +106,7 @@ export function ProjectEditor({
             <input
               className="desk-input w-full"
               placeholder="https://…"
-              aria-label="Link URL"
+              aria-label={t`Link URL`}
               value={link.url}
               onChange={(event) =>
                 onChange({
@@ -128,11 +128,9 @@ export function ProjectEditor({
             onChange({ ...project, links: [...project.links, { label: "", url: "" }] })
           }
         >
-          Add link
-        </button>
+          {t`Add link`}</button>
         <button className="desk-button-danger" type="button" onClick={onRemove}>
-          Remove project
-        </button>
+          {t`Remove project`}</button>
       </div>
     </div>
   );

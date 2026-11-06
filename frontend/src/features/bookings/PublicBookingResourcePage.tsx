@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PublicDetailLayout, PublicLayout } from "../../components/layouts";
@@ -51,33 +52,33 @@ export function PublicBookingResourcePage() {
   return <div style={brandStyle}>
     {resource ? <PageMetadata title={resource.name} description={resource.description} image={resource.image_url} path={path(`bookings/${resourceToken}`)} /> : null}
     <PublicLayout {...publicPageChrome(tenantSlug, displayName, path, bootstrap)} state={state}
-      breadcrumb={[{ label: "All resources", href: path("bookings") }, { label: resource?.name ?? "Resource" }]}>
-      <PublicDetailLayout title={resource?.name ?? (state.status === "error" ? "Resource unavailable" : "Resource")} state={state}
+      breadcrumb={[{ label: t`All resources`, href: path("bookings") }, { label: resource?.name ?? t`Resource` }]}>
+      <PublicDetailLayout title={resource?.name ?? (state.status === "error" ? t`Resource unavailable` : t`Resource`)} state={state}
         cover={resource?.image_url ? { src: resource.image_url, alt: "" } : undefined}
-        chips={resource ? [{ label: approval ? "Needs approval" : "Instant when available", tone: approval ? "warn" : "success" }] : []}
+        chips={resource ? [{ label: approval ? t`Needs approval` : t`Instant when available`, tone: approval ? "warn" : "success" }] : []}
         facts={resource?.location ? [{ identity: { kind: "icon", icon: "Info", tone: "neutral" }, primary: resource.location,
           secondary: resource.capacity ? `Capacity ${resource.capacity}` : "Capacity not specified" }] : []}
         sections={resource ? [
           ...photosSection(resource),
-          { id: "about", label: "About this resource", content: <p className="whitespace-pre-wrap leading-7">{resource.description}</p> },
-          { id: "rules", label: "Booking rules", content: <div className="grid gap-2 leading-7">
-            <p>{resource.rules.minimum_minutes}–{resource.rules.maximum_minutes} minutes; request at least {resource.rules.lead_minutes} minutes ahead, up to {resource.rules.advance_days} days ahead.</p>
-            <p>Changes and cancellation close {resource.rules.cancellation_cutoff_hours} hours before the start. {approval ? "Staff approval is required." : "Available times confirm immediately."}</p>
+          { id: "about", label: t`About this resource`, content: <p className="whitespace-pre-wrap leading-7">{resource.description}</p> },
+          { id: "rules", label: t`Booking rules`, content: <div className="grid gap-2 leading-7">
+            <p>{t`${resource.rules.minimum_minutes}–${resource.rules.maximum_minutes} minutes; request at least ${resource.rules.lead_minutes} minutes ahead, up to ${resource.rules.advance_days} days ahead.`}</p>
+            <p>{t`Changes and cancellation close ${resource.rules.cancellation_cutoff_hours} hours before the start. `}{approval ? t`Staff approval is required.` : t`Available times confirm immediately.`}</p>
           </div> },
-          ...(resource.website ? [{ id: "details", label: "Resource details", content: <BookingResourceWebsite page={resource.website} slug={tenantSlug} /> }] : []),
-          { id: "availability", label: "Availability", content: <AvailabilityCalendar makerspaceSlug={tenantSlug} publicToken={resource.public_token} /> },
+          ...(resource.website ? [{ id: "details", label: t`Resource details`, content: <BookingResourceWebsite page={resource.website} slug={tenantSlug} /> }] : []),
+          { id: "availability", label: t`Availability`, content: <AvailabilityCalendar makerspaceSlug={tenantSlug} publicToken={resource.public_token} /> },
         ] : []}
-        actionCard={{ title: "Choose a time", state: "open",
+        actionCard={{ title: t`Choose a time`, state: "open",
           summary: resource ? <div className="flex flex-wrap items-end gap-6">
-            <dl><dt className="eyebrow">Capacity</dt><dd className="font-semibold tabular-nums text-ink">{resource.capacity || "Not specified"}</dd></dl>
-            {showPrice ? <dl><dt className="eyebrow">Flat price</dt><dd className="font-semibold tabular-nums text-ink">{resource.payment_amount} {resource.currency.toUpperCase()}</dd></dl> : null}
+            <dl><dt className="eyebrow">{t`Capacity`}</dt><dd className="font-semibold tabular-nums text-ink">{resource.capacity || t`Not specified`}</dd></dl>
+            {showPrice ? <dl><dt className="eyebrow">{t`Flat price`}</dt><dd className="font-semibold tabular-nums text-ink">{resource.payment_amount} {resource.currency.toUpperCase()}</dd></dl> : null}
           </div> : null,
-          form: !resource ? null : session === "restoring" ? <p role="status" className="text-sm text-muted">Restoring your session...</p>
-            : session === "anonymous" ? <MemberAuthPanel embedded context={<p className="text-sm text-muted">Sign in to submit a booking.</p>}
+          form: !resource ? null : session === "restoring" ? <p role="status" className="text-sm text-muted">{t`Restoring your session...`}</p>
+            : session === "anonymous" ? <MemberAuthPanel embedded context={<p className="text-sm text-muted">{t`Sign in to submit a booking.`}</p>}
               makerspaceSlug={tenantSlug} onAuthenticated={() => setSession("authenticated")} />
             : <PublicBookingForm key={resourceToken} makerspaceSlug={tenantSlug} space={resource} showCalendar={false} />,
-          note: approval ? "Your request stays pending until makerspace staff review it." : "A non-overlapping slot is confirmed immediately.",
-          mobileBar: { summary: resource?.name ?? "Resource", label: "Choose a time" } }} />
+          note: approval ? t`Your request stays pending until makerspace staff review it.` : t`A non-overlapping slot is confirmed immediately.`,
+          mobileBar: { summary: resource?.name ?? t`Resource`, label: t`Choose a time` } }} />
     </PublicLayout>
   </div>;
 }

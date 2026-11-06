@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { memberRequest, StructuredApiError } from "../../../lib/api";
@@ -24,7 +25,7 @@ export function fieldError(error: unknown, field: string) {
     const message = Array.isArray(value) ? value.filter(item => typeof item === "string").join(" ") : typeof value === "string" ? value : "";
     return message || error.message;
   }
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }
 
 function useRefresh(makerspaceId: number) {

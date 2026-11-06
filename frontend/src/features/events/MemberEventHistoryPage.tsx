@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -35,15 +36,15 @@ export function MemberEventHistoryPage() {
   if (status === 401) return <MemberAuthPanel makerspaceSlug={makerspaceSlug}
     tenantBrand={space ? { name: spaceName, logo: space.branding?.logo_url || space.makerspace.logo_url || undefined } : undefined}
     onAuthenticated={() => { void identity.refetch(); }} />;
-  return <CenteredCardLayout width="wide" eyebrow={spaceName} title="Your event history"
+  return <CenteredCardLayout width="wide" eyebrow={spaceName} title={t`Your event history`}
     state={restoring || identity.isLoading || history.isLoading || bootstrap.isLoading ? { status: "loading" } : { status: "ready" }}
     body="Events you registered for or spoke at in this space."
     content={<div className="grid gap-4">
       {/* 403: no registration or talk here yet, or this account can't see history in this space. */}
-      {status === 403 ? <EmptyState message="No event history here yet. Events you register for or speak at will appear here." /> : null}
+      {status === 403 ? <EmptyState message={t`No event history here yet. Events you register for or speak at will appear here.`} /> : null}
       {error && status !== 403 ? <ErrorText message={error.message} /> : null}
-      {bootstrap.error ? <ErrorText message="Unable to load this makerspace." /> : null}
-      {history.data ? <EventHistoryLists history={history.data} emptyMessage="No event history here yet. Events you register for or speak at will appear here." /> : null}
+      {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} /> : null}
+      {history.data ? <EventHistoryLists history={history.data} emptyMessage={t`No event history here yet. Events you register for or speak at will appear here.`} /> : null}
     </div>}
-    primary={{ label: "See events", href: tenantPath("events") }} />;
+    primary={{ label: t`See events`, href: tenantPath("events") }} />;
 }

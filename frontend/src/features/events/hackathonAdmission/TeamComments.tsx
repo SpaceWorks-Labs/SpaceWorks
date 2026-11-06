@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { Page, Team } from './types'
@@ -11,15 +13,15 @@ export function TeamComments({ base, team, pending, onSend }: { base: string; te
       const { memberRequest } = await import('../../../lib/api')
       return memberRequest<Page<Comment>>(base.slice('/api/v1'.length) + '/teams/' + team.id + '/comments/?page=' + page)
     }, staleTime: 0, gcTime: 0, retry: false })
-  return <section className="grid gap-3" aria-label="Team conversation"><h2 className="title-section">Team conversation</h2>
-    {comments.error ? <p className="text-sm text-danger" role="alert">Could not load comments.</p> : null}
+  return <section className="grid gap-3" aria-label={t`Team conversation`}><h2 className="title-section">{t`Team conversation`}</h2>
+    {comments.error ? <p className="text-sm text-danger" role="alert">{t`Could not load comments.`}</p> : null}
     <ol className="grid gap-3">{comments.data?.results.map(comment => <li key={comment.id} className="rounded-xl border border-line bg-panel p-3">
-      <p className="whitespace-pre-wrap break-words text-sm text-ink">{comment.body}</p><time className="text-xs text-muted" dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString()}</time></li>)}</ol>
-    <nav className="flex gap-2" aria-label="Comment pages"><button className="desk-button" type="button" disabled={!comments.data?.previous} onClick={() => setPage(p => p - 1)}>Previous</button>
-      <button className="desk-button" type="button" disabled={!comments.data?.next} onClick={() => setPage(p => p + 1)}>Next</button></nav>
+      <p className="whitespace-pre-wrap break-words text-sm text-ink">{comment.body}</p><time className="text-xs text-muted" dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString(formatLocale())}</time></li>)}</ol>
+    <nav className="flex gap-2" aria-label={t`Comment pages`}><button className="desk-button" type="button" disabled={!comments.data?.previous} onClick={() => setPage(p => p - 1)}>{t`Previous`}</button>
+      <button className="desk-button" type="button" disabled={!comments.data?.next} onClick={() => setPage(p => p + 1)}>{t`Next`}</button></nav>
     <form className="grid gap-2" onSubmit={event => { event.preventDefault(); onSend(body) }}>
-      <label className="grid gap-1 text-sm text-ink">Message your team<textarea required className="desk-input" maxLength={2000} value={body} onChange={e => setBody(e.target.value)} /></label>
-      <button className="desk-button justify-self-start" type="submit" disabled={pending || !body.trim()}>Post comment</button>
-    </form><p className="text-xs text-muted">Only current team members can read this conversation.</p>
+      <label className="grid gap-1 text-sm text-ink">{t`Message your team`}<textarea required className="desk-input" maxLength={2000} value={body} onChange={e => setBody(e.target.value)} /></label>
+      <button className="desk-button justify-self-start" type="submit" disabled={pending || !body.trim()}>{t`Post comment`}</button>
+    </form><p className="text-xs text-muted">{t`Only current team members can read this conversation.`}</p>
   </section>
 }

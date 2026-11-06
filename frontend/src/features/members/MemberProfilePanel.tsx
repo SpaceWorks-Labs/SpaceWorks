@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsActions } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -108,9 +109,9 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
   });
 
   if (profile.isLoading) {
-    return <section className="desk-panel p-5 text-sm text-muted">Loading your profile…</section>;
+    return <section className="desk-panel p-5 text-sm text-muted">{t`Loading your profile…`}</section>;
   }
-  if (profile.isError) return <section className="desk-panel p-5"><p role="alert" className="text-sm text-danger">{profile.error instanceof Error ? profile.error.message : "Unable to load your profile."}</p></section>;
+  if (profile.isError) return <section className="desk-panel p-5"><p role="alert" className="text-sm text-danger">{profile.error instanceof Error ? profile.error.message : t`Unable to load your profile.`}</p></section>;
   if (!draft || !profile.data) return null;
   const badLink = links.some((link) => link.url.trim() !== "" && !isPublicLink(link.url.trim()));
 
@@ -127,10 +128,9 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
     <div className="grid gap-5">
       <PublicPageSettings makerspaceId={makerspaceId} profile={profile.data} />
       <section className="desk-panel p-5">
-      <h2 className="title-panel">Your maker profile</h2>
+      <h2 className="title-panel">{t`Your maker profile`}</h2>
       <p className="mt-1 text-sm text-muted">
-        Nothing here is shown to other members until you choose to. The member directory and your public page are separate switches.
-      </p>
+        {t`Nothing here is shown to other members until you choose to. The member directory and your public page are separate switches.`}</p>
 
       <label className="mt-4 flex min-h-11 items-center gap-2 text-sm text-ink">
         <input
@@ -139,8 +139,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           checked={draft.is_visible}
           onChange={(event) => patch({ is_visible: event.target.checked })}
         />
-        Show my profile in this makerspace&apos;s member directory
-      </label>
+        {t`Show my profile in this makerspace's member directory`}</label>
       <label className="mt-2 flex min-h-11 items-center gap-2 text-sm text-ink">
         <input
           type="checkbox"
@@ -148,22 +147,21 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           checked={draft.show_attended_events}
           onChange={(event) => patch({ show_attended_events: event.target.checked })}
         />
-        Also show the events I have attended on my profile
-      </label>
+        {t`Also show the events I have attended on my profile`}</label>
 
       <div className="mt-4">
         <ImageUploader
           request={memberRequest}
           endpoint={`/member/makerspaces/${makerspaceId}/profile/image`}
           currentUrl={draft.avatar_url}
-          label="Avatar"
+          label={t`Avatar`}
           onChanged={() =>
             client.invalidateQueries({ queryKey: ["member", "profile-page", makerspaceId] })
           }
         />
       </div>
 
-      <Field id="profile-headline" label="Headline">
+      <Field id="profile-headline" label={t`Headline`}>
         <input
           id="profile-headline"
           className="desk-input mt-1 w-full"
@@ -171,7 +169,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           onChange={(event) => patch({ headline: event.target.value })}
         />
       </Field>
-      <Field id="profile-institution" label="Institution">
+      <Field id="profile-institution" label={t`Institution`}>
         <input
           id="profile-institution"
           className="desk-input mt-1 w-full"
@@ -179,7 +177,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           onChange={(event) => patch({ institution: event.target.value })}
         />
       </Field>
-      <Field id="profile-bio" label="Bio">
+      <Field id="profile-bio" label={t`Bio`}>
         <textarea
           id="profile-bio"
           className="desk-input mt-1 w-full"
@@ -188,7 +186,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           onChange={(event) => patch({ bio: event.target.value })}
         />
       </Field>
-      <Field id="profile-interests" label="Interests" hint="Comma separated">
+      <Field id="profile-interests" label={t`Interests`} hint={t`Comma separated`}>
         <input
           id="profile-interests"
           className="desk-input mt-1 w-full"
@@ -196,7 +194,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           onChange={(event) => { setDirty(true); setInterests(event.target.value); }}
         />
       </Field>
-      <Field id="profile-domains" label="Domains" hint="What you work in, comma separated. Shown as chips on your public page.">
+      <Field id="profile-domains" label={t`Domains`} hint={t`What you work in, comma separated. Shown as chips on your public page.`}>
         <input
           id="profile-domains"
           className="desk-input mt-1 w-full"
@@ -206,7 +204,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
       </Field>
       <SkillsField skills={skills} onChange={(next) => { setDirty(true); setSkills(next); }} />
       <LinksField links={links} onChange={(next) => { setDirty(true); setLinks(next); }} />
-      <Field id="profile-languages" label="Languages" hint="Comma separated">
+      <Field id="profile-languages" label={t`Languages`} hint={t`Comma separated`}>
         <input
           id="profile-languages"
           className="desk-input mt-1 w-full"
@@ -214,7 +212,7 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           onChange={(event) => { setDirty(true); setLanguages(event.target.value); }}
         />
       </Field>
-      <Field id="profile-github" label="GitHub username">
+      <Field id="profile-github" label={t`GitHub username`}>
         <input
           id="profile-github"
           className="desk-input mt-1 w-full"
@@ -224,11 +222,10 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
       </Field>
       {draft.github_contributions !== null ? (
         <p className="mt-1 text-sm text-muted">
-          <span className="tabular-nums">{draft.github_contributions}</span> contributions in the last year.
-        </p>
+          <span className="tabular-nums">{draft.github_contributions}</span> {t` contributions in the last year.`}</p>
       ) : null}
 
-      <h3 className="title-section mt-6">Projects</h3>
+      <h3 className="title-section mt-6">{t`Projects`}</h3>
       <div className="mt-2 space-y-3">
         {projects.map((project, index) => (
           <ProjectEditor
@@ -257,12 +254,11 @@ export function MemberProfilePanel({ makerspaceId }: { makerspaceId: number }) {
           editProjects([...projects, { title: "", subtitle: "", tags: [], public_visible: false, description: "", links: [] }])
         }
       >
-        Add a project
-      </button>
+        {t`Add a project`}</button>
 
       {save.error ? (
         <p className="mt-3 text-sm text-danger" role="alert">
-          {save.error instanceof Error ? save.error.message : "Could not save."}
+          {save.error instanceof Error ? save.error.message : t`Could not save.`}
         </p>
       ) : null}
       {dirty || save.isPending ? <SettingsActions pending={save.isPending} disabled={badLink} onSave={() => save.mutate()} onDiscard={() => {

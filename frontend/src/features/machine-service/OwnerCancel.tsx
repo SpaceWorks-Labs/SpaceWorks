@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery, type QueryKey } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
@@ -30,5 +31,5 @@ function useOwner(token: string) {
 export function OwnerJobLink({ token, path }: { token: string; path: (part: string) => string }) {
   const owner = useOwner(token);
   if (!owner.data?.request_id) return null;
-  return <Link className="desk-button" to={path(`member/machine-jobs/${owner.data.request_id}`)}>Open in your member area</Link>;
+  return <Link className="desk-button" to={path(`member/machine-jobs/${owner.data.request_id}`)}>{t`Open in your member area`}</Link>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { Briefcase, FolderGit2, GraduationCap, HeartHandshake, Plus, type LucideIcon } from "lucide-react";
 import { RouteLink } from "../../components/ui/RouteLink";
@@ -5,7 +6,7 @@ import { linkPresentation, timelineRange } from "./profileFormat";
 import type { PublicProject, PublicTimelineEntry, TimelineKind } from "./publicProfileApi";
 
 function AddLink({ href, label }: { href?: string; label: string }) {
-  return href ? <RouteLink href={href} aria-label={label} className="desk-button gap-2 rounded-full">Add<Plus aria-hidden="true" className="h-4 w-4" /></RouteLink> : null;
+  return href ? <RouteLink href={href} aria-label={label} className="desk-button gap-2 rounded-full">{t`Add`}<Plus aria-hidden="true" className="h-4 w-4" /></RouteLink> : null;
 }
 
 function SectionHeading({ id, title, addHref, addLabel }: { id: string; title: string; addHref?: string; addLabel: string }) {
@@ -24,16 +25,16 @@ function Empty({ Icon, tone, message, addHref, addLabel }: { Icon: LucideIcon; t
 
 export function ProfileProjectsTab({ projects, addHref }: { projects: PublicProject[]; addHref?: string }) {
   return <section aria-labelledby="profile-projects" className="grid gap-4">
-    <SectionHeading id="profile-projects" title="Projects" addHref={projects.length ? addHref : undefined} addLabel="Add a project" />
+    <SectionHeading id="profile-projects" title={t`Projects`} addHref={projects.length ? addHref : undefined} addLabel="Add a project" />
     {!projects.length ? <Empty Icon={FolderGit2} tone="bg-brand-soft text-brand-ink" addHref={addHref} addLabel="Add a project"
-      message={addHref ? "Show what you've built. Add a project and mark it public." : "No public projects yet."} /> : null}
+      message={addHref ? t`Show what you've built. Add a project and mark it public.` : t`No public projects yet.`} /> : null}
     <ul className="grid gap-4 md:grid-cols-2">
       {projects.map((project, index) => <li key={`${project.title}-${index}`} className="desk-panel grid content-start gap-3 p-4">
         {project.image_url ? <img src={project.image_url} alt="" className="aspect-video w-full rounded-lg bg-hover object-cover" /> : null}
         <div><h3 className="title-section break-words">{project.title}</h3>
           {project.subtitle ? <p className="font-semibold text-muted">{project.subtitle}</p> : null}</div>
         {project.description ? <p className="whitespace-pre-line break-words text-sm text-ink">{project.description}</p> : null}
-        {project.tags.length ? <ul aria-label="Tags" className="flex flex-wrap gap-2">{project.tags.map(tag => <li key={tag} className="chip">{tag}</li>)}</ul> : null}
+        {project.tags.length ? <ul aria-label={t`Tags`} className="flex flex-wrap gap-2">{project.tags.map(tag => <li key={tag} className="chip">{tag}</li>)}</ul> : null}
         {project.links.length ? <ul className="flex flex-wrap gap-3 text-sm">{project.links.map(link => <li key={link.url}>
           <a href={link.url} target="_blank" rel="noopener noreferrer nofollow ugc" className="font-semibold text-accent-ink underline-offset-2 hover:underline">
             {linkPresentation(link).label} ↗</a></li>)}</ul> : null}
@@ -43,12 +44,12 @@ export function ProfileProjectsTab({ projects, addHref }: { projects: PublicProj
 }
 
 export const TIMELINE_COPY: Record<TimelineKind, { title: string; Icon: LucideIcon; tone: string; owner: string; visitor: string }> = {
-  experience: { title: "Experience", Icon: Briefcase, tone: "bg-info-soft text-info-ink",
-    owner: "Build your professional story. Add your work history.", visitor: "No experience shared yet." },
-  education: { title: "Education", Icon: GraduationCap, tone: "bg-warn-soft text-warn-ink",
-    owner: "Add the schools, courses and programmes you've studied.", visitor: "No education shared yet." },
-  volunteering: { title: "Volunteering", Icon: HeartHandshake, tone: "bg-accent-soft text-accent-ink",
-    owner: "Add the communities and causes you give time to.", visitor: "No volunteering shared yet." },
+  experience: { title: t`Experience`, Icon: Briefcase, tone: "bg-info-soft text-info-ink",
+    owner: t`Build your professional story. Add your work history.`, visitor: t`No experience shared yet.` },
+  education: { title: t`Education`, Icon: GraduationCap, tone: "bg-warn-soft text-warn-ink",
+    owner: t`Add the schools, courses and programmes you've studied.`, visitor: t`No education shared yet.` },
+  volunteering: { title: t`Volunteering`, Icon: HeartHandshake, tone: "bg-accent-soft text-accent-ink",
+    owner: t`Add the communities and causes you give time to.`, visitor: t`No volunteering shared yet.` },
 };
 
 export function ProfileTimelineTab({ kind, entries, addHref }: { kind: TimelineKind; entries: PublicTimelineEntry[]; addHref?: string }) {

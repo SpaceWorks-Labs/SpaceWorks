@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { currentSessionContext } from "../../lib/api/sessionContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -27,9 +28,9 @@ export function SlackInstallation({ makerspaceId, configured }: { makerspaceId: 
     },
   });
   return <div className="grid gap-2">
-    <p className="text-sm text-muted">Save the app credentials, then install it in Slack to verify its workspace and receive its bot token.</p>
-    <button className="desk-button" type="button" disabled={!configured || start.isPending} onClick={() => start.mutate()}>Install Slack app</button>
-    {start.data ? <a className="desk-button" href={start.data.connect_url}>Continue to Slack</a> : null}
+    <p className="text-sm text-muted">{t`Save the app credentials, then install it in Slack to verify its workspace and receive its bot token.`}</p>
+    <button className="desk-button" type="button" disabled={!configured || start.isPending} onClick={() => start.mutate()}>{t`Install Slack app`}</button>
+    {start.data ? <a className="desk-button" href={start.data.connect_url}>{t`Continue to Slack`}</a> : null}
     {start.error ? <p role="alert">{start.error.message}</p> : null}
   </div>;
 }

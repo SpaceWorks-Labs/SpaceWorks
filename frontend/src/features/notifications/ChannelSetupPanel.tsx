@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { ErrorBlock, StatusPill, type Tone } from "../../components/ui";
@@ -8,11 +9,11 @@ import { ChannelTestSend } from "./ChannelTestSend";
 
 function summary(spec: ChannelSpec, row?: Channel): { label: string; tone: Tone } {
   // No settings row means today's behaviour: email sends and existing rooms post.
-  if (!row) return { label: spec.key === "email" ? "On (default)" : "Not set up", tone: "neutral" };
-  if (!row.enabled) return { label: "Off", tone: "neutral" };
-  if (row.activation_hold) return { label: "Review needed", tone: "warn" };
+  if (!row) return { label: spec.key === "email" ? t`On (default)` : t`Not set up`, tone: "neutral" };
+  if (!row.enabled) return { label: t`Off`, tone: "neutral" };
+  if (row.activation_hold) return { label: t`Review needed`, tone: "warn" };
   const parts = [row.room_enabled && spec.rooms ? "rooms" : "", row.personal_enabled ? "personal" : ""].filter(Boolean);
-  return { label: parts.length ? `On · ${parts.join(" + ")}` : "On", tone: "success" };
+  return { label: parts.length ? t`On · ${parts.join(" + ")}` : t`On`, tone: "success" };
 }
 
 /**
@@ -23,11 +24,11 @@ function summary(spec: ChannelSpec, row?: Channel): { label: string; tone: Tone 
 export function ChannelSetupPanel({ makerspaceId, enabledModules }: { makerspaceId: number; enabledModules: readonly string[] }) {
   const channels = useChannels(makerspaceId);
   const [open, setOpen] = useState<string | null>(null);
-  if (channels.isLoading) return <p className="py-4 text-sm text-muted">Loading channels…</p>;
-  if (channels.error) return <ErrorBlock error={new Error(`Couldn't load channel settings (${channels.error.message}).`)}
+  if (channels.isLoading) return <p className="py-4 text-sm text-muted">{t`Loading channels…`}</p>;
+  if (channels.error) return <ErrorBlock error={new Error(t`Couldn't load channel settings (${channels.error.message}).`)}
     onRetry={() => { void channels.refetch(); }} />;
   const rows = new Map((channels.data?.results ?? []).map(row => [row.channel, row]));
-  return <ul className="grid min-w-0 gap-3 py-4" aria-label="Notification channels">
+  return <ul className="grid min-w-0 gap-3 py-4" aria-label={t`Notification channels`}>
     {CHANNEL_SPECS.map(spec => {
       const row = rows.get(spec.key);
       const state = summary(spec, row);

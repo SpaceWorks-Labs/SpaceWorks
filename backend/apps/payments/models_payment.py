@@ -41,6 +41,9 @@ class Payment(models.Model):
         EVENT_DEPOSIT = "event_deposit", "Event deposit"
         # Lane L22. One shop order (online or a front-desk sale; subject_id = ShopOrder id).
         SHOP_ORDER = "shop_order", "Shop order"
+        # #184: a term staff open from the console (subject_id = that MembershipTerm pk). Not
+        # MEMBERSHIP_TERM: that subject id already names the term whose RENEWAL is charged.
+        MEMBERSHIP_TERM_START = "membership_term_start", "Membership term"
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")

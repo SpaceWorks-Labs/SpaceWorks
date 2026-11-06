@@ -188,6 +188,9 @@ def _cancel_term_charges(makerspace, term, actor):
         with transaction.atomic():
             cancel_or_hold(makerspace=makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
                            subject_id=term.pk, actor=actor, reason_code=reason)
+            # #184: the charge a staff-opened term raised for itself.
+            cancel_or_hold(makerspace=makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_TERM_START,
+                           subject_id=term.pk, actor=actor, reason_code=reason)
             if term.renewed_from_id:
                 hold_settled(makerspace=makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_TERM,
                              subject_id=term.renewed_from_id, actor=actor, reason_code=reason)

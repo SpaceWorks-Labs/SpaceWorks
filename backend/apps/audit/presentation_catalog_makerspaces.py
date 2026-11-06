@@ -71,6 +71,8 @@ ENTRIES = (
     P("membership.revoked", "Membership revoked"),
     P("membership.role_changed", "Membership role changed", ("role_id",)),
     P("membership.term_cancelled", "Membership term cancelled", ("membership_id", "term_id")),
+    P("membership.term_charge_raised", "Membership term charge raised",
+      ("membership_id", "payment_id", "term_id")),
     P("membership.term_created", "Membership term created",
       ("membership_id", "plan_id", "term_id")),
     P("membership.term_expired", "Membership term expired", ("membership_id", "term_id")),

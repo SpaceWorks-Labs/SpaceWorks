@@ -8,6 +8,7 @@ const SUBJECT_ACTION: Record<PaymentRow["subject_type"], string> = {
   membership_term: "manage_makerspace",
   // Mirrors reconciliation_authority.SUBJECT_ACTIONS: admission fees are settled by whoever admits members.
   membership_request: "manage_members",
+  membership_term_start: "manage_members", // #184: a staff-opened term
   loan_deposit: "issue_request",
   loan_late_fee: "return_request",
   loan_rental: "return_request",

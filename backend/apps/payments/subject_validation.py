@@ -154,7 +154,7 @@ def validate_subject(payment, identity_unchanged):
         validate_shop_order(payment, identity_unchanged)
     if payment.subject_type == "event_deposit" and payment.subject_id:
         validate_event_deposit(payment, identity_unchanged)
-    if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM and payment.subject_id:
+    if payment.subject_type in (Payment.SubjectType.MEMBERSHIP_TERM, Payment.SubjectType.MEMBERSHIP_TERM_START)             and payment.subject_id:
         from apps.makerspaces.models import MembershipTerm
 
         if not identity_unchanged and not MembershipTerm.objects.filter(

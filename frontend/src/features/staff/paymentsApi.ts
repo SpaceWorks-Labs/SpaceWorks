@@ -11,6 +11,7 @@ export const PAYMENT_SUBJECTS = [
   // could not be found on its own, and rendered with a raw enum label.
   ["membership_term", "Membership renewal"],
   ["membership_request", "Membership admission"],
+  ["membership_term_start", "Membership term"], // #184: a term staff opened
   ["loan_deposit", "Loan deposit"],
   ["loan_late_fee", "Late return fee"],
   ["loan_rental", "Loan rental"],

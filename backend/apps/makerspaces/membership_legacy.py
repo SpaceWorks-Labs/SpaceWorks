@@ -175,8 +175,9 @@ def legacy_approve_request(actor, request, assigned_role, plan=None):
         membership = _approve_request(actor, request, assigned_role)
         if plan is not None:
             from apps.makerspaces.membership_plan_services import create_term
+            from apps.makerspaces.membership_term_charges import raise_term_start
 
-            create_term(actor, membership, plan)
+            raise_term_start(actor, create_term(actor, membership, plan))  # #184
     return membership
 
 

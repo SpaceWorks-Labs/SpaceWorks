@@ -146,9 +146,13 @@ class MembershipTermListCreateView(APIView):
             MembershipPlan.objects.filter(makerspace=makerspace),
             pk=serializer.validated_data["plan_id"],
         )
-        term = create_term(
-            request.user, membership, plan, starts_at=serializer.validated_data.get("starts_at")
-        )
+        from django.db import transaction
+        from apps.makerspaces.membership_term_charges import raise_term_start
+        with transaction.atomic():
+            term = create_term(
+                request.user, membership, plan, starts_at=serializer.validated_data.get("starts_at")
+            )
+            raise_term_start(request.user, term)  # #184: the term's frozen price is owed
         term = MembershipTerm.objects.select_related("plan").get(pk=term.pk)
         return Response(MembershipTermSerializer(term).data, status=status.HTTP_201_CREATED)
 

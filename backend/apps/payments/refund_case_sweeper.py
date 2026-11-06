@@ -89,9 +89,12 @@ def missed_membership_cases(space, *, since, limit):
         subjects.setdefault(term_id, cancelled[term_id])
         if renewed_from:
             subjects.setdefault(renewed_from, cancelled[term_id])
+    from django.db.models import Q
+    started = [term_id for term_id in subjects if term_id in cancelled]  # #184: a staff-opened term's own charge
     payments = (Payment.objects.filter(
-        makerspace=space, subject_type=Payment.SubjectType.MEMBERSHIP_TERM, subject_id__in=list(subjects),
-        status__in=PAID,
+        Q(subject_type=Payment.SubjectType.MEMBERSHIP_TERM, subject_id__in=list(subjects))
+        | Q(subject_type=Payment.SubjectType.MEMBERSHIP_TERM_START, subject_id__in=started),
+        makerspace=space, status__in=PAID,
     ).exclude(refund_cases__kind=RefundCase.Kind.DUE).order_by("pk")[:limit])
     return [(payment, RefundCase.ReasonCode.MEMBERSHIP_CANCELLED, subjects[payment.subject_id]) for payment in payments]
 

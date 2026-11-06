@@ -139,6 +139,8 @@ FIRST_PARTY_FIELD_NAMES.update({
 
 FIRST_PARTY_FIELD_NAMES['accounts.DeviceAttestationChallenge'] |= frozenset('signing_identities'.split())
 FIRST_PARTY_FIELD_NAMES['accounts.DeviceGrant'] |= frozenset('attestation_key_id attestation_public_key authority'.split())
+# L21b (#173): an event-role grant's one event snapshot (accounts/0055).
+FIRST_PARTY_FIELD_NAMES['accounts.DeviceGrant'] |= frozenset({'event_id'})
 FIRST_PARTY_FIELD_NAMES['accounts.NativeAppRegistration'] |= frozenset('min_supported_version signing_identities'.split())
 FIRST_PARTY_FIELD_NAMES['accounts.PasswordResetEnvelope'] |= frozenset('purpose'.split())
 FIRST_PARTY_FIELD_NAMES['accounts.PhoneVerificationChallenge'] |= frozenset('attestation_challenge credential_fingerprint'.split())

@@ -50,6 +50,13 @@ EDGES = {
              ("card.scanned_for_checkin", "registration_id")),
     **_remap("presence.PresenceSession", ("card.scanned_for_checkin", "session_id")),
     **_remap("card_designs.CardPhotoRequest", ("card.photo_requested", "request_id")),
+    # r2-idcards-best: version restore and preview-as-holder. A preview's holder is any of the three
+    # card kinds (`holder_kind`), so it is nulled like `card.*` rather than remapped to one model.
+    **_remap("card_designs.CardDesign", ("card_design.restored", "design_id"),
+             ("card_design.previewed_as_holder", "design_id")),
+    **_remap("events.Event", ("card_design.restored", "event_id")),
+    **_remap("id_programmes.IdProgramme", ("card_design.restored", "programme_id")),
+    **_null("audit_polymorphic_card", ("card_design.previewed_as_holder", "holder_id")),
     **_null("audit_polymorphic_card", *((f"card.{action}", "card_id") for action in (
         "extras_optin_changed", "photo_requested", "photo_cleanup_accepted", "verify_optin_changed",
         "verify_link_rotated", "photo_set_by_staff", "email_format_changed"))),

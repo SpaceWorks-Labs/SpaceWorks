@@ -14,7 +14,7 @@ and drops out of the totals), never edited or deleted. `OpeningBalance` rows are
 append-only revisions; the newest row for a (financial year, currency) is the balance.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
@@ -26,24 +26,24 @@ slug_validator = RegexValidator(r"^[a-z][a-z0-9_.]{0,47}$", "Use lower-case lett
 
 class LedgerEntry(models.Model):
     class Kind(models.TextChoices):
-        RECEIPT = "receipt", gettext_lazy("Money in")
-        EXPENSE = "expense", gettext_lazy("Money out")
+        RECEIPT = "receipt", gettext_noop("Money in")
+        EXPENSE = "expense", gettext_noop("Money out")
 
     class Domain(models.TextChoices):
         INVENTORY = "inventory", "Inventory"
         LOANS = "loans", "Lending"
         MACHINES = "machines", "Machines"
-        BOOKINGS = "bookings", gettext_lazy("Bookings and rooms")
+        BOOKINGS = "bookings", gettext_noop("Bookings and rooms")
         EVENTS = "events", "Events"
         MEMBERSHIP = "membership", "Membership"
-        DONATIONS = "donations", gettext_lazy("Donations and sponsors")
+        DONATIONS = "donations", gettext_noop("Donations and sponsors")
         SHOP = "shop", "Shop"
         GENERAL = "general", "General"
 
     class Method(models.TextChoices):
         CASH = "cash", "Cash"
         UPI = "upi", "UPI"
-        BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank transfer")
+        BANK_TRANSFER = "bank_transfer", gettext_noop("Bank transfer")
         CARD = "card", "Card"
         CHEQUE = "cheque", "Cheque"
         ONLINE = "online", "Online"

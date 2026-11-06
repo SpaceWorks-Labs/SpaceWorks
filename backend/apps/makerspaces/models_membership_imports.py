@@ -8,7 +8,7 @@ instead keep a row as "record only": a register entry with no invite and no acco
 
 Name, email, phone, GSTIN and notes are scoped PII (`encryption/registry_r2_l4.py`).
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -34,7 +34,7 @@ class MembershipImportBatch(models.Model):
 class ImportedMember(ScopedPiiModelMixin, models.Model):
     class Status(models.TextChoices):
         INVITED = "invited", "Invited"
-        RECORD_ONLY = "record_only", gettext_lazy("Record only")
+        RECORD_ONLY = "record_only", gettext_noop("Record only")
         ACCEPTED = "accepted", "Accepted"
         CANCELLED = "cancelled", "Cancelled"
 

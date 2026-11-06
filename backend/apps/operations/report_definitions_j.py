@@ -1,6 +1,6 @@
 """Area J and superadmin analytics registration and organization combination."""
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from dataclasses import replace
 
 from apps.accounts import rbac
@@ -31,7 +31,7 @@ def _activity(key, fields, chart_spec, *, action=rbac.Action.VIEW_AUDIT, identit
 
 J_REPORT_DEFINITIONS = (
     ReportDefinition("device-health", f"{PATH}reports_j_devices.build_device_health", DEVICE_FIELDS,
-                     ("devices",), required_action=rbac.Action.MANAGE_MAKERSPACE, title=gettext_lazy("Device health"),
+                     ("devices",), required_action=rbac.Action.MANAGE_MAKERSPACE, title=gettext_noop("Device health"),
                      grains=GRAINS, section_modules=("qr_print_batches",), chart_hint="stacked_bar",
                      chart_spec=chart("period", (("online_seconds", "seconds"), ("offline_seconds", "seconds"), ("unknown_seconds", "seconds"), ("command_success_percent", "percent"), ("labels_printed", "labels")), series=("device_id",))),
     _activity("presence-activity", PRESENCE_FIELDS,
@@ -49,20 +49,20 @@ J_REPORT_DEFINITIONS = (
     _activity("audit-activity-hours", HOUR_FIELDS,
               chart("hour", (("count", "actions"),), series=("weekday",), time=False, partition=None), hours=True),
     ReportDefinition("organization-membership", f"{PATH}reports_j_organizations.build_organization_membership", ORGANIZATION_FIELDS,
-                     required_action=rbac.Action.MANAGE_MAKERSPACE, title=gettext_lazy("Organization membership"), grains=GRAINS, schedulable=False,
+                     required_action=rbac.Action.MANAGE_MAKERSPACE, title=gettext_noop("Organization membership"), grains=GRAINS, schedulable=False,
                      chart_hint="funnel", chart_spec=chart("period", (("invitations", "invitations"), ("redeemed", "invitations"), ("active_memberships", "memberships")), series=("organization_id",))),
     replace(next(d for d in COVERAGE_REPORT_DEFINITIONS if d.key == "module-operational-health"),
             builder_path=f"{PATH}reports_j_health.build_module_operational_health", fields=HEALTH_FIELDS,
             version=3, grains=GRAINS, chart_hint="table", chart_spec=chart("period", (("delivery_count", "deliveries"), ("failure_count", "deliveries")), series=("module_key", "delivery_kind"))),
     ReportDefinition("platform-services", f"{PATH}reports_platform_services.build_platform_services", SERVICES_FIELDS,
                      required_action=rbac.Action.MANAGE_MAKERSPACE, platform_only=True, schedulable=False,
-                     title=gettext_lazy("Platform services"), grains=GRAINS, chart_hint="stacked_bar", version=3,
+                     title=gettext_noop("Platform services"), grains=GRAINS, chart_hint="stacked_bar", version=3,
                      section_modules=("sms", "whatsapp"),
                      chart_spec=chart("day", (("count", "operations"), ("amount", "currency")), series=("makerspace_id", "service", "purpose", "provider_source", "status", "bucket"), partition="currency", currency="currency")),
     ReportDefinition("platform-usage", f"{PATH}reports_platform_usage.build_platform_usage", USAGE_FIELDS,
                      required_action=rbac.Action.MANAGE_MAKERSPACE, platform_only=True, schedulable=False,
                      section_modules=("public_inventory", "request_workflow", "guest_handover", "bookings", "events", "membership", "member_accounts", "machines", "machine_service", "devices", "mobile"),
-                     title=gettext_lazy("Platform usage"), grains=GRAINS, chart_hint="line",
+                     title=gettext_noop("Platform usage"), grains=GRAINS, chart_hint="line",
                      chart_spec=chart("period", (("value", "unit"),), series=("makerspace_id", "metric", "entity_kind", "entity_id", "currency"),
                                       partition="unit", currency="currency", top=10)),
 )

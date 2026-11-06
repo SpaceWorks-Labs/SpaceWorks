@@ -48,6 +48,7 @@ from apps.operations.views_report_helpers import (
 from .report_render_throttles import ReportRenderThrottle
 from .report_download import _export_response
 from .report_definitions_machines import MACHINE_REPORT_KEYS
+from config.locale_resolution import display
 
 
 ERROR_RESPONSES = {
@@ -272,7 +273,7 @@ def report_rows(makerspace_id, report_key):
 
 def _catalog_entry(definition, *, available, reason):
     return {
-        "key": definition.key, "title": definition.title or definition.key.replace("-", " ").title(),
+        "key": definition.key, "title": display(definition.title) or definition.key.replace("-", " ").title(),
         "fields": list(definition.fields), "exportable": definition.exportable,
         "summary": definition.summary, "required_modules": list(definition.required_modules),
         "available": available, "unavailable_reason": reason,

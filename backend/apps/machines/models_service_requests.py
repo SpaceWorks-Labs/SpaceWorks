@@ -1,6 +1,6 @@
 """Foundation models for the per-machine service-request queue."""
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 import uuid
 
 from django.conf import settings
@@ -18,8 +18,8 @@ class ServiceQueue(models.Model):
     """A makerspace-wide, machine-type-compatible service queue."""
 
     class AllocationPolicy(models.TextChoices):
-        FIRST_IDLE = "first_idle", gettext_lazy("First compatible idle machine")
-        STAFF_SELECT = "staff_select", gettext_lazy("Staff selects machine")
+        FIRST_IDLE = "first_idle", gettext_noop("First compatible idle machine")
+        STAFF_SELECT = "staff_select", gettext_noop("Staff selects machine")
 
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", on_delete=models.PROTECT, related_name="service_queues"
@@ -114,15 +114,15 @@ class MachineServiceRequest(ScopedPiiModelMixin, JobFlowFields, models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         # #141: staff asked the member for a new file or notes.
-        CHANGES_REQUESTED = "changes_requested", gettext_lazy("Needs changes")
+        CHANGES_REQUESTED = "changes_requested", gettext_noop("Needs changes")
         # #141: a quote waits for the member's approval (or, when prepaid, the payment).
-        QUOTED = "quoted", gettext_lazy("Quote sent")
+        QUOTED = "quoted", gettext_noop("Quote sent")
         ACCEPTED = "accepted", "Accepted"
-        IN_PROGRESS = "in_progress", gettext_lazy("In progress")
+        IN_PROGRESS = "in_progress", gettext_noop("In progress")
         COMPLETED = "completed", "Completed"
         COLLECTED = "collected", "Collected"
         # #142 OQ-7: never picked up; the item is the space's, any charge stays owed.
-        UNCOLLECTED = "uncollected", gettext_lazy("Not collected")
+        UNCOLLECTED = "uncollected", gettext_noop("Not collected")
         REJECTED = "rejected", "Rejected"
         FAILED = "failed", "Failed"
         CANCELLED = "cancelled", "Cancelled"

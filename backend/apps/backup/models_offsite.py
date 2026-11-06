@@ -8,7 +8,7 @@ immutable snapshots), because retention may delete the primary row while an offs
 copy is still the deployment's only surviving backup.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -18,12 +18,12 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 class BackupDestination(models.Model):
     class Kind(models.TextChoices):
-        S3 = "s3", gettext_lazy("S3-compatible (AWS, R2, Supabase Storage, MinIO)")
+        S3 = "s3", gettext_noop("S3-compatible (AWS, R2, Supabase Storage, MinIO)")
 
     class AddressingStyle(models.TextChoices):
         AUTO = "auto", "Auto"
         PATH = "path", "Path"
-        VIRTUAL = "virtual", gettext_lazy("Virtual host")
+        VIRTUAL = "virtual", gettext_noop("Virtual host")
 
     name = models.SlugField(max_length=64, unique=True)
     kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.S3)
@@ -82,18 +82,18 @@ class BackupDestination(models.Model):
 
 class BackupDestinationUpload(models.Model):
     class State(models.TextChoices):
-        PENDING = "pending", gettext_lazy("Pending upload")
+        PENDING = "pending", gettext_noop("Pending upload")
         UPLOADING = "uploading", "Uploading"
         # Named for what the platform can actually prove: the remote ciphertext was
         # read back and equals the ledger's size and SHA-256. It is NOT a claim that
         # the archive restores -- a sealed tenant slice cannot be opened here at all.
-        BYTES_VERIFIED = "bytes_verified", gettext_lazy("Bytes verified")
-        ABANDONED = "abandoned", gettext_lazy("Abandoned (source no longer available)")
-        DELETED = "deleted", gettext_lazy("Deleted by retention")
+        BYTES_VERIFIED = "bytes_verified", gettext_noop("Bytes verified")
+        ABANDONED = "abandoned", gettext_noop("Abandoned (source no longer available)")
+        DELETED = "deleted", gettext_noop("Deleted by retention")
 
     class IntegritySource(models.TextChoices):
-        ARTIFACT_LEDGER = "artifact_ledger", gettext_lazy("Artifact ledger")
-        ARCHIVE_ROW = "archive_row", gettext_lazy("Archive row")
+        ARTIFACT_LEDGER = "artifact_ledger", gettext_noop("Artifact ledger")
+        ARCHIVE_ROW = "archive_row", gettext_noop("Archive row")
 
     destination = models.ForeignKey(
         BackupDestination, on_delete=models.PROTECT, related_name="uploads"

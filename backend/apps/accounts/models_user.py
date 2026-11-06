@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -19,7 +19,7 @@ class User(AbstractUser):
     # Staff authority is a staff-TRACK membership on a person, never an account kind.
     class AccountKind(models.TextChoices):
         MEMBER = "member", "Person"
-        STAFF = "staff", gettext_lazy("Inert shell")
+        STAFF = "staff", gettext_noop("Inert shell")
         PLATFORM = "platform", "Platform"
 
     objects = UserManager()
@@ -45,8 +45,8 @@ class User(AbstractUser):
     deletion_username = models.CharField(max_length=150, blank=True, default="")
 
     class Role(models.TextChoices):
-        SUPERADMIN = "superadmin", gettext_lazy("Super Admin")
-        SPACE_MANAGER = "space_manager", gettext_lazy("Space Manager")
+        SUPERADMIN = "superadmin", gettext_noop("Super Admin")
+        SPACE_MANAGER = "space_manager", gettext_noop("Space Manager")
         REQUESTER = "requester", "Requester"
 
     class AccessStatus(models.TextChoices):

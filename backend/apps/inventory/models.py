@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.postgres.indexes import GinIndex
@@ -10,8 +10,8 @@ from apps.inventory.kit_validators import validate_kit_definition
 
 
 class PublicAvailabilityMode(models.TextChoices):
-    EXACT_COUNT = "exact_count", gettext_lazy("Exact Count")
-    STATUS_ONLY = "status_only", gettext_lazy("Status Only")
+    EXACT_COUNT = "exact_count", gettext_noop("Exact Count")
+    STATUS_ONLY = "status_only", gettext_noop("Status Only")
     HIDDEN = "hidden", "Hidden"
 
 

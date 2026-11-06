@@ -11,21 +11,21 @@ that depends on nothing in this app cannot be caught in that cycle.
 NotificationFeature` keeps resolving and no call site had to change.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 
 
 class NotificationFeature(models.TextChoices):
-    HARDWARE_REQUESTS = "hardware_requests", gettext_lazy("Hardware requests")
+    HARDWARE_REQUESTS = "hardware_requests", gettext_noop("Hardware requests")
     PRINTING = "printing", "Printing"
     EVENTS = "events", "Events"
     BOOKINGS = "bookings", "Bookings"
     MAINTENANCE = "maintenance", "Maintenance"
     MEMBERS = "members", "Members"
-    API_ACCESS = "api_access", gettext_lazy("API access")
+    API_ACCESS = "api_access", gettext_noop("API access")
     DEVICES = "devices", "Devices"
     PAYMENTS = "payments", "Payments"
-    STOCK = "stock", gettext_lazy("Stock and procurement")
+    STOCK = "stock", gettext_noop("Stock and procurement")
     CERTIFICATIONS = "certifications", "Certifications"
     PRESENCE = "presence", "Presence"
 
@@ -37,8 +37,8 @@ class NotificationChannel(models.TextChoices):
     SLACK = "slack", "Slack"
     MATTERMOST = "mattermost", "Mattermost"
     DISCORD = "discord", "Discord"
-    WEBHOOK = "webhook", gettext_lazy("Signed webhook")
-    NATIVE_PUSH = "native_push", gettext_lazy("Native push")
+    WEBHOOK = "webhook", gettext_noop("Signed webhook")
+    NATIVE_PUSH = "native_push", gettext_noop("Native push")
     SMS = "sms", "SMS"
     WHATSAPP = "whatsapp", "WhatsApp"
 
@@ -50,8 +50,8 @@ class NonEmailNotificationChannel(models.TextChoices):
     SLACK = "slack", "Slack"
     MATTERMOST = "mattermost", "Mattermost"
     DISCORD = "discord", "Discord"
-    WEBHOOK = "webhook", gettext_lazy("Signed webhook")
-    NATIVE_PUSH = "native_push", gettext_lazy("Native push")
+    WEBHOOK = "webhook", gettext_noop("Signed webhook")
+    NATIVE_PUSH = "native_push", gettext_noop("Native push")
     SMS = "sms", "SMS"
 
 
@@ -68,7 +68,7 @@ class ChatNotificationChannel(models.TextChoices):
     DISCORD = "discord", "Discord"
     # Not a chat room: a machine endpoint that receives the SAME notification a room would,
     # as JSON, signed with a per-destination secret (apps/integrations/webhooks.py).
-    WEBHOOK = "webhook", gettext_lazy("Signed webhook")
+    WEBHOOK = "webhook", gettext_noop("Signed webhook")
 
 
 # Hard per-provider message ceilings, in characters. One table because the failure mode

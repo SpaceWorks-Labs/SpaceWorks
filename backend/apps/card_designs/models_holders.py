@@ -3,7 +3,7 @@
 Every such row carries exactly one of `member_card`, `programme_card`, `event_card`.
 The two separable kinds are string references, nullable and tombstone-safe.
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -58,9 +58,9 @@ class HolderCardMixin(models.Model):
 class CardVerifyToken(HolderCardMixin):
     """The public check-link token. Never the desk QR payload; never logged (#71)."""
     class Retired(models.TextChoices):
-        REISSUED = "reissued", gettext_lazy("A newer card was issued")
+        REISSUED = "reissued", gettext_noop("A newer card was issued")
         REVOKED = "revoked", "Revoked"
-        ROTATED = "rotated", gettext_lazy("Rotated by the holder")
+        ROTATED = "rotated", gettext_noop("Rotated by the holder")
         EXPIRED = "expired", "Expired"
 
     token = models.CharField(max_length=43, unique=True)

@@ -8,6 +8,7 @@ with no tenant, so they are platform-only numbers and never split by space.
 from apps.makerspaces.module_registry import MODULES, module_available
 from apps.makerspaces.platform import module_enabled
 from apps.operations.platform_overview_blocks import Block, Metric, always_on, count_by_space, in_window
+from config.locale_resolution import display
 
 
 def _operations(ids, window, now):
@@ -87,7 +88,7 @@ def module_matrix(spaces):
         if not module_available(module.key):
             continue
         on = [space.pk for space in spaces if module_enabled(space, module.key)]
-        rows.append({"key": module.key, "label": module.label, "on_in": len(on),
+        rows.append({"key": module.key, "label": display(module.label), "on_in": len(on),
                      "off_in": len(spaces) - len(on), "space_ids": on})
     return rows
 

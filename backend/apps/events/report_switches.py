@@ -12,6 +12,7 @@ so capability prerequisites (events + reports installed) are validated as everyw
 from django.db import transaction
 
 from apps.makerspaces.capability_eligibility import configuration_feature_enabled
+from config.locale_resolution import display
 
 MODULE = "events"
 KEYS = ("reports.event_pdf", "reports.event_exports")
@@ -29,7 +30,7 @@ def describe(actor, makerspace):
     rows = []
     for key in KEYS:
         decision = decide(actor, makerspace, MODULE, key)
-        rows.append({"key": key, "label": FEATURES[key].label, "description": FEATURES[key].description,
+        rows.append({"key": key, "label": display(FEATURES[key].label), "description": display(FEATURES[key].description),
                      "enabled": key in stored, "effective": configuration_feature_enabled(makerspace, key),
                      "editable": decision.allowed, "locked": key in locks, "code": decision.code})
     return {"switches": rows}

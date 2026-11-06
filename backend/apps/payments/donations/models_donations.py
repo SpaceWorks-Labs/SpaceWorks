@@ -8,7 +8,7 @@ case (#59). Donor contact details are scoped PII; the 80G PAN is ALWAYS encrypte
 (`encryption/registry_r2_l18`, `encryption_required`) and never leaves through a report.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 import secrets
 
 from django.db import models
@@ -117,14 +117,14 @@ class DonationPledge(ScopedPiiModelMixin, models.Model):
 
 class Donation(ScopedPiiModelMixin, models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", gettext_lazy("Waiting for payment")
+        PENDING = "pending", gettext_noop("Waiting for payment")
         PAID = "paid", "Received"
         CANCELLED = "cancelled", "Cancelled"
 
     class Source(models.TextChoices):
-        ONLINE = "online", gettext_lazy("Given online")
-        DESK = "desk", gettext_lazy("Recorded by staff")
-        PLEDGE = "pledge", gettext_lazy("Pledge period")
+        ONLINE = "online", gettext_noop("Given online")
+        DESK = "desk", gettext_noop("Recorded by staff")
+        PLEDGE = "pledge", gettext_noop("Pledge period")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="donations")
     campaign = models.ForeignKey(DonationCampaign, null=True, blank=True, on_delete=models.SET_NULL,

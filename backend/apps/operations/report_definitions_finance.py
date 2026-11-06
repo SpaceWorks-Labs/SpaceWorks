@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
 from apps.operations.reports_finance import LEDGER_FIELDS, REVENUE_FIELDS, CASH_FIELDS
@@ -15,23 +15,23 @@ from apps.operations.org_report_fg import combine_revenue, combine_cash, combine
 
 FINANCE_REPORT_DEFINITIONS = (
     ReportDefinition("payments-ledger", "apps.operations.reports_finance.build_payments_ledger", LEDGER_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Payments ledger"), deployment_aggregate=False,
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_noop("Payments ledger"), deployment_aggregate=False,
                      chart_hint="stacked_bar", chart_spec=LEDGER_CHART),
     ReportDefinition("revenue-over-time", "apps.operations.reports_finance.build_revenue_over_time", REVENUE_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Collected, owed and refunded by rail"), chart_hint="multi_line",
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_noop("Collected, owed and refunded by rail"), chart_hint="multi_line",
                      grains=("day", "week", "month"), version=2, chart_spec=REVENUE_CHART),
     ReportDefinition("cash-book", "apps.operations.reports_finance.build_cash_book", CASH_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Cash book by local date"), grains=("day", "week", "month"),
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_noop("Cash book by local date"), grains=("day", "week", "month"),
                      version=2, chart_hint="multi_line", chart_spec=CASH_CHART),
     ReportDefinition("payments-ageing", "apps.operations.reports_payments_ageing.build_payments_ageing", AGEING_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Outstanding debt ageing"), chart_hint="stacked_bar",
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_noop("Outstanding debt ageing"), chart_hint="stacked_bar",
                      chart_spec=AGEING_CHART),
     ReportDefinition("accounting-journal", "apps.operations.reports_accounting.build_accounting_journal", ACCOUNTING_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Accounting journal CSV"), allowed_formats=("csv",),
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_noop("Accounting journal CSV"), allowed_formats=("csv",),
                      deployment_aggregate=False, chart_hint="grouped_bar", chart_spec=JOURNAL_CHART),
     # Refund cases and refunds raised outside them, by local month, area and reason.
     ReportDefinition("refunds", "apps.operations.reports_refunds.build_refunds", REFUND_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Refunds by area and reason"),
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_noop("Refunds by area and reason"),
                      deployment_aggregate=False, chart_hint="grouped_bar", chart_spec=REFUNDS_CHART),
     *L5_FINANCE_REPORT_DEFINITIONS,
     *SHOP_REPORT_DEFINITIONS,

@@ -7,15 +7,15 @@ money itself, and the outcome arrives as later status events. `PaymentDisputeEve
 the append-only history; `PaymentDispute.status` is the latest of it.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 
 
 class PaymentDispute(models.Model):
     class Status(models.TextChoices):
-        OPEN = "open", gettext_lazy("Needs response")
-        UNDER_REVIEW = "under_review", gettext_lazy("Under review")
+        OPEN = "open", gettext_noop("Needs response")
+        UNDER_REVIEW = "under_review", gettext_noop("Under review")
         WON = "won", "Won"
         LOST = "lost", "Lost"
         CLOSED = "closed", "Closed"

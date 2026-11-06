@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.db import connection, models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
@@ -17,8 +17,8 @@ class EncryptionKeyManager(models.Manager.from_queryset(EncryptionKeyQuerySet)):
 
 class MakerspaceEncryptionKey(models.Model):
     class BrokerBackend(models.TextChoices):
-        LOCAL = "local", gettext_lazy("Local master key")
-        AWS_KMS = "aws_kms", gettext_lazy("AWS KMS")
+        LOCAL = "local", gettext_noop("Local master key")
+        AWS_KMS = "aws_kms", gettext_noop("AWS KMS")
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -142,10 +142,10 @@ class _FenceModel(models.Model):
         CLOSED = "closed", "Closed"
 
     class OperationKind(models.TextChoices):
-        ENABLE_TRANSITION = "enable_transition", gettext_lazy("Enable transition")
-        DECRYPT_ROLLBACK = "decrypt_rollback", gettext_lazy("Decrypt rollback")
-        SEARCH_ROTATION = "search_rotation", gettext_lazy("Search rotation")
-        TENANT_IMPORT = "tenant_import", gettext_lazy("Tenant import")
+        ENABLE_TRANSITION = "enable_transition", gettext_noop("Enable transition")
+        DECRYPT_ROLLBACK = "decrypt_rollback", gettext_noop("Decrypt rollback")
+        SEARCH_ROTATION = "search_rotation", gettext_noop("Search rotation")
+        TENANT_IMPORT = "tenant_import", gettext_noop("Tenant import")
 
     state = models.CharField(max_length=8, choices=State.choices, default=State.OPEN)
     operation_id = models.UUIDField(null=True, blank=True)

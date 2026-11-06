@@ -8,7 +8,7 @@ registration without an account (Hard Rule, #71). The order's `Payment` (subject
 their own. `EventOrderLine.unit_amount` is the frozen per-ticket price L24 reads.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 import secrets
 
 from django.conf import settings
@@ -59,16 +59,16 @@ class EventSalesSettings(models.Model):
 class EventOrder(models.Model):
     class Kind(models.TextChoices):
         TICKETS = "tickets", "Tickets"
-        PASS = "pass", gettext_lazy("Series pass")
-        TYPE_CHANGE = "type_change", gettext_lazy("Ticket type change")
+        PASS = "pass", gettext_noop("Series pass")
+        TYPE_CHANGE = "type_change", gettext_noop("Ticket type change")
 
     class Status(models.TextChoices):
-        PENDING = "pending", gettext_lazy("Awaiting payment")
+        PENDING = "pending", gettext_noop("Awaiting payment")
         PAID = "paid", "Paid"
         CANCELLED = "cancelled", "Cancelled"
-        EXPIRED = "expired", gettext_lazy("Checkout expired")
+        EXPIRED = "expired", gettext_noop("Checkout expired")
         #: Paid without a held seat and the event filled first; a staff-approved refund is due.
-        UNFULFILLED = "unfulfilled", gettext_lazy("Could not be seated")
+        UNFULFILLED = "unfulfilled", gettext_noop("Could not be seated")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.CASCADE, related_name="orders")
@@ -121,8 +121,8 @@ class EventOrderLine(models.Model):
     class Kind(models.TextChoices):
         TICKET = "ticket", "Ticket"
         ADDON = "addon", "Add-on"
-        PASS = "pass", gettext_lazy("Series pass")
-        TYPE_CHANGE = "type_change", gettext_lazy("Type change difference")
+        PASS = "pass", gettext_noop("Series pass")
+        TYPE_CHANGE = "type_change", gettext_noop("Type change difference")
 
     order = models.ForeignKey(EventOrder, on_delete=models.CASCADE, related_name="lines")
     kind = models.CharField(max_length=12, choices=Kind.choices)
@@ -154,7 +154,7 @@ class EventOrderSeat(ScopedPiiModelMixin, models.Model):
     """One admission. The buyer's own seat, or a seat held for an attendee's email."""
 
     class Status(models.TextChoices):
-        UNCLAIMED = "unclaimed", gettext_lazy("Waiting for the attendee")
+        UNCLAIMED = "unclaimed", gettext_noop("Waiting for the attendee")
         CLAIMED = "claimed", "Claimed"
         VOID = "void", "Void"
 
@@ -188,11 +188,11 @@ class EventOrderDue(models.Model):
     """An amount the space owes back on an order: append-only, staff approve the refund case."""
 
     class Kind(models.TextChoices):
-        SEAT_CANCELLED = "seat_cancelled", gettext_lazy("A seat was cancelled")
-        EVENT_CANCELLED = "event_cancelled", gettext_lazy("The event was cancelled")
-        OCCURRENCE_CANCELLED = "occurrence_cancelled", gettext_lazy("A pass occurrence was cancelled")
-        TYPE_CHANGE = "type_change", gettext_lazy("Changed to a cheaper ticket")
-        UNFULFILLED = "unfulfilled", gettext_lazy("No seat was left")
+        SEAT_CANCELLED = "seat_cancelled", gettext_noop("A seat was cancelled")
+        EVENT_CANCELLED = "event_cancelled", gettext_noop("The event was cancelled")
+        OCCURRENCE_CANCELLED = "occurrence_cancelled", gettext_noop("A pass occurrence was cancelled")
+        TYPE_CHANGE = "type_change", gettext_noop("Changed to a cheaper ticket")
+        UNFULFILLED = "unfulfilled", gettext_noop("No seat was left")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     order = models.ForeignKey(EventOrder, on_delete=models.CASCADE, related_name="dues")

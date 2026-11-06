@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -10,13 +10,13 @@ class SourceMigrationGate(models.Model):
 
     class State(models.TextChoices):
         OPEN = "open", "Open"
-        DRAINING = "draining", gettext_lazy("Draining uploads")
+        DRAINING = "draining", gettext_noop("Draining uploads")
         QUIESCED = "quiesced", "Quiesced"
-        MIGRATED_OUT = "migrated_out", gettext_lazy("Migrated out")
+        MIGRATED_OUT = "migrated_out", gettext_noop("Migrated out")
 
     class Purpose(models.TextChoices):
-        MIGRATION = "migration", gettext_lazy("Tenant migration")
-        COPY_CAPTURE = "copy_capture", gettext_lazy("Tenant exit copy capture")
+        MIGRATION = "migration", gettext_noop("Tenant migration")
+        COPY_CAPTURE = "copy_capture", gettext_noop("Tenant exit copy capture")
 
     makerspace = models.OneToOneField(
         "makerspaces.Makerspace",

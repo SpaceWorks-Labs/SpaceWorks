@@ -10,7 +10,7 @@
   waivable: it has its own release path.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -19,9 +19,9 @@ from django.db.models import Q
 
 class PriceDiscount(models.Model):
     class Audience(models.TextChoices):
-        ALL_MEMBERS = "all_members", gettext_lazy("All members")
-        PLAN = "plan", gettext_lazy("Members on a plan")
-        MEMBER = "member", gettext_lazy("One member")
+        ALL_MEMBERS = "all_members", gettext_noop("All members")
+        PLAN = "plan", gettext_noop("Members on a plan")
+        MEMBER = "member", gettext_noop("One member")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="price_discounts")
     #: Staff-authored and shown to members on their quote. Never a person's name.
@@ -86,9 +86,9 @@ class PriceDiscount(models.Model):
 class LoanFeeWaiver(models.Model):
     class Component(models.TextChoices):
         RENTAL = "rental", "Rental"
-        LATE = "late", gettext_lazy("Late fee")
+        LATE = "late", gettext_noop("Late fee")
         DAMAGE = "damage", "Damage"
-        LOST = "lost", gettext_lazy("Lost item")
+        LOST = "lost", gettext_noop("Lost item")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="+")
     request = models.ForeignKey("hardware_requests.HardwareRequest", on_delete=models.PROTECT,

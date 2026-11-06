@@ -10,15 +10,15 @@ challenge must never be redeemable at the login endpoint: otherwise a member who
 starts linking a number and walks away leaves a code that signs someone in.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 
 
 class PhoneChallengePurpose(models.TextChoices):
-    LINK = "link", gettext_lazy("Link a phone number")
-    LOGIN = "login", gettext_lazy("Sign in with a phone number")
-    REAUTH = "reauth", gettext_lazy("Reauthenticate with a phone number")
-    RESTORE = "restore", gettext_lazy("Restore an archived account")
+    LINK = "link", gettext_noop("Link a phone number")
+    LOGIN = "login", gettext_noop("Sign in with a phone number")
+    REAUTH = "reauth", gettext_noop("Reauthenticate with a phone number")
+    RESTORE = "restore", gettext_noop("Restore an archived account")
 
 
 class PhoneVerificationChallenge(models.Model):

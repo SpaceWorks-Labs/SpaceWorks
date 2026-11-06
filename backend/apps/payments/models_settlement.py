@@ -13,7 +13,7 @@ Corrections are therefore an appended `amends` row -- the same shape `Refund` an
 visible.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -27,8 +27,8 @@ class ManualSettlement(models.Model):
     class Method(models.TextChoices):
         CASH = "cash", "Cash"
         UPI = "upi", "UPI"
-        BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank transfer")
-        CARD_MACHINE = "card_machine", gettext_lazy("Card machine")
+        BANK_TRANSFER = "bank_transfer", gettext_noop("Bank transfer")
+        CARD_MACHINE = "card_machine", gettext_noop("Card machine")
         CHEQUE = "cheque", "Cheque"
         OTHER = "other", "Other"
 
@@ -159,7 +159,7 @@ class SettlementConfirmation(models.Model):
     """
 
     class Status(models.TextChoices):
-        AWAITING = "awaiting_confirmation", gettext_lazy("Awaiting confirmation")
+        AWAITING = "awaiting_confirmation", gettext_noop("Awaiting confirmation")
         CONFIRMED = "confirmed", "Confirmed"
         REJECTED = "rejected", "Rejected"
 

@@ -8,7 +8,7 @@ permitted post-completion write is the purge scrub of that snapshot.
 ``AccountMergeIntent`` is the transient two-sided proof a merge needs (#65).
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -23,17 +23,17 @@ class AccountMergeRecord(models.Model):
         MERGED = "merged", "Merged"
 
     class ProofMethod(models.TextChoices):
-        MIGRATION = "migration", gettext_lazy("Unification migration")
-        CREDENTIALS = "credentials", gettext_lazy("Password and second factor")
-        EMAIL_CODES = "email_codes", gettext_lazy("Two emailed codes")
+        MIGRATION = "migration", gettext_noop("Unification migration")
+        CREDENTIALS = "credentials", gettext_noop("Password and second factor")
+        EMAIL_CODES = "email_codes", gettext_noop("Two emailed codes")
 
     class State(models.TextChoices):
         PENDING = "pending", "Pending"
         COMPLETED = "completed", "Completed"
 
     class SnapshotScheme(models.TextChoices):
-        DEPLOYMENT = "deployment", gettext_lazy("Deployment field key")
-        ACCOUNT = "account", gettext_lazy("Per-account key")
+        DEPLOYMENT = "deployment", gettext_noop("Deployment field key")
+        ACCOUNT = "account", gettext_noop("Per-account key")
         SCRUBBED = "scrubbed", "Scrubbed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -80,8 +80,8 @@ class AccountMergeRecord(models.Model):
 
 class AccountMergeIntent(models.Model):
     class Method(models.TextChoices):
-        CREDENTIALS = "credentials", gettext_lazy("Password and second factor")
-        EMAIL_CODES = "email_codes", gettext_lazy("Two emailed codes")
+        CREDENTIALS = "credentials", gettext_noop("Password and second factor")
+        EMAIL_CODES = "email_codes", gettext_noop("Two emailed codes")
 
     class State(models.TextChoices):
         STARTED = "started", "Started"

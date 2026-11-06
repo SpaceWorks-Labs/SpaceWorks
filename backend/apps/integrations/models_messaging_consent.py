@@ -1,5 +1,5 @@
 """Immutable consent evidence and sender-scoped recipient protections."""
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -11,14 +11,14 @@ CHANNELS = [("sms", "SMS"), ("whatsapp", "WhatsApp")]
 
 class MessagingConsent(ScopedPiiModelMixin, models.Model):
     class Action(models.TextChoices):
-        OPTED_IN = "opted_in", gettext_lazy("Opted in")
-        OPTED_OUT = "opted_out", gettext_lazy("Opted out")
+        OPTED_IN = "opted_in", gettext_noop("Opted in")
+        OPTED_OUT = "opted_out", gettext_noop("Opted out")
 
     class Source(models.TextChoices):
-        MEMBER_SETTINGS = "member_settings", gettext_lazy("Member settings")
-        NATIVE_APP = "native_app", gettext_lazy("Native app")
-        INBOUND_STOP = "inbound_stop", gettext_lazy("Inbound STOP")
-        ACCOUNT_ARCHIVE = "account_archive", gettext_lazy("Account archive")
+        MEMBER_SETTINGS = "member_settings", gettext_noop("Member settings")
+        NATIVE_APP = "native_app", gettext_noop("Native app")
+        INBOUND_STOP = "inbound_stop", gettext_noop("Inbound STOP")
+        ACCOUNT_ARCHIVE = "account_archive", gettext_noop("Account archive")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -50,9 +50,9 @@ class MessagingConsent(ScopedPiiModelMixin, models.Model):
 
 class MessagingSuppression(models.Model):
     class Reason(models.TextChoices):
-        INBOUND_STOP = "inbound_stop", gettext_lazy("Inbound STOP")
-        PROVIDER_OPT_OUT = "provider_opt_out", gettext_lazy("Provider opt-out")
-        PERMANENT_FAILURE = "permanent_failure", gettext_lazy("Permanent failure")
+        INBOUND_STOP = "inbound_stop", gettext_noop("Inbound STOP")
+        PROVIDER_OPT_OUT = "provider_opt_out", gettext_noop("Provider opt-out")
+        PERMANENT_FAILURE = "permanent_failure", gettext_noop("Permanent failure")
 
     channel = models.CharField(max_length=16, choices=CHANNELS)
     sender_key = models.CharField(max_length=255)

@@ -4,7 +4,7 @@ The pass authentication token is derived (HMAC) from the serial and never stored
 its digest is, for constant-time checks on the Apple pass web service. Push tokens are
 encrypted at rest. Neither is ever part of a self-export or a tenant-wide report.
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 from django.db.models import Q
 
@@ -13,8 +13,8 @@ from .models_holders import HolderCardMixin, exactly_one_holder
 
 class WalletPass(HolderCardMixin):
     class Platform(models.TextChoices):
-        APPLE = "apple", gettext_lazy("Apple Wallet")
-        GOOGLE = "google", gettext_lazy("Google Wallet")
+        APPLE = "apple", gettext_noop("Apple Wallet")
+        GOOGLE = "google", gettext_noop("Google Wallet")
 
     platform = models.CharField(max_length=8, choices=Platform.choices)
     serial = models.CharField(max_length=64, unique=True)

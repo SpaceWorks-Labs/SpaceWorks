@@ -9,7 +9,7 @@ Machine maintenance keeps L12's machine schedules and logs. `inventory.maintenan
 bookable room: a recurring schedule and an append-only log of each run.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -27,8 +27,8 @@ _SUBJECT_SHAPE = (
 
 class RoomOutage(models.Model):
     class Mode(models.TextChoices):
-        BLOCK = "block", gettext_lazy("Block new bookings")
-        WARN = "warn", gettext_lazy("Warn bookers")
+        BLOCK = "block", gettext_noop("Block new bookings")
+        WARN = "warn", gettext_noop("Warn bookers")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="room_outages")
     room = models.ForeignKey("bookings.BookableSpace", on_delete=models.CASCADE, related_name="outages")

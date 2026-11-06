@@ -1,6 +1,6 @@
 """Tenant loan settings; a missing row preserves the legacy return policy."""
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -22,7 +22,7 @@ def validate_reminder_offsets(value):
 class MakerspaceLoanPolicy(models.Model):
     class RenewalMode(models.TextChoices):
         OFF = "off", "Off"
-        AUTO = "auto", gettext_lazy("Automatic within policy")
+        AUTO = "auto", gettext_noop("Automatic within policy")
 
     makerspace = models.OneToOneField(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="loan_policy",

@@ -1,14 +1,14 @@
 """Tenant or platform keyed addresses; never store plaintext email."""
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
 
 class EmailSuppression(models.Model):
     class Reason(models.TextChoices):
-        BOUNCE = "bounce", gettext_lazy("Hard bounce")
-        COMPLAINT = "complaint", gettext_lazy("Spam complaint")
+        BOUNCE = "bounce", gettext_noop("Hard bounce")
+        COMPLAINT = "complaint", gettext_noop("Spam complaint")
 
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", null=True, blank=True, on_delete=models.CASCADE,

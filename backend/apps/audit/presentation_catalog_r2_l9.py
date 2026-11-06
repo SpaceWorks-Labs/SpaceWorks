@@ -4,10 +4,10 @@ Leaves are the two locale codes (``default`` when an account follows its makersp
 never anything else about the account.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("account.locale_changed", gettext_lazy("Account language changed"), ("before", "after")),
-    P("makerspace.default_locale_changed", gettext_lazy("Makerspace default language changed"), ("before", "after")),
+    P("account.locale_changed", gettext_noop("Account language changed"), ("before", "after")),
+    P("makerspace.default_locale_changed", gettext_noop("Makerspace default language changed"), ("before", "after")),
 )

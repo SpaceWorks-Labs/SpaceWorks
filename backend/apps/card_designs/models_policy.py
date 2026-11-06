@@ -5,15 +5,15 @@ Levels: space, organisation, ID programme, event. Two domain groups: `membership
 `event` (event ID cards and tickets) defaults to OFF (#128), and an event, its
 organisation or the space may turn it on.
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 from django.db.models import Q
 
 
 class CardApprovalSetting(models.Model):
     class Group(models.TextChoices):
-        MEMBERSHIP = "membership", gettext_lazy("Membership and programme cards")
-        EVENT = "event", gettext_lazy("Event cards and tickets")
+        MEMBERSHIP = "membership", gettext_noop("Membership and programme cards")
+        EVENT = "event", gettext_noop("Event cards and tickets")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     group = models.CharField(max_length=12, choices=Group.choices)

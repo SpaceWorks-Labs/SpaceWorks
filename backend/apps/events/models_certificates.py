@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -17,10 +17,10 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         PARTICIPANT = "participant", "Participant"
         FINALIST = "finalist", "Finalist"
         WINNER = "winner", "Winner"
-        VOLUNTEER_THANKS = "volunteer_thanks", gettext_lazy("Volunteer thanks")
-        MENTOR_THANKS = "mentor_thanks", gettext_lazy("Mentor thanks")
-        JUDGE_THANKS = "judge_thanks", gettext_lazy("Judge thanks")
-        ORGANISER_THANKS = "organiser_thanks", gettext_lazy("Organiser thanks")
+        VOLUNTEER_THANKS = "volunteer_thanks", gettext_noop("Volunteer thanks")
+        MENTOR_THANKS = "mentor_thanks", gettext_noop("Mentor thanks")
+        JUDGE_THANKS = "judge_thanks", gettext_noop("Judge thanks")
+        ORGANISER_THANKS = "organiser_thanks", gettext_noop("Organiser thanks")
 
     event = models.ForeignKey("events.Event", on_delete=models.PROTECT, related_name="certificates")
     recipient_member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
@@ -43,9 +43,9 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         REVOKED = "revoked", "Revoked"
 
     class RevocationReason(models.TextChoices):
-        ATTENDANCE_CORRECTED = "attendance_corrected", gettext_lazy("Attendance corrected")
-        EVENT_CANCELLED = "event_cancelled", gettext_lazy("Event cancelled")
-        STAFF_REVOKED = "staff_revoked", gettext_lazy("Staff revoked")
+        ATTENDANCE_CORRECTED = "attendance_corrected", gettext_noop("Attendance corrected")
+        EVENT_CANCELLED = "event_cancelled", gettext_noop("Event cancelled")
+        STAFF_REVOKED = "staff_revoked", gettext_noop("Staff revoked")
 
     response = models.ForeignKey(
         EventFeedbackResponse,

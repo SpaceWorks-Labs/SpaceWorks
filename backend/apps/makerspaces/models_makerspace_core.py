@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -53,7 +53,7 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     class MembershipPolicy(models.TextChoices):
         REQUEST = "request", "Request"
         OPEN = "open", "Open"
-        INVITE_ONLY = "invite_only", gettext_lazy("Invite only")
+        INVITE_ONLY = "invite_only", gettext_noop("Invite only")
 
     class DomainStatus(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -61,8 +61,8 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         FAILED = "failed", "Failed"
 
     class PublicPrintStatusLookupPolicy(models.TextChoices):
-        TOKEN_ONLY = "token_only", gettext_lazy("Token only")
-        EMAIL_UNVERIFIED = "email_unverified", gettext_lazy("Email unverified")
+        TOKEN_ONLY = "token_only", gettext_noop("Token only")
+        EMAIL_UNVERIFIED = "email_unverified", gettext_noop("Email unverified")
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, db_index=True)

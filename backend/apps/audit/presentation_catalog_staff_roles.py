@@ -7,18 +7,18 @@ actions (``staff_account.*``, ``staff.account_created``, ``staff.invitation_*``)
 emitted, so their entries are gone.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("staff_role.changed", gettext_lazy("Staff role changed"),
+    P("staff_role.changed", gettext_noop("Staff role changed"),
       ("membership_id", "roles_before", "roles_after", "machine_type_ids_before", "machine_type_ids_after")),
-    P("staff_role.revoked", gettext_lazy("Staff role revoked"), ("membership_id",)),
-    P("staff_role.restored", gettext_lazy("Staff role restored"), ("membership_id",)),
-    P("staff_invitation.sent", gettext_lazy("Staff invitation sent"), ("roles", "machine_type_ids", "email_hash", "expires_at")),
-    P("staff_invitation.accepted", gettext_lazy("Staff invitation accepted"), ("membership_id", "roles")),
-    P("staff_invitation.accept_failed", gettext_lazy("Staff invitation code rejected")),
-    P("staff_invitation.revoked", gettext_lazy("Staff invitation revoked")),
-    P("account.disabled", gettext_lazy("Account disabled by the platform administrator")),
-    P("account.enabled", gettext_lazy("Account re-enabled by the platform administrator")),
+    P("staff_role.revoked", gettext_noop("Staff role revoked"), ("membership_id",)),
+    P("staff_role.restored", gettext_noop("Staff role restored"), ("membership_id",)),
+    P("staff_invitation.sent", gettext_noop("Staff invitation sent"), ("roles", "machine_type_ids", "email_hash", "expires_at")),
+    P("staff_invitation.accepted", gettext_noop("Staff invitation accepted"), ("membership_id", "roles")),
+    P("staff_invitation.accept_failed", gettext_noop("Staff invitation code rejected")),
+    P("staff_invitation.revoked", gettext_noop("Staff invitation revoked")),
+    P("account.disabled", gettext_noop("Account disabled by the platform administrator")),
+    P("account.enabled", gettext_noop("Account re-enabled by the platform administrator")),
 )

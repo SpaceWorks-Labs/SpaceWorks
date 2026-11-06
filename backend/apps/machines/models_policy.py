@@ -5,7 +5,7 @@ Reminder timing (release 1) plus the per-type job settings of the uniform job fl
 settings (`charges.*` keys in the settings-authority layer).
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 
 
@@ -19,19 +19,19 @@ class MakerspaceMachineTypePolicy(models.Model):
     grace_days = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class QuoteMode(models.TextChoices):
-        AUTO = "auto", gettext_lazy("Always when priced, off when free")
+        AUTO = "auto", gettext_noop("Always when priced, off when free")
         OFF = "off", "Off"
-        ABOVE = "above", gettext_lazy("Above an amount")
+        ABOVE = "above", gettext_noop("Above an amount")
         ALWAYS = "always", "Always"
 
     class PaymentTiming(models.TextChoices):
-        COMPLETION = "completion", gettext_lazy("Pay at completion")
-        PREPAY = "prepay", gettext_lazy("Pay before the job queues")
+        COMPLETION = "completion", gettext_noop("Pay at completion")
+        PREPAY = "prepay", gettext_noop("Pay before the job queues")
 
     class FailureCharge(models.TextChoices):
-        NONE = "none", gettext_lazy("No charge")
-        MATERIAL_ONLY = "material_only", gettext_lazy("Material used only")
-        FULL = "full", gettext_lazy("Full charge")
+        NONE = "none", gettext_noop("No charge")
+        MATERIAL_ONLY = "material_only", gettext_noop("Material used only")
+        FULL = "full", gettext_noop("Full charge")
 
     # #140: on/off per machine type (default on: today every active queue accepts jobs).
     accepts_job_requests = models.BooleanField(default=True)

@@ -18,7 +18,7 @@ financial-year end, ends on one fixed date, or lifetime), separate new and renew
 prices, and per-plan overrides of the space's joining fee, rejoin rule, payment timing,
 join mode and application form. A null override inherits the space default.
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
@@ -38,7 +38,7 @@ class MembershipPlan(models.Model):
     class Interval(models.TextChoices):
         MONTHLY = "monthly", "Monthly"
         YEARLY = "yearly", "Yearly"
-        CUSTOM_DAYS = "custom_days", gettext_lazy("Custom number of days")
+        CUSTOM_DAYS = "custom_days", gettext_noop("Custom number of days")
 
     PlanType = PlanType
 

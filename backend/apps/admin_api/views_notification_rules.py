@@ -23,6 +23,7 @@ from apps.integrations.models import (
 )
 from apps.makerspaces.servability import servable_queryset
 from apps.openapi_errors import errors
+from config.locale_resolution import display
 
 
 @extend_schema(tags=["Makerspaces"], summary="List or update makerspace notification rules")
@@ -91,7 +92,7 @@ class NotificationRulesView(APIView):
         features = [
             {
                 "key": feature.value,
-                "label": feature.label,
+                "label": display(feature.label),
                 "events": list(notification_catalog.FEATURE_EVENTS[feature]),
             }
             for feature in NotificationFeature

@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.core.exceptions import ValidationError
@@ -98,8 +98,8 @@ class MembershipRequest(ScopedPiiModelMixin, models.Model):
     class State(models.TextChoices):
         REQUESTED = "requested", "Requested"
         INVITED = "invited", "Invited"
-        AWAITING_VOUCHES = "awaiting_vouches", gettext_lazy("Awaiting vouches")
-        AWAITING_PAYMENT = "awaiting_payment", gettext_lazy("Awaiting payment")
+        AWAITING_VOUCHES = "awaiting_vouches", gettext_noop("Awaiting vouches")
+        AWAITING_PAYMENT = "awaiting_payment", gettext_noop("Awaiting payment")
         EXPIRED = "expired", "Expired"
         CANCELED = "canceled", "Canceled"
         ACTIVE = "active", "Active"

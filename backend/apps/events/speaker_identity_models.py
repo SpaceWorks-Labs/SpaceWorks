@@ -13,7 +13,7 @@ Only the token's HMAC digest is stored. Removal is a soft `removed_at`, never a 
 audit trail and the history projection agree about what once existed.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -21,8 +21,8 @@ from django.db.models import Q
 
 class EventSpeaker(models.Model):
     class LinkedVia(models.TextChoices):
-        STAFF_ASSIGNED = "staff_assigned", gettext_lazy("Assigned by staff")
-        CLAIMED = "claimed", gettext_lazy("Claimed by invite")
+        STAFF_ASSIGNED = "staff_assigned", gettext_noop("Assigned by staff")
+        CLAIMED = "claimed", gettext_noop("Claimed by invite")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="speakers")

@@ -19,7 +19,7 @@ FK: resolution always ANDs the makerspace, so a row pointing at another space's 
 matches nobody rather than leaking.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -32,8 +32,8 @@ class NotificationRecipientKind(models.TextChoices):
     # from (feature, event) alone -- it comes off the domain object -- so this kind is a
     # flag the caller reads, never an address this module produces.
     REQUESTER = "requester", "Requester"
-    MEMBERS = "members", gettext_lazy("All members")
-    USER = "user", gettext_lazy("Named user")
+    MEMBERS = "members", gettext_noop("All members")
+    USER = "user", gettext_noop("Named user")
 
 
 class NotificationRecipient(models.Model):

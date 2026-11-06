@@ -12,21 +12,21 @@ Kinds:
 * `mismatch` -- the captured amount or currency differs from the charge.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 
 
 class PaymentCaptureFlag(models.Model):
     class Kind(models.TextChoices):
-        LATE = "late", gettext_lazy("Paid after cancellation")
-        DUPLICATE = "duplicate", gettext_lazy("Paid twice")
-        MISMATCH = "mismatch", gettext_lazy("Amount differs")
+        LATE = "late", gettext_noop("Paid after cancellation")
+        DUPLICATE = "duplicate", gettext_noop("Paid twice")
+        MISMATCH = "mismatch", gettext_noop("Amount differs")
 
     class Resolution(models.TextChoices):
         OPEN = "", "Open"
-        ISSUE_RECEIVED = "issue_received", gettext_lazy("Receipt issued on the amount received")
-        REFUND_CASE = "refund_case", gettext_lazy("Refund case opened")
+        ISSUE_RECEIVED = "issue_received", gettext_noop("Receipt issued on the amount received")
+        REFUND_CASE = "refund_case", gettext_noop("Refund case opened")
         ACKNOWLEDGED = "acknowledged", "Acknowledged"
 
     #: Kinds whose receipt waits for the staff decision. A duplicate's charge already has

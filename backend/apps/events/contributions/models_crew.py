@@ -8,7 +8,7 @@ authority at all; desks still need their own role. Answers (dietary needs includ
 scoped PII (#28); the public crew section shows only people who opted in and have a
 public profile (#25).
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -27,8 +27,8 @@ class EventCrewMember(ScopedPiiModelMixin, models.Model):
         REMOVED = "removed", "Removed"
 
     class Origin(models.TextChoices):
-        SIGNUP = "signup", gettext_lazy("Sign-up link")
-        STAFF = "staff", gettext_lazy("Added by staff")
+        SIGNUP = "signup", gettext_noop("Sign-up link")
+        STAFF = "staff", gettext_noop("Added by staff")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="crew")

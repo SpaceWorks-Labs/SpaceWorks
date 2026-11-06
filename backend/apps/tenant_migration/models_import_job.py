@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 import uuid
 
 from django.conf import settings
@@ -11,7 +11,7 @@ class TenantImportJob(models.Model):
     class Status(models.TextChoices):
         UPLOADING = "uploading", "Uploading"
         PENDING = "pending", "Pending"
-        AWAITING_IDENTITY = "awaiting_identity", gettext_lazy("Awaiting identity decisions")
+        AWAITING_IDENTITY = "awaiting_identity", gettext_noop("Awaiting identity decisions")
         READY = "ready", "Ready"
         MATERIALIZING = "materializing", "Materializing"
         FINALIZING = "finalizing", "Finalizing"
@@ -74,12 +74,12 @@ class TenantImportJob(models.Model):
 
 class ImportIdentityDecision(models.Model):
     class IdentityResolution(models.TextChoices):
-        LINK_EXISTING = "link_existing", gettext_lazy("Link existing account")
-        CREATE_WALK_IN = "create_walk_in", gettext_lazy("Create walk-in account")
+        LINK_EXISTING = "link_existing", gettext_noop("Link existing account")
+        CREATE_WALK_IN = "create_walk_in", gettext_noop("Create walk-in account")
 
     class MembershipDisposition(models.TextChoices):
-        IMPORT_MEMBERSHIP = "import_membership", gettext_lazy("Import membership")
-        NO_MEMBERSHIP = "no_membership", gettext_lazy("Do not import membership")
+        IMPORT_MEMBERSHIP = "import_membership", gettext_noop("Import membership")
+        NO_MEMBERSHIP = "no_membership", gettext_noop("Do not import membership")
 
     job = models.ForeignKey(
         TenantImportJob, on_delete=models.CASCADE, related_name="identity_decisions"

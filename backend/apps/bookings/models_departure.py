@@ -6,7 +6,7 @@ scoped PII. Anything other than "all good" opens one `BookingIssue`, whose only 
 the staff resolution -- the event it points at never changes.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -15,10 +15,10 @@ from apps.encryption.mappers import ScopedPiiModelMixin
 
 
 class DepartureOutcome(models.TextChoices):
-    ALL_GOOD = "all_good", gettext_lazy("All good")
-    ISSUE = "issue", gettext_lazy("Something was wrong")
-    DAMAGED = "damaged", gettext_lazy("Something was damaged")
-    LEFT_EARLY = "left_early", gettext_lazy("Left early")
+    ALL_GOOD = "all_good", gettext_noop("All good")
+    ISSUE = "issue", gettext_noop("Something was wrong")
+    DAMAGED = "damaged", gettext_noop("Something was damaged")
+    LEFT_EARLY = "left_early", gettext_noop("Left early")
 
 
 class DepartureSource(models.TextChoices):

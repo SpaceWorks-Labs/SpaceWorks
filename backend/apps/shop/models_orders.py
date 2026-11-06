@@ -8,7 +8,7 @@ one of its events (Q-S3, #135); no shipping. Every refund is a staff-approved re
 (#59); a returned line goes back to stock or is written off (`ShopOrderReturn`).
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 import secrets
 
 from django.conf import settings
@@ -29,22 +29,22 @@ def new_status_secret():
 class ShopOrder(ScopedPiiModelMixin, models.Model):
     class Channel(models.TextChoices):
         ONLINE = "online", "Online"
-        POS = "pos", gettext_lazy("Front desk")
+        POS = "pos", gettext_noop("Front desk")
 
     class Status(models.TextChoices):
-        HELD = "held", gettext_lazy("Checkout in progress")
-        AWAITING_PAYMENT = "awaiting_payment", gettext_lazy("Pay at the desk")
+        HELD = "held", gettext_noop("Checkout in progress")
+        AWAITING_PAYMENT = "awaiting_payment", gettext_noop("Pay at the desk")
         PAID = "paid", "Paid"
-        READY = "ready", gettext_lazy("Ready for pickup")
+        READY = "ready", gettext_noop("Ready for pickup")
         COLLECTED = "collected", "Collected"
         CANCELLED = "cancelled", "Cancelled"
         #: Paid without held stock and the stock ran out first; a staff-approved refund is due.
-        UNFULFILLED = "unfulfilled", gettext_lazy("Paid, out of stock")
+        UNFULFILLED = "unfulfilled", gettext_noop("Paid, out of stock")
         REFUNDED = "refunded", "Refunded"
 
     class Pickup(models.TextChoices):
-        SPACE = "space", gettext_lazy("At the space")
-        EVENT = "event", gettext_lazy("At an event")
+        SPACE = "space", gettext_noop("At the space")
+        EVENT = "event", gettext_noop("At an event")
 
     OPEN_STATUSES = (Status.HELD, Status.AWAITING_PAYMENT)
     PAID_STATUSES = (Status.PAID, Status.READY)
@@ -150,8 +150,8 @@ class ShopOrderReturn(models.Model):
     """
 
     class Disposition(models.TextChoices):
-        RESTOCK = "restock", gettext_lazy("Back to stock")
-        WRITE_OFF = "write_off", gettext_lazy("Written off")
+        RESTOCK = "restock", gettext_noop("Back to stock")
+        WRITE_OFF = "write_off", gettext_noop("Written off")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     order = models.ForeignKey(ShopOrder, on_delete=models.CASCADE, related_name="returns")

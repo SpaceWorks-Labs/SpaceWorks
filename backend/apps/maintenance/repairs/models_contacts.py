@@ -9,7 +9,7 @@ An in-house contact's coverage is also the Technician's scope (Q-T1 a): the mach
 types, inventory and rooms they may run maintenance on and set service state for.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -27,7 +27,7 @@ def default_channels():
 class TechnicianContact(ScopedPiiModelMixin, models.Model):
     class Kind(models.TextChoices):
         IN_HOUSE = "in_house", "In-house"
-        EXTERNAL = "external", gettext_lazy("External contractor")
+        EXTERNAL = "external", gettext_noop("External contractor")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE,
                                    related_name="technician_contacts")
@@ -70,7 +70,7 @@ class TechnicianCoverage(models.Model):
     """One covered area: a machine type, all inventory, or one room."""
 
     class Kind(models.TextChoices):
-        MACHINE_TYPE = "machine_type", gettext_lazy("Machine type")
+        MACHINE_TYPE = "machine_type", gettext_noop("Machine type")
         INVENTORY = "inventory", "Inventory"
         ROOM = "room", "Room"
 

@@ -4,13 +4,13 @@ Never a code, an identifier or an address: only the proof method, the source acc
 (a shell after the merge), counts per disposition and the role slugs gained.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("account.merge_started", gettext_lazy("Account link started"), ("method",)),
-    P("account.merge_proof_failed", gettext_lazy("Account link proof rejected"), ("method", "attempts")),
-    P("account.merge_cancelled", gettext_lazy("Account link cancelled"), ("method",)),
-    P("account.merged", gettext_lazy("Accounts linked into one"),
+    P("account.merge_started", gettext_noop("Account link started"), ("method",)),
+    P("account.merge_proof_failed", gettext_noop("Account link proof rejected"), ("method", "attempts")),
+    P("account.merge_cancelled", gettext_noop("Account link cancelled"), ("method",)),
+    P("account.merged", gettext_noop("Accounts linked into one"),
       ("proof_method", "source_id", "record_id", "counts", "roles_gained", "grace_opened")),
 )

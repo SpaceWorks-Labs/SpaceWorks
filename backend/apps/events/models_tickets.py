@@ -1,6 +1,6 @@
 """Ticket templates belong to a series; sellable copies belong to occurrences."""
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -9,8 +9,8 @@ from django.db.models import F, Q
 
 class EventTicketType(models.Model):
     class Audience(models.TextChoices):
-        MEMBER = "member", gettext_lazy("Active members")
-        PUBLIC = "public", gettext_lazy("All accounts")
+        MEMBER = "member", gettext_noop("Active members")
+        PUBLIC = "public", gettext_noop("All accounts")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.CASCADE, related_name="ticket_types")

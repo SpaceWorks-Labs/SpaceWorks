@@ -10,7 +10,7 @@ None of these rows is tenant data: they are platform governance, omitted from te
 exports and dumps, and a tenant purge cascades the per-space rows away.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -21,9 +21,9 @@ DEFAULT_PURGE_GRACE_DAYS = 90
 
 class SpaceControlState(models.Model):
     class ReadOnlySource(models.TextChoices):
-        MANUAL = "manual", gettext_lazy("Set by the platform operator")
-        TRIAL_EXPIRED = "trial_expired", gettext_lazy("Trial ended")
-        PAYMENT_OVERDUE = "payment_overdue", gettext_lazy("Hosting payment overdue")
+        MANUAL = "manual", gettext_noop("Set by the platform operator")
+        TRIAL_EXPIRED = "trial_expired", gettext_noop("Trial ended")
+        PAYMENT_OVERDUE = "payment_overdue", gettext_noop("Hosting payment overdue")
 
     makerspace = models.OneToOneField(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="control_state",
@@ -86,8 +86,8 @@ class PlatformAnnouncement(models.Model):
         WARNING = "warning", "Warning"
 
     class Audience(models.TextChoices):
-        ALL_SPACES = "all_spaces", gettext_lazy("All spaces")
-        SELECTED_SPACES = "selected_spaces", gettext_lazy("Selected spaces")
+        ALL_SPACES = "all_spaces", gettext_noop("All spaces")
+        SELECTED_SPACES = "selected_spaces", gettext_noop("Selected spaces")
 
     title = models.CharField(max_length=120)
     body = models.TextField(max_length=4000)

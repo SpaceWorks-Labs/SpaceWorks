@@ -5,7 +5,7 @@ here because guards, datasets and the tenant-migration reference checks all impo
 from ``apps.data_export.models``.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -40,11 +40,11 @@ class DataExportJob(models.Model):
 
     class FailureCode(models.TextChoices):
         NONE = "", "None"
-        DEADLINE_EXCEEDED = "deadline_exceeded", gettext_lazy("Deadline exceeded")
-        INTEGRITY_ERROR = "integrity_error", gettext_lazy("Integrity error")
-        STORAGE_ERROR = "storage_error", gettext_lazy("Storage error")
-        QUOTA_EXCEEDED = "quota_exceeded", gettext_lazy("Quota exceeded")
-        INTERNAL_ERROR = "internal_error", gettext_lazy("Internal error")
+        DEADLINE_EXCEEDED = "deadline_exceeded", gettext_noop("Deadline exceeded")
+        INTEGRITY_ERROR = "integrity_error", gettext_noop("Integrity error")
+        STORAGE_ERROR = "storage_error", gettext_noop("Storage error")
+        QUOTA_EXCEEDED = "quota_exceeded", gettext_noop("Quota exceeded")
+        INTERNAL_ERROR = "internal_error", gettext_noop("Internal error")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     makerspace = models.ForeignKey(

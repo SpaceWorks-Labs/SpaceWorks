@@ -3,7 +3,7 @@
 Kept in one module so a plan override and the space default it overrides can never
 drift into two spellings of the same rule.
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 
 
@@ -11,9 +11,9 @@ class PlanType(models.TextChoices):
     #: A term lasts the plan interval (monthly / yearly / custom days) -- the shipped behaviour.
     ROLLING = "rolling", "Rolling"
     #: A term ends when the space's financial year ends (`makerspaces.financial_year`).
-    FINANCIAL_YEAR = "financial_year", gettext_lazy("Financial year")
+    FINANCIAL_YEAR = "financial_year", gettext_noop("Financial year")
     #: Every term ends on the plan's `fixed_end_date`.
-    FIXED_END = "fixed_end", gettext_lazy("Fixed end date")
+    FIXED_END = "fixed_end", gettext_noop("Fixed end date")
     #: A term never ends and never renews.
     LIFETIME = "lifetime", "Lifetime"
 
@@ -21,14 +21,14 @@ class PlanType(models.TextChoices):
 class JoinMode(models.TextChoices):
     OPEN = "open", "Open"
     APPROVAL = "approval", "Approval"
-    INVITE_ONLY = "invite_only", gettext_lazy("Invite only")
+    INVITE_ONLY = "invite_only", gettext_noop("Invite only")
     VOUCH = "vouch", "Vouch"
     CLOSED = "closed", "Closed"
 
 
 class PaymentTiming(models.TextChoices):
-    AFTER = "after_activation", gettext_lazy("Activate then charge")
-    BEFORE = "before_activation", gettext_lazy("Pay before activation")
+    AFTER = "after_activation", gettext_noop("Activate then charge")
+    BEFORE = "before_activation", gettext_noop("Pay before activation")
 
 
 class RejoinRule(models.TextChoices):
@@ -40,16 +40,16 @@ class RejoinRule(models.TextChoices):
     * after_lapse -- on the first join, and again on a rejoin after more than
       `rejoin_after_days` days without a membership.
     """
-    NEVER = "never", gettext_lazy("No joining fee")
-    ONCE = "once", gettext_lazy("Joining dues once")
-    EACH_JOIN = "each_join", gettext_lazy("Joining dues on each join")
-    AFTER_LAPSE = "after_lapse", gettext_lazy("Joining dues again after a lapse")
+    NEVER = "never", gettext_noop("No joining fee")
+    ONCE = "once", gettext_noop("Joining dues once")
+    EACH_JOIN = "each_join", gettext_noop("Joining dues on each join")
+    AFTER_LAPSE = "after_lapse", gettext_noop("Joining dues again after a lapse")
 
 
 class LateRenewal(models.TextChoices):
     """Where a renewal opened after the old term ended (inside its grace) starts."""
-    BACKDATE = "backdate", gettext_lazy("Backdate to the old end")
-    PAYMENT_DAY = "payment_day", gettext_lazy("Start on the renewal day")
+    BACKDATE = "backdate", gettext_noop("Backdate to the old end")
+    PAYMENT_DAY = "payment_day", gettext_noop("Start on the renewal day")
 
 
 class TermKind(models.TextChoices):
@@ -67,7 +67,7 @@ class TermStanding(models.TextChoices):
     """
     UPCOMING = "upcoming", "Upcoming"
     ACTIVE = "active", "Active"
-    GRACE = "grace", gettext_lazy("In grace")
+    GRACE = "grace", gettext_noop("In grace")
     ENDED = "ended", "Ended"
     LAPSED = "lapsed", "Lapsed"
     CANCELLED = "cancelled", "Cancelled"
@@ -76,7 +76,7 @@ class TermStanding(models.TextChoices):
 
 class MemberSource(models.TextChoices):
     JOIN = "join", "Joined"
-    MANUAL = "manual", gettext_lazy("Added by staff")
+    MANUAL = "manual", gettext_noop("Added by staff")
     IMPORT = "import", "Imported"
 
 

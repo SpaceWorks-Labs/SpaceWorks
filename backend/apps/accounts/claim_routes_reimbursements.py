@@ -4,11 +4,11 @@ Every owner command and read needs a full authenticated member session; a claime
 pre-authentication session is refused. OPTIONS stays an anonymous CORS preflight, as on
 every other member route.
 """
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from .claim_route_types import AnonymousRead, Refused
 from .reimbursement_route_catalog import ROUTES
 
-_REFUSED = Refused(gettext_lazy("A full authenticated account is required for reimbursement, stage-form and payout work."))
+_REFUSED = Refused(gettext_noop("A full authenticated account is required for reimbursement, stage-form and payout work."))
 
 CLAIM_ROUTES = {
     **{(name, method): _REFUSED

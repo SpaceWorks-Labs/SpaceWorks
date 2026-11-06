@@ -15,7 +15,7 @@ and freezes the result on the charge it raises.
 * `PriceOverride` -- inherit / free / custom for one component on one item.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -37,13 +37,13 @@ class PricingDefault(models.Model):
         PAID = "paid", "Paid"
 
     class RentalTiming(models.TextChoices):
-        AT_CHECKOUT = "at_checkout", gettext_lazy("At checkout, for the planned days")
-        AT_RETURN = "at_return", gettext_lazy("At return, for the actual days")
+        AT_CHECKOUT = "at_checkout", gettext_noop("At checkout, for the planned days")
+        AT_RETURN = "at_return", gettext_noop("At return, for the actual days")
 
     class FailedJobCharge(models.TextChoices):
-        NONE = "none", gettext_lazy("No charge")
-        MATERIAL_ONLY = "material_only", gettext_lazy("Material used only")
-        FULL = "full", gettext_lazy("Full charge")
+        NONE = "none", gettext_noop("No charge")
+        MATERIAL_ONLY = "material_only", gettext_noop("Material used only")
+        FULL = "full", gettext_noop("Full charge")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="pricing_defaults")
     domain = models.CharField(max_length=16, choices=PricingDomain.choices)
@@ -102,15 +102,15 @@ class PriceOverride(models.Model):
     """
 
     class TargetType(models.TextChoices):
-        INVENTORY_PRODUCT = "inventory_product", gettext_lazy("Inventory item")
+        INVENTORY_PRODUCT = "inventory_product", gettext_noop("Inventory item")
         MACHINE = "machine", "Machine"
-        CONSUMABLE_POOL = "consumable_pool", gettext_lazy("Material pool")
-        BOOKABLE_SPACE = "bookable_space", gettext_lazy("Room or resource")
+        CONSUMABLE_POOL = "consumable_pool", gettext_noop("Material pool")
+        BOOKABLE_SPACE = "bookable_space", gettext_noop("Room or resource")
 
     class Mode(models.TextChoices):
-        INHERIT = "inherit", gettext_lazy("Use the space default")
+        INHERIT = "inherit", gettext_noop("Use the space default")
         FREE = "free", "Free"
-        CUSTOM = "custom", gettext_lazy("Custom price")
+        CUSTOM = "custom", gettext_noop("Custom price")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="price_overrides")
     domain = models.CharField(max_length=16, choices=PricingDomain.choices)

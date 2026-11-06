@@ -7,7 +7,7 @@ step when the space requires one. A reference can be claimed once per space, eve
 second claim quoting the same UTR is refused, whatever happened to the first.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -15,11 +15,11 @@ from django.db import models
 class PaymentClaim(models.Model):
     class Method(models.TextChoices):
         UPI = "upi", "UPI"
-        BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank transfer")
+        BANK_TRANSFER = "bank_transfer", gettext_noop("Bank transfer")
 
     class Status(models.TextChoices):
-        SUBMITTED = "submitted", gettext_lazy("Waiting for staff")
-        AWAITING_CONFIRMATION = "awaiting_confirmation", gettext_lazy("Waiting for a second confirmation")
+        SUBMITTED = "submitted", gettext_noop("Waiting for staff")
+        AWAITING_CONFIRMATION = "awaiting_confirmation", gettext_noop("Waiting for a second confirmation")
         CONFIRMED = "confirmed", "Confirmed"
         REJECTED = "rejected", "Rejected"
 

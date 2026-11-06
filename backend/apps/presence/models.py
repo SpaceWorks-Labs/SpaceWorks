@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -17,16 +17,16 @@ class PresenceSession(models.Model):
 
     class EndReason(models.TextChoices):
         SUPERSEDED = "superseded", "Superseded"
-        MEMBERSHIP_REVOKED = "membership_revoked", gettext_lazy("Membership revoked")
-        CLAIM_REVOKED = "claim_revoked", gettext_lazy("Claim revoked")
-        USER_ENDED = "user_ended", gettext_lazy("User ended")
+        MEMBERSHIP_REVOKED = "membership_revoked", gettext_noop("Membership revoked")
+        CLAIM_REVOKED = "claim_revoked", gettext_noop("Claim revoked")
+        USER_ENDED = "user_ended", gettext_noop("User ended")
         EXPIRED = "expired", "Expired"
-        STAFF_ENDED = "staff_ended", gettext_lazy("Staff ended")
+        STAFF_ENDED = "staff_ended", gettext_noop("Staff ended")
 
     class Status(models.TextChoices):
         WORKING = "working", "Working"
         VISITING = "visiting", "Visiting"
-        ATTENDING_EVENT = "attending_event", gettext_lazy("Attending an event")
+        ATTENDING_EVENT = "attending_event", gettext_noop("Attending an event")
         GUEST = "guest", "Guest"
 
     # `member` is the legacy identity used by history/claim readers. Keep it in

@@ -1,5 +1,5 @@
 """Durable addressed delivery/outcome and normalized webhook inbox contracts."""
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -10,23 +10,23 @@ from .notification_scope_contract import validate_notification_scope
 
 class MessagingDelivery(models.Model):
     class SkipReason(models.TextChoices):
-        TENANT_UNSERVABLE = "tenant_unservable", gettext_lazy("Tenant unavailable")
-        MODULE_DISABLED = "module_disabled", gettext_lazy("Channel module disabled")
-        FEATURE_UNAVAILABLE = "feature_unavailable", gettext_lazy("Source feature unavailable")
-        MATRIX_DISABLED = "matrix_disabled", gettext_lazy("Notification rule disabled")
-        ACCOUNT_INACTIVE = "account_inactive", gettext_lazy("Account inactive or restricted")
-        NO_MEMBERSHIP = "no_membership", gettext_lazy("No active local membership")
-        NO_TENANT_TIE = "no_tenant_tie", gettext_lazy("No tie to this makerspace")
-        MEMBERSHIP_OPTED_OUT = "membership_opted_out", gettext_lazy("Membership notifications disabled")
-        RECIPIENT_CHANGED = "recipient_changed", gettext_lazy("Recipient selection or scope changed")
-        PERSONAL_DISABLED = "personal_disabled", gettext_lazy("Personal preference disabled")
-        PHONE_UNVERIFIED = "phone_unverified", gettext_lazy("Phone unverified")
-        NO_CONSENT = "no_consent", gettext_lazy("No live consent")
-        SENDER_UNAVAILABLE = "sender_unavailable", gettext_lazy("Sender unavailable")
-        NO_TEMPLATE = "no_template", gettext_lazy("No approved audience template")
-        QUOTA_EXCEEDED = "quota_exceeded", gettext_lazy("Quota exhausted")
-        SOURCE_CHANGED = "source_changed", gettext_lazy("Source removed or scope changed")
-        IDENTITY_UNCONFIRMED = "identity_unconfirmed", gettext_lazy("Recipient correlation unconfirmed")
+        TENANT_UNSERVABLE = "tenant_unservable", gettext_noop("Tenant unavailable")
+        MODULE_DISABLED = "module_disabled", gettext_noop("Channel module disabled")
+        FEATURE_UNAVAILABLE = "feature_unavailable", gettext_noop("Source feature unavailable")
+        MATRIX_DISABLED = "matrix_disabled", gettext_noop("Notification rule disabled")
+        ACCOUNT_INACTIVE = "account_inactive", gettext_noop("Account inactive or restricted")
+        NO_MEMBERSHIP = "no_membership", gettext_noop("No active local membership")
+        NO_TENANT_TIE = "no_tenant_tie", gettext_noop("No tie to this makerspace")
+        MEMBERSHIP_OPTED_OUT = "membership_opted_out", gettext_noop("Membership notifications disabled")
+        RECIPIENT_CHANGED = "recipient_changed", gettext_noop("Recipient selection or scope changed")
+        PERSONAL_DISABLED = "personal_disabled", gettext_noop("Personal preference disabled")
+        PHONE_UNVERIFIED = "phone_unverified", gettext_noop("Phone unverified")
+        NO_CONSENT = "no_consent", gettext_noop("No live consent")
+        SENDER_UNAVAILABLE = "sender_unavailable", gettext_noop("Sender unavailable")
+        NO_TEMPLATE = "no_template", gettext_noop("No approved audience template")
+        QUOTA_EXCEEDED = "quota_exceeded", gettext_noop("Quota exhausted")
+        SOURCE_CHANGED = "source_changed", gettext_noop("Source removed or scope changed")
+        IDENTITY_UNCONFIRMED = "identity_unconfirmed", gettext_noop("Recipient correlation unconfirmed")
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

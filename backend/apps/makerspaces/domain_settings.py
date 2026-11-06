@@ -32,6 +32,7 @@ from apps.accounts.rbac_actions import Action
 
 from .capabilities import FEATURE_DEFINITIONS, feature_required_modules
 from .module_registry import module_available
+from config.locale_resolution import display
 
 
 @dataclass(frozen=True)
@@ -116,8 +117,8 @@ def describe(makerspace, domain, editable, permissions=None):
         allowed = permissions.get(key, default)
         features.append({
             "key": key,
-            "label": definition.label,
-            "description": definition.description,
+            "label": display(definition.label),
+            "description": display(definition.description),
             "parent_module": definition.parent_module,
             "requires_features": list(definition.requires_features),
             "enabled": key in enabled,

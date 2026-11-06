@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -26,9 +26,9 @@ class Event(models.Model):
 
     class RegistrationAudience(models.TextChoices):
         MEMBERS = "members", "Members"
-        ACCOUNTS = "accounts", gettext_lazy("Authenticated accounts")
-        INVITE = "invite", gettext_lazy("Invited accounts")
-        PARTICIPATING_ORGANIZATIONS = "participating_organizations", gettext_lazy("Participating organizations")
+        ACCOUNTS = "accounts", gettext_noop("Authenticated accounts")
+        INVITE = "invite", gettext_noop("Invited accounts")
+        PARTICIPATING_ORGANIZATIONS = "participating_organizations", gettext_noop("Participating organizations")
 
     organization_admission_blocked = models.BooleanField(default=False, editable=False)
     registration_audience = models.CharField(max_length=32, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
@@ -44,7 +44,7 @@ class Event(models.Model):
         OFFLINE = "offline", "Offline"
 
     class DeliveryMode(models.TextChoices):
-        IN_PERSON = "in_person", gettext_lazy("In person")
+        IN_PERSON = "in_person", gettext_noop("In person")
         ONLINE = "online", "Online"
         HYBRID = "hybrid", "Hybrid"
 

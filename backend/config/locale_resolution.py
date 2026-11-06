@@ -153,3 +153,15 @@ def override_for(user=None, makerspace=None):
     code = locale_for(user=user, makerspace=makerspace)
     with translation.override(code):
         yield code
+
+
+def display(value):
+    """Translate a label declared with ``gettext_noop`` at the point it is shown.
+
+    Choice labels and display catalogues stay plain strings at declaration (no lazy proxy can
+    leak into a join, a hash or a JSON field); presentation seams call this. Empty stays empty,
+    because ``gettext("")`` is the catalogue header.
+    """
+    from django.utils.translation import gettext
+
+    return gettext(value) if value else value

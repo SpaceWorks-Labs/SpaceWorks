@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 import uuid
 
 from django.conf import settings
@@ -123,7 +123,7 @@ class QrCode(models.Model):
         ASSET = "asset", "Asset"
         # A member ID card (makerspaces.MemberCard). Resolved ONLY through the dedicated
         # member-card resolver, never the generic scanner path.
-        MEMBER_CARD = "member_card", gettext_lazy("Member card")
+        MEMBER_CARD = "member_card", gettext_noop("Member card")
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -172,10 +172,10 @@ class QrScanEvent(models.Model):
     class Context(models.TextChoices):
         ISSUE = "issue", "Issue"
         RETURN = "return", "Return"
-        INVENTORY_CHECK = "inventory_check", gettext_lazy("Inventory Check")
+        INVENTORY_CHECK = "inventory_check", gettext_noop("Inventory Check")
         REASSIGNMENT = "reassignment", "Reassignment"
-        SCANNER_LOOKUP = "scanner_lookup", gettext_lazy("Scanner Lookup")
-        MEMBER_LOOKUP = "member_lookup", gettext_lazy("Member card lookup")
+        SCANNER_LOOKUP = "scanner_lookup", gettext_noop("Scanner Lookup")
+        MEMBER_LOOKUP = "member_lookup", gettext_noop("Member card lookup")
 
     makerspace = models.ForeignKey(
         Makerspace,

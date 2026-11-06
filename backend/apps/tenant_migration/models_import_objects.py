@@ -1,6 +1,6 @@
 """Durable journal for target-side tenant object promotion and rollback."""
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 
 from .models_import_job import TenantImportJob
@@ -9,14 +9,14 @@ from .models_import_job import TenantImportJob
 class TenantImportObject(models.Model):
     class BucketKind(models.TextChoices):
         PRIVATE = "private", "Private"
-        PUBLIC_IMAGE = "public_image", gettext_lazy("Public image")
+        PUBLIC_IMAGE = "public_image", gettext_noop("Public image")
 
     class State(models.TextChoices):
         STAGED = "staged", "Staged"
         PROMOTED = "promoted", "Promoted"
         VERIFIED = "verified", "Verified"
         FAILED = "failed", "Failed"
-        ROLLED_BACK = "rolled_back", gettext_lazy("Rolled back")
+        ROLLED_BACK = "rolled_back", gettext_noop("Rolled back")
 
     job = models.ForeignKey(
         TenantImportJob,

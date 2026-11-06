@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -21,19 +21,19 @@ class MakerspaceMembership(models.Model):
         STAFF = STAFF, "Staff"
 
     class Role(models.TextChoices):
-        SPACE_MANAGER = "space_manager", gettext_lazy("Space Manager")
-        INVENTORY_MANAGER = "inventory_manager", gettext_lazy("Inventory Manager")
-        PRINT_MANAGER = "print_manager", gettext_lazy("Print Manager")
+        SPACE_MANAGER = "space_manager", gettext_noop("Space Manager")
+        INVENTORY_MANAGER = "inventory_manager", gettext_noop("Inventory Manager")
+        PRINT_MANAGER = "print_manager", gettext_noop("Print Manager")
         # Makerspace-wide machine authority: manages assigned machines end-to-end
         # (the machine + usage/cycle + warranty + maintenance). Action set is exactly
         # {MANAGE_MACHINES}; every machine sub-feature already gates on machine access,
         # so no new RBAC action is needed. Delegable by a Space Manager (Part I).
-        MACHINE_MANAGER = "machine_manager", gettext_lazy("Machine Manager")
-        EVENT_MANAGER = "event_manager", gettext_lazy("Event Manager")
-        BOOKING_MANAGER = "booking_manager", gettext_lazy("Booking Manager")
+        MACHINE_MANAGER = "machine_manager", gettext_noop("Machine Manager")
+        EVENT_MANAGER = "event_manager", gettext_noop("Event Manager")
+        BOOKING_MANAGER = "booking_manager", gettext_noop("Booking Manager")
         HANDOVER = "handover", "Handover"
         TECHNICIAN = "technician", "Technician"
-        SHOP_MANAGER = "shop_manager", gettext_lazy("Shop Manager")
+        SHOP_MANAGER = "shop_manager", gettext_noop("Shop Manager")
         CUSTOM = "custom", "Custom"
 
     objects = CommunityMembershipManager()

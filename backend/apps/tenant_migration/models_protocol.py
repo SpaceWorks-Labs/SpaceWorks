@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -108,8 +108,8 @@ class MigrationPairing(models.Model):
 
 class MigrationReceipt(models.Model):
     class Operation(models.TextChoices):
-        SOURCE_CUTOVER = "source_cutover", gettext_lazy("Source cutover")
-        TARGET_ABORT = "target_abort", gettext_lazy("Target abort")
+        SOURCE_CUTOVER = "source_cutover", gettext_noop("Source cutover")
+        TARGET_ABORT = "target_abort", gettext_noop("Target abort")
 
     receipt_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     pairing = models.ForeignKey(
@@ -140,8 +140,8 @@ class MigrationReceipt(models.Model):
 
 class ReceiptConsumption(models.Model):
     class Purpose(models.TextChoices):
-        ACTIVATE_TARGET = "activate_target", gettext_lazy("Activate target")
-        REOPEN_SOURCE = "reopen_source", gettext_lazy("Reopen source")
+        ACTIVATE_TARGET = "activate_target", gettext_noop("Activate target")
+        REOPEN_SOURCE = "reopen_source", gettext_noop("Reopen source")
 
     receipt = models.OneToOneField(
         MigrationReceipt,
@@ -160,7 +160,7 @@ class ReceiptConsumption(models.Model):
 
 class MigratedOutHandoff(models.Model):
     class State(models.TextChoices):
-        MIGRATED_OUT = "migrated_out", gettext_lazy("Migrated out")
+        MIGRATED_OUT = "migrated_out", gettext_noop("Migrated out")
 
     source_tenant = models.OneToOneField(
         "makerspaces.Makerspace",

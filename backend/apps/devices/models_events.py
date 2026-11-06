@@ -6,7 +6,7 @@ live ``device`` FK is remapped, so a source integer can never silently rebind to
 unrelated target Machine, request or batch.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.db import models
@@ -20,29 +20,29 @@ class DeviceEvent(models.Model):
     class EventType(models.TextChoices):
         CREATED = "created", "Created"
         UPDATED = "updated", "Updated"
-        ENROLLMENT_CREATED = "enrollment_created", gettext_lazy("Enrollment created")
+        ENROLLMENT_CREATED = "enrollment_created", gettext_noop("Enrollment created")
         ENROLLED = "enrolled", "Enrolled"
-        ROTATION_STARTED = "rotation_started", gettext_lazy("Rotation started")
+        ROTATION_STARTED = "rotation_started", gettext_noop("Rotation started")
         ROTATED = "rotated", "Rotated"
         REVOKED = "revoked", "Revoked"
         HEARTBEAT = "heartbeat", "Heartbeat"
-        PRINTER_BOUND = "printer_bound", gettext_lazy("printer bound")
-        PRINTER_UNBOUND = "printer_unbound", gettext_lazy("printer unbound")
-        PRINTER_JOB_CREATED = "printer_job_created", gettext_lazy("printer job created")
-        COMMAND_LEASED = "command_leased", gettext_lazy("command leased")
-        COMMAND_ACKNOWLEDGED = "command_acknowledged", gettext_lazy("command acknowledged")
-        COMMAND_DELIVERY_FAILED = "command_delivery_failed", gettext_lazy("command delivery failed")
-        PRINTER_TELEMETRY_RECEIVED = "printer_telemetry_received", gettext_lazy("printer telemetry received")
-        PRINTER_RESULT_CLAIMED = "printer_result_claimed", gettext_lazy("printer result claimed")
-        PRINTER_RESULT_APPLIED = "printer_result_applied", gettext_lazy("printer result applied")
-        PRINTER_RESULT_NEEDS_REVIEW = "printer_result_needs_review", gettext_lazy("printer result needs review")
-        PRINTER_JOB_CANCELLED = "printer_job_cancelled", gettext_lazy("printer job cancelled")
-        LABEL_COMMAND_CREATED = "label_command_created", gettext_lazy("Label command created")
-        LABEL_CONTENT_DOWNLOADED = "label_content_downloaded", gettext_lazy("Label content downloaded")
-        LABEL_COMMAND_SUCCEEDED = "label_command_succeeded", gettext_lazy("Label command succeeded")
-        LABEL_COMMAND_RETRY_SCHEDULED = "label_command_retry_scheduled", gettext_lazy("Label command retry scheduled")
-        LABEL_COMMAND_FAILED = "label_command_failed", gettext_lazy("Label command failed")
-        OFFLINE = "offline_detected", gettext_lazy("Offline detected")
+        PRINTER_BOUND = "printer_bound", gettext_noop("printer bound")
+        PRINTER_UNBOUND = "printer_unbound", gettext_noop("printer unbound")
+        PRINTER_JOB_CREATED = "printer_job_created", gettext_noop("printer job created")
+        COMMAND_LEASED = "command_leased", gettext_noop("command leased")
+        COMMAND_ACKNOWLEDGED = "command_acknowledged", gettext_noop("command acknowledged")
+        COMMAND_DELIVERY_FAILED = "command_delivery_failed", gettext_noop("command delivery failed")
+        PRINTER_TELEMETRY_RECEIVED = "printer_telemetry_received", gettext_noop("printer telemetry received")
+        PRINTER_RESULT_CLAIMED = "printer_result_claimed", gettext_noop("printer result claimed")
+        PRINTER_RESULT_APPLIED = "printer_result_applied", gettext_noop("printer result applied")
+        PRINTER_RESULT_NEEDS_REVIEW = "printer_result_needs_review", gettext_noop("printer result needs review")
+        PRINTER_JOB_CANCELLED = "printer_job_cancelled", gettext_noop("printer job cancelled")
+        LABEL_COMMAND_CREATED = "label_command_created", gettext_noop("Label command created")
+        LABEL_CONTENT_DOWNLOADED = "label_content_downloaded", gettext_noop("Label content downloaded")
+        LABEL_COMMAND_SUCCEEDED = "label_command_succeeded", gettext_noop("Label command succeeded")
+        LABEL_COMMAND_RETRY_SCHEDULED = "label_command_retry_scheduled", gettext_noop("Label command retry scheduled")
+        LABEL_COMMAND_FAILED = "label_command_failed", gettext_noop("Label command failed")
+        OFFLINE = "offline_detected", gettext_noop("Offline detected")
         RECOVERED = "recovered", "Recovered"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

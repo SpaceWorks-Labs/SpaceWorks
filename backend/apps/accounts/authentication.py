@@ -19,7 +19,7 @@ from apps.accounts.claim_routes import CLAIM_REACHABLE_PREFIXES
 from apps.accounts.models import User
 from apps.accounts.authentication_device import heartbeat_device_grant, validated_device_grant
 from apps.accounts.tokens import validate_auth_generation
-from config.locale_resolution import activate_authenticated_locale
+from config.locale_resolution import activate_authenticated_locale, display
 
 
 VERIFICATION_ONLY_SURFACE = "verification_only"
@@ -147,7 +147,7 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
             expire_claim_presence(token.get("claim_session_id"))
             raise AuthenticationFailed(gettext("Claim session is no longer active.")) from exc
         if isinstance(policy, Refused):
-            raise PermissionDenied(policy.reason)
+            raise PermissionDenied(display(policy.reason))
         if not isinstance(policy, ControlRoute) and not claim_tenant_matches(
             policy.tenant,
             claim_makerspace_id=claim.membership.makerspace_id,

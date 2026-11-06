@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
@@ -19,9 +19,9 @@ connect_account_validator = RegexValidator(
 
 class MakerspacePaymentSettings(models.Model):
     class LoanDepositMode(models.TextChoices):
-        NONE = "none", gettext_lazy("No deposit")
-        FIXED = "fixed", gettext_lazy("Fixed amount per loan")
-        PER_PRODUCT = "per_product", gettext_lazy("Sum of product deposits")
+        NONE = "none", gettext_noop("No deposit")
+        FIXED = "fixed", gettext_noop("Fixed amount per loan")
+        PER_PRODUCT = "per_product", gettext_noop("Sum of product deposits")
 
     class ConnectStatus(models.TextChoices):
         UNCONNECTED = "unconnected", "Unconnected"

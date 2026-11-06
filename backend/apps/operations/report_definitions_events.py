@@ -4,7 +4,7 @@ Keyed to MANAGE_EVENTS (not the VIEW_AUDIT default) so the built-in Event Manage
 the exports for every event it manages; the subject check still applies per event.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from apps.accounts import rbac
 
 from .report_types import ReportDefinition
@@ -19,15 +19,15 @@ ATTENDANCE_FIELDS = next(d.fields for d in EXISTING_REPORT_DEFINITIONS if d.key 
 
 EVENT_REPORT_DEFINITIONS = (
     ReportDefinition("event-registrations", "apps.operations.reports_event_exports.build_registrations",
-                     REGISTRATION_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_lazy("Event registration export"), subject_kind="event",
+                     REGISTRATION_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_noop("Event registration export"), subject_kind="event",
                      required_feature="reports.event_exports", schedulable=False, deployment_aggregate=False,
                      chart_spec=REGISTRATIONS_CHART),
     ReportDefinition("event-feedback", "apps.operations.reports_event_exports.build_feedback",
-                     FEEDBACK_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_lazy("Event feedback export"), subject_kind="event",
+                     FEEDBACK_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_noop("Event feedback export"), subject_kind="event",
                      required_feature="reports.event_exports", schedulable=False, deployment_aggregate=False,
                      chart_spec=FEEDBACK_CHART),
     ReportDefinition("event-attendance-pdf", "apps.operations.reports_events.build_event_attendance",
-                     ATTENDANCE_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_lazy("Post-event analytics"), subject_kind="event",
+                     ATTENDANCE_FIELDS, ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_noop("Post-event analytics"), subject_kind="event",
                      required_feature="reports.event_pdf", allowed_formats=("pdf",),
                      pdf_renderer_path="apps.operations.report_pdf.render_pdf",
                      schedulable=False, deployment_aggregate=False, chart_hint="line", chart_spec=ATTENDANCE_PDF_CHART),

@@ -7,10 +7,10 @@ only, never values), and the staff role slugs the person kept in that space.
 row); it never creates an account.
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("account.converted", gettext_lazy("Staff account converted to a personal account"), ("decision", "holds", "roles_kept")),
-    P("staff_role.granted", gettext_lazy("Staff role granted"), ("membership_id", "roles", "machine_type_ids")),
+    P("account.converted", gettext_noop("Staff account converted to a personal account"), ("decision", "holds", "roles_kept")),
+    P("staff_role.granted", gettext_noop("Staff role granted"), ("membership_id", "roles", "machine_type_ids")),
 )

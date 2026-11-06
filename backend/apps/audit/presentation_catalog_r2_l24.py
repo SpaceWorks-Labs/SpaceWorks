@@ -4,10 +4,10 @@ One row per price save that opened refund cases: the area, how many items, and t
 and charge ids. Each case also writes its own `payment.refund_case_opened` row; members
 are never named here."""
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("pricing.price_drop_refunds_opened", gettext_lazy("Refund cases opened after a price drop"),
+    P("pricing.price_drop_refunds_opened", gettext_noop("Refund cases opened after a price drop"),
       ("area", "items", "case_ids", "payment_ids")),
 )

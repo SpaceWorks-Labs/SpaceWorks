@@ -1,6 +1,6 @@
 """Immutable issued financial documents, permanently part of the core ledger."""
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal, InvalidOperation
@@ -9,7 +9,7 @@ from decimal import Decimal, InvalidOperation
 class PaymentDocument(models.Model):
     class Kind(models.TextChoices):
         RECEIPT = "receipt", "Receipt"
-        CREDIT_NOTE = "credit_note", gettext_lazy("Credit note")
+        CREDIT_NOTE = "credit_note", gettext_noop("Credit note")
         BILL = "bill", "Bill"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)

@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -24,7 +24,7 @@ class EventRegistration(PrivateDocumentMixin, models.Model):
     #: never part of an order or a team. Only `contributions/crew_workflow` sets it.
     is_crew = models.BooleanField(default=False, editable=False)
     class Status(models.TextChoices):
-        PENDING_APPROVAL = "pending_approval", gettext_lazy("Pending approval")
+        PENDING_APPROVAL = "pending_approval", gettext_noop("Pending approval")
         REGISTERED = "registered", "Registered"
         WAITLISTED = "waitlisted", "Waitlisted"
         REJECTED = "rejected", "Rejected"

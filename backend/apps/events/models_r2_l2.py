@@ -10,7 +10,7 @@
   Desk help alerts. Rooms get a short outbound notice only; no buttons, no names.
 """
 
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -19,10 +19,10 @@ from django.db import models
 class SubmissionIntegrityCheck(models.Model):
     class State(models.TextChoices):
         PENDING = "pending", "Pending"
-        CLEAR = "clear", gettext_lazy("No early commits")
-        FLAGGED = "flagged", gettext_lazy("Flagged for information")
-        NO_REPOSITORY = "no_repository", gettext_lazy("No GitHub repository")
-        UNAVAILABLE = "unavailable", gettext_lazy("GitHub unavailable")
+        CLEAR = "clear", gettext_noop("No early commits")
+        FLAGGED = "flagged", gettext_noop("Flagged for information")
+        NO_REPOSITORY = "no_repository", gettext_noop("No GitHub repository")
+        UNAVAILABLE = "unavailable", gettext_noop("GitHub unavailable")
 
     snapshot = models.OneToOneField("events.SubmissionSnapshot", on_delete=models.CASCADE,
                                     related_name="integrity_check")

@@ -11,7 +11,7 @@ step writes an `IssueEvent` and an audit row. The reporter's name and email are 
 PII; a Technician only ever sees the first name (Q-T2).
 """
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -30,7 +30,7 @@ class IssueReport(ScopedPiiModelMixin, models.Model):
         REPORTED = "reported", "Reported"
         TRIAGED = "triaged", "Triaged"
         ASSIGNED = "assigned", "Assigned"
-        IN_PROGRESS = "in_progress", gettext_lazy("In progress")
+        IN_PROGRESS = "in_progress", gettext_noop("In progress")
         FIXED = "fixed", "Fixed"
         CLOSED = "closed", "Closed"
         REJECTED = "rejected", "Rejected"
@@ -38,12 +38,12 @@ class IssueReport(ScopedPiiModelMixin, models.Model):
     class Source(models.TextChoices):
         LOAN = "loan", "Loan"
         BOOKING = "booking", "Booking"
-        MACHINE_JOB = "machine_job", gettext_lazy("Machine job")
+        MACHINE_JOB = "machine_job", gettext_noop("Machine job")
         STAFF = "staff", "Staff"
 
     class QuoteState(models.TextChoices):
-        NONE = "none", gettext_lazy("No quote")
-        PENDING = "pending", gettext_lazy("Awaiting approval")
+        NONE = "none", gettext_noop("No quote")
+        PENDING = "pending", gettext_noop("Awaiting approval")
         APPROVED = "approved", "Approved"
         DECLINED = "declined", "Declined"
 

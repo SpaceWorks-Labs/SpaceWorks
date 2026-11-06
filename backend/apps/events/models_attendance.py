@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -15,11 +15,11 @@ class EventCheckInEvent(models.Model):
     """Immutable evidence that an attended transition happened."""
 
     class Source(models.TextChoices):
-        ONLINE = "online", gettext_lazy("Online staff confirmation")
-        QR = "qr", gettext_lazy("Online QR check-in")
-        OFFLINE_SYNC = "offline_sync", gettext_lazy("Authenticated offline synchronization")
-        VENUE_STATION = "venue_station", gettext_lazy("PIN venue station")
-        LEGACY = "legacy", gettext_lazy("Legacy attendance history")
+        ONLINE = "online", gettext_noop("Online staff confirmation")
+        QR = "qr", gettext_noop("Online QR check-in")
+        OFFLINE_SYNC = "offline_sync", gettext_noop("Authenticated offline synchronization")
+        VENUE_STATION = "venue_station", gettext_noop("PIN venue station")
+        LEGACY = "legacy", gettext_noop("Legacy attendance history")
 
     makerspace = models.ForeignKey(
         Makerspace,

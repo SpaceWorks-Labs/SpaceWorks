@@ -1,18 +1,18 @@
 """Durable deployment-artifact and component records."""
 
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 from django.db import models
 
 
 class BackupArtifactLedger(models.Model):
     class State(models.TextChoices):
-        PENDING = "pending", gettext_lazy("Pending upload")
-        STAGING_VERIFIED = "staging_verified", gettext_lazy("Staging verified")
-        FINAL_VERIFIED = "final_verified", gettext_lazy("Final verified")
+        PENDING = "pending", gettext_noop("Pending upload")
+        STAGING_VERIFIED = "staging_verified", gettext_noop("Staging verified")
+        FINAL_VERIFIED = "final_verified", gettext_noop("Final verified")
         AVAILABLE = "available", "Available"
         FAILED = "failed", "Failed"
         SUPERSEDED = "superseded", "Superseded"
-        BYTES_DELETED = "bytes_deleted", gettext_lazy("Managed bytes deleted")
+        BYTES_DELETED = "bytes_deleted", gettext_noop("Managed bytes deleted")
 
     artifact_id = models.UUIDField(primary_key=True, editable=False)
     capture_id = models.UUIDField(unique=True, editable=False)
@@ -66,12 +66,12 @@ class BackupArtifactLedger(models.Model):
 
 class BackupArtifactComponent(models.Model):
     class Kind(models.TextChoices):
-        MAIN = "main", gettext_lazy("Readable main")
+        MAIN = "main", gettext_noop("Readable main")
 
     class StorageState(models.TextChoices):
         PENDING = "pending", "Pending"
         AVAILABLE = "available", "Available"
-        BYTES_DELETED = "bytes_deleted", gettext_lazy("Managed bytes deleted")
+        BYTES_DELETED = "bytes_deleted", gettext_noop("Managed bytes deleted")
 
     artifact = models.ForeignKey(
         BackupArtifactLedger, on_delete=models.PROTECT, related_name="components"

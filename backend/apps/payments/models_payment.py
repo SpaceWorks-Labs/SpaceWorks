@@ -1,4 +1,4 @@
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -7,41 +7,41 @@ from apps.payments.models_settings import currency_validator
 
 class Payment(models.Model):
     class SubjectType(models.TextChoices):
-        MACHINE_SERVICE_REQUEST = "machine_service_request", gettext_lazy("Machine service request")
+        MACHINE_SERVICE_REQUEST = "machine_service_request", gettext_noop("Machine service request")
         BOOKING = "booking", "Booking"
-        EVENT_REGISTRATION = "event_registration", gettext_lazy("Event registration")
-        MAKERSPACE_MEMBERSHIP = "makerspace_membership", gettext_lazy("Makerspace membership")
+        EVENT_REGISTRATION = "event_registration", gettext_noop("Event registration")
+        MAKERSPACE_MEMBERSHIP = "makerspace_membership", gettext_noop("Makerspace membership")
         # subject_id is the `makerspaces.MembershipTerm` pk: the membership pk is already
         # taken by the dues charge above, and one term gets exactly one renewal charge.
-        MEMBERSHIP_TERM = "membership_term", gettext_lazy("Membership renewal")
-        MEMBERSHIP_REQUEST = "membership_request", gettext_lazy("Membership admission")
+        MEMBERSHIP_TERM = "membership_term", gettext_noop("Membership renewal")
+        MEMBERSHIP_REQUEST = "membership_request", gettext_noop("Membership admission")
         # Loan charges (forward plan phase 6). subject_id is the HardwareRequest id, so
         # the one-per-subject constraint gives one deposit and one late fee per loan.
-        LOAN_DEPOSIT = "loan_deposit", gettext_lazy("Loan deposit")
-        LOAN_LATE_FEE = "loan_late_fee", gettext_lazy("Loan late fee")
+        LOAN_DEPOSIT = "loan_deposit", gettext_noop("Loan deposit")
+        LOAN_LATE_FEE = "loan_late_fee", gettext_noop("Loan late fee")
         # Lane L15 (#84/#85). Rental is one per loan (subject_id = HardwareRequest id);
         # damage and lost are one per RequesterAccountability row (subject_id = its id).
-        LOAN_RENTAL = "loan_rental", gettext_lazy("Loan rental")
-        LOAN_DAMAGE = "loan_damage", gettext_lazy("Loan damage charge")
-        LOAN_LOST = "loan_lost", gettext_lazy("Lost item charge")
+        LOAN_RENTAL = "loan_rental", gettext_noop("Loan rental")
+        LOAN_DAMAGE = "loan_damage", gettext_noop("Loan damage charge")
+        LOAN_LOST = "loan_lost", gettext_noop("Lost item charge")
         # Lane L23 (#158): one metered machine session; subject_id is the MachineSession id.
-        MACHINE_SESSION = "machine_session", gettext_lazy("Machine session")
+        MACHINE_SESSION = "machine_session", gettext_noop("Machine session")
         # Lane L6. An order is one buyer's several tickets (subject_id = EventOrder id); a
         # venue fee is an outside organiser's hosting charge (subject_id = EventVenueFee id).
-        EVENT_ORDER = "event_order", gettext_lazy("Event ticket order")
-        EVENT_VENUE_FEE = "event_venue_fee", gettext_lazy("Event venue fee")
+        EVENT_ORDER = "event_order", gettext_noop("Event ticket order")
+        EVENT_VENUE_FEE = "event_venue_fee", gettext_noop("Event venue fee")
         # Lane L18. A donation (one-off, or one period of a pledge; subject_id = Donation id)
         # and a sponsor's agreed payment (subject_id = SponsorshipCharge id).
         DONATION = "donation", "Donation"
         SPONSORSHIP = "sponsorship", "Sponsorship"
         # Lane L21b. A hackathon project's entry fee (subject_id = HackathonSubmission id) and a
         # paid team's one charge on its leader (subject_id = HackathonTeam id, C-39).
-        SUBMISSION_FEE = "submission_fee", gettext_lazy("Project entry fee")
-        TEAM_REGISTRATION = "team_registration", gettext_lazy("Team registration")
+        SUBMISSION_FEE = "submission_fee", gettext_noop("Project entry fee")
+        TEAM_REGISTRATION = "team_registration", gettext_noop("Team registration")
         # Hack-money G10: an optional refundable commitment deposit (subject_id = EventRegistration id).
-        EVENT_DEPOSIT = "event_deposit", gettext_lazy("Event deposit")
+        EVENT_DEPOSIT = "event_deposit", gettext_noop("Event deposit")
         # Lane L22. One shop order (online or a front-desk sale; subject_id = ShopOrder id).
-        SHOP_ORDER = "shop_order", gettext_lazy("Shop order")
+        SHOP_ORDER = "shop_order", gettext_noop("Shop order")
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
@@ -58,14 +58,14 @@ class Payment(models.Model):
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
-        PAID_ONLINE = "paid_online", gettext_lazy("Paid online")
-        PAID_OFFLINE = "paid_offline", gettext_lazy("Paid offline")
+        PAID_ONLINE = "paid_online", gettext_noop("Paid online")
+        PAID_OFFLINE = "paid_offline", gettext_noop("Paid offline")
         WAIVED = "waived", "Waived"
         CANCELED = "canceled", "Canceled"
 
     class StripeProvider(models.TextChoices):
-        RAW = "raw", gettext_lazy("Makerspace raw credentials")
-        CONNECT = "connect", gettext_lazy("Stripe Connect")
+        RAW = "raw", gettext_noop("Makerspace raw credentials")
+        CONNECT = "connect", gettext_noop("Stripe Connect")
 
     class Provider(models.TextChoices):
         """Which vendor holds this charge.
@@ -82,11 +82,11 @@ class Payment(models.Model):
         # a DB trigger permits that transition exactly once. Without this state such a row
         # would be stamped `stripe` and could never be claimed by a gateway configured
         # later, because provider provenance is immutable.
-        UNCLAIMED = "unclaimed", gettext_lazy("No online rail")
+        UNCLAIMED = "unclaimed", gettext_noop("No online rail")
 
     class OnlineRail(models.TextChoices):
-        CHECKOUT = 'checkout', gettext_lazy('Stripe Checkout')
-        NATIVE_PAYMENT_INTENT = 'native_payment_intent', gettext_lazy('Native payment intent')
+        CHECKOUT = 'checkout', gettext_noop('Stripe Checkout')
+        NATIVE_PAYMENT_INTENT = 'native_payment_intent', gettext_noop('Native payment intent')
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="payments")
     subject_type = models.CharField(max_length=48, choices=SubjectType.choices)

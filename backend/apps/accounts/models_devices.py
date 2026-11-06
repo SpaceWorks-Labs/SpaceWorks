@@ -1,4 +1,4 @@
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -102,7 +102,7 @@ class DeviceGrant(models.Model):
     class Authority(models.TextChoices):
         MEMBER = 'member', 'Member'
         STAFF = 'staff', 'Staff'
-        EVENT = 'event', gettext_lazy('Event role')  # #173: a step-up limited to one event's programme routes.
+        EVENT = 'event', gettext_noop('Event role')  # #173: a step-up limited to one event's programme routes.
 
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'

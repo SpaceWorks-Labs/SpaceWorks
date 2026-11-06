@@ -95,6 +95,22 @@ NOT_SEPARABLE = {
     "evidence_uploads": "Core module.",
     "qr_management": "Core module.",
     "scanner": "Core module.",
+    # #183B(f): modules that DO hold rows, but rows that belong to another owner, so a
+    # per-module purge would be wrong rather than empty. They go with the makerspace.
+    "payments": (
+        "The money ledger is never purged on its own: a deployment must always read and "
+        "settle what it is owed. Online-rail rows are part of that ledger."
+    ),
+    "email": (
+        "Email logs are the delivery record for every other module's messages; they are "
+        "removed with the makerspace and by the email-log retention sweep."
+    ),
+    "bulk_import": "Import jobs are provenance for the inventory rows they created; they go with the makerspace.",
+    "containers": "Containers hold the space's inventory; removing them alone would orphan stock locations.",
+    "asset_units": "Asset units are inventory items with their own QR; they go with the inventory.",
+    "member_accounts": "Member accounts are people on the platform, not rows of this makerspace.",
+    "mobile": "Mobile device grants belong to each person's account and expire on their own.",
+    "printing": "Print jobs share the machines stack; purge machine_service, then the makerspace.",
 }
 
 

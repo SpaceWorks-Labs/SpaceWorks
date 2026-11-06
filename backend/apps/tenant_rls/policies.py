@@ -10,8 +10,8 @@ One permissive policy per table, ``spaceworks_rls_tenant``, for every command an
 "Owned" follows the predicate: any of its ``any_paths`` points at a bound makerspace,
 or none of them names an owner at all (a platform row is nobody else's row); every
 ``local_or_global_paths`` entry is unset or bound. A one-hop path compares the column;
-a longer path is an ``EXISTS`` join to the makerspace column; when its last link is nullable,
-a chain that ends at no makerspace is a platform row too. When the L25 group role
+a longer path is an ``EXISTS`` join to the makerspace column; when any link after the first is
+nullable, a chain that ends at no makerspace is a platform row too. When the L25 group role
 ``spaceworks_rls_fixed`` exists, a restrictive ``spaceworks_rls_fixed`` policy limits its
 members to their fixed space whatever settings they send.
 """
@@ -78,19 +78,23 @@ def _path_sql(table, hops, scope):
     joins, alias = [], "spaceworks_j1"
     source = f"{q(first.related_model._meta.db_table)} {alias}"
     condition = f"{alias}.{q(first.target_field.column)} = {outer}"
+    broken = False  # once a nullable link is LEFT JOINed, every later link must be too
     for index, field in enumerate(hops[1:-1], start=2):
         nxt = f"spaceworks_j{index}"
-        joins.append(f"JOIN {q(field.related_model._meta.db_table)} {nxt} "
+        broken = broken or field.null
+        joins.append(f"{'LEFT JOIN' if broken else 'JOIN'} {q(field.related_model._meta.db_table)} {nxt} "
                      f"ON {nxt}.{q(field.target_field.column)} = {alias}.{q(field.column)}")
         alias = nxt
     last = hops[-1]
     chain = f"EXISTS (SELECT 1 FROM {source} {' '.join(joins)} WHERE {condition} AND {alias}.{q(last.column)}"
     owned = f"{chain} = ANY({scope}))".replace("  ", " ")
-    if last.null:
+    if last.null or broken:
         # The chain may end at no makerspace: a credential row of an account with no
         # staff_makerspace_id (a person, the superadmin) is nobody's tenant row, exactly
         # as accounts_user's own one-hop policy already admits. Without this every
         # tenant-bound request hid the session marker of every person (#194 VPS boot).
+        # A nullable INTERMEDIATE link ends the chain the same way (a blacklisted token
+        # whose outstanding token has no user, token__user__staff_makerspace).
         unowned = f"({unowned} OR {chain} IS NULL))".replace("  ", " ")
     return owned, unowned
 

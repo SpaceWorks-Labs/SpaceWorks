@@ -45,7 +45,10 @@ export function PlatformNoticeBanners({ data, space, surface = "staff" }: {
 }) {
   const { ids, dismiss } = useDismissedAnnouncements();
   const readOnly = space ? spaceNotice(data, space) : undefined;
-  const announcements = applicableAnnouncements(data, space?.id, surface).filter(row => !ids.includes(row.id));
+  // A screen for one space whose id is still loading shows no announcements yet, rather than every space's (#195).
+  const spaceId = space?.id ?? (space?.slug ? data?.spaces?.find(row => row.slug === space.slug)?.id : undefined);
+  const spacePending = space !== undefined && spaceId === undefined;
+  const announcements = spacePending ? [] : applicableAnnouncements(data, spaceId, surface).filter(row => !ids.includes(row.id));
   if (!announcements.length && readOnly?.state !== "read_only") return null;
   return <div className="mb-4 grid gap-3" aria-label="Platform notices" role="region">
     {readOnly?.state === "read_only" ? <Banner tone="warn">

@@ -155,11 +155,13 @@ class AssetQrView(APIView):
     def post(self, request, pk, *args, **kwargs):
         asset = get_object_or_404(rbac.scope_by_action(request.user, rbac.Action.MANAGE_QR, InventoryAsset.objects.all()), pk=pk)
         require_module(asset.makerspace, "asset_units")
-        qr, _ = QrCode.objects.get_or_create(
+        qr, created = QrCode.objects.get_or_create(
             makerspace=asset.makerspace,
             target_type=QrCode.TargetType.ASSET,
             target_id=asset.id,
             status=QrCode.Status.ACTIVE,
             defaults={"created_by": request.user},
         )
+        if created:  # A new active QR identity, audited like the tool and box QR paths.
+            audit.record(request.user, "qr.asset_created", makerspace=asset.makerspace, target=qr)
         return Response(QrCodeSerializer(qr).data, status=status.HTTP_201_CREATED)

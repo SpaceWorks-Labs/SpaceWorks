@@ -188,6 +188,8 @@ def resend(survivor, intent_id):
             intent.resends += 1
             intent.save(update_fields=["resends"])
             codes = _issue(intent, now)
+            audit.record(survivor, "account.merge_codes_resent", target=survivor,
+                         meta={"method": intent.method, "resends": intent.resends})
             failure = None
     if failure:
         raise MergeRefused(*failure)

@@ -153,5 +153,5 @@ class ShopOrderReceiptView(APIView):
         require_feature(order.makerspace, "shop.receipts")
         body = ShopReceiptEmailSerializer(data=request.data)
         body.is_valid(raise_exception=True)
-        email_receipt(order, body.validated_data.get("email", ""))
+        email_receipt(order, body.validated_data.get("email", ""), actor=request.user)
         return Response(status=204)

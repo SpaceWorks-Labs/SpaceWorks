@@ -102,11 +102,16 @@ class CardFontPrepareView(APIView):
                    request=FontPrepareRequestSerializer,
                    responses={202: FontPrepareResultSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
-        require_edit(request.user, design_for(request.user, pk))
+        design = design_for(request.user, pk)
+        require_edit(request.user, design)
         family = request.data.get("family")
         if not isinstance(family, str) or not fonts.family_weights(family):
             raise ValidationError({"family": "That family is not in the card font library."})
         pending = font_fetch.request_family(family)
+        if pending:  # New platform-wide font rows were queued for download.
+            from apps.audit import services as audit
+            audit.record(request.user, "card_design.font_requested", makerspace=getattr(design, "makerspace", None),
+                         target=design, meta={"family": family, "weights": len(pending)})
         return Response({"family": family, "pending_weights": pending, "state": font_fetch.state_of(family)},
                         status=status.HTTP_202_ACCEPTED)
 

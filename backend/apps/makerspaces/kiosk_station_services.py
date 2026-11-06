@@ -193,7 +193,13 @@ def resolve_session(public_token, cookie_value):
 
 @transaction.atomic
 def end_session(station, *, session_id, expires_at):
-    StationSessionRevocation.objects.get_or_create(
+    _revocation, created = StationSessionRevocation.objects.get_or_create(
         session_id=session_id, defaults={"station": station, "expires_at": expires_at},
     )
-    return _revoke_station_leases(station, session_id=session_id)
+    revoked = _revoke_station_leases(station, session_id=session_id)
+    if created:  # The start is audited, so the end is too; a repeated end changes nothing.
+        audit.record(
+            None, "kiosk.station_session_ended", makerspace=station.makerspace, target=station,
+            meta={"station_id": station.pk, "station_session_id": str(session_id), "leases_revoked": revoked},
+        )
+    return revoked

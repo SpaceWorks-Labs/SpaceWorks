@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.audit import services as audit
 from apps.admin_api.permissions import IsActiveStaff
 from apps.machines import role_scope
 from apps.makerspaces.guards import require_module
@@ -131,6 +132,7 @@ class NotificationMarkReadView(APIView):
         if notification.read_at is None:
             notification.read_at = timezone.now()
             notification.save(update_fields=["read_at"])
+            audit.record(request.user, "notification.read", makerspace=makerspace, target=notification)
         return Response(NotificationSerializer(notification).data)
 
 
@@ -153,6 +155,9 @@ class NotificationMarkAllReadView(APIView):
             makerspace=makerspace,
             read_at__isnull=True,
         ).update(read_at=timezone.now())
+        if updated:
+            audit.record(request.user, "notification.read_all", makerspace=makerspace, target=makerspace,
+                         meta={"updated": updated})
         return Response({"updated": updated})
 
 def _is_guest_only(user, makerspace_id):

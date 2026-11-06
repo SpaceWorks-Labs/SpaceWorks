@@ -8384,6 +8384,12 @@ English is the only catalogue, and every screen is ready for translation. The co
   are marked. The parity route map (`config/control_parity_entries*.py`) and the /control/ Django
   templates are not marked: the first is a technical route map, the second keeps Django's and
   Unfold's own catalogues. The /control/ catalogue titles and help are marked.
+- **No lazy proxy in data structures.** Choice labels and the display catalogues (module registry,
+  capabilities, report definitions, audit presentation labels, claim refusal reasons) are
+  `gettext_noop` strings, translated where they are shown (`config.locale_resolution.display`), so
+  joins, sorting, hashing and JSON snapshots keep plain `str`. Only Django-owned declarations
+  (`verbose_name`, `help_text`, serializer `error_messages`) and the /control/ catalogue rendered
+  by templates are `gettext_lazy`.
 - **Every user-facing literal is marked, and two guards enforce it.**
   `backend/scripts/check_i18n_literals.py` covers exceptions, `detail` responses, field and choice
   labels, notification and email fields, email defaults, ReportLab text and the display

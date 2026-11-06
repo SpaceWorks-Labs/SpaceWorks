@@ -330,8 +330,9 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   entry (PRD §11). Honor the immutability/append-only and makerspace-scoping invariants as enforced code,
   not convention.
 - **Every user-facing literal is marked (phase 8 i18n).** Backend copy goes through `gettext` (runtime),
-  `gettext_lazy` (class/module declarations) or `gettext_noop` (email-template defaults), with named
-  `.format()` placeholders rather than f-strings. Frontend copy goes through the Lingui `t` macro, and
+  `gettext_lazy` (Django field and serializer declarations) or `gettext_noop` (choice labels, display
+  catalogues and email-template defaults, translated where shown with `locale_resolution.display`), with
+  named `.format()` placeholders rather than f-strings. Frontend copy goes through the Lingui `t` macro, and
   dates/numbers go through `src/lib/format.ts`. Stable identifiers (audit actions, error codes, module,
   feature, report and event keys, enum values) and tenant-authored text are never translated. Both
   literal guards (`backend/scripts/check_i18n_literals.py`, `npm run i18n:check`) must report 0, and the

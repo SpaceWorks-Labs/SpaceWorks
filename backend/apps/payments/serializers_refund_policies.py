@@ -1,5 +1,6 @@
 """Refund policy shape: events and bookings by time before start, memberships by term."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -43,17 +44,17 @@ class RefundPolicySerializer(serializers.ModelSerializer):
                 attrs[name] = 0
         else:
             if attrs.get("partial_mode", RefundPolicy.PartialMode.PERCENT) != RefundPolicy.PartialMode.PERCENT:
-                raise serializers.ValidationError({"partial_mode": "Pro rata applies to memberships only."})
+                raise serializers.ValidationError({"partial_mode": gettext("Pro rata applies to memberships only.")})
             if attrs.get("full_within_days"):
-                raise serializers.ValidationError({"full_within_days": "Days into a term apply to memberships only."})
+                raise serializers.ValidationError({"full_within_days": gettext("Days into a term apply to memberships only.")})
             full = attrs.get("full_before_minutes", getattr(self.instance, "full_before_minutes", 0))
             partial = attrs.get("partial_before_minutes", getattr(self.instance, "partial_before_minutes", 0))
             if partial > full:
                 raise serializers.ValidationError(
-                    {"partial_before_minutes": "The partial window cannot start before the full-refund window."})
+                    {"partial_before_minutes": gettext("The partial window cannot start before the full-refund window.")})
         fee = attrs.get("cancellation_fee")
         if fee is not None:
             from apps.payments.refund_policy import precision_ok
             if not precision_ok(fee, self.context.get("currency", "")):
-                raise serializers.ValidationError({"cancellation_fee": "Too many decimal places for this currency."})
+                raise serializers.ValidationError({"cancellation_fee": gettext("Too many decimal places for this currency.")})
         return attrs

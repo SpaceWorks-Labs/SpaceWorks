@@ -1,5 +1,6 @@
 """Transactional namespace lifecycle. The same locks are used by portable imports."""
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 
 import hashlib
@@ -21,9 +22,9 @@ HANDLE_RELEASE_DELAY = timedelta(days=30)
 def normalize_handle(value):
     value = str(value).lower()
     if not re.fullmatch(HANDLE_PATTERN, value):
-        raise ValidationError({"handle": "Use 3–30 letters, numbers, dots, underscores or hyphens; start and end with a letter or number."})
+        raise ValidationError({"handle": gettext("Use 3–30 letters, numbers, dots, underscores or hyphens; start and end with a letter or number.")})
     if value in RESERVED_SEGMENTS:
-        raise ValidationError({"handle": "This name is reserved."})
+        raise ValidationError({"handle": gettext("This name is reserved.")})
     return value
 
 
@@ -58,13 +59,13 @@ def claim_handle(membership, value):
     if not current and PublicHandleRedirect.objects.filter(
         user_id=membership.user_id, expires_at__gt=now,
     ).exists():
-        raise ValidationError({"handle": "Wait 30 days after releasing a handle before claiming another."})
+        raise ValidationError({"handle": gettext("Wait 30 days after releasing a handle before claiming another.")})
     if current and current.handle == handle and current.profile.membership_id == membership.pk:
         return current
     if current and now < current.changed_at + HANDLE_COOLDOWN:
-        raise ValidationError({"handle": "Handles can be changed once every 30 days."})
+        raise ValidationError({"handle": gettext("Handles can be changed once every 30 days.")})
     if not name_available(handle, now=now) and (not current or current.handle != handle):
-        raise ValidationError({"handle": "This name is unavailable."})
+        raise ValidationError({"handle": gettext("This name is unavailable.")})
     PublicHandleRedirect.objects.filter(handle__iexact=handle, expires_at__lte=now).delete()
     from .models import MakerspaceMembership
     MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
@@ -81,7 +82,7 @@ def claim_handle(membership, value):
                 current = PublicHandle.objects.create(user=membership.user, profile=profile,
                                                      handle=handle, changed_at=now)
     except IntegrityError as exc:
-        raise ValidationError({"handle": "This name is unavailable."}) from exc
+        raise ValidationError({"handle": gettext("This name is unavailable.")}) from exc
     audit.record(membership.user, "member.public_handle_claimed", makerspace=membership.makerspace,
                  target=membership, meta={"changed": changing})
     from .public_profile_cache import invalidate_profile

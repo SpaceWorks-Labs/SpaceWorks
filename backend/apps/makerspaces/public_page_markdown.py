@@ -1,5 +1,6 @@
 """Bounded restricted Markdown and URL validation; no network or model dependencies."""
 
+from django.utils.translation import gettext
 import html
 import re
 import unicodedata
@@ -14,12 +15,12 @@ def public_url(value, *, legacy_http=False, allow_blank=True):
     if value == "" and allow_blank:
         return value
     if not isinstance(value, str) or len(value) > 500:
-        raise ValidationError("Use a URL of at most 500 characters.")
+        raise ValidationError(gettext("Use a URL of at most 500 characters."))
     decoded = value
     for _ in range(3):
         decoded = html.unescape(unquote(decoded))
     if any(unicodedata.category(c).startswith("C") or c.isspace() for c in decoded):
-        raise ValidationError("URLs cannot contain whitespace or control characters.")
+        raise ValidationError(gettext("URLs cannot contain whitespace or control characters."))
     try:
         parsed = urlsplit(value)
         decoded_url = urlsplit(decoded)
@@ -31,7 +32,7 @@ def public_url(value, *, legacy_http=False, allow_blank=True):
             raise ValueError
         parsed.port
     except ValueError as exc:
-        raise ValidationError("Use an absolute HTTPS URL without credentials.") from exc
+        raise ValidationError(gettext("Use an absolute HTTPS URL without credentials.")) from exc
     return value
 
 
@@ -71,16 +72,16 @@ def links(text):
 
 def validate_markdown(value, *, legacy_http=False, limit=10000):
     if not isinstance(value, str):
-        raise ValidationError("Expected text.")
+        raise ValidationError(gettext("Expected text."))
     value = value.replace("\r\n", "\n").replace("\r", "\n")
     if any(unicodedata.category(c) == "Cs" for c in value):
-        raise ValidationError("Text contains unsupported surrogate characters.")
+        raise ValidationError(gettext("Text contains unsupported surrogate characters."))
     if len(value) > limit or len(value.encode("utf-8")) > 131072:
-        raise ValidationError("Text exceeds the allowed length.")
+        raise ValidationError(gettext("Text exceeds the allowed length."))
     if any(unicodedata.category(c) == "Cc" and c not in "\n\t" for c in value):
-        raise ValidationError("Text contains control characters.")
+        raise ValidationError(gettext("Text contains control characters."))
     if TAG.search(value) or re.search(r"!\s*\[", value):
-        raise ValidationError("HTML, embeds and Markdown images are not supported.")
+        raise ValidationError(gettext("HTML, embeds and Markdown images are not supported."))
     for _, _, url in links(value):
         public_url(url, legacy_http=legacy_http, allow_blank=False)
     return value

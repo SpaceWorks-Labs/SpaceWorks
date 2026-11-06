@@ -1,5 +1,6 @@
 """Core-ledger staff endpoint: works without the online payments rail."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -44,7 +45,7 @@ class PaymentOfflineRefundView(APIView):
         allowed = offline_refund_queryset(request.user)
         payment = allowed.select_related("makerspace").filter(pk=payment_id, makerspace_id=makerspace_id).first()
         if payment is None:
-            raise NotFound("Payment not found.")
+            raise NotFound(gettext("Payment not found."))
         from apps.payments.donations.refunds import refuse_direct_refund  # lane L18: gifts only via a case
         from apps.shop.refunds import refuse_direct_refund as refuse_shop_refund  # lane L22: shop sales only via a case
         refuse_shop_refund(payment)
@@ -88,7 +89,7 @@ class PaymentRefundAmendView(APIView):
         allowed = offline_refund_queryset(request.user)
         payment = allowed.filter(pk=payment_id, makerspace_id=makerspace_id).first()
         if payment is None:
-            raise NotFound("Payment not found.")
+            raise NotFound(gettext("Payment not found."))
         amend_offline_refund(payment, refund_id=refund_id, actor=request.user, **payload.validated_data)
         payment = with_refunds(allowed).get(pk=payment.pk)
         return Response(PaymentReconciliationSerializer(payment, context={

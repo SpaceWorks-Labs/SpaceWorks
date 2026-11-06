@@ -4,6 +4,7 @@ The sequence never resets; the year is the approval year (Q9); numbers survive r
 and reinstate; past 9999 the sequence simply widens. Assignment locks the programme
 row, so concurrent approvals never share a number.
 """
+from django.utils.translation import gettext
 import re
 from datetime import datetime, time, timedelta
 
@@ -21,7 +22,7 @@ def prefix_from(name):
 
 def validate_prefix(value):
     if not isinstance(value, str) or not PREFIX.match(value):
-        raise ValidationError({"id_prefix": "Use 2-6 capital letters or digits."})
+        raise ValidationError({"id_prefix": gettext("Use 2-6 capital letters or digits.")})
     return value
 
 

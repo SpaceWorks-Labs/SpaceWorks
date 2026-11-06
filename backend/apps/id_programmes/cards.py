@@ -4,6 +4,7 @@ Decisions: approve (numbered, expiry set), reject (private reason), revoke (priv
 reason), reinstate (keeps number and old expiry, Q8), renew (expiry from now). At most
 500 cards per decision. Reasons are encrypted on the row, never in audit meta.
 """
+from django.utils.translation import gettext
 import json
 
 from django.db import transaction
@@ -36,12 +37,12 @@ def _store_answers(programme, raw):
 def add(actor, programme, *, name, email, answers=None, source=IdProgrammeCard.Source.MANUAL, user=None):
     name, email = (name or "").strip(), (email or "").strip().lower()
     if not 1 <= len(name) <= 120:
-        raise ValidationError({"name": "Give a name of up to 120 characters."})
+        raise ValidationError({"name": gettext("Give a name of up to 120 characters.")})
     digest = email_digest(email)
     if digest and IdProgrammeCard.objects.filter(programme=programme, email_digest=digest).exists():
-        raise ValidationError({"email": "This person is already in the programme."})
+        raise ValidationError({"email": gettext("This person is already in the programme.")})
     if user is not None and IdProgrammeCard.objects.filter(programme=programme, user=user).exists():
-        raise ValidationError({"detail": "You already asked to join this programme."})
+        raise ValidationError({"detail": gettext("You already asked to join this programme.")})
     card = IdProgrammeCard.objects.create(programme=programme, makerspace=programme.makerspace, user=user, name=name,
                                           email=email, email_digest=digest, source=source,
                                           answers=_store_answers(programme, answers or {}))
@@ -107,11 +108,11 @@ def _apply(card, action, now, reason):
 @transaction.atomic
 def decide(actor, programme, action, ids, reason=""):
     if action not in ACTIONS:
-        raise ValidationError({"action": "Unknown decision."})
+        raise ValidationError({"action": gettext("Unknown decision.")})
     if not 1 <= len(ids) <= MAX_DECISION:
-        raise ValidationError({"ids": f"Choose 1-{MAX_DECISION} cards."})
+        raise ValidationError({"ids": gettext('Choose 1-{MAX_DECISION} cards.').format(MAX_DECISION=MAX_DECISION)})
     if action in ("reject", "revoke") and not (reason or "").strip():
-        raise ValidationError({"reason": "Give a reason (it stays private to staff)."})
+        raise ValidationError({"reason": gettext("Give a reason (it stays private to staff).")})
     programme = IdProgramme.objects.select_for_update().get(pk=programme.pk)
     now = timezone.now()
     cards = list(IdProgrammeCard.objects.select_for_update().filter(programme=programme, pk__in=ids))

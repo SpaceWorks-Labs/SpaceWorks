@@ -1,4 +1,5 @@
 """Actor-scoped, transactional pack preview/apply and platform presets."""
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
@@ -120,7 +121,7 @@ def _apply_pack_locked(actor, makerspace, pack, *, base_checksum, creating):
 
 def require_superadmin(actor):
     if not active_user(actor) or not _superadmin(actor):
-        raise PermissionDenied("Only a superadmin may manage platform install profiles.")
+        raise PermissionDenied(gettext("Only a superadmin may manage platform install profiles."))
 
 
 @transaction.atomic

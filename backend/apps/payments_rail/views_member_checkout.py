@@ -6,6 +6,7 @@ always be able to see what they owe and what they have paid -- while creating a 
 checkout is only meaningful on a deployment that ships the rail at all.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound
@@ -58,7 +59,7 @@ class MemberPaymentCheckoutView(APIView):
             # charge.
             return Response(
                 {
-                    "detail": "Online payment is not available for this charge.",
+                    "detail": gettext("Online payment is not available for this charge."),
                     "code": "payments_unavailable",
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -68,13 +69,13 @@ class MemberPaymentCheckoutView(APIView):
         except PaymentRailConflict:
             return Response(
                 {
-                    'detail': 'The payment already uses a different online payment rail.',
+                    'detail': gettext('The payment already uses a different online payment rail.'),
                     'code': 'payment_rail_conflict',
                 },
                 status=status.HTTP_409_CONFLICT,
             )
         except Exception:
-            return Response({"detail": "Payments are temporarily unavailable.", "code": "payments_unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            return Response({"detail": gettext("Payments are temporarily unavailable."), "code": "payments_unavailable"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         if not checkout_url:
             raise NotFound()
         return Response({"checkout_url": checkout_url})

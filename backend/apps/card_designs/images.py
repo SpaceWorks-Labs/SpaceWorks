@@ -4,6 +4,7 @@ Uploads are PNG/JPEG/WebP up to 8 MB (SPEC §3.2, §6). They are decoded with Pi
 EXIF-rotated, resized to a bounded longest edge and re-encoded, which strips every
 metadata block (GPS included). The mean colour feeds the contrast check.
 """
+from django.utils.translation import gettext
 from io import BytesIO
 
 from rest_framework.exceptions import ValidationError
@@ -17,17 +18,17 @@ def normalise(data, *, max_edge=2400, keep_alpha=True):
     """-> (png_bytes, width, height, mean_hex). Raises ValidationError for anything else."""
     from PIL import Image, ImageOps, UnidentifiedImageError
     if not data or len(data) > MAX_UPLOAD_BYTES:
-        raise ValidationError({"file": "Upload a PNG, JPEG or WebP image up to 8 MB."})
+        raise ValidationError({"file": gettext("Upload a PNG, JPEG or WebP image up to 8 MB.")})
     try:
         with Image.open(BytesIO(data)) as source:
             if source.format not in ALLOWED.values():
-                raise ValidationError({"file": "Upload a PNG, JPEG or WebP image."})
+                raise ValidationError({"file": gettext("Upload a PNG, JPEG or WebP image.")})
             if source.width * source.height > 40_000_000:
-                raise ValidationError({"file": "That image is too large."})
+                raise ValidationError({"file": gettext("That image is too large.")})
             image = ImageOps.exif_transpose(source)
             image = image.convert("RGBA" if keep_alpha else "RGB")
     except UnidentifiedImageError:
-        raise ValidationError({"file": "That file isn't a readable image."}) from None
+        raise ValidationError({"file": gettext("That file isn't a readable image.")}) from None
     image.thumbnail((max_edge, max_edge))
     buffer = BytesIO()
     image.save(buffer, format="PNG", optimize=True)

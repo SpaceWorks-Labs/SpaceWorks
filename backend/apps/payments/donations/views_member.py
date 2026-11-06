@@ -4,6 +4,7 @@ The gift's charge is an ordinary member charge: it is paid from the member payme
 (the existing checkout) and a refund is asked for there too (it opens a case staff decide).
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
@@ -27,7 +28,7 @@ def member_space(makerspace_id, key=DONATIONS):
 
     space = servable_queryset(Makerspace.objects.filter(pk=makerspace_id)).first()
     if space is None:
-        raise NotFound("Makerspace not found.")
+        raise NotFound(gettext("Makerspace not found."))
     return require_feature(space, key)
 
 
@@ -58,7 +59,7 @@ class MemberTaxReceiptView(APIView):
 
         donation = Donation.objects.filter(makerspace=space, donor_id__in=actor_ids_for(request.user), pk=pk).first()
         if donation is None or not donation.tax_receipt:
-            raise NotFound({"detail": "No tax-exempt receipt was issued for this gift.", "code": "no_tax_receipt"})
+            raise NotFound({"detail": gettext("No tax-exempt receipt was issued for this gift."), "code": "no_tax_receipt"})
         return pdf_response(donation)
 
 
@@ -90,7 +91,7 @@ class MemberPledgeActionView(APIView):
         space = member_space(makerspace_id, PLEDGES)
         pledge = DonationPledge.objects.filter(makerspace=space, donor=request.user, pk=pk).first()
         if pledge is None:
-            raise NotFound("Pledge not found.")
+            raise NotFound(gettext("Pledge not found."))
         payload = s.PledgeActionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data

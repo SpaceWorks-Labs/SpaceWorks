@@ -1,4 +1,5 @@
 """Admission policy compatibility and audited settings updates."""
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 
@@ -59,12 +60,12 @@ def vouching_on(makerspace, policy):
 def validate_policy(makerspace, row):
     plan = row.default_plan
     if plan and (plan.makerspace_id != makerspace.pk or not plan.is_active):
-        raise ValidationError({"default_plan": "Choose an active plan in this makerspace."})
+        raise ValidationError({"default_plan": gettext("Choose an active plan in this makerspace.")})
     if plan and row.joining_fee > 0 and plan.currency != row.joining_fee_currency:
-        raise ValidationError({"joining_fee_currency": "Joining fee and plan must use the same currency."})
+        raise ValidationError({"joining_fee_currency": gettext("Joining fee and plan must use the same currency.")})
     paid = row.joining_fee > 0 or (plan is not None and plan.amount > 0)
     if paid and row.payment_timing == "before_activation" and not charge_tracking_enabled(makerspace, "membership"):
-        raise ValidationError({"payment_timing": "Pay before activation requires membership charge tracking."})
+        raise ValidationError({"payment_timing": gettext("Pay before activation requires membership charge tracking.")})
 
 
 def plan_feature_needs(makerspace):

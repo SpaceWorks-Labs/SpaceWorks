@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -20,19 +21,19 @@ class MakerspaceMembership(models.Model):
         STAFF = STAFF, "Staff"
 
     class Role(models.TextChoices):
-        SPACE_MANAGER = "space_manager", "Space Manager"
-        INVENTORY_MANAGER = "inventory_manager", "Inventory Manager"
-        PRINT_MANAGER = "print_manager", "Print Manager"
+        SPACE_MANAGER = "space_manager", gettext_lazy("Space Manager")
+        INVENTORY_MANAGER = "inventory_manager", gettext_lazy("Inventory Manager")
+        PRINT_MANAGER = "print_manager", gettext_lazy("Print Manager")
         # Makerspace-wide machine authority: manages assigned machines end-to-end
         # (the machine + usage/cycle + warranty + maintenance). Action set is exactly
         # {MANAGE_MACHINES}; every machine sub-feature already gates on machine access,
         # so no new RBAC action is needed. Delegable by a Space Manager (Part I).
-        MACHINE_MANAGER = "machine_manager", "Machine Manager"
-        EVENT_MANAGER = "event_manager", "Event Manager"
-        BOOKING_MANAGER = "booking_manager", "Booking Manager"
+        MACHINE_MANAGER = "machine_manager", gettext_lazy("Machine Manager")
+        EVENT_MANAGER = "event_manager", gettext_lazy("Event Manager")
+        BOOKING_MANAGER = "booking_manager", gettext_lazy("Booking Manager")
         HANDOVER = "handover", "Handover"
         TECHNICIAN = "technician", "Technician"
-        SHOP_MANAGER = "shop_manager", "Shop Manager"
+        SHOP_MANAGER = "shop_manager", gettext_lazy("Shop Manager")
         CUSTOM = "custom", "Custom"
 
     objects = CommunityMembershipManager()
@@ -183,7 +184,7 @@ class MakerspaceMembership(models.Model):
         # Block assigning a membership to a deactivated account (covers the User-side
         # inline where user is the parent and limit_choices_to does not apply).
         if self.user_id and not self.user.is_active:
-            raise ValidationError("Cannot assign a makerspace to an inactive user.")
+            raise ValidationError(gettext("Cannot assign a makerspace to an inactive user."))
         # An assigned custom role must belong to the SAME makerspace as this
         # membership. Defense-in-depth: the RBAC reader also fails closed on a
         # tenant mismatch, and the role-assignment service rejects it at write.
@@ -193,19 +194,19 @@ class MakerspaceMembership(models.Model):
             and self.assigned_role.makerspace_id != self.makerspace_id
         ):
             raise ValidationError(
-                {"assigned_role": "Role must belong to the same makerspace."}
+                {"assigned_role": gettext("Role must belong to the same makerspace.")}
             )
         if (
             self.accepted_waiver_id and self.makerspace_id
             and self.accepted_waiver.makerspace_id != self.makerspace_id
         ):
-            raise ValidationError({"accepted_waiver": "Waiver must belong to the same makerspace."})
+            raise ValidationError({"accepted_waiver": gettext("Waiver must belong to the same makerspace.")})
         if (
             self.witnessed_waiver_id and self.makerspace_id
             and self.witnessed_waiver.makerspace_id != self.makerspace_id
         ):
             raise ValidationError(
-                {"witnessed_waiver": "Waiver must belong to the same makerspace."}
+                {"witnessed_waiver": gettext("Waiver must belong to the same makerspace.")}
             )
 
     def __str__(self):

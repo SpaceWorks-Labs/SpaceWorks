@@ -10,6 +10,7 @@ Who writes: the host space's settings authority for that group (Space Manager or
 overrides the space, so letting an organisation write it would let it loosen the space's
 own rule. Clearing a level (`required: null`) makes it inherit again.
 """
+from django.utils.translation import gettext
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -114,13 +115,13 @@ class CardApprovalLevelsView(APIView):
         data.is_valid(raise_exception=True)
         group, required = data.validated_data["group"], data.validated_data["required"]
         if not _group_available(space, group):
-            raise ValidationError({"group": "This kind of card is switched off for this space."})
+            raise ValidationError({"group": gettext("This kind of card is switched off for this space.")})
         organization = None
         if data.validated_data.get("organization_id"):
             organization = next((row for row in organisations_for(space)
                                  if row.pk == data.validated_data["organization_id"]), None)
             if organization is None:
-                raise ValidationError({"organization_id": "This organisation has no link to this space."})
+                raise ValidationError({"organization_id": gettext("This organisation has no link to this space.")})
         decision = assert_setting_write(request.user, space, GROUP_MODULES[group], "card_designs.approval")
         before = level_value(space, group, organization=organization)
         set_level(request.user, space, group, required, organization=organization)

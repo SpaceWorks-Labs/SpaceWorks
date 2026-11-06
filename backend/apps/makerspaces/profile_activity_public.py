@@ -1,5 +1,6 @@
 """Bounded, query-derived daily counts. No source title, link or time is returned."""
 
+from django.utils.translation import gettext
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 from django.utils import timezone
@@ -17,7 +18,7 @@ def activity_window(profile, params):
         if end < start or (end - start).days >= 120 or end > today or end == date.max:
             raise ValueError
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValidationError({"window": "Use ISO dates, from <= to <= today, at most 120 inclusive days."}) from exc
+        raise ValidationError({"window": gettext("Use ISO dates, from <= to <= today, at most 120 inclusive days.")}) from exc
     return start, end, tz
 
 

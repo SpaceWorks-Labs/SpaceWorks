@@ -5,6 +5,7 @@ capability is off for the space, so a switched-off feature has no API surface an
 not reveal that it exists. `require_membership_feature_locked` re-checks both under the
 makerspace row lock for writers (the same reason `require_module_locked` exists).
 """
+from django.utils.translation import gettext
 from rest_framework.exceptions import NotFound
 
 from apps.makerspaces.platform import feature_enabled, module_enabled
@@ -16,7 +17,7 @@ def membership_feature_on(makerspace, key):
 
 def require_membership_feature(makerspace, key):
     if not membership_feature_on(makerspace, key):
-        raise NotFound("This feature is not available here.")
+        raise NotFound(gettext("This feature is not available here."))
     return makerspace
 
 
@@ -26,7 +27,7 @@ def require_membership_feature_locked(makerspace_or_id, key):
     try:
         locked = require_module_locked(makerspace_or_id, "membership")
     except SurfaceOff as exc:  # the module went off while we waited for the lock
-        raise NotFound("This feature is not available here.") from exc
+        raise NotFound(gettext("This feature is not available here.")) from exc
     if not feature_enabled(locked, f"membership.{key}"):
-        raise NotFound("This feature is not available here.")
+        raise NotFound(gettext("This feature is not available here."))
     return locked

@@ -14,6 +14,7 @@ and staff decide case by case. An event may carry its own override (lane L6, #69
 through `refund_policy.area_policy`; after its first sale it may only become more generous.
 """
 
+from django.utils.translation import gettext_lazy
 from django.core.validators import MaxValueValidator
 from django.db import models
 
@@ -23,8 +24,8 @@ from apps.payments.models_refund import Refund
 
 class RefundCase(models.Model):
     class Kind(models.TextChoices):
-        DUE = "due", "Due under policy"
-        REQUEST = "request", "Requested by member"
+        DUE = "due", gettext_lazy("Due under policy")
+        REQUEST = "request", gettext_lazy("Requested by member")
 
     class Area(models.TextChoices):
         # Mirrors `payments.availability.SUBJECT_DOMAINS` values (R8).
@@ -42,7 +43,7 @@ class RefundCase(models.Model):
         OPEN = "open", "Open"
         APPROVED = "approved", "Approved"
         #: The provider refused the approved refund. Staff retry or decline (R2).
-        APPROVAL_FAILED = "approval_failed", "Approval failed"
+        APPROVAL_FAILED = "approval_failed", gettext_lazy("Approval failed")
         DECLINED = "declined", "Declined"
         WITHDRAWN = "withdrawn", "Withdrawn"
         #: Closed by the system: nothing left to refund, or the charge was refunded
@@ -53,45 +54,45 @@ class RefundCase(models.Model):
     ACTIVE_STATUSES = (Status.OPEN, Status.APPROVAL_FAILED)
 
     class ReasonCode(models.TextChoices):
-        EVENT_CANCELLED = "event_cancelled", "Event cancelled by the space"
-        REGISTRATION_CANCELLED = "registration_cancelled", "Registration cancelled"
-        BOOKING_CANCELLED = "booking_cancelled", "Booking cancelled"
+        EVENT_CANCELLED = "event_cancelled", gettext_lazy("Event cancelled by the space")
+        REGISTRATION_CANCELLED = "registration_cancelled", gettext_lazy("Registration cancelled")
+        BOOKING_CANCELLED = "booking_cancelled", gettext_lazy("Booking cancelled")
         #: Staff cancelled a member's booking: owed in full (decision 72).
-        STAFF_CANCELLED = "staff_cancelled", "Cancelled by staff"
-        MEMBERSHIP_CANCELLED = "membership_cancelled", "Membership term cancelled"
-        MEMBER_REQUEST = "member_request", "Member request"
+        STAFF_CANCELLED = "staff_cancelled", gettext_lazy("Cancelled by staff")
+        MEMBERSHIP_CANCELLED = "membership_cancelled", gettext_lazy("Membership term cancelled")
+        MEMBER_REQUEST = "member_request", gettext_lazy("Member request")
         #: Staff opened it for an unexpected online capture (lane L5 capture flags).
-        CAPTURE_FLAGGED = "capture_flagged", "Unexpected online capture"
+        CAPTURE_FLAGGED = "capture_flagged", gettext_lazy("Unexpected online capture")
         #: Staff waived a loan fee the member had already paid (lane L15, A14).
-        FEE_WAIVED = "fee_waived", "Loan fee waived by staff"
+        FEE_WAIVED = "fee_waived", gettext_lazy("Loan fee waived by staff")
         #: Lane L6: a paid order that could not be seated, a cheaper ticket type, and a
         #: series-pass occurrence the space cancelled (the organiser's partial amount).
-        ORDER_UNFULFILLED = "order_unfulfilled", "Order could not be seated"
-        TICKET_TYPE_CHANGED = "ticket_type_changed", "Changed to a cheaper ticket"
-        PASS_OCCURRENCE_CANCELLED = "pass_occurrence_cancelled", "Pass occurrence cancelled"
+        ORDER_UNFULFILLED = "order_unfulfilled", gettext_lazy("Order could not be seated")
+        TICKET_TYPE_CHANGED = "ticket_type_changed", gettext_lazy("Changed to a cheaper ticket")
+        PASS_OCCURRENCE_CANCELLED = "pass_occurrence_cancelled", gettext_lazy("Pass occurrence cancelled")
         #: Lane L18: staff opened a case to return a gift or a sponsor's payment.
-        DONATION_RETURNED = "donation_returned", "Gift returned to the giver"
+        DONATION_RETURNED = "donation_returned", gettext_lazy("Gift returned to the giver")
         #: Lane L21b (#59): a paid project disqualified with "refund on disqualification" set, and a
         #: rejected or closed paid team. Each opens a DUE case for the full amount; staff decide.
-        SUBMISSION_DISQUALIFIED = "submission_disqualified", "Project disqualified"
-        TEAM_REJECTED = "team_rejected", "Team rejected"
+        SUBMISSION_DISQUALIFIED = "submission_disqualified", gettext_lazy("Project disqualified")
+        TEAM_REJECTED = "team_rejected", gettext_lazy("Team rejected")
         #: Lane L24: a price LOWERED after payment (#163A), a member cancelling a prepaid
         #: machine job before it starts (#171 (2)), and a prepaid job whose actual cost came
         #: in below its quote (#171 (3)). Each case still needs a staff approval.
-        PRICE_DROP = "price_drop", "Price lowered after payment"
-        JOB_CANCELLED = "job_cancelled", "Prepaid job cancelled before it started"
-        QUOTE_DIFFERENCE = "quote_difference", "Actual cost below the prepaid quote"
+        PRICE_DROP = "price_drop", gettext_lazy("Price lowered after payment")
+        JOB_CANCELLED = "job_cancelled", gettext_lazy("Prepaid job cancelled before it started")
+        QUOTE_DIFFERENCE = "quote_difference", gettext_lazy("Actual cost below the prepaid quote")
         #: Lane L22: shop items taken back, a paid order nobody collected, a paid order the
         #: stock could not fill.
-        SHOP_RETURN = "shop_return", "Shop items returned"
-        SHOP_UNCOLLECTED = "shop_uncollected", "Shop order not collected"
-        SHOP_UNFULFILLED = "shop_unfulfilled", "Shop order could not be filled"
+        SHOP_RETURN = "shop_return", gettext_lazy("Shop items returned")
+        SHOP_UNCOLLECTED = "shop_uncollected", gettext_lazy("Shop order not collected")
+        SHOP_UNFULFILLED = "shop_unfulfilled", gettext_lazy("Shop order could not be filled")
         #: Hack-money G2: a paid entry fee of a withdrawn project, or of a team that did not advance
         #: at a published shortlist, each behind its own per-event switch (off by default).
-        SUBMISSION_WITHDRAWN = "submission_withdrawn", "Project withdrawn"
-        NOT_SHORTLISTED = "not_shortlisted", "Team not shortlisted"
+        SUBMISSION_WITHDRAWN = "submission_withdrawn", gettext_lazy("Project withdrawn")
+        NOT_SHORTLISTED = "not_shortlisted", gettext_lazy("Team not shortlisted")
         # Hack-money G10: a staff-approved deposit settlement returns an attendee's deposit.
-        DEPOSIT_RETURNED = "deposit_returned", "Deposit returned after the event"
+        DEPOSIT_RETURNED = "deposit_returned", gettext_lazy("Deposit returned after the event")
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refund_cases")
     kind = models.CharField(max_length=16, choices=Kind.choices)
@@ -154,9 +155,9 @@ class RefundPolicy(models.Model):
         MEMBERSHIP = "membership", "Memberships"
 
     class PartialMode(models.TextChoices):
-        PERCENT = "percent", "A fixed percentage"
+        PERCENT = "percent", gettext_lazy("A fixed percentage")
         #: Memberships only: the unused share of the term, by time.
-        PRO_RATA = "pro_rata", "Pro rata of unused term time"
+        PRO_RATA = "pro_rata", gettext_lazy("Pro rata of unused term time")
 
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", on_delete=models.CASCADE, related_name="refund_policies",

@@ -1,5 +1,6 @@
 """Staff API for Settings › Public stats (#170). Writes go through `public_stats_settings`."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -22,7 +23,7 @@ class _KeyListField(serializers.ListField):
     def to_internal_value(self, data):
         values = super().to_internal_value(data)
         if len(set(values)) != len(values):
-            raise serializers.ValidationError("Each key may appear once.")
+            raise serializers.ValidationError(gettext("Each key may appear once."))
         return values
 
 
@@ -40,7 +41,7 @@ class PublicStatsSettingsSerializer(serializers.Serializer):
 
     def validate_period(self, value):
         if value not in group.PERIODS:
-            raise serializers.ValidationError(f"Choose one of: {', '.join(group.PERIODS)}.")
+            raise serializers.ValidationError(gettext('Choose one of: {value}.').format(value=', '.join(group.PERIODS)))
         return value
 
 

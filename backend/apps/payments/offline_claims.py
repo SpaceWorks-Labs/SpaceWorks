@@ -5,6 +5,7 @@ settlement (method + the claimed reference + the claimed date) in the same trans
 that marks the charge paid -- or, under maker-checker, proposing it for a second person.
 """
 
+from django.utils.translation import gettext
 import re
 from datetime import datetime, time
 
@@ -63,7 +64,7 @@ def submit_claim(payment, *, claimant, reference, paid_on, method=PaymentClaim.M
 def _locked_claim(makerspace_id, claim_id):
     claim = PaymentClaim.objects.filter(pk=claim_id, makerspace_id=makerspace_id).first()
     if claim is None:
-        raise NotFound("Claim not found.")
+        raise NotFound(gettext("Claim not found."))
     Payment.objects.select_for_update(of=("self",)).get(pk=claim.payment_id)
     claim = PaymentClaim.objects.select_for_update().select_related("payment__makerspace").get(pk=claim.pk)
     if claim.status != PaymentClaim.Status.SUBMITTED:

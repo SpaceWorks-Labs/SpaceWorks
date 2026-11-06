@@ -1,4 +1,5 @@
 """Stable explicit import surface for membership lifecycle services."""
+from django.utils.translation import gettext
 from apps.makerspaces import role_services
 from apps.audit import services as audit
 from rest_framework.exceptions import ValidationError
@@ -16,7 +17,7 @@ from apps.makerspaces.membership_verification import (
 
 def change_role(actor, membership, assigned_role):
     if membership.status != "active":
-        raise ValidationError({"detail": "Only active memberships can change role."})
+        raise ValidationError({"detail": gettext("Only active memberships can change role.")})
     roles = list(assigned_role) if isinstance(assigned_role, (list, tuple)) else [assigned_role]
     changed = role_services.set_membership_roles(
         makerspace=membership.makerspace, actor=actor, membership=membership, roles=roles,

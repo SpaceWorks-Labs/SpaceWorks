@@ -1,5 +1,6 @@
 """Staff shapes for sponsors, tiers, perks, sponsorship charges and event links."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
@@ -57,7 +58,7 @@ class SponsorSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
     def validate(self, data):
         start, end = data.get("starts_on"), data.get("ends_on")
         if start and end and end < start:
-            raise serializers.ValidationError({"ends_on": "A sponsorship must end after it starts."})
+            raise serializers.ValidationError({"ends_on": gettext("A sponsorship must end after it starts.")})
         return data
 
 
@@ -71,7 +72,7 @@ class ChargeCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["earmark"] == "prize_pool" and not attrs.get("event_id"):
-            raise serializers.ValidationError({"event_id": "Choose the event whose prize pool this funds."})
+            raise serializers.ValidationError({"event_id": gettext("Choose the event whose prize pool this funds.")})
         return attrs
 
 

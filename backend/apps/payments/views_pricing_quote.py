@@ -5,6 +5,7 @@ the space gets their own price. Only publicly shown things can be quoted, and th
 holds prices only -- never hidden counts, storage, box, QR or requester data.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
@@ -53,7 +54,7 @@ class PricingQuoteRequestSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs.get("starts_at") and attrs.get("ends_at") and attrs["ends_at"] <= attrs["starts_at"]:
-            raise serializers.ValidationError({"ends_at": "The end must be after the start."})
+            raise serializers.ValidationError({"ends_at": gettext("The end must be after the start.")})
         return attrs
 
 

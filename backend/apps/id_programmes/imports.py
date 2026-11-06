@@ -7,6 +7,7 @@ links to an existing account and no account is created until the person accepts 
 signing in with that verified email. The file itself is never stored; a sheet is
 fetched as CSV under `membership.id_programmes_import_sheets` and parsed the same way.
 """
+from django.utils.translation import gettext
 import csv
 import hashlib
 import io
@@ -28,20 +29,20 @@ def parse(raw):
     if isinstance(raw, str):
         raw = raw.encode("utf-8")
     if not raw or len(raw) > MAX_BYTES:
-        raise ValidationError({"file": "Upload a CSV file up to 2 MB."})
+        raise ValidationError({"file": gettext("Upload a CSV file up to 2 MB.")})
     text = raw.decode("utf-8-sig", errors="replace")
     rows = list(csv.reader(io.StringIO(text, newline="")))
     if not rows or not rows[0]:
-        raise ValidationError({"file": "The file has no header row."})
+        raise ValidationError({"file": gettext("The file has no header row.")})
     headers = [cell.strip()[:MAX_CELL] for cell in rows[0]]
     if len(headers) > MAX_COLUMNS:
-        raise ValidationError({"file": f"Use at most {MAX_COLUMNS} columns."})
+        raise ValidationError({"file": gettext('Use at most {MAX_COLUMNS} columns.').format(MAX_COLUMNS=MAX_COLUMNS)})
     body = [row for row in rows[1:] if any(cell.strip() for cell in row)]
     if len(body) > MAX_ROWS:
-        raise ValidationError({"file": f"Import at most {MAX_ROWS} rows at a time."})
+        raise ValidationError({"file": gettext('Import at most {MAX_ROWS} rows at a time.').format(MAX_ROWS=MAX_ROWS)})
     for row in body:
         if any(len(cell) > MAX_CELL for cell in row):
-            raise ValidationError({"file": f"A cell is longer than {MAX_CELL} characters."})
+            raise ValidationError({"file": gettext('A cell is longer than {MAX_CELL} characters.').format(MAX_CELL=MAX_CELL)})
     return headers, body, hashlib.sha256(raw).hexdigest()
 
 
@@ -107,7 +108,7 @@ def preview(programme, raw):
 def commit(actor, programme, raw, mapping, *, approve=False, dry_run=False, source="file"):
     headers, body, source_digest = parse(raw)
     if not isinstance(mapping, dict) or mapping.get("name") is None or mapping.get("email") is None:
-        raise ValidationError({"mapping": "Map a name column and an email column."})
+        raise ValidationError({"mapping": gettext("Map a name column and an email column.")})
     create, skipped = plan(programme, body, mapping)
     result = {"rows_total": len(body), "created": 0 if dry_run else len(create), "would_create": len(create),
               "skipped": skipped, "dry_run": dry_run}

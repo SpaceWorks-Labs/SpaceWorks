@@ -1,5 +1,6 @@
 """Audited, locked grant lifecycle, parameterised by a typed domain adapter."""
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import secrets
@@ -71,7 +72,7 @@ def _require_subset(
         actor = adapter.lock_authority(actor, target)
     if adapter.subset_validator is not None:
         if not adapter.active(actor):
-            raise PermissionDenied("An active account is required.")
+            raise PermissionDenied(gettext("An active account is required."))
         allowed = adapter.subset_validator(
             actor=actor, target=target, permissions=tuple(permissions),
             operation=operation, row=row,
@@ -79,12 +80,12 @@ def _require_subset(
         # The domain validator decides delegation scope; every requested permission is
         # still revalidated through the adapter so the two can never drift apart.
         if allowed is not True or not all(adapter.can(actor, target, p) for p in permissions):
-            raise PermissionDenied("Resource staff access cannot exceed current authority.")
+            raise PermissionDenied(gettext("Resource staff access cannot exceed current authority."))
         return actor
     if not adapter.can_manage(actor, target) or not all(
         adapter.can(actor, target, permission) for permission in permissions
     ):
-        raise PermissionDenied("Resource staff access cannot exceed current authority.")
+        raise PermissionDenied(gettext("Resource staff access cannot exceed current authority."))
     return actor
 
 
@@ -106,7 +107,7 @@ def create_invite(adapter, target, *, actor, permissions, email="", send=None, l
     permissions = _permissions(adapter, permissions)
     _require_subset(adapter, actor, target, permissions, operation="create_invite")
     if send is not None and not email:
-        raise ValidationError({"email": "An email address is required for delivery."})
+        raise ValidationError({"email": gettext("An email address is required for delivery.")})
     token = secrets.token_urlsafe(32)
     row = adapter.invite_model.objects.create(
         **adapter.scope(target), permissions=permissions, created_by=actor, **_labels(adapter, label),
@@ -126,7 +127,7 @@ def update_permissions(adapter, grant, *, actor, permissions, label=None):
     actor = adapter.lock_authority(actor, target)
     row = adapter.grant_model.objects.select_for_update().get(pk=grant.pk)
     if row.revoked_at:
-        raise ValidationError({"detail": "This staff grant has been revoked."})
+        raise ValidationError({"detail": gettext("This staff grant has been revoked.")})
     permissions = _permissions(adapter, permissions)
     _require_subset(adapter, actor, target, permissions, operation="update_permissions",
                     row=row, authority_locked=True)
@@ -177,7 +178,7 @@ def redeem_invite(adapter, token, *, actor, makerspace_id=None):
         token_digest=credential_digest(token, namespace=adapter.namespace, purpose="invite"),
     ).first()
     if not candidate or (makerspace_id is not None and candidate.makerspace_id != makerspace_id):
-        raise NotFound("Invitation not found.")
+        raise NotFound(gettext("Invitation not found."))
     # Domain lock order precedes credentials. No nullable joins under FOR UPDATE.
     from apps.accounts.models import User
     try:
@@ -187,10 +188,10 @@ def redeem_invite(adapter, token, *, actor, makerspace_id=None):
         row = adapter.invite_model.objects.select_for_update().get(pk=candidate.pk)
     except ObjectDoesNotExist as exc:
         # A draft occurrence and its cascading invite can disappear during regeneration.
-        raise NotFound("Invitation not found.") from exc
+        raise NotFound(gettext("Invitation not found.")) from exc
     if (row.revoked_at or row.redeemed_at or row.expires_at <= timezone.now()
             or row.makerspace_id != target.makerspace_id):
-        raise NotFound("Invitation not found.")
+        raise NotFound(gettext("Invitation not found."))
     creator = _require_subset(
         adapter, creator, target, _permissions(adapter, row.permissions),
         operation="redeem_invite", row=row, authority_locked=True,
@@ -204,7 +205,7 @@ def redeem_invite(adapter, token, *, actor, makerspace_id=None):
             credential_digest(account.email, namespace=adapter.namespace, purpose="email"),
         )
     ):
-        raise PermissionDenied("A matching verified email is required.")
+        raise PermissionDenied(gettext("A matching verified email is required."))
     grant = adapter.grant_model.objects.select_for_update().filter(
         **adapter.scope(target), user=account, revoked_at__isnull=True,
     ).first()

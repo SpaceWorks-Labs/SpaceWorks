@@ -5,6 +5,7 @@ cards and event tickets. A design row is either a space default or an override f
 exactly one target (plan, title, programme, event, ticket type, or an organisation's
 event library default). Holders only ever render `published_document`.
 """
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -12,14 +13,14 @@ from django.db.models import Q
 
 class CardDesign(models.Model):
     class Domain(models.TextChoices):
-        MEMBER_CARDS = "member_cards", "Member cards"
-        ID_PROGRAMME = "id_programme", "ID programme cards"
-        EVENT_CARD = "event_card", "Event ID cards"
-        EVENT_TICKET = "event_ticket", "Event tickets"
+        MEMBER_CARDS = "member_cards", gettext_lazy("Member cards")
+        ID_PROGRAMME = "id_programme", gettext_lazy("ID programme cards")
+        EVENT_CARD = "event_card", gettext_lazy("Event ID cards")
+        EVENT_TICKET = "event_ticket", gettext_lazy("Event tickets")
 
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
-        PENDING_APPROVAL = "pending_approval", "Waiting for approval"
+        PENDING_APPROVAL = "pending_approval", gettext_lazy("Waiting for approval")
         PUBLISHED = "published", "Published"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="card_designs")

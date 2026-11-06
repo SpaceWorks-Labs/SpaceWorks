@@ -4,6 +4,7 @@ Lock order: makerspace, request, membership/role, payment. Legacy tenants contin
 through the shipped flow until settings are explicitly configured.
 """
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 from datetime import timedelta
 
@@ -60,9 +61,9 @@ def request_membership(user, makerspace, application_answers=None, *, plan_id=No
         from apps.makerspaces.guards import require_module
         require_module(makerspace, "membership")
         if not _eligible_user(user) or user.access_status != "active":
-            raise ValidationError({"detail": "An unrestricted account with a verified email is required."})
+            raise ValidationError({"detail": gettext("An unrestricted account with a verified email is required.")})
         if MakerspaceMembership.objects.filter(makerspace=makerspace, user=user, status="active").exists():
-            raise ValidationError({"detail": "You are already an active member."})
+            raise ValidationError({"detail": gettext("You are already an active member.")})
         from apps.makerspaces.membership_admission_plans import resolve_join
         plan, policy = resolve_join(makerspace, user, policy, plan_id, invite_code)
         try:
@@ -117,7 +118,7 @@ def claim_invitation(user, request_id, application_answers=None):
         from apps.makerspaces.membership_plan_policy import plan_policy
         policy = plan_policy(makerspace, row.selected_plan or policy.default_plan, policy)
         if not _eligible_user(user) or user.access_status != "active":
-            raise ValidationError({"detail": "An unrestricted account with a verified email is required."})
+            raise ValidationError({"detail": gettext("An unrestricted account with a verified email is required.")})
         _prepare(row, user, policy, application_answers, row.selected_plan)
         audit.record(user, "membership.invitation_claimed", makerspace=makerspace, target=row)
         from apps.makerspaces.membership_notifications import notify_membership_request_pending
@@ -159,17 +160,17 @@ def approve_request(actor, request, assigned_role, plan=None):
         if row.state not in ("requested", "invited", "awaiting_vouches") or row.approved_at:
             raise AdmissionError("membership_request_terminal", "This membership request is no longer approvable.")
         if not row.user or not row.user.is_active or row.user.access_status != "active":
-            raise ValidationError({"detail": "The applicant needs an unrestricted active account."})
+            raise ValidationError({"detail": gettext("The applicant needs an unrestricted active account.")})
         existing = MakerspaceMembership.objects.filter(makerspace=makerspace, user=row.user).first()
         role_services.can_assign_role(actor, makerspace, assigned_role, target_membership=existing)
         if assigned_role.granted_actions:
-            raise ValidationError({"role_id": "Community admission must use a role without staff actions."})
+            raise ValidationError({"role_id": gettext("Community admission must use a role without staff actions.")})
         if plan is not None:
             row.selected_plan = plan
         elif not row.admission_managed:
             row.selected_plan = policy.default_plan
         if row.selected_plan and (row.selected_plan.makerspace_id != makerspace.pk or not row.selected_plan.is_active):
-            raise ValidationError({"plan_id": "Choose an active plan in this makerspace."})
+            raise ValidationError({"plan_id": gettext("Choose an active plan in this makerspace.")})
         from apps.makerspaces.membership_plan_policy import plan_policy
         policy = plan_policy(makerspace, row.selected_plan, policy)
         if vouching_on(makerspace, policy):

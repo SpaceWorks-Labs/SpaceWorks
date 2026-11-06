@@ -9,6 +9,7 @@ One endpoint set serves both the avatar and a project image, discriminated by an
 key-collision check.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -50,7 +51,7 @@ class MemberProfileImageView(MemberProfileBaseView):
         if project is None:
             # 400 rather than 404: the profile exists and is the caller's, so this is a
             # bad field in their payload, not a missing resource.
-            raise ValidationError({"project_id": "Unknown project."})
+            raise ValidationError({"project_id": gettext("Unknown project.")})
         return project
 
     @extend_schema(
@@ -106,17 +107,17 @@ class MemberProfileImageView(MemberProfileBaseView):
 
         if not object_key.startswith(f"{IMAGE_KIND}/{membership.makerspace_id}/"):
             raise ValidationError(
-                {"object_key": "Image object key is outside this makerspace."}
+                {"object_key": gettext("Image object key is outside this makerspace.")}
             )
         if not public_image_storage.is_safe_object_key(object_key):
-            raise ValidationError({"object_key": "Invalid image object key."})
+            raise ValidationError({"object_key": gettext("Invalid image object key.")})
         if public_image_storage.public_image_key_in_use(
             membership.makerspace_id,
             object_key,
             profile_id=None if project else profile.pk,
             project_id=project.pk if project else None,
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
             result = public_image_storage.finalize_upload(object_key)
         except StorageUnavailable:
@@ -133,7 +134,7 @@ class MemberProfileImageView(MemberProfileBaseView):
             return storage_unavailable_response()
         if not is_valid_image:
             _discard(object_key)
-            raise ValidationError({"object_key": "Uploaded file is not a valid image."})
+            raise ValidationError({"object_key": gettext("Uploaded file is not a valid image.")})
         if project is not None:
             profile_images.set_project_image(profile, project, object_key)
         else:
@@ -159,7 +160,7 @@ class MemberProfileImageView(MemberProfileBaseView):
             # avatar, so `?project_id=abc` would destroy a different image than the one
             # the caller named. Present-but-unparseable is a 400.
             if not raw_project_id.isdigit():
-                raise ValidationError({"project_id": "Invalid project id."})
+                raise ValidationError({"project_id": gettext("Invalid project id.")})
             project = self._project(profile, int(raw_project_id))
         if project is not None:
             profile_images.clear_project_image(profile, project)

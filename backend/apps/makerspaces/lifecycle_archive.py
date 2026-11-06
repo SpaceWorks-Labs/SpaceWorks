@@ -1,5 +1,6 @@
 """Makerspace archive and recovery lifecycle."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -42,7 +43,7 @@ def archive(makerspace, actor):
 
 def _archive_locked(makerspace, actor, *, archived_at):
     if not is_servable(makerspace):
-        raise ValidationError("Makerspace is not available for archival.")
+        raise ValidationError(gettext("Makerspace is not available for archival."))
 
     # This is an advisory snapshot: payment creation does not universally take
     # this lock, so a concurrent insert can change the count before commit.
@@ -68,12 +69,12 @@ def unarchive(makerspace, actor):
     with transaction.atomic():
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
         if locked.archived_at is None:
-            raise ValidationError("Makerspace is not archived.")
+            raise ValidationError(gettext("Makerspace is not archived."))
         from apps.tenant_migration.cutover import has_active_migrated_out_handoff
 
         if has_active_migrated_out_handoff(locked.pk):
             raise ValidationError(
-                "A migrated-out makerspace can only be reopened with a signed abort receipt."
+                gettext("A migrated-out makerspace can only be reopened with a signed abort receipt.")
             )
 
         locked.archived_at = None

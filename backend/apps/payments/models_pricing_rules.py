@@ -10,6 +10,7 @@
   waivable: it has its own release path.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -18,9 +19,9 @@ from django.db.models import Q
 
 class PriceDiscount(models.Model):
     class Audience(models.TextChoices):
-        ALL_MEMBERS = "all_members", "All members"
-        PLAN = "plan", "Members on a plan"
-        MEMBER = "member", "One member"
+        ALL_MEMBERS = "all_members", gettext_lazy("All members")
+        PLAN = "plan", gettext_lazy("Members on a plan")
+        MEMBER = "member", gettext_lazy("One member")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="price_discounts")
     #: Staff-authored and shown to members on their quote. Never a person's name.
@@ -71,12 +72,12 @@ class PriceDiscount(models.Model):
 
     def clean(self):
         if self.audience == self.Audience.PLAN and self.plan_id is None:
-            raise ValidationError({"plan": "Choose the plan whose members get this discount."})
+            raise ValidationError({"plan": gettext("Choose the plan whose members get this discount.")})
         if self.plan_id and self.plan.makerspace_id != self.makerspace_id:
-            raise ValidationError({"plan": "The plan must belong to this makerspace."})
+            raise ValidationError({"plan": gettext("The plan must belong to this makerspace.")})
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Discounts are archived, never deleted.")
+        raise ValidationError(gettext("Discounts are archived, never deleted."))
 
     def __str__(self):
         return f"Discount {self.name} ({self.audience}) for makerspace {self.makerspace_id}"
@@ -85,9 +86,9 @@ class PriceDiscount(models.Model):
 class LoanFeeWaiver(models.Model):
     class Component(models.TextChoices):
         RENTAL = "rental", "Rental"
-        LATE = "late", "Late fee"
+        LATE = "late", gettext_lazy("Late fee")
         DAMAGE = "damage", "Damage"
-        LOST = "lost", "Lost item"
+        LOST = "lost", gettext_lazy("Lost item")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="+")
     request = models.ForeignKey("hardware_requests.HardwareRequest", on_delete=models.PROTECT,
@@ -118,13 +119,13 @@ class LoanFeeWaiver(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk is not None:
-            raise ValidationError("Loan fee waivers are append-only.")
+            raise ValidationError(gettext("Loan fee waivers are append-only."))
         if not (self.reason or "").strip():
-            raise ValidationError({"reason": "A reason is required."})
+            raise ValidationError({"reason": gettext("A reason is required.")})
         unknown = set(self.components or ()) - set(self.Component.values)
         if unknown:
-            raise ValidationError({"components": f"Unknown loan fee components: {sorted(unknown)}."})
+            raise ValidationError({"components": gettext('Unknown loan fee components: {value}.').format(value=sorted(unknown))})
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Loan fee waivers are append-only.")
+        raise ValidationError(gettext("Loan fee waivers are append-only."))

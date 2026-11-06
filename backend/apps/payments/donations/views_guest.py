@@ -5,6 +5,7 @@ moved link answers 404 like an unknown id, and the switch off answers 404 too. A
 their gift, pays it, downloads their 80G receipt, and manages their pledge -- nothing else.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
@@ -108,7 +109,7 @@ class GuestTaxReceiptView(APIView):
         donation = _gift(token)
         require_feature(donation.makerspace, TAX)
         if not donation.tax_receipt:
-            raise NotFound({"detail": "No tax-exempt receipt was issued for this gift.", "code": "no_tax_receipt"})
+            raise NotFound({"detail": gettext("No tax-exempt receipt was issued for this gift."), "code": "no_tax_receipt"})
         return pdf_response(donation)
 
 

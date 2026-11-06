@@ -6,6 +6,7 @@ Classic is the member-card default and follows the R26 ticket (band, caps-label 
 perforation, desk-QR stub). Event pass is the event default. Every template passes
 the 4.5:1 contrast check in both themes, and QR codes sit on white at 18 mm or more.
 """
+from django.utils.translation import gettext
 from . import backs, fronts
 from .builders import CREAM, INK, WHITE, document
 from .themes import THEMES, apply
@@ -66,7 +67,7 @@ DEFAULT_FOR_DOMAIN = {"member_cards": "classic", "id_programme": "community", "e
 def build(key, domain, theme="light"):
     from rest_framework.exceptions import ValidationError
     if key not in TEMPLATES or theme not in THEMES:
-        raise ValidationError({"template": "Choose one of the six templates, light or dark."})
+        raise ValidationError({"template": gettext("Choose one of the six templates, light or dark.")})
     return TEMPLATES[key](domain, theme)
 
 

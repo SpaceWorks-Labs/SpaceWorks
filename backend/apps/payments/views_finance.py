@@ -5,6 +5,7 @@ same numbers export through the report registry (`income-spending`, `finance-*`,
 `event-finance`), where the PII export rules apply.
 """
 
+from django.utils.translation import gettext
 import csv
 from datetime import date, timedelta
 from io import StringIO
@@ -77,12 +78,12 @@ def _range(request, space):
         try:
             return date.fromisoformat(value) if value else None
         except ValueError:
-            raise ValidationError({name: "Use YYYY-MM-DD."})
+            raise ValidationError({name: gettext("Use YYYY-MM-DD.")})
     today = local_now(space).date()
     end = parse("to") or today
     start = parse("from") or (end.replace(day=1) - timedelta(days=330)).replace(day=1)
     if start > end or (end - start).days > 1100:
-        raise ValidationError({"from": "Choose a range of at most three years."})
+        raise ValidationError({"from": gettext("Choose a range of at most three years.")})
     return start, end, (local_day_bounds(space, start)[0], local_day_bounds(space, end + timedelta(days=1))[0])
 
 
@@ -116,7 +117,7 @@ class EventFinanceView(APIView):
     def get(self, request, makerspace_id, event_id):
         space, view = finance_space(request, makerspace_id)
         if not view.sees("events"):
-            raise PermissionDenied("Events money is for the Event Manager and finance staff.")
+            raise PermissionDenied(gettext("Events money is for the Event Manager and finance staff."))
         event = _event(space, event_id)
         rows = event_finance(space, None, request.user, event.pk)
         if request.query_params.get("format") == "csv":
@@ -143,7 +144,7 @@ class EventBudgetView(APIView):
 
         space, view = finance_space(request, makerspace_id)
         if not view.may_record("events"):
-            raise PermissionDenied("Event budgets are set by the Event Manager or finance staff.")
+            raise PermissionDenied(gettext("Event budgets are set by the Event Manager or finance staff."))
         event = _event(space, event_id)
         payload = EventBudgetSerializer(data=request.data)
         payload.is_valid(raise_exception=True)

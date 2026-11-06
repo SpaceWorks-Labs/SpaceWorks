@@ -10,6 +10,7 @@ Two rules here are security, not tidiness:
   render on everyone else's screen.
 """
 
+from django.utils.translation import gettext
 from urllib.parse import urlparse
 
 from rest_framework import serializers
@@ -47,7 +48,7 @@ class ProjectLinkSerializer(serializers.Serializer):
 
     def validate_url(self, value):
         if urlparse(value).scheme.lower() not in ALLOWED_LINK_SCHEMES:
-            raise serializers.ValidationError("Links must start with https://.")
+            raise serializers.ValidationError(gettext("Links must start with https://."))
         return value
 
 

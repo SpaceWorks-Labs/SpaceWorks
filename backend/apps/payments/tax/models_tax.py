@@ -1,5 +1,6 @@
 """Per-space tax policy and the per-financial-year document counters (core ledger)."""
 
+from django.utils.translation import gettext_lazy
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
@@ -17,17 +18,17 @@ class MakerspaceTaxSettings(models.Model):
     """
 
     class Mode(models.TextChoices):
-        NONE = "none", "No tax"
-        SINGLE = "single", "Single named tax"
-        GST_INDIA = "gst_india", "India GST"
+        NONE = "none", gettext_lazy("No tax")
+        SINGLE = "single", gettext_lazy("Single named tax")
+        GST_INDIA = "gst_india", gettext_lazy("India GST")
 
     class Scheme(models.TextChoices):
         REGULAR = "regular", "Regular"
         COMPOSITION = "composition", "Composition"
 
     class ForeignCurrency(models.TextChoices):
-        NO_GST = "no_gst", "Outside GST"
-        EXPORT_LUT = "export_lut", "Export under LUT"
+        NO_GST = "no_gst", gettext_lazy("Outside GST")
+        EXPORT_LUT = "export_lut", gettext_lazy("Export under LUT")
 
     makerspace = models.OneToOneField("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="tax_settings")
     mode = models.CharField(max_length=16, choices=Mode.choices, default=Mode.NONE)
@@ -88,8 +89,8 @@ class DocumentNumberCounter(models.Model):
     """Gapless per-financial-year series. Locked and bumped inside the issue transaction."""
 
     class Series(models.TextChoices):
-        INVOICE = "invoice", "Tax invoice / receipt"
-        CREDIT_NOTE = "credit_note", "Credit note"
+        INVOICE = "invoice", gettext_lazy("Tax invoice / receipt")
+        CREDIT_NOTE = "credit_note", gettext_lazy("Credit note")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     series = models.CharField(max_length=16, choices=Series.choices)

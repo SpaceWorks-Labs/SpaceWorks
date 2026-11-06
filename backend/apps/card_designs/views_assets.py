@@ -1,5 +1,6 @@
 """Designer resources reached through a design the caller may edit: artwork uploads and
 the card font library (list, prepare a family, and the font bytes the canvas loads)."""
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -105,7 +106,7 @@ class CardFontPrepareView(APIView):
         require_edit(request.user, design_for(request.user, pk))
         family = request.data.get("family")
         if not isinstance(family, str) or not fonts.family_weights(family):
-            raise ValidationError({"family": "That family is not in the card font library."})
+            raise ValidationError({"family": gettext("That family is not in the card font library.")})
         pending = font_fetch.request_family(family)
         return Response({"family": family, "pending_weights": pending, "state": font_fetch.state_of(family)},
                         status=status.HTTP_202_ACCEPTED)

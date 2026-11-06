@@ -8,6 +8,7 @@ is the one caller that writes; everything here only computes.
 * fixed_end      -> local midnight after the plan's `fixed_end_date`;
 * lifetime       -> `LIFETIME_ENDS_AT` (never ends, never renews).
 """
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from dateutil.relativedelta import relativedelta
@@ -42,7 +43,7 @@ def term_end(plan, starts_at):
 def require_openable(plan, starts_at):
     """Refuse a term that would end before it starts (a fixed date already passed)."""
     if term_end(plan, starts_at) <= starts_at:
-        raise ValidationError({"plan_id": "This plan's end date has already passed."})
+        raise ValidationError({"plan_id": gettext("This plan's end date has already passed.")})
 
 
 def price_for(plan, kind):

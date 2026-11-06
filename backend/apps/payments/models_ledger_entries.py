@@ -14,6 +14,7 @@ and drops out of the totals), never edited or deleted. `OpeningBalance` rows are
 append-only revisions; the newest row for a (financial year, currency) is the balance.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
@@ -25,24 +26,24 @@ slug_validator = RegexValidator(r"^[a-z][a-z0-9_.]{0,47}$", "Use lower-case lett
 
 class LedgerEntry(models.Model):
     class Kind(models.TextChoices):
-        RECEIPT = "receipt", "Money in"
-        EXPENSE = "expense", "Money out"
+        RECEIPT = "receipt", gettext_lazy("Money in")
+        EXPENSE = "expense", gettext_lazy("Money out")
 
     class Domain(models.TextChoices):
         INVENTORY = "inventory", "Inventory"
         LOANS = "loans", "Lending"
         MACHINES = "machines", "Machines"
-        BOOKINGS = "bookings", "Bookings and rooms"
+        BOOKINGS = "bookings", gettext_lazy("Bookings and rooms")
         EVENTS = "events", "Events"
         MEMBERSHIP = "membership", "Membership"
-        DONATIONS = "donations", "Donations and sponsors"
+        DONATIONS = "donations", gettext_lazy("Donations and sponsors")
         SHOP = "shop", "Shop"
         GENERAL = "general", "General"
 
     class Method(models.TextChoices):
         CASH = "cash", "Cash"
         UPI = "upi", "UPI"
-        BANK_TRANSFER = "bank_transfer", "Bank transfer"
+        BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank transfer")
         CARD = "card", "Card"
         CHEQUE = "cheque", "Cheque"
         ONLINE = "online", "Online"
@@ -104,19 +105,19 @@ class LedgerEntry(models.Model):
     def clean(self):
         allowed = self.RECEIPT_CATEGORIES if self.kind == self.Kind.RECEIPT else self.EXPENSE_CATEGORIES
         if self.source_kind == "manual" and self.category not in allowed:
-            raise ValidationError({"category": "Choose a category for this kind of entry."})
+            raise ValidationError({"category": gettext("Choose a category for this kind of entry.")})
 
     def save(self, *args, **kwargs):
         if self.pk:
             original = type(self).objects.filter(pk=self.pk).values("voided_at").first()
             if original and original["voided_at"] is not None:
-                raise ValidationError("A voided ledger entry is final.")
+                raise ValidationError(gettext("A voided ledger entry is final."))
         else:
             self.full_clean()
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Ledger entries are voided, never deleted.")
+        raise ValidationError(gettext("Ledger entries are voided, never deleted."))
 
 
 class OpeningBalance(models.Model):
@@ -134,8 +135,8 @@ class OpeningBalance(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Opening balances are revised by appending a new row.")
+            raise ValidationError(gettext("Opening balances are revised by appending a new row."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Opening balances are revised by appending a new row.")
+        raise ValidationError(gettext("Opening balances are revised by appending a new row."))

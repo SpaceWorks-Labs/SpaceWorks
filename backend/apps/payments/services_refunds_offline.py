@@ -1,5 +1,6 @@
 """Record money returned in person without calling or depending on a provider."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
@@ -39,7 +40,7 @@ def record_offline_refund(payment, *, amount, reason, receipt, actor, release_de
         .filter(pk=payment.pk, makerspace_id=payment.makerspace_id).first()
     )
     if locked is None:
-        raise NotFound("Payment not found.")
+        raise NotFound(gettext("Payment not found."))
     if release_deposit:
         from apps.hardware_requests.models import HardwareRequest
         closed = rbac.scope_by_action(
@@ -82,14 +83,14 @@ def amend_offline_refund(payment, *, refund_id, receipt, actor):
         pk=payment.pk, makerspace_id=payment.makerspace_id,
     ).first()
     if locked is None:
-        raise NotFound("Payment not found.")
+        raise NotFound(gettext("Payment not found."))
     previous = rbac.scope_by_action(
         actor, rbac.Action.RECORD_PAYMENT, Refund.objects.all(), field="payment__makerspace_id",
     ).filter(
         pk=refund_id, payment=locked, provider=Refund.Provider.MANUAL, amended_by__isnull=True,
     ).first()
     if previous is None:
-        raise NotFound("Effective manual refund not found.")
+        raise NotFound(gettext("Effective manual refund not found."))
     replacement = Refund.objects.create(
         payment=locked, amount=previous.amount, currency=previous.currency,
         provider=Refund.Provider.MANUAL, status=Refund.Status.SUCCEEDED,

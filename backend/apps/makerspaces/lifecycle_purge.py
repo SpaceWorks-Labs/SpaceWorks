@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.integrations.notification_cutover import guarded
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
@@ -20,7 +21,7 @@ def purge(makerspace, actor):
     with presentation_purge_scope(makerspace.pk, actor=actor), transaction.atomic():
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
         if locked.archived_at is None:
-            raise ValidationError("Cannot purge a makerspace that is not archived.")
+            raise ValidationError(gettext("Cannot purge a makerspace that is not archived."))
         # Capture the access decision and object locators from the locked row, never
         # the caller's potentially stale instance. Completion retains these facts.
         meta = _audit_meta(locked)

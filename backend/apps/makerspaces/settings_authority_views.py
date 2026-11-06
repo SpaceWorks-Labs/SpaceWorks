@@ -10,6 +10,7 @@ The space is resolved through rbac (`scope_by_action` / `resolve_scope`) on the 
 queryset, so another space is a 404, never a 403 that confirms it exists.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
@@ -122,7 +123,7 @@ def _space(actor, makerspace_id):
 def _manager_space(actor, makerspace_id):
     space = _space(actor, makerspace_id)
     if not is_space_manager(actor, space):
-        raise PermissionDenied("Only the Space Manager decides who may change settings.")
+        raise PermissionDenied(gettext("Only the Space Manager decides who may change settings."))
     return space
 
 

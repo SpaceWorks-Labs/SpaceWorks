@@ -8,6 +8,7 @@ case (#59). Donor contact details are scoped PII; the 80G PAN is ALWAYS encrypte
 (`encryption/registry_r2_l18`, `encryption_required`) and never leaves through a report.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 import secrets
 
 from django.db import models
@@ -116,14 +117,14 @@ class DonationPledge(ScopedPiiModelMixin, models.Model):
 
 class Donation(ScopedPiiModelMixin, models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "Waiting for payment"
+        PENDING = "pending", gettext_lazy("Waiting for payment")
         PAID = "paid", "Received"
         CANCELLED = "cancelled", "Cancelled"
 
     class Source(models.TextChoices):
-        ONLINE = "online", "Given online"
-        DESK = "desk", "Recorded by staff"
-        PLEDGE = "pledge", "Pledge period"
+        ONLINE = "online", gettext_lazy("Given online")
+        DESK = "desk", gettext_lazy("Recorded by staff")
+        PLEDGE = "pledge", gettext_lazy("Pledge period")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="donations")
     campaign = models.ForeignKey(DonationCampaign, null=True, blank=True, on_delete=models.SET_NULL,
@@ -170,7 +171,7 @@ class Donation(ScopedPiiModelMixin, models.Model):
             frozen = type(self).objects.filter(pk=self.pk).values_list("tax_receipt", flat=True).first()
             if frozen is not None and frozen != self.tax_receipt:
                 from django.core.exceptions import ValidationError
-                raise ValidationError("A tax-exempt receipt is frozen once issued.")
+                raise ValidationError(gettext("A tax-exempt receipt is frozen once issued."))
         return super().save(*args, **kwargs)
 
 

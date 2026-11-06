@@ -7,6 +7,7 @@ ramp, text at 6-12 pt and a QR and Code128 at their minimum sizes. `paper="card"
 one card-sized page for PVC printers: the trim frame, the safe area and a centre cross.
 No person's data is ever on it; the codes carry a fixed test string.
 """
+from django.utils.translation import gettext
 from io import BytesIO
 
 from rest_framework.exceptions import ValidationError
@@ -114,7 +115,7 @@ def render(document, paper):
     from reportlab.lib.units import mm
     from reportlab.pdfgen.canvas import Canvas
     if paper not in PAPERS:
-        raise ValidationError({"paper": "Choose A4, Letter or a single card."})
+        raise ValidationError({"paper": gettext("Choose A4, Letter or a single card.")})
     card_w, card_h = document["front"]["page_width_mm"], document["front"]["page_height_mm"]
     buffer = BytesIO()
     size = (card_w * mm, card_h * mm) if paper == "card" else tuple(v * mm for v in stocks.PAPERS[paper])

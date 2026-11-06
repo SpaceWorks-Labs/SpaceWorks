@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 from urllib.parse import urlencode
 
@@ -41,7 +42,7 @@ def _send_created(archive_request_id):
                 continue
             dispatch_email(
                 to_email=email,
-                subject=f"Archive request: {archive_request.makerspace.name}",
+                subject=gettext('Archive request: {name}').format(name=archive_request.makerspace.name),
                 text_body=body,
                 makerspace=None,
                 stream="governance",
@@ -76,8 +77,7 @@ def _send_resolved(archive_request_id):
         dispatch_email(
             to_email=requester_email,
             subject=(
-                f"Archive request {archive_request.status}: "
-                f"{archive_request.makerspace.name}"
+                gettext('Archive request {status}: {name}').format(status=archive_request.status, name=archive_request.makerspace.name)
             ),
             text_body=body,
             makerspace=None,

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
@@ -119,7 +120,7 @@ class BootstrapView(APIView):
         )
         if makerspace is None:
             return Response(
-                {"detail": "No active tenant frontend matched."},
+                {"detail": gettext("No active tenant frontend matched.")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         # The space is authoritative now: its default replaces only an ambient/system locale.

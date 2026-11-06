@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 from decimal import Decimal
 
@@ -134,7 +135,7 @@ class PaymentBulkActionSerializer(serializers.Serializer):
 
     def validate_ids(self, value):
         if len(value) != len(set(value)):
-            raise serializers.ValidationError("Payment IDs must be unique.")
+            raise serializers.ValidationError(gettext("Payment IDs must be unique."))
         return value
 
 
@@ -157,7 +158,7 @@ class ManualSettlementSerializer(serializers.Serializer):
         # A receipt dated in the future is an operator slip, not a record of money that
         # has already changed hands. Small tolerance for clock skew between devices.
         if value > timezone.now() + timedelta(minutes=5):
-            raise serializers.ValidationError("A settlement cannot be received in the future.")
+            raise serializers.ValidationError(gettext("A settlement cannot be received in the future."))
         return value
 
 

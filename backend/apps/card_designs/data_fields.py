@@ -4,6 +4,7 @@ Values come from a frozen snapshot assembled at render time by the holder adapte
 (`holders.py`); a design never names a model field. `field:<key>` places a programme
 or event answer. The two sensitive tags render only when the holder opted in (§3.4).
 """
+from django.utils.translation import gettext
 import re
 
 from rest_framework.exceptions import ValidationError
@@ -46,12 +47,12 @@ def tags_in(text):
 
 def validate_text(text, *, limit=500):
     if not isinstance(text, str) or len(text) > limit:
-        raise ValidationError({"text": f"Use at most {limit} characters."})
+        raise ValidationError({"text": gettext('Use at most {limit} characters.').format(limit=limit)})
     for tag in tags_in(text):
         if not valid_tag(tag):
-            raise ValidationError({"text": f"Unknown data field {{{{{tag}}}}}."})
+            raise ValidationError({"text": gettext('Unknown data field {{{{{tag}}}}}.').format(tag=tag)})
     if re.search(r"[{}]", _TAG.sub("", text)):
-        raise ValidationError({"text": "Braces are only used around a data field, like {{name}}."})
+        raise ValidationError({"text": gettext("Braces are only used around a data field, like {{name}}.")})
     return text
 
 

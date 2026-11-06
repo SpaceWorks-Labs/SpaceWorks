@@ -11,6 +11,7 @@ Behind `membership.renewal_desk`. Everything here is staff work in ONE space und
 * `extend` moves the current term's end by a number of days or to a date, with a
   required reason; written to the term history (EXTENDED) and audited.
 """
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -98,9 +99,9 @@ def extend(actor, membership, *, reason, days=None, until=None):
     """Move the current (or latest) term's end; never a lifetime term."""
     reason = (reason or "").strip()
     if not reason:
-        raise ValidationError({"reason": "Say why this membership is being extended."})
+        raise ValidationError({"reason": gettext("Say why this membership is being extended.")})
     if (days is None) == (until is None):
-        raise ValidationError({"detail": "Give either a number of days or a new end date."})
+        raise ValidationError({"detail": gettext("Give either a number of days or a new end date.")})
     from apps.makerspaces.membership_features import require_membership_feature_locked
     with transaction.atomic():
         from apps.tenant_migration.gate_runtime import assert_write_allowed
@@ -108,22 +109,22 @@ def extend(actor, membership, *, reason, days=None, until=None):
         makerspace = require_membership_feature_locked(membership.makerspace_id, "renewal_desk")
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
         if membership.status != "active":
-            raise ValidationError({"detail": "Only an active membership can be extended."})
+            raise ValidationError({"detail": gettext("Only an active membership can be extended.")})
         term = (MembershipTerm.objects.select_for_update().filter(membership=membership, status="active")
                 .order_by("-ends_at", "-pk").first())
         if term is None:
-            raise ValidationError({"detail": "This membership has no open term to extend."})
+            raise ValidationError({"detail": gettext("This membership has no open term to extend.")})
         if term.is_lifetime:
-            raise ValidationError({"detail": "A lifetime term never ends."})
+            raise ValidationError({"detail": gettext("A lifetime term never ends.")})
         previous = term.ends_at
         if days is not None:
             if not 1 <= int(days) <= 3650:
-                raise ValidationError({"days": "Extend by 1 to 3650 days."})
+                raise ValidationError({"days": gettext("Extend by 1 to 3650 days.")})
             term.ends_at = previous + timedelta(days=int(days))
         else:
             term.ends_at = local_day_bounds(makerspace, until)[1]
             if term.ends_at <= previous:
-                raise ValidationError({"until": "The new end must be later than the current end."})
+                raise ValidationError({"until": gettext("The new end must be later than the current end.")})
         term.save(update_fields=["ends_at"])
         term.membership = membership
         record(term, TermStanding.EXTENDED, effective_at=timezone.now(), actor=actor, reason=reason,

@@ -8,6 +8,7 @@ for a live (not revoked) card; the opt-in extras appear only when the holder opt
 exactly as on the printed card. `fonts` serves the card fonts the design uses, from this
 app (never a font CDN).
 """
+from django.utils.translation import gettext
 import base64
 
 from django.http import HttpResponse
@@ -47,7 +48,7 @@ def qr_uri(payload):
 def live_card(user, kind, card_id):
     spec, card = own_card(user, kind, card_id)
     if spec.standing(card) == "revoked":
-        raise PermissionDenied("This card was revoked.")
+        raise PermissionDenied(gettext("This card was revoked."))
     return spec, card
 
 

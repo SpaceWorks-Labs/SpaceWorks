@@ -1,4 +1,5 @@
 """Replace owned showcase projects, preserving image cleanup."""
+from django.utils.translation import gettext
 from apps.makerspaces.models import MemberProject
 
 
@@ -21,7 +22,7 @@ def save_projects(profile, rows):
         if project_id is not None:
             project = existing.get(project_id)
             if project is None:
-                raise ValidationError({"projects": f"Unknown project id {project_id}."})
+                raise ValidationError({"projects": gettext('Unknown project id {project_id}.').format(project_id=project_id)})
             project.title = row["title"]
             project.description = row.get("description", "")
             project.links = row.get("links", [])

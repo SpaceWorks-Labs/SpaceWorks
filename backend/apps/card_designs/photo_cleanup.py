@@ -4,6 +4,7 @@ The holder (or staff) asks for a clean-up of the card's current photo; the job w
 a candidate object; accepting replaces the photo and deletes the original, discarding
 deletes the candidate. Nothing changes on the card until the person accepts.
 """
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -18,9 +19,9 @@ def request(actor, kind, card):
     from . import segmentation
     from .jobs import enqueue
     if not segmentation.available():
-        raise ValidationError({"detail": "Photo clean-up is not set up on this server."})
+        raise ValidationError({"detail": gettext("Photo clean-up is not set up on this server.")})
     if not spec_for(kind).photo_bytes(card):
-        raise ValidationError({"detail": "Add a photo first."})
+        raise ValidationError({"detail": gettext("Add a photo first.")})
     scope = {"member_card": "member_cards", "programme_card": "id_programme", "event_card": "event"}[kind]
     job, _created = enqueue(actor, card.makerspace, CardJob.Kind.PHOTO_CLEANUP, scope=scope, targets=[card.pk],
                             params={}, revision=f"{kind}:{card.pk}:{getattr(card, 'photo_object_key', '')}")
@@ -46,7 +47,7 @@ def run_cleanup(job):
 
 def _candidate(job):
     if job.kind != CardJob.Kind.PHOTO_CLEANUP or job.state != CardJob.State.SUCCEEDED or not job.result_key:
-        raise ValidationError({"detail": "No cleaned photo is waiting."})
+        raise ValidationError({"detail": gettext("No cleaned photo is waiting.")})
     return job.result_key
 
 

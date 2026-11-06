@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import IntegrityError, transaction
@@ -37,9 +38,9 @@ class PendingArchiveRequestExists(ArchiveRequestConflict):
 def create(makerspace, actor, reason):
     reason = (reason or "").strip()
     if not reason:
-        raise ValidationError({"reason": "Explain why this makerspace should be archived."})
+        raise ValidationError({"reason": gettext("Explain why this makerspace should be archived.")})
     if len(reason) > 2000:
-        raise ValidationError({"reason": "Ensure this field has no more than 2000 characters."})
+        raise ValidationError({"reason": gettext("Ensure this field has no more than 2000 characters.")})
 
     try:
         with transaction.atomic():
@@ -152,10 +153,10 @@ def decline(archive_request, actor, resolution_note):
     require_platform_superadmin(actor)
     note = (resolution_note or "").strip()
     if not note:
-        raise ValidationError({"resolution_note": "Explain why the request was declined."})
+        raise ValidationError({"resolution_note": gettext("Explain why the request was declined.")})
     if len(note) > 2000:
         raise ValidationError(
-            {"resolution_note": "Ensure this field has no more than 2000 characters."}
+            {"resolution_note": gettext("Ensure this field has no more than 2000 characters.")}
         )
     with transaction.atomic():
         locked_space = Makerspace.objects.select_for_update().get(
@@ -247,7 +248,7 @@ def _require_archive_authority(actor, makerspace):
     the view's identical check; both must agree, or one of them is decorative.
     """
     if not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk):
-        raise PermissionDenied("Managing archive requests requires MANAGE_MAKERSPACE.")
+        raise PermissionDenied(gettext("Managing archive requests requires MANAGE_MAKERSPACE."))
 
 
 def _resolve(archive_request, *, status, actor, note, resolved_at):
@@ -270,6 +271,6 @@ def _optional_note(value):
     note = (value or "").strip()
     if len(note) > 2000:
         raise ValidationError(
-            {"resolution_note": "Ensure this field has no more than 2000 characters."}
+            {"resolution_note": gettext("Ensure this field has no more than 2000 characters.")}
         )
     return note

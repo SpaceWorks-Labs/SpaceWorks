@@ -2,6 +2,7 @@
 
 CR80 is 85.60 x 53.98 mm everywhere (ISO/IEC 7810 ID-1); the old 54.0 is gone.
 """
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 CR80 = (85.6, 53.98)
@@ -46,11 +47,11 @@ def dimensions(stock, width=None, height=None):
     if stock in STOCKS:
         return STOCKS[stock]
     if stock != CUSTOM:
-        raise ValidationError({"stock": "Choose a named stock or custom."})
+        raise ValidationError({"stock": gettext("Choose a named stock or custom.")})
     sizes = []
     for value in (width, height):
         if type(value) not in (int, float) or not CUSTOM_MIN_MM <= value <= CUSTOM_MAX_MM:
-            raise ValidationError({"stock": f"A custom stock is {CUSTOM_MIN_MM:g}-{CUSTOM_MAX_MM:g} mm each side."})
+            raise ValidationError({"stock": gettext('A custom stock is {CUSTOM_MIN_MM:g}-{CUSTOM_MAX_MM:g} mm each side.').format(CUSTOM_MIN_MM=CUSTOM_MIN_MM, CUSTOM_MAX_MM=CUSTOM_MAX_MM)})
         sizes.append(round(float(value), 1))
     return tuple(sizes)
 

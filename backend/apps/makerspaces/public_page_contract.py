@@ -1,5 +1,6 @@
 """Versioned, model-free editorial document contract. Derived facts never enter it."""
 
+from django.utils.translation import gettext
 import json
 import uuid
 import unicodedata
@@ -68,34 +69,34 @@ def normalize_document(value, *, kind, previous=None):
     data = serializer.validated_data
     data["accent_choice"] = data["accent_choice"] or "inherit"
     if (data["cover_mode"] == "asset") != (data["cover_asset_id"] is not None):
-        raise s.ValidationError({"cover_asset_id": "Only asset cover mode requires an image."})
+        raise s.ValidationError({"cover_asset_id": gettext("Only asset cover mode requires an image.")})
     counts, ids = Counter(), set()
     for section in data["sections"]:
         key = section["type"]
         if key not in SECTION_TYPES[kind]:
-            raise s.ValidationError({"sections": f"Unsupported section for {kind}: {key}."})
+            raise s.ValidationError({"sections": gettext('Unsupported section for {kind}: {key}.').format(kind=kind, key=key)})
         if section["id"] in ids:
-            raise s.ValidationError({"sections": "Section IDs must be unique."})
+            raise s.ValidationError({"sections": gettext("Section IDs must be unique.")})
         ids.add(section["id"])
         counts[key] += 1
         if counts[key] > (2 if key == "about" else 1):
-            raise s.ValidationError({"sections": f"Too many {key} sections."})
+            raise s.ValidationError({"sections": gettext('Too many {key} sections.').format(key=key)})
         payload = PAYLOADS[key](data=section["payload"])
         payload.is_valid(raise_exception=True)
         section["payload"] = payload.validated_data
         rows = section["payload"].get("entries", [])
         row_ids = [row["id"] for row in rows]
         if len(row_ids) != len(set(row_ids)):
-            raise s.ValidationError({"sections": "Entry IDs must be unique within a section."})
+            raise s.ValidationError({"sections": gettext("Entry IDs must be unique within a section.")})
         if key == "location" and kind != "makerspace" and section["payload"]["source"] != "entered":
-            raise s.ValidationError({"sections": "This owner requires an explicitly entered location."})
+            raise s.ValidationError({"sections": gettext("This owner requires an explicitly entered location.")})
     for key in REQUIRED[kind]:
         group = next((row for row in data["sections"] if row["type"] == key), None)
         if group is None or not group["enabled"]:
-            raise s.ValidationError({"sections": f"The {key} group is required and enabled."})
+            raise s.ValidationError({"sections": gettext('The {key} group is required and enabled.').format(key=key)})
         old = next((row for row in (previous or empty_document(kind))["sections"] if row["type"] == key), None)
         if old and str(group["id"]) != str(old["id"]):
-            raise s.ValidationError({"sections": "Required group identity cannot change."})
+            raise s.ValidationError({"sections": gettext("Required group identity cannot change.")})
     validate_text_tree(data)
     encoded = json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str)
     if len(encoded.encode("utf-8")) > MAX_DOCUMENT_BYTES:
@@ -106,7 +107,7 @@ def normalize_document(value, *, kind, previous=None):
 
 def validate_text_tree(value):
     if isinstance(value, str) and any(unicodedata.category(char) in {"Cs", "Cc"} and char not in "\n\t" for char in value):
-        raise s.ValidationError({"document": "Text contains unsupported control or surrogate characters."})
+        raise s.ValidationError({"document": gettext("Text contains unsupported control or surrogate characters.")})
     if isinstance(value, dict):
         for child in value.values():
             validate_text_tree(child)
@@ -140,7 +141,7 @@ def validate_stored_document(value, *, kind):
             for row in section["payload"]["entries"]:
                 if row["kind"] == "member":
                     if row.get("member_slot_id") != row["id"] or "profile_id" in row:
-                        raise s.ValidationError({"document": "Stored member entries require a stable typed reference slot."})
+                        raise s.ValidationError({"document": gettext("Stored member entries require a stable typed reference slot.")})
                     row.pop("member_slot_id")
                     row["profile_id"] = 1  # Schema validation only; typed rows own the real identity.
     normalize_document(document, kind=kind)

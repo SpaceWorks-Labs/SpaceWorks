@@ -1,4 +1,5 @@
 """Read-only validation and a concrete ordered diff against a scoped target."""
+from django.utils.translation import gettext
 from copy import copy
 from types import SimpleNamespace
 
@@ -49,7 +50,7 @@ def keep_target_security(makerspace, config):
 def prepare(actor, makerspace, config):
     config = keep_target_security(makerspace, validate_configuration(config))
     if set(makerspace.enabled_modules or []) != set(config["modules"]) and not _superadmin(actor):
-        raise PermissionDenied("Only a superadmin may change modules through a pack.")
+        raise PermissionDenied(gettext("Only a superadmin may change modules through a pack."))
     current = configuration_for(actor, makerspace)
     candidate = copy(makerspace)
     candidate.enabled_modules = config["modules"]
@@ -70,7 +71,7 @@ def prepare(actor, makerspace, config):
             maps[section] = {}
             continue
         if rows and not rbac.can(actor, spec.action, makerspace.pk):
-            raise PermissionDenied(f"Applying {section} requires {spec.action}.")
+            raise PermissionDenied(gettext('Applying {section} requires {action}.').format(section=section, action=spec.action))
         lookup = {}
         existing = scoped_rows(actor, makerspace, spec).order_by("pk")
         if section == "active_waiver":
@@ -100,7 +101,7 @@ def prepare(actor, makerspace, config):
                 from apps.admin_api.views_email_templates_common import STREAM_ACTIONS, STREAM_MODULES
                 actions = STREAM_ACTIONS.get(values["stream"], ())
                 if not any(rbac.can(actor, action, makerspace.pk) for action in actions):
-                    raise PermissionDenied("The template requires its stream's management action.")
+                    raise PermissionDenied(gettext("The template requires its stream's management action."))
                 module = STREAM_MODULES.get(values["stream"])
                 if module and module not in config["modules"]:
                     raise PackError("pack_module_disabled", "The email stream module is not installed.")

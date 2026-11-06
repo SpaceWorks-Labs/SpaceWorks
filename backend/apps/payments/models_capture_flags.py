@@ -12,20 +12,21 @@ Kinds:
 * `mismatch` -- the captured amount or currency differs from the charge.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 from django.core.exceptions import ValidationError
 from django.db import models
 
 
 class PaymentCaptureFlag(models.Model):
     class Kind(models.TextChoices):
-        LATE = "late", "Paid after cancellation"
-        DUPLICATE = "duplicate", "Paid twice"
-        MISMATCH = "mismatch", "Amount differs"
+        LATE = "late", gettext_lazy("Paid after cancellation")
+        DUPLICATE = "duplicate", gettext_lazy("Paid twice")
+        MISMATCH = "mismatch", gettext_lazy("Amount differs")
 
     class Resolution(models.TextChoices):
         OPEN = "", "Open"
-        ISSUE_RECEIVED = "issue_received", "Receipt issued on the amount received"
-        REFUND_CASE = "refund_case", "Refund case opened"
+        ISSUE_RECEIVED = "issue_received", gettext_lazy("Receipt issued on the amount received")
+        REFUND_CASE = "refund_case", gettext_lazy("Refund case opened")
         ACKNOWLEDGED = "acknowledged", "Acknowledged"
 
     #: Kinds whose receipt waits for the staff decision. A duplicate's charge already has
@@ -69,8 +70,8 @@ class PaymentCaptureFlag(models.Model):
         if self.pk:
             original = type(self).objects.filter(pk=self.pk).values("resolution").first()
             if original and original["resolution"]:
-                raise ValidationError("A resolved capture flag is final.")
+                raise ValidationError(gettext("A resolved capture flag is final."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Capture flags are permanent records.")
+        raise ValidationError(gettext("Capture flags are permanent records."))

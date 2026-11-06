@@ -1,5 +1,6 @@
 """The one row-locked path that turns a person into an active member."""
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 
 from django.db import transaction
@@ -22,7 +23,7 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
     """Activate or reactivate exactly one membership in the mandated lock order."""
     require_member_account(user)
     if role.slug != "member":
-        raise ValidationError({"role_id": "Community membership requires the Member role."})
+        raise ValidationError({"role_id": gettext("Community membership requires the Member role.")})
     with transaction.atomic():
         from apps.tenant_migration.gate_runtime import assert_write_allowed
         assert_write_allowed(makerspace.pk)
@@ -36,16 +37,16 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
         user = lock_obligation_owner(user)
         if driving_request is not None:
             if driving_request.makerspace_id != makerspace.pk:
-                raise ValidationError({"detail": "Membership request is for another makerspace."})
+                raise ValidationError({"detail": gettext("Membership request is for another makerspace.")})
             if driving_request.state not in (
                 MembershipRequest.State.REQUESTED,
                 MembershipRequest.State.INVITED,
                 MembershipRequest.State.AWAITING_VOUCHES,
                 MembershipRequest.State.AWAITING_PAYMENT,
             ):
-                raise ValidationError({"detail": "This membership request is no longer open."})
+                raise ValidationError({"detail": gettext("This membership request is no longer open.")})
             if driving_request.user_id not in (None, user.pk):
-                raise ValidationError({"detail": "Membership request belongs to another account."})
+                raise ValidationError({"detail": gettext("Membership request belongs to another account.")})
             if driving_request.user_id is None:
                 driving_request.user = user
                 driving_request.save(update_fields=["user", "updated_at"])
@@ -59,7 +60,7 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
         ).first()
         role = MakerspaceRole.objects.select_for_update().get(pk=role.pk)
         if role.makerspace_id != makerspace.pk:
-            raise ValidationError({"role_id": "Role must belong to this makerspace."})
+            raise ValidationError({"role_id": gettext("Role must belong to this makerspace.")})
 
         adding = membership is None or membership.status != "active"
         direct_request = None

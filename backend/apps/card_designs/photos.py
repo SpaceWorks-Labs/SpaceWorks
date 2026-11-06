@@ -5,6 +5,7 @@ the browser gets a presign for `staging/<final>` only; finalising reads the stag
 bytes, sniffs and re-encodes them (metadata stripped, <= 1200 px), writes the final
 key server-side, charges storage and records consent (Hard Rule: staging -> final).
 """
+from django.utils.translation import gettext
 import uuid
 from datetime import timedelta
 
@@ -29,13 +30,13 @@ def final_key(card):
 def _valid_key(card, key):
     prefix = f"card-photos/{card.makerspace_id}/"
     if not isinstance(key, str) or not key.startswith(prefix) or "/" in key[len(prefix):]:
-        raise ValidationError({"object_key": "Unknown upload."})
+        raise ValidationError({"object_key": gettext("Unknown upload.")})
 
 
 def presign(card, content_type):
     from .images import ALLOWED
     if content_type not in ALLOWED:
-        raise ValidationError({"content_type": "Upload a PNG, JPEG or WebP photo."})
+        raise ValidationError({"content_type": gettext("Upload a PNG, JPEG or WebP photo.")})
     key = final_key(card)
     return {"object_key": key, "content_type": content_type, **presign_staging(key, content_type, MAX_UPLOAD_BYTES)}
 
@@ -46,7 +47,7 @@ def attach_bytes(actor, kind, card, data, *, consent):
     assert_write_allowed(card.makerspace_id)
     from apps.makerspaces.limits_usage import add_storage, free_storage
     if not consent:
-        raise ValidationError({"consent": "A photo needs the holder's consent to be stored."})
+        raise ValidationError({"consent": gettext("A photo needs the holder's consent to be stored.")})
     png, _w, _h, _mean = normalise(data, max_edge=1200, keep_alpha=False)
     key = final_key(card)
     put_bytes(key, png, "image/png")
@@ -74,7 +75,7 @@ def finalize(actor, kind, card, *, object_key, consent):
     _valid_key(card, object_key)
     data = take_staging(object_key, MAX_UPLOAD_BYTES)
     if data is None:
-        raise ValidationError({"object_key": "Upload not found; upload the photo first."})
+        raise ValidationError({"object_key": gettext("Upload not found; upload the photo first.")})
     return attach_bytes(actor, kind, card, data, consent=consent)
 
 

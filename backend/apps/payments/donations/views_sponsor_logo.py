@@ -5,6 +5,7 @@ it; it is charged to storage once, released when replaced or cleared, collected 
 purge and counted by the storage reconciler, and declared in the backup ownership registry.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -63,9 +64,9 @@ class SponsorLogoView(APIView):
         payload.is_valid(raise_exception=True)
         key = payload.validated_data["object_key"]
         if not key.startswith(f"sponsor/{sponsor.makerspace_id}/") or not images.is_safe_object_key(key):
-            raise ValidationError({"object_key": "Image object key is outside this makerspace."})
+            raise ValidationError({"object_key": gettext("Image object key is outside this makerspace.")})
         if Sponsor.objects.filter(logo_key=key).exclude(pk=sponsor.pk).exists():
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
             result = images.finalize_upload(key)
             if result.status != "ok":
@@ -74,7 +75,7 @@ class SponsorLogoView(APIView):
                 raise ValidationError({"object_key": images.finalize_error_message(result)})
             if not images.sniff_is_valid_image(key):
                 _discard(key)
-                raise ValidationError({"object_key": "Uploaded file is not a valid image."})
+                raise ValidationError({"object_key": gettext("Uploaded file is not a valid image.")})
         except StorageUnavailable:
             return storage_unavailable_response()
         sponsor = Sponsor.objects.select_for_update().select_related("makerspace").get(pk=sponsor.pk)

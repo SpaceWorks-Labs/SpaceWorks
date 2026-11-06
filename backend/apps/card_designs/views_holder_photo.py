@@ -3,6 +3,7 @@
 Member-card photos keep `member/makerspaces/<id>/member-card/photo`; the clean-up and
 wallet routes serve all three kinds.
 """
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -125,7 +126,7 @@ class MyCardWalletView(APIView):
         from .wallet.service import request_pass
         spec, card = own_card(request.user, kind, card_id)
         if spec.standing(card) != "valid":
-            raise ValidationError({"detail": "Only a valid card can go into a wallet."})
+            raise ValidationError({"detail": gettext("Only a valid card can go into a wallet.")})
         _row, job = request_pass(request.user, kind, card, platform)
         return Response(CardJobSerializer(job).data, status=201)
 

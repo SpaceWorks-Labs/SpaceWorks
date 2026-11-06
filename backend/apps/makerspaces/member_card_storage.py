@@ -5,6 +5,7 @@ same MIME and size bounds (`EVIDENCE_ALLOWED_MIME`, `EVIDENCE_MAX_BYTES`). The f
 never client-writable: the browser only ever receives a presign for `staging/<key>`, and
 `finalize_photo` copies it into place, deletes the staging object and saves the row.
 """
+from django.utils.translation import gettext
 import uuid
 
 from django.conf import settings
@@ -25,7 +26,7 @@ def _final_key(makerspace_id):
 
 def presign_photo(card, content_type):
     if content_type not in settings.EVIDENCE_ALLOWED_MIME:
-        raise ValidationError({"content_type": "Unsupported image type."})
+        raise ValidationError({"content_type": gettext("Unsupported image type.")})
     final_key = _final_key(card.makerspace_id)
     upload = storage.presigned_upload(final_key, content_type)
     return {"object_key": final_key, "content_type": content_type, **upload}
@@ -35,21 +36,21 @@ def _validate_key(card, object_key):
     prefix = f"member-cards/{card.makerspace_id}/"
     if not object_key.startswith(prefix) or "/" in object_key[len(prefix):]:
         # The prefix test stops one makerspace attaching another's object.
-        raise ValidationError({"object_key": "Unknown upload."})
+        raise ValidationError({"object_key": gettext("Unknown upload.")})
 
 
 @transaction.atomic
 def finalize_photo(actor, card, *, object_key, content_type, consent):
     _validate_key(card, object_key)
     if not consent:
-        raise ValidationError({"consent": "A photo needs the member's consent to be stored."})
+        raise ValidationError({"consent": gettext("A photo needs the member's consent to be stored.")})
     staging = storage.staging_key(object_key)
     size = storage.object_size(staging)
     if not size:
-        raise ValidationError({"object_key": "Upload not found; upload the photo first."})
+        raise ValidationError({"object_key": gettext("Upload not found; upload the photo first.")})
     if size > settings.EVIDENCE_MAX_BYTES:
         storage.delete_object(staging)
-        raise ValidationError({"object_key": "Photo exceeds the size limit."})
+        raise ValidationError({"object_key": gettext("Photo exceeds the size limit.")})
     storage.validate_evidence_object(staging)
     storage.copy_object(staging, object_key)
     storage.delete_object(staging)

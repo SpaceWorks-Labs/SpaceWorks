@@ -1,5 +1,6 @@
 """Staff routes for programmes: list/create per organisation, read/change/delete one,
 its design, its approval switch. Authority by action on the host space (`access`)."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -111,10 +112,10 @@ class ProgrammeApprovalView(APIView):
         from apps.makerspaces.settings_authority import assert_setting_write
         programme = programme_for(request.user, pk, MANAGE)
         if "required" not in request.data:
-            raise ValidationError({"required": "Use true, false or null."})
+            raise ValidationError({"required": gettext("Use true, false or null.")})
         required = request.data.get("required")
         if required is not None and type(required) is not bool:
-            raise ValidationError({"required": "Use true, false or null."})
+            raise ValidationError({"required": gettext("Use true, false or null.")})
         assert_setting_write(request.user, programme.makerspace, "membership", "card_designs.approval")
         set_level(request.user, programme.makerspace, "membership", required, programme=programme)
         return Response(_approval(programme))

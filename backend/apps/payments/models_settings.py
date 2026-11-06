@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
@@ -18,9 +19,9 @@ connect_account_validator = RegexValidator(
 
 class MakerspacePaymentSettings(models.Model):
     class LoanDepositMode(models.TextChoices):
-        NONE = "none", "No deposit"
-        FIXED = "fixed", "Fixed amount per loan"
-        PER_PRODUCT = "per_product", "Sum of product deposits"
+        NONE = "none", gettext_lazy("No deposit")
+        FIXED = "fixed", gettext_lazy("Fixed amount per loan")
+        PER_PRODUCT = "per_product", gettext_lazy("Sum of product deposits")
 
     class ConnectStatus(models.TextChoices):
         UNCONNECTED = "unconnected", "Unconnected"
@@ -152,7 +153,7 @@ class MakerspacePaymentSettings(models.Model):
             currency_validator(self.default_currency)
         except ValidationError:
             raise ValidationError(
-                {"default_currency": "Enter a three-letter lowercase currency code."}
+                {"default_currency": gettext("Enter a three-letter lowercase currency code.")}
             )
         negative = {
             name: "Loan amounts cannot be negative."

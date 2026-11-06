@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.core.exceptions import ValidationError
@@ -65,7 +66,7 @@ class MakerspaceRole(models.Model):
     def save(self, *args, **kwargs):
         self.name = (self.name or "").strip()
         if not self.name:
-            raise ValidationError("Role name cannot be blank.")
+            raise ValidationError(gettext("Role name cannot be blank."))
         super().save(*args, **kwargs)
 
 
@@ -97,8 +98,8 @@ class MembershipRequest(ScopedPiiModelMixin, models.Model):
     class State(models.TextChoices):
         REQUESTED = "requested", "Requested"
         INVITED = "invited", "Invited"
-        AWAITING_VOUCHES = "awaiting_vouches", "Awaiting vouches"
-        AWAITING_PAYMENT = "awaiting_payment", "Awaiting payment"
+        AWAITING_VOUCHES = "awaiting_vouches", gettext_lazy("Awaiting vouches")
+        AWAITING_PAYMENT = "awaiting_payment", gettext_lazy("Awaiting payment")
         EXPIRED = "expired", "Expired"
         CANCELED = "canceled", "Canceled"
         ACTIVE = "active", "Active"

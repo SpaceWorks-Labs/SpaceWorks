@@ -4,6 +4,7 @@ A programme is hosted by a space its organisation OWNS (Q12: not possible otherw
 Deleting is allowed only while no card was ever approved; otherwise close it, and its
 cards keep verifying until revoked or expired (Q10).
 """
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils.text import slugify
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -28,7 +29,7 @@ def require_owner(organization, makerspace):
     from apps.organizations.models import OrganizationMakerspace
     if not OrganizationMakerspace.objects.filter(organization=organization, makerspace=makerspace,
                                                  relationship="owner").exists():
-        raise ValidationError({"makerspace_id": "Programmes are hosted by a space this organisation owns."})
+        raise ValidationError({"makerspace_id": gettext("Programmes are hosted by a space this organisation owns.")})
 
 
 def _clean(values, current=None):
@@ -39,9 +40,9 @@ def _clean(values, current=None):
         data["form_schema"] = validate_schema(data["form_schema"])
     mode = data.get("validity_mode", current.validity_mode if current else "none")
     if mode == "fixed_date" and not data.get("valid_until", getattr(current, "valid_until", None)):
-        raise ValidationError({"valid_until": "Choose the date cards stop being valid."})
+        raise ValidationError({"valid_until": gettext("Choose the date cards stop being valid.")})
     if mode == "days" and not data.get("validity_days", getattr(current, "validity_days", None)):
-        raise ValidationError({"validity_days": "Choose for how many days a card is valid."})
+        raise ValidationError({"validity_days": gettext("Choose for how many days a card is valid.")})
     status = data.get("status", current.status if current else "draft")
     if status != "active":
         data["registration_open"] = False
@@ -62,7 +63,7 @@ def create(actor, organization, makerspace, values):
     from apps.card_designs.resolution import get_or_create
     require_owner(organization, makerspace)
     if not rbac.can(actor, rbac.Action.MANAGE_ID_PROGRAMMES, makerspace.pk):
-        raise PermissionDenied("You cannot create programmes for this space.")
+        raise PermissionDenied(gettext("You cannot create programmes for this space."))
     preset = PRESETS.get(values.pop("preset", ""), {})
     data = _clean({**preset, **values})
     data.setdefault("name", preset.get("name", "ID programme"))
@@ -101,7 +102,7 @@ def update(actor, programme, values):
 @transaction.atomic
 def delete(actor, programme):
     if IdProgrammeCard.objects.filter(programme=programme, sequence__isnull=False).exists():
-        raise ValidationError({"detail": "Cards in this programme were approved. Close it instead."})
+        raise ValidationError({"detail": gettext("Cards in this programme were approved. Close it instead.")})
     from apps.card_designs.storage import delete_quietly
     keys = list(programme.cards.exclude(photo_object_key="").values_list("photo_object_key", flat=True))
     audit.record(actor, "id_programme.deleted", makerspace=programme.makerspace, target=programme,

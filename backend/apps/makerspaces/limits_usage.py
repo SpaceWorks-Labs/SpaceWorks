@@ -1,5 +1,6 @@
 """Managed-platform fair-use limits; deliberately dormant on self-hosts."""
 
+from django.utils.translation import gettext
 import logging
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -185,7 +186,7 @@ def add_storage(makerspace, size_bytes) -> None:
         if _storage(locked) + size_bytes > limit:
             raise serializers.ValidationError(
                 {
-                    "limit": "You've reached the free storage limit for this space — ask the operator to raise it or self-host."
+                    "limit": gettext("You've reached the free storage limit for this space — ask the operator to raise it or self-host.")
                 },
                 code="limit_reached",
             )

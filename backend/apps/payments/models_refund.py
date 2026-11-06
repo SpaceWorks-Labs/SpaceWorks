@@ -9,6 +9,7 @@ their (pending + succeeded) sum never exceeds the charge is enforced by the serv
 under the Payment row lock and re-checked in `clean()` as a last line of defence.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -96,30 +97,30 @@ class Refund(models.Model):
         self.currency = (self.currency or "").lower()
         currency_validator(self.currency)
         if self.amount is None or self.amount <= 0:
-            raise ValidationError({"amount": "Refund amount must be positive."})
+            raise ValidationError({"amount": gettext("Refund amount must be positive.")})
         if self.provider == self.Provider.MANUAL:
             if not self.refunded_at or not self.settled_at or self.method not in ManualSettlement.Method.values:
-                raise ValidationError("A manual refund needs method and refund date.")
+                raise ValidationError(gettext("A manual refund needs method and refund date."))
             if self.status != self.Status.SUCCEEDED or self.external_refund_id is not None:
-                raise ValidationError("A manual refund records money already returned.")
+                raise ValidationError(gettext("A manual refund records money already returned."))
         if self.amends_id:
             previous = type(self).objects.filter(pk=self.amends_id).first()
             if (not previous or self.provider != self.Provider.MANUAL or
                     previous.provider != self.Provider.MANUAL or
                     previous.payment_id != self.payment_id or previous.amount != self.amount or
                     previous.currency != self.currency or self.amends_id == self.pk):
-                raise ValidationError("A correction must replace the same manual refund amount and currency.")
+                raise ValidationError(gettext("A correction must replace the same manual refund amount and currency."))
         if self.status in self.COUNTED_STATUSES and self.payment_id:
             payment = Payment.objects.filter(pk=self.payment_id).only("amount", "currency", "status").first()
             if payment and self.currency != payment.currency:
-                raise ValidationError({"currency": "A refund must match the payment currency."})
+                raise ValidationError({"currency": gettext("A refund must match the payment currency.")})
             if payment and self.provider == self.Provider.MANUAL and payment.status != Payment.Status.PAID_OFFLINE:
-                raise ValidationError("Only offline-settled payments accept manual refunds.")
+                raise ValidationError(gettext("Only offline-settled payments accept manual refunds."))
             if payment is not None and (
                 self.counted_total(payment, exclude_pk=self.pk, replacing=self.amends_id)
                 + self.amount > payment.amount
             ):
-                raise ValidationError({"amount": "Refunds exceed the payment amount."})
+                raise ValidationError({"amount": gettext("Refunds exceed the payment amount.")})
 
     def save(self, *args, **kwargs):
         if self.pk:
@@ -127,17 +128,17 @@ class Refund(models.Model):
                 type(self).objects.filter(pk=self.pk).values("status", "amount", "payment_id", "provider").first()
             )
             if original and original["provider"] == self.Provider.MANUAL:
-                raise ValidationError("Manual refunds are append-only.")
+                raise ValidationError(gettext("Manual refunds are append-only."))
             if original and original["status"] != self.Status.PENDING and (
                 original["status"] != self.status or original["amount"] != self.amount
             ):
-                raise ValidationError("Settled refunds are immutable.")
+                raise ValidationError(gettext("Settled refunds are immutable."))
             if original and original["payment_id"] != self.payment_id:
-                raise ValidationError("A refund cannot move between payments.")
+                raise ValidationError(gettext("A refund cannot move between payments."))
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         if self.provider == self.Provider.MANUAL:
-            raise ValidationError("Manual refunds are append-only.")
+            raise ValidationError(gettext("Manual refunds are append-only."))
         return super().delete(*args, **kwargs)

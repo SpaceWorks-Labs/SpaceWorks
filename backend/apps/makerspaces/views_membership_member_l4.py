@@ -4,6 +4,7 @@ Each route answers for the signed-in member's OWN active membership in one space
 through the rbac tenant boundary, and 404s when `membership` or the route's switch is
 off (#95). Nothing here returns staff notes or staff-written reasons.
 """
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -28,7 +29,7 @@ from apps.makerspaces.serializers_membership_l4 import (
 def mine(user, makerspace_id, feature):
     require_member_account(user)
     if not user.is_active or user.access_status != "active" or user.is_walk_in:
-        raise PermissionDenied("An active member account is required.")
+        raise PermissionDenied(gettext("An active member account is required."))
     rows = rbac.scope_by_makerspace(user, MakerspaceMembership.objects.select_related("makerspace"))
     membership = get_object_or_404(rows, user=user, makerspace_id=makerspace_id, status="active")
     require_membership_feature(membership.makerspace, feature)
@@ -132,8 +133,8 @@ class MemberRefundSuggestionView(APIView):
         from apps.payments.member_access import member_may_see_own_charges
         from apps.payments.member_scope import member_payment_queryset
         if not member_may_see_own_charges(request.user, makerspace_id):
-            raise PermissionDenied("An active membership or an existing charge is required.")
+            raise PermissionDenied(gettext("An active membership or an existing charge is required."))
         payment = member_payment_queryset(request.user, makerspace_id).filter(pk=payment_id).first()
         if payment is None:
-            raise NotFound("Payment not found.")
+            raise NotFound(gettext("Payment not found."))
         return Response(RefundSuggestionSerializer(suggestion(payment)).data)

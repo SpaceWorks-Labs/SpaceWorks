@@ -7,6 +7,7 @@ holds RECORD_PAYMENT authority for that charge; only their confirmation writes t
 their own proposal (409 `self_confirmation`, and a database check behind it).
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException, NotFound
@@ -54,12 +55,12 @@ def _locked(actor, makerspace_id, confirmation_id):
 
     row = SettlementConfirmation.objects.filter(pk=confirmation_id, payment__makerspace_id=makerspace_id).first()
     if row is None:
-        raise NotFound("Settlement confirmation not found.")
+        raise NotFound(gettext("Settlement confirmation not found."))
     payment = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=row.payment_id)
     row = SettlementConfirmation.objects.select_for_update().get(pk=row.pk)
     # The checker must hold RECORD_PAYMENT itself; domain authority is not enough here.
     if not rbac.scope_by_action(actor, rbac.Action.RECORD_PAYMENT, Payment.objects.filter(pk=payment.pk)).exists():
-        raise PermissionDenied("Confirming a settlement needs record_payment.")
+        raise PermissionDenied(gettext("Confirming a settlement needs record_payment."))
     if row.status != SettlementConfirmation.Status.AWAITING:
         raise ConfirmationConflict("This settlement has already been decided.", "settlement_decided")
     if row.proposed_by_id == actor.pk:

@@ -15,6 +15,7 @@ and freezes the result on the charge it raises.
 * `PriceOverride` -- inherit / free / custom for one component on one item.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -36,13 +37,13 @@ class PricingDefault(models.Model):
         PAID = "paid", "Paid"
 
     class RentalTiming(models.TextChoices):
-        AT_CHECKOUT = "at_checkout", "At checkout, for the planned days"
-        AT_RETURN = "at_return", "At return, for the actual days"
+        AT_CHECKOUT = "at_checkout", gettext_lazy("At checkout, for the planned days")
+        AT_RETURN = "at_return", gettext_lazy("At return, for the actual days")
 
     class FailedJobCharge(models.TextChoices):
-        NONE = "none", "No charge"
-        MATERIAL_ONLY = "material_only", "Material used only"
-        FULL = "full", "Full charge"
+        NONE = "none", gettext_lazy("No charge")
+        MATERIAL_ONLY = "material_only", gettext_lazy("Material used only")
+        FULL = "full", gettext_lazy("Full charge")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="pricing_defaults")
     domain = models.CharField(max_length=16, choices=PricingDomain.choices)
@@ -101,15 +102,15 @@ class PriceOverride(models.Model):
     """
 
     class TargetType(models.TextChoices):
-        INVENTORY_PRODUCT = "inventory_product", "Inventory item"
+        INVENTORY_PRODUCT = "inventory_product", gettext_lazy("Inventory item")
         MACHINE = "machine", "Machine"
-        CONSUMABLE_POOL = "consumable_pool", "Material pool"
-        BOOKABLE_SPACE = "bookable_space", "Room or resource"
+        CONSUMABLE_POOL = "consumable_pool", gettext_lazy("Material pool")
+        BOOKABLE_SPACE = "bookable_space", gettext_lazy("Room or resource")
 
     class Mode(models.TextChoices):
-        INHERIT = "inherit", "Use the space default"
+        INHERIT = "inherit", gettext_lazy("Use the space default")
         FREE = "free", "Free"
-        CUSTOM = "custom", "Custom price"
+        CUSTOM = "custom", gettext_lazy("Custom price")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="price_overrides")
     domain = models.CharField(max_length=16, choices=PricingDomain.choices)
@@ -165,4 +166,4 @@ class PriceOverride(models.Model):
     def clean(self):
         target = self.target if self.target_type in self.FIELDS else None
         if target is None or target.makerspace_id != self.makerspace_id:
-            raise ValidationError({"target_type": "The item must belong to this makerspace."})
+            raise ValidationError({"target_type": gettext("The item must belong to this makerspace.")})

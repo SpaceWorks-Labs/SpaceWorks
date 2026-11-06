@@ -5,6 +5,7 @@ Staff surfaces are the finance ledger's `donations` domain (#100): only holders 
 or opening a refund case also needs `record_payment`.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 
 from apps.accounts import rbac
@@ -70,10 +71,10 @@ def staff_space(actor, makerspace_id, key, *, record=False):
 
     space = servable_queryset(Makerspace.objects.filter(pk=makerspace_id)).first()
     if space is None or not rbac.can(actor, rbac.Action.VIEW_FINANCE, makerspace_id):
-        raise NotFound("Makerspace not found.")
+        raise NotFound(gettext("Makerspace not found."))
     require_feature(space, key)
     if record and not rbac.can(actor, rbac.Action.RECORD_PAYMENT, makerspace_id):
-        raise PermissionDenied({"detail": "Recording money needs record_payment.", "code": "record_payment_required"})
+        raise PermissionDenied({"detail": gettext("Recording money needs record_payment."), "code": "record_payment_required"})
     return space
 
 

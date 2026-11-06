@@ -20,6 +20,7 @@ The contract that makes it safe to offer at all:
   commit, best-effort: a failed S3 call must not roll back a completed purge.
 """
 
+from django.utils.translation import gettext
 from apps.integrations.notification_cutover import guarded
 
 from contextlib import nullcontext
@@ -69,7 +70,7 @@ def purge_module(makerspace, key, actor):
         # Re-check under the lock: an install could have committed since `_resolve`.
         if plan.key in (locked.enabled_modules or []):
             raise ValidationError(
-                f"{plan.key} was re-installed; uninstall it again before purging."
+                gettext('{key} was re-installed; uninstall it again before purging.').format(key=plan.key)
             )
         # Unfinished reimbursement work refuses before any key collection or deletion.
         from .module_purge_collectors_reimbursements import purge_preflight
@@ -109,19 +110,18 @@ def purge_module(makerspace, key, actor):
 
 def _resolve(makerspace, key, actor):
     if not getattr(actor, "is_superuser", False):
-        raise ValidationError("Only a superuser can purge module data.")
+        raise ValidationError(gettext("Only a superuser can purge module data."))
     plan = BY_KEY.get(key)
     if plan is None:
         reason = NOT_SEPARABLE.get(key)
         if reason:
-            raise ValidationError(f"{key} cannot be purged on its own. {reason}")
+            raise ValidationError(gettext('{key} cannot be purged on its own. {reason}').format(key=key, reason=reason))
         if key in MODULE_BY_KEY:
-            raise ValidationError(f"{key} stores no data of its own, so there is nothing to purge.")
-        raise ValidationError(f"Unknown module {key!r}.")
+            raise ValidationError(gettext('{key} stores no data of its own, so there is nothing to purge.').format(key=key))
+        raise ValidationError(gettext('Unknown module {key!r}.').format(key=key))
     if key in (makerspace.enabled_modules or []):
         raise ValidationError(
-            f"{key} is still installed. Uninstall it first -- purging is a separate, "
-            "irreversible step."
+            gettext('{key} is still installed. Uninstall it first -- purging is a separate, irreversible step.').format(key=key)
         )
     return plan
 

@@ -4,6 +4,7 @@ Single cards render in the request (one card is not heavy, SPEC §6); every bulk
 output is a CardJob. Sensitive extras render only where the design places them and
 only for a holder who opted in (Q-I5); nothing else ever reads them.
 """
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from .holders import spec_for
@@ -58,7 +59,7 @@ def document_for(kind, card):
 def render(kind, card, *, fmt="pdf", side="front", preview_label=""):
     """-> (bytes, content type, filename)."""
     if fmt not in FORMATS or side not in SIDES:
-        raise ValidationError({"format": "Choose pdf or png, and the front or back."})
+        raise ValidationError({"format": gettext("Choose pdf or png, and the front or back.")})
     document = document_for(kind, card)
     context = context_for(kind, card, document, preview=bool(preview_label), preview_label=preview_label)
     name = spec_for(kind).filename(card)

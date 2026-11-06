@@ -1,6 +1,7 @@
 """Shared lookups for the lane L5 staff routes: a servable space the actor may act in, and
 the per-space capability switch (off answers 404, data kept -- #95)."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 
@@ -11,7 +12,7 @@ from apps.makerspaces.servability import servable_queryset
 
 def require_capability(space, key):
     if not feature_enabled(space, key):
-        raise NotFound({"detail": "This feature is turned off for this space.", "code": "feature_disabled"})
+        raise NotFound({"detail": gettext("This feature is turned off for this space."), "code": "feature_disabled"})
     return space
 
 

@@ -5,6 +5,7 @@ Split from ``security_settings_registry`` so the frozen login-security rows
 other. Import these names from the registry; it re-exports them.
 """
 
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -66,24 +67,24 @@ class SecuritySetting:
         """Validate one incoming value and return it in canonical form."""
         if self.kind == BOOL:
             if type(value) is not bool:
-                raise ValidationError(f"{self.label} takes true or false.", code="invalid_security_value")
+                raise ValidationError(gettext('{label} takes true or false.').format(label=self.label), code="invalid_security_value")
             return value
         if self.kind == INT:
             if type(value) is not int:
-                raise ValidationError(f"{self.label} takes a whole number.", code="invalid_security_value")
+                raise ValidationError(gettext('{label} takes a whole number.').format(label=self.label), code="invalid_security_value")
             if (self.minimum is not None and value < self.minimum) or (
                     self.maximum is not None and value > self.maximum):
-                raise ValidationError(f"{self.label} is out of range.", code="invalid_security_value")
+                raise ValidationError(gettext('{label} is out of range.').format(label=self.label), code="invalid_security_value")
             return value
         if self.kind == CHOICE:
             if value not in self.choices:
-                raise ValidationError(f"{self.label} takes one of {', '.join(map(str, self.choices))}.",
+                raise ValidationError(gettext('{label} takes one of {value}.').format(label=self.label, value=', '.join(map(str, self.choices))),
                                       code="invalid_security_value")
             return value
         if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-            raise ValidationError(f"{self.label} takes a list of text values.", code="invalid_security_value")
+            raise ValidationError(gettext('{label} takes a list of text values.').format(label=self.label), code="invalid_security_value")
         if len(value) > self.extra.get("max_items", 100):
-            raise ValidationError(f"{self.label} has too many entries.", code="invalid_security_value")
+            raise ValidationError(gettext('{label} has too many entries.').format(label=self.label), code="invalid_security_value")
         item = self.extra.get("normalize_item")
         try:
             return sorted({item(entry) if item else entry for entry in value})
@@ -100,6 +101,6 @@ class SecuritySetting:
         if self.kind == BOOL and floor is not strict:
             # Q9: a boolean lock forces the stricter value; the other would lock nothing.
             word = "on; send true" if strict else "off; send false"
-            raise ValidationError(f"A lock on an on/off setting forces it {word}.",
+            raise ValidationError(gettext('A lock on an on/off setting forces it {word}.').format(word=word),
                                   code="invalid_security_floor")
         return floor

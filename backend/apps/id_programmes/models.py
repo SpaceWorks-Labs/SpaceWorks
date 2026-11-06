@@ -4,6 +4,7 @@ An internal, separable app with no module key. A programme belongs to an organis
 and is hosted by a space that organisation OWNS. A holder needs no membership of the
 host space (Q-I7). Holder name, email, answers and the private reason are scoped PII.
 """
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -18,12 +19,12 @@ class IdProgramme(models.Model):
         CLOSED = "closed", "Closed"
 
     class Validity(models.TextChoices):
-        NONE = "none", "No expiry"
-        FIXED_DATE = "fixed_date", "Until a fixed date"
-        DAYS = "days", "A number of days from approval"
+        NONE = "none", gettext_lazy("No expiry")
+        FIXED_DATE = "fixed_date", gettext_lazy("Until a fixed date")
+        DAYS = "days", gettext_lazy("A number of days from approval")
 
     class PhotoMode(models.TextChoices):
-        NONE = "none", "No photo"
+        NONE = "none", gettext_lazy("No photo")
         OPTIONAL = "optional", "Optional"
         REQUIRED = "required", "Required"
 
@@ -69,15 +70,15 @@ class IdProgramme(models.Model):
 class IdProgrammeCard(ScopedPiiModelMixin, models.Model):
     """The holder and their card in one row (SPEC §4.3)."""
     class Status(models.TextChoices):
-        PENDING = "pending", "Waiting for approval"
+        PENDING = "pending", gettext_lazy("Waiting for approval")
         APPROVED = "approved", "Approved"
-        REJECTED = "rejected", "Not approved"
+        REJECTED = "rejected", gettext_lazy("Not approved")
         REVOKED = "revoked", "Revoked"
 
     class Source(models.TextChoices):
-        FORM = "form", "Join form"
+        FORM = "form", gettext_lazy("Join form")
         IMPORT = "import", "Import"
-        MANUAL = "manual", "Added by staff"
+        MANUAL = "manual", gettext_lazy("Added by staff")
 
     programme = models.ForeignKey(IdProgramme, on_delete=models.CASCADE, related_name="cards")
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")

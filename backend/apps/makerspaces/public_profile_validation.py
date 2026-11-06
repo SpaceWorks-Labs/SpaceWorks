@@ -1,5 +1,6 @@
 """Public publication boundaries, separate from the member directory contract."""
 
+from django.utils.translation import gettext
 from urllib.parse import urlsplit
 from rest_framework import serializers
 from .models_profiles import ProfileTimelineEntry
@@ -12,7 +13,7 @@ class HttpsLinkSerializer(serializers.Serializer):
     def validate_url(self, value):
         parsed = urlsplit(value)
         if parsed.scheme != "https" or parsed.username or parsed.password:
-            raise serializers.ValidationError("Use an HTTPS link without credentials.")
+            raise serializers.ValidationError(gettext("Use an HTTPS link without credentials."))
         return value
 
 
@@ -47,7 +48,7 @@ class TimelineWriteSerializer(serializers.ModelSerializer):
         start = attrs.get("start", getattr(self.instance, "start", None))
         end = attrs.get("end", getattr(self.instance, "end", None))
         if start and end and end < start:
-            raise serializers.ValidationError({"end": "End must be on or after start."})
+            raise serializers.ValidationError({"end": gettext("End must be on or after start.")})
         return attrs
 
 
@@ -61,7 +62,7 @@ def apply_publication(profile, data):
     from django.utils import timezone
     if data.get("public_visible") and not profile.public_visible:
         if data.get("publication_consent") is not True:
-            raise serializers.ValidationError({"publication_consent": "Fresh consent is required to publish."})
+            raise serializers.ValidationError({"publication_consent": gettext("Fresh consent is required to publish.")})
         profile.public_consented_at = timezone.now()
     if data.get("public_visible") is False:
         profile.public_consented_at = None

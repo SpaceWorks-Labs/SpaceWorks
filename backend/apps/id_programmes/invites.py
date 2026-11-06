@@ -5,6 +5,7 @@ signed in with a VERIFIED email equal to the entry's email. There is no silent l
 on sign-in and no account is ever created here. The invite secret is mailed once and
 only its digest is stored; the mail body is never persisted (it carries the secret).
 """
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import logging
@@ -40,7 +41,7 @@ def send_invites(card_ids):
                 f"Sign in (or create your account) with this email address and open:\n{link}\n\n"
                 "Your card appears under My cards once you accept.")
         try:
-            dispatch_email(to_email=card.email, subject=f"Your {programme.name} card from {programme.organization.name}",
+            dispatch_email(to_email=card.email, subject=gettext('Your {name} card from {name2}').format(name=programme.name, name2=programme.organization.name),
                            text_body=body, makerspace=card.makerspace, stream="membership", event="programme_invite",
                            audience="requester", persist_body=False, sync=True)
         except Exception:
@@ -55,11 +56,11 @@ def accept(user, card_id, token):
             or not hmac.compare_digest(card.invite_digest, _digest(token)) or not programmes_on(card.makerspace)):
         raise NotFound()
     if not user.email_verified_at:
-        raise ValidationError({"detail": "Verify your email address first, then open the invite again."})
+        raise ValidationError({"detail": gettext("Verify your email address first, then open the invite again.")})
     if (user.email or "").strip().lower() != (card.email or "").strip().lower():
-        raise ValidationError({"detail": "Sign in with the email address the invite was sent to."})
+        raise ValidationError({"detail": gettext("Sign in with the email address the invite was sent to.")})
     if IdProgrammeCard.objects.filter(programme=card.programme, user=user).exists():
-        raise ValidationError({"detail": "You already hold a card in this programme."})
+        raise ValidationError({"detail": gettext("You already hold a card in this programme.")})
     card.user, card.invite_digest = user, ""
     card.save(update_fields=["user", "invite_digest", "updated_at"])
     audit.record(user, "id_programme.card_linked", makerspace=card.makerspace, target=card,

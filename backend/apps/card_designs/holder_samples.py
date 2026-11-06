@@ -5,6 +5,7 @@ design's space, approved cards of the design's programme, active cards of the de
 event. Ticket designs have no card holders. The preview never shows the opt-in
 sensitive extras, and a superadmin needs an open PII window (it shows a person's data).
 """
+from django.utils.translation import gettext
 from rest_framework.exceptions import NotFound
 
 from apps.accounts.pii_presentation import require_pii_access
@@ -45,7 +46,7 @@ def holder(actor, design, holder_id):
     kind, rows = _queryset(design)
     card = rows.filter(pk=holder_id).first() if rows is not None else None
     if card is None:
-        raise NotFound("That person has no live card for this design.")
+        raise NotFound(gettext("That person has no live card for this design."))
     return kind, card
 
 

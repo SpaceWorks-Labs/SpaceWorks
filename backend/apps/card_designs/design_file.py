@@ -6,6 +6,7 @@ as FILE FORMATS only and converted to a v2 document. Imported files are untruste
 the result is normalised like any save, and uploaded artwork never travels (asset
 ids from another space are dropped, with a note of what was removed).
 """
+from django.utils.translation import gettext
 import json
 from uuid import uuid4
 
@@ -68,7 +69,7 @@ def _legacy_layers(settings):
 
 def from_legacy(settings):
     if not isinstance(settings, dict):
-        raise ValidationError({"file": "This design file has no settings."})
+        raise ValidationError({"file": gettext("This design file has no settings.")})
     width, height, layers = _legacy_layers(settings)
     stock = "cr80-landscape" if (round(width, 1), round(height, 1)) == (85.6, 54.0) else "custom"
     from .default_templates.builders import document
@@ -82,22 +83,22 @@ def parse(raw):
     """Bytes or text from an uploaded file -> (document, notes). Raises ValidationError."""
     if isinstance(raw, (bytes, bytearray)):
         if len(raw) > MAX_FILE_BYTES:
-            raise ValidationError({"file": "That file is too large to be a card design."})
+            raise ValidationError({"file": gettext("That file is too large to be a card design.")})
         raw = raw.decode("utf-8", errors="replace")
     try:
         value = json.loads(raw) if isinstance(raw, str) else raw
     except ValueError:
-        raise ValidationError({"file": "That file isn't a card design. Choose a .json design file."}) from None
+        raise ValidationError({"file": gettext("That file isn't a card design. Choose a .json design file.")}) from None
     if not isinstance(value, dict):
-        raise ValidationError({"file": "That file isn't a card design."})
+        raise ValidationError({"file": gettext("That file isn't a card design.")})
     kind = value.get("kind")
     if kind == KIND:
         if value.get("version") != 2 or not isinstance(value.get("document"), dict):
-            raise ValidationError({"file": "This design file is from a newer or unknown version."})
+            raise ValidationError({"file": gettext("This design file is from a newer or unknown version.")})
         return value["document"], []
     if kind in LEGACY_KINDS:
         return from_legacy(value.get("settings")), ["Converted from an older badge design; check the layout."]
-    raise ValidationError({"file": "That file isn't a card design. Choose a .json design file."})
+    raise ValidationError({"file": gettext("That file isn't a card design. Choose a .json design file.")})
 
 
 def strip_foreign_assets(document, owned_ids):

@@ -13,6 +13,7 @@ instead (`price_drop.approval`), and approving one never ends a membership term.
 the payments rail removed an online case can only be declined (R4).
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -85,7 +86,7 @@ def _approve_locked(payment, case, *, actor, amount, reason, note, receipt):
             raise RefundCaseConflict("Online refunds are not available on this deployment; decline instead.",
                                      "refund_rail_unavailable")
     elif not may_record_cash(actor, payment):
-        raise PermissionDenied("Recording a cash refund requires record_payment.")
+        raise PermissionDenied(gettext("Recording a cash refund requires record_payment."))
     elif not receipt:
         raise RefundNotAllowed("An offline refund needs a receipt: method, reference and date.",
                                "refund_receipt_required")

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from uuid import uuid4
 
 from django.conf import settings
@@ -9,7 +10,7 @@ class Station(models.Model):
     """Tenant-owned metadata for a physical or browser Station channel."""
 
     class Kind(models.TextChoices):
-        EVENT_CHECKIN = "event_checkin", "Event check-in"
+        EVENT_CHECKIN = "event_checkin", gettext_lazy("Event check-in")
         SCANNER = "scanner", "Scanner"
         HANDOVER = "handover", "Handover"
 

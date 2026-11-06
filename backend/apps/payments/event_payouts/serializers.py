@@ -1,4 +1,5 @@
 """Core wire types remain usable with both Events and the online rail removed."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 from datetime import datetime
 from apps.payments.currencies import normalize_supported_currency
@@ -24,7 +25,7 @@ class Currency(serializers.CharField):
         try:
             return normalize_supported_currency(data)
         except ValueError:
-            raise serializers.ValidationError("Unsupported currency.") from None
+            raise serializers.ValidationError(gettext("Unsupported currency.")) from None
 
 
 class AwareDateTime(serializers.DateTimeField):
@@ -34,7 +35,7 @@ class AwareDateTime(serializers.DateTimeField):
             if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
                 raise ValueError()
         except (ValueError, TypeError):
-            raise serializers.ValidationError("An offset-aware datetime is required.") from None
+            raise serializers.ValidationError(gettext("An offset-aware datetime is required.")) from None
         return super().to_internal_value(data)
 
 

@@ -1,5 +1,6 @@
 """Private typed assets. Durable intent commits before any external byte write."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 from uuid import uuid4
 from django.db import transaction
@@ -29,14 +30,14 @@ def charge_storage(kind, owner, size):
     usage, _ = Storage.objects.get_or_create(organization=owner)
     usage = Storage.objects.select_for_update().get(pk=usage.pk)
     if usage.used_bytes + size > ORGANIZATION_STORAGE_BYTES:
-        raise ValidationError({"file": "This organization's 100 MB page storage allowance is full."})
+        raise ValidationError({"file": gettext("This organization's 100 MB page storage allowance is full.")})
     usage.used_bytes += size
     usage.save(update_fields=["used_bytes"])
 
 
 def upload(kind, owner_id, *, actor, version, file, alt_text):
     if not isinstance(alt_text, str) or not alt_text.strip() or len(alt_text) > 200:
-        raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
+        raise ValidationError({"alt_text": gettext("Provide an image description of at most 200 characters.")})
     # Refuse unauthorized callers before reading or decoding any bytes; the locked
     # reservation below still rechecks authority and the tenant write fence.
     from .public_page_adapters import adapter
@@ -56,7 +57,7 @@ def upload(kind, owner_id, *, actor, version, file, alt_text):
             from .public_page_lifecycle import event_cleanup_keys
             pending = pending.exclude(event_cleanup_keys())
         if page.assets.count() + pending.count() >= MAX_ASSETS:
-            raise ValidationError({"file": "A page may retain at most 50 assets, including pending uploads."})
+            raise ValidationError({"file": gettext("A page may retain at most 50 assets, including pending uploads.")})
         charge_storage(kind, owner, len(converted))
         key = prefix(kind, owner_id, page.pk) + uuid4().hex + ".webp"
         job = Cleanup.objects.create(owner_kind=kind, owner_id=owner_id, page_id=page.pk, object_key=key,

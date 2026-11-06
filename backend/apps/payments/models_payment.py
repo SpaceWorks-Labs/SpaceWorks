@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -6,41 +7,41 @@ from apps.payments.models_settings import currency_validator
 
 class Payment(models.Model):
     class SubjectType(models.TextChoices):
-        MACHINE_SERVICE_REQUEST = "machine_service_request", "Machine service request"
+        MACHINE_SERVICE_REQUEST = "machine_service_request", gettext_lazy("Machine service request")
         BOOKING = "booking", "Booking"
-        EVENT_REGISTRATION = "event_registration", "Event registration"
-        MAKERSPACE_MEMBERSHIP = "makerspace_membership", "Makerspace membership"
+        EVENT_REGISTRATION = "event_registration", gettext_lazy("Event registration")
+        MAKERSPACE_MEMBERSHIP = "makerspace_membership", gettext_lazy("Makerspace membership")
         # subject_id is the `makerspaces.MembershipTerm` pk: the membership pk is already
         # taken by the dues charge above, and one term gets exactly one renewal charge.
-        MEMBERSHIP_TERM = "membership_term", "Membership renewal"
-        MEMBERSHIP_REQUEST = "membership_request", "Membership admission"
+        MEMBERSHIP_TERM = "membership_term", gettext_lazy("Membership renewal")
+        MEMBERSHIP_REQUEST = "membership_request", gettext_lazy("Membership admission")
         # Loan charges (forward plan phase 6). subject_id is the HardwareRequest id, so
         # the one-per-subject constraint gives one deposit and one late fee per loan.
-        LOAN_DEPOSIT = "loan_deposit", "Loan deposit"
-        LOAN_LATE_FEE = "loan_late_fee", "Loan late fee"
+        LOAN_DEPOSIT = "loan_deposit", gettext_lazy("Loan deposit")
+        LOAN_LATE_FEE = "loan_late_fee", gettext_lazy("Loan late fee")
         # Lane L15 (#84/#85). Rental is one per loan (subject_id = HardwareRequest id);
         # damage and lost are one per RequesterAccountability row (subject_id = its id).
-        LOAN_RENTAL = "loan_rental", "Loan rental"
-        LOAN_DAMAGE = "loan_damage", "Loan damage charge"
-        LOAN_LOST = "loan_lost", "Lost item charge"
+        LOAN_RENTAL = "loan_rental", gettext_lazy("Loan rental")
+        LOAN_DAMAGE = "loan_damage", gettext_lazy("Loan damage charge")
+        LOAN_LOST = "loan_lost", gettext_lazy("Lost item charge")
         # Lane L23 (#158): one metered machine session; subject_id is the MachineSession id.
-        MACHINE_SESSION = "machine_session", "Machine session"
+        MACHINE_SESSION = "machine_session", gettext_lazy("Machine session")
         # Lane L6. An order is one buyer's several tickets (subject_id = EventOrder id); a
         # venue fee is an outside organiser's hosting charge (subject_id = EventVenueFee id).
-        EVENT_ORDER = "event_order", "Event ticket order"
-        EVENT_VENUE_FEE = "event_venue_fee", "Event venue fee"
+        EVENT_ORDER = "event_order", gettext_lazy("Event ticket order")
+        EVENT_VENUE_FEE = "event_venue_fee", gettext_lazy("Event venue fee")
         # Lane L18. A donation (one-off, or one period of a pledge; subject_id = Donation id)
         # and a sponsor's agreed payment (subject_id = SponsorshipCharge id).
         DONATION = "donation", "Donation"
         SPONSORSHIP = "sponsorship", "Sponsorship"
         # Lane L21b. A hackathon project's entry fee (subject_id = HackathonSubmission id) and a
         # paid team's one charge on its leader (subject_id = HackathonTeam id, C-39).
-        SUBMISSION_FEE = "submission_fee", "Project entry fee"
-        TEAM_REGISTRATION = "team_registration", "Team registration"
+        SUBMISSION_FEE = "submission_fee", gettext_lazy("Project entry fee")
+        TEAM_REGISTRATION = "team_registration", gettext_lazy("Team registration")
         # Hack-money G10: an optional refundable commitment deposit (subject_id = EventRegistration id).
-        EVENT_DEPOSIT = "event_deposit", "Event deposit"
+        EVENT_DEPOSIT = "event_deposit", gettext_lazy("Event deposit")
         # Lane L22. One shop order (online or a front-desk sale; subject_id = ShopOrder id).
-        SHOP_ORDER = "shop_order", "Shop order"
+        SHOP_ORDER = "shop_order", gettext_lazy("Shop order")
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
@@ -57,14 +58,14 @@ class Payment(models.Model):
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
-        PAID_ONLINE = "paid_online", "Paid online"
-        PAID_OFFLINE = "paid_offline", "Paid offline"
+        PAID_ONLINE = "paid_online", gettext_lazy("Paid online")
+        PAID_OFFLINE = "paid_offline", gettext_lazy("Paid offline")
         WAIVED = "waived", "Waived"
         CANCELED = "canceled", "Canceled"
 
     class StripeProvider(models.TextChoices):
-        RAW = "raw", "Makerspace raw credentials"
-        CONNECT = "connect", "Stripe Connect"
+        RAW = "raw", gettext_lazy("Makerspace raw credentials")
+        CONNECT = "connect", gettext_lazy("Stripe Connect")
 
     class Provider(models.TextChoices):
         """Which vendor holds this charge.
@@ -81,11 +82,11 @@ class Payment(models.Model):
         # a DB trigger permits that transition exactly once. Without this state such a row
         # would be stamped `stripe` and could never be claimed by a gateway configured
         # later, because provider provenance is immutable.
-        UNCLAIMED = "unclaimed", "No online rail"
+        UNCLAIMED = "unclaimed", gettext_lazy("No online rail")
 
     class OnlineRail(models.TextChoices):
-        CHECKOUT = 'checkout', 'Stripe Checkout'
-        NATIVE_PAYMENT_INTENT = 'native_payment_intent', 'Native payment intent'
+        CHECKOUT = 'checkout', gettext_lazy('Stripe Checkout')
+        NATIVE_PAYMENT_INTENT = 'native_payment_intent', gettext_lazy('Native payment intent')
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="payments")
     subject_type = models.CharField(max_length=48, choices=SubjectType.choices)
@@ -210,17 +211,17 @@ class Payment(models.Model):
                 "tax_snapshot", "method_label", "pricing_snapshot",
             ).first()
             if original and original["tax_snapshot"] != self.tax_snapshot:
-                raise ValidationError("A charge's tax snapshot is immutable.")
+                raise ValidationError(gettext("A charge's tax snapshot is immutable."))
             if original and original["pricing_snapshot"] != self.pricing_snapshot:
-                raise ValidationError("A charge's pricing snapshot is immutable.")
+                raise ValidationError(gettext("A charge's pricing snapshot is immutable."))
             if original and original["method_label"] and original["method_label"] != self.method_label:
-                raise ValidationError("A payment method label is set once.")
+                raise ValidationError(gettext("A payment method label is set once."))
             if original and original["due_at"] != self.due_at:
-                raise ValidationError("A charge due date is immutable.")
+                raise ValidationError(gettext("A charge due date is immutable."))
             if original and original["status"] != self.Status.PENDING and (
                 original["status"] != self.status or original["amount"] != self.amount
             ):
-                raise ValidationError("Terminal payments are immutable.")
+                raise ValidationError(gettext("Terminal payments are immutable."))
             # A charge raised with no gateway configured carries `provider=unclaimed`:
             # it has no provenance yet, so the first checkout that reaches a provider is
             # allowed to stamp one, exactly once. Without this exemption the guard below
@@ -239,13 +240,13 @@ class Payment(models.Model):
                 # `provider` joins the provenance set: moving a charge between vendors
                 # would point the row at a merchant account that never took the money,
                 # and every settlement and refund path after it would be wrong.
-                raise ValidationError("Payment provenance is immutable.")
+                raise ValidationError(gettext("Payment provenance is immutable."))
             if (
                 original
                 and original['online_rail'] is not None
                 and original['online_rail'] != self.online_rail
             ):
-                raise ValidationError('The online payment rail is immutable once claimed.')
+                raise ValidationError(gettext('The online payment rail is immutable once claimed.'))
         self.full_clean()
         return super().save(*args, **kwargs)
 

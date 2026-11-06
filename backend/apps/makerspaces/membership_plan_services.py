@@ -7,6 +7,7 @@ failure never rolls back a recorded debt. Optional automation tracks bounded ret
 promised grace and one successor behind the compatibility exports at the end of this file.
 """
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 import logging
 from datetime import timedelta
@@ -38,7 +39,7 @@ def _start_for(membership, plan, now):
     )
     if current is not None:
         if current.is_lifetime:
-            raise ValidationError({"detail": "This membership already holds a lifetime term."})
+            raise ValidationError({"detail": gettext("This membership already holds a lifetime term.")})
         return current.ends_at
     latest = plan_types.previous_term(membership)
     if latest is not None and plan_types.in_staff_grace(latest, now):
@@ -68,11 +69,11 @@ def create_term(actor, membership, plan, starts_at=None, *, kind=None, price=Non
         )
         membership.user = lock_obligation_owner(membership.user)
         if plan.makerspace_id != makerspace.pk:
-            raise ValidationError({"plan_id": "Plan must belong to this makerspace."})
+            raise ValidationError({"plan_id": gettext("Plan must belong to this makerspace.")})
         if not plan.is_active or plan.archived_at is not None:
-            raise ValidationError({"plan_id": "This plan is no longer active."})
+            raise ValidationError({"plan_id": gettext("This plan is no longer active.")})
         if membership.status != "active":
-            raise ValidationError({"detail": "Only an active membership can hold a term."})
+            raise ValidationError({"detail": gettext("Only an active membership can hold a term.")})
         now = timezone.now()
         if starts_at is None:
             starts_at = _start_for(membership, plan, now)
@@ -82,7 +83,7 @@ def create_term(actor, membership, plan, starts_at=None, *, kind=None, price=Non
             plan_types.require_openable(plan, local_start)
             ends_at = term_end(plan, local_start)
         elif ends_at <= starts_at:
-            raise ValidationError({"ends_on": "The term must end after it starts."})
+            raise ValidationError({"ends_on": gettext("The term must end after it starts.")})
         kind = kind or plan_types.derive_kind(membership, starts_at, renewed_from=renewed_from)
         from apps.makerspaces.membership_number import assign as assign_number
         assign_number(membership, source=None)
@@ -125,7 +126,7 @@ def cancel_term(actor, term, *, reason="", hold_charges=True):
             .get(pk=term.pk)
         )
         if term.status != MembershipTerm.Status.ACTIVE:
-            raise ValidationError({"detail": "This term is not active."})
+            raise ValidationError({"detail": gettext("This term is not active.")})
         term.status = MembershipTerm.Status.CANCELLED
         term.save(update_fields=["status"])
         makerspace = term.membership.makerspace

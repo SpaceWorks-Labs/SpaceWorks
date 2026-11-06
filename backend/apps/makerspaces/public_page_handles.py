@@ -6,6 +6,7 @@ names; global pages take organization -> account -> governance -> page -> names.
 Imports must take the same owner locks before calling the shared name locks.
 """
 
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from .models_profiles import PublicHandle, PublicHandleRedirect
@@ -24,7 +25,7 @@ def owner_filter(kind, owner):
 def claim_locked(kind, owner, value):
     if not isinstance(value, str):
         from rest_framework.exceptions import ValidationError
-        raise ValidationError({"handle": "Provide a handle string."})
+        raise ValidationError({"handle": gettext("Provide a handle string.")})
     handle = normalize_handle(value)
     query = owner_filter(kind, owner)
     current = PublicHandle.objects.filter(**query).first()

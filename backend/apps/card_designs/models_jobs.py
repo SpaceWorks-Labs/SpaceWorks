@@ -3,6 +3,7 @@
 A job's result is a temporary PRIVATE object readable only by its requester (and the
 superadmin through the PII-window surface), deleted 7 days after it finishes (Q-I1).
 """
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -12,13 +13,13 @@ BULK_KINDS = ("bulk_sheet", "bulk_per_person", "zip")
 
 class CardJob(models.Model):
     class Kind(models.TextChoices):
-        BULK_SHEET = "bulk_sheet", "Print sheets (PDF)"
-        BULK_PER_PERSON = "bulk_per_person", "One PDF per person"
-        ZIP = "zip", "ZIP of card PDFs"
-        EMAIL = "email", "Email cards"
-        WALLET_ISSUE = "wallet_issue", "Issue wallet pass"
-        WALLET_UPDATE = "wallet_update", "Update wallet passes"
-        PHOTO_CLEANUP = "photo_cleanup", "Photo background clean-up"
+        BULK_SHEET = "bulk_sheet", gettext_lazy("Print sheets (PDF)")
+        BULK_PER_PERSON = "bulk_per_person", gettext_lazy("One PDF per person")
+        ZIP = "zip", gettext_lazy("ZIP of card PDFs")
+        EMAIL = "email", gettext_lazy("Email cards")
+        WALLET_ISSUE = "wallet_issue", gettext_lazy("Issue wallet pass")
+        WALLET_UPDATE = "wallet_update", gettext_lazy("Update wallet passes")
+        PHOTO_CLEANUP = "photo_cleanup", gettext_lazy("Photo background clean-up")
 
     class State(models.TextChoices):
         QUEUED = "queued", "Queued"

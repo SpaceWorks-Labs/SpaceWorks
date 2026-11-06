@@ -1,5 +1,6 @@
 """Shared credential fields only; concrete domain models own typed targets/tables."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.conf import settings
@@ -18,7 +19,7 @@ def validate_permission_set(value, vocabulary):
         or any(not isinstance(item, str) or item not in vocabulary for item in value)
         or len(value) != len(set(value))
     ):
-        raise ValidationError("Choose a nonempty list of distinct resource permissions.")
+        raise ValidationError(gettext("Choose a nonempty list of distinct resource permissions."))
 
 
 class ResourceGrantScope(models.Model):

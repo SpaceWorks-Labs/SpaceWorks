@@ -1,5 +1,6 @@
 """Locked capability delegation and per-makerspace member verification."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -20,7 +21,7 @@ def _set_capability(actor, membership, field, value):
         if value and membership.status != "active":
             # Revocation clears both delegations; granting one back to a revoked row would
             # only be undone again by reactivation, and reads as authority meanwhile.
-            raise ValidationError({"detail": "Only an active membership can be delegated."})
+            raise ValidationError({"detail": gettext("Only an active membership can be delegated.")})
         setattr(membership, field, bool(value))
         membership.save(update_fields=[field])
         audit.record(actor, f"membership.{field}_changed", makerspace=makerspace,
@@ -41,7 +42,7 @@ def _verification_target(actor, membership):
     require_module(makerspace, "membership")
     membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
     if membership.status != "active":
-        raise ValidationError({"detail": "Only active memberships can be verified."})
+        raise ValidationError({"detail": gettext("Only active memberships can be verified.")})
     manager = rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk)
     actor_membership = rbac.scope_by_makerspace(
         actor, MakerspaceMembership.objects.select_for_update(),
@@ -51,7 +52,7 @@ def _verification_target(actor, membership):
     if not manager and not (actor_membership and actor_membership.can_verify):
         raise PermissionDenied()
     if not manager and membership.user_id == actor.pk:
-        raise PermissionDenied("Delegated verifiers cannot verify themselves.")
+        raise PermissionDenied(gettext("Delegated verifiers cannot verify themselves."))
     return makerspace, membership
 
 

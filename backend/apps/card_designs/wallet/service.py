@@ -5,6 +5,7 @@ Google save link) and the holder downloads it. Update: reissue, revoke and desig
 data changes queue a `wallet_update` job; a periodic sweep also catches renewals and
 expiries by comparing each pass's content digest. A revoked card's pass is voided.
 """
+from django.utils.translation import gettext
 import logging
 import secrets
 
@@ -27,7 +28,7 @@ def request_pass(actor, kind, card, platform):
     from ..jobs import enqueue
     from ..switches import wallet_on
     if platform not in configured_platforms() or not wallet_on(kind, card.makerspace):
-        raise ValidationError({"platform": "Wallet passes are not available here."})
+        raise ValidationError({"platform": gettext("Wallet passes are not available here.")})
     with transaction.atomic():
         row, created = WalletPass.objects.get_or_create(
             **{kind: card}, platform=platform,

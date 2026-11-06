@@ -1,4 +1,5 @@
 """Validated, audited settings paths shared by setup and the existing staff editors."""
+from django.utils.translation import gettext
 from types import SimpleNamespace
 
 from apps.admin_api.serializers_makerspaces import MakerspaceSerializer
@@ -91,7 +92,7 @@ def apply_settings(actor, space, settings):
         from apps.payments.models import MakerspacePaymentSettings
         values = settings["loan_charges"]
         if any(not key.startswith("loan_") for key in values):
-            raise ValidationError({"loan_charges": "Use loan charge fields only."})
+            raise ValidationError({"loan_charges": gettext("Use loan charge fields only.")})
         row = MakerspacePaymentSettings.for_makerspace(space)
         check = MakerspacePaymentSettingsSerializer(row, data=values, partial=True)
         validate(check)

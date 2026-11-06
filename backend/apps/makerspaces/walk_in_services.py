@@ -14,6 +14,7 @@ machine-service jobs submitted on a member's behalf, accountability and the
 access-restriction flow all take this row exactly as they take a self-registered one.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -29,7 +30,7 @@ def create_walk_in_member(actor, makerspace, *, display_name, email="", phone=""
     """Name a person, then complete admission or leave the application pending."""
     display_name = (display_name or "").strip()
     if not display_name:
-        raise ValidationError({"display_name": "A name is required."})
+        raise ValidationError({"display_name": gettext("A name is required.")})
     email = normalized_email(email)
     phone = (phone or "").strip()
 
@@ -82,7 +83,7 @@ def _new_user(display_name, email, phone):
     """
     if email and User.objects.filter(person_q(), email__iexact=email).exists():
         raise ValidationError(
-            {"email": "An account already uses that email. Add them from the members list."}
+            {"email": gettext("An account already uses that email. Add them from the members list.")}
         )
 
     def create(username):

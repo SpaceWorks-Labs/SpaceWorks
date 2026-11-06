@@ -1,6 +1,6 @@
 # Choosing modules
 
-A makerspace only carries the parts it uses. Space Works ships **35 modules**; **6 are core** and
+A makerspace only carries the parts it uses. Space Works ships **37 modules**; **6 are core** and
 always on (the public catalogue, request workflow, staff admin, evidence uploads, QR management and
 the scanner). The rest are **opt-in**.
 

@@ -1,6 +1,6 @@
 # SpaceWorks modules — what each one is, and what happens without it
 
-Space Works ships **35 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
+Space Works ships **37 modules**: 6 **core** ones that cannot be switched off, 1 that is **on by
 default** (`member_accounts`, owner decision #91), and the rest opt-in. The `backup` key was retired in
 P1b (owner decision #111 Q2): backup and restore are platform duties. This page is the per-module reference the README links into — one entry
 per key, saying what it is, what it puts on screen, what disappears if you do not install it, and what

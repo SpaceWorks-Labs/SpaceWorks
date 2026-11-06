@@ -33,15 +33,15 @@ modules.
 | Profile | Modules | For |
 |---|---|---|
 | `minimal` | 6 | Core only; nothing published publicly |
-| `workshop` | 13 | A machine shop: machines, service queue, and `machines.maintenance` switched on — deliberately without `member_accounts` |
-| `lending` | 17 | A tool library: the full lending lifecycle, no machines |
-| `recommended` | 20 | Core plus the inventory lifecycle, reports and machines (the default) |
-| `cloud` | 25 | A managed box: everything that runs on a single Django process, no worker or beat |
-| `everything` / `full` | 36 | All modules, including the opt-in SMS and WhatsApp channels |
+| `workshop` | 12 | A machine shop: machines, service queue, and `machines.maintenance` switched on — deliberately without `member_accounts` |
+| `lending` | 16 | A tool library: the full lending lifecycle, no machines |
+| `recommended` | 19 | Core plus the inventory lifecycle, reports and machines (the default) |
+| `cloud` | 23 | A managed box: everything that runs on a single Django process, no worker or beat |
+| `everything` / `full` | 37 | All modules, including the opt-in SMS and WhatsApp channels |
 | `events` | 12 | An events programme: events, notifications, email, member accounts, payments, reports (core is present but hidden by the `events` edition) |
 | `bookings` | 12 | Bookable rooms and resources: bookings, notifications, email, member accounts, payments, reports (core hidden by the `bookings` edition) |
 
-**Installing without a profile** gives you **8 modules**: the six core ones plus `backup` and
+**Installing without a profile** gives you **7 modules**: the six core ones plus
 `member_accounts`. Member accounts are default-on since owner decisions #80/#91, because a space without
 them takes account-less requests and self-checkout from anyone with a confirmed email -- that must be a
 deliberate untick. Mobile apps are opt-in; installing `mobile` or `membership` also installs

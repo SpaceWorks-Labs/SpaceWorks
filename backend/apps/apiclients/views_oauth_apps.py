@@ -28,20 +28,23 @@ from .models_tokens import OAuthAppRegistration
 TAGS = ["App connections"]
 
 
+class _RedirectUrisField(serializers.ListField):
+    """Written as a list; stored space-separated on the DOT application, read back as a list."""
+
+    def get_attribute(self, instance):
+        return instance.application.redirect_uris.split()
+
+
 class OAuthAppSerializer(serializers.Serializer):
     id = serializers.IntegerField(source="application.pk", read_only=True)
     name = serializers.CharField(source="application.name", max_length=255)
     client_id = serializers.CharField(source="application.client_id", read_only=True)
     client_type = serializers.ChoiceField(source="application.client_type", choices=("confidential", "public"))
-    redirect_uris = serializers.ListField(child=serializers.CharField(), allow_empty=False)
+    # The registration row has no redirect_uris of its own: DRF 3.18 raised on the lookup (a 500).
+    redirect_uris = _RedirectUrisField(child=serializers.CharField(), allow_empty=False)
     allowed_scopes = serializers.ListField(child=serializers.CharField(), allow_empty=False)
     is_active = serializers.BooleanField(default=True)
     created_at = serializers.DateTimeField(read_only=True)
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["redirect_uris"] = instance.application.redirect_uris.split()
-        return data
 
 
 class OAuthAppCreatedSerializer(OAuthAppSerializer):

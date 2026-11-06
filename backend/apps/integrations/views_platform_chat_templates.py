@@ -47,21 +47,25 @@ class ChatTemplateSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class ChatTemplateListCreateView(RecentReauthenticationMixin, GenericAPIView):
-    permission_classes = [IsActiveSuperAdmin]
+class ChatTemplateListBase(GenericAPIView):
+    """Shared with the Space Manager editor (``views_space_chat_templates``); ``_space`` decides who may."""
+
     serializer_class = ChatTemplateSerializer
+
+    def _space(self, request, makerspace_id):
+        return get_object_or_404(Makerspace, pk=makerspace_id)
 
     @extend_schema(tags=TAGS, summary="List a space's chat message templates",
                    responses={200: ChatTemplateSerializer(many=True), **errors(401, 403, 404)})
     def get(self, request, makerspace_id):
-        space = get_object_or_404(Makerspace, pk=makerspace_id)
+        space = self._space(request, makerspace_id)
         page = self.paginate_queryset(ChatTemplate.objects.filter(makerspace=space))
         return self.get_paginated_response(ChatTemplateSerializer(page, many=True).data)
 
     @extend_schema(tags=TAGS, summary="Add a chat message template for one event",
                    request=ChatTemplateSerializer, responses={201: ChatTemplateSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, makerspace_id):
-        space = get_object_or_404(Makerspace, pk=makerspace_id)
+        space = self._space(request, makerspace_id)
         body = ChatTemplateSerializer(data=request.data, context={"makerspace": space})
         body.is_valid(raise_exception=True)
         row = body.save(makerspace=space, updated_by=request.user)
@@ -70,11 +74,17 @@ class ChatTemplateListCreateView(RecentReauthenticationMixin, GenericAPIView):
         return Response(ChatTemplateSerializer(row).data, status=status.HTTP_201_CREATED)
 
 
-class ChatTemplateDetailView(RecentReauthenticationMixin, APIView):
+class ChatTemplateListCreateView(RecentReauthenticationMixin, ChatTemplateListBase):
     permission_classes = [IsActiveSuperAdmin]
 
+
+class ChatTemplateDetailBase(APIView):
+    def _space(self, request, makerspace_id):
+        return get_object_or_404(Makerspace, pk=makerspace_id)
+
     def _row(self, makerspace_id, pk):
-        return get_object_or_404(ChatTemplate.objects.select_related("makerspace"), pk=pk, makerspace_id=makerspace_id)
+        space = self._space(self.request, makerspace_id)
+        return get_object_or_404(ChatTemplate.objects.select_related("makerspace"), pk=pk, makerspace=space)
 
     @extend_schema(tags=TAGS, summary="Change a chat message template", request=ChatTemplateSerializer,
                    responses={200: ChatTemplateSerializer, **errors(400, 401, 403, 404)})
@@ -95,3 +105,7 @@ class ChatTemplateDetailView(RecentReauthenticationMixin, APIView):
                      meta={"via": "console", "feature": row.feature, "event": row.event})
         row.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ChatTemplateDetailView(RecentReauthenticationMixin, ChatTemplateDetailBase):
+    permission_classes = [IsActiveSuperAdmin]

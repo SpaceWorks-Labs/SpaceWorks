@@ -17,6 +17,7 @@ from apps.admin_api.views_notification_destinations import (
 from apps.admin_api.views_notification_recipients import NotificationRecipientsView
 from apps.admin_api.views_notification_rules import NotificationRulesView
 from apps.admin_api.views_recipient_rules import NotificationRecipientRulesView
+from apps.integrations.views_space_chat_templates import SpaceChatTemplateDetailView, SpaceChatTemplateListCreateView
 
 
 urlpatterns = [
@@ -45,6 +46,10 @@ urlpatterns = [
         NotificationDestinationDetailView.as_view(),
         name="admin-notification-destination-detail",
     ),
+    path("makerspace/<int:makerspace_id>/chat-templates", SpaceChatTemplateListCreateView.as_view(),
+         name="admin-chat-templates"),
+    path("makerspace/<int:makerspace_id>/chat-templates/<int:pk>", SpaceChatTemplateDetailView.as_view(),
+         name="admin-chat-template"),
     path(
         "makerspace/<int:makerspace_id>/email-templates",
         EmailTemplateListView.as_view(),

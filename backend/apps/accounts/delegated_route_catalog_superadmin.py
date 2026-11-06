@@ -7,6 +7,7 @@
 * Membership-only: a space's own hosting plan usage and invoices (its Space Manager, or
   the superadmin through the console surface rule).
 * Shared: the signed-in notices feed (banners and the paused page) for every account.
+* Delegable: a space's own chat templates, by its per-makerspace action (MANAGE_MAKERSPACE).
 """
 
 PLATFORM_ONLY_ROUTES = frozenset("""
@@ -40,3 +41,6 @@ admin-makerspace-hosting-plan admin-makerspace-hosting-invoices admin-makerspace
 """.split())
 
 SHARED_ROUTES = frozenset({"platform-notices"})
+
+# r2-parity-followups (#190): a Space Manager's own chat templates, MANAGE_MAKERSPACE like the chat rooms.
+DELEGABLE_ROUTES = frozenset({"admin-chat-templates", "admin-chat-template"})

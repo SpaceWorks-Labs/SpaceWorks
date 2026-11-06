@@ -7,6 +7,7 @@ import environ
 from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
+from config.locale_registry import SYSTEM_LOCALE, django_languages
 from config.log_setup import build_logging
 from config.storage_validation import assert_distinct_storage_buckets
 
@@ -334,7 +335,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = "en-us"
+# Phase 8 i18n: one code-defined locale registry (config/supported_locales.json), never an
+# env read. English is the only catalogue; docs/i18n.md covers adding a language.
+LANGUAGE_CODE = SYSTEM_LOCALE
+LANGUAGES = django_languages()
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
@@ -1047,6 +1052,8 @@ CORS_ALLOW_HEADERS = (
 )
 # --- release 2 lane L1: the SPA marks the first short-link resolve of a page load (one visit) ---
 CORS_ALLOW_HEADERS += ("x-sw-visit",)
+# --- release 2 lane L9: a deliberate in-app language choice (Accept-Language stays the fallback) ---
+CORS_ALLOW_HEADERS += ("x-spaceworks-locale",)
 CORS_ALLOW_CREDENTIALS = True
 
 HMAC_CLIENT_ID = env("HMAC_CLIENT_ID", default="")

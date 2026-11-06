@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "generate:api": "node scripts/generate-api-client.mjs",
+    "generate:locales": "node scripts/generate-locales.mjs",
     "test": "vitest run",
     "build": "tsc -b && vite build && node scripts/verify-pwa-build.mjs",
     "preview": "vite preview",

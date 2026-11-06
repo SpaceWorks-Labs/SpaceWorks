@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SiteFooter } from "../../components/SiteFooter";
 import { MakerspaceBrand } from "../../components/MakerspaceBrand";
 import { FlowLayout } from "../../components/layouts";
@@ -117,28 +118,28 @@ export function PublicSelfCheckoutPage() {
   const state = bootstrapQuery.isLoading ? { status: "loading" as const } : bootstrapQuery.isError
     ? { status: "error" as const, error: "Couldn't load checkout access. Try again.", onRetry: () => { void bootstrapQuery.refetch(); } } : { status: "ready" as const };
   return <div style={brandStyle}>
-    <FlowLayout title="Borrow or return a tool" subject={displayName} state={state} compact
-      isEmpty={!enabled} empty={{ message: `Self-checkout isn't on at ${displayName}.`, action: { label: "Back to catalogue", href: tenantPath() } }}
+    <FlowLayout title={t`Borrow or return a tool`} subject={displayName} state={state} compact
+      isEmpty={!enabled} empty={{ message: t`Self-checkout isn't on at ${displayName}.`, action: { label: t`Back to catalogue`, href: tenantPath() } }}
       current={phase} steps={[
-        { key: "photo", label: mode === "return" ? "Photo and condition notes" : "Photo", state: phase === "photo" ? "current" : "done", required: true },
-        { key: "scan", label: "Scan the tool", state: phase === "scan" ? "current" : phase === "kit" ? "done" : "todo", required: true },
-        ...(kits.components.length ? [{ key: "kit", label: "Check the kit", state: phase === "kit" ? "current" as const : "todo" as const, required: true }] : []),
+        { key: "photo", label: mode === "return" ? t`Photo and condition notes` : t`Photo`, state: phase === "photo" ? "current" : "done", required: true },
+        { key: "scan", label: t`Scan the tool`, state: phase === "scan" ? "current" : phase === "kit" ? "done" : "todo", required: true },
+        ...(kits.components.length ? [{ key: "kit", label: t`Check the kit`, state: phase === "kit" ? "current" as const : "todo" as const, required: true }] : []),
       ]}
       onCancel={() => navigate(tenantPath())}
-      footer={{ next: { label: scannedPayload && kits.components.length ? `Confirm ${mode === "checkout" ? "checkout" : "return"}` : "Scan QR",
+      footer={{ next: { label: scannedPayload && kits.components.length ? t`Confirm ${mode === "checkout" ? "checkout" : "return"}` : t`Scan QR`,
         pending: loanMutation.isPending, disabled: !canScan || (Boolean(scannedPayload) && !kits.ready),
         disabledReason: mode === "return" ? "Upload a return photo and add condition notes before scanning." : "Upload a photo of the tool before scanning.",
         onClick: () => scannedPayload && kits.components.length ? loanMutation.mutate({ payload: scannedPayload }) : setScannerOpen(true) } }}
       error={loanMutation.isError ? { size: "panel", tone: "danger", lead: "Couldn't complete this handover.", body: loanMutation.error.message } : undefined}
-      result={loanMutation.isSuccess ? { tone: "success", title: mode === "checkout" ? "You've got it." : "Returned. Thanks!", summary: <ResultCard result={loanMutation.data} />,
-        next: { label: mode === "checkout" ? "Borrow another" : "Return another", onClick: () => loanMutation.reset() } } : undefined}
+      result={loanMutation.isSuccess ? { tone: "success", title: mode === "checkout" ? t`You've got it.` : t`Returned. Thanks!`, summary: <ResultCard result={loanMutation.data} />,
+        next: { label: mode === "checkout" ? t`Borrow another` : t`Return another`, onClick: () => loanMutation.reset() } } : undefined}
       work={<div className="grid gap-5"><MakerspaceBrand name={displayName} logoUrl={bootstrap?.makerspace.logo_url} fallback="logo" />
-        <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1"><SegmentedControl label="Checkout mode" value={mode} options={[{ value: "checkout", label: "Borrow" }, { value: "return", label: "Return" }]} onChange={value => { setMode(value as Mode); setScannedPayload(""); }} /></div>
+        <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1"><SegmentedControl label={t`Checkout mode`} value={mode} options={[{ value: "checkout", label: t`Borrow` }, { value: "return", label: t`Return` }]} onChange={value => { setMode(value as Mode); setScannedPayload(""); }} /></div>
         {contact.details ? <ContactFields contact={contact.details} /> : null}
-        <p className="text-sm text-muted">{mode === "checkout" ? "Take a photo of the tool, then scan its QR label." : "Take a return photo and describe its condition, then scan its QR label."}</p>
+        <p className="text-sm text-muted">{mode === "checkout" ? t`Take a photo of the tool, then scan its QR label.` : t`Take a return photo and describe its condition, then scan its QR label.`}</p>
         {mode === "checkout" ? <PublicEvidenceUpload key={`issue-${uploadKey}`} slug={makerspaceSlug} evidenceType="issue" disabled={loanMutation.isPending} contactEmail={contact.uploadEmail} onUploaded={(id, grant) => { contact.remember(id, grant); setIssueEvidenceId(id); }} />
           : <><PublicEvidenceUpload key={`return-${uploadKey}`} slug={makerspaceSlug} evidenceType="return" disabled={loanMutation.isPending} contactEmail={contact.uploadEmail} onUploaded={(id, grant) => { contact.remember(id, grant); setReturnEvidenceId(id); }} />
-            <label className="grid gap-2 text-sm font-semibold">Return condition notes<textarea className="desk-input min-h-24 w-full resize-y font-normal" required value={returnRemark} onChange={event => setReturnRemark(event.target.value)} /></label></>}
+            <label className="grid gap-2 text-sm font-semibold">{t`Return condition notes`}<textarea className="desk-input min-h-24 w-full resize-y font-normal" required value={returnRemark} onChange={event => setReturnRemark(event.target.value)} /></label></>}
         <KitChecklistCapture checklist={kits} />
       </div>} />
     {scannerOpen ? <QrScanner onClose={() => setScannerOpen(false)} onScan={scanTool} /> : null}

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { DataTable, type DataTableColumn } from "../../components/ui";
 import { Figure, SpaceCell } from "./OverviewBlockSection";
 import { formatMoney, offText } from "./overviewFormat";
@@ -7,7 +9,7 @@ type Figures = { charges: number; amounts: Record<string, string> };
 type Row = { id: string; space?: OverviewSpace; total?: boolean; figures: Figures };
 
 function value(currency: string, key: string, figures: Figures) {
-  return key === "charges" ? figures.charges.toLocaleString() : formatMoney(currency, figures.amounts[key] ?? "0");
+  return key === "charges" ? figures.charges.toLocaleString(formatLocale()) : formatMoney(currency, figures.amounts[key] ?? "0");
 }
 
 /** One currency's table. Totals only ever add rows of this same currency. */
@@ -27,7 +29,7 @@ function CurrencyTable({ money, entry, spaces }: { money: OverviewMoney; entry: 
     <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
       {money.metrics.map(metric => <Figure key={metric.key} label={metric.label} value={value(entry.currency, metric.key, entry.totals)} />)}
     </dl>
-    <DataTable caption={`Money in ${entry.currency.toUpperCase()} per space, with the ${entry.currency.toUpperCase()} total`} data={rows}
+    <DataTable caption={t`Money in ${entry.currency.toUpperCase()} per space, with the ${entry.currency.toUpperCase()} total`} data={rows}
       getRowId={row => row.id} columns={columns} />
   </section>;
 }
@@ -36,6 +38,6 @@ export function OverviewMoneySection({ money, spaces }: { money: OverviewMoney; 
   return <div className="grid min-w-0 gap-4">
     <p className="text-sm text-muted">{offText(money.off_in)}. Each currency is shown on its own and never added to another. Outstanding is what is still owed on the charges raised in this period.</p>
     {money.currencies.length ? money.currencies.map(entry => <CurrencyTable key={entry.currency} money={money} entry={entry} spaces={spaces} />)
-      : <p className="rounded-xl border border-dashed border-line p-4 text-sm text-muted">No money was recorded in this period.</p>}
+      : <p className="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{t`No money was recorded in this period.`}</p>}
   </div>;
 }

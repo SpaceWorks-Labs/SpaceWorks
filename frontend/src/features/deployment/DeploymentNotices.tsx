@@ -1,8 +1,9 @@
+import { t } from "@lingui/core/macro";
 import { Callout } from "../../components/ui";
 import type { DeploymentNoticeData } from "./types";
 
 export function DeploymentNotices({ data }: { data: DeploymentNoticeData }) {
-  return <div className="grid gap-3" aria-label="Deployment notices">
+  return <div className="grid gap-3" aria-label={t`Deployment notices`}>
     {data.mode === "managed" && data.scanner === "none" ? <Callout size="inline" tone="warn"
       lead="Malware scanning is off."
       body="Files are validated by type and size, but are not scanned for malware. Configure an external ClamAV service to enable scanning." /> : null}

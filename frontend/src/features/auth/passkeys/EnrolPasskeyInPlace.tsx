@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fingerprint } from "lucide-react";
@@ -25,14 +26,14 @@ export function EnrolPasskeyInPlace() {
     else void invalidateAccountSecurity(client);
   } });
   if (codes) return <div className="grid gap-3">
-    <p role="status" className="text-sm text-ink">Passkey added. Save these recovery codes: each works once if you lose your device.</p>
+    <p role="status" className="text-sm text-ink">{t`Passkey added. Save these recovery codes: each works once if you lose your device.`}</p>
     <MfaRecoveryCodes codes={codes} />
     <div><button type="button" className="desk-button-primary min-h-11"
-      onClick={() => { setCodes(undefined); void invalidateAccountSecurity(client); }}>I've saved my codes</button></div>
+      onClick={() => { setCodes(undefined); void invalidateAccountSecurity(client); }}>{t`I've saved my codes`}</button></div>
   </div>;
   return <div className="grid gap-2">
     <div><button type="button" className="desk-button-primary min-h-11 gap-2" disabled={add.isPending} aria-busy={add.isPending || undefined}
-      onClick={() => add.mutate()}><Fingerprint aria-hidden="true" size={20} />{add.isPending ? "Waiting for your device…" : "Add a passkey now"}</button></div>
+      onClick={() => add.mutate()}><Fingerprint aria-hidden="true" size={20} />{add.isPending ? t`Waiting for your device…` : t`Add a passkey now`}</button></div>
     {add.error && !isPasskeyCancelled(add.error) ? <ErrorText message={authErrorMessage(add.error, "Couldn't add a passkey. Try again, or set up an authenticator app.")} /> : null}
   </div>;
 }

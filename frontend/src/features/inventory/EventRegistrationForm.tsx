@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Icon, TicketCard } from "../../components/ui";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,14 +30,14 @@ function registerPath(slug: string, token: string) {
 }
 
 function failureMessage(error: StructuredApiError | null) {
-  if (!error) return "The registration could not be submitted.";
-  if (error.status === 401) return "Sign in to register for this event.";
-  if (error.status === 403 && error.code === "membership_required") return "Join this makerspace before registering.";
-  if (error.status === 403 && error.code === "waiver_acceptance_required") return "Accept the current waiver before registering.";
-  if (error.status === 403 && error.code === "presence_required") return "Start a presence session before registering.";
-  if (error.status === 429) return "Too many registration attempts. Please wait and try again.";
-  if (error.status === 409 && error.code === "registration_closed") return "Registration for this event is closed.";
-  if (error.status === 409 && error.code === "registration_rejected") return "Your application was not approved and cannot be resubmitted.";
+  if (!error) return t`The registration could not be submitted.`;
+  if (error.status === 401) return t`Sign in to register for this event.`;
+  if (error.status === 403 && error.code === "membership_required") return t`Join this makerspace before registering.`;
+  if (error.status === 403 && error.code === "waiver_acceptance_required") return t`Accept the current waiver before registering.`;
+  if (error.status === 403 && error.code === "presence_required") return t`Start a presence session before registering.`;
+  if (error.status === 429) return t`Too many registration attempts. Please wait and try again.`;
+  if (error.status === 409 && error.code === "registration_closed") return t`Registration for this event is closed.`;
+  if (error.status === 409 && error.code === "registration_rejected") return t`Your application was not approved and cannot be resubmitted.`;
   return error.detail ?? error.message;
 }
 
@@ -96,15 +97,15 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     const pending = registration.data.status === "pending_approval";
     const waitlisted = registration.data.status === "waitlisted";
     return <div ref={successRef} role="status" tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-      <TicketCard organisation={organisation} title={pending ? "Application awaiting approval" : waitlisted ? "You’re on the waitlist" : "Registration received"}
-        fields={[{ label: "Status", value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: "Next step", value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
+      <TicketCard organisation={organisation} title={pending ? t`Application awaiting approval` : waitlisted ? t`You’re on the waitlist` : t`Registration received`}
+        fields={[{ label: t`Status`, value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: t`Next step`, value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
         qr={<div className="grid h-full place-items-center rounded-xl bg-success-soft text-success-ink"><Icon name="CheckCircle" className="h-16 w-16" /></div>}
-        caption={pending ? "You will only be charged if a place is confirmed." : waitlisted ? "The makerspace has recorded your waitlist request." : "The makerspace has recorded your registration."} />
-      {paymentsHref && showPrice && registration.data.status === "registered" ? <p className="mt-3 text-sm text-muted">Any fee for this event is listed under <a className="font-semibold text-ink underline" href={paymentsHref}>Payments</a> in your member area. Pay online there when it is offered, or pay at the space.</p> : null}
+        caption={pending ? t`You will only be charged if a place is confirmed.` : waitlisted ? t`The makerspace has recorded your waitlist request.` : t`The makerspace has recorded your registration.`} />
+      {paymentsHref && showPrice && registration.data.status === "registered" ? <p className="mt-3 text-sm text-muted">{t`Any fee for this event is listed under `}<a className="font-semibold text-ink underline" href={paymentsHref}>{t`Payments`}</a> {t` in your member area. Pay online there when it is offered, or pay at the space.`}</p> : null}
     </div>;
   }
 
-  if (ticketRequired && !tickets.length) return <p role="status">No tickets are available for this account. Sign in or contact the organizers.</p>;
+  if (ticketRequired && !tickets.length) return <p role="status">{t`No tickets are available for this account. Sign in or contact the organizers.`}</p>;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -119,22 +120,21 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   const serverErrors = customAnswerErrors(apiError?.body.custom_answers);
 
   return <form className="grid gap-3 rounded-lg border border-line bg-bg p-4" onSubmit={submit} noValidate>
-    <h3 className="title-section">{approvalRequired ? "Apply" : waitlist ? "Join the waitlist" : "Register"}</h3>
-    <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">Website
-      <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+    <h3 className="title-section">{approvalRequired ? t`Apply` : waitlist ? t`Join the waitlist` : t`Register`}</h3>
+    <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">{t`Website`}<input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
     </label>
     <EventContactFallback needsPhone={needsPhone} needsEmail={needsEmail} phone={phone} email={email} onPhone={setPhone} onEmail={setEmail} disabled={registration.isPending} />
     <EventTicketPicker tickets={tickets} value={ticketId} onChange={setTicketId} currency={currency} disabled={registration.isPending} showPrice={showPrice} />
-    {audience === "invite" ? <><label className="grid gap-1 text-sm">Invitation code<input className="desk-input" maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">Leave blank if your verified account email was invited.</p></> : null}
-    {hostWaiver ? <fieldset className="grid gap-2 rounded-xl border border-line bg-panel p-3"><legend className="px-1 text-sm font-semibold">Host waiver</legend><p className="whitespace-pre-wrap text-sm leading-6">{hostWaiver.body}</p><label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={waiverAccepted} onChange={(e) => setWaiverAccepted(e.target.checked)} />I accept this host waiver (version {hostWaiver.version}).</label>{clientErrors.waiver ? <p className="text-sm text-danger" role="alert">{clientErrors.waiver}</p> : null}</fieldset> : null}
-    {promoEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
+    {audience === "invite" ? <><label className="grid gap-1 text-sm">{t`Invitation code`}<input className="desk-input" maxLength={128} autoComplete="off" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label><p className="text-sm text-muted">{t`Leave blank if your verified account email was invited.`}</p></> : null}
+    {hostWaiver ? <fieldset className="grid gap-2 rounded-xl border border-line bg-panel p-3"><legend className="px-1 text-sm font-semibold">{t`Host waiver`}</legend><p className="whitespace-pre-wrap text-sm leading-6">{hostWaiver.body}</p><label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={waiverAccepted} onChange={(e) => setWaiverAccepted(e.target.checked)} />{t`I accept this host waiver (version ${hostWaiver.version}).`}</label>{clientErrors.waiver ? <p className="text-sm text-danger" role="alert">{clientErrors.waiver}</p> : null}</fieldset> : null}
+    {promoEnabled ? <label className="grid gap-1 text-sm">{t`Promo code (optional)`}<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
     {clientErrors.ticket || clientErrors.invite ? <p className="text-sm text-danger" role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
     <CustomFormFields schema={customForm} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...clientErrors }} />
     {!tickets.length || ticketId !== null ? <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "events", event_token: publicToken, ticket_type_id: ticketId ?? undefined }} onDigest={setQuoteDigest} /> : null}
     {isPriceChanged(registration.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={registration.error} />
       : registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
     <button className="desk-button-brand" type="submit" disabled={registration.isPending}>
-      {registration.isPending ? "Submitting..." : approvalRequired ? "Apply" : waitlist ? "Join waitlist" : "Register"}
+      {registration.isPending ? t`Submitting...` : approvalRequired ? t`Apply` : waitlist ? t`Join waitlist` : t`Register`}
     </button>
   </form>;
 }

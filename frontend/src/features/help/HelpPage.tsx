@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useLocation, useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -36,16 +37,16 @@ export function HelpPage() {
   const memberHref = single || !routeSlug ? "/member" : `/m/${encodeURIComponent(routeSlug)}/member`;
   const chrome = {
     makerspace: { name: spaceName, slug: bootstrap?.makerspace.slug ?? routeSlug, homeHref, logo: bootstrap?.branding.logo_url || undefined },
-    nav: [{ label: "Help", href: helpHref("", where) }, ...(bootstrap ? [{ label: spaceName, href: homeHref }] : [])],
-    headerAction: reader.signedIn ? { label: "Your account", href: memberHref } : { label: "Sign in", href: memberHref },
+    nav: [{ label: t`Help`, href: helpHref("", where) }, ...(bootstrap ? [{ label: spaceName, href: homeHref }] : [])],
+    headerAction: reader.signedIn ? { label: t`Your account`, href: memberHref } : { label: t`Sign in`, href: memberHref },
     liveStatus: <ThemeToggle variant="icon" />,
     width: "narrow" as const,
-    footer: { credit: "Space Works help centre", links: [{ label: "About Space Works", href: "/about" }] },
+    footer: { credit: "Space Works help centre", links: [{ label: t`About Space Works`, href: "/about" }] },
   };
 
   if (routeSlug && bootstrapQuery.isError) return <NotFoundPage />;
   if (spaceLoading) {
-    return <PublicLayout {...chrome} header={{ title: "Help" }} state={{ status: "loading" }}><span /></PublicLayout>;
+    return <PublicLayout {...chrome} header={{ title: t`Help` }} state={{ status: "loading" }}><span /></PublicLayout>;
   }
   // The space switched its help centre off: its help routes are gone, like any other off feature.
   if (bootstrap && !bootstrap.features.includes(HELP_FEATURE)) return <NotFoundPage />;
@@ -59,14 +60,14 @@ export function HelpPage() {
     const article = helpArticle(id);
     const section = SECTION_BY_ID.get(sectionId);
     return <>
-      <PageMetadata title={`${article?.title ?? "Help"} · ${spaceName} help`} description={article?.summary ?? ""} path={hrefFor(id)} />
+      <PageMetadata title={t`${article?.title ?? "Help"} · ${spaceName} help`} description={article?.summary ?? ""} path={hrefFor(id)} />
       <HelpArticleView chrome={chrome} article={article} section={section} visible={articles.some(item => item.id === id)}
         loading={readerLoading} signedIn={reader.signedIn} memberHref={memberHref}
         siblings={articles.filter(item => item.section === sectionId && item.id !== id)} hrefFor={hrefFor} />
     </>;
   }
   return <>
-    <PageMetadata title={`${spaceName} help`} description="Guides for members, staff and operators." path={hrefFor(sectionId)} />
+    <PageMetadata title={`${spaceName} help`} description={t`Guides for members, staff and operators.`} path={hrefFor(sectionId)} />
     <HelpIndex chrome={chrome} articles={articles} sectionId={sectionId} loading={readerLoading} signedIn={reader.signedIn}
       memberHref={memberHref} hrefFor={hrefFor} spaceName={bootstrap ? spaceName : null} />
   </>;

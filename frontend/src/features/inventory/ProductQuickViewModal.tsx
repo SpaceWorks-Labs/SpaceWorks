@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { DetailLayout } from "../../components/layouts";
 import { StatusPill } from "../../components/ui";
 import type { Product } from "../../types/inventory";
@@ -10,9 +11,9 @@ type ProductQuickViewModalProps = { product: Product | null; open: boolean; onCl
   makerspaceId?: number; features?: readonly string[] };
 
 function trackingLabel(product: Product) {
-  if (product.tracking_mode === "individual") return "Serialized";
-  if (product.tracking_mode === "quantity") return "Quantity-tracked";
-  return "Catalog item";
+  if (product.tracking_mode === "individual") return t`Serialized`;
+  if (product.tracking_mode === "quantity") return t`Quantity-tracked`;
+  return t`Catalog item`;
 }
 
 export function ProductQuickViewModal({ product, open, onClose, makerspaceId, features }: ProductQuickViewModalProps) {
@@ -27,9 +28,9 @@ export function ProductQuickViewModal({ product, open, onClose, makerspaceId, fe
       {product.category_name ? <div><StatusPill label={product.category_name} /></div> : null}
       <ExpectedBack product={product} />
       <WaitlistJoin key={product.id} makerspaceId={makerspaceId} product={product} features={features} />
-      <section aria-label="Description"><h2 className="title-panel">Description</h2>
-        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7">{product.description.trim() || "No description provided."}</p>
+      <section aria-label={t`Description`}><h2 className="title-panel">{t`Description`}</h2>
+        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7">{product.description.trim() || t`No description provided.`}</p>
       </section>
     </div>}
-    footer={{ secondary: [{ label: "Close", onClick: onClose }] }} />;
+    footer={{ secondary: [{ label: t`Close`, onClick: onClose }] }} />;
 }

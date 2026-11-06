@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { PublicLayout } from "../../components/layouts";
 import { publicPageChrome } from "./PublicPageChrome";
 import { useTenantBranding } from "../../lib/useTenantBranding";
@@ -97,26 +98,26 @@ export function PublicMachinesPage() {
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   return <div style={brandStyle}>
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
-      header={{ title: "Machines", subtitle: `What you can use at ${displayName}`, ...(jobTypeIds.size
-        ? { primary: { label: "Request a job", href: tenantPath("machine-jobs/new") }, secondary: { label: "Member area", href: tenantPath("member") } }
-        : { primary: { label: "Member area", href: tenantPath("member") } }) }}
+      header={{ title: t`Machines`, subtitle: t`What you can use at ${displayName}`, ...(jobTypeIds.size
+        ? { primary: { label: t`Request a job`, href: tenantPath("machine-jobs/new") }, secondary: { label: t`Member area`, href: tenantPath("member") } }
+        : { primary: { label: t`Member area`, href: tenantPath("member") } }) }}
       state={machines.isLoading ? { status: "loading" } : machines.error ? publicErrorState(machines.error, { noun: "Machines" }, () => { void machines.refetch(); }) : { status: "ready" }}
-      isEmpty={!groups.length} empty={{ message: "No machines listed yet. Check back soon." }}>
-      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filter machines">
-        <button className={!kind ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={!kind} onClick={() => setKind("")}>All kinds</button>
+      isEmpty={!groups.length} empty={{ message: t`No machines listed yet. Check back soon.` }}>
+      <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label={t`Filter machines`}>
+        <button className={!kind ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={!kind} onClick={() => setKind("")}>{t`All kinds`}</button>
         {groups.map(group => <button key={group.name} className={kind === group.name ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={kind === group.name} onClick={() => setKind(group.name)}>{group.name}</button>)}
-        {detailEnabled ? <button className={trainingOnly ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={trainingOnly} onClick={() => setTrainingOnly(value => !value)}>Training required</button> : null}
+        {detailEnabled ? <button className={trainingOnly ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={trainingOnly} onClick={() => setTrainingOnly(value => !value)}>{t`Training required`}</button> : null}
       </div>
-      {!visibleGroups.length ? <EmptyState message="No machines match these filters. Choose another kind or clear the filters." action={{ label: "Clear filters", onClick: () => { setKind(""); setTrainingOnly(false); } }} /> : null}
+      {!visibleGroups.length ? <EmptyState message={t`No machines match these filters. Choose another kind or clear the filters.`} action={{ label: t`Clear filters`, onClick: () => { setKind(""); setTrainingOnly(false); } }} /> : null}
       <div className="grid gap-6">{visibleGroups.map(group => <CollapsibleSection key={group.name} title={group.name} icon={group.icon || null}
         count={group.machines.length} open={!collapsed.has(group.name)} onToggle={() => toggleGroup(group.name)}>
         <div className="grid gap-3 p-3">{group.machines.map(machine => <div key={machine.name}>
           <ListRow title={machine.name} identity={machine.image_url ? { kind: "image", src: machine.image_url } : { kind: "icon", icon: "Wrench", tone: "neutral" }}
-            meta={<>{machine.usage_hours} h logged{machine.status_since ? <> · Status since <RelativeTime date={machine.status_since} /></> : null}
-              {machine.training_required != null ? <span className="mt-1 block">{machine.training_required ? "Training required" : "No service training required"}</span> : null}
+            meta={<>{t`${machine.usage_hours} h logged`}{machine.status_since ? <> {t` · Status since `}<RelativeTime date={machine.status_since} /></> : null}
+              {machine.training_required != null ? <span className="mt-1 block">{machine.training_required ? t`Training required` : t`No service training required`}</span> : null}
               {machine.queue ? <span className="mt-1 block"><QueueSummary summary={machine.queue} /></span> : null}</>}
             right={<StatusPill label={MACHINE_STATUS[machine.status] ?? machine.status} tone={machine.status === "idle" ? "success" : machine.status === "maintenance" || machine.status === "offline" ? "warn" : "info"} />} />
-          {machine.machine_type.id && jobTypeIds.has(machine.machine_type.id) ? <Link className="desk-button mt-3" to={tenantPath(`machine-jobs/new?type=${machine.machine_type.id}`)}>Request a job</Link>
+          {machine.machine_type.id && jobTypeIds.has(machine.machine_type.id) ? <Link className="desk-button mt-3" to={tenantPath(`machine-jobs/new?type=${machine.machine_type.id}`)}>{t`Request a job`}</Link>
             : bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} dialog trackingPath={token => tenantPath(`machine-service/requests/${token}`)} /> : null}
         </div>)}</div>
       </CollapsibleSection>)}</div>

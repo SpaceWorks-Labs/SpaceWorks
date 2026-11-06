@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { StatusPill } from "../../components/ui";
 import type { UsageSample } from "./types";
 
@@ -6,8 +8,8 @@ function valid(value: number | null): value is number {
 }
 export function formatUsage(value: number | null, unit: UsageSample["unit"]) {
   if (!valid(value)) return "Unknown";
-  if (unit === "recipients") return `${value.toLocaleString()} recipients`;
-  return `${(value / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 1 })} MB`;
+  if (unit === "recipients") return `${value.toLocaleString(formatLocale())} recipients`;
+  return `${(value / 1_000_000).toLocaleString(formatLocale(), { maximumFractionDigits: 1 })} MB`;
 }
 export function quotaState(sample: UsageSample) {
   if (!valid(sample.used) || !valid(sample.cap) || sample.cap === 0 || !sample.sampled_at
@@ -26,13 +28,13 @@ export function QuotaCard({ label, sample }: { label: string; sample: UsageSampl
       <StatusPill tone={state === "Reached" ? "danger" : warning ? "warn" : "neutral"} label={state} />
     </div>
     <p className="mt-3 text-ink">{formatUsage(sample.used, sample.unit)} / {formatUsage(sample.cap, sample.unit)}</p>
-    <p className="mt-1 text-sm text-muted">Uncertain or reserved: {formatUsage(sample.uncertain, sample.unit)}. Included when evaluating the cap.</p>
-    <p className="mt-2 text-xs text-muted">Usage source: {sample.source || "Unknown"}. Cap source: {sample.cap_source || "Unknown"}. Cap checked: {dateLabel(sample.cap_verified_on)}. Sampled: {dateLabel(sample.sampled_at)}.</p>
+    <p className="mt-1 text-sm text-muted">{t`Uncertain or reserved: ${formatUsage(sample.uncertain, sample.unit)}. Included when evaluating the cap.`}</p>
+    <p className="mt-2 text-xs text-muted">{t`Usage source: `}{sample.source || t`Unknown`}. Cap source: {sample.cap_source || t`Unknown`}. Cap checked: {dateLabel(sample.cap_verified_on)}. Sampled: {dateLabel(sample.sampled_at)}.</p>
     {warning ? <p className="mt-2 text-sm text-ink">{state === "Unknown" || state === "Stale"
-      ? "Ask the operator to refresh usage and verify the provider account allowance."
-      : "Review the provider account and pending work. Export, migrate or upgrade before reaching the limit; retain immutable history."}</p> : null}
+      ? t`Ask the operator to refresh usage and verify the provider account allowance.`
+      : t`Review the provider account and pending work. Export, migrate or upgrade before reaching the limit; retain immutable history.`}</p> : null}
   </section>;
 }
 export function dateLabel(value: string | null) {
-  return value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString() : "Unknown";
+  return value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(formatLocale()) : t`Unknown`;
 }

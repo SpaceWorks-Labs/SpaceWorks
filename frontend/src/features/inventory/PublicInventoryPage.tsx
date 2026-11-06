@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { plural } from "../../lib/plural";
 import { PublicLayout } from "../../components/layouts";
 import type { PublicActionCardProps } from "../../components/layouts/PublicActionCard";
@@ -89,11 +90,11 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
   const body = <div className="grid min-w-0 gap-6">
     <CatalogSidebar categories={categories} view={view} onSelect={selectView} />
     <Card><form className="flex flex-wrap items-end gap-3" onSubmit={submitSearch}>
-      <Field className="min-w-0 flex-1" label="Search inventory"><input className="desk-input w-full bg-success text-on-success placeholder:text-on-success" placeholder="Search tools, machines, kits, or materials" value={searchInput} onChange={event => setSearchInput(event.target.value)} /></Field>
-      <button className="desk-button-brand" type="submit">Search</button>
-      {query ? <button className="desk-button" type="button" onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}>Clear</button> : null}
+      <Field className="min-w-0 flex-1" label={t`Search inventory`}><input className="desk-input w-full bg-success text-on-success placeholder:text-on-success" placeholder={t`Search tools, machines, kits, or materials`} value={searchInput} onChange={event => setSearchInput(event.target.value)} /></Field>
+      <button className="desk-button-brand" type="submit">{t`Search`}</button>
+      {query ? <button className="desk-button" type="button" onClick={() => { setSearchInput(""); setQuery(""); setPage(1); }}>{t`Clear`}</button> : null}
     </form></Card>
-    <QueryContent state={state} isEmpty={!products.length} empty={{ message: query ? "No matching items. Try another search." : "No public items yet. Check back soon.", action: query ? { label: "Clear search", onClick: () => { setSearchInput(""); setQuery(""); setPage(1); } } : undefined }}>
+    <QueryContent state={state} isEmpty={!products.length} empty={{ message: query ? t`No matching items. Try another search.` : t`No public items yet. Check back soon.`, action: query ? { label: t`Clear search`, onClick: () => { setSearchInput(""); setQuery(""); setPage(1); } } : undefined }}>
     {/* Columns come from the space the catalogue actually has (it shares the row with the request panel
       at xl, and with the request column on the desk kiosk), not from the viewport width. */}
     <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-4">{products.map(product => <ProductCard key={product.id} product={product}
@@ -105,14 +106,14 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
   const request = <PublicRequestPanel items={selectedItems} makerspaceSlug={makerspaceSlug} onClear={clearCart} disabled={!requestEnabled} requestAccess={bootstrap?.makerspace.request_access}
     activeTab={requestTab} onActiveTabChange={setRequestTab} draft={requestDraft} features={bootstrap?.features} />;
   const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
-  const aside: PublicActionCardProps = { title: "Your request", form: request, state: "open", mobileBar: { summary: `Request · ${plural(totalItems, "item")}`, label: "Review request", onOpen: () => setRequestTab("borrow"),
-    secondary: requestEnabled ? { label: "Scan a tool", onOpen: () => setRequestTab("scan") } : undefined } };
+  const aside: PublicActionCardProps = { title: t`Your request`, form: request, state: "open", mobileBar: { summary: t`Request · ${plural(totalItems, "item")}`, label: t`Review request`, onOpen: () => setRequestTab("borrow"),
+    secondary: requestEnabled ? { label: t`Scan a tool`, onOpen: () => setRequestTab("scan") } : undefined } };
   // A composed public page owns its palette; the standalone catalogue and desk still apply tenant branding.
   return <div style={inheritBranding ? undefined : brandStyle}>
-    {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || `Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
+    {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || t`Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
     {embedded ? embedded({ body, request, aside })
       : <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} width="wide" state={{ status: "ready" }}
-        header={{ title: `Borrow tools from ${displayName}`, subtitle: `${plural(inventoryQuery.data?.count ?? 0, "tool")} and kits`, primary: { label: "Member area", href: tenantPath("member") } }}
+        header={{ title: t`Borrow tools from ${displayName}`, subtitle: t`${plural(inventoryQuery.data?.count ?? 0, "tool")} and kits`, primary: { label: t`Member area`, href: tenantPath("member") } }}
         isEmpty={false} aside={aside}>
         {body}
       </PublicLayout>}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { CenteredCardLayout } from "../../components/layouts";
 import type { Action } from "../../components/ui";
 
@@ -12,6 +13,6 @@ export function PausedSpacePage({ name, reason, primary, escape }: { name?: stri
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "CircleSlash", tone: "neutral" }} eyebrow={name}
     title={PAUSED_TITLE} body={<>
       <p>{reason || GENERIC_PAUSE_REASON}</p>
-      <p className="mt-2">Nothing here is deleted. Check back later, or contact the space if you need something urgently.</p>
+      <p className="mt-2">{t`Nothing here is deleted. Check back later, or contact the space if you need something urgently.`}</p>
     </>} primary={primary} escape={escape} />;
 }

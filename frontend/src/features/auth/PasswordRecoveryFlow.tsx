@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { CenteredCardLayout } from "../../components/layouts";
 import { NewPasswordFields } from "./NewPasswordFields";
@@ -44,7 +45,7 @@ export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", i
       if (isRecoveryUnavailable(requestError)) {
         setStep("unavailable");
       } else {
-        setError("Unable to request password recovery. Please try again.");
+        setError(t`Unable to request password recovery. Please try again.`);
       }
     } finally {
       setPending(false);
@@ -74,29 +75,28 @@ export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", i
     : step === "confirm" ? acknowledgement || "Enter your username or email and the six-digit recovery code from your email."
     : step === "success" ? `Your password has been updated. You can now sign in.${recoveryContext ? " Authenticator verification is still required if enabled for your account." : ""}`
     : "Password recovery is unavailable on this deployment — contact your makerspace staff";
-  return <CenteredCardLayout state={{ status: "ready" }} eyebrow={recoveryContext ? "Platform account access" : "Account access"}
+  return <CenteredCardLayout state={{ status: "ready" }} eyebrow={recoveryContext ? t`Platform account access` : t`Account access`}
     media={{ icon: step === "success" ? "Check" : step === "confirm" ? "Mail" : "KeyRound", tone: step === "success" ? "success" : "accent" }}
     title={titles[step]} body={<p role={step === "unavailable" ? "alert" : undefined}>{body}</p>}
-    primary={step === "success" || step === "unavailable" ? { label: step === "success" ? "Go to sign in" : "Back to sign in", href: signInHref } : {
-      label: step === "request" ? "Request recovery code" : "Update password", pending,
+    primary={step === "success" || step === "unavailable" ? { label: step === "success" ? t`Go to sign in` : t`Back to sign in`, href: signInHref } : {
+      label: step === "request" ? t`Request recovery code` : t`Update password`, pending,
       pendingLabel: step === "request" ? "Requesting…" : "Updating…", disabled: step === "confirm" && !canConfirm,
       disabledReason: "Enter the six-digit code and matching passwords.",
       onClick: () => (document.getElementById("password-recovery-form") as HTMLFormElement)?.requestSubmit(),
     }}
-    escape={step === "request" ? { label: "Back to sign in", href: signInHref } : step === "confirm" ? {
-      label: cooldown > 0 ? `Request another code in ${cooldown}s` : "Request another code",
+    escape={step === "request" ? { label: t`Back to sign in`, href: signInHref } : step === "confirm" ? {
+      label: cooldown > 0 ? t`Request another code in ${cooldown}s` : t`Request another code`,
       disabled: pending || cooldown > 0 || !email.trim(), disabledReason: "Enter your account identifier and wait before requesting another code.", onClick: () => void requestCode(true),
     } : undefined}
     content={step === "request" || step === "confirm" ? <form id="password-recovery-form" className="grid gap-2"
       onSubmit={(event) => { event.preventDefault(); if (step === "request" && !pending) void requestCode(false); else if (canConfirm) void submitConfirmation(); }}>
-      {step === "request" || recoveryContext ? <label className="grid gap-2 text-sm font-semibold" htmlFor="recovery-email">{recoveryContext ? "Username or email" : "Email"}
+      {step === "request" || recoveryContext ? <label className="grid gap-2 text-sm font-semibold" htmlFor="recovery-email">{recoveryContext ? t`Username or email` : t`Email`}
         <input id="recovery-email" className="desk-input w-full" name="email" autoComplete={recoveryContext ? "username" : "email"} type={recoveryContext ? "text" : "email"} required
           value={email} onChange={(event) => setEmail(event.target.value)} />
       </label> : null}
       {step === "confirm" ? <>
-        <p className="text-sm text-muted">Email delivery runs on a schedule and may take a few minutes.</p>
-        <label className="mt-3 grid gap-2 text-sm font-semibold" htmlFor="recovery-code">Six-digit code
-          <input id="recovery-code" className="desk-input w-full" autoComplete="one-time-code" inputMode="numeric"
+        <p className="text-sm text-muted">{t`Email delivery runs on a schedule and may take a few minutes.`}</p>
+        <label className="mt-3 grid gap-2 text-sm font-semibold" htmlFor="recovery-code">{t`Six-digit code`}<input id="recovery-code" className="desk-input w-full" autoComplete="one-time-code" inputMode="numeric"
             pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />
         </label>
         <NewPasswordFields idPrefix="otp-reset" newPassword={newPassword} confirmPassword={confirmPassword}

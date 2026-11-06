@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Fingerprint, Smartphone } from "lucide-react";
 import { ActionControl, StatusPill } from "../../components/ui";
 import { PasswordlessMfaProof } from "./PasswordlessMfaProof";
@@ -27,24 +28,23 @@ export function MfaAuthenticatorSection({ status, hasPasskey, passkeysOffered, p
   return <div className="grid gap-4">
     <div className="flex flex-wrap items-center gap-3">
       <Smartphone aria-hidden="true" size={20} className="text-muted" />
-      <StatusPill label={enabled ? "Authenticator on" : "Authenticator off"} tone={enabled ? "success" : "neutral"} />
-      {hasPasskey ? <StatusPill label="Passkey saved" tone="success" /> : null}
+      <StatusPill label={enabled ? t`Authenticator on` : t`Authenticator off`} tone={enabled ? "success" : "neutral"} />
+      {hasPasskey ? <StatusPill label={t`Passkey saved`} tone="success" /> : null}
     </div>
-    <p className="text-sm text-muted">{!available ? "Two-step sign-in is turned off on this deployment."
-      : enabled ? "Your authenticator is enrolled." : "Add an authenticator to protect your account."}
-      {required ? " MFA is required for this account." : ""}</p>
+    <p className="text-sm text-muted">{!available ? t`Two-step sign-in is turned off on this deployment.`
+      : enabled ? t`Your authenticator is enrolled.` : t`Add an authenticator to protect your account.`}
+      {required ? t` MFA is required for this account.` : ""}</p>
     {mustEnrol ? <p className="rounded-xl border border-line bg-surface p-4 text-sm text-ink">
-      Staff need an authenticator app or a passkey before the staff console opens. Your member area keeps working meanwhile.</p> : null}
-    {!manageable ? null : passwordAvailable ? <label className="grid gap-2 text-sm font-semibold" htmlFor="mfa-password">Confirm your current password
-      <input id="mfa-password" className="desk-input" type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} /></label>
+      {t`Staff need an authenticator app or a passkey before the staff console opens. Your member area keeps working meanwhile.`}</p> : null}
+    {!manageable ? null : passwordAvailable ? <label className="grid gap-2 text-sm font-semibold" htmlFor="mfa-password">{t`Confirm your current password`}<input id="mfa-password" className="desk-input" type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} /></label>
       : !enabled ? <PasswordlessMfaProof />
-      : <p className="text-sm text-muted">Your existing MFA-management operations require a current password. Contact your administrator if you cannot supply one.</p>}
+      : <p className="text-sm text-muted">{t`Your existing MFA-management operations require a current password. Contact your administrator if you cannot supply one.`}</p>}
     {available ? <div className="flex flex-wrap gap-3">
       <ActionControl primary action={{
-        label: enabled ? "Regenerate recovery codes" : "Enroll authenticator", pending: busy, disabled: needsPassword && !password,
+        label: enabled ? t`Regenerate recovery codes` : t`Enroll authenticator`, pending: busy, disabled: needsPassword && !password,
         disabledReason: passwordAvailable ? "Confirm your current password to continue." : "Managing an enrolled authenticator requires a current password.",
         onClick: () => enabled ? onRegenerate() : onEnroll() }} />
-      {!enabled && passkeysOffered ? <a href="#passkeys" className="desk-button min-h-11 gap-2"><Fingerprint aria-hidden="true" size={20} />Add a passkey instead</a> : null}
+      {!enabled && passkeysOffered ? <a href="#passkeys" className="desk-button min-h-11 gap-2"><Fingerprint aria-hidden="true" size={20} />{t`Add a passkey instead`}</a> : null}
     </div> : null}
   </div>;
 }

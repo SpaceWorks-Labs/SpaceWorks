@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getAccessToken } from "../../lib/api";
@@ -23,11 +24,11 @@ function JoinButton({ makerspaceId, product }: { makerspaceId: number; product: 
   const entry = join.data;
   return <div className="mt-4 grid gap-2">
     <button className="desk-button" type="button" disabled={join.isPending || join.isSuccess} onClick={() => join.mutate()}>
-      {join.isPending ? "Joining…" : join.isSuccess ? "On the waitlist" : "Join the waitlist"}
+      {join.isPending ? t`Joining…` : join.isSuccess ? t`On the waitlist` : t`Join the waitlist`}
     </button>
     {entry ? <p role="status" className="text-sm text-muted">
-      {entry.position ? `You're number ${entry.position} in line for ${product.name}. ` : `You're in line for ${product.name}. `}
-      When one comes back we hold it for you and let you know.</p> : null}
+      {entry.position ? t`You're number ${entry.position} in line for ${product.name}. ` : t`You're in line for ${product.name}. `}
+      {t`When one comes back we hold it for you and let you know.`}</p> : null}
     {join.error ? <p role="alert" className="text-sm text-danger">{join.error.message}</p> : null}
   </div>;
 }

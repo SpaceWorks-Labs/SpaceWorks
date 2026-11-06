@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { ClosedNoticeBanner } from "./ClosedNoticeBanner";
 import { useParams } from "react-router-dom";
@@ -51,15 +52,15 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   const families = new Set(publicFamilies(bootstrap));
   const name = bootstrap.branding.display_name || bootstrap.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const actions: Action[] = [];
-  if (families.has("inventory")) actions.push({ label: "Browse inventory", href: "#inventory" });
-  if (families.has("events")) actions.push({ label: "See events", href: path("events") });
-  if (families.has("bookings")) actions.push({ label: "Book a space", href: path("bookings") });
-  if (families.has("membership")) actions.push({ label: "Member area", href: path("member") });
+  if (families.has("inventory")) actions.push({ label: t`Browse inventory`, href: "#inventory" });
+  if (families.has("events")) actions.push({ label: t`See events`, href: path("events") });
+  if (families.has("bookings")) actions.push({ label: t`Book a space`, href: path("bookings") });
+  if (families.has("membership")) actions.push({ label: t`Member area`, href: path("member") });
 
   const functional = (catalogue?: { body: ReactNode; aside: PublicActionCardProps }) => <div className="grid gap-8">
     <ClosedNoticeBanner bootstrap={bootstrap} />
     {families.has("events") ? <FeaturedActivities slug={makerspaceSlug} path={path} timeZone={bootstrap.makerspace.timezone} /> : null}
-    {catalogue ? <MakerspaceSection id="inventory" title="Inventory" subtitle="Tools, kits and materials you can borrow.">{catalogue.body}</MakerspaceSection> : null}
+    {catalogue ? <MakerspaceSection id="inventory" title={t`Inventory`} subtitle={t`Tools, kits and materials you can borrow.`}>{catalogue.body}</MakerspaceSection> : null}
     {families.has("machines") ? <MachinesSection path={path} /> : null}
     {families.has("bookings") ? <SpacesSection slug={makerspaceSlug} path={path} /> : null}
     {families.has("membership") ? <MembershipSection policy={bootstrap.makerspace.membership_policy} path={path} /> : null}
@@ -74,10 +75,10 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
 
   // Only the profile-only route depends on the page endpoint. The legacy home (and its catalogue) never
   // gives way to a transient page-endpoint error; it simply renders as unpublished.
-  if (profileOnly && !published && pageQuery.error) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: "Public page" }} state={{ status: "ready" }}><ErrorBlock error={pageQuery.error} onRetry={() => { void pageQuery.refetch(); }} /></PublicLayout>;
+  if (profileOnly && !published && pageQuery.error) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: t`Public page` }} state={{ status: "ready" }}><ErrorBlock error={pageQuery.error} onRetry={() => { void pageQuery.refetch(); }} /></PublicLayout>;
   if (profileOnly && !published) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: name }} state={{ status: "loading" }}><span /></PublicLayout>;
   return <div style={published ? pageStyle : brandStyle}>
-    <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || `Events, tools and spaces at ${name}.`)} path={published?.canonical_url ?? path()}
+    <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || t`Events, tools and spaces at ${name}.`)} path={published?.canonical_url ?? path()}
       image={published?.cover?.url ?? (published ? null : bootstrap.makerspace.cover_image_url || bootstrap.makerspace.logo_url)} imageAlt={published?.cover?.alt} siteName={name} />
     {families.has("inventory") ? <PublicInventoryPage key={makerspaceSlug} resolvedSlug={makerspaceSlug} inheritBranding embedded={({ body, aside }) => page({ body, aside })} /> : page()}
   </div>;

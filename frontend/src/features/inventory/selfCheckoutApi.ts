@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { tenantPublicRequest } from "../../lib/api";
 import type { KitCount } from "./KitChecklist";
 
@@ -56,7 +57,7 @@ export async function uploadPublicEvidenceFile(
       body: file,
       headers: presigned.headers,
     });
-    if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+    if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
     return;
   }
 
@@ -64,7 +65,7 @@ export async function uploadPublicEvidenceFile(
   Object.entries(presigned.fields).forEach(([key, value]) => formData.append(key, value));
   formData.append("file", file);
   const upload = await fetch(presigned.upload_url, { method: "POST", body: formData });
-  if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+  if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
 }
 
 export function checkoutTool(

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { pageInput, pageLabel } from "./documentDefaults";
 import type { AccentChoice, PageAsset, PageDocument } from "./pageTypes";
 import type { PaletteChoices } from "../../generated/api";
@@ -11,21 +12,21 @@ export function PagePresentationForm({ document, assets, choices, disabled, onCh
   document: PageDocument; assets: Pick<PageAsset, "id" | "alt_text">[]; choices: PaletteChoices; disabled: boolean; onChange: (document: PageDocument) => void;
 }) {
   return <fieldset disabled={disabled} className="grid gap-4 rounded-xl border border-line p-4">
-    <legend className="px-1 font-semibold">Cover and colours</legend>
-    <label className={pageLabel}>Cover<select className={pageInput} value={document.cover_mode} onChange={e => onChange({ ...document,
+    <legend className="px-1 font-semibold">{t`Cover and colours`}</legend>
+    <label className={pageLabel}>{t`Cover`}<select className={pageInput} value={document.cover_mode} onChange={e => onChange({ ...document,
       cover_mode: e.target.value as PageDocument["cover_mode"], cover_asset_id: e.target.value === "asset" ? document.cover_asset_id : null })}>
-      <option value="inherit">Inherit existing cover or logo</option><option value="asset">Use an uploaded image</option><option value="none">No cover</option>
+      <option value="inherit">{t`Inherit existing cover or logo`}</option><option value="asset">{t`Use an uploaded image`}</option><option value="none">{t`No cover`}</option>
     </select></label>
-    {document.cover_mode === "asset" ? <label className={pageLabel}>Cover image<select className={pageInput} required value={document.cover_asset_id ?? ""}
+    {document.cover_mode === "asset" ? <label className={pageLabel}>{t`Cover image`}<select className={pageInput} required value={document.cover_asset_id ?? ""}
       onChange={e => onChange({ ...document, cover_asset_id: e.target.value ? Number(e.target.value) : null })}>
-      <option value="">Choose an image</option>{assets.map(asset => <option key={asset.id} value={asset.id}>{asset.alt_text}</option>)}
+      <option value="">{t`Choose an image`}</option>{assets.map(asset => <option key={asset.id} value={asset.id}>{asset.alt_text}</option>)}
     </select></label> : null}
-    <fieldset className="grid gap-2"><legend className="mb-2 text-sm font-semibold">Public accent palette</legend>
+    <fieldset className="grid gap-2"><legend className="mb-2 text-sm font-semibold">{t`Public accent palette`}</legend>
       <div className="flex flex-wrap gap-2">{(Object.keys(choices) as AccentChoice[]).map(choice => <label key={choice} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-line px-3 text-sm has-checked:border-brand-boundary has-checked:bg-brand-soft">
         <input type="radio" name="page-accent" value={choice} checked={(document.accent_choice ?? "inherit") === choice} onChange={() => onChange({ ...document, accent_choice: choice })} />
         {choice !== "inherit" ? <span aria-hidden="true" className="h-5 w-5 rounded-full border border-line" style={{ backgroundColor: choices[choice] ?? undefined }} /> : null}{labels[choice]}
       </label>)}</div>
     </fieldset>
-    <p className="text-sm text-muted">Colours apply to the public preview and page. Inherit keeps existing brand colours, including custom colours.</p>
+    <p className="text-sm text-muted">{t`Colours apply to the public preview and page. Inherit keeps existing brand colours, including custom colours.`}</p>
   </fieldset>;
 }

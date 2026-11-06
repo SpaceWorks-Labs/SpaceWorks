@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DashboardLayout } from "../../components/layouts";
@@ -19,7 +21,7 @@ const HEADLINE: [block: string, metric: string, label: string][] = [
 ];
 
 function headline(data: PlatformOverview): Stat[] {
-  const stats: Stat[] = [{ label: "Spaces counted", value: data.spaces.length }];
+  const stats: Stat[] = [{ label: t`Spaces counted`, value: data.spaces.length }];
   for (const [blockKey, metricKey, label] of HEADLINE) {
     const block = data.blocks.find(item => item.key === blockKey);
     const metric = block?.metrics.find(item => item.key === metricKey);
@@ -29,9 +31,9 @@ function headline(data: PlatformOverview): Stat[] {
 }
 
 function windowText(data: PlatformOverview) {
-  const end = new Date(data.window.ends_at).toLocaleDateString();
-  const start = data.window.starts_at ? new Date(data.window.starts_at).toLocaleDateString() : "the beginning";
-  return `From ${start} to ${end} (UTC days). Computed ${new Date(data.computed_at).toLocaleString()}.`;
+  const end = new Date(data.window.ends_at).toLocaleDateString(formatLocale());
+  const start = data.window.starts_at ? new Date(data.window.starts_at).toLocaleDateString(formatLocale()) : "the beginning";
+  return t`From ${start} to ${end} (UTC days). Computed ${new Date(data.computed_at).toLocaleString(formatLocale())}.`;
 }
 
 /**
@@ -55,27 +57,27 @@ export function PlatformOverviewPage() {
   };
   const computing = isComputing(response) || result.isPlaceholderData;
   const main = data ? [
-    ...data.blocks.map(block => ({ title: block.label, empty: { message: "No spaces in this view." }, isEmpty: !block.rows.length,
+    ...data.blocks.map(block => ({ title: block.label, empty: { message: t`No spaces in this view.` }, isEmpty: !block.rows.length,
       content: <OverviewBlockSection block={block} spaces={spaces} /> })),
-    ...(data.money ? [{ title: "Money", empty: { message: "Money is off in every space." },
+    ...(data.money ? [{ title: t`Money`, empty: { message: t`Money is off in every space.` },
       content: <OverviewMoneySection money={data.money} spaces={spaces} /> }] : []),
-    { title: "Modules", empty: { message: "No modules ship in this deployment." }, isEmpty: !data.modules.length,
+    { title: t`Modules`, empty: { message: t`No modules ship in this deployment.` }, isEmpty: !data.modules.length,
       content: <OverviewModulesSection data={data} spaces={spaces} /> },
   ] : [];
   return <DashboardLayout width="wide"
-    header={{ eyebrow: "Platform", title: "Platform overview",
-      subtitle: "Every space's totals combined, with each space's own numbers beside them. Counts and money only; no member names." }}
+    header={{ eyebrow: t`Platform`, title: t`Platform overview`,
+      subtitle: t`Every space's totals combined, with each space's own numbers beside them. Counts and money only; no member names.` }}
     state={{ status: result.isLoading ? "loading" : "ready" }}
     progress={<div className="grid gap-3">
       <PlatformOverviewControls query={query} onChange={setQuery} ready={Boolean(data) && !computing}
         excludedCount={data ? data.excluded_count : null} onRefresh={() => void refresh()} refreshing={refreshing} />
       {result.error && !data ? <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ink">
         <span>{eventErrorText(result.error)}</span>
-        <button type="button" className="desk-button min-h-11" onClick={() => { void result.refetch(); }}>Try again</button>
+        <button type="button" className="desk-button min-h-11" onClick={() => { void result.refetch(); }}>{t`Try again`}</button>
       </div> : null}
       <p role="status" className="text-sm text-muted">
-        {!overviewReady(query) ? "Choose a start and an end date to see a custom period."
-          : computing ? "Working out the totals. Large platforms can take a minute; this page updates by itself."
+        {!overviewReady(query) ? t`Choose a start and an end date to see a custom period.`
+          : computing ? t`Working out the totals. Large platforms can take a minute; this page updates by itself.`
             : data ? windowText(data) : ""}
       </p>
     </div>}

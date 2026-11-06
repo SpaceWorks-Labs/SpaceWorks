@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect } from "react";
 import { Icon } from "../../components/ui";
 import { toneSurfaceClasses } from "../../components/ui/tones";
@@ -18,7 +19,7 @@ export function superadminWriteGuard(notice: NoticeSpace, confirm: (message: str
     if (path.startsWith("/admin/platform/")) return true;
     const at = acknowledged.get(notice.id);
     if (at !== undefined && Date.now() - at < ACKNOWLEDGED_FOR_MS) return true;
-    const ok = confirm(`${superadminWarning(notice)}
+    const ok = confirm(t`${superadminWarning(notice)}
 
 Continue with this change?`);
     if (ok) acknowledged.set(notice.id, Date.now());
@@ -43,7 +44,6 @@ export function SuperadminSpaceGuard({ notice }: { notice?: NoticeSpace }) {
   if (!notice) return null;
   return <div role="alert" className={`mb-4 flex min-w-0 items-start gap-3 rounded-xl border p-4 ${toneSurfaceClasses.warn}`}>
     <Icon name="TriangleAlert" />
-    <p className="min-w-0 flex-1 text-sm [overflow-wrap:anywhere]"><strong>{superadminWarning(notice)}</strong> You will be asked to
-      confirm before your first change.</p>
+    <p className="min-w-0 flex-1 text-sm [overflow-wrap:anywhere]"><strong>{superadminWarning(notice)}</strong> {t` You will be asked to confirm before your first change.`}</p>
   </div>;
 }

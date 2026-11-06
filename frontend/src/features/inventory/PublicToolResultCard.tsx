@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { PublicToolLoanResult } from "./selfCheckoutApi";
 
 function formatStatus(status: string) {
@@ -12,7 +13,7 @@ export function ResultCard({ result }: { result: PublicToolLoanResult }) {
         {formatStatus(result.status)}
       </p>
       <h2 className="title-panel mt-1 break-words text-on-success dark:text-success-ink">
-        {result.items.map((item) => item.product_name).join(", ") || "Tool loan"}
+        {result.items.map((item) => item.product_name).join(", ") || t`Tool loan`}
       </h2>
       <div className="mt-3 space-y-2">
         {result.items.map((item) => (

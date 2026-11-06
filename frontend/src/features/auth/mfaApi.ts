@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { FactorsEnum, LoginCodeResent, MFAChallengeResponse } from "../../generated/api";
 import { API_V1_URL } from "../../lib/api";
 import type { PasswordLoginResponse, StaffAuthUser } from "../../lib/api";
@@ -25,7 +26,7 @@ export async function mfaRequest<T>(path: string, body: object, headers: Record<
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw apiError(response.status, typeof data?.detail === "string" ? data : { ...data, detail: "Unable to verify. Try again." },
+    throw apiError(response.status, typeof data?.detail === "string" ? data : { ...data, detail: t`Unable to verify. Try again.` },
       response.headers);
   }
   return data as T;

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { AvailabilityBadge } from "./AvailabilityBadge";
 import { ExpectedBack } from "./ExpectedBack";
 import type { Product } from "../../types/inventory";
@@ -34,7 +35,7 @@ export function ProductCard({
         className={`relative w-full overflow-hidden rounded-t-xl border-b border-line bg-surface text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${product.image_url ? "aspect-[4/3]" : "h-24"}`}
         type="button"
         onClick={onOpenDetails}
-        aria-label={`Open details for ${product.name}`}
+        aria-label={t`Open details for ${product.name}`}
       >
         {product.image_url ? (
           <img
@@ -65,7 +66,7 @@ export function ProductCard({
         </h2>
         <p className="eyebrow mt-1">{idLabel}</p>
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">
-          {product.description || "No description provided."}
+          {product.description || t`No description provided.`}
         </p>
         <ExpectedBack product={product} className="mt-2" />
         {product.category_name ? (
@@ -77,7 +78,7 @@ export function ProductCard({
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4">
           <div className="flex items-center rounded-lg border border-line bg-bg">
             <button
-              aria-label={`Remove ${product.name}`}
+              aria-label={t`Remove ${product.name}`}
               className="h-11 w-11 tabular-nums text-lg font-semibold text-ink transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
               disabled={quantity === 0}
               type="button"
@@ -89,7 +90,7 @@ export function ProductCard({
               {quantity}
             </span>
             <button
-              aria-label={`Add ${product.name}`}
+              aria-label={t`Add ${product.name}`}
               className="h-11 w-11 tabular-nums text-lg font-semibold text-ink transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
               disabled={disabled}
               type="button"
@@ -103,7 +104,7 @@ export function ProductCard({
             type="button"
             onClick={onOpenDetails}
           >
-            {detailUrl ? "Quick view" : "Details"}
+            {detailUrl ? t`Quick view` : t`Details`}
           </button>
         </div>
       </div>

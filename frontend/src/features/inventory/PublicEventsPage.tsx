@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { PublicLayout } from "../../components/layouts";
 import { publicPageChrome } from "./PublicPageChrome";
 import { downloadEventCalendar } from "../events/eventCalendar";
@@ -30,7 +32,7 @@ function publicEventsPath(slug: string) {
 
 function eventTime(event: PublicEvent, timeZone: string) {
   const options: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", timeZone };
-  return `${new Date(event.starts_at).toLocaleString(undefined, options)} – ${new Date(event.ends_at).toLocaleString(undefined, options)}`;
+  return `${new Date(event.starts_at).toLocaleString(formatLocale(), options)} – ${new Date(event.ends_at).toLocaleString(formatLocale(), options)}`;
 }
 
 export function PublicEventsPage() {
@@ -87,28 +89,28 @@ export function PublicEventsPage() {
     try {
       await downloadEventCalendar(makerspaceSlug, item);
     } catch (cause) {
-      setCalendarError({ token: item.public_token, message: cause instanceof Error ? cause.message : "Could not download this calendar." });
+      setCalendarError({ token: item.public_token, message: cause instanceof Error ? cause.message : t`Could not download this calendar.` });
     } finally {
       setCalendarToken(null);
     }
   }
 
   return <div style={brandStyle}>
-    <PageMetadata title={`Events · ${displayName}`} description={`Upcoming public workshops, meetups and community events at ${displayName}.`} path={canonicalPath} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
+    <PageMetadata title={t`Events · ${displayName}`} description={t`Upcoming public workshops, meetups and community events at ${displayName}.`} path={canonicalPath} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
-      header={{ title: "Upcoming events", subtitle: `What's on at ${displayName}`, primary: { label: "My events", href: tenantPath("member/events") },
-        ...(tenant.mode === "central" ? { secondary: { label: "Discover across makerspaces", href: "/discover" } } : {}) }}
+      header={{ title: t`Upcoming events`, subtitle: t`What's on at ${displayName}`, primary: { label: t`My events`, href: tenantPath("member/events") },
+        ...(tenant.mode === "central" ? { secondary: { label: t`Discover across makerspaces`, href: "/discover" } } : {}) }}
       state={events.isLoading ? { status: "loading" } : events.error ? publicErrorState(events.error, { noun: "Events" }, () => { void events.refetch(); }) : { status: "ready" }}>
-      <DiscoveryControls state={discovery} searchLabel="Search events" filters={[...(showPrice ? [{ value: "free", label: "Free events" }] : []), { value: "open", label: "Registration open" }]} />
-      <div className="mb-5 flex flex-wrap gap-3"><label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm font-semibold sm:max-w-xs">Category<select className="desk-input w-full font-normal" value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{[...new Map((events.data ?? []).flatMap(item => item.category ? [[item.category.slug, item.category] as const] : [])).values()].map(row => <option key={row.slug} value={row.slug}>{row.name}</option>)}</select></label>
-      <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm font-semibold sm:max-w-xs">Tag<select className="desk-input w-full font-normal" value={tag} onChange={e => setTag(e.target.value)}><option value="">All tags</option>{[...new Set((events.data ?? []).flatMap(item => item.tags ?? []))].sort().map(value => <option key={value}>{value}</option>)}</select></label></div>
-      <p role="status" className="mb-4 text-sm text-muted">{visibleEvents.length} matching event(s)</p>
-      {discovery.view === "calendar" && discovery.month ? <MonthCalendar month={discovery.month} timeZone={discovery.timeZone} label="Upcoming public events" entries={visibleEvents.map(item => ({ id: item.public_token, startsAt: item.starts_at, endsAt: item.ends_at, label: item.title, href: `#event-${item.public_token}` }))} /> : null}
-      {!visibleEvents.length ? <EmptyState message={events.data?.length ? "No matching events. Try another search, filter or month." : "No upcoming events. Check back soon."} /> : null}
+      <DiscoveryControls state={discovery} searchLabel="Search events" filters={[...(showPrice ? [{ value: "free", label: t`Free events` }] : []), { value: "open", label: t`Registration open` }]} />
+      <div className="mb-5 flex flex-wrap gap-3"><label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm font-semibold sm:max-w-xs">{t`Category`}<select className="desk-input w-full font-normal" value={category} onChange={e => setCategory(e.target.value)}><option value="">{t`All categories`}</option>{[...new Map((events.data ?? []).flatMap(item => item.category ? [[item.category.slug, item.category] as const] : [])).values()].map(row => <option key={row.slug} value={row.slug}>{row.name}</option>)}</select></label>
+      <label className="grid min-w-0 flex-1 basis-48 gap-1 text-sm font-semibold sm:max-w-xs">{t`Tag`}<select className="desk-input w-full font-normal" value={tag} onChange={e => setTag(e.target.value)}><option value="">{t`All tags`}</option>{[...new Set((events.data ?? []).flatMap(item => item.tags ?? []))].sort().map(value => <option key={value}>{value}</option>)}</select></label></div>
+      <p role="status" className="mb-4 text-sm text-muted">{t`${visibleEvents.length} matching event(s)`}</p>
+      {discovery.view === "calendar" && discovery.month ? <MonthCalendar month={discovery.month} timeZone={discovery.timeZone} label={t`Upcoming public events`} entries={visibleEvents.map(item => ({ id: item.public_token, startsAt: item.starts_at, endsAt: item.ends_at, label: item.title, href: `#event-${item.public_token}` }))} /> : null}
+      {!visibleEvents.length ? <EmptyState message={events.data?.length ? t`No matching events. Try another search, filter or month.` : t`No upcoming events. Check back soon.`} /> : null}
       <div className="grid gap-7">{groupedEvents.map(group => <section key={group.key} aria-label={group.title ?? undefined}>
-        {group.title ? <div className="mb-3"><p className="text-sm text-muted">Recurring series</p><h2 className="title-panel">{group.title}</h2>
+        {group.title ? <div className="mb-3"><p className="text-sm text-muted">{t`Recurring series`}</p><h2 className="title-panel">{group.title}</h2>
           {showPrice && group.items[0]?.series?.id && group.items[0].series.passes_enabled ? <a className="mt-2 inline-flex text-sm font-semibold text-brand-ink underline"
-            href={tenantPath(`member/series/${group.items[0].series.id}/passes`)}>Buy a series pass</a> : null}</div> : null}
+            href={tenantPath(`member/series/${group.items[0].series.id}/passes`)}>{t`Buy a series pass`}</a> : null}</div> : null}
         <div className="grid gap-5">{group.items.map(item => <PublicEventCard key={item.public_token} event={item} href={tenantPath(`events/${item.public_token}`)}
           time={eventTime(item, discovery.timeZone)} calendarPending={calendarToken === item.public_token} onCalendar={() => downloadCalendar(item)}
           calendarError={calendarError?.token === item.public_token ? calendarError.message : undefined} showPrice={showPrice} />)}</div>

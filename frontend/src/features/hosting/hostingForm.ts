@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StructuredApiError } from "../../lib/api/errors";
 import type * as Api from "../../generated/api";
 import type { HostingRequestBody } from "./hostingApi";
@@ -49,13 +50,13 @@ export function hostingFieldErrors(error: unknown): Record<string, string> {
 /** The form-level message: field errors are shown inline, so this only summarises them. */
 export function hostingErrorText(error: unknown, notFound: string) {
   if (error instanceof StructuredApiError) {
-    if (error.status === 429) return "Too many requests from this connection. Please try again later.";
+    if (error.status === 429) return t`Too many requests from this connection. Please try again later.`;
     if (error.status === 404) return notFound;
     if (error.status === 400) {
       const errors = hostingFieldErrors(error);
-      return errors.non_field_errors ?? error.detail ?? "Check the highlighted fields and try again.";
+      return errors.non_field_errors ?? error.detail ?? t`Check the highlighted fields and try again.`;
     }
     return error.message;
   }
-  return error instanceof Error ? error.message : "Could not send your request.";
+  return error instanceof Error ? error.message : t`Could not send your request.`;
 }

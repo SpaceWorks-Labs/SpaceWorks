@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { CenteredCardLayout } from "../../components/layouts";
 import { NewPasswordFields } from "./NewPasswordFields";
@@ -24,12 +25,12 @@ export function LegacyPasswordResetForm({ uid, token }: { uid: string; token: st
       setPending(false);
     }
   };
-  return <CenteredCardLayout state={{ status: "ready" }} eyebrow="Account access"
+  return <CenteredCardLayout state={{ status: "ready" }} eyebrow={t`Account access`}
     media={{ icon: updated ? "Check" : "KeyRound", tone: updated ? "success" : "accent" }}
-    title={updated ? "Password updated" : "Set a new password"}
+    title={updated ? t`Password updated` : t`Set a new password`}
     body={updated ? "Your password has been updated. You can now sign in." : "Choose a new password for your Space Works account."}
-    primary={updated ? { label: "Go to sign in", href: "/admin" } : {
-      label: "Update password", pending, pendingLabel: "Updating…", disabled: !canSubmit,
+    primary={updated ? { label: t`Go to sign in`, href: "/admin" } : {
+      label: t`Update password`, pending, pendingLabel: "Updating…", disabled: !canSubmit,
       disabledReason: "Enter matching passwords with at least 8 characters.",
       onClick: () => (document.getElementById("legacy-reset-form") as HTMLFormElement)?.requestSubmit(),
     }} content={!updated ? <form id="legacy-reset-form" onSubmit={(event) => { event.preventDefault(); if (canSubmit) void submit(); }}>

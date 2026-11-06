@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { API_V1_URL, staffRequestBlob, tenantPublicRequestBlob } from "../../lib/api";
@@ -32,7 +33,7 @@ export function PageImage({ url, alt, slug, token, privatePreview = false }: {
         const base = new URL(API_V1_URL, window.location.origin); const address = new URL(url, base.origin);
         const prefix = base.pathname.replace(/\/$/, "");
         const path = address.pathname.startsWith(`${prefix}/`) ? address.pathname.slice(prefix.length) : address.pathname;
-        if (address.origin !== base.origin || address.username || address.password || !path.startsWith("/admin/")) throw new Error("Unsupported preview address");
+        if (address.origin !== base.origin || address.username || address.password || !path.startsWith("/admin/")) throw new Error(t`Unsupported preview address`);
         return staffRequestBlob(path, { cache: "no-store" });
       }
       const path = pageApiPath(url);
@@ -55,6 +56,6 @@ export function PageImage({ url, alt, slug, token, privatePreview = false }: {
     return () => { if (src) URL.revokeObjectURL(src); };
   }, [src]);
   if (artwork) return <img src={url} alt={alt} className="max-h-96 w-full rounded-xl object-contain" />;
-  if (query.error) return <p className="text-sm text-muted">Image unavailable: {alt}</p>;
-  return src ? <img src={src} alt={alt} className="max-h-96 w-full rounded-xl object-contain" /> : <p role="status" className="text-sm text-muted">Loading image…</p>;
+  if (query.error) return <p className="text-sm text-muted">{t`Image unavailable: ${alt}`}</p>;
+  return src ? <img src={src} alt={alt} className="max-h-96 w-full rounded-xl object-contain" /> : <p role="status" className="text-sm text-muted">{t`Loading image…`}</p>;
 }

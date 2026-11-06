@@ -1,16 +1,47 @@
 import type { PositionedElement } from "../../../components/print-layout/positionedLayout";
 
 export type Layer = {
-  id: string; order: number; type: "text" | "image" | "logo" | "photo" | "certificate_id" | "certificate_qr" | "event_credential_qr";
+  id: string; order: number; type: "text" | "image" | "logo" | "photo" | "certificate_id" | "certificate_qr" | "event_credential_qr" | "signature";
   x_mm: number; y_mm: number; width_mm: number; height_mm: number; rotation: number;
   text?: string; font_family?: "Gilroy" | "Unbounded"; font_weight?: 400 | 500 | 600 | 700;
   font_size_pt?: number; align?: "left" | "center" | "right"; shrink_to_fit?: boolean;
   italic?: boolean; uppercase?: boolean; tracking_pt?: number; line_height?: number;
   opacity?: number; resource_id?: string; resource_slot?: string; colour_token?: string;
+  /** Free #RRGGBB text colour; overrides colour_token. */ colour?: string;
+  /** Signature layers print signatory 1, 2 or 3. */ signature_slot?: 1 | 2 | 3;
+  locked?: boolean; hidden?: boolean;
 };
+/** Brand colour tokens (backend certificates/layout.py COLOURS): presets beside the free colour. */
+export const COLOUR_TOKENS: Record<string, string> = { ink: "#142C2A", teal: "#006E63", orange: "#FF7447",
+  citron: "#DFFF8F", sky: "#B5CDFF", yellow: "#FFD447", cream: "#FFF4E8" };
+export const layerColour = (layer: Layer) => layer.colour ?? COLOUR_TOKENS[layer.colour_token ?? "ink"] ?? COLOUR_TOKENS.ink;
+/** Page sizes in millimetres (width x height). Custom keeps 100-420 mm. */
+export const PAGE_PRESETS = {
+  "a4-landscape": { label: "A4 landscape", size: [297, 210] }, "a4-portrait": { label: "A4 portrait", size: [210, 297] },
+  "letter-landscape": { label: "US Letter landscape", size: [279.4, 215.9] }, "letter-portrait": { label: "US Letter portrait", size: [215.9, 279.4] },
+} as const;
+export type PagePreset = keyof typeof PAGE_PRESETS | "custom";
+export function pagePreset(width: number, height: number): PagePreset {
+  const match = Object.entries(PAGE_PRESETS).find(([, value]) => Math.abs(value.size[0] - width) < 0.05 && Math.abs(value.size[1] - height) < 0.05);
+  return (match?.[0] as PagePreset | undefined) ?? "custom";
+}
+/** Fit every layer inside a new page size: scale positions, keep sizes where they still fit. */
+export function resizePage(document: LayerDocument, width: number, height: number): LayerDocument {
+  const sx = width / document.page_width_mm, sy = height / document.page_height_mm;
+  return { ...document, page_width_mm: width, page_height_mm: height, layers: document.layers.map((layer) => {
+    const floor = layer.type.endsWith("qr") ? 20 : 0.1;  // Verification QR codes stay scannable.
+    const w = Math.min(Math.max(floor, layer.width_mm * Math.min(sx, sy)), width);
+    const h = Math.min(Math.max(floor, layer.height_mm * Math.min(sx, sy)), height);
+    const round = (value: number) => Math.round(value * 10) / 10;
+    return { ...layer, width_mm: round(w), height_mm: round(h),
+      x_mm: round(Math.min(Math.max(0, layer.x_mm * sx), width - w)), y_mm: round(Math.min(Math.max(0, layer.y_mm * sy), height - h)) };
+  }) };
+}
 export type LayerDocument = { version: 2; page_width_mm: number; page_height_mm: number; layers: Layer[] };
 export type LegacyDocument = { version: 1; page_width_mm: number; page_height_mm: number; name_box: PositionedElement };
 export const MERGE_TAGS = ["name", "event", "eventDate", "organisation", "issueDate", "crewRole"] as const;
+/** Certificates also print the frozen kind, award, role and place labels. */
+export const CERTIFICATE_MERGE_TAGS = ["name", "kind", "award", "place", "role", "event", "eventDate", "organisation", "issueDate"] as const;
 export const STOCKS = {
   "a6-portrait": [105, 148], "4x6": [101.6, 152.4], "3x4": [76.2, 101.6],
   "4x3": [101.6, 76.2], "cr80-portrait": [53.98, 85.6], "cr80-landscape": [85.6, 53.98],

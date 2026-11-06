@@ -8,18 +8,21 @@ import type { LayerDocument, LegacyDocument } from "./layout";
 import type { DesignStock as Stock } from "./badgeStocks";
 
 export type DesignInput = { parameters: LayerDocument; artwork_id: number | null };
-export type CertificateDesign = { id: number | null; parameters: LayerDocument | LegacyDocument; artwork_id: number | null; event_version: number };
-const key = (eventId: number) => ["events", "credentials", eventId, "certificate-design", ...sessionScope()] as const;
+export type CertificateDesign = { id: number | null; parameters: LayerDocument | LegacyDocument; artwork_id: number | null; event_version: number;
+  certificate_kind?: string; uses_default?: boolean; own_designs?: string[] };
+const key = (eventId: number, kind = "") => ["events", "credentials", eventId, "certificate-design", kind, ...sessionScope()] as const;
 
-export function useDesign(eventId: number) {
+/** One design per certificate kind ("" = the event default); kinds without their own fall back to it. */
+export function useDesign(eventId: number, kind = "") {
   const commands = useRef(new CommandSession());
-  const query = useQuery({ queryKey: key(eventId), queryFn: () => staffRequest<CertificateDesign>(`/admin/events/${eventId}/certificate-template/`) });
+  const query = useQuery({ queryKey: key(eventId, kind), queryFn: () => staffRequest<CertificateDesign>(
+    `/admin/events/${eventId}/certificate-template/${kind ? `?${new URLSearchParams({ kind })}` : ""}`) });
   const client = useQueryClient();
   const save = useMutation({ mutationFn: (input: DesignInput) => commands.current.send<CertificateDesign>(
-    `/api/v1/admin/events/${eventId}/certificate-template/`, 'PUT', { ...input, expected_version: query.data?.event_version }, true),
-  onSuccess: async (result) => { client.setQueryData(key(eventId), result); await Promise.all([client.invalidateQueries({ queryKey: key(eventId) }), client.invalidateQueries({ queryKey: ['event', eventId] }), client.invalidateQueries({ queryKey: ['event-badge-desk-design', eventId] })]); } });
-  const preview = useMutation({ mutationFn: (input: DesignInput) => staffRequestBlob(
-    `/admin/events/${eventId}/certificate-template/preview.pdf`, { method: "POST", body: JSON.stringify(input) }) });
+    `/api/v1/admin/events/${eventId}/certificate-template/`, 'PUT', { ...input, certificate_kind: kind, expected_version: query.data?.event_version }, true),
+  onSuccess: async () => { await Promise.all([client.invalidateQueries({ queryKey: ["events", "credentials", eventId] }), client.invalidateQueries({ queryKey: ['event', eventId] }), client.invalidateQueries({ queryKey: ['event-badge-desk-design', eventId] })]); } });
+  const preview = useMutation({ mutationFn: (input: DesignInput & { sample_name?: string }) => staffRequestBlob(
+    `/admin/events/${eventId}/certificate-template/preview.pdf`, { method: "POST", body: JSON.stringify({ ...input, certificate_kind: kind }) }) });
   return { query, save, preview };
 }
 

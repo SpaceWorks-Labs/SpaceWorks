@@ -22,6 +22,8 @@ class PublicPhotoThrottle(AnonRateThrottle):
 
 class PublicCardPhotoView(APIView):
     permission_classes = [AllowAny]
+    # No authentication: AnonRateThrottle skips signed-in callers, so a bearer would lift the limit.
+    authentication_classes = []
     throttle_classes = [PublicPhotoThrottle]
 
     def finalize_response(self, request, response, *args, **kwargs):

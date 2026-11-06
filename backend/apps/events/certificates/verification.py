@@ -54,6 +54,8 @@ def verified_row(verification_id, request=None):
 
 class CertificateVerificationView(APIView):
     permission_classes = [AllowAny]
+    # No authentication: AnonRateThrottle skips signed-in callers, so a bearer would lift the limit.
+    authentication_classes = []
     throttle_classes = [VerifyThrottle]
 
     def finalize_response(self, request, response, *args, **kwargs):

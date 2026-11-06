@@ -1,5 +1,6 @@
 """F1 owns delayed email/chat claims; uncertain deliveries are never auto-reclaimed."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 
 from apps.accounts import rbac
@@ -20,7 +21,7 @@ def discover(space, now, limit, tz):
 
 
 def build(space, row, now, tz):
-    return ReminderMessage(title='Deferred delivery', event=row.kind)
+    return ReminderMessage(title=gettext('Deferred delivery'), event=row.kind)
 
 
 def _allowed(log, space):
@@ -130,7 +131,7 @@ def _digest(space, row, now):
             for (family, address, audience), mails in groups.items():
                 summaries.append(dispatch_email(
                     makerspace=space, to_email=address, recipient_id=int(user_id), feature=family,
-                    subject=f'{space.name}: daily notification digest',
+                    subject=gettext('{name}: daily notification digest').format(name=space.name),
                     text_body='\n\n'.join(f'{content(mail).subject}\n{content(mail).text_body}' for mail in mails),
                     stream='notifications', event='daily_digest', audience=audience, sync=False,
                     source_kind='notification_digest',

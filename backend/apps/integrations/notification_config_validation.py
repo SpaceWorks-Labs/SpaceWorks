@@ -1,4 +1,5 @@
 """Validate a replacement against the same contracts used by provider adapters."""
+from django.utils.translation import gettext
 from types import SimpleNamespace
 
 from rest_framework.exceptions import ValidationError
@@ -76,7 +77,7 @@ def validate_configuration(row, data):
             raise ValueError()
     except (ValidationError, ValueError, TypeError, KeyError):
         # Never reflect credentials, URLs or provider error bodies in diagnostics.
-        raise ValidationError({"detail": "Invalid or incomplete provider credentials.",
+        raise ValidationError({"detail": gettext("Invalid or incomplete provider credentials."),
                                "code": "invalid_credentials"}) from None
     if platform_conflict:
         # The platform's physical sender stays reserved even before its registry row

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.apps import apps
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
@@ -15,7 +16,7 @@ def contract_space(user, makerspace_id, *, manager=False):
         raise PermissionDenied()
     if manager:
         if not rbac.is_space_manager_identity(user, space.pk):
-            raise PermissionDenied("Channel settings require a Space Manager.")
+            raise PermissionDenied(gettext("Channel settings require a Space Manager."))
         return space
     from .messaging.ties import has_tenant_tie
     if has_tenant_tie(user, space):

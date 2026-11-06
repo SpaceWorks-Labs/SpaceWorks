@@ -1,4 +1,5 @@
 """Atomic lease claims and token-fenced writes around provider I/O."""
+from django.utils.translation import gettext
 from datetime import timedelta
 from uuid import uuid4
 
@@ -71,7 +72,7 @@ def _prepare(pk):
         try:
             allowed = PROJECTION_KEYS[(row.feature, row.event, row.audience)]
             if row.context.keys() - set(allowed):
-                raise ValidationError("Unreviewed template context")
+                raise ValidationError(gettext("Unreviewed template context"))
             if row.channel == "sms":
                 sms = prepare_sms("SpaceWorks messaging test. Your sender is working." if row.source_type == "messaging_test"
                                   else render_sms(row.feature, row.event, row.audience, row.context))
@@ -80,7 +81,7 @@ def _prepare(pk):
             else:
                 binding = binding_for(row.makerspace, sender, row.feature, row.event, row.audience)
                 if binding is None or any(key not in allowed for key in binding.parameters):
-                    raise ValidationError("Template unavailable")
+                    raise ValidationError(gettext("Template unavailable"))
                 row.template_name = binding.template_name
                 kwargs.update(template_name=binding.template_name, language=binding.language,
                               parameters=[str(row.context.get(key) or "") for key in binding.parameters])

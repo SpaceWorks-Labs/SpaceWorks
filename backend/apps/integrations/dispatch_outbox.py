@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 
 from django.conf import settings
@@ -61,7 +62,7 @@ def dispatch_email(
         return _create_email_log(
             makerspace=makerspace,
             to_email="" if platform_minimized else to_email,
-            subject="Platform email" if platform_minimized else subject,
+            subject=gettext("Platform email") if platform_minimized else subject,
             text_body=text_body if persist_body else "",
             html_body=html_body if persist_body else "",
             stream=stream,
@@ -144,7 +145,7 @@ def dispatch_email(
     log = _create_email_log(
         makerspace=makerspace,
         to_email="" if platform_minimized else to_email,
-        subject="Platform email" if platform_minimized else subject,
+        subject=gettext("Platform email") if platform_minimized else subject,
         text_body=text_body if persist_body else "",
         html_body=html_body if persist_body else "",
         stream=stream,

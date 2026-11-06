@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -17,5 +18,5 @@ class TimingPolicySerializer(serializers.Serializer):
         for key in ('quiet_start', 'quiet_end', 'digest_at'):
             clock = values.get(key)
             if clock and (clock.tzinfo or clock.second or clock.microsecond):
-                raise serializers.ValidationError({key: 'Use local hours and minutes only.'})
+                raise serializers.ValidationError({key: gettext('Use local hours and minutes only.')})
         return values

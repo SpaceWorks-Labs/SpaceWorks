@@ -1,4 +1,5 @@
 """Credential writes and sender reservations commit together; audits name fields only."""
+from django.utils.translation import gettext
 from apps.integrations.notification_cutover import guarded
 from django.db import transaction
 from rest_framework.exceptions import APIException, ValidationError
@@ -36,7 +37,7 @@ def read_secret(row, field):
 def validate_otp_reservation(sid, number):
     otp = PlatformSmsSettings.objects.filter(pk=1).first()
     if otp and ((sid and sid == otp.account_sid) or (number and number == otp.from_number)):
-        raise ValidationError({"code": "otp_sender_reserved", "detail": "OTP credentials and number are reserved for authentication."})
+        raise ValidationError({"code": "otp_sender_reserved", "detail": gettext("OTP credentials and number are reserved for authentication.")})
     platform = sender_key("sms", account_sid=otp.account_sid, from_number=otp.notifications_from_number) if otp else None
     if sid and number and sender_key("sms", account_sid=sid, from_number=number) == platform:
         raise SenderInUse()
@@ -44,7 +45,7 @@ def validate_otp_reservation(sid, number):
 
 def validate_platform_sms(row):
     if row.notifications_from_number and row.notifications_from_number == row.from_number:
-        raise ValidationError({"notifications_from_number": "Use a number distinct from the OTP sender."})
+        raise ValidationError({"notifications_from_number": gettext("Use a number distinct from the OTP sender.")})
     from datetime import timedelta
     from django.db.models import Q
     from django.utils import timezone
@@ -53,7 +54,7 @@ def validate_platform_sms(row):
     for key in identities.values_list("sender_key", flat=True):
         _, sid, number = key.split(":", 2)
         if (sid and sid == row.account_sid) or (number and number == row.from_number):
-            raise ValidationError({"account_sid": "This authentication sender is reserved by a tenant configuration."})
+            raise ValidationError({"account_sid": gettext("This authentication sender is reserved by a tenant configuration.")})
 
 
 def _sync(*, channel, owner, makerspace, key, secret, verify="", force_rotate=False):

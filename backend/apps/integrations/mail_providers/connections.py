@@ -1,5 +1,6 @@
 """Create isolated connections; only the selected provider receives credentials."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.mail import get_connection
@@ -28,7 +29,7 @@ def connection_for(config, instance=None, *, timeout=None):
                           use_ssl=instance.smtp_use_ssl,
                           use_tls=instance.smtp_use_tls and not instance.smtp_use_ssl)
         if not (kwargs["host"] or "").strip():
-            raise ValidationError("SMTP hostname is required.")
+            raise ValidationError(gettext("SMTP hostname is required."))
         validate_smtp_endpoint(kwargs["host"], kwargs["port"])
     elif provider == "ses":
         kwargs["mail_config"] = config

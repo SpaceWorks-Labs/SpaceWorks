@@ -1,4 +1,5 @@
 """A diagnostic sends only to the authenticated administrator's own consented phone."""
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.db import transaction
@@ -32,9 +33,9 @@ class MessagingTestSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if (attrs["feature"], attrs["event"], "staff") not in PROJECTION_KEYS:
-            raise ValidationError("Select a reviewed staff event for the test template.")
+            raise ValidationError(gettext("Select a reviewed staff event for the test template."))
         if self.initial_data.keys() - {"channel", "feature", "event"}:
-            raise ValidationError("Only channel, feature and event are accepted; the recipient is always you.")
+            raise ValidationError(gettext("Only channel, feature and event are accepted; the recipient is always you."))
         return attrs
 
 

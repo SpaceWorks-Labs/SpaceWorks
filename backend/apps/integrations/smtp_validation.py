@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import ipaddress
 import socket
 from datetime import timedelta
@@ -44,7 +45,7 @@ def validate_smtp_settings(attrs, instance=None):
     tls = attrs.get("smtp_use_tls", getattr(instance, "smtp_use_tls", False))
     ssl = attrs.get("smtp_use_ssl", getattr(instance, "smtp_use_ssl", False))
     if tls and ssl:
-        raise ValidationError({"smtp_use_tls": "Select STARTTLS or implicit SSL, not both."})
+        raise ValidationError({"smtp_use_tls": gettext("Select STARTTLS or implicit SSL, not both.")})
     host = attrs.get("smtp_host")
     port = attrs.get("smtp_port")
     if host is None and instance is not None:
@@ -61,27 +62,27 @@ def validate_smtp_endpoint(host, port):
     try:
         port = int(port)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({"smtp_port": "Enter a valid SMTP port."}) from exc
+        raise ValidationError({"smtp_port": gettext("Enter a valid SMTP port.")}) from exc
     if port < 1 or port > 65535:
-        raise ValidationError({"smtp_port": "Enter a valid SMTP port."})
+        raise ValidationError({"smtp_port": gettext("Enter a valid SMTP port.")})
     if port not in ALLOWED_SMTP_PORTS and not _private_smtp_allowed():
         raise ValidationError(
-            {"smtp_port": "SMTP port must be one of 25, 465, 587, or 2525."}
+            {"smtp_port": gettext("SMTP port must be one of 25, 465, 587, or 2525.")}
         )
     if _has_invalid_host_syntax(host):
-        raise ValidationError({"smtp_host": "Enter a bare SMTP hostname."})
+        raise ValidationError({"smtp_host": gettext("Enter a bare SMTP hostname.")})
     literal = _ip_literal(host)
     if literal is not None:
         if _private_smtp_allowed() and _is_dev_address(literal):
             return
-        raise ValidationError({"smtp_host": "SMTP host must be a public DNS hostname."})
+        raise ValidationError({"smtp_host": gettext("SMTP host must be a public DNS hostname.")})
 
     resolved = _resolve_host(host, port)
     for address in resolved:
         if _address_is_blocked(address):
             if _private_smtp_allowed() and _is_dev_address(address):
                 continue
-            raise ValidationError({"smtp_host": "SMTP host resolves to a blocked address."})
+            raise ValidationError({"smtp_host": gettext("SMTP host resolves to a blocked address.")})
 
 
 def sanitize_email_error(exc) -> str:
@@ -107,10 +108,10 @@ def _resolve_host(host: str, port: int):
     try:
         records = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
     except OSError as exc:
-        raise ValidationError({"smtp_host": "SMTP host could not be resolved."}) from exc
+        raise ValidationError({"smtp_host": gettext("SMTP host could not be resolved.")}) from exc
     addresses = {ipaddress.ip_address(record[4][0]) for record in records}
     if not addresses:
-        raise ValidationError({"smtp_host": "SMTP host could not be resolved."})
+        raise ValidationError({"smtp_host": gettext("SMTP host could not be resolved.")})
     return addresses
 
 

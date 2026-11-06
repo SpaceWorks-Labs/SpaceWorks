@@ -1,4 +1,5 @@
 """Frozen Phase-1a HTTP shapes; credentials and destinations are never readable."""
+from django.utils.translation import gettext
 from collections.abc import Mapping
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
@@ -37,13 +38,13 @@ class TemplateSerializer(serializers.ModelSerializer):
             audience = "member" if attrs["audience"] == "requester" else attrs["audience"]
             allowed = PROJECTION_KEYS.get((attrs["feature"], attrs["event"], audience))
             if allowed is None or set(names) - set(allowed):
-                raise serializers.ValidationError({"variables": "Use reviewed context keys for this event and audience."})
+                raise serializers.ValidationError({"variables": gettext("Use reviewed context keys for this event and audience.")})
         markers = {"__document_header__", "__document_media__"} & set(names)
         if markers and (len(markers) != 1 or len(names) != len(set(names))
                 or attrs.get("event") != "document_issued.document" or attrs.get("audience") == "staff"
                 or "__document_header__" in markers and names[0] != "__document_header__"):
-            raise serializers.ValidationError({"variables": "Use one personal document media binding; "
-                "Meta's document header must be the first variable."})
+            raise serializers.ValidationError({"variables": gettext("Use one personal document media binding; "
+                "Meta's document header must be the first variable.")})
         return attrs
 
     class Meta:
@@ -104,15 +105,15 @@ class ChannelPatchSerializer(StrictSerializer):
 
     def validate_credentials(self, value):
         if len(value) > 20 or any(len(key) > 64 for key in value):
-            raise serializers.ValidationError("At most 20 credential fields with names up to 64 characters.")
+            raise serializers.ValidationError(gettext("At most 20 credential fields with names up to 64 characters."))
         return value
 
     def validate_templates(self, value):
         if len(value) > 100:
-            raise serializers.ValidationError("At most 100 template bindings.")
+            raise serializers.ValidationError(gettext("At most 100 template bindings."))
         identities = [(v["event"], v["audience"], v.get("locale", "en")) for v in value]
         if len(set(identities)) != len(identities):
-            raise serializers.ValidationError("Duplicate template binding.")
+            raise serializers.ValidationError(gettext("Duplicate template binding."))
         return value
 
 
@@ -161,7 +162,7 @@ class ChallengeStartSerializer(StrictSerializer):
 
     def validate_consent(self, value):
         if not value:
-            raise serializers.ValidationError("Explicit messaging consent is required.")
+            raise serializers.ValidationError(gettext("Explicit messaging consent is required."))
         return value
 
 
@@ -190,7 +191,7 @@ class SelectionSerializer(StrictSerializer):
 
     def validate_channels(self, value):
         if len(set(value)) != len(value):
-            raise serializers.ValidationError("Duplicate channel.")
+            raise serializers.ValidationError(gettext("Duplicate channel."))
         return value
 
 
@@ -200,7 +201,7 @@ class PreferencesSerializer(StrictSerializer):
 
     def validate_preferences(self, value):
         if len(value) > len(NotificationFeature.values) or len({p["category"] for p in value}) != len(value):
-            raise serializers.ValidationError("Duplicate or too many categories.")
+            raise serializers.ValidationError(gettext("Duplicate or too many categories."))
         return value
 
 
@@ -232,13 +233,13 @@ class ContractTestSerializer(StrictSerializer):
 
     def validate(self, attrs):
         if attrs.get("channel") == "whatsapp" and (not attrs.get("endpoint_id") or attrs.get("room_id")):
-            raise serializers.ValidationError("WhatsApp tests require your own verified endpoint.")
+            raise serializers.ValidationError(gettext("WhatsApp tests require your own verified endpoint."))
         if attrs.get("channel") == "sms":
             if attrs.get("endpoint_id") or attrs.get("room_id"):
-                raise serializers.ValidationError("SMS tests target your own verified phone only.")
+                raise serializers.ValidationError(gettext("SMS tests target your own verified phone only."))
             return attrs
         if bool(attrs.get("endpoint_id")) == bool(attrs.get("room_id")):
-            raise serializers.ValidationError("Choose exactly one endpoint or room.")
+            raise serializers.ValidationError(gettext("Choose exactly one endpoint or room."))
         return attrs
 
 

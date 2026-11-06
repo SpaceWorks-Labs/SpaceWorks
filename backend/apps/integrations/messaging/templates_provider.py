@@ -1,4 +1,5 @@
 """Check authoritative Meta template shape before accepting a binding."""
+from django.utils.translation import gettext
 import json
 import re
 from urllib.parse import quote, urlencode
@@ -15,7 +16,7 @@ class TemplateCheckUnavailable(APIException):
 
 def validate_provider_template(*, business_account_id, access_token, template_name, language, parameters):
     if not access_token:
-        raise ValidationError({"template_name": "Configure an access token with template-management permission first."})
+        raise ValidationError({"template_name": gettext("Configure an access token with template-management permission first.")})
     if not re.fullmatch(r"v\d+\.\d+", settings.WHATSAPP_META_GRAPH_VERSION):
         raise TemplateCheckUnavailable()
     query = urlencode({"name": template_name, "fields": "name,language,status,components,parameter_format", "limit": 100})
@@ -30,15 +31,15 @@ def validate_provider_template(*, business_account_id, access_token, template_na
         # Neither Graph bodies (which may echo credentials) nor raw exception text escapes.
         raise TemplateCheckUnavailable() from None
     if not selected or selected.get("status") != "APPROVED":
-        raise ValidationError({"template_name": "An approved template with this name and language is required."})
+        raise ValidationError({"template_name": gettext("An approved template with this name and language is required.")})
     if selected.get("parameter_format", "POSITIONAL") != "POSITIONAL":
-        raise ValidationError({"parameters": "Named template parameters are unsupported."})
+        raise ValidationError({"parameters": gettext("Named template parameters are unsupported.")})
     components = selected.get("components", [])
     if not isinstance(components, list) or len(components) != 1:
-        raise ValidationError({"template_name": "Only one text BODY component is supported."})
+        raise ValidationError({"template_name": gettext("Only one text BODY component is supported.")})
     body = components[0]
     if not isinstance(body, dict) or body.get("type") != "BODY" or not isinstance(body.get("text"), str):
-        raise ValidationError({"template_name": "Headers, media and buttons are unsupported."})
+        raise ValidationError({"template_name": gettext("Headers, media and buttons are unsupported.")})
     placeholders = re.findall(r"\{\{\s*(.*?)\s*\}\}", body["text"])
     if placeholders != [str(index) for index in range(1, len(parameters) + 1)]:
-        raise ValidationError({"parameters": "The approved BODY must use consecutive positional parameters matching the binding."})
+        raise ValidationError({"parameters": gettext("The approved BODY must use consecutive positional parameters matching the binding.")})

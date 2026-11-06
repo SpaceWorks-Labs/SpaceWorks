@@ -12,6 +12,7 @@ Two guarantees, and the second is a security boundary rather than a convenience:
   so a future call site cannot leak member-facing content into a shared room.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.core.exceptions import ValidationError
@@ -58,13 +59,13 @@ def chat_entry(feature, event):
 def validate_chat_template_string(feature, event, text_body):
     entry = chat_entry(feature, event)
     if entry is None:
-        raise ValidationError("Unknown chat template feature or event.")
+        raise ValidationError(gettext("Unknown chat template feature or event."))
     try:
         Template(text_body or "").render(Context(entry.sample_context, autoescape=False))
     except TemplateSyntaxError as exc:
-        raise ValidationError(f"Chat template has invalid syntax: {exc}") from exc
+        raise ValidationError(gettext('Chat template has invalid syntax: {exc}').format(exc=exc)) from exc
     except Exception as exc:
-        raise ValidationError(f"Chat template has invalid syntax: {exc}") from exc
+        raise ValidationError(gettext('Chat template has invalid syntax: {exc}').format(exc=exc)) from exc
 
 
 def render_chat_text(makerspace, feature, event, fallback_text, context=None, *, audience=CHAT_AUDIENCE):

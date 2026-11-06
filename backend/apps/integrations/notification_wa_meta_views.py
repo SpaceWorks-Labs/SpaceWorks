@@ -1,4 +1,5 @@
 """Provider-authenticated Meta ingress. No JWT, browser cookies or chat decisions."""
+from django.utils.translation import gettext
 import hmac
 import logging
 
@@ -73,12 +74,12 @@ class MetaWebhookView(APIView):
                 and request.query_params.get("hub.mode") == "subscribe"
                 and len(token) <= 8000 and hmac.compare_digest(token.encode(), values["webhook_verify_token"].encode()))
             if not valid:
-                return Response({"detail": "Webhook verification failed.", "code": "invalid_webhook"}, status=403)
+                return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
             if not challenge or len(challenge) > 4096:
-                return Response({"detail": "Invalid challenge.", "code": "invalid_challenge"}, status=400)
+                return Response({"detail": gettext("Invalid challenge."), "code": "invalid_challenge"}, status=400)
             return HttpResponse(challenge, content_type="text/plain")
         except (KeyError, TypeError, ValueError):
-            return Response({"detail": "Webhook verification failed.", "code": "invalid_webhook"}, status=403)
+            return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
 
     @extend_schema(tags=["Notification contract"], auth=[],
         parameters=[OpenApiParameter("X-Hub-Signature-256", str, location="header", required=True,
@@ -88,14 +89,14 @@ class MetaWebhookView(APIView):
     def post(self, request, makerspace_id, generation, phone_number_id):
         config = self.configuration(makerspace_id, generation, phone_number_id, request=request)
         if config is None:
-            return Response({"detail": "Webhook verification failed.", "code": "invalid_webhook"}, status=403)
+            return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
         payload = verified_payload(config, request)
         if payload is None:
-            return Response({"detail": "Webhook verification failed.", "code": "invalid_webhook"}, status=403)
+            return Response({"detail": gettext("Webhook verification failed."), "code": "invalid_webhook"}, status=403)
         try:
             batch = items(config, payload)
         except ValueError:
-            return Response({"detail": "Invalid webhook payload.", "code": "invalid_payload"}, status=400)
+            return Response({"detail": gettext("Invalid webhook payload."), "code": "invalid_payload"}, status=400)
         try:
             from .notification_wa_journal import accept_meta_item
             from .notification_cutover import boundary
@@ -105,5 +106,5 @@ class MetaWebhookView(APIView):
         except Exception as exc:
             logger.warning("notification.meta_callback_unavailable", extra={"configuration_id": config.pk,
                 "failure_type": type(exc).__name__})
-            return Response({"detail": "Callback storage is temporarily unavailable.", "code": "unavailable"}, status=503)
+            return Response({"detail": gettext("Callback storage is temporarily unavailable."), "code": "unavailable"}, status=503)
         return Response({"accepted": True})

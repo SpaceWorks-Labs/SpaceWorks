@@ -1,5 +1,6 @@
 """Member communication passes current RBAC, segment, channel and personal gates."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q, Exists, OuterRef
 from django.utils import timezone
@@ -23,7 +24,7 @@ def segment_members(space, segment):
     current = terms.filter(membership_id=OuterRef('pk'), starts_at__lte=now, ends_at__gt=now, status='active')
     if segment.get('plan_id'):
         if not rbac.scope_notification_policy(MembershipPlan.objects.all(), makerspace_id=space.pk).filter(pk=segment['plan_id']).exists():
-            raise ValidationError({'plan_id': 'Unknown plan in this makerspace.'})
+            raise ValidationError({'plan_id': gettext('Unknown plan in this makerspace.')})
         # A lapsed-plan campaign addresses the expired plan's former members.
         # Requiring a current term here would make plan + lapsed always empty.
         plan_terms = terms.filter(membership_id=OuterRef('pk'), ends_at__lte=now) if segment.get('status') == 'lapsed' else current
@@ -36,11 +37,11 @@ def segment_members(space, segment):
             rows = rows.filter(current_term=True)
     if segment.get('certification_id'):
         if not module_enabled(space, 'machines'):
-            raise ValidationError({'certification_id': 'Machines are disabled.'})
+            raise ValidationError({'certification_id': gettext('Machines are disabled.')})
         from apps.machines.models_certifications import CertificationGrant, CertificationType
         types = rbac.scope_notification_policy(CertificationType.objects.all(), makerspace_id=space.pk)
         if not types.filter(pk=segment['certification_id']).exists():
-            raise ValidationError({'certification_id': 'Unknown certification in this makerspace.'})
+            raise ValidationError({'certification_id': gettext('Unknown certification in this makerspace.')})
         grants = rbac.scope_notification_policy(CertificationGrant.objects.all(), makerspace_id=space.pk,
                                                field='membership__makerspace_id').filter(
             membership_id=OuterRef('pk'), certification_type_id=segment['certification_id'], revoked_at__isnull=True,
@@ -62,7 +63,7 @@ def send_broadcast(space, *, actor, title, body, **segment):
     # Explicit cap prevents one HTTP transaction from enqueueing an unbounded roster.
     ids = list(segment_members(space, segment).values_list('user_id', flat=True)[:2001])
     if len(ids) > 2000:
-        raise ValidationError({'segment': 'Choose a segment of at most 2000 members.'})
+        raise ValidationError({'segment': gettext('Choose a segment of at most 2000 members.')})
     broadcast = MemberBroadcast.objects.create(makerspace=space, created_by=actor, title=title, body=body)
     audit.record(actor, 'notification.broadcast_created', makerspace=space, target=broadcast,
                  meta={'recipient_count': len(ids)})

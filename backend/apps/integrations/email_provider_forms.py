@@ -1,5 +1,6 @@
 """Safe control-plane form; I mounts this in the existing audited ModelAdmin."""
 
+from django.utils.translation import gettext
 from django import forms
 from rest_framework.exceptions import ValidationError as ApiValidationError
 
@@ -33,7 +34,7 @@ class PlatformEmailProviderForm(forms.ModelForm):
             fields = {key: value if isinstance(value, list) else [value]
                       for key, value in detail.items() if key in self.fields}
             raise forms.ValidationError(
-                fields or "Check the selected email provider and required fields.") from None
+                fields or gettext("Check the selected email provider and required fields.")) from None
         return cleaned
 
     def save(self, commit=True):

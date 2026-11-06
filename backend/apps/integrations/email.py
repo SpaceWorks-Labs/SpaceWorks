@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 
 from django.conf import settings
@@ -184,11 +185,9 @@ def send_email_verification_otp(recipient, code):
 
     log = dispatch_email(
         to_email=recipient,
-        subject="Verify your email",
+        subject=gettext("Verify your email"),
         text_body=(
-            "Use this code to verify your email address:\n\n"
-            f"{code}\n\n"
-            "This code expires in 10 minutes."
+            gettext('Use this code to verify your email address:\n\n{code}\n\nThis code expires in 10 minutes.').format(code=code)
         ),
         makerspace=None,
         stream="account",

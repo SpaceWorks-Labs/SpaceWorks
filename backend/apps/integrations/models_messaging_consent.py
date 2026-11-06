@@ -1,4 +1,5 @@
 """Immutable consent evidence and sender-scoped recipient protections."""
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -10,14 +11,14 @@ CHANNELS = [("sms", "SMS"), ("whatsapp", "WhatsApp")]
 
 class MessagingConsent(ScopedPiiModelMixin, models.Model):
     class Action(models.TextChoices):
-        OPTED_IN = "opted_in", "Opted in"
-        OPTED_OUT = "opted_out", "Opted out"
+        OPTED_IN = "opted_in", gettext_lazy("Opted in")
+        OPTED_OUT = "opted_out", gettext_lazy("Opted out")
 
     class Source(models.TextChoices):
-        MEMBER_SETTINGS = "member_settings", "Member settings"
-        NATIVE_APP = "native_app", "Native app"
-        INBOUND_STOP = "inbound_stop", "Inbound STOP"
-        ACCOUNT_ARCHIVE = "account_archive", "Account archive"
+        MEMBER_SETTINGS = "member_settings", gettext_lazy("Member settings")
+        NATIVE_APP = "native_app", gettext_lazy("Native app")
+        INBOUND_STOP = "inbound_stop", gettext_lazy("Inbound STOP")
+        ACCOUNT_ARCHIVE = "account_archive", gettext_lazy("Account archive")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -40,18 +41,18 @@ class MessagingConsent(ScopedPiiModelMixin, models.Model):
         if not self._state.adding:
             from .messaging.pii_maintenance import consent_phone_maintenance_allowed
             if set(kwargs.get("update_fields") or ()) != {"phone_e164"} or not consent_phone_maintenance_allowed(self.makerspace_id):
-                raise ValidationError("Messaging consent is append-only.")
+                raise ValidationError(gettext("Messaging consent is append-only."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Messaging consent is append-only.")
+        raise ValidationError(gettext("Messaging consent is append-only."))
 
 
 class MessagingSuppression(models.Model):
     class Reason(models.TextChoices):
-        INBOUND_STOP = "inbound_stop", "Inbound STOP"
-        PROVIDER_OPT_OUT = "provider_opt_out", "Provider opt-out"
-        PERMANENT_FAILURE = "permanent_failure", "Permanent failure"
+        INBOUND_STOP = "inbound_stop", gettext_lazy("Inbound STOP")
+        PROVIDER_OPT_OUT = "provider_opt_out", gettext_lazy("Provider opt-out")
+        PERMANENT_FAILURE = "permanent_failure", gettext_lazy("Permanent failure")
 
     channel = models.CharField(max_length=16, choices=CHANNELS)
     sender_key = models.CharField(max_length=255)

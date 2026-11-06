@@ -1,5 +1,6 @@
 """Live checks run inside dispatch_delivery, including release and every retry."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import APIException, ValidationError
 
@@ -53,7 +54,7 @@ def retry(log, actor):
     )
     campaign_id = rows.values_list("campaign_id", flat=True).first()
     if campaign_id is None:
-        raise ValidationError("This broadcast delivery no longer exists.")
+        raise ValidationError(gettext("This broadcast delivery no longer exists."))
     # Match reconciliation's tenant-before-campaign order: audit FKs also lock
     # the tenant, so holding the campaign while waiting for it can deadlock.
     makerspace = Makerspace.objects.select_for_update().get(pk=log.makerspace_id)
@@ -62,7 +63,7 @@ def retry(log, actor):
     delivery = rows.select_for_update().first()
     if (campaign.status not in {"queued", "sending", "failed"} or delivery is None
             or delivery.status not in {"pending", "failed"}):
-        raise ValidationError("This broadcast delivery cannot be retried.")
+        raise ValidationError(gettext("This broadcast delivery cannot be retried."))
     # Do not authorize using the retrying operator: prepare() still rechecks the
     # original sender and recipient before every SMTP attempt, including release.
     if campaign.status == "failed":

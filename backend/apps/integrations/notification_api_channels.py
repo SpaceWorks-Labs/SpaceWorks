@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -45,7 +46,7 @@ class ChannelSettingsView(APIView):
     def patch(self, request, makerspace_id, channel):
         space = contract_space(request.user, makerspace_id, manager=True)
         if channel not in NotificationChannel.values:
-            raise ValidationError({"channel": "Unknown channel."})
+            raise ValidationError({"channel": gettext("Unknown channel.")})
         # Writing or clearing (`{}`) secrets steps up; non-secret toggles do not.
         if "credentials" in request.data:
             require_recent_reauth(request)

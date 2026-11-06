@@ -1,4 +1,5 @@
 """Mattermost server registration and DNS-pinned requests, including self-host opt-in."""
+from django.utils.translation import gettext
 import socket
 from ipaddress import ip_address
 from urllib.parse import urlsplit
@@ -23,7 +24,7 @@ def server_url(value):
             raise ValueError()
         return base
     except (ValueError, TypeError):
-        raise ValidationError({"server_url": "Use an absolute HTTPS server origin without credentials."}) from None
+        raise ValidationError({"server_url": gettext("Use an absolute HTTPS server origin without credentials.")}) from None
 
 
 def resolve_server(value, path):
@@ -42,7 +43,7 @@ def resolve_server(value, path):
         if not addresses:
             raise ValueError()
     except (OSError, ValueError, UnicodeError):
-        raise ValidationError({"server_url": "Server must resolve exclusively to permitted addresses."}) from None
+        raise ValidationError({"server_url": gettext("Server must resolve exclusively to permitted addresses.")}) from None
     return ResolvedWebhookTarget(base + path, parts.hostname, parts.port or 443,
                                  parts.netloc, path, tuple(addresses))
 

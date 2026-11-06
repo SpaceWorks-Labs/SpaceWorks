@@ -3,6 +3,7 @@
 No email body is reused: those contain names, contacts, tokens and free text.
 Unmapped events have no projection and therefore no addressed delivery.
 """
+from django.utils.translation import gettext
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -90,7 +91,7 @@ SMS_DEFAULT_TEXTS = {key: "{makerspace.name}: " + key[0].replace("_", " ") + " "
 def project_context(feature, event, audience, context):
     keys = PROJECTION_KEYS.get((feature, event, audience))
     if keys is None:
-        raise ValidationError("This lifecycle event/audience has no reviewed messaging projection.")
+        raise ValidationError(gettext("This lifecycle event/audience has no reviewed messaging projection."))
     result = {}
     for key in keys:
         value = context
@@ -108,5 +109,5 @@ def project_context(feature, event, audience, context):
 def render_sms(feature, event, audience, context):
     key = (feature, event, audience)
     if key not in SMS_DEFAULT_TEXTS or context.keys() - set(PROJECTION_KEYS[key]):
-        raise ValidationError("Unreviewed messaging context.")
+        raise ValidationError(gettext("Unreviewed messaging context."))
     return SMS_DEFAULT_TEXTS[key].replace("{makerspace.name}", str(context.get("makerspace.name") or "SpaceWorks"))

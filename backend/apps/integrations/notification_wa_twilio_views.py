@@ -1,4 +1,5 @@
 """Signature-only ingress plus Space Manager approval refresh; no message bodies out."""
+from django.utils.translation import gettext
 import hashlib
 import logging
 from dataclasses import replace
@@ -105,7 +106,7 @@ class TwilioWhatsAppWebhookView(APIView):
                     config = candidate
                     break
             if config is None:
-                raise PermissionDenied("Invalid provider callback.")
+                raise PermissionDenied(gettext("Invalid provider callback."))
             params = request.POST
             protection = {"stop": event.opt_out,
                 "phone_hash": phone_hash(params.get("From") if kind == "inbound" else params.get("To")),
@@ -144,6 +145,6 @@ class TwilioWhatsAppTemplateRefreshView(APIView):
         try:
             credentials = TwilioWhatsAppProvider(config).credentials()
         except ConfigurationError:
-            raise ValidationError({"credentials": "Twilio configuration is incomplete or invalid."}) from None
+            raise ValidationError({"credentials": gettext("Twilio configuration is incomplete or invalid.")}) from None
         return Response(refresh_approvals(config, credentials, request.user,
             content_sids=serializer.validated_data.get("content_sids")))

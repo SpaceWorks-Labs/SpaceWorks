@@ -9,6 +9,7 @@ and announced in the staff notices with the room's label and channel, never a cr
 Runs hourly with a bounded batch.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from celery import shared_task
@@ -43,10 +44,8 @@ def disable(destination):
         record(None, "notification.destination_auto_disabled", makerspace=row.makerspace, target=row,
                meta={"channel": row.channel, "failures": WINDOW})
         emit_notification(row.makerspace, level="warning", event="destination_auto_disabled",
-                          title=f"Chat room switched off: {row.label}",
-                          body=(f"Space Works stopped posting to {row.label} ({row.get_channel_display()}) after "
-                                f"{WINDOW} failed deliveries in a row. Check the room's settings, then switch it "
-                                "back on."),
+                          title=gettext('Chat room switched off: {label}').format(label=row.label),
+                          body=(gettext("Space Works stopped posting to {label} ({value}) after {WINDOW} failed deliveries in a row. Check the room's settings, then switch it back on.").format(label=row.label, value=row.get_channel_display(), WINDOW=WINDOW)),
                           url_path="settings/notifications")
     return True
 

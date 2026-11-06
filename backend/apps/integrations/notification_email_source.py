@@ -1,4 +1,5 @@
 """Keep legacy EmailLog retries attached to the personal envelope's live authority."""
+from django.utils.translation import gettext
 from .models_contract import NotificationDelivery
 
 
@@ -33,7 +34,7 @@ def prepare(log):
 
 def retry(log, actor):
     from rest_framework.exceptions import ValidationError
-    raise ValidationError({"delivery": "Personal deliveries use the envelope retry budget."})
+    raise ValidationError({"delivery": gettext("Personal deliveries use the envelope retry budget.")})
 
 
 def register_email_source():

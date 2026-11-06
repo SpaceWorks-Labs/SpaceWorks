@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -122,6 +123,6 @@ def _validate_template_delimiters(value):
             close_at = value.find(end, open_at + len(start))
             if close_at == -1:
                 raise ValidationError(
-                    f"Email template has invalid syntax: unclosed {start} tag."
+                    gettext('Email template has invalid syntax: unclosed {start} tag.').format(start=start)
                 )
             offset = close_at + len(end)

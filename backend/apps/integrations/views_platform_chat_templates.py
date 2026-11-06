@@ -6,6 +6,7 @@ a template that renders against its sample context). Removing a row returns that
 the built-in text. Every change is audited.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -43,7 +44,7 @@ class ChatTemplateSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             clash = clash.exclude(pk=self.instance.pk)
         if clash.exists():
-            raise serializers.ValidationError({"event": "This event already has a template here."})
+            raise serializers.ValidationError({"event": gettext("This event already has a template here.")})
         return attrs
 
 

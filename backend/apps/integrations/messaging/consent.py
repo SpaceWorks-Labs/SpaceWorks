@@ -1,4 +1,5 @@
 """Explicit per-tenant consent, serialized with phone changes and account deletion."""
+from django.utils.translation import gettext
 from apps.accounts.staff_identity import has_staff_role
 from apps.integrations.notification_cutover import guarded
 from django.utils import timezone
@@ -92,7 +93,7 @@ def member_payload(space, user):
 def grant_consent(*, user, makerspace_id, channel, action, source="member_settings"):
     if channel not in {"sms", "whatsapp"} or action not in MessagingConsent.Action.values:
         from rest_framework.exceptions import ValidationError
-        raise ValidationError("Invalid messaging channel or consent action.")
+        raise ValidationError(gettext("Invalid messaging channel or consent action."))
     # Sender can rotate while acquiring locks: restart before taking a new sender lock.
     for _ in range(3):
         space = member_space(user, makerspace_id)
@@ -101,7 +102,7 @@ def grant_consent(*, user, makerspace_id, channel, action, source="member_settin
             return _grant(user, space, channel, action, source, sender)
         except _SenderChanged:
             continue
-    error = APIException({"code": "sender_changed", "detail": "Sender configuration changed. Try again."})
+    error = APIException({"code": "sender_changed", "detail": gettext("Sender configuration changed. Try again.")})
     error.status_code = 503
     raise error
 
@@ -125,12 +126,12 @@ def _grant(user, space, channel, action, source, sender):
         if action == "opted_in":
             from rest_framework.exceptions import ValidationError
             if config is None or sender is None:
-                raise ValidationError({"channel": "Configure a sender before consenting."})
+                raise ValidationError({"channel": gettext("Configure a sender before consenting.")})
             if channel == "whatsapp":
                 from apps.integrations.notification_resolution import endpoint_current
                 endpoint = NotificationEndpoint.objects.filter(configuration=config, user=user, revoked_at=None).first()
                 if not endpoint_current(endpoint):
-                    raise ValidationError({"channel": "Complete the signed WhatsApp account-link proof first."})
+                    raise ValidationError({"channel": gettext("Complete the signed WhatsApp account-link proof first.")})
         if channel == "whatsapp" and action == "opted_out":
             NotificationEndpoint.objects.filter(configuration=config, user=user, revoked_at=None).update(
                 revoked_at=timezone.now(), verification_state="revoked")

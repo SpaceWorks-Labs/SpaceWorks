@@ -1,4 +1,5 @@
 """Signed provider callbacks; no browser session or tenant-module gate is needed."""
+from django.utils.translation import gettext
 import hmac
 import json
 import logging
@@ -37,7 +38,7 @@ def verification_secret(credential):
 
 def _db_failure():
     logger.exception("messaging_webhook_database_failure")
-    return Response({"code": "webhook_unavailable", "detail": "Callback storage unavailable."}, status=500)
+    return Response({"code": "webhook_unavailable", "detail": gettext("Callback storage unavailable.")}, status=500)
 
 
 class TwilioMessagingWebhookView(APIView):
@@ -52,7 +53,7 @@ class TwilioMessagingWebhookView(APIView):
                    (200, "text/xml"): OpenApiTypes.STR, **errors(400, 403, 415, 500)})
     def post(self, request, kind, makerspace_id=None):
         if request.content_type != "application/x-www-form-urlencoded":
-            return Response({"detail": "Form encoding required."}, status=415)
+            return Response({"detail": gettext("Form encoding required.")}, status=415)
         try:
             credential = None
             for candidate in credentials("sms", makerspace_id):
@@ -67,10 +68,10 @@ class TwilioMessagingWebhookView(APIView):
                     break
             if credential is None:
                 logger.warning("messaging_webhook_signature_rejected", extra={"channel": "sms", "makerspace_id": makerspace_id})
-                return Response({"detail": "Invalid callback signature or sender."}, status=403)
+                return Response({"detail": gettext("Invalid callback signature or sender.")}, status=403)
             normalized = twilio_payload(request.data, kind)
             if normalized is None:
-                return Response({"detail": "Invalid callback fields."}, status=400)
+                return Response({"detail": gettext("Invalid callback fields.")}, status=400)
             dedupe, payload = normalized
             accept_event(provider="twilio", channel="sms", sender_key=credential.identity.sender_key,
                          makerspace_id=makerspace_id, credential_version=credential.version, dedupe_id=dedupe, kind=kind, payload=payload)
@@ -91,18 +92,18 @@ class MetaMessagingWebhookView(APIView):
         responses={(200, "text/plain"): OpenApiTypes.STR, **errors(400, 403, 500)})
     def get(self, request, makerspace_id=None):
         if request.query_params.get("hub.mode") != "subscribe":
-            return Response({"detail": "Invalid subscription mode."}, status=403)
+            return Response({"detail": gettext("Invalid subscription mode.")}, status=403)
         supplied = request.query_params.get("hub.verify_token", "")
         try:
             if supplied and any(c.verify_token and hmac.compare_digest(c.verify_token.encode(), supplied.encode())
                                 for c in credentials("whatsapp", makerspace_id)):
                 challenge = request.query_params.get("hub.challenge", "")
                 if not challenge:
-                    return Response({"detail": "Subscription challenge required."}, status=400)
+                    return Response({"detail": gettext("Subscription challenge required.")}, status=400)
                 return HttpResponse(challenge, content_type="text/plain")
         except DatabaseError:
             return _db_failure()
-        return Response({"detail": "Invalid verification token."}, status=403)
+        return Response({"detail": gettext("Invalid verification token.")}, status=403)
 
     @extend_schema(tags=["Messaging webhooks"], auth=[], request=OpenApiTypes.OBJECT,
         description="Meta messages webhook; X-Hub-Signature-256 covers the exact raw JSON body.",
@@ -110,7 +111,7 @@ class MetaMessagingWebhookView(APIView):
         responses={200: OpenApiTypes.OBJECT, **errors(400, 403, 415, 500)})
     def post(self, request, makerspace_id=None):
         if request.content_type != "application/json":
-            return Response({"detail": "JSON encoding required."}, status=415)
+            return Response({"detail": gettext("JSON encoding required.")}, status=415)
         raw = request.body
         signature = request.headers.get("X-Hub-Signature-256", "")
         try:
@@ -121,11 +122,11 @@ class MetaMessagingWebhookView(APIView):
                     verified.append(candidate)
             if not verified:
                 logger.warning("messaging_webhook_signature_rejected", extra={"channel": "whatsapp", "makerspace_id": makerspace_id})
-                return Response({"detail": "Invalid callback signature."}, status=403)
+                return Response({"detail": gettext("Invalid callback signature.")}, status=403)
             try:
                 document = json.loads(raw)
             except (ValueError, UnicodeError):
-                return Response({"detail": "Invalid JSON body."}, status=400)
+                return Response({"detail": gettext("Invalid JSON body.")}, status=400)
             # A rotated app secret may cover statuses for both old and new senders.
             seen = set()
             for credential in verified:

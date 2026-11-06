@@ -1,4 +1,5 @@
 """Validated manager installation boundaries; never accept a personal destination."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -29,7 +30,7 @@ class OAuthCallbackSerializer(serializers.Serializer):
 class StrictSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict) or set(data) - set(self.fields):
-            raise ValidationError({"detail": "Unknown fields or invalid object."})
+            raise ValidationError({"detail": gettext("Unknown fields or invalid object.")})
         return super().to_internal_value(data)
 
 

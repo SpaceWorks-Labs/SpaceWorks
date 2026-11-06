@@ -1,5 +1,6 @@
 """Minimal persisted subject used by delivery-time requester selection."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 from apps.integrations.notification_scope_contract import SCOPE_FIELDS, validate_notification_scope
@@ -21,7 +22,7 @@ def persisted_scope(value):
     identifier still raises, so a tampered scope keeps failing closed.
     """
     if not isinstance(value, dict) or value.keys() - SCOPE_FIELDS:
-        raise ValidationError("Invalid notification scope fields.")
+        raise ValidationError(gettext("Invalid notification scope fields."))
     data = {key: item for key, item in value.items() if item is not None}
     validate_notification_scope(data)
     return data

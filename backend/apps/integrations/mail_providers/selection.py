@@ -1,5 +1,6 @@
 """Platform DB > platform secret mount/env; tenants may explicitly inherit."""
 
+from django.utils.translation import gettext
 import json
 from pathlib import Path
 
@@ -21,7 +22,7 @@ def stored_config(instance, *, tenant=False):
     sender = sender or settings.DEFAULT_FROM_EMAIL
     values = instance.get_email_provider_config() if provider != "smtp" else {}
     if tenant and provider == "ses" and values.get("workload_identity"):
-        raise ValidationError("Tenant SES requires dedicated credentials.")
+        raise ValidationError(gettext("Tenant SES requires dedicated credentials."))
     return validate_config(provider, values, sender)
 
 

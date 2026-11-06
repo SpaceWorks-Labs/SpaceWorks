@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core import signing
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -54,9 +55,9 @@ class MemberPreferenceView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         if data["enabled"] and not channel_available(space, data["feature"], data["channel"]):
-            raise ValidationError({"channel": "This family/channel is disabled by the makerspace."})
+            raise ValidationError({"channel": gettext("This family/channel is disabled by the makerspace.")})
         if data.get("daily_digest") and (data["channel"] != "email" or not feature_enabled(space, "notifications.digests")):
-            raise ValidationError({"daily_digest": "Daily digests are disabled or this is not an email channel."})
+            raise ValidationError({"daily_digest": gettext("Daily digests are disabled or this is not an email channel.")})
         save_preference(request.user, space, data)
         return Response({"cells": preference_cells(space, request.user)})
 
@@ -78,9 +79,9 @@ class OneClickUnsubscribeView(APIView):
         try:
             data = decode_unsubscribe(token)
         except (signing.BadSignature, TypeError, ValueError):
-            raise ValidationError({"token": "Invalid or expired unsubscribe token."})
+            raise ValidationError({"token": gettext("Invalid or expired unsubscribe token.")})
         if request.data.get("List-Unsubscribe") != "One-Click":
-            raise ValidationError({"List-Unsubscribe": "Expected One-Click."})
+            raise ValidationError({"List-Unsubscribe": gettext("Expected One-Click.")})
         space = get_object_or_404(rbac.scope_notification_policy(
             servable_queryset(), makerspace_id=data["space"], field="pk",
         ))
@@ -93,4 +94,4 @@ class OneClickUnsubscribeView(APIView):
         # Actor is the user who received the capability, never a provider/device.
         save_preference(user, space, {"feature": data["feature"], "channel": "email", "enabled": False},
                         unsubscribe=True)
-        return Response({"detail": "Optional emails for this family are disabled. Safety emails remain enabled."})
+        return Response({"detail": gettext("Optional emails for this family are disabled. Safety emails remain enabled.")})

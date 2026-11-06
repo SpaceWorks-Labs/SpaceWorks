@@ -1,4 +1,5 @@
 """OAuth state uses the frozen durable challenge, bound to actor/tenant/generation."""
+from django.utils.translation import gettext
 import base64
 import hashlib
 from datetime import timedelta
@@ -26,7 +27,7 @@ def redirect_uri(channel, makerspace_id=None, challenge_id=None):
     parts = urlsplit(value)
     if (parts.scheme != "https" or not parts.hostname or parts.username or parts.password
             or parts.fragment or "{" in value or "}" in value):
-        raise ValidationError({"channel": "Configure an HTTPS OAuth redirect URI on the server."})
+        raise ValidationError({"channel": gettext("Configure an HTTPS OAuth redirect URI on the server.")})
     return value
 
 
@@ -52,7 +53,7 @@ def read_state(config, state, *, purpose="link", user_id=None, challenge_id=None
             raise ValueError()
         return challenge, value["code"]
     except (signing.BadSignature, KeyError, TypeError, ValueError, NotificationEndpointChallenge.DoesNotExist):
-        raise ValidationError({"proof": "Invalid or expired OAuth state."}) from None
+        raise ValidationError({"proof": gettext("Invalid or expired OAuth state.")}) from None
 
 
 def verifier(code):
@@ -92,11 +93,11 @@ def claim_install(config, state):
         assert_mapped_write_allowed(config.makerspace_id)
         locked = ChannelConfiguration.objects.select_for_update().get(pk=config.pk)
         if locked.generation != config.generation:
-            raise ValidationError({"proof": "Configuration changed; restart installation."})
+            raise ValidationError({"proof": gettext("Configuration changed; restart installation.")})
         challenge, _ = read_state(config, state, purpose="install")
         challenge = NotificationEndpointChallenge.objects.select_for_update().get(pk=challenge.pk)
         if challenge.consumed_at:
-            raise ValidationError({"proof": "OAuth state already consumed."})
+            raise ValidationError({"proof": gettext("OAuth state already consumed.")})
         challenge.consumed_at = timezone.now()
         challenge.save(update_fields=["consumed_at"])
         audit.record(challenge.user, "notification.chat_install_state_consumed", makerspace=config.makerspace,
@@ -106,7 +107,7 @@ def claim_install(config, state):
 
 def save_install(config, user, credentials, identity):
     if not isinstance(identity, str) or not 1 <= len(identity) <= 255:
-        raise ValidationError({"channel": "Provider returned an invalid installation identity."})
+        raise ValidationError({"channel": gettext("Provider returned an invalid installation identity.")})
     from .notification_api_access import contract_space
     contract_space(user, config.makerspace_id, manager=True)
     with tenant_write(config.makerspace_id), transaction.atomic():
@@ -114,7 +115,7 @@ def save_install(config, user, credentials, identity):
         assert_mapped_write_allowed(config.makerspace_id)
         row = ChannelConfiguration.objects.select_for_update().get(pk=config.pk)
         if row.generation != config.generation:
-            raise ValidationError({"channel": "Configuration changed; restart installation."})
+            raise ValidationError({"channel": gettext("Configuration changed; restart installation.")})
         row.set_credentials(credentials)
         row.integration_identity = identity
         row.generation += 1

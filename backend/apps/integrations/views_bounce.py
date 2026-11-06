@@ -1,5 +1,6 @@
 """Provider adapters sign `timestamp.raw-body` with the tenant's inbound secret."""
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import time
@@ -57,7 +58,7 @@ class BounceWebhookView(APIView):
         except Exception:
             valid = False
         if not valid:
-            raise PermissionDenied('Invalid webhook signature.')
+            raise PermissionDenied(gettext('Invalid webhook signature.'))
         serializer = BounceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = serializer.validated_data
@@ -100,12 +101,12 @@ class ProviderBounceWebhookView(APIView):
             # Header signatures authenticate exact raw bytes; no raw body enters logs.
             event = verify(provider, request.body, request.headers, config.credentials)
         except Exception:
-            raise PermissionDenied('Invalid webhook signature.') from None
+            raise PermissionDenied(gettext('Invalid webhook signature.')) from None
         from django.db import DatabaseError
         try:
             observed = observe(space, provider, event)
         except DatabaseError:
             observed = False
         if not observed:
-            return Response({'detail': 'Email observation is not ready.', 'code': 'email_observation_not_ready'}, status=503)
+            return Response({'detail': gettext('Email observation is not ready.'), 'code': 'email_observation_not_ready'}, status=503)
         return Response({'accepted': True})

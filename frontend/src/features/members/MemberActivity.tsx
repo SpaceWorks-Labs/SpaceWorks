@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { EmptyState, ListRow, StatusPill, RelativeTime, Modal, TicketCard } from "../../components/ui";
 import { staffRequestBlob } from "../../lib/api";
 import { MemberEventFeedback } from "./MemberEventFeedback";
+import { CertificateApprovals } from "./certificates/CertificateApprovals";
+import { MyCertificates } from "./certificates/MyCertificates";
 import { MemberLoanRenew } from "./MemberLoanRenew";
 import { MemberEventCancel } from "./MemberEventCancel";
 import { MemberCalendarLinks } from "./calendarFeeds/MemberCalendarLinks";
@@ -169,6 +171,7 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
         {item.checkin_token ? <CheckInQr makerspaceId={makerspaceId} registrationId={item.registration_id} title={item.event_title} startsAt={item.starts_at} organisation={makerspaceName} /> : null}
         <MemberEventCancel makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} status={item.status} canCancel={item.can_cancel} cutoffAt={item.cancellation_cutoff_at} />
         <MemberEventFeedback makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} feedbackPath={item.feedback_path} certificate={item.certificate} /></div>} />) : <EmptyState message={eventPeriod === "past" ? "No past events yet." : "You’re not registered for anything yet. See what’s on."} action={{ label: "See events", href: `/m/${makerspaceSlug}/events` }} />}</Section> : null}
+    {(section === "all" || section === "events") && modules.includes("events") ? <Section title="Certificates"><CertificateApprovals makerspaceId={makerspaceId} /><MyCertificates makerspaceId={makerspaceId} /></Section> : null}
     {section === "all" || section === "overview" ? <MemberGifts makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} /> : null}
     {(section === "all" || section === "overview") && modules.includes("presence") ? <Section title="Recent presence">{activity.recent_presence_sessions.length ? activity.recent_presence_sessions.map(item => <ListRow key={item.started_at} title="Makerspace visit" identity={{ kind: "date", date: item.started_at }} meta={<><RelativeTime date={item.started_at} /> · until {new Date(item.expires_at).toLocaleString()}</>} right={<StatusPill label={item.active ? "Active" : "Ended"} tone={item.active ? "success" : "neutral"} />} />) : <Empty />}</Section> : null}
   </div>;

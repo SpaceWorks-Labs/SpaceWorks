@@ -17,6 +17,8 @@ from apps.admin_api.serializers_payments import (
 )
 from apps.audit import services as audit
 from apps.makerspaces.domain_verification import is_self_host
+from apps.makerspaces.guards import module_off, require_module
+from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import servable_queryset
 from apps.payments.connect import create_onboarding
 from apps.payments.credential_validation import MAKERSPACE_CREDENTIAL_FIELDS
@@ -81,6 +83,10 @@ class MakerspacePaymentSettingsView(APIView):
     def patch(self, request, makerspace_id):
         makerspace = self._makerspace(request, makerspace_id)
         if any(field in request.data for field in ("provider", *MAKERSPACE_CREDENTIAL_FIELDS)):
+            # The provider and its credentials are the online rail; loan rules and the
+            # currency on this row stay editable while `payments` is off (#95).
+            if not module_enabled(makerspace, "payments"):
+                raise module_off("payments")
             require_recent_reauth(request)
         # Preserve lazy default initialization even when the PATCH is invalid.
         # Requested changes and their audit entry still commit together below.
@@ -135,6 +141,7 @@ class StripeConnectOnboardingView(APIView):
             ),
             pk=makerspace_id,
         )
+        require_module(makerspace, "payments")
         try:
             authorize_url = create_onboarding(makerspace, request.user)
         except PaymentsUnavailable:

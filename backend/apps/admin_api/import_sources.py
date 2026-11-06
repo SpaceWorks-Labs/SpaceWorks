@@ -11,7 +11,6 @@ edited in between is refused with `sheet_changed`, so what is written is what st
 """
 from drf_spectacular.utils import OpenApiResponse
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
 
 from apps.admin_api import import_sources_sheets as sheets
 
@@ -48,9 +47,10 @@ def read_source(validated, makerspace, capability, *, max_bytes, max_rows):
     """The fetched sheet for a `google_sheet` request, or None for a file upload."""
     if validated.get("source") != sheets.SOURCE_SHEET:
         return None
+    from apps.makerspaces.guards import feature_off
     from apps.makerspaces.platform import feature_enabled
     if not feature_enabled(makerspace, capability):
-        raise NotFound("This feature is not available here.")
+        raise feature_off(capability)
     fetched = sheets.fetch_sheet(validated.get("url", ""), max_bytes=max_bytes, max_rows=max_rows)
     expected = validated.get("sheet_sha256")
     if expected and expected != fetched.sha256:

@@ -15,6 +15,7 @@ NON_CREDENTIAL = {
     ('events.HackathonApplication', 'state'): "Workflow state or target-reset mode, not a bearer credential.",
     ('events.HackathonApplicationCohort', 'state'): "Workflow state or target-reset mode, not a bearer credential.",
     ('events.HackathonParticipantAsset', 'state'): "Workflow state or target-reset mode, not a bearer credential.",
+    ('events.HackathonPrizeShare', 'state'): "Workflow state or target-reset mode, not a bearer credential.",
     ('events.HackathonSubmission', 'state'): "Workflow state or target-reset mode, not a bearer credential.",
     ('events.HackathonTeam', 'state'): "Workflow state or target-reset mode, not a bearer credential.",
     ('events.HackathonTeamMember', 'state'): "Workflow state or target-reset mode, not a bearer credential.",

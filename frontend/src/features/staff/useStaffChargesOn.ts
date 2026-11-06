@@ -1,4 +1,3 @@
-import { createContext, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -12,20 +11,14 @@ export function staffChargesOn(space: Omit<SpaceFlags, "id">, domain: ChargeDoma
   return capabilityOn(space, "charges.enabled") && capabilityOn(space, `charges.${domain}`);
 }
 
-/** The console's active space (StaffTabContent), the default when a caller passes no id (R4 audit B). */
-export const StaffChargeSpaceContext = createContext<number | undefined>(undefined);
-
 /**
  * Staff-console twin of `useChargesOn` (#184) for editors that hold a makerspace id rather
  * than a public bootstrap. Reads the session's cached makerspace list (never fetched here,
  * like `useStaffPricingOn`). Fails OPEN while that list or the space is unknown, so a price
- * field is never hidden by a missing cache. Without an id the console's active space is used;
- * only outside the console (no active space) does the field show when any staff space tracks
- * that domain's charges -- otherwise a free space showed prices whenever another space charged.
+ * field is never hidden by a missing cache. Without an id (a form that does not know its
+ * space) the field shows when any staff space tracks that domain's charges.
  */
-export function useStaffChargesOn(domain: ChargeDomain, explicitId?: number): boolean {
-  const activeId = useContext(StaffChargeSpaceContext);
-  const makerspaceId = explicitId ?? activeId;
+export function useStaffChargesOn(domain: ChargeDomain, makerspaceId?: number): boolean {
   const spaces = useQuery({
     queryKey: ["staff", "makerspaces"],
     queryFn: () => staffRequest<SpaceFlags[]>("/admin/makerspaces"),

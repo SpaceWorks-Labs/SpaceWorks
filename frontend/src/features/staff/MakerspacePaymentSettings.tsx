@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Field, SettingsRow, StatusPill } from "../../components/ui";
 import { staffRequest } from "../../lib/api";
-import { capabilityOn } from "../../lib/features";
+import { capabilityOn, featureEnabled } from "../../lib/features";
 import { MakerspaceLoanSettings } from "./MakerspaceLoanSettings";
 import { PaymentCredentialFields, type CredentialDraft, type PaymentSettings, type Provider } from "./PaymentCredentialFields";
 import { SettingsEditorActions } from "./SettingsEditorActions";
@@ -12,6 +12,13 @@ import { type Makerspace, useStaffGet } from "./StaffPanels";
 import { staffChargesOn } from "./useStaffChargesOn";
 
 export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspace }) {
+  // #95: the provider and its credentials are the online rail, so without the `payments`
+  // module only the loan rules show (the backend refuses rail writes with 404). Unknown
+  // modules (an older payload) fail open, like the rest of the console.
+  if (makerspace.enabled_modules !== undefined && !makerspace.enabled_modules.includes("payments")) {
+    return staffChargesOn(makerspace, "loans")
+      ? <MakerspaceLoanSettings makerspaceId={makerspace.id} pricingOn={capabilityOn(makerspace, "charges.pricing")} /> : null;
+  }
   return <PaymentSettingsEditor key={makerspace.id} makerspace={makerspace} />;
 }
 
@@ -56,14 +63,10 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
     || provider !== (settings.data?.provider ?? "stripe")
     || currency !== (settings.data?.default_currency ?? "usd"));
 
-  // Loan tracking remains available even when the online rail is tombstoned. It follows the
-  // `charges.enabled` master as well as `charges.loans` (#184), like every other money field.
-  const loans = staffChargesOn(makerspace, "loans")
+  // Loan tracking remains available even when the online rail is tombstoned.
+  const loans = featureEnabled(makerspace.enabled_features ?? [], "charges.loans")
     ? <MakerspaceLoanSettings makerspaceId={makerspace.id} pricingOn={capabilityOn(makerspace, "charges.pricing")} /> : null;
-  // The provider and credentials are the online rail: no `payments` module, no rail editor (#95).
-  // Unknown modules (an older payload) fail open, like the rest of the console.
-  if ((makerspace.enabled_modules !== undefined && !makerspace.enabled_modules.includes("payments"))
-      || (settings.error as { status?: number } | null)?.status === 404) return loans;
+  if ((settings.error as { status?: number } | null)?.status === 404) return loans;
 
   return <>
     <SettingsQueryState query={settings} resource="payment">

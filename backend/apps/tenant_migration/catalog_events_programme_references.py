@@ -225,3 +225,9 @@ DATASETS.update(_PC_DATASETS)
 from .catalog_r2_certificates import DATASETS as _CERT_DATASETS, USER_FIELDS as _CERT_USER_FIELDS  # noqa: E402
 DATASETS.update(_CERT_DATASETS)
 USER_FIELDS = USER_FIELDS | _CERT_USER_FIELDS
+# Each programme lane's account edges join the literal set, as the certificates lane's do.
+from .catalog_r2_l21b import USER_FIELDS as _L21B_USER_FIELDS  # noqa: E402
+from .catalog_r2_submit_content import USER_FIELDS as _SC_USER_FIELDS  # noqa: E402
+from .catalog_hackmoney import USER_FIELDS as _HM_USER_FIELDS  # noqa: E402
+from .catalog_r2_peoples_choice import USER_FIELDS as _PC_USER_FIELDS  # noqa: E402
+USER_FIELDS = USER_FIELDS | _L21B_USER_FIELDS | _SC_USER_FIELDS | _HM_USER_FIELDS | _PC_USER_FIELDS

@@ -93,6 +93,11 @@ from .classification_r2_l11 import (  # noqa: E402
 )
 RELATIONAL_USER_FIELDS |= R2_L11_USER_FIELDS
 _EXCLUDED_USER_EDGE_REASONS.update(R2_L11_EDGES)
+from .classification_gap_api import (  # noqa: E402
+    RELATIONAL_USER_FIELDS as GAP_API_USER_FIELDS, EXCLUDED_USER_EDGE_REASONS as GAP_API_EDGES,
+)
+RELATIONAL_USER_FIELDS |= GAP_API_USER_FIELDS
+_EXCLUDED_USER_EDGE_REASONS.update(GAP_API_EDGES)
 from .types import (
     Fidelity,
     Omitted,

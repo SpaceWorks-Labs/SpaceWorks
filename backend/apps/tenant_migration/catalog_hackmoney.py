@@ -34,6 +34,9 @@ DATASETS = {
     'events.HackathonPrizeClaim': ('events/programme/HackathonPrizeClaim.csv', 'makerspace'),
     'events.HackathonPrizeOutcome': ('events/programme/HackathonPrizeOutcome.csv', 'makerspace'),
 }
+#: Account edges exported as personal references; the portable closure carries each named person.
+USER_FIELDS = frozenset({('events.HackathonPrizeShare', 'member'), ('events.HackathonPrizeShare', 'proposed_by'),
+                         ('events.HackathonPrizeClaim', 'verified_by'), ('events.HackathonPrizeOutcome', 'recorded_by')})
 AUTHORITY_FIELDS = {
     **{('events.HackathonProgrammeOptions', name): _DEF for name in (
         'refund_on_withdrawal', 'refund_if_not_shortlisted', 'show_prize_amounts', 'prize_claim_days',

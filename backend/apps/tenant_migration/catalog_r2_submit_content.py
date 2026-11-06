@@ -36,6 +36,9 @@ DATASETS = {
     'events.StageShortlistEntry': ('events/programme/StageShortlistEntry.csv', 'shortlist__event__makerspace'),
     'events.StageShortlistAnnouncement': ('events/programme/StageShortlistAnnouncement.csv', 'event__makerspace'),
 }
+#: Account edges exported as personal references; the portable closure carries each named person.
+USER_FIELDS = frozenset({('events.StageExtension', 'created_by'), ('events.StageShortlist', 'created_by'),
+                         ('events.StageShortlistAnnouncement', 'published_by')})
 
 JSON_FIELDS = frozenset({
     ('events.SubmissionStage', 'required_link_kinds'),

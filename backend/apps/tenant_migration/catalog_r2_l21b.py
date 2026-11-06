@@ -34,6 +34,9 @@ DATASETS = {
     'events.HackathonProgrammeOptions': ('events/programme/HackathonProgrammeOptions.csv', 'event__makerspace'),
     'events.HackathonPrizePayout': ('events/programme/HackathonPrizePayout.csv', 'makerspace'),
 }
+#: Account edges exported as personal references; the portable closure carries each named person.
+USER_FIELDS = frozenset({('events.FinalistAdvance', 'created_by'), ('events.FinalistAnnouncement', 'published_by'),
+                         ('events.HackathonPrizePayout', 'recipient'), ('events.HackathonPrizePayout', 'recorded_by')})
 
 _DEF = 'Authored round or event configuration; it travels as data and grants no target authority.'
 _EVIDENCE = 'Append-only selection or money evidence; preserved, remapped, and never a grant of target authority.'

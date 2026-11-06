@@ -1,5 +1,6 @@
 """Claim policies for release-2 routes on claim-reachable prefixes: U-C's account merge and
-L12's machine jobs, loan waitlist and request withdrawal; L23's machine sessions.
+L12's machine jobs, loan waitlist and request withdrawal; L23's machine sessions; #196's
+access tokens and app connections; the public paused-space state.
 
 A claim session (a walk-in claiming an account at a kiosk) never merges accounts, never
 acts on a member's own job, waitlist or request, and never submits a job; the public job
@@ -36,6 +37,12 @@ _REFUSED = (
         ("hardware_requests:member-loan-waitlist-leave", ("POST",)),
         ("hardware_requests:member-request-withdraw", ("POST",)),
     )),
+    # #196 (gap-api): personal access tokens and app connections are a person's own credentials.
+    ("claim sessions cannot mint, read or revoke access tokens or app connections", (
+        ("auth-access-tokens", ("GET", "HEAD", "POST")), ("auth-access-token-revoke", ("DELETE",)),
+        ("auth-access-token-scopes", ("GET", "HEAD")), ("auth-oauth-consent", ("GET", "HEAD", "POST")),
+        ("auth-connected-apps", ("GET", "HEAD")), ("auth-connected-app-revoke", ("DELETE",)),
+    )),
 )
 
 R2_CLAIM_ROUTES = {
@@ -44,4 +51,6 @@ R2_CLAIM_ROUTES = {
     **{(name, "OPTIONS"): AnonymousRead()
        for _reason, routes in _REFUSED for name, _methods in routes},
     **{("public-machine-job-types", method): AnonymousRead() for method in ("GET", "HEAD", "OPTIONS")},
+    # Superadmin controls: the paused/active state of a public space has no authentication classes.
+    **{("public-makerspace-availability", method): AnonymousRead() for method in ("GET", "HEAD", "OPTIONS")},
 }

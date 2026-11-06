@@ -51,6 +51,13 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.accounts.throttles.PhoneLoginConfirmThrottle": {"get_cache_key"},
     "apps.accounts.throttles.PhoneOtpNumberThrottle": {"get_cache_key"},
     "apps.accounts.throttles.PhoneOtpRequestThrottle": {"get_cache_key"},
+    # #196: the person-credential authenticators run first in DEFAULT_AUTHENTICATION_CLASSES.
+    # Each returns None unless the bearer carries its own swpat_/swoa_ prefix, so a claim
+    # JWT always falls through to SpaceWorksJWTAuthentication; a matched token goes through
+    # admit_person, which refuses every /api/v1/auth/ and credential route. The header hook
+    # only names the WWW-Authenticate realm. Neither ever authenticates a claim session.
+    "apps.apiclients.person_auth.PersonalAccessTokenAuthentication": {"authenticate", "authenticate_header"},
+    "apps.apiclients.person_auth.OAuthPersonAuthentication": {"authenticate", "authenticate_header"},
     "apps.apiclients.throttling.ClientTierRateThrottle": {"_tier", "allow_request", "get_cache_key"},
     "apps.apiclients.throttling.MemberPrincipalRateThrottle": {"_tier", "allow_request", "get_cache_key"},
     "apps.events.throttles.CollaborativeRegistrationThrottle": {
@@ -121,4 +128,7 @@ LIFECYCLE_OVERRIDE_ALLOWLIST = {
     "apps.payments.event_payouts.http.PrivateView": {"handle_exception", "finalize_response"},
     "apps.events.staged_forms.http.PrivateView": {"initial", "handle_exception", "finalize_response"},
     "apps.event_reimbursements.http.PrivateView": {"handle_exception"},
+    # #196: the token and app-connection routes. ``initial`` calls ``super().initial()``
+    # first, then demands a recent re-authentication for every unsafe method.
+    "apps.accounts.reauthentication_permissions.RecentReauthenticationMixin": {"initial"},
 }

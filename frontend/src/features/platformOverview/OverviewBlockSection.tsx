@@ -16,9 +16,12 @@ export function Figure({ label, value, timing }: { label: string; value: ReactNo
 export function SpaceCell({ space, tab }: { space?: OverviewSpace; tab: string }) {
   if (!space) return <strong>All spaces</strong>;
   const href = drillHref(space, tab);
+  const reports = drillHref(space, "reports");
   return <span className="inline-flex flex-wrap items-center gap-2">
     {href ? <a className="font-semibold text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       href={href} aria-label={`Open ${space.name} in the console`}>{space.name}</a> : <span>{space.name}</span>}
+    {reports ? <a className="text-sm text-muted underline underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      href={reports} aria-label={`Open ${space.name}'s reports`}>Reports</a> : null}
     {!isLiveSpace(space) && space.excluded_reason ? <Badge tone="warn">{EXCLUDED_LABEL[space.excluded_reason] ?? space.excluded_reason}</Badge> : null}
     {space.directory_hidden ? <Badge tone="neutral">Not in directory</Badge> : null}
   </span>;

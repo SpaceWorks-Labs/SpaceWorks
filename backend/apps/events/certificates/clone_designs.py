@@ -19,7 +19,7 @@ class CleanupStorage:
 
 
 def identities(event):
-    certificate = EventCertificateTemplateRevision.objects.filter(event=event).select_related("artwork").first()
+    certificate = EventCertificateTemplateRevision.objects.filter(event=event, certificate_kind="").select_related("artwork").first()
     badge = EventBadgeTemplateRevision.objects.filter(event=event).order_by("-pk").first()
     return certificate, badge
 

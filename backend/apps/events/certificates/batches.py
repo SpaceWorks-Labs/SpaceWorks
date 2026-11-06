@@ -87,7 +87,7 @@ def run_chunk(batch_id):
     for item in candidates:
         try:
             preparations[item.pk] = prepare_issuance(identity.event_id,
-                [{"subject_kind": item.subject_kind, "subject_id": item.subject_id}])
+                [{"subject_kind": item.subject_kind, "subject_id": item.subject_id, "kind": item.kind}])
         except NotFound:
             preparations[item.pk] = None
     accounts = {pk for prep in preparations.values() if prep for pk in prep.account_ids}

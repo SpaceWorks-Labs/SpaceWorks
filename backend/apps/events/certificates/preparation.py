@@ -55,6 +55,17 @@ class IssuancePreparation:
     layout: dict = field(repr=False)
     recipients: tuple = field(repr=False)
     key_version: int | None = None
+    # (certificate kind, template revision id, issuance layout) for every kind being issued; a kind
+    # with no design of its own uses the event's default design (C3 per-kind variants).
+    variants: tuple = field(default=(), repr=False)
+
+    def variant(self, kind):
+        for item_kind, template_id, layout in self.variants:
+            if item_kind == kind:
+                return template_id, layout
+        if not self.variants:
+            return self.template_id, self.layout
+        raise ProgrammeConflict("Prepare every certificate kind before locking.", code="subject_changed")
 
     @property
     def account_ids(self):
@@ -75,6 +86,10 @@ class IssuancePreparation:
                 or (template.pk if template else None) != self.template_id
                 or issuance_layout(template) != self.layout):
             raise ProgrammeConflict("Certificate source changed. Retry preparation.", code="subject_changed")
+        for kind, template_id, layout in self.variants:
+            template = selected_template(event, kind)
+            if (template.pk if template else None) != template_id or issuance_layout(template) != layout:
+                raise ProgrammeConflict("Certificate source changed. Retry preparation.", code="subject_changed")
         for item in self.recipients:
             row = subject_model(item.kind).objects.filter(pk=item.subject_id, event=event).first()
             if row is None or row.member_id != item.member_id:
@@ -84,10 +99,16 @@ class IssuancePreparation:
                 raise ProgrammeConflict("Recipient name changed. Retry preparation.", code="subject_changed")
 
 
-def selected_template(event):
-    if feature_enabled(event.makerspace, "events.certificate_designer"):
-        return EventCertificateTemplateRevision.objects.filter(event=event).select_related("artwork").first()
-    return None
+def selected_template(event, kind=None):
+    """The design a certificate of ``kind`` uses: its own variant, else the event default."""
+    if not feature_enabled(event.makerspace, "events.certificate_designer"):
+        return None
+    rows = EventCertificateTemplateRevision.objects.filter(event=event).select_related("artwork")
+    if kind:
+        own = rows.filter(certificate_kind=kind).first()
+        if own is not None:
+            return own
+    return rows.filter(certificate_kind="").first()
 
 
 def prepare_issuance(event_id, subjects, *, for_issue=True):
@@ -95,6 +116,10 @@ def prepare_issuance(event_id, subjects, *, for_issue=True):
         raise RuntimeError("Prepare certificate recipients outside domain transactions.")
     event = Event.objects.select_related("makerspace").get(pk=event_id)
     template = selected_template(event)
+    variants = []
+    for kind in sorted({item.get("kind") or "attendance" for item in subjects}):
+        chosen = selected_template(event, kind)
+        variants.append((kind, chosen.pk if chosen else None, deepcopy(issuance_layout(chosen))))
     active = get_or_create_active_dek(event.makerspace_id) if for_issue and settings.PII_ENCRYPTION_ENABLED else None
     recipients = []
     for kind, pk in sorted({(item["subject_kind"], item["subject_id"]) for item in subjects}):
@@ -114,7 +139,7 @@ def prepare_issuance(event_id, subjects, *, for_issue=True):
         recipients.append(PreparedRecipient(kind, pk, source.member_id, name, raw, candidate.pk, envelope))
     return IssuancePreparation(event_id, event.version, template.pk if template else None,
                                deepcopy(issuance_layout(template)), tuple(recipients),
-                               active.key.version if active else None)
+                               active.key.version if active else None, tuple(variants))
 
 
 def save_prepared(row, recipient):

@@ -7,8 +7,12 @@ from apps.events.event_permissions import EDIT_DETAILS
 from apps.events.services_certificate_templates import save_template
 
 
-def save_command(event_id, *, actor, operation_id, expected_version, parameters, artwork_id=None):
-    digest = hashlib.sha256(json.dumps(["certificate_design", expected_version, parameters, artwork_id], sort_keys=True).encode()).hexdigest()
+def save_command(event_id, *, actor, operation_id, expected_version, parameters, artwork_id=None,
+                 certificate_kind=""):
+    request = ["certificate_design", expected_version, parameters, artwork_id]
+    if certificate_kind:  # The default design keeps its earlier receipt digest.
+        request.append(certificate_kind)
+    digest = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()
     with event_command(event_id, actor=actor, permission=EDIT_DETAILS) as (event, actor):
         receipt = EventCredentialCommand.objects.filter(event=event, operation_id=operation_id).first()
         if receipt:
@@ -16,10 +20,12 @@ def save_command(event_id, *, actor, operation_id, expected_version, parameters,
                 raise ProgrammeConflict("Operation ID was already used.", code="operation_conflict")
             return receipt.result
         require_version(event, expected_version)
-        row = save_template(event, actor=actor, parameters=parameters, artwork_id=artwork_id)
+        row = save_template(event, actor=actor, parameters=parameters, artwork_id=artwork_id,
+                            certificate_kind=certificate_kind)
         result = {"id": row.pk, "event_id": event.pk, "version": advance(event), "event_version": event.version,
                   "state": "applied", "allowed_actions": [], "parameters": row.parameters,
-                  "artwork_id": row.artwork_id, "created_at": row.created_at.isoformat()}
+                  "artwork_id": row.artwork_id, "created_at": row.created_at.isoformat(),
+                  "certificate_kind": row.certificate_kind}
         EventCredentialCommand.objects.create(event=event, actor=actor, operation_id=operation_id,
                                              request_sha256=digest, result=result)
         return result

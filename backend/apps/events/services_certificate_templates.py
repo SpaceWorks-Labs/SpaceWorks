@@ -47,7 +47,7 @@ def _artwork(event, artwork_id):
 
 
 @transaction.atomic
-def save_template(event, *, actor, parameters, artwork_id=None):
+def save_template(event, *, actor, parameters, artwork_id=None, certificate_kind=""):
     event = _locked(event, actor)
     parameters = normalize_certificate_template(parameters)
     artwork = _artwork(event, artwork_id)
@@ -55,11 +55,17 @@ def save_template(event, *, actor, parameters, artwork_id=None):
         from types import SimpleNamespace
         from .certificate_templates import issuance_layout
         issuance_layout(SimpleNamespace(parameters=parameters, artwork=artwork, event_id=event.pk))
+    from .certificates.signatories import validate_signature_layers
+    validate_signature_layers(event, parameters)
     revision = EventCertificateTemplateRevision.objects.create(
-        event=event, artwork=artwork, parameters=parameters,
+        event=event, artwork=artwork, parameters=parameters, certificate_kind=certificate_kind,
     )
     audit.record(actor, "event.certificate_template_saved", makerspace=event.makerspace,
-                 target=revision, meta={"artwork_id": artwork_id})
+                 target=revision, meta={"artwork_id": artwork_id, "certificate_kind": certificate_kind})
+    from .certificates.signatories import printed_slots
+    if printed_slots(parameters):
+        from .certificates.signatory_commands import request_approvals
+        transaction.on_commit(lambda: request_approvals(event.pk), robust=True)
     return revision
 
 
@@ -108,17 +114,23 @@ def _attach_artwork(event, artwork_id, metadata, actor):
     return row
 
 
-def preview_context(event, *, actor, parameters, artwork_id=None):
+def preview_context(event, *, actor, parameters, artwork_id=None, certificate_kind="", sample_name=""):
     from types import SimpleNamespace
     from apps.events.certificate_templates import issuance_layout
+    from .certificates.merge import sample_merge
+    from .certificates.signatories import preview_signatures
     require_design(event, actor)
     artwork = _artwork(event, artwork_id)
     snapshot = issuance_layout(SimpleNamespace(
         parameters=normalize_certificate_template(parameters), artwork=artwork, event_id=event.pk,
     ))
+    snapshot["merge"] = sample_merge(certificate_kind or "attendance")
+    preview_signatures(event, snapshot)
     audit.record(actor, "event.certificate_template_previewed", makerspace=event.makerspace,
-                 target=event, meta={"revision_id": None})
-    return SimpleNamespace(layout_snapshot=snapshot, recipient_name="Sample attendee",
+                 target=event, meta={"revision_id": None, "certificate_kind": certificate_kind})
+    return SimpleNamespace(layout_snapshot=snapshot, recipient_name=sample_name or "Sample attendee",
+                           kind=certificate_kind or "attendance", award_id=None,
                            event_title=event.title, issuer_name=event.makerspace.name,
+                           event_timezone_name=event.timezone_name,
                            event_starts_at=event.starts_at, event_ends_at=event.ends_at,
                            issued_at=timezone.now(), serial="PREVIEW", revision=0)

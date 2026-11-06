@@ -123,6 +123,7 @@ def _stub_values(ref):
         "first_name": "",
         "last_name": "",
         "display_name": "",
+        "preferred_locale": None,
         "email": "",
         "phone": "",
         "phone_e164": "",

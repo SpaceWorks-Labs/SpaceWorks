@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from config.locale_registry import validate_supported_locale
 from .managers import UserManager
 from .account_constraints import user_constraints
 from .account_kind_guards import guard_account_identity
@@ -62,6 +64,11 @@ class User(AbstractUser):
     phone_e164 = models.CharField(max_length=20, blank=True)
     phone_verified_at = models.DateTimeField(null=True, blank=True)
     display_name = models.CharField(max_length=200, blank=True)
+    # Phase 8 i18n: the account's own language; null means "use the makerspace default".
+    # Platform account data, changed only by its owner through PATCH /auth/me.
+    preferred_locale = models.CharField(
+        max_length=16, null=True, blank=True, default=None, validators=[validate_supported_locale],
+    )
     email_verified_at = models.DateTimeField(null=True, blank=True)
     # Provenance matters for login: only accounts created by the anonymous signup
     # flow must remain verification-only until they prove ownership of their email.

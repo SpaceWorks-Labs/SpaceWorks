@@ -50,6 +50,8 @@ from .classification_r2_l15 import extend as extend_r2_l15  # noqa: E402
 extend_r2_l15(EXPORTED_MODEL_FIELDS)
 from .classification_r2_l26 import extend as extend_r2_l26  # noqa: E402
 extend_r2_l26(EXPORTED_MODEL_FIELDS)
+from .classification_r2_l9 import extend as extend_r2_l9  # noqa: E402
+extend_r2_l9(EXPORTED_MODEL_FIELDS)
 EXPORTED_MODEL_FIELDS = exported_fields(EXPORTED_MODEL_FIELDS)
 OMITTED_MODELS = {
     **NOTIFICATION_OMITTED,

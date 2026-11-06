@@ -45,6 +45,11 @@ StaffRoleEntrySerializer = inline_serializer(
         "actions": serializers.ListField(child=serializers.CharField()),
     },
 )
+class SupportedLocaleSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    label = serializers.CharField()
+
+
 class AuthUserPayload(serializers.Serializer):
     """Frozen release-2 auth payload (one account per person, #62/#63)."""
 
@@ -95,6 +100,11 @@ class AuthUserPayload(serializers.Serializer):
         help_text="A former staff account that has not linked another account yet: show the \"Link your "
                   "accounts\" nudge (Q17). There is no deadline.",
     )
+
+    preferred_locale = serializers.CharField(
+        allow_null=True, help_text="The account's own language; null follows the makerspace default.")
+    effective_locale = serializers.CharField(help_text="The language this request resolved to.")
+    supported_locales = SupportedLocaleSerializer(many=True)
 
     def get_fields(self):
         from apps.makerspaces.resource_grant_sources import registered_sources

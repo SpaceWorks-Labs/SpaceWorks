@@ -34,6 +34,7 @@ HTTP_EXEMPTIONS = {
     "auth-reauth-enrollment-confirm": "Global enrollment-only proof, never a tenant grant.",
     "control-reauthentication": "Global control session proof; existing control MFA gate remains.",
     "auth-organizations-self-service": "Global organization governance; creation confers no tenant authority.",
+    "auth-me": "Phase 8 i18n: the account's own language preference is platform-global account data.",
     "admin-space-pack-profiles": (
         "Platform configuration snapshots have no tenant rows; applying one uses the target tenant gate."
     ),

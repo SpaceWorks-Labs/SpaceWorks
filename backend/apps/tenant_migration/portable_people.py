@@ -10,6 +10,7 @@ merges on an email).
 
 from apps.accounts.models import User
 from apps.accounts.username_allocation import allocate_username
+from config.locale_registry import canonicalize
 
 from .archive_stream import database_value
 from .insertion_errors import IdentityResolutionError
@@ -52,6 +53,7 @@ def create_signing_person(source, target_pk):
             role=User.Role.REQUESTER, access_status=User.AccessStatus.ACTIVE,
             is_walk_in=False, is_staff=False, is_superuser=False,
             is_active=database_value(User._meta.get_field("is_active"), source.get("is_active") or "true"),
+            preferred_locale=canonicalize(source.get("preferred_locale")),
         )
         user.set_unusable_password()
         user.save(force_insert=True)
@@ -91,6 +93,8 @@ def _create_walk_in(source, target_pk):
             is_staff=False,
             is_superuser=False,
             is_active=not deleted,
+            # Phase 8 i18n: a supported source preference travels; anything else follows the space.
+            preferred_locale=canonicalize(source.get("preferred_locale")),
             **lifecycle,
         )
         user.set_unusable_password()

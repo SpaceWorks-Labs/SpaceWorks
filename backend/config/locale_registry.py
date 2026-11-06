@@ -76,3 +76,12 @@ def canonicalize(value):
         return candidate
     base = candidate.split("-", 1)[0]
     return base if base in codes else None
+
+
+def validate_supported_locale(value):
+    """Model-field validator. There are no DB choices, so adding a language needs no migration."""
+    if value is not None and canonicalize(value) != value:
+        from django.core.exceptions import ValidationError
+        from django.utils.translation import gettext
+
+        raise ValidationError(gettext("Choose a supported language."), code="unsupported_locale")

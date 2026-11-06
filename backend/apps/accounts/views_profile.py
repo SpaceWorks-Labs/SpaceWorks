@@ -14,6 +14,8 @@ from apps.accounts.auth_cookies import (
     csrf_surface,
 )
 from apps.accounts.schemas_auth import UserPayloadSerializer
+from apps.accounts.serializers_locale import PreferredLocaleUpdateSerializer
+from apps.accounts.services_locale import set_preferred_locale
 from apps.accounts.serializers import user_payload
 from apps.accounts.services_browser_logout import revoke_browser_cookie
 from .session_context import SessionContextSerializer, cookie_name, request_context
@@ -78,4 +80,30 @@ class MeView(APIView):
         },
     )
     def get(self, request, *args, **kwargs):
+        return Response(user_payload(request.user, request=request))
+
+    @extend_schema(
+        tags=["Auth"],
+        summary="Change your own language preference",
+        description="Self-only: sets the signed-in account's `preferred_locale` (a supported code, or "
+                    "null to follow the makerspace default). A real change writes one "
+                    "`account.locale_changed` audit row; repeating the current value writes nothing. "
+                    "Claim sessions are refused.",
+        request=PreferredLocaleUpdateSerializer,
+        responses={
+            200: UserPayloadSerializer,
+            400: OpenApiResponse(description="Blank, unsupported or extra fields."),
+            401: OpenApiResponse(description="Authentication credentials were not provided."),
+            403: OpenApiResponse(description="Permission denied (for example a claim session)."),
+            429: OpenApiResponse(description="Request throttled."),
+        },
+    )
+    def patch(self, request, *args, **kwargs):
+        serializer = PreferredLocaleUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.validated_data["preferred_locale"]
+        set_preferred_locale(request.user, code)
+        from config.locale_resolution import activate_authenticated_locale
+
+        activate_authenticated_locale(request, request.user)
         return Response(user_payload(request.user, request=request))

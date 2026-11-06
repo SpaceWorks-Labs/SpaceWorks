@@ -9,6 +9,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.schemas_auth import SupportedLocaleSerializer
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.platform import bootstrap_payload, resolve_frontend
 from apps.makerspaces.opening_hours_schema import OpeningHoursField
@@ -74,6 +75,8 @@ TenantBootstrapSerializer = inline_serializer(
         "theme": serializers.JSONField(),
         "branding": serializers.JSONField(),
         "email_enabled": serializers.BooleanField(),
+        "default_locale": serializers.CharField(help_text="The space's default language code."),
+        "supported_locales": SupportedLocaleSerializer(many=True),
         "messaging": inline_serializer(name="TenantMessagingAvailability", fields={
             "sms": serializers.BooleanField(), "whatsapp": serializers.BooleanField(),
         }),
@@ -119,4 +122,8 @@ class BootstrapView(APIView):
                 {"detail": "No active tenant frontend matched."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        # The space is authoritative now: its default replaces only an ambient/system locale.
+        from config.locale_resolution import activate_resolved_makerspace_locale
+
+        activate_resolved_makerspace_locale(request, makerspace)
         return Response(bootstrap_payload(makerspace))

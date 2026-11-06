@@ -30,7 +30,7 @@ export type Page<T> = { count: number; next: string | null; previous: string | n
 export type TransferBody = { email: string; previous_membership_id: number | null;
   previous_outcome: "keep_staff" | "revoke" | "keep_manager"; previous_roles: string[] };
 export type TransferResult = { status: "transferred" | "invited"; card: HealthCard; invitation_email_status?: string };
-export type ScheduleBody = { archive_on: string | null; purge_grace_days: number; note: string };
+export type ScheduleBody = { archive_on: string | null; purge_grace_days: number; note: string; confirm_slug: string };
 
 export const PAGE_SIZE = 24;
 export const healthKey = ["platform-space-health"] as const;

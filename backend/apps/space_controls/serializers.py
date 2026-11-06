@@ -121,6 +121,7 @@ class SpaceScheduleRequestSerializer(serializers.Serializer):
     archive_on = serializers.DateTimeField(required=False, allow_null=True, default=None)
     purge_grace_days = serializers.IntegerField(min_value=1, max_value=3650, default=90)
     note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+    confirm_slug = serializers.CharField(max_length=50)
 
 
 class SpacePurgeRequestSerializer(serializers.Serializer):

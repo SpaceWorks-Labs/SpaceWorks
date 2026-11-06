@@ -7532,6 +7532,9 @@ msgstr "Choose a file using the upload control."
 msgid "Choose a future deadline."
 msgstr "Choose a future deadline."
 
+msgid "Choose a language"
+msgstr "Choose a language"
+
 msgid "Choose a machine"
 msgstr "Choose a machine"
 
@@ -10456,6 +10459,12 @@ msgstr "Default for booking submitted, confirmed and rejected emails. Each space
 
 msgid "Default for this type"
 msgstr "Default for this type"
+
+msgid "Default language"
+msgstr "Default language"
+
+msgid "Default language saved."
+msgstr "Default language saved."
 
 msgid "Default payment currency"
 msgstr "Default payment currency"
@@ -16289,6 +16298,9 @@ msgstr "Landscape"
 
 msgid "Language"
 msgstr "Language"
+
+msgid "Language: {current}"
+msgstr "Language: {current}"
 
 msgid "Languages"
 msgstr "Languages"
@@ -30848,6 +30860,9 @@ msgstr "Share: "
 msgid "Shared consumables"
 msgstr "Shared consumables"
 
+msgid "Shared notices, the space feed and members without their own choice use this language."
+msgstr "Shared notices, the space feed and members without their own choice use this language."
+
 msgid "Shared provider account alias (optional)"
 msgstr "Shared provider account alias (optional)"
 
@@ -36372,6 +36387,9 @@ msgstr "Use the currency printed on the receipt."
 msgid "Use the platform WhatsApp sender"
 msgstr "Use the platform WhatsApp sender"
 
+msgid "Use the space's default"
+msgstr "Use the space's default"
+
 msgid "Use these separate Mentor Desk observations during integrity and shortlist review. Judging calculations use only submitted rubric judgments or ranking ballots."
 msgstr "Use these separate Mentor Desk observations during integrity and shortlist review. Judging calculations use only submitted rubric judgments or ranking ballots."
 
@@ -38535,6 +38553,9 @@ msgstr "Your job is running"
 
 msgid "Your judging desk"
 msgstr "Your judging desk"
+
+msgid "Your language could not be saved to your account. It still applies in this browser."
+msgstr "Your language could not be saved to your account. It still applies in this browser."
 
 msgid "Your last check-in has ended."
 msgstr "Your last check-in has ended."

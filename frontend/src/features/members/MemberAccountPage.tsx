@@ -21,6 +21,8 @@ import type { DeletionResult } from "./accountDeletionApi";
 import { SignOutEverywhere } from "../auth/SignOutEverywhere";
 import { AccountLinkCard } from "./accountLink/AccountLinkCard";
 import { useMergeSuggested } from "./accountLink/accountLinkApi";
+import { LanguageSwitcher } from "../../components/shell/LanguageSwitcher";
+import { memberRequest } from "../../lib/api/requests";
 
 export function MemberAccountPage() {
   const { slug = "" } = useParams();
@@ -90,6 +92,6 @@ export function MemberAccountPage() {
           {privacyOn && section === "privacy" ? <MemberPrivacy key={`privacy-${data.makerspace.id}`} makerspaceId={data.makerspace.id} consentOn={lifecycleOn("consent")} erasureOn={lifecycleOn("erasure")} /> : null}
           {selfExport && section === "data" ? <MemberAccountExports key={`exports-${data.makerspace.id}`} makerspaceId={data.makerspace.id} /> : null}
         </> : null}
-      </> }, ...(!restoring && !signIn && !hasClaimSession() && section === (tabs[0]?.key || "profile") ? [{ id: "your-organizations", title: t`Organization memberships`, rows: <OwnOrganizations /> }] : []), ...(showSelfCreation ? [{ id: "create-organization", title: t`Create your organization`, rows: <OrganizationSelfCreation /> }] : [])]} /></MemberSectionNavigation>
+      </> }, ...(!restoring && !signIn && !hasClaimSession() && section === (tabs[0]?.key || "profile") ? [{ id: "your-organizations", title: t`Organization memberships`, rows: <OwnOrganizations /> }] : []), ...(showSelfCreation ? [{ id: "create-organization", title: t`Create your organization`, rows: <OrganizationSelfCreation /> }] : []), ...(!restoring && !signIn && !hasClaimSession() && section === defaultSection ? [{ id: "language", title: t`Language`, rows: <LanguageSwitcher variant="select" onPersist={(code) => memberRequest("/auth/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ preferred_locale: code }) })} /> }] : [])]} /></MemberSectionNavigation>
   </MemberPortalTabs>;
 }

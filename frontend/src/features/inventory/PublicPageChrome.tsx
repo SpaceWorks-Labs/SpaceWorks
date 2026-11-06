@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { ThemeToggle } from "../../components/ThemeToggle";
+import { LanguageSwitcher } from "../../components/shell/LanguageSwitcher";
 import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
 import type { TenantBootstrap } from "../../lib/api";
 
@@ -27,7 +28,7 @@ export function publicPageChrome(slug: string, name: string, path: (part?: strin
   return {
     makerspace: { slug, name, logo: bootstrap?.makerspace.logo_url || undefined, homeHref: path() }, nav,
     headerAction: { label: t`Sign in`, href: path("member") },
-    liveStatus: <><MakerspaceMapLink makerspace={bootstrap?.makerspace} /><ThemeToggle variant="icon" /></>,
+    liveStatus: <><MakerspaceMapLink makerspace={bootstrap?.makerspace} /><LanguageSwitcher /><ThemeToggle variant="icon" /></>,
     footer: { credit: "Powered by Space Works", links: [
       { label: t`About`, href: "/about" },
       { label: t`License`, href: LICENSE_URL, external: true },

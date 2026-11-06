@@ -44,7 +44,8 @@ export function MemberGifts({ makerspaceId, makerspaceSlug }: { makerspaceId: nu
   return <section className="grid gap-3" aria-labelledby="member-gifts-heading">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 id="member-gifts-heading" className="title-panel">My gifts</h2>
-      <a className="desk-button" href={path("donate")}>Give again</a>
+      {/* #184: with donation charges off the space takes no gifts; past gifts stay listed as history. */}
+      {on("charges.enabled") && on("charges.donations") ? <a className="desk-button" href={path("donate")}>Give again</a> : null}
     </div>
     {gifts.data?.length ? gifts.data.map(gift => <GiftRow key={gift.id} makerspaceId={makerspaceId} gift={gift} />)
       : <p className="text-sm text-muted">You haven't given to this space yet.</p>}

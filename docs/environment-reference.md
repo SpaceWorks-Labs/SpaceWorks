@@ -89,6 +89,14 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | `PLATFORM_SUBDOMAIN_AUTO_TLS` | `False` | Guided platforms enable TLS admission for registered, verified, non-archived tenant subdomains. Unknown/pending/archived domains remain denied. Compared during restore preflight without blocking a target's TLS choice. |
 | `MANAGED_PLANS_ENABLED` | `False` | Managed hosting limiter (#187A), **off by default**: superadmin plan tiers, a plan per space, trials, recorded hosting billing and its optional non-payment enforcement. Also needs a managed deployment (`PLATFORM_DOMAIN_SUFFIX`). Off = nothing visible or enforced; self-host is unchanged. |
 | `MANAGED_BILLING_ONLINE_ENABLED` | `False` | Second switch, also off: lets a Space Manager pay a hosting invoice online through the platform's own Stripe/Razorpay account (keys are set encrypted in the superadmin console). Never charges without the payer opening the checkout. Meaningless unless `MANAGED_PLANS_ENABLED` is on. |
+| `PERSON_CREDENTIAL_RATE_PER_MINUTE` | `120` | Requests per minute per personal access token or OAuth app connection (#196). |
+| `OAUTH_OIDC_RSA_PRIVATE_KEY` | empty | PEM RSA key that signs OpenID Connect ID tokens for app connections (secret-bearing; `
+` escapes allowed). Empty = OAuth 2.0 only, no ID tokens. |
+| `OAUTH_ACCESS_TOKEN_SECONDS` | `3600` | Lifetime of an app connection's access token. |
+| `OAUTH_REFRESH_TOKEN_SECONDS` | `2592000` | Lifetime of an app connection's refresh token (30 days; rotated on every use). |
+| `THROTTLE_PERSON_TOKEN_MANAGE` | `30/hour` | Rate for creating and revoking personal access tokens. |
+| `THROTTLE_OAUTH_CONSENT` | `30/hour` | Rate for granting app-connection consent. |
+| `THROTTLE_API_CLIENT_MANAGE` | `120/hour` | Rate for creating, rotating and revoking API clients in the console. |
 
 ## Database
 

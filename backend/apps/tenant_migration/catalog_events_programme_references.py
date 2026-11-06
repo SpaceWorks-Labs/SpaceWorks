@@ -222,3 +222,6 @@ from .catalog_hackmoney import DATASETS as _HM_DATASETS  # noqa: E402
 DATASETS.update(_HM_DATASETS)
 from .catalog_r2_peoples_choice import DATASETS as _PC_DATASETS  # noqa: E402
 DATASETS.update(_PC_DATASETS)
+from .catalog_r2_certificates import DATASETS as _CERT_DATASETS, USER_FIELDS as _CERT_USER_FIELDS  # noqa: E402
+DATASETS.update(_CERT_DATASETS)
+USER_FIELDS = USER_FIELDS | _CERT_USER_FIELDS

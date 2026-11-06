@@ -8,6 +8,9 @@ from apps.events.certificates.library_models import (
 from apps.events.certificates.models import (
     EventCertificatePublicationPolicy, CertificateIssueBatch, CertificateIssueBatchItem,
 )
+from apps.events.certificates.signatory_models import (
+    EventCertificateSignatory, EventCertificateSignatoryApproval,
+)
 from apps.events.certificates.print_models import (
     EventBadgeTemplateRevision, BadgePrintJob, BadgePrintResource, BadgePrintCleanupReceipt,
 )
@@ -105,6 +108,7 @@ from apps.events.submissions.models_stages import (
 
 __all__ = [
     'EventContributorRequirementCompletion',
+    'EventCertificateSignatory', 'EventCertificateSignatoryApproval',
     'BadgePrintCleanupReceipt',
     'EventAssetObligation', 'EventProgrammeSweepCursor',
     'EventBroadcastPreview', 'EventCommandReceipt', 'EventAnswerDerivation', 'EventCertificateLibraryTemplate',

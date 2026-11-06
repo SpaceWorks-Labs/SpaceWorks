@@ -59,6 +59,8 @@ def _claim_render(certificate_id):
         _eligible(row, prepared)
         if row.status == "active":
             return row
+        from .signatories import require_render_released
+        require_render_released(row)
         stale = row.status == "rendering" and (
             row.render_started_at is None or row.render_started_at <= timezone.now()-timedelta(minutes=5))
         if row.status not in ("pending", "failed") and not stale:

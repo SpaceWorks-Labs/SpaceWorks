@@ -264,5 +264,9 @@ NATIVE_DECISIONS = {**NATIVE_DECISIONS, **HACKMONEY_NATIVE_DECISIONS}
 from .programme_route_catalog_peoples_choice import PEOPLES_CHOICE_ROUTES, PEOPLES_CHOICE_NATIVE_DECISIONS  # noqa: E402
 ROUTES += PEOPLES_CHOICE_ROUTES
 NATIVE_DECISIONS = {**NATIVE_DECISIONS, **PEOPLES_CHOICE_NATIVE_DECISIONS}
+# r2-idcards-best (#199): certificate signatories, approvals, issue preview, list, PNG, share and verify.
+from .programme_route_catalog_certificates import CERTIFICATE_ROUTES, CERTIFICATE_NATIVE_DECISIONS  # noqa: E402
+ROUTES += CERTIFICATE_ROUTES
+NATIVE_DECISIONS = {**NATIVE_DECISIONS, **CERTIFICATE_NATIVE_DECISIONS}
 
 BY_NAME = {name: (methods, target) for name, methods, target in ROUTES}

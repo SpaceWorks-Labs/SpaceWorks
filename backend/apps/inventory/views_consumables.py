@@ -1,5 +1,6 @@
 """Staff consumables screen API (MI-40): the merged list and the take-and-go use log."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
@@ -81,7 +82,7 @@ class ConsumableUseView(APIView):
             request.user, rbac.Action.EDIT_INVENTORY,
             InventoryProduct.objects.filter(makerspace=space, is_archived=False)), pk=pk)
         if not product.is_consumable:
-            raise PermissionDenied("Only consumables can be logged as used.")
+            raise PermissionDenied(gettext("Only consumables can be logged as used."))
         serializer = ConsumableUseSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         note = serializer.validated_data["note"].strip()

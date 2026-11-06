@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.hardware_requests.display import requester_label
@@ -35,7 +36,7 @@ class RequestSubmitSerializer(serializers.Serializer):
         product_ids = [item["product_id"] for item in attrs["items"]]
         if len(product_ids) != len(set(product_ids)):
             raise serializers.ValidationError(
-                {"items": "Duplicate product_id values are not allowed."}
+                {"items": gettext("Duplicate product_id values are not allowed.")}
             )
         return attrs
 

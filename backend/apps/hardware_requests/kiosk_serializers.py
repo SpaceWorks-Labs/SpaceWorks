@@ -5,6 +5,7 @@ the kiosk cannot accept a field the staff route would refuse. Unknown kinds and
 versions fail closed.
 """
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.boxes.serializers import QrResolveSerializer
@@ -112,5 +113,5 @@ class KioskEvidencePrepareSerializer(serializers.Serializer):
         from django.conf import settings
 
         if value not in settings.EVIDENCE_ALLOWED_MIME:
-            raise serializers.ValidationError("Unsupported evidence content type.")
+            raise serializers.ValidationError(gettext("Unsupported evidence content type."))
         return value

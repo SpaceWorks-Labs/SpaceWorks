@@ -5,6 +5,7 @@ Inventory Manager, or a Machine Manager whose To-Buy stream is on), behind the
 `inventory.vendors` switch. Every change is audited.
 """
 
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -27,12 +28,12 @@ def _save(vendor):
             vendor.full_clean()
             vendor.save()
     except IntegrityError:
-        raise ValidationError({"name": "A vendor with this name already exists."}) from None
+        raise ValidationError({"name": gettext("A vendor with this name already exists.")}) from None
     except Exception as exc:
         from django.core.exceptions import ValidationError as DjangoValidationError
         if isinstance(exc, DjangoValidationError):
             if "__all__" in getattr(exc, "message_dict", {}):
-                raise ValidationError({"name": "A vendor with this name already exists."}) from None
+                raise ValidationError({"name": gettext("A vendor with this name already exists.")}) from None
             raise ValidationError(exc.message_dict) from None
         raise
     return vendor

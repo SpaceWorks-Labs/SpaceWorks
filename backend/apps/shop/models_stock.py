@@ -11,6 +11,7 @@ a pay-at-desk order is collected (48 hours). Payment turns it into a sale; expir
 failure or cancellation releases it.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -20,12 +21,12 @@ from django.db.models import Q
 class ShopStockMovement(models.Model):
     class Kind(models.TextChoices):
         RESTOCK = "restock", "Restocked"
-        COUNT = "count", "Stock count correction"
+        COUNT = "count", gettext_lazy("Stock count correction")
         DAMAGE = "damage", "Damaged"
-        INTERNAL_USE = "internal_use", "Internal use"
+        INTERNAL_USE = "internal_use", gettext_lazy("Internal use")
         SALE = "sale", "Sold"
-        RETURNED = "returned", "Returned to stock"
-        WRITTEN_OFF = "written_off", "Returned and written off"
+        RETURNED = "returned", gettext_lazy("Returned to stock")
+        WRITTEN_OFF = "written_off", gettext_lazy("Returned and written off")
 
     ADJUST_KINDS = (Kind.COUNT, Kind.DAMAGE, Kind.INTERNAL_USE)
 
@@ -48,7 +49,7 @@ class ShopStockMovement(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk and type(self).objects.filter(pk=self.pk).exists():
-            raise ValidationError("Stock movements are append-only.")
+            raise ValidationError(gettext("Stock movements are append-only."))
         return super().save(*args, **kwargs)
 
 

@@ -8,6 +8,7 @@ Uploads belong to the space's inert principal, so each one carries a signed gran
 to the borrower's address, and a return must come from the address the checkout used.
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
@@ -36,7 +37,7 @@ def contact_mode(request, makerspace, *, taking=False):
     """
     if uses_contact_path(request, makerspace):
         if taking and not feature_enabled(makerspace, CONTACT_SWITCH):
-            raise PermissionDenied("Self-checkout without an account is turned off for this makerspace.")
+            raise PermissionDenied(gettext("Self-checkout without an account is turned off for this makerspace."))
         return True
     if not request.user.is_authenticated:
         raise NotAuthenticated()
@@ -47,14 +48,14 @@ def confirmed_identity(makerspace, data):
     """Check the evidence grant against the typed address, then consume the email code."""
     key = email_key(makerspace, data["contact_email"])
     if not grant_matches(makerspace, data["evidence_grant"], data["evidence_id"], key):
-        raise ValidationError({"evidence_grant": "This photo was not uploaded for this email."})
+        raise ValidationError({"evidence_grant": gettext("This photo was not uploaded for this email.")})
     return confirm_contact(makerspace, data)
 
 
 def issue_upload(makerspace, data, *, uploader, actor, contact_email=None):
     """Create the evidence row and its presigned upload URL (both paths share this)."""
     if data["content_type"] not in settings.EVIDENCE_ALLOWED_MIME:
-        raise ValidationError({"content_type": "Unsupported evidence content type."})
+        raise ValidationError({"content_type": gettext("Unsupported evidence content type.")})
     object_key = evidence_object_key(makerspace.id, data["evidence_type"])
     try:
         upload = presigned_upload(object_key, data["content_type"])

@@ -1,5 +1,6 @@
 """Policy-bound extensions, exposed through the request workflow barrel."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -74,7 +75,7 @@ def renew_loan(actor, request, *, staff=False):
             and actor.access_status == User.AccessStatus.ACTIVE
             and not actor.is_tenant_dump_stub
             and not getattr(actor, "must_change_password", False)):
-        raise PermissionDenied("An active, unrestricted actor is required to renew a loan.")
+        raise PermissionDenied(gettext("An active, unrestricted actor is required to renew a loan."))
     with transaction.atomic():
         # Settings updates use the same tenant lock, so disabling renewals wins cleanly.
         makerspace = require_feature_locked(request.makerspace_id, "loans.renewals")
@@ -86,7 +87,7 @@ def renew_loan(actor, request, *, staff=False):
             scoped = rbac.scope_by_makerspace(actor, HardwareRequest.objects.all()).filter(requester=actor)
         loan = scoped.select_for_update().filter(pk=request.pk, makerspace=makerspace).first()
         if loan is None:
-            raise PermissionDenied("This loan is outside your renewal scope.")
+            raise PermissionDenied(gettext("This loan is outside your renewal scope."))
         loan.makerspace = makerspace
         policy = MakerspaceLoanPolicy.for_makerspace(makerspace)
         check_renewal(loan, policy, actor=actor, staff=staff)

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -33,7 +34,7 @@ class DirectLoanIssueSerializer(serializers.Serializer):
             and attrs.get("container_id") is None
         ):
             raise serializers.ValidationError(
-                "Provide qr_payloads, items, or a container."
+                gettext("Provide qr_payloads, items, or a container.")
             )
         return attrs
 
@@ -55,7 +56,7 @@ class DirectLoanReturnSerializer(serializers.Serializer):
         item_ids = [resolution["item_id"] for resolution in attrs.get("resolutions") or []]
         if len(item_ids) != len(set(item_ids)):
             raise serializers.ValidationError(
-                {"resolutions": "Duplicate item_id values are not allowed."}
+                {"resolutions": gettext("Duplicate item_id values are not allowed.")}
             )
         return attrs
 

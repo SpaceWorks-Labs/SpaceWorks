@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import Http404
 from rest_framework import serializers
 from django.core.exceptions import ValidationError as ModelValidationError
@@ -105,7 +106,7 @@ class CreateToolQrSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("product_id")) == bool(attrs.get("asset_id")):
-            raise serializers.ValidationError("Provide exactly one of product_id or asset_id.")
+            raise serializers.ValidationError(gettext("Provide exactly one of product_id or asset_id."))
         return attrs
 
 

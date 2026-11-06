@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -24,7 +25,7 @@ class EvidencePhoto(models.Model):
 
     class ConsumptionState(models.TextChoices):
         # Every pre-migration and imported row: never a cleanup candidate.
-        LEGACY_UNKNOWN = "legacy_unknown", "Legacy (unknown)"
+        LEGACY_UNKNOWN = "legacy_unknown", gettext_lazy("Legacy (unknown)")
         # Only the two production presign views create this.
         UNCONSUMED = "unconsumed", "Unconsumed"
         CONSUMED = "consumed", "Consumed"

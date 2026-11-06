@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -43,7 +44,7 @@ class ToBuyExportView(APIView):
             raise PermissionDenied()
         fmt = request.query_params.get("format", "csv")
         if fmt not in {"csv", "xlsx"}:
-            raise ValidationError({"format": "Use csv or xlsx."})
+            raise ValidationError({"format": gettext("Use csv or xlsx.")})
         items = access.scope_items(ToBuyItem.objects.all(), request.user, makerspace_id)
         items = (
             apply_status_filter(items, request)

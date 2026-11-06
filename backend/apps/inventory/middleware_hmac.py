@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import logging
@@ -53,7 +54,7 @@ class FrontendHMACMiddleware(PublishableKeyMixin):
             if not is_valid and not settings.API_CLIENT_AUTH_REQUIRED:
                 log_would_reject(request)
         if self._should_reject_invalid(request) and not is_valid:
-            return JsonResponse({"detail": "Invalid client signature."}, status=401)
+            return JsonResponse({"detail": gettext("Invalid client signature.")}, status=401)
         return self.get_response(request)
 
     def _should_reject_invalid(self, request):

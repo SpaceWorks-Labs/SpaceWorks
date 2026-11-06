@@ -1,5 +1,6 @@
 """Credit a received grams To-Buy back to the machine consumable that raised it (MI-40)."""
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -15,9 +16,9 @@ def _amount(value):
     try:
         amount = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
-        raise ValidationError({"amount": "Enter a valid quantity."}) from None
+        raise ValidationError({"amount": gettext("Enter a valid quantity.")}) from None
     if not amount.is_finite() or amount <= 0:
-        raise ValidationError({"amount": "Amount must be greater than zero."})
+        raise ValidationError({"amount": gettext("Amount must be greater than zero.")})
     return amount
 
 
@@ -32,19 +33,19 @@ def refill_consumable(actor, item, amount):
     from apps.machines.models import MachineConsumable
     locked = ToBuyItem.objects.select_for_update().select_related("makerspace").get(pk=item.pk)
     if locked.source_consumable_id is None:
-        raise ValidationError({"detail": "This item was not raised by a machine consumable."})
+        raise ValidationError({"detail": gettext("This item was not raised by a machine consumable.")})
     if locked.status != ToBuyItem.Status.RECEIVED:
-        raise ValidationError({"status": "Item must be received before it can refill its consumable."})
+        raise ValidationError({"status": gettext("Item must be received before it can refill its consumable.")})
     if locked.moved_to_inventory_at is not None:
-        raise ValidationError({"detail": "This item has already been credited."})
+        raise ValidationError({"detail": gettext("This item has already been credited.")})
     if not access.can_manage_kind(actor, locked.makerspace_id, locked.kind):
         raise PermissionDenied()
     row = MachineConsumable.objects.select_for_update(of=("self",)).select_related("machine").get(
         pk=locked.source_consumable_id)
     if row.machine.makerspace_id != locked.makerspace_id or row.measurement != MachineConsumable.Measurement.GRAMS:
-        raise ValidationError({"detail": "The source consumable cannot be refilled."})
+        raise ValidationError({"detail": gettext("The source consumable cannot be refilled.")})
     if not row.machine.is_active:
-        raise ValidationError({"detail": "Machine is retired."})
+        raise ValidationError({"detail": gettext("Machine is retired.")})
     if not machine_access.can_manage_machine(actor, row.machine):
         raise PermissionDenied()
     amount = _amount(amount)

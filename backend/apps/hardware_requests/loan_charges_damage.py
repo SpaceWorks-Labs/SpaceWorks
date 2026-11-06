@@ -12,6 +12,7 @@ is a staff waive of the pending charge (or a refund of a paid one), then nothing
 the row is immutable and so is its charge.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -56,9 +57,9 @@ def _amount(value):
     try:
         amount = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
-        raise ValidationError({"amount": "Enter an amount."})
+        raise ValidationError({"amount": gettext("Enter an amount.")})
     if not amount.is_finite() or amount < 0 or amount.as_tuple().exponent < -2:
-        raise ValidationError({"amount": "Enter an amount of 0 or more with at most two decimals."})
+        raise ValidationError({"amount": gettext("Enter an amount of 0 or more with at most two decimals.")})
     return amount
 
 
@@ -105,7 +106,7 @@ def charge_accountability(row, actor, *, amount, note=""):
     assert_write_allowed(row.makerspace_id)
     request = HardwareRequest.objects.select_for_update().select_related("makerspace").get(pk=row.request_id)
     if not rbac.can(actor, rbac.Action.RETURN_REQUEST, request.makerspace_id):
-        raise PermissionDenied("Charging for damage or loss needs the return permission in this space.")
+        raise PermissionDenied(gettext("Charging for damage or loss needs the return permission in this space."))
     if not feature_enabled(request.makerspace, PRICING_FEATURE):
         raise PricingDisabled()
     if not loans_enabled(request.makerspace):

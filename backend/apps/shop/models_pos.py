@@ -7,6 +7,7 @@ cash it expected from the session's cash sales and cash refunds, and the varianc
 open -> (closing ->) closed, and a closed session's figures are frozen.
 """
 
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -18,7 +19,7 @@ MONEY = {"max_digits": 12, "decimal_places": 2}
 class ShopCashSession(models.Model):
     class Status(models.TextChoices):
         OPEN = "open", "Open"
-        CLOSING = "closing", "Waiting for a second check"
+        CLOSING = "closing", gettext_lazy("Waiting for a second check")
         CLOSED = "closed", "Closed"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
@@ -52,5 +53,5 @@ class ShopCashSession(models.Model):
         if self.pk:
             before = type(self).objects.filter(pk=self.pk).values("status", "opening_float").first()
             if before and (before["status"] == self.Status.CLOSED or before["opening_float"] != self.opening_float):
-                raise ValidationError("A closed cash session is frozen.")
+                raise ValidationError(gettext("A closed cash session is frozen."))
         return super().save(*args, **kwargs)

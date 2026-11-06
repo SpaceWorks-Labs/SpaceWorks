@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from apps.evidence.serializers import EvidenceUrlResponseSerializer
@@ -19,7 +20,7 @@ class PublicToolScanSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs.get("report_problem") and not attrs.get("problem_note", "").strip():
             raise serializers.ValidationError(
-                {"problem_note": "Problem note is required."}
+                {"problem_note": gettext("Problem note is required.")}
             )
         return attrs
 

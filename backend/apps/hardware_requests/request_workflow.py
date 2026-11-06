@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 
 from dataclasses import dataclass
@@ -114,8 +115,8 @@ def submit_request(
             makerspace,
             level="info",
             event="request.submitted",
-            title="New hardware request",
-            body=f"Hardware request #{request.pk} submitted.",
+            title=gettext("New hardware request"),
+            body=gettext('Hardware request #{pk} submitted.').format(pk=request.pk),
         )
         return request
 

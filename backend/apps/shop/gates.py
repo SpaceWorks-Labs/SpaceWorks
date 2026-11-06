@@ -5,6 +5,7 @@ off its routes answer 404 `feature_off`; data is kept. Staff spaces resolve thro
 (`scope_by_action`), so a person without the action in that space gets a 404, never a hint.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import NotFound
 
 from apps.accounts import rbac
@@ -51,7 +52,7 @@ def staff_space(actor, makerspace_id, action=VIEW):
     space = rbac.scope_by_action(actor, action, Makerspace.objects.all(), field="pk").filter(
         pk=makerspace_id).first()
     if space is None:
-        raise NotFound("Makerspace not found.")
+        raise NotFound(gettext("Makerspace not found."))
     return require_shop(space)
 
 

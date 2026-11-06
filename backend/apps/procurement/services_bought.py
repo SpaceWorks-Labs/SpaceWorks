@@ -12,6 +12,7 @@ shared finance answer `finance_view(...).may_record(domain, machine_type_id)` pl
 procurement stream authority. No approval threshold.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db import transaction
@@ -38,7 +39,7 @@ def _vendor(item, vendor_id):
         return None
     vendor = Vendor.objects.filter(pk=vendor_id, makerspace_id=item.makerspace_id, is_archived=False).first()
     if vendor is None:
-        raise ValidationError({"vendor_id": "Choose a vendor of this makerspace."})
+        raise ValidationError({"vendor_id": gettext("Choose a vendor of this makerspace.")})
     return vendor
 
 
@@ -58,7 +59,7 @@ def _restock(actor, item, refill_amount):
         return "shop_variant", variant.pk
     if item.source_consumable_id:
         if refill_amount is None:
-            raise ValidationError({"refill_amount": "Say how much material arrived for this machine consumable."})
+            raise ValidationError({"refill_amount": gettext("Say how much material arrived for this machine consumable.")})
         from apps.procurement.services_refill import refill_consumable
         row = refill_consumable(actor, item, refill_amount)
         return "consumable", row.pk
@@ -73,15 +74,15 @@ def mark_bought(actor, item, *, amount, currency, method, reference="", receipt_
 
     locked = ToBuyItem.objects.select_for_update().select_related("makerspace").get(pk=item.pk)
     if locked.status not in OPEN:
-        raise ValidationError({"status": "Only an open To-Buy item can be marked bought."})
+        raise ValidationError({"status": gettext("Only an open To-Buy item can be marked bought.")})
     if not access.can_manage_kind(actor, locked.makerspace_id, locked.kind):
         raise PermissionDenied()
     domain, machine_type_id = ledger_scope(locked)
     if not finance_view(actor, locked.makerspace_id).may_record(domain, machine_type_id):
-        raise PermissionDenied("You cannot record spending in this area.")
+        raise PermissionDenied(gettext("You cannot record spending in this area."))
     amount = Decimal(amount)
     if amount <= 0:
-        raise ValidationError({"amount": "Enter what was paid."})
+        raise ValidationError({"amount": gettext("Enter what was paid.")})
     vendor = _vendor(locked, vendor_id)
     supplier = (vendor.name if vendor else str(vendor_name or "").strip() or locked.vendor_name)[:200]
     entry = ledger_api.record_expense(

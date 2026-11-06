@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import { MakerspaceBrand } from "../MakerspaceBrand";
@@ -63,7 +64,7 @@ export function PublicHeader({ makerspace, nav, account, liveStatus, chrome = "b
     return () => document.removeEventListener("pointerdown", outside);
   }, [open]);
   const centralIdentity = !makerspace.slug && makerspace.name === "Space Works" && !makerspace.logo;
-  const links = (stacked: boolean) => <nav aria-label="Public navigation">
+  const links = (stacked: boolean) => <nav aria-label={t`Public navigation`}>
     <ul ref={stacked ? undefined : list} className={stacked ? "grid gap-1" : "flex w-max items-center gap-1"}>
       {nav.map(link => <li key={link.href}><ActionControl action={link}
         className={`border-transparent ${stacked ? "w-full justify-start" : "whitespace-nowrap"}`} /></li>)}
@@ -84,7 +85,7 @@ export function PublicHeader({ makerspace, nav, account, liveStatus, chrome = "b
         {liveStatus && !compact ? <div className="flex min-w-0 items-center gap-2">{liveStatus}</div> : null}
         {hasMenu ? <button ref={trigger} type="button" className="desk-button min-w-11 gap-2 px-3" aria-expanded={open}
           aria-controls={open ? menuId : undefined} onClick={() => setOpen(!open)}>
-          {open ? <X aria-hidden="true" size={20} /> : <Menu aria-hidden="true" size={20} />}<span className={menuNav ? "max-sm:sr-only" : "sr-only"}>Menu</span>
+          {open ? <X aria-hidden="true" size={20} /> : <Menu aria-hidden="true" size={20} />}<span className={menuNav ? "max-sm:sr-only" : "sr-only"}>{t`Menu`}</span>
         </button> : null}
         <ActionControl action={account} className="whitespace-nowrap" />
         {open && hasMenu ? <div id={menuId} className="absolute right-0 top-full z-40 mt-2 grid w-72 max-w-[calc(100vw-2rem)] gap-3 rounded-xl border border-line bg-panel p-2 shadow-overlay"

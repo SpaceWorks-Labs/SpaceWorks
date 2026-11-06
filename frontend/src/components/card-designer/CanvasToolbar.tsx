@@ -1,5 +1,6 @@
 // The bar above the canvas: align, distribute, group and zoom. Align works on one layer
 // (to the card) or several (to their bounds); "Safe area" aligns to the 3 mm safe area instead.
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical,
   AlignHorizontalDistributeCenter, AlignStartHorizontal, AlignStartVertical, AlignVerticalDistributeCenter, Group,
@@ -28,30 +29,30 @@ export function CanvasToolbar({ side, selection, editing, zoom, onZoom }: {
   const canMove = editing.canEdit && units.some((unit) => unit.every((layer) => !layer.locked));
   const target = toSafe ? "the safe area" : units.length > 1 ? "the selection" : "the card";
   return <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-    <div role="toolbar" aria-label="Arrange" className="flex flex-wrap items-center gap-1">
+    <div role="toolbar" aria-label={t`Arrange`} className="flex flex-wrap items-center gap-1">
       {ALIGN.map(({ edge, icon: Icon }) => <button key={edge} type="button" className={tool} disabled={!canMove}
         aria-label={`${ALIGN_LABELS[edge]} to ${target}`} title={`${ALIGN_LABELS[edge]} to ${target}`}
         onClick={() => editing.align(edge, toSafe)}><Icon size={18} aria-hidden="true" /></button>)}
       <span aria-hidden="true" className="mx-1 h-6 w-px bg-line" />
-      <button type="button" className={tool} disabled={!canMove || units.length < 3} title="Space evenly across"
-        aria-label="Space evenly across (three or more)" onClick={() => editing.distribute("horizontal")}>
+      <button type="button" className={tool} disabled={!canMove || units.length < 3} title={t`Space evenly across`}
+        aria-label={t`Space evenly across (three or more)`} onClick={() => editing.distribute("horizontal")}>
         <AlignHorizontalDistributeCenter size={18} aria-hidden="true" /></button>
-      <button type="button" className={tool} disabled={!canMove || units.length < 3} title="Space evenly down"
-        aria-label="Space evenly down (three or more)" onClick={() => editing.distribute("vertical")}>
+      <button type="button" className={tool} disabled={!canMove || units.length < 3} title={t`Space evenly down`}
+        aria-label={t`Space evenly down (three or more)`} onClick={() => editing.distribute("vertical")}>
         <AlignVerticalDistributeCenter size={18} aria-hidden="true" /></button>
       <span aria-hidden="true" className="mx-1 h-6 w-px bg-line" />
-      <button type="button" className={tool} disabled={!editing.canEdit || selection.length < 2} title="Group (Ctrl or Cmd + G)"
-        aria-label="Group the selection" onClick={editing.group}><Group size={18} aria-hidden="true" /></button>
+      <button type="button" className={tool} disabled={!editing.canEdit || selection.length < 2} title={t`Group (Ctrl or Cmd + G)`}
+        aria-label={t`Group the selection`} onClick={editing.group}><Group size={18} aria-hidden="true" /></button>
       <button type="button" className={tool} disabled={!editing.canEdit || !layers.some((layer) => layer.group)}
-        title="Ungroup (Shift + Ctrl or Cmd + G)" aria-label="Ungroup" onClick={editing.ungroup}>
+        title={t`Ungroup (Shift + Ctrl or Cmd + G)`} aria-label={t`Ungroup`} onClick={editing.ungroup}>
         <Ungroup size={18} aria-hidden="true" /></button>
       <label className="flex min-h-11 items-center gap-2 px-1 text-sm text-ink">
         <input type="checkbox" className="h-5 w-5 accent-[rgb(var(--color-accent-ink))]" checked={toSafe}
           onChange={(event) => setToSafe(event.target.checked)} />
-        To safe area</label>
+        {t`To safe area`}</label>
     </div>
     <div className="ml-auto">
-      <SegmentedControl label="Zoom" value={String(zoom)} onChange={(value) => onZoom(value === "fit" ? "fit" : Number(value) as Zoom)}
+      <SegmentedControl label={t`Zoom`} value={String(zoom)} onChange={(value) => onZoom(value === "fit" ? "fit" : Number(value) as Zoom)}
         options={ZOOMS.map((item) => ({ value: String(item.value), label: item.label }))} />
     </div>
   </div>;

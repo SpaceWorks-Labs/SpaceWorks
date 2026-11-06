@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type KeyboardEvent } from "react";
 import { ChevronLeft, ChevronRight, Images } from "lucide-react";
 
@@ -34,7 +35,7 @@ export function Gallery({ photos, label, title, emptyMessage, className = "" }: 
       <div className={`grid gap-2 ${thumbs.length ? "sm:grid-cols-[2fr_1fr]" : ""}`}>
         <PhotoButton photo={lead} index={0} count={photos.length} onOpen={setOpen} large />
         {thumbs.length ? (
-          <ul className="grid grid-cols-4 gap-2 sm:grid-cols-2" aria-label="More photos">
+          <ul className="grid grid-cols-4 gap-2 sm:grid-cols-2" aria-label={t`More photos`}>
             {thumbs.map((photo, offset) => (
               <li key={photo.id} className="relative">
                 <PhotoButton photo={photo} index={offset + 1} count={photos.length} onOpen={setOpen} />
@@ -59,7 +60,7 @@ function PhotoButton({ photo, index, count, onOpen, large = false }: {
   const [failed, setFailed] = useState(false);
   const name = photo.caption || `Photo ${index + 1} of ${count}`;
   return (
-    <button type="button" onClick={() => onOpen(index)} aria-label={`Open ${name}`}
+    <button type="button" onClick={() => onOpen(index)} aria-label={t`Open ${name}`}
       className={`group block w-full overflow-hidden rounded-lg border border-line bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 ${large ? "aspect-[4/3] sm:aspect-auto sm:h-full sm:min-h-64" : "aspect-square"}`}>
       {failed ? (
         <span className="flex h-full w-full items-center justify-center text-muted"><Images aria-hidden="true" size={24} /></span>
@@ -82,17 +83,16 @@ export function GalleryViewer({ photos, index, onIndex, label }: {
   };
   return (
     <Modal open={photo !== undefined} onClose={() => onIndex(null)} size="xl"
-      title={photo ? `${label} — ${(index ?? 0) + 1} of ${photos.length}` : label}>
+      title={photo ? t`${label} — ${(index ?? 0) + 1} of ${photos.length}` : label}>
       {photo ? (
         <div className="grid gap-3" onKeyDown={onKeyDown}>
           <img src={photo.url} alt={photo.caption ?? ""} className="max-h-[70vh] w-full rounded-lg bg-surface object-contain" />
           <div className="flex items-center justify-between gap-3">
             <button type="button" className="desk-button min-h-11" onClick={() => step(-1)} disabled={photos.length < 2}>
-              <ChevronLeft aria-hidden="true" size={20} /> Previous
-            </button>
+              <ChevronLeft aria-hidden="true" size={20} /> {t` Previous`}</button>
             <p className="min-w-0 flex-1 text-center text-sm text-muted">{photo.caption}</p>
             <button type="button" className="desk-button min-h-11" onClick={() => step(1)} disabled={photos.length < 2}>
-              Next <ChevronRight aria-hidden="true" size={20} />
+              {t`Next `}<ChevronRight aria-hidden="true" size={20} />
             </button>
           </div>
         </div>

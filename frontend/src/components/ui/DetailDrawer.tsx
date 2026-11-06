@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import {
@@ -77,7 +78,7 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
     <div ref={layerRef} inert={!amTop} className="sw-overlay-layer fixed inset-0 z-50">
       <button
         type="button"
-        aria-label="Close detail drawer"
+        aria-label={t`Close detail drawer`}
         className="absolute inset-0 bg-ink/30"
         onClick={onClose}
       />
@@ -99,8 +100,7 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
             {title}
           </h2>
           <button type="button" className="desk-button ml-auto shrink-0" onClick={onClose}>
-            Close
-          </button>
+            {t`Close`}</button>
         </header>
         {/* `min-w-0` so a wide child (a table, a long unbroken string) is constrained by the
             drawer and scrolls inside its own container, rather than stretching this flex column

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ActionControl, Callout, Card, ConfirmDialog, Modal, PageHeader } from "../ui";
 import type { Action, CalloutProps } from "../ui";
@@ -44,13 +45,13 @@ export function FlowLayout({ title, subject, steps, current, onStepSelect, work,
       : <PageHeader headingLevel={presentation === "dialog" ? 2 : 1} title={title} subtitle={subject} accentTitle={accentTitle} />}
     <div className={steps.length > 1 && !compact && !result ? "sw-flow-columns" : "grid min-w-0 gap-6"}>
       {!result ? <FlowSteps steps={steps} current={current} onStepSelect={onStepSelect} /> : null}
-      <div ref={workRef} tabIndex={-1} aria-label={steps.find(step => step.key === current)?.label ?? "Work panel"}
+      <div ref={workRef} tabIndex={-1} aria-label={steps.find(step => step.key === current)?.label ?? t`Work panel`}
         className="min-w-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
         <QueryContent {...query}><Card>{result ? <ResultPanel {...result} /> : work}</Card></QueryContent>
         {error ? <div className="mt-4" role="alert"><Callout {...error} /></div> : null}
         {next.disabled && next.disabledReason && !result ? <p className="mt-4 text-sm text-muted">{next.disabledReason}</p> : null}
         <div className="sw-sticky-footer mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line bg-panel pt-4">
-          <ActionControl action={{ label: "Cancel", onClick: cancel, disabled: busy }} />
+          <ActionControl action={{ label: t`Cancel`, onClick: cancel, disabled: busy }} />
           {!result ? <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
             {footer.back ? <ActionControl action={footer.back} /> : null}<ActionControl primary action={next} />
           </div> : null}
@@ -60,8 +61,8 @@ export function FlowLayout({ title, subject, steps, current, onStepSelect, work,
   </LayoutFrame>;
   return <>
     {presentation === "dialog" ? <Modal open={Boolean(open)} onClose={cancel} title={title} size="xl">{content}</Modal> : content}
-    <ConfirmDialog open={confirmLeave} title="Leave this task?" message={leaveGuard ?? "Leave this task?"}
-      confirmLabel="Leave task" cancelLabel="Keep working" onCancel={() => { if (!busy) setConfirmLeave(false); }}
+    <ConfirmDialog open={confirmLeave} title={t`Leave this task?`} message={leaveGuard ?? t`Leave this task?`}
+      confirmLabel={t`Leave task`} cancelLabel={t`Keep working`} onCancel={() => { if (!busy) setConfirmLeave(false); }}
       pending={busy} onConfirm={() => { if (!busy) { setConfirmLeave(false); onCancel(); } }} />
   </>;
 }

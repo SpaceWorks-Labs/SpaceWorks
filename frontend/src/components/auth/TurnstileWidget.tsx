@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { currentTheme } from "../../lib/theme";
 import { loadTurnstile } from "./turnstileScript";
@@ -36,12 +37,12 @@ export function TurnstileWidget({ siteKey, action, onToken, onExpired }: {
       if (widgetId !== undefined) window.turnstile?.remove(widgetId);
     };
   }, [siteKey, action]);
-  return <div className="grid gap-2" role="group" aria-label="Confirm you're a person">
-    <p className="text-sm font-semibold text-ink">Confirm you're a person</p>
+  return <div className="grid gap-2" role="group" aria-label={t`Confirm you're a person`}>
+    <p className="text-sm font-semibold text-ink">{t`Confirm you're a person`}</p>
     <div ref={container} className="min-h-16" />
     <p aria-live="polite" className="text-sm text-muted">
-      {status === "loading" ? "Loading the check…" : status === "failed"
-        ? "The check couldn't load. Check your connection, then try again." : ""}
+      {status === "loading" ? t`Loading the check…` : status === "failed"
+        ? t`The check couldn't load. Check your connection, then try again.` : ""}
     </p>
   </div>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useSyncExternalStore, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { currentTheme, subscribeTheme, type Theme } from "../lib/theme";
@@ -54,12 +55,12 @@ export function SpaceWorksLogo({
           height={height}
           style={{ display: "block", width, height, minWidth: width, minHeight: height, maxWidth: "none" }}
           role={decorative ? undefined : "img"}
-          aria-label={decorative ? undefined : "Space Works"}
+          aria-label={decorative ? undefined : t`Space Works`}
           aria-labelledby={decorative ? undefined : titleId}
           aria-hidden={decorative || undefined}
           focusable="false"
         >
-          {!decorative && <title id={titleId}>Space Works</title>}
+          {!decorative && <title id={titleId}>{t`Space Works`}</title>}
           {artwork.clip ? <>
             <defs><clipPath id={`${titleId}-clip`}><rect width={artwork.clip.width} height={artwork.clip.height} /></clipPath></defs>
             <g clipPath={`url(#${titleId}-clip)`}>{artwork.paths.slice(0, artwork.clip.count - 4).map((path, index) => <path key={index} {...path} />)}</g>
@@ -79,7 +80,7 @@ function flapClass(flap: number) {
 export function SpaceWorksHomeLink({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <Link
-      aria-label="Open makerspace listing"
+      aria-label={t`Open makerspace listing`}
       className={[
         "inline-flex text-left transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
         className,

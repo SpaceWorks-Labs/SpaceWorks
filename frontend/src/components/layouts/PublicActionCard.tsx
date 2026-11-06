@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { ActionControl, Card, Modal } from "../ui";
 import type { Action } from "../ui";
@@ -19,7 +20,7 @@ function ActionCardContent({ title, summary, form, primary, secondary, note, sta
   return <Card className="grid gap-4 shadow-overlay">
     {/* The phone sheet already titles itself; repeating it reads as a duplicate heading. */}
     {inSheet ? null : <h2 className="title-panel">{title}</h2>}{summary}
-    {state === "done" ? <div role="status">{doneContent ?? "Complete"}</div> : state === "closed" ? <p role="status">{note ?? "This action is closed."}</p>
+    {state === "done" ? <div role="status">{doneContent ?? t`Complete`}</div> : state === "closed" ? <p role="status">{note ?? t`This action is closed.`}</p>
       : <>{form}{primary ? <ActionControl action={primary} primary className="desk-button-brand w-full" /> : null}</>}
     {secondary?.length ? <div className="flex flex-wrap gap-2">{secondary.map(action => <ActionControl key={action.label} action={action} />)}</div> : null}
     {note && state !== "closed" ? <p className="text-sm text-muted">{note}</p> : null}
@@ -39,7 +40,7 @@ export function PublicActionCard(props: PublicActionCardProps) {
       </div>
     </div>
     <Modal open={open} onClose={() => setOpen(false)} title={props.title}
-      footer={<ActionControl action={{ label: "Close", onClick: () => setOpen(false) }} />}>
+      footer={<ActionControl action={{ label: t`Close`, onClick: () => setOpen(false) }} />}>
       <ActionCardContent {...props} inSheet />
     </Modal>
   </>;

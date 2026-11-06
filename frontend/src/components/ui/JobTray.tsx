@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { LoaderCircle } from "lucide-react";
@@ -11,7 +12,7 @@ function useJobStatus(job: TrayJob, poll = true) {
     queryFn: async ({ signal }) => {
       const result = await staffRequest<{ status: string } | { id: string; status: string }[]>(job.endpoint, { signal });
       const row = Array.isArray(result) ? result.find(value => String(value.id) === job.collectionId) : result;
-      if (!row) throw new Error("Job unavailable. Open its source panel to refresh the list.");
+      if (!row) throw new Error(t`Job unavailable. Open its source panel to refresh the list.`);
       return row;
     },
     enabled: poll && jobRunning(job.status), retry: false,
@@ -24,8 +25,8 @@ function JobStatus({ job, poll = true }: { job: TrayJob; poll?: boolean }) {
   const query = useJobStatus(job, poll);
   return <li className="flex flex-wrap items-center gap-3 border-t border-line p-3">
     <span>{job.label}</span><span className="text-sm text-muted">{job.status.replace(/_/g, " ")}</span>
-    {query.error ? <><span className="text-sm text-danger">Could not check progress.</span><button className="desk-button" onClick={() => void query.refetch()}>Retry status</button></> : null}
-    <button className="desk-button-ghost" aria-label={`Dismiss ${job.label}`} onClick={() => dismissJob(job.key)}>Dismiss</button>
+    {query.error ? <><span className="text-sm text-danger">{t`Could not check progress.`}</span><button className="desk-button" onClick={() => void query.refetch()}>{t`Retry status`}</button></> : null}
+    <button className="desk-button-ghost" aria-label={t`Dismiss ${job.label}`} onClick={() => dismissJob(job.key)}>{t`Dismiss`}</button>
   </li>;
 }
 export function JobTray({ makerspaceId, presentation = "details" }: { makerspaceId: number; presentation?: "details" | "pill" }) {
@@ -37,15 +38,14 @@ export function JobTray({ makerspaceId, presentation = "details" }: { makerspace
   if (presentation === "pill") return <>
     {jobs.map(job => <JobPoller key={job.key} job={job} />)}
     <button type="button" className="desk-button w-full rounded-full text-sm" aria-haspopup="dialog" onClick={() => setOpen(true)}>
-      <LoaderCircle aria-hidden="true" size={24} />Background jobs ({running} running)
-    </button>
-    {open ? createPortal(<Modal open title="Background jobs" onClose={() => setOpen(false)}>
+      <LoaderCircle aria-hidden="true" size={24} />{t`Background jobs (${running} running)`}</button>
+    {open ? createPortal(<Modal open title={t`Background jobs`} onClose={() => setOpen(false)}>
       <p role="status" aria-live="polite" className="text-sm">{jobs.map(row => `${row.label}: ${row.status}`).join(". ")}</p>
       <ul>{jobs.map(job => <JobStatus key={job.key} job={job} poll={false} />)}</ul>
     </Modal>, document.body) : null}
   </>;
   return <details className="mx-5 my-3 rounded-xl border border-line bg-panel">
-    <summary className="min-h-11 cursor-pointer p-3">Background jobs ({running} running)</summary>
+    <summary className="min-h-11 cursor-pointer p-3">{t`Background jobs (${running} running)`}</summary>
     <p role="status" aria-live="polite" className="px-3 text-sm">{jobs.map(row => `${row.label}: ${row.status}`).join(". ")}</p>
     <ul>{jobs.map(job => <JobStatus key={job.key} job={job} />)}</ul>
   </details>;

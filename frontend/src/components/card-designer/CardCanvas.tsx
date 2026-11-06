@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import type { Layer, Side, Watermark } from "./cardTypes";
@@ -61,12 +62,12 @@ export function CardCanvas({ side, designId, values, mono, stock, selection, gri
       const result = moveSelection(side, active.layers, dx, dy, { gridMm, free: event.altKey });
       onPatch(result.patches, false);
       setFeedback({ guides: result.guides, hints: result.hints,
-        readout: result.box ? { box: result.box, text: `X ${mm(result.box.x)} · Y ${mm(result.box.y)} mm` } : null });
+        readout: result.box ? { box: result.box, text: t`X ${mm(result.box.x)} · Y ${mm(result.box.y)} mm` } : null });
     } else if (active.mode === "resize") {
       const size = resizeLayer(side, start, dx, dy, { gridMm, stock, shift: event.shiftKey, free: event.altKey });
       onPatch({ [start.id]: size }, false);
       setFeedback({ guides: [], hints: [], readout: { box: { x: start.x_mm, y: start.y_mm, w: size.w_mm, h: size.h_mm },
-        text: `W ${mm(size.w_mm)} × H ${mm(size.h_mm)} mm` } });
+        text: t`W ${mm(size.w_mm)} × H ${mm(size.h_mm)} mm` } });
     } else {
       const rect = surface.current!.getBoundingClientRect();
       const centre = { x: rect.left + (start.x_mm + start.w_mm / 2) * px, y: rect.top + (start.y_mm + start.h_mm / 2) * px };
@@ -107,7 +108,7 @@ export function CardCanvas({ side, designId, values, mono, stock, selection, gri
   const handle = "absolute grid h-11 w-11 touch-none place-items-center";
   const dot = "h-4 w-4 rounded-full border-2 border-white bg-accent-ink shadow";
   return <div ref={viewport} data-card-viewport="" tabIndex={zoomed ? 0 : undefined} role={zoomed ? "region" : undefined}
-    aria-label={zoomed ? `${label}, zoomed in. Scroll to see all of it.` : undefined}
+    aria-label={zoomed ? t`${label}, zoomed in. Scroll to see all of it.` : undefined}
     className={`w-full min-w-0 ${zoomed ? "max-h-[70vh] overflow-auto overscroll-contain rounded-card focus-visible:outline-2 focus-visible:outline-focus [scrollbar-gutter:stable]" : ""}`}>
     <div ref={surface} role="group" aria-label={label} data-card-canvas=""
       className="relative mx-auto select-none overflow-hidden rounded-[3.18mm] outline outline-1 outline-line"
@@ -122,8 +123,7 @@ export function CardCanvas({ side, designId, values, mono, stock, selection, gri
         designId={designId} />
       {!readOnly ? <div aria-hidden="true" className="pointer-events-none absolute border border-dashed border-accent-ink/40"
         style={{ inset: SAFE_AREA_MM * px }} /> : null}
-      <span id={hintId} className="sr-only">Arrow keys move the selection, Shift for 5 mm; Alt with arrows resizes.
-        Shift-click adds to the selection; Alt-click picks one layer in a group.</span>
+      <span id={hintId} className="sr-only">{t`Arrow keys move the selection, Shift for 5 mm; Alt with arrows resizes. Shift-click adds to the selection; Alt-click picks one layer in a group.`}</span>
       {side.layers.map((layer) => {
         if (layer.hidden) return null;
         const selected = chosen.has(layer.id);

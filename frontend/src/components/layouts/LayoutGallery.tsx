@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Field } from "../ui";
 import { LayoutGalleryExample, layoutGalleryExamples, type LayoutGalleryExampleName } from "./LayoutGalleryExamples";
@@ -8,7 +9,7 @@ export function LayoutGallery({ initialExample = "Dashboard" }: { initialExample
   if (!import.meta.env.DEV && import.meta.env.MODE !== "test") return null;
   return <div className="min-h-dvh bg-bg text-ink">
     <div className="border-b border-line bg-panel p-4">
-      <Field label="Layout gallery"><select className="desk-input max-w-full" value={example}
+      <Field label={t`Layout gallery`}><select className="desk-input max-w-full" value={example}
         onChange={event => setExample(event.target.value as LayoutGalleryExampleName)}>
         {layoutGalleryExamples.map(name => <option key={name}>{name}</option>)}
       </select></Field>

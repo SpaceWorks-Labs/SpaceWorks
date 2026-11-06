@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { CollapsibleSection, Icon } from "../ui";
 import { useLayoutMedia } from "./useLayoutMedia";
@@ -20,7 +21,7 @@ export function FlowSteps({ steps, current, onStepSelect }: { steps: FlowStep[];
       : (focused + (event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 1) + buttons.length) % buttons.length;
     event.preventDefault(); buttons[next]?.focus();
   };
-  const rail = <nav ref={navRef} aria-label="Flow steps" onKeyDown={moveFocus}>
+  const rail = <nav ref={navRef} aria-label={t`Flow steps`} onKeyDown={moveFocus}>
     <ol className="grid gap-3 md:flex md:flex-wrap xl:grid">{steps.map((step, i) => <li key={step.key}
       aria-current={step.key === current ? "step" : undefined} className="min-w-0">
       <div className={`flex min-h-11 items-start gap-3 rounded-control border p-3 ${step.key === current ? "border-accent bg-accent-soft text-accent-ink" : "border-line text-ink"}`}>
@@ -28,9 +29,9 @@ export function FlowSteps({ steps, current, onStepSelect }: { steps: FlowStep[];
         <div className="min-w-0 flex-1">
           {step.state === "done" && onStepSelect ? <button type="button" className="desk-button-ghost w-full justify-start text-left"
             onClick={() => onStepSelect(step.key)}>{step.label}</button> : <p className="font-semibold">{step.label}</p>}
-          <p className="text-sm">{step.state === "done" ? "Completed" : step.key === current ? "Current step" : "Not started"}{step.required ? " · Required" : ""}</p>
+          <p className="text-sm">{step.state === "done" ? t`Completed` : step.key === current ? t`Current step` : t`Not started`}{step.required ? t` · Required` : ""}</p>
           {step.summary ? <p className="mt-1 break-words text-sm">{step.summary}</p> : null}
-          {step.missing ? <p className="mt-1 text-sm text-danger">Required information missing</p> : null}
+          {step.missing ? <p className="mt-1 text-sm text-danger">{t`Required information missing`}</p> : null}
         </div>
       </div>
     </li>)}</ol>

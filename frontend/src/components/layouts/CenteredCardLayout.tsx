@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { SpaceWorksLogo } from "../SpaceWorksLogo";
 import { ActionControl, IdentityChip, PageHeader } from "../ui";
@@ -20,7 +21,7 @@ export type CenteredCardLayoutProps = Omit<LayoutProps, "width"> & {
 export function CenteredCardLayout({ media, eyebrow, title, body, content, primary, escape, footer,
   width = 440, standalone = true, ...query }: CenteredCardLayoutProps) {
   return <LayoutFrame standalone={standalone}>
-    <a href="/" aria-label="Open makerspace listing" className="mb-8 inline-flex rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+    <a href="/" aria-label={t`Open makerspace listing`} className="mb-8 inline-flex rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>
       <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span>
     </a>

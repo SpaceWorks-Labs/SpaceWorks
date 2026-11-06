@@ -1,5 +1,6 @@
 // "Start from a template": the six templates drawn live (front and back) for the current
 // preview person, in light or dark. Choosing one replaces the draft after a confirmation.
+import { t } from "@lingui/core/macro";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { LayoutTemplate } from "lucide-react";
 
@@ -45,18 +46,18 @@ export function TemplateGallery({ design, values, onAdopt, onError }: {
 
   return <>
     <button type="button" className="desk-button min-h-11" onClick={() => setOpen(true)}>
-      <LayoutTemplate size={16} aria-hidden="true" /> Templates</button>
-    <Modal open={open} onClose={() => setOpen(false)} title="Start from a template" size="xl">
+      <LayoutTemplate size={16} aria-hidden="true" /> {t` Templates`}</button>
+    <Modal open={open} onClose={() => setOpen(false)} title={t`Start from a template`} size="xl">
       <div className="grid gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted">Shown with {values.name}. Every template stays fully editable.</p>
-          <SegmentedControl label="Template colours" value={theme} onChange={(value) => setTheme(value as "light" | "dark")}
-            options={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]} />
+          <p className="text-sm text-muted">{t`Shown with ${values.name}. Every template stays fully editable.`}</p>
+          <SegmentedControl label={t`Template colours`} value={theme} onChange={(value) => setTheme(value as "light" | "dark")}
+            options={[{ value: "light", label: t`Light` }, { value: "dark", label: t`Dark` }]} />
         </div>
         {templates.isLoading ? <div className="grid gap-3 sm:grid-cols-2">
           {Array.from({ length: 4 }, (_v, index) => <Skeleton key={index} className="h-44 w-full" />)}</div> : null}
         {templates.isError ? <ErrorBlock error={templates.error} resource="templates" onRetry={() => void templates.refetch()} /> : null}
-        {templates.data && !shown.length ? <p className="text-sm text-muted">No {theme} templates are available.</p> : null}
+        {templates.data && !shown.length ? <p className="text-sm text-muted">{t`No ${theme} templates are available.`}</p> : null}
         <ul className="grid gap-3 sm:grid-cols-2" aria-label={`${theme === "light" ? "Light" : "Dark"} templates`}>
           {shown.map((item) => {
             const { front, back, back_enabled: twoSided, mono } = item.document;
@@ -64,23 +65,23 @@ export function TemplateGallery({ design, values, onAdopt, onError }: {
             return <li key={`${item.key}-${item.theme}`} className="grid gap-3 rounded-card border border-line bg-surface p-3">
               <div className="flex flex-wrap items-start justify-center gap-2">
                 <CardThumbnail side={front} designId={design.id} values={values} mono={mono} width={width}
-                  label={`${item.label}, ${item.theme}, front`} />
+                  label={t`${item.label}, ${item.theme}, front`} />
                 {twoSided ? <CardThumbnail side={back} designId={design.id} values={values} mono={mono} width={width}
-                  label={`${item.label}, ${item.theme}, back`} /> : null}
+                  label={t`${item.label}, ${item.theme}, back`} /> : null}
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-ink">{item.label}
-                  <span className="block text-xs font-normal text-muted">{twoSided ? "Two-sided" : "Front only"}</span></span>
+                  <span className="block text-xs font-normal text-muted">{twoSided ? t`Two-sided` : t`Front only`}</span></span>
                 <button type="button" className="desk-button-primary min-h-11" disabled={reset.isPending}
-                  onClick={() => setChosen(item)}>Use {item.label}</button>
+                  onClick={() => setChosen(item)}>{t`Use ${item.label}`}</button>
               </div>
             </li>;
           })}
         </ul>
       </div>
     </Modal>
-    <ConfirmDialog open={chosen !== null} title={`Start again from ${chosen?.label ?? "this template"}?`}
-      message="Your draft is replaced. Cards keep the published version until you publish again."
-      confirmLabel="Replace the draft" pending={reset.isPending} onCancel={() => setChosen(null)} onConfirm={apply} />
+    <ConfirmDialog open={chosen !== null} title={t`Start again from ${chosen?.label ?? "this template"}?`}
+      message={t`Your draft is replaced. Cards keep the published version until you publish again.`}
+      confirmLabel={t`Replace the draft`} pending={reset.isPending} onCancel={() => setChosen(null)} onConfirm={apply} />
   </>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useLayoutMedia } from "./useLayoutMedia";
 
@@ -14,8 +15,8 @@ export function SettingsNav({ sections }: { sections: { id: string; title?: stri
     sections.forEach(section => { const element = document.getElementById(section.id); if (element) observer.observe(element); });
     return () => observer.disconnect();
   }, [sections]);
-  if (phone) return <nav aria-label="Settings sections" className="sw-settings-nav min-w-0">
-    <label className="grid gap-2"><span className="text-sm font-semibold text-ink">Jump to section</span>
+  if (phone) return <nav aria-label={t`Settings sections`} className="sw-settings-nav min-w-0">
+    <label className="grid gap-2"><span className="text-sm font-semibold text-ink">{t`Jump to section`}</span>
       <select className="desk-input w-full" value={active} onChange={event => {
         const id = event.target.value;
         setActive(id);
@@ -27,7 +28,7 @@ export function SettingsNav({ sections }: { sections: { id: string; title?: stri
       </select>
     </label>
   </nav>;
-  return <nav aria-label="Settings sections" className="sw-settings-nav flex min-w-0 gap-2 overflow-x-auto pb-2 xl:flex-col">
+  return <nav aria-label={t`Settings sections`} className="sw-settings-nav flex min-w-0 gap-2 overflow-x-auto pb-2 xl:flex-col">
     {sections.map(section => <a key={section.id} href={`#${section.id}`} onClick={() => setActive(section.id)}
       aria-current={active === section.id ? "location" : undefined}
       className={`flex min-h-11 shrink-0 items-center rounded-control px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${active === section.id ? "bg-hover text-ink" : "text-muted hover:bg-hover hover:text-ink"}`}>

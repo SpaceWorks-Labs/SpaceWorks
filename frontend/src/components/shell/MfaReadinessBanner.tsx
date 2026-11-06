@@ -1,9 +1,11 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { Callout } from "../ui";
 
 function lockDate(endsAt: string) {
   const date = new Date(endsAt);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString(undefined, { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
+  return date.toLocaleString(formatLocale(), { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
 }
 
 /**
@@ -14,5 +16,5 @@ export function MfaReadinessBanner({ endsAt, href }: { endsAt: string; href: str
   const when = lockDate(endsAt);
   return <Callout size="banner" tone="warn" lead="Set up two-step sign-in"
     body={`${when ? `Staff screens lock on ${when}.` : "Staff screens lock soon."} Use an authenticator app or a passkey. Your member area keeps working.`}
-    action={{ label: "Set it up now", href }} />;
+    action={{ label: t`Set it up now`, href }} />;
 }

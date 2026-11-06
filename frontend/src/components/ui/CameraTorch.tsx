@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type RefObject } from "react";
 
 /** Unsupported cameras simply omit torch; permission/capture flows stay usable. */
@@ -11,6 +12,6 @@ export function CameraTorch({ stream, ready }: { stream: RefObject<MediaStream |
   if (!supported) return null;
   return <><button className="desk-button min-h-11" type="button" aria-pressed={on} onClick={async () => {
     try { await track!.applyConstraints({ advanced: [{ torch: !on } as MediaTrackConstraintSet] }); setOn(!on); setError(""); }
-    catch { setError("Torch unavailable. Continue scanning in better light."); }
-  }}>{on ? "Turn torch off" : "Turn torch on"}</button>{error ? <p role="status">{error}</p> : null}</>;
+    catch { setError(t`Torch unavailable. Continue scanning in better light.`); }
+  }}>{on ? t`Turn torch off` : t`Turn torch on`}</button>{error ? <p role="status">{error}</p> : null}</>;
 }

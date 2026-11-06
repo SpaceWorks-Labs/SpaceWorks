@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 /**
  * Shared presign upload for gallery photos. The server answers a presign with an upload
  * target (`{ object_key, upload: { url, method, fields, headers } }`) -- a staging key for
@@ -23,7 +24,7 @@ export async function sendToStorage(presigned: GalleryPresign, file: File, trans
     form.append("file", file);
     response = await transport(upload.url, { method: "POST", body: form });
   }
-  if (!response.ok) throw new Error(`Photo upload failed (${response.status}). Try again.`);
+  if (!response.ok) throw new Error(t`Photo upload failed (${response.status}). Try again.`);
 }
 
 /** presign -> storage -> attach, as one awaited step so the UI shows a single pending state. */
@@ -33,7 +34,7 @@ export async function uploadGalleryPhoto(file: File, steps: {
   transport?: typeof fetch;
 }) {
   if (!GALLERY_ACCEPT.split(",").includes(file.type)) {
-    throw new Error("Use a JPEG, PNG or WebP photo.");
+    throw new Error(t`Use a JPEG, PNG or WebP photo.`);
   }
   const presigned = await steps.presign({ filename: file.name, content_type: file.type });
   await sendToStorage(presigned, file, steps.transport);

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { lazy, Suspense, useState } from "react";
 import { captchaChallenge } from "../../lib/api/authErrorCopy";
 
@@ -19,7 +20,7 @@ export function useTurnstileGate(configuredKey: string | undefined, onToken: (to
     setChallenge(current => ({ siteKey: next.siteKey || configuredKey, action: next.action, round: (current?.round ?? 0) + 1 }));
     return true;
   };
-  const slot = challenge ? <Suspense fallback={<p role="status" className="text-sm text-muted">Loading the check…</p>}>
+  const slot = challenge ? <Suspense fallback={<p role="status" className="text-sm text-muted">{t`Loading the check…`}</p>}>
     <TurnstileWidget key={challenge.round} siteKey={challenge.siteKey} action={challenge.action}
       onToken={onToken} onExpired={() => setChallenge(current => current && { ...current, round: current.round + 1 })} />
   </Suspense> : null;

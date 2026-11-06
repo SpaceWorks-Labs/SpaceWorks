@@ -1,5 +1,7 @@
 // The free card designer: one design (member cards, an ID programme, event cards or tickets).
 // Edits are drafts saved as you go; publishing (or approval) decides what cards print.
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useMemo, useRef, useState } from "react";
 
 import { ErrorBlock } from "../ui/ErrorBlock";
@@ -61,12 +63,11 @@ function DesignerBody({ design, canEdit, title }: { design: CardDesign; canEdit:
     setSelection(layerId ? [layerId] : []);
   };
 
-  return <section ref={scope} className="grid min-w-0 grid-cols-1 gap-4" aria-label={title ?? "Card designer"}>
+  return <section ref={scope} className="grid min-w-0 grid-cols-1 gap-4" aria-label={title ?? t`Card designer`}>
     {working.deviceDraft ? <div role="status" className="flex flex-wrap items-center gap-2 rounded-control border border-warn bg-warn-soft p-3 text-sm text-warn-ink">
-      <span className="min-w-0 flex-1">This device has changes that were not saved
-        ({new Date(working.deviceDraft.savedAt).toLocaleString()}).</span>
-      <button type="button" className="desk-button min-h-11" onClick={working.restoreDeviceDraft}>Restore them</button>
-      <button type="button" className="desk-button-ghost min-h-11" onClick={working.discardDeviceDraft}>Discard</button>
+      <span className="min-w-0 flex-1">{t`This device has changes that were not saved (${new Date(working.deviceDraft.savedAt).toLocaleString(formatLocale())}).`}</span>
+      <button type="button" className="desk-button min-h-11" onClick={working.restoreDeviceDraft}>{t`Restore them`}</button>
+      <button type="button" className="desk-button-ghost min-h-11" onClick={working.discardDeviceDraft}>{t`Discard`}</button>
     </div> : null}
     <DesignActions design={design} saveStatus={working.status} saveError={working.error} canEdit={canEdit}
       flush={working.flush} onRetry={() => void working.retry()} onReload={() => void working.reload()} />
@@ -84,19 +85,18 @@ function DesignerBody({ design, canEdit, title }: { design: CardDesign; canEdit:
             watermark={document.watermark}
             selection={selection} gridMm={view.gridMm} showGrid={view.showGrid} zoom={zoom} readOnly={!canEdit}
             onSelect={setSelection} onPatch={editing.patch} onCheckpoint={working.checkpoint}
-            label={`${view.side === "front" ? "Front" : "Back"} of the card, ${side.page_width_mm} by ${side.page_height_mm} mm`} />
+            label={t`${view.side === "front" ? "Front" : "Back"} of the card, ${side.page_width_mm} by ${side.page_height_mm} mm`} />
         </div>
-        <p className="text-center text-xs text-muted">The dashed line is the 3 mm safe area: keep text inside it.
-          Showing {previewLabel(person)}.</p>
+        <p className="text-center text-xs text-muted">{t`The dashed line is the 3 mm safe area: keep text inside it. Showing ${previewLabel(person)}.`}</p>
       </div>
-      <aside className="self-start rounded-card border border-line bg-panel p-3 lg:col-start-2 lg:row-start-2 xl:col-start-3 xl:row-start-1" aria-label="Layer settings">
+      <aside className="self-start rounded-card border border-line bg-panel p-3 lg:col-start-2 lg:row-start-2 xl:col-start-3 xl:row-start-1" aria-label={t`Layer settings`}>
         {primary ? <>
           <h3 className="mb-3 text-sm font-semibold text-ink">{layerName(primary)}</h3>
           <LayerInspector side={side} layer={primary} designId={design.id} stock={document.stock} assetColours={assetColours}
             answerFields={design.answer_fields}
             readOnly={!canEdit} onChange={(change) => editing.patchOne(primary.id, change)} />
         </> : selection.length > 1 ? <SelectionInspector side={side} selection={selection} editing={editing} />
-          : <p className="text-sm text-muted">Select a layer on the card or in the Layers list to change it. Shift-click to select several.</p>}
+          : <p className="text-sm text-muted">{t`Select a layer on the card or in the Layers list to change it. Shift-click to select several.`}</p>}
       </aside>
       <div className="lg:col-start-1 lg:row-span-2 lg:row-start-1 xl:row-span-1">
         <DesignerSidePanel panel={panel} onPanel={setPanel} design={design} document={document} sideName={view.side}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { isProgrammePath } from "./features/events/programme/routeNames";
 import { isEventAddonPath } from "./features/events/eventAddons/routeNames";
 import { isCardPath } from "./features/cards/routeNames";
@@ -59,7 +60,7 @@ function FamilyHome() {
   const [params] = useSearchParams();
   if (!bootstrap) {
     if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: "Couldn't load this space. Try again.", onRetry: () => void bootstrapQuery.refetch() }}
-      makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: "Sign in", href: memberHref }} nav={[]} header={{ title: "We couldn't load this space" }}
+      makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]} header={{ title: t`We couldn't load this space` }}
       footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
     return <RouteFallback />;
   }
@@ -71,15 +72,15 @@ function FamilyHome() {
     case "bookings": return <><PublicBookingsPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
     case "machines": return <><PublicMachinesPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
     case "membership": return <><MemberArea /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
-    default: return <PublicLayout state={{ status: "ready" }} isEmpty empty={{ message: `${bootstrap.branding.display_name || bootstrap.makerspace.name} hasn't published anything yet. Check back soon.` }}
-      makerspace={{ name: bootstrap.branding.display_name || bootstrap.makerspace.name, slug, homeHref }} headerAction={{ label: "Sign in", href: memberHref }} nav={[]}
+    default: return <PublicLayout state={{ status: "ready" }} isEmpty empty={{ message: t`${bootstrap.branding.display_name || bootstrap.makerspace.name} hasn't published anything yet. Check back soon.` }}
+      makerspace={{ name: bootstrap.branding.display_name || bootstrap.makerspace.name, slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]}
       header={{ title: bootstrap.branding.display_name || bootstrap.makerspace.name }} footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
   }
 }
 
 function RouteFallback() {
-  return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Opening Space Works…" body=""
-    primary={{ label: "Loading…", disabled: true, disabledReason: "The page is opening." }} /></div>;
+  return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Opening Space Works…`} body=""
+    primary={{ label: t`Loading…`, disabled: true, disabledReason: "The page is opening." }} /></div>;
 }
 
 // Canonical links also use the tenant prefix on token-configured frontends.

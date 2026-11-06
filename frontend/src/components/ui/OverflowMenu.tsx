@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { RouteLink } from "./RouteLink";
@@ -5,7 +6,7 @@ import { Icon } from "./icon";
 import type { Action } from "./types";
 import { rove, rovingItems } from "./useRovingFocus";
 export type OverflowMenuProps = { actions: Action[]; label?: string; className?: string; mobileActions?: Action[]; showLabel?: boolean };
-export function OverflowMenu({ actions, label = "More actions", className = "", mobileActions = [], showLabel = false }: OverflowMenuProps) {
+export function OverflowMenu({ actions, label = t`More actions`, className = "", mobileActions = [], showLabel = false }: OverflowMenuProps) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState<Action | null>(null);
   // A trigger near the left edge (a wrapped phone header row) opens its menu rightwards, never off-screen.

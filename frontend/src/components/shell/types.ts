@@ -9,7 +9,7 @@ export type ShellWorkspace = { name: string; subtitle: string; avatar: Identity;
 export type ShellUser = { name: string; role?: string; menu: Action[]; /** Omitted for a signed-out visitor: no Sign out entry. */ onSignOut?: () => void };
 export type AppShellProps = {
   variant: "staff" | "member"; workspace?: ShellWorkspace;
-  search?: { label: "Search and commands"; shortcut: "mod+k"; onOpen: () => void };
+  search?: { label: string; shortcut: "mod+k"; onOpen: () => void };
   nav: ShellSection[]; activeKey: string; footerLinks?: Action[]; user: ShellUser;
   compactNav: "drawer" | "bottom-tabs"; status?: ReactNode; children: ReactNode;
 };

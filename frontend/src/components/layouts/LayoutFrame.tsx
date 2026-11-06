@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { createContext, useContext, type ReactNode } from "react";
 import { EmptyState, ErrorBlock, Skeleton } from "../ui";
 import type { LayoutStateProps } from "./types";
@@ -18,7 +19,7 @@ export function LayoutFrame({ standalone = false, width = "default", children, c
   const ownsTarget = standalone && !nested;
   const Root = ownsTarget ? "main" : "div";
   return <ContentTarget.Provider value={true}>
-    {standalone && !nested ? <a href="#main-content" className="skip-link">Skip to content</a> : null}
+    {standalone && !nested ? <a href="#main-content" className="skip-link">{t`Skip to content`}</a> : null}
     <Root id={ownsTarget ? "main-content" : undefined} tabIndex={ownsTarget ? -1 : undefined}
       className={`${nested ? `min-w-0 ${width === "narrow" ? "mx-auto w-full max-w-[792px]" : ""}` : `sw-layout sw-layout-${width}`} ${className}`}>
       {children}
@@ -37,12 +38,12 @@ export function useLayoutQuery(query: LayoutStateProps): LayoutStateProps {
 
 export function QueryContent({ children, ...props }: LayoutStateProps & { children: ReactNode }) {
   const { state, isEmpty, empty } = useLayoutQuery(props);
-  if (state.status === "loading") return <div role="status" aria-label="Loading content" className="grid gap-3">
-    <span className="sr-only">Loading content</span>
+  if (state.status === "loading") return <div role="status" aria-label={t`Loading content`} className="grid gap-3">
+    <span className="sr-only">{t`Loading content`}</span>
     <Skeleton className="h-24 w-full" /><Skeleton className="h-32 w-full" />
   </div>;
-  if (state.status === "error") return <ErrorBlock error={new Error(state.error || "Couldn't load this page. Try again.")}
+  if (state.status === "error") return <ErrorBlock error={new Error(state.error || t`Couldn't load this page. Try again.`)}
     onRetry={state.onRetry} />;
-  if (isEmpty) return <EmptyState {...empty ?? { message: "Nothing here yet." }} />;
+  if (isEmpty) return <EmptyState {...empty ?? { message: t`Nothing here yet.` }} />;
   return <>{children}</>;
 }

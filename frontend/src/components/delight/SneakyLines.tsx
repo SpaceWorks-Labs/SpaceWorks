@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "../ui/toastStore";
@@ -28,7 +29,7 @@ export function SudoMake({ allowed }: { allowed: boolean }) {
     const typed = (event: Event) => {
       if (!isSearch(event.target) || event.target.value.trim().toLowerCase() !== "sudo make" || !once(SUDO_KEY)) return;
       remember(SUDO_KEY);
-      toast("Okay.", { tone: "info", duration: 4000 });
+      toast(t`Okay.`, { tone: "info", duration: 4000 });
     };
     document.addEventListener("input", typed, true);
     return () => document.removeEventListener("input", typed, true);
@@ -43,8 +44,8 @@ export function LateShiftLine({ now = new Date() }: { now?: Date }) {
   const [hidden, setHidden] = useState(() => !once(LATE_KEY));
   if (!enabled || !eggsEnabled || hidden || now.getHours() >= 4 || !eggsAllowed(window.location.pathname)) return null;
   return <p className="flex items-center gap-2 text-sm text-muted">
-    <span>Late shift? The solder's still warm.</span>
-    <button type="button" aria-label="Dismiss" className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    <span>{t`Late shift? The solder's still warm.`}</span>
+    <button type="button" aria-label={t`Dismiss`} className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       onClick={() => { remember(LATE_KEY); setHidden(true); }}><X size={14} aria-hidden="true" /></button>
   </p>;
 }

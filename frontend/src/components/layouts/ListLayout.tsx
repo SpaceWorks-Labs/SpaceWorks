@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { ActionControl, BulkActionToolbar, Callout, PageHeader, Pagination, StatCard, Tabs } from "../ui";
 import type { Action, CalloutProps, EmptyProps, PageHeaderProps, Stat, Tab } from "../ui";
@@ -41,7 +42,7 @@ export function ListLayout({ header, callout, stats = [], tabs, activeTab, onTab
             <div className="min-w-0">{body.kind === "rows" ? <StaggerGroup className="grid gap-3">{body.rows}</StaggerGroup> : body.table}</div>
             {pagination ? <Pagination {...pagination} totalPages={Math.ceil(pagination.count / Math.max(1, pagination.pageSize))} /> : null}
           </div>
-          {rail ? <aside aria-label="List activity" className="min-w-0">{rail}</aside> : null}
+          {rail ? <aside aria-label={t`List activity`} className="min-w-0">{rail}</aside> : null}
         </div>
       </QueryContent>
   </>;

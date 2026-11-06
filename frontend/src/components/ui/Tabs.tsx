@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { RouteLink } from "./RouteLink";
 import { rove } from "./useRovingFocus";
@@ -37,7 +38,7 @@ function useScrollAffordance(active: string | undefined, count: number) {
   return { bar, fade };
 }
 
-export function Tabs({ tabs, activeKey, label = "Page sections", onChange, children }: TabsProps) {
+export function Tabs({ tabs, activeKey, label = t`Page sections`, onChange, children }: TabsProps) {
   const id = useId();
   const active = tabs.some(tab => tab.key === activeKey) ? activeKey : tabs[0]?.key;
   const { bar, fade } = useScrollAffordance(active, tabs.length);

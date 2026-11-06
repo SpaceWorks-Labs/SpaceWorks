@@ -1,11 +1,12 @@
+import { t } from "@lingui/core/macro";
 import { Check, Circle } from "lucide-react";
 import { useDelight } from "./DelightProvider";
 
 export function StaffGreeting({ name, now = new Date() }: { name: string; now?: Date }) {
   const hour = now.getHours();
-  return <p className="text-ink">{hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"}, {name}. What will you make possible today?</p>;
+  return <p className="text-ink">{hour < 12 ? t`Good morning` : hour < 18 ? t`Good afternoon` : t`Good evening`}, {name}. What will you make possible today?</p>;
 }
-export function ConfirmationGreeting({ name }: { name: string }) { return <p className="text-ink">You're in, {name}.</p>; }
+export function ConfirmationGreeting({ name }: { name: string }) { return <p className="text-ink">{t`You're in, ${name}.`}</p>; }
 
 export type SetupStep = { key: "inventory" | "qr" | "staff" | "public"; label: string; done: boolean; href: string; available: boolean };
 /** Caller derives availability from actual modules/actions; this never grants them. */
@@ -13,10 +14,10 @@ export function SetupChecklist({ steps }: { steps: SetupStep[] }) {
   const order: SetupStep["key"][] = ["inventory", "qr", "staff", "public"];
   const visible = [...steps].filter(step => step.available).sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
   if (!visible.length || visible.every(step => step.done)) return null;
-  return <section aria-label="Set up your space" className="rounded-2xl border border-line bg-panel p-5">
-    <h2 className="title-section">Set up your space</h2><ol className="mt-3 grid gap-2">{visible.map(step => <li key={step.key}>
+  return <section aria-label={t`Set up your space`} className="rounded-2xl border border-line bg-panel p-5">
+    <h2 className="title-section">{t`Set up your space`}</h2><ol className="mt-3 grid gap-2">{visible.map(step => <li key={step.key}>
       <a href={step.href} className="flex min-h-11 items-center gap-3 rounded-control text-accent-ink underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-        {step.done ? <Check size={20} aria-hidden="true" /> : <Circle size={20} aria-hidden="true" />}<span>{step.label}{step.done ? " — complete" : ""}</span>
+        {step.done ? <Check size={20} aria-hidden="true" /> : <Circle size={20} aria-hidden="true" />}<span>{step.label}{step.done ? t` — complete` : ""}</span>
       </a></li>)}</ol>
   </section>;
 }

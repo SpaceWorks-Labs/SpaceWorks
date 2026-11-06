@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { illustrationManifest } from './manifest'
 import type { IllustrationId, IllustrationTheme } from './manifest'
 
@@ -12,9 +13,9 @@ const sources = import.meta.glob<string>('./**/*.svg', {
 /** One image for the chosen theme; callers decide whether its meaning is needed. */
 export function getIllustration(id: IllustrationId, theme: IllustrationTheme) {
   const entry = illustrationManifest.find((item) => item.id === id)
-  if (!entry) throw new Error(`Unknown Space Works illustration: ${id}`)
+  if (!entry) throw new Error(t`Unknown Space Works illustration: ${id}`)
   const src = sources[`./${entry.paths[theme]}`]
-  if (!src) throw new Error(`Missing Space Works illustration: ${id}/${theme}`)
+  if (!src) throw new Error(t`Missing Space Works illustration: ${id}/${theme}`)
   return { ...entry, src }
 }
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { ActionControl, ActivityItem, ActivityRail, Callout, EmptyState, PageHeader, StatCard } from "../ui";
 import type { Action, ActivityItemProps, CalloutProps, EmptyProps, PageHeaderProps, Stat } from "../ui";
@@ -44,8 +45,8 @@ export function DashboardLayout({ header, callout, progress, stats, overflowStat
         {callout ? <Callout {...callout} /> : null}
         {progress}
         {stats.length ? <StaggerGroup className="sw-stats">{stats.slice(0, 4).map(stat => <StatCard key={stat.label} {...stat} />)}</StaggerGroup> : null}
-        {overflow.length ? <section aria-label={overflowStats?.label ?? "More numbers"}>
-          <h2 className="sr-only">{overflowStats?.label ?? "More numbers"}</h2>
+        {overflow.length ? <section aria-label={overflowStats?.label ?? t`More numbers`}>
+          <h2 className="sr-only">{overflowStats?.label ?? t`More numbers`}</h2>
           <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{overflow.map(stat => <li key={stat.label}><CompactStat {...stat} /></li>)}</ul>
         </section> : null}
         <div className={rail || railContent ? "sw-columns" : "min-w-0"}>

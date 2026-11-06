@@ -72,6 +72,8 @@ def unsuspend(actor, makerspace_id):
         audit.record(actor, "space_control.unsuspended", makerspace=space, target=space,
                      meta={"read_only": state.read_only_at is not None})
         notifications.notify(space, "unsuspended")
+        from .held_mail import release_held_mail
+        release_held_mail(space.pk)
     return space
 
 

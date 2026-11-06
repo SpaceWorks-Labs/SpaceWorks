@@ -56,6 +56,11 @@ def change_type(registration, *, actor, ticket_type_id, digest=None):
     ticket = _target(event, actor, ticket_type_id, row.ticket_type_id)
     paid, payment = paid_ticket_price(row)
     difference = new_price(event, actor, ticket) - paid
+    from apps.payments.availability import charge_tracking_enabled
+    if difference > 0 and not charge_tracking_enabled(event.makerspace, "events"):
+        # #184: with event charges off a dearer type costs nothing more, so the switch is
+        # immediate; a cheaper switch still refunds money that was really collected.
+        difference = Decimal("0")
     currency = RateCard(event.makerspace, "events").currency
     item = line(TYPE_CHANGE, currency=currency, quantity=1, unit_amount=max(difference, Decimal("0")),
                 rate_source="item", target={"type": "event", "id": event.pk, "label": event.title},

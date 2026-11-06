@@ -18,6 +18,7 @@ from apps.accounts.claim_routes import CLAIM_REACHABLE_PREFIXES
 from apps.accounts.models import User
 from apps.accounts.authentication_device import heartbeat_device_grant, validated_device_grant
 from apps.accounts.tokens import validate_auth_generation
+from config.locale_resolution import activate_authenticated_locale
 
 
 VERIFICATION_ONLY_SURFACE = "verification_only"
@@ -46,6 +47,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         validate_auth_generation(token)
         from apps.accounts.session_issuance import validate_session_generation
         validate_session_generation(user, token)
+        # Phase 8: the principal is valid, so any refusal below renders in its locale.
+        activate_authenticated_locale(request, user)
         # Set before route policy runs: native members cannot use organization
         # grants/governance to enter delegated staff routes, and the route gate needs the
         # grant's authority (a staff grant is a step-up fixed to one makerspace).
@@ -102,6 +105,8 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         if staff and staff_route and request.headers.get("X-Makerspace-Id") is None:
             raise PermissionDenied("Native staff APIs require X-Makerspace-Id.")
         selected = validate_native_makerspace_scope(request, user, grant)
+        membership = getattr(request, "selected_makerspace_membership", None)
+        activate_authenticated_locale(request, user, getattr(membership, "makerspace", None))
         if staff and selected is not None:
             kwargs = getattr(request.resolver_match, "kwargs", {}) or {}
             for key in ("makerspace_id", "makerspace_pk"):
@@ -166,6 +171,7 @@ class SpaceWorksJWTAuthentication(JWTAuthentication):
         request.claim_session = claim
         request.session_authority = "member"
         request.selected_makerspace_id = claim.membership.makerspace_id
+        activate_authenticated_locale(request, user, claim.membership.makerspace_id)
         _assert_source_gate(request, user)
         return user, token
 

@@ -228,6 +228,9 @@ MIDDLEWARE = [
     # Binds the per-request correlation id before any layer below can log. The two gates
     # above refuse without logging through it; that is the accepted cost of their position.
     "config.request_id.RequestIdMiddleware",
+    # Phase 8 i18n: a fresh locale context per request, OUTSIDE every layer below that can
+    # answer early, so no refusal inherits another request's locale (config/locale_context.py).
+    "config.locale_context.LocaleContextResetMiddleware",
     # #189/#191: with CONTROL_PLANE_PROXY off, /control/ answers only the server and its
     # SSH tunnel; the public origin gets a plain 404 before any session or login layer runs.
     "config.control_plane_access.ControlPlaneReachMiddleware",
@@ -242,6 +245,10 @@ MIDDLEWARE = [
     "config.admin_access.AdminCspEvalMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # After sessions, before CommonMiddleware (Django's required placement); the explicit
+    # X-SpaceWorks-Locale choice is re-applied right after it.
+    "django.middleware.locale.LocaleMiddleware",
+    "config.locale_context.ExplicitLocaleMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "apps.inventory.middleware.FrontendHMACMiddleware",
     "django.middleware.common.CommonMiddleware",

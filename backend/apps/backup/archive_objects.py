@@ -70,6 +70,14 @@ NON_OBJECT_KEY_FIELDS = frozenset({
     # Stage trigger and payee-template selectors are closed vocabulary labels.
     ("events.StageFormAssignment", "trigger_key"),
     ("payments.EventPayeeRevision", "template_key"),
+    ("events.HackathonPrizeClaim", "template_key"),  # hack-money: the same payee-template selector
+    # L3 card designer: the deployment-wide font cache and expiring job results are omitted
+    # models (not tenant archive content); the job's idempotency key is a replay identity.
+    ("card_designs.CardFont", "font_key"),
+    ("card_designs.CardJob", "idempotency_key"),
+    ("card_designs.CardJob", "result_key"),
+    # Superadmin hosting billing: an encrypted provider credential, never a bucket locator.
+    ("managed_hosting.PlatformHostingBillingSettings", "stripe_secret_key"),
     ("operations.ReportMetricRollup", "dimension_key"),
     ("operations.ReportMetricRollup", "metric_key"),
     ("operations.ReportMetricRollup", "report_key"),

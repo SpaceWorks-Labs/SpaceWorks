@@ -35,7 +35,7 @@ ROUTE_CLASSES = MappingProxyType({
     **{name: (MEMBERSHIP_ONLY if target == "tenant" else DELEGABLE)
        for name, methods, target in PROGRAMME_ROUTES if name.startswith("events-programme-admin-")},
     **{name: MEMBERSHIP_ONLY for name, methods, target in PROGRAMME_ROUTES
-       if "library" in name or "tenant-admin" in name or name == "admin-platform-insights"},
+       if "library" in name or "tenant-admin" in name},
     "events-programme-series-guests": DELEGABLE,
     **{name: (DELEGABLE if surface == "delegable" else MEMBERSHIP_ONLY)
        for name, methods, target, surface in REIMBURSEMENT_ROUTES if surface != "member"},

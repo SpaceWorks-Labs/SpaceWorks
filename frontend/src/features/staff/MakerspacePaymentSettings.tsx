@@ -56,7 +56,8 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
     || currency !== (settings.data?.default_currency ?? "usd"));
 
   // Loan tracking remains available even when the online rail is tombstoned.
-  const loans = featureEnabled(makerspace.enabled_features ?? [], "charges.loans")
+  // #184: loan fees exist only while BOTH the charges master switch and charges.loans are on.
+  const loans = featureEnabled(makerspace.enabled_features ?? [], "charges.loans") && capabilityOn(makerspace, "charges.enabled")
     ? <MakerspaceLoanSettings makerspaceId={makerspace.id} pricingOn={capabilityOn(makerspace, "charges.pricing")} /> : null;
   if ((settings.error as { status?: number } | null)?.status === 404) return loans;
 

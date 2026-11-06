@@ -33,7 +33,7 @@ def normalise(data, *, max_edge=2400, keep_alpha=True):
                 if source.width * source.height > (MAX_JPEG_PIXELS if jpeg else MAX_OTHER_PIXELS):
                     raise ValidationError({"file": "That image is too large."})
                 if jpeg:  # decode at the smallest DCT scale that still covers max_edge
-                    source.draft("RGB", (max_edge, max_edge))
+                    source.draft(mode="RGB", size=(max_edge, max_edge))
                 image = ImageOps.exif_transpose(source)
                 image = image.convert("RGBA" if keep_alpha else "RGB")
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError,

@@ -30,6 +30,11 @@ def snapshot(*, event_id, assignment_id):
             judge=role, invalidation__isnull=True).exclude(outcome="skip").order_by("pk").values_list("pk", "version")]
         if compared:
             proof["comparisons"] = compared
+    elif role.role == "co_organizer":
+        # Organising has no hours ledger; the live approved role is the evidence, and a
+        # withdrawn or revoked role makes the stored proof stale.
+        if role.state not in ("approved", "completed") or role.imported_inert:
+            raise ProgrammeConflict("An approved organiser role is required.", code="certificate_ineligible")
     else:
         raise ProgrammeConflict("Verified work is required.", code="certificate_ineligible")
     return proof

@@ -19,6 +19,7 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         VOLUNTEER_THANKS = "volunteer_thanks", "Volunteer thanks"
         MENTOR_THANKS = "mentor_thanks", "Mentor thanks"
         JUDGE_THANKS = "judge_thanks", "Judge thanks"
+        ORGANISER_THANKS = "organiser_thanks", "Organiser thanks"
 
     event = models.ForeignKey("events.Event", on_delete=models.PROTECT, related_name="certificates")
     recipient_member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
@@ -31,6 +32,8 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
     result_revision = models.ForeignKey("events.EventResultRevision", on_delete=models.PROTECT,
                                        null=True, blank=True, related_name="certificates")
     public_verification_enabled = models.BooleanField(default=False)
+    # C9: the holder may show their name on the public verification page and share image.
+    holder_name_public = models.BooleanField(default=False)
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         RENDERING = "rendering", "Rendering"

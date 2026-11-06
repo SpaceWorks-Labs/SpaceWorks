@@ -1,6 +1,6 @@
 from django.conf import settings
-from zoneinfo import ZoneInfo
-from .layer_rendering import ImageResource, QrResource, draw_document
+from .layer_rendering import ImageResource, QrResource, SignatureResource, draw_document
+from .merge import merge_values  # noqa: F401 - re-exported for older importers
 
 
 def badge_image_resource(layer, *, event_id, document):
@@ -29,14 +29,6 @@ def verification_url(certificate):
     return f"{settings.PUBLIC_APP_BASE_URL.rstrip('/')}/certificates/verify/{certificate.serial}"
 
 
-def merge_values(certificate):
-    return {"name": certificate.recipient_name, "event": certificate.event_title,
-            "eventDate": certificate.event_starts_at.astimezone(ZoneInfo(getattr(certificate, "event_timezone_name", "UTC"))).strftime("%d %B %Y"),
-            "organisation": certificate.issuer_name,
-            "issueDate": certificate.issued_at.strftime("%d %B %Y"),
-            "certificate_id": str(certificate.serial), "crewRole": ""}
-
-
 def render_layers(canvas, certificate, *, preflight=False):
     from apps.events.certificate_artwork_storage import read_artwork
     snapshot = certificate.layout_snapshot
@@ -52,6 +44,14 @@ def render_layers(canvas, certificate, *, preflight=False):
     def resource(layer):
         if layer["type"] == "certificate_qr":
             return QrResource(verification_url(certificate), dummy=preview)
+        if layer["type"] == "signature":
+            item = (snapshot.get("signatures") or {}).get(str(layer["signature_slot"]))
+            if not item:
+                return None
+            art = item.get("artwork")
+            image = (ImageResource(read_artwork(art["key"], art["version"], art["sha256"]), art["sha256"])
+                     if art and not preflight else None)
+            return SignatureResource(item["name"], item["title"], image)
         if preflight:
             return None
         if layer["type"] == "image":

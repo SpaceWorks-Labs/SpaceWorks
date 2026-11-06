@@ -33,7 +33,8 @@ def render_certificate_pdf(certificate):
     width, height = snapshot["page_width_mm"], snapshot["page_height_mm"]
     output = BytesIO()
     canvas = Canvas(output, pagesize=(width * mm, height * mm), pageCompression=1, invariant=1)
-    canvas.setTitle(f"Attendance certificate {certificate.serial}")
+    from .certificates.merge import document_title
+    canvas.setTitle(document_title(certificate))
     if snapshot.get("version") == 2:
         from .certificates.rendering import render_layers
         render_layers(canvas, certificate)

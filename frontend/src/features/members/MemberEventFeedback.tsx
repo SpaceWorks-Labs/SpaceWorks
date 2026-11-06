@@ -8,7 +8,7 @@ import { validateCustomAnswers, type CustomAnswers, type CustomFormQuestion } fr
 type Form = {
   survey: { title: string; questions: CustomFormQuestion[] };
   requires_auth: boolean;
-  certificate: { id: number; status: string; revision: number } | null;
+  certificate: { id: number; status: string; revision: number; kind_title?: string } | null;
 };
 
 export function MemberEventFeedback({ makerspaceId, makerspaceSlug, registrationId, feedbackPath, certificate }: {
@@ -16,7 +16,7 @@ export function MemberEventFeedback({ makerspaceId, makerspaceSlug, registration
   makerspaceSlug: string;
   registrationId: number;
   feedbackPath: string | null;
-  certificate: { id: number; status: string; revision: number } | null;
+  certificate: { id: number; status: string; revision: number; kind_title?: string } | null;
 }) {
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -48,13 +48,14 @@ export function MemberEventFeedback({ makerspaceId, makerspaceSlug, registration
     },
   });
 
+  const noun = certificate?.kind_title ? certificate.kind_title.toLowerCase() : "certificate";
   return <div className="mt-2 grid gap-2">
     <div className="flex flex-wrap gap-2">
       {feedbackPath ? <button className="desk-button-ghost" type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)}>{open ? "Close feedback" : "Leave feedback"}</button> : null}
-      {certificate?.status === "active" ? <button className="desk-button-ghost" type="button" disabled={download.isPending} onClick={() => download.mutate(certificate.id)}>Download certificate</button> : null}
-      {certificate?.status === "pending" ? <button className="desk-button-ghost" type="button" disabled={download.isPending} onClick={() => download.mutate(certificate.id)}>Prepare certificate</button> : null}
-      {certificate?.status === "failed" ? <button className="desk-button-ghost" type="button" disabled={download.isPending} onClick={() => download.mutate(certificate.id)}>Retry certificate</button> : null}
-      {certificate?.status === "revoked" ? <span className="text-xs text-danger">Certificate revoked.</span> : null}
+      {certificate?.status === "active" ? <button className="desk-button-ghost" type="button" disabled={download.isPending} onClick={() => download.mutate(certificate.id)}>Download {noun}</button> : null}
+      {certificate?.status === "pending" ? <button className="desk-button-ghost" type="button" disabled={download.isPending} onClick={() => download.mutate(certificate.id)}>Prepare {noun}</button> : null}
+      {certificate?.status === "failed" ? <button className="desk-button-ghost" type="button" disabled={download.isPending} onClick={() => download.mutate(certificate.id)}>Retry {noun}</button> : null}
+      {certificate?.status === "revoked" ? <span className="text-xs text-danger">This {noun} was withdrawn.</span> : null}
     </div>
     {open && form.isLoading ? <p className="text-sm text-muted">Loading feedback form…</p> : null}
     {open && form.data ? <form className="mt-2 grid gap-4 rounded-lg border border-line p-3" onSubmit={(event) => { event.preventDefault(); const next = validateCustomAnswers(form.data!.survey.questions, answers); setErrors(next); if (!Object.keys(next).length) submit.mutate(); }}>

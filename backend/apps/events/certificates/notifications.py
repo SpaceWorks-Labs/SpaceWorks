@@ -8,7 +8,7 @@ from apps.makerspaces.servability import is_servable
 
 
 def certificate_envelope(certificate, event_name):
-    from apps.events.notification_envelopes import CERTIFICATE_COPY
+    from apps.events.notification_envelopes import certificate_copy
     from apps.notifications.inbox import eligible_owner
     event = certificate.event
     space = event.makerspace
@@ -16,13 +16,13 @@ def certificate_envelope(certificate, event_name):
         space = certificate.registration.registered_via_makerspace or space
     if not certificate.recipient_member_id or not eligible_owner(space, certificate.recipient_member_id):
         return None
-    subject, text = CERTIFICATE_COPY[event_name]
+    subject, text = certificate_copy(certificate, event_name, event.title)
     return emit(makerspace=space, recipient=certificate.recipient_member, feature="events", stream="events",
                 event=event_name, audience="requester", source_kind="events.certificate",
                 source_id=str(certificate.pk), revision=str(certificate.revision), subject=certificate,
                 dedup_key=f"ev:certificate:{certificate.pk}:{certificate.revision}:{event_name}",
                 context={"event_id": event.pk, "certificate_id": certificate.pk},
-                rendered={"subject": subject, "text": text.format(title=event.title), "html": "",
+                rendered={"subject": subject, "text": text, "html": "",
                           "link": local_link(space, "member")})
 
 

@@ -872,6 +872,16 @@ identity normalization and production minimum-version comparison. `mobile_associ
   `segmentation.py`, `extras.py`, `verification.py`, `scan.py`, `wallet/`; views `views_*.py` (gap lane:
   `views_approval.py` approval levels, `views_staff_photo.py` staff photos, `views_holder_face.py` printed
   view + fonts), URLs `urls_{admin,member,public,wallet}.py`. `id_programmes/prefill.py` is the join prefill.
+  r2-idcards-best: `default_templates/{fronts,backs,themes}.py` (six templates × light/dark, two-sided),
+  `rendering_extras.py` (Code128 barcodes, photo filters), `history.py` + `views_history.py` (version
+  history, restore, "Preview as" holders, calibration), `holder_samples.py`, `calibration.py`,
+  `sheet_preview.py` + `views_sheet_preview.py` (with `id_programmes/views_preview.py` and
+  `events/id_cards_preview.py`), `serializers_history.py`.
+- Designer frontend (r2-idcards-best): `components/card-designer/` gains `TemplateGallery`, `PreviewAsControl`,
+  `HistoryPanel`, `PreflightPanel` + `preflight.ts`, `SelectionInspector` + `selection.ts`/`alignment.ts`
+  (multi-select, groups, align, distribute), `clipboard.ts`, `canvasMath.ts` (zoom, snapping),
+  `CanvasToolbar`/`CanvasOverlays`, `ShortcutsDialog` + `shortcuts.ts`, `textFit.ts` + `layerExtras.tsx`
+  (on-screen shrink-to-fit, barcode, photo filters), `WatermarkView.tsx`; `features/cards/SheetPreviewDialog.tsx`.
 - Gap-lane frontend: `components/photo-crop/` (crop dialog + picker), `features/cards/{ApprovalLevelSelect,
   StaffPhotoDialog}.tsx`, `features/members/wallet/{CardFaces,CardPhotoSection,PhotoCleanup}.tsx`,
   `features/staff/eventCardScan.tsx` (door card scan), `features/staff/eventCredentials/badgeStocks.ts`,
@@ -1125,6 +1135,17 @@ registers artwork keys embedded in issuance JSON; the normal retention/purge reg
 also include concrete artwork and revision rows. Frontend shared design controls live in
 `components/print-layout/`; `EventCertificateDesigner.tsx` and
 `eventsCertificateDesignerApi.ts` own event draft/revision/upload/preview state.
+Release 2 certificates (#199): `events/certificates/merge.py` (kind/award/role/place labels and
+titles), `signatory_models.py`/`signatories.py`/`signatory_commands.py`/`signatory_views.py`/
+`signatory_notifications.py` (signatories and approvals), `signature_rendering.py`,
+`issue_plan.py`/`issue_views.py` (bulk plan, sample, issued list, staff PNG), `holder.py`/
+`outputs.py`/`output_views.py` (holder list, PNG, share image, name opt-in, public share image),
+`urls_member.py`; route rows in `accounts/programme_route_catalog_certificates.py`, tenant rows
+in `tenant_migration/catalog_r2_certificates.py`. Frontend: `staff/eventCredentials/designer/`
+(canvas, geometry, layer list, page/kind/sample pickers), `SignatoriesPanel.tsx`,
+`BulkCertificates.tsx` + `IssuedCertificatesList.tsx` + `issueApi.ts`,
+`members/certificates/` (holder list and signatory approvals) and
+`events/eventPresentation/CertificateVerificationPage.tsx` + `CertificateFileCheck.tsx`.
 
 Account contexts live in `accounts/models_user.py` (re-exported by `models.py`),
 `account_constraints.py`, `account_kind_guards.py` and `managers.py`. One account per person

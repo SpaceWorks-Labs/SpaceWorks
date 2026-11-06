@@ -38,7 +38,7 @@ class SpaceHealthListView(GenericAPIView):
         wanted = request.query_params.get("state")
         if wanted in s.STATES:
             # State is derived, so filter after building cards (bounded by the page anyway).
-            cards = [card for card in (health.card(space) for space in rows[:500]) if card["state"] == wanted]
+            cards = [card for card in (health.card(space) for space in rows[:500]) if health.has_state(card, wanted)]
             page = self.paginate_queryset(cards)
             return self.get_paginated_response(s.HealthCardSerializer(page, many=True).data)
         page = self.paginate_queryset(rows)

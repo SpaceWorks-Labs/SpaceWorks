@@ -33,6 +33,14 @@ def state_label(space, control):
     return "active"
 
 
+def has_state(card_data, wanted):
+    """The state filter: the headline state, or a condition it outranks (a read-only space
+    that also has a schedule is still read-only; an archived one with a purge due is archived)."""
+    flags = {"read_only": card_data.get("read_only"), "archived": card_data.get("archived_at"),
+             "scheduled": card_data.get("schedule"), "suspended": card_data.get("suspended")}
+    return card_data["state"] == wanted or bool(flags.get(wanted))
+
+
 def _who(user):
     return (user.display_name or user.username) if user is not None else None
 

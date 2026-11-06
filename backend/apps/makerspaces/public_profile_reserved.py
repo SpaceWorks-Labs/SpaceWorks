@@ -54,4 +54,14 @@ RESERVED_SEGMENTS = frozenset({
     'sw.js',
     # Release 2 L3: the public card check (/verify/c/:token).
     'verify',
+    # Release 2 frontend routes added after L3 (route-inventory drift, R3): L22 shop, pay links,
+    # #196 OAuth consent, the security pages, machine jobs, the technician opt-in and the
+    # browser-alerts service worker. A handle must never shadow them.
+    'browser-alerts-sw.js',
+    'machine-jobs',
+    'oauth',
+    'pay',
+    'security',
+    'shop',
+    'technician-opt-in',
 })

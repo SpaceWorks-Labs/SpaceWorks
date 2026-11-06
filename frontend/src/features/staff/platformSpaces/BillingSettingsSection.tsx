@@ -29,7 +29,7 @@ function BillingForm({ data }: { data: BillingSettings }) {
     <p className="flex flex-wrap items-center gap-2 text-sm text-ink">Online billing switch (set on the server):
       <StatusPill label={data.online_billing_switch ? "On" : "Off"} tone={data.online_billing_switch ? "success" : "neutral"} /></p>
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-      <input type="checkbox" checked={auto} onChange={event => setAuto(event.target.checked)} />Make a space read-only when its trial ends or an invoice is overdue
+      <input type="checkbox" checked={auto} onChange={event => setAuto(event.target.checked)} />Make a space read-only when an invoice is overdue past its grace period (trials always end read-only)
     </label>
     <Field label="Grace days after the due date" className="max-w-xs">
       <input className="desk-input" type="number" min={0} value={grace} onChange={event => setGrace(event.target.value)} />

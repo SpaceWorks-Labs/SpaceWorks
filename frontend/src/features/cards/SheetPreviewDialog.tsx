@@ -13,7 +13,9 @@ import { staffRequest } from "../../lib/api";
 import { plural } from "../../lib/plural";
 import { useStartCardJob } from "./cardJobs";
 
-export type SheetFilter = { status?: "active" | "all"; card_ids?: number[]; plan_id?: number; expiring_within_days?: number };
+export type SheetFilter = { status?: "active" | "all"; card_ids?: number[]; plan_id?: number; expiring_within_days?: number;
+  /** Event cards only. */
+  roles?: string[]; checked_in?: boolean | null };
 export type SheetPaper = "a4" | "letter";
 export type SheetOrder = "duplex" | "fronts_then_backs";
 export type SheetPreview = { total: number; per_page: number; sheets: number; paper: SheetPaper; order: SheetOrder;

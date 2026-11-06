@@ -60,6 +60,10 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
   const [reason, setReason] = useState("");
   const [photoFor, setPhotoFor] = useState<EventCard | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [printRole, setPrintRole] = useState("");
+  const [printCheckIn, setPrintCheckIn] = useState<"" | "in" | "out">("");
+  const printFilter = { status: "active" as const, ...(printRole ? { roles: [printRole] } : {}),
+    ...(printCheckIn ? { checked_in: printCheckIn === "in" } : {}) };
   const download = async (row: EventCard) => {
     const url = URL.createObjectURL(await staffRequestBlob(`/admin/event-id-cards/${row.id}/download?format=pdf`));
     Object.assign(document.createElement("a"), { href: url, download: `event-card-${row.id}.pdf` }).click();
@@ -68,19 +72,30 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
   const rows = cards.data ?? [];
   return <div className="grid gap-3">
     {!published ? <p className="text-sm text-warn-ink">Publish the card design to start issuing cards.</p> : null}
+    <div className="flex flex-wrap items-end gap-2">
+      <label className="grid gap-1 text-xs font-semibold text-muted"><span>Print for</span>
+        <select className="desk-input min-h-11" value={printRole} onChange={(event) => setPrintRole(event.target.value)}>
+          <option value="">Every role</option>
+          {ROLES.map((value) => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}s</option>)}
+        </select></label>
+      <label className="grid gap-1 text-xs font-semibold text-muted"><span>Check-in</span>
+        <select className="desk-input min-h-11" value={printCheckIn} onChange={(event) => setPrintCheckIn(event.target.value as typeof printCheckIn)}>
+          <option value="">Everyone</option><option value="in">Checked in</option><option value="out">Not checked in yet</option>
+        </select></label>
+    </div>
     <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button-primary min-h-11" disabled={!published || issue.isPending} onClick={() => issue.mutate()}>
         {issue.isPending ? "Issuing…" : "Issue cards now"}</button>
       <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => setPreviewing(true)}>
         {JOB_LABELS.bulk_sheet}…</button>
-      <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => startJob.mutate({ kind: "zip" })}>
+      <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => startJob.mutate({ kind: "zip", ...printFilter })}>
         {JOB_LABELS.zip}</button>
     </div>
     {issue.data ? <p role="status" className="text-sm text-muted">{issue.data.issued} issued, {issue.data.revoked} withdrawn.</p> : null}
     {[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean) ? <ErrorBlock error={[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean)} /> : null}
     <CardJobList listPath={jobsPath} />
-    <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={{ status: "active" }} jobsPath={jobsPath}
-      previewPath={`${jobsPath}/preview`} title="Print sheet: all active event cards" />
+    <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={printFilter} jobsPath={jobsPath}
+      previewPath={`${jobsPath}/preview`} title={printRole || printCheckIn ? "Print sheet: the chosen event cards" : "Print sheet: all active event cards"} />
     <StaffPhotoDialog holderName={photoFor?.printed_name ?? null} photoPath={`/admin/event-id-cards/${photoFor?.id}/photo`}
       onClose={() => setPhotoFor(null)} onSaved={() => { setPhotoFor(null); void refresh(); }} />
     {revoking ? <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault();

@@ -3,6 +3,8 @@ from rest_framework import serializers
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 
+from .serializers import EVENT_CARD_ROLES
+
 
 class CardDesignRevisionSerializer(serializers.Serializer):
     revision = serializers.IntegerField()
@@ -53,6 +55,10 @@ class SheetPreviewRequestSerializer(serializers.Serializer):
     card_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, max_length=1000)
     plan_id = serializers.IntegerField(required=False, min_value=1)
     expiring_within_days = serializers.IntegerField(required=False, min_value=1, max_value=365)
+    roles = serializers.ListField(child=serializers.ChoiceField(choices=EVENT_CARD_ROLES), required=False,
+                                  max_length=6, help_text="Event cards only: print these roles.")
+    checked_in = serializers.BooleanField(required=False, allow_null=True, default=None,
+                                          help_text="Event cards only: true = checked in, false = not yet.")
     paper = serializers.ChoiceField(choices=("a4", "letter"), default="a4")
     order = serializers.ChoiceField(choices=("duplex", "fronts_then_backs"), default="duplex")
     crop_marks = serializers.BooleanField(default=True)

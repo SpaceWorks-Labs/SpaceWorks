@@ -179,7 +179,12 @@ def collect_at_desk(registration, *, actor, method="", reference="", received_at
     if payment is None:
         raise OrderRefused("nothing_to_collect", "This ticket has nothing left to pay.")
     if terminal:
+        from apps.payments.availability import online_payments_enabled
         from apps.payments.services import create_checkout_url
+        if not online_payments_enabled(event.makerspace, "events"):
+            # #184: an offline-only events domain never mints a checkout, even when the
+            # space's credentials serve another domain; the desk takes a receipt instead.
+            raise OrderRefused("online_payments_off", "Online payment is off for events here; record a receipt.")
         url = create_checkout_url(payment.pk, actor=actor)
         record(actor, "event.payment_collected_at_desk", makerspace=event.makerspace, target=registration,
                meta={"registration_id": registration.pk, "payment_id": payment.pk, "terminal": True, "method": ""})

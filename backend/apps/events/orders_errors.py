@@ -13,6 +13,7 @@ STATUS = {
     "claim_invalid": 404, "claim_email_mismatch": 403, "order_not_payable": 409,
     "amount_below_minimum": 400, "addon_unavailable": 409, "type_change_not_allowed": 409,
     "venue_fee_charged": 409, "nothing_to_collect": 409, "already_registered": 409,
+    "online_payments_off": 409,
 }
 
 

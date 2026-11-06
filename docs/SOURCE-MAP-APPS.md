@@ -11,8 +11,15 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   `config/control_attention.py` fill the home page; `config/admin_confirm.py` confirms dangerous list
   actions; `config/control_parity*.py` maps every `/control/` write to its web console path or host-only
   reason (#190). The console side of #190 is `admin_api/urls_platform_parity.py` (IP access, accounts,
-  OIDC, request queues, chat templates, restore drills, self-host moves) and
-  `frontend/src/features/staff/platformParity/`.
+  OIDC, request queues, chat templates, restore drills, self-host moves, platform provider credentials,
+  mobile app identities, a space's keys and capability purge) and `frontend/src/features/staff/platformParity/`
+  plus `platformSpaceKeys/`. Provider credentials: `integrations/platform_credentials.py` (specs over the
+  /control/ forms), `platform_credential_checks.py` (send test / credential checks),
+  `views_platform_credentials.py`. A space's keys: `encryption/views_space_keys.py`, `space_key_state.py`,
+  `backup/space_archive_keys.py` + `tasks_space_keys.py` (archive re-encrypt/purge Celery job). Capability
+  purge: `makerspaces/views_capability_purge.py`. Mobile apps: `accounts/views_platform_native_apps.py`.
+  The Space Manager chat-template editor is `integrations/views_space_chat_templates.py` (bases shared with
+  `views_platform_chat_templates.py`) and `frontend/src/features/staff/SpaceChatTemplates.tsx`.
 - `backend/apps/accounts/` — custom `User` model (`AUTH_USER_MODEL`), browser JWT auth, attested device
   grants/rotating refresh families, Google/Apple social identities + nonce/JWKS verification, and the
   Auth & RBAC module: thin `rbac.py` import surface/coordinator over `rbac_actions.py`,

@@ -136,11 +136,14 @@ export const openApiTags = [
   "Platform announcements",
   "Platform insights",
   "Platform messaging",
+  "Platform mobile apps",
   "Platform onboarding",
   "Platform overview",
+  "Platform providers",
   "Platform requests",
   "Platform security",
   "Platform space controls",
+  "Platform space keys",
   "Platform tenant reports",
   "Presence",
   "Presence staff",
@@ -745,6 +748,8 @@ export const openApiPaths = [
   "/api/v1/admin/makerspace/{makerspace_id}/capture-flags/{flag_id}/resolve",
   "/api/v1/admin/makerspace/{makerspace_id}/categories",
   "/api/v1/admin/makerspace/{makerspace_id}/certification-types",
+  "/api/v1/admin/makerspace/{makerspace_id}/chat-templates",
+  "/api/v1/admin/makerspace/{makerspace_id}/chat-templates/{id}",
   "/api/v1/admin/makerspace/{makerspace_id}/consumables",
   "/api/v1/admin/makerspace/{makerspace_id}/consumables/{id}/use",
   "/api/v1/admin/makerspace/{makerspace_id}/containers",
@@ -1151,6 +1156,7 @@ export const openApiPaths = [
   "/api/v1/admin/platform/archive-requests",
   "/api/v1/admin/platform/archive-requests/{id}/approve",
   "/api/v1/admin/platform/archive-requests/{id}/decline",
+  "/api/v1/admin/platform/attestation-settings",
   "/api/v1/admin/platform/backup-destinations",
   "/api/v1/admin/platform/backup-destinations/push",
   "/api/v1/admin/platform/backup-destinations/{destination_id}",
@@ -1179,18 +1185,23 @@ export const openApiPaths = [
   "/api/v1/admin/platform/ip-blocks/{id}/unblock",
   "/api/v1/admin/platform/ip-rules",
   "/api/v1/admin/platform/ip-rules/{id}",
+  "/api/v1/admin/platform/login-methods",
   "/api/v1/admin/platform/metabase",
   "/api/v1/admin/platform/metabase/connection",
   "/api/v1/admin/platform/metabase/dashboards/{dashboard_id}/embed",
   "/api/v1/admin/platform/metabase/login",
   "/api/v1/admin/platform/metabase/login/rotate",
   "/api/v1/admin/platform/mobile-readiness",
+  "/api/v1/admin/platform/native-apps",
+  "/api/v1/admin/platform/native-apps/{id}",
   "/api/v1/admin/platform/oidc-providers",
   "/api/v1/admin/platform/oidc-providers/{id}",
   "/api/v1/admin/platform/overview",
   "/api/v1/admin/platform/overview/export",
   "/api/v1/admin/platform/payment-settings",
   "/api/v1/admin/platform/problems",
+  "/api/v1/admin/platform/push-settings",
+  "/api/v1/admin/platform/push-settings/test",
   "/api/v1/admin/platform/restore-drills",
   "/api/v1/admin/platform/restore-drills/settings",
   "/api/v1/admin/platform/restores",
@@ -1202,12 +1213,18 @@ export const openApiPaths = [
   "/api/v1/admin/platform/selfhost-moves/{id}/download-url",
   "/api/v1/admin/platform/selfhost-moves/{id}/export",
   "/api/v1/admin/platform/selfhost-moves/{id}/reject",
+  "/api/v1/admin/platform/sms-settings",
+  "/api/v1/admin/platform/sms-settings/test",
   "/api/v1/admin/platform/social-auth-settings",
   "/api/v1/admin/platform/space-health",
   "/api/v1/admin/platform/space-health/{makerspace_id}",
   "/api/v1/admin/platform/spaces/{makerspace_id}/archive",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/capability-purge",
   "/api/v1/admin/platform/spaces/{makerspace_id}/chat-templates",
   "/api/v1/admin/platform/spaces/{makerspace_id}/chat-templates/{id}",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/keys",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/keys/archives/{archive_id}",
+  "/api/v1/admin/platform/spaces/{makerspace_id}/keys/rotate",
   "/api/v1/admin/platform/spaces/{makerspace_id}/plan",
   "/api/v1/admin/platform/spaces/{makerspace_id}/purge",
   "/api/v1/admin/platform/spaces/{makerspace_id}/read-only",
@@ -1233,6 +1250,8 @@ export const openApiPaths = [
   "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/run",
   "/api/v1/admin/platform/tenant-migrations/imports/{job_id}/verification",
   "/api/v1/admin/platform/tenant-migrations/pairings",
+  "/api/v1/admin/platform/whatsapp-settings",
+  "/api/v1/admin/platform/whatsapp-settings/test",
   "/api/v1/admin/printer-jobs/{id}",
   "/api/v1/admin/printer-jobs/{id}/apply",
   "/api/v1/admin/products/{id}/assets/generate",
@@ -2009,10 +2028,21 @@ export type _Rows = {
   "rows": number;
 };
 
+export type _SecretState = {
+  "name": string;
+  "set": boolean;
+  "last_changed": _Stamp;
+};
+
 export type _Source = {
   "id": number;
   "username": string;
   "display_name": string;
+};
+
+export type _Stamp = {
+  "at": string | null;
+  "by": string | null;
 };
 
 export type _StationRef = {
@@ -2024,6 +2054,11 @@ export type _StationRef = {
 export type _UniqueRows = {
   "rows": number;
   "kept_on_shell": number;
+};
+
+export type _Version = {
+  "version": number;
+  "status": string;
 };
 
 export type About = {
@@ -2254,6 +2289,8 @@ export type AccountSessionPage = {
 export type Ack = {
   "lease_token": string;
 };
+
+export type Action713Enum = "reencrypt" | "purge";
 
 export type ActivationPointEnum = "accepted" | "rsvp";
 
@@ -3123,6 +3160,15 @@ export type ArchiveHost = {
   "name": string;
   "canonical_url": string;
 };
+
+export type ArchiveJob = {
+  "action": Action713Enum;
+  "state": ArchiveJobStateEnum;
+  "error_code": string;
+  "updated_at": string;
+};
+
+export type ArchiveJobStateEnum = "queued" | "running" | "done" | "failed";
 
 export type ArchiveRequestError = {
   "detail": string;
@@ -5089,6 +5135,27 @@ export type Candidate = {
   "id": number;
   "name": string;
   "email": string;
+};
+
+export type CapabilityPlan = {
+  "key": string;
+  "summary": string;
+  "switched_on": boolean;
+  "counts": {
+  [key: string]: number;
+};
+};
+
+export type CapabilityPurge = {
+  "key": string;
+  "confirm": string;
+};
+
+export type CapabilityPurgeResult = {
+  "key": string;
+  "counts": {
+  [key: string]: number;
+};
 };
 
 export type Capacity = {
@@ -15568,6 +15635,22 @@ export type NamedRoute = {
   "url": string;
 };
 
+export type NativeApp = {
+  "id": number;
+  "makerspace"?: number | null;
+  "app_id": string;
+  "platform": DevicePlatformEnum;
+  "environment": EnvironmentEnum;
+  "verifier_config_key": string;
+  "signing_identities"?: unknown;
+  "min_supported_version"?: string | null;
+  "status"?: NativeAppStatusEnum;
+  "approved_by": string;
+  "revoked_at": string | null;
+  "created_at": string;
+  "updated_at": string;
+};
+
 export type NativeAppIdentities = {
   "android": NativeAppIdentity | null;
   "ios": NativeAppIdentity | null;
@@ -15581,6 +15664,8 @@ export type NativeAppIdentity = {
 export type NativeApple = {
   "enabled": boolean;
 };
+
+export type NativeAppStatusEnum = "pending" | "approved" | "revoked";
 
 export type NativeConfig = {
   "app_display_name": string;
@@ -17132,6 +17217,13 @@ export type PaginatedMaterialList = {
   "results": Array<Material>;
 };
 
+export type PaginatedNativeAppList = {
+  "count": number;
+  "next"?: string | null;
+  "previous"?: string | null;
+  "results": Array<NativeApp>;
+};
+
 export type PaginatedNotificationList = {
   "count": number;
   "next"?: string | null;
@@ -17822,6 +17914,12 @@ export type PatchedApplicationInput = {
 export type PatchedAssignOperator = {
   "user_id"?: number;
   "access_level"?: string;
+};
+
+export type PatchedAttestationCredentialsUpdate = {
+  "app_display_name"?: string;
+  "play_integrity_service_account"?: string;
+  "clear_play_integrity_service_account"?: boolean;
 };
 
 export type PatchedBackupDestination = {
@@ -18607,6 +18705,14 @@ export type PatchedLibraryWrite = {
   "artwork_id"?: number | null;
 };
 
+export type PatchedLoginMethodsUpdate = {
+  "password_enabled"?: boolean;
+  "social_enabled"?: boolean;
+  "phone_enabled"?: boolean;
+  "self_registration_enabled"?: boolean;
+  "passkeys_enabled"?: boolean;
+};
+
 export type PatchedMachine = {
   "id"?: number;
   "makerspace"?: number;
@@ -19077,6 +19183,22 @@ export type PatchedMetabaseConnectionUpdate = {
   "show_member_details"?: boolean;
 };
 
+export type PatchedNativeApp = {
+  "id"?: number;
+  "makerspace"?: number | null;
+  "app_id"?: string;
+  "platform"?: DevicePlatformEnum;
+  "environment"?: EnvironmentEnum;
+  "verifier_config_key"?: string;
+  "signing_identities"?: unknown;
+  "min_supported_version"?: string | null;
+  "status"?: NativeAppStatusEnum;
+  "approved_by"?: string;
+  "revoked_at"?: string | null;
+  "created_at"?: string;
+  "updated_at"?: string;
+};
+
 export type PatchedNotificationRecipientsPatch = {
   "recipients"?: Array<NotificationRecipientUpdate>;
 };
@@ -19411,6 +19533,16 @@ export type PatchedPublishingInput = {
   "website_revision"?: number;
 };
 
+export type PatchedPushCredentialsUpdate = {
+  "apns_team_id"?: string;
+  "apns_key_id"?: string;
+  "apns_topic"?: string;
+  "fcm_service_account"?: string;
+  "clear_fcm_service_account"?: boolean;
+  "apns_private_key"?: string;
+  "clear_apns_private_key"?: boolean;
+};
+
 export type PatchedRegistrationAnswers = {
   "custom_answers"?: unknown | null;
   "answers"?: unknown | null;
@@ -19659,6 +19791,17 @@ export type PatchedShopSettings = {
   "updated_at"?: string;
 };
 
+export type PatchedSmsCredentialsUpdate = {
+  "is_enabled"?: boolean;
+  "provider"?: SmsCredentialsUpdateProviderEnum;
+  "account_sid"?: string;
+  "from_number"?: string;
+  "notifications_enabled"?: boolean;
+  "notifications_from_number"?: string;
+  "auth_token"?: string;
+  "clear_auth_token"?: boolean;
+};
+
 export type PatchedSpacePhotoUpdate = {
   "caption"?: string;
 };
@@ -19875,6 +20018,17 @@ export type PatchedWhatsAppBinding = {
   "is_active"?: boolean;
   "needs_review"?: boolean;
   "components"?: unknown;
+};
+
+export type PatchedWhatsAppCredentialsUpdate = {
+  "is_enabled"?: boolean;
+  "app_id"?: string;
+  "phone_number_id"?: string;
+  "business_account_id"?: string;
+  "access_token"?: string;
+  "clear_access_token"?: boolean;
+  "app_secret"?: string;
+  "clear_app_secret"?: boolean;
 };
 
 export type PayeeCorrectionCommand = {
@@ -20669,6 +20823,22 @@ export type PlatformBackupSettings = {
   "updated_at": string;
 };
 
+export type PlatformCredentials = {
+  "provider": PlatformCredentialsProviderEnum;
+  "values": {
+  [key: string]: unknown;
+};
+  "secrets": Array<_SecretState>;
+  "info": {
+  [key: string]: unknown;
+};
+  "updated_at": string | null;
+  "last_changed": _Stamp;
+  "test": TestEnum | NullEnum | null;
+};
+
+export type PlatformCredentialsProviderEnum = "sms" | "push" | "whatsapp" | "attestation" | "login_methods";
+
 export type PlatformDashboard = {
   "deployment"?: DeploymentSummary;
   "checked_at": string;
@@ -20806,6 +20976,11 @@ export type PlatformProblems = {
   "checked_at": string;
   "status": Status00eEnum;
   "results": Array<PlatformProblem>;
+};
+
+export type PlatformProviderCheckResult = {
+  "outcome": string;
+  "checked"?: Array<string>;
 };
 
 export type PlatformReadiness = {
@@ -26890,6 +27065,12 @@ export type SkippedRow = {
 
 export type SkippedRowReasonEnum = "no_name" | "bad_email" | "duplicate_in_file" | "already_in_programme";
 
+export type SmsCredentialsUpdateProviderEnum = "twilio";
+
+export type SmsTest = {
+  "to": string;
+};
+
 export type Snapshot = {
   "schema_version": number;
   "state": StateE91Enum;
@@ -26975,6 +27156,16 @@ export type Source4adEnum = "loan" | "booking" | "machine_job" | "staff";
 export type SourceA69Enum = "public" | "invited";
 
 export type SourceEd5Enum = "member_qr" | "staff" | "device";
+
+export type SpaceArchiveJobQueued = {
+  "archive_id": string;
+  "job": ArchiveJob | null;
+};
+
+export type SpaceArchiveKeyAction = {
+  "action": Action713Enum;
+  "confirm_slug": string;
+};
 
 export type SpaceCard = {
   "name": string;
@@ -27087,6 +27278,26 @@ export type SpaceImageUpload = {
 };
 
 export type SpaceImageUploadMethodEnum = "PUT";
+
+export type SpaceKeyAction = {
+  "action": SpaceKeyActionActionEnum;
+  "confirm_slug": string;
+};
+
+export type SpaceKeyActionActionEnum = "rotate_dek" | "emergency_rekey" | "rotate_search_key" | "rotate_publishable_key";
+
+export type SpaceKeyState = {
+  "active_dek_version": number | null;
+  "dek_versions": Array<_Version>;
+  "search_key_version": number | null;
+  "publishable_key_rotated_at": string | null;
+  "previous_publishable_key_valid_until": string | null;
+  "jobs": Array<KeyEvent>;
+  "running": KeyEvent | null;
+  "pii_encryption_enabled": boolean;
+  "rls_mode": string;
+  "stale_archives": Array<StaleArchive>;
+};
 
 export type SpacePack = {
   "format": SpacePackFormatEnum;
@@ -28281,6 +28492,14 @@ export type StageVirtualContext = {
   "response_id": number | null;
 };
 
+export type StaleArchive = {
+  "id": string;
+  "completed_at": string | null;
+  "size_bytes": number | null;
+  "reencryptable": boolean;
+  "job": ArchiveJob | null;
+};
+
 export type StaleDraftRow = {
   "assignment_id": number;
   "judge_role_assignment_id": number;
@@ -29117,6 +29336,8 @@ export type TenantMessagingAvailability = {
   "sms": boolean;
   "whatsapp": boolean;
 };
+
+export type TestEnum = "send" | "check";
 
 export type Testimonial = {
   "id": string;

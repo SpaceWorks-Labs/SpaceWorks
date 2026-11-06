@@ -2,7 +2,7 @@
 
 from django.db import transaction
 
-from apps.accounts import audit_events
+from apps.audit import services as audit
 from apps.accounts.models import User
 
 
@@ -20,7 +20,7 @@ def set_preferred_locale(user, code):
         locked.preferred_locale = code
         locked.save(update_fields=["preferred_locale"])
         user.preferred_locale = code
-        audit_events.record_auth_event(
+        audit.record(
             user, "account.locale_changed", target=user,
             meta={"before": before or "default", "after": code or "default"},
         )

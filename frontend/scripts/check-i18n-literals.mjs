@@ -49,7 +49,7 @@ export function scanGenerators(generators = GENERATED_SOURCE_FILES, root = ROOT)
   try {
     for (const { script, env, name } of generators) {
       const output = path.join(directory, name);
-      execFileSync(process.execPath, [path.join(root, script)], { cwd: root, env: { ...process.env, [env]: output }, stdio: "ignore" });
+      execFileSync(process.execPath, [path.resolve(root, script)], { cwd: root, env: { ...process.env, [env]: output }, stdio: "ignore" });
       findings.push(...scanFile(output, `${script} -> ${name}`));
     }
   } finally {

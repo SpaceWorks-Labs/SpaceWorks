@@ -1,5 +1,6 @@
 """Certificate design validation; templates contain layout, never recipient PII."""
 
+from django.utils.translation import gettext
 from copy import deepcopy
 
 from rest_framework.exceptions import ValidationError
@@ -28,10 +29,10 @@ def normalize_certificate_template(value):
         from .certificates.layout import normalize_document
         return normalize_document(value)
     if not isinstance(value, dict) or set(value) - set(DEFAULT_CERTIFICATE_TEMPLATE):
-        raise ValidationError({"parameters": "Unknown certificate template properties."})
+        raise ValidationError({"parameters": gettext("Unknown certificate template properties.")})
     result = {**deepcopy(DEFAULT_CERTIFICATE_TEMPLATE), **value}
     if type(result["version"]) is not int or result["version"] != 1:
-        raise ValidationError({"version": "Use certificate template version 1."})
+        raise ValidationError({"version": gettext("Use certificate template version 1.")})
     width = number(result["page_width_mm"], 100, 420, "page_width_mm")
     height = number(result["page_height_mm"], 100, 420, "page_height_mm")
     result["grid_mm"] = number(result["grid_mm"], 0.5, 10, "grid_mm")
@@ -60,7 +61,7 @@ def issuance_layout(revision):
         resources = {str(row.resource_id): {"key": row.object_key, "version": row.version_id,
                                             "sha256": row.sha256} for row in rows}
         if set(ids) != set(resources):
-            raise ValidationError({"layers": "Every image must be promoted artwork owned by this event."})
+            raise ValidationError({"layers": gettext("Every image must be promoted artwork owned by this event.")})
         result["artwork_resources"] = resources
     result.update(artwork_object_key=artwork.object_key if artwork else "",
                   artwork_version_id=artwork.version_id if artwork else "",
@@ -78,7 +79,7 @@ def _verification_slots(result):
         if kind in types:
             continue
         if len(result["layers"]) >= 20:
-            raise ValidationError({"layers": "Reserve layers for the certificate ID and verification QR."})
+            raise ValidationError({"layers": gettext("Reserve layers for the certificate ID and verification QR.")})
         x, y, w, h = box
         layer = {"id": str(uuid5(NAMESPACE_URL, f"spaceworks:certificate:{kind}")),
                  "order": len(result["layers"]), "type": kind, "x_mm": x, "y_mm": y,

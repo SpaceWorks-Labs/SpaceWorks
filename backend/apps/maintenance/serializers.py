@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from decimal import Decimal
 from collections.abc import Mapping
 from drf_spectacular.utils import extend_schema_field
@@ -19,7 +20,7 @@ class StrictFieldsSerializer(serializers.Serializer):
             # Serializer.errors wraps this as a ReturnDict, so object-level
             # errors must have a mapping shape rather than a bare error list.
             raise serializers.ValidationError(
-                {api_settings.NON_FIELD_ERRORS_KEY: ["Expected an object."]}
+                {api_settings.NON_FIELD_ERRORS_KEY: [gettext("Expected an object.")]}
             )
         unexpected = set(data) - set(self.fields)
         if unexpected:

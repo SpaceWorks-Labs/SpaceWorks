@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.audit.services import record
 from apps.events.credentials.boundary import event_command, advance, require_version
 from apps.events.credentials.models import EventCredentialCommand
@@ -12,17 +13,17 @@ from .print_models import EventBadgeTemplateRevision
 def validate_design(document, stock, *, event_id=None):
     from rest_framework.exceptions import ValidationError
     if stock not in DESIGN_STOCKS and stock != CUSTOM_STOCK:
-        raise ValidationError({"stock": "Choose a named stock or a custom size."})
+        raise ValidationError({"stock": gettext("Choose a named stock or a custom size.")})
     result = normalize_document(document, badge=True)
     size = (result["page_width_mm"], result["page_height_mm"])
     if stock == CUSTOM_STOCK:
         low, high = CUSTOM_RANGE_MM
         if not all(low <= side <= high and abs(side * 10 - round(side * 10)) < 1e-6 for side in size):
-            raise ValidationError({"stock": f"A custom size is {low}-{high} mm on each side, in 0.1 mm steps."})
+            raise ValidationError({"stock": gettext('A custom size is {low}-{high} mm on each side, in 0.1 mm steps.').format(low=low, high=high)})
     elif size != DESIGN_STOCKS[stock]:
-        raise ValidationError({"stock": "The document must match the physical stock dimensions."})
+        raise ValidationError({"stock": gettext("The document must match the physical stock dimensions.")})
     if not any(layer["type"] == "event_credential_qr" for layer in result["layers"]):
-        raise ValidationError({"layers": "A desk badge requires its typed event check-in QR slot."})
+        raise ValidationError({"layers": gettext("A desk badge requires its typed event check-in QR slot.")})
     # A design can reference packaged vectors or promoted same-event artwork.
     # The HTTP document never carries a path, object key or external image URL.
     from .seed_artwork import packaged_resource
@@ -58,7 +59,7 @@ def save_design(event_id, *, actor, document, stock, operation_id, expected_vers
             resource_id__in=images, promoted_at__isnull=False).values_list("resource_id", flat=True)}
         if images - owned:
             from rest_framework.exceptions import ValidationError
-            raise ValidationError({"document": "Install the default design before saving its artwork."})
+            raise ValidationError({"document": gettext("Install the default design before saving its artwork.")})
         row = EventBadgeTemplateRevision.objects.create(event=event, document=result, stock=stock)
         row.event_version = advance(event)
         EventCredentialCommand.objects.create(event=event, actor=actor, operation_id=operation_id,

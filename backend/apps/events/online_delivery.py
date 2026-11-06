@@ -8,6 +8,7 @@ feed). It never appears in a public serializer, share card, embed, staff room al
 audit row. Switching the capability off hides the link everywhere and keeps the data.
 """
 
+from django.utils.translation import gettext
 from urllib.parse import quote, urlsplit
 
 from django.db import transaction
@@ -43,14 +44,14 @@ def validate_join_url(value):
     if not value:
         return ""
     if len(value) > MAX_JOIN_URL or any(ord(char) < 33 or ord(char) == 127 for char in value):
-        raise ValidationError({"join_url": "Use a single https:// link of at most 2000 characters."})
+        raise ValidationError({"join_url": gettext("Use a single https:// link of at most 2000 characters.")})
     try:
         parts = urlsplit(value)
         host = parts.hostname
     except ValueError as exc:
-        raise ValidationError({"join_url": "Use a valid https:// link."}) from exc
+        raise ValidationError({"join_url": gettext("Use a valid https:// link.")}) from exc
     if parts.scheme != "https" or not host or parts.username or parts.password:
-        raise ValidationError({"join_url": "Use an https:// link without a username or password."})
+        raise ValidationError({"join_url": gettext("Use an https:// link without a username or password.")})
     return value
 
 
@@ -110,7 +111,7 @@ def set_online(event, *, actor, delivery_mode=None, join_url_value=None):
         old_mode, fields = locked.delivery_mode, []
         if delivery_mode is not None and delivery_mode != locked.delivery_mode:
             if delivery_mode not in Event.DeliveryMode.values:
-                raise ValidationError({"delivery_mode": "Choose in_person, online or hybrid."})
+                raise ValidationError({"delivery_mode": gettext("Choose in_person, online or hybrid.")})
             locked.delivery_mode = delivery_mode
             fields.append("delivery_mode")
         if join_url_value is not None:

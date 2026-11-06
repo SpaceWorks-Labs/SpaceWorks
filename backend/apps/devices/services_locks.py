@@ -7,6 +7,7 @@ unambiguous winners), and re-checks canonical servability under that lock becaus
 ``module_enabled`` deliberately answers capability for an archived tenant.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 from apps.makerspaces.guards import require_module_locked
@@ -20,5 +21,5 @@ def lock_tenant(makerspace_id):
     assert_write_allowed(makerspace_id)
     makerspace = require_module_locked(makerspace_id, MODULE_KEY)
     if not is_servable(makerspace):
-        raise PermissionDenied("This makerspace is not available.")
+        raise PermissionDenied(gettext("This makerspace is not available."))
     return makerspace

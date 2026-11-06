@@ -4,6 +4,7 @@ Staff and signatory commands live in ``signatory_commands``; this module holds w
 rendering and the designer call. A design prints a signatory through a ``signature`` layer
 naming slot 1-3; issuance freezes that slot's name, title, image and version.
 """
+from django.utils.translation import gettext
 from django.db.models import Max
 
 from apps.events.credentials.errors import ProgrammeConflict
@@ -37,7 +38,7 @@ def validate_signature_layers(event, parameters):
     missing = [slot for slot in slots if slot not in known]
     if missing:
         from rest_framework.exceptions import ValidationError
-        raise ValidationError({"layers": f"Add signatory {missing[0]} before placing their signature."})
+        raise ValidationError({"layers": gettext('Add signatory {value} before placing their signature.').format(value=missing[0])})
 
 
 def _artwork(row):

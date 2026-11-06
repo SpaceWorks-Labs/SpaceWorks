@@ -1,5 +1,6 @@
 """Strict website allow-lists. Editorial content is deliberately publication data."""
 
+from django.utils.translation import gettext
 from collections.abc import Mapping
 from rest_framework import serializers
 
@@ -30,7 +31,7 @@ class BookingWebsiteSectionInput(StrictInput):
 
     def validate_url(self, value):
         if value and not value.lower().startswith(("http://", "https://")):
-            raise serializers.ValidationError("Use an HTTP or HTTPS link.")
+            raise serializers.ValidationError(gettext("Use an HTTP or HTTPS link."))
         return value
 
 

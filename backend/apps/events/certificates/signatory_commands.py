@@ -1,4 +1,5 @@
 """Staff and signatory commands for certificate signatories (C4). Every change is audited."""
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -28,7 +29,7 @@ def _member(event, member_id):
                                retired_at__isnull=True).first()
     if user is None or not MakerspaceMembership.objects.filter(
             user=user, makerspace_id=event.makerspace_id, status="active").exists():
-        raise ValidationError({"member_id": "Choose an active account of this space."})
+        raise ValidationError({"member_id": gettext("Choose an active account of this space.")})
     return user
 
 
@@ -38,7 +39,7 @@ def _signature(event, artwork_id):
     from apps.events.models_certificate_templates import EventCertificateArtwork
     row = EventCertificateArtwork.objects.filter(event=event, pk=artwork_id, promoted_at__isnull=False).first()
     if row is None:
-        raise ValidationError({"signature_artwork_id": "Upload and finalise the signature image first."})
+        raise ValidationError({"signature_artwork_id": gettext("Upload and finalise the signature image first.")})
     return row
 
 
@@ -51,9 +52,9 @@ def save_signatory(event, *, actor, slot, name, title="", member_id=None, signat
     values = {"name": name.strip(), "title": title.strip(), "member_id": member.pk if member else None,
               "signature_id": signature.pk if signature else None}
     if not values["name"]:
-        raise ValidationError({"name": "Enter the signatory's name."})
+        raise ValidationError({"name": gettext("Enter the signatory's name.")})
     if approval_required(event) and member is None:
-        raise ValidationError({"member_id": "Signatories must approve designs here, so choose their account."})
+        raise ValidationError({"member_id": gettext("Signatories must approve designs here, so choose their account.")})
     if row is None:
         row = EventCertificateSignatory(event=event, slot=slot, **values)
     elif all(getattr(row, key) == value for key, value in values.items()):
@@ -92,7 +93,7 @@ def set_approval_required(event, *, actor, required):
     from .signatory_models import EventCertificateSignatory
     event = _locked(event, actor)
     if required and EventCertificateSignatory.objects.filter(event=event, member__isnull=True).exists():
-        raise ValidationError({"required": "Choose an account for every signatory before requiring approval."})
+        raise ValidationError({"required": gettext("Choose an account for every signatory before requiring approval.")})
     policy, _ = EventCertificatePublicationPolicy.objects.select_for_update().get_or_create(event=event)
     if policy.signatory_approval_required != required:
         policy.signatory_approval_required = required
@@ -123,7 +124,7 @@ def approve(event_id, *, actor, signatory_id, template_revision_id):
         if signatory is None or revision is None:
             raise NotFound()
         if signatory.slot not in printed_slots(revision.parameters):
-            raise ValidationError({"template_revision_id": "This design does not print your signature."})
+            raise ValidationError({"template_revision_id": gettext("This design does not print your signature.")})
         row, created = EventCertificateSignatoryApproval.objects.get_or_create(
             signatory=signatory, template_revision=revision, signatory_version=signatory.version,
             defaults={"approved_by": actor})

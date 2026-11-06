@@ -1,5 +1,6 @@
 """Tenant library revisions. Copying always creates event-owned artwork keys."""
 
+from django.utils.translation import gettext
 from contextlib import contextmanager
 from copy import deepcopy
 from uuid import uuid4
@@ -48,7 +49,7 @@ def require_artworks(template, parameters, artwork_id):
     rows = list(template.artworks.filter(promoted_at__isnull=False))
     available = {str(row.resource_id): row for row in rows}
     if ids - available.keys() or (artwork_id and not any(row.pk == artwork_id for row in rows)):
-        raise ValidationError({"artwork_id": "Use promoted artwork owned by this library template."})
+        raise ValidationError({"artwork_id": gettext("Use promoted artwork owned by this library template.")})
 
 
 def save(makerspace_id, *, actor, operation_id, expected_version, name, parameters,
@@ -56,7 +57,7 @@ def save(makerspace_id, *, actor, operation_id, expected_version, name, paramete
     normalized = normalize_certificate_template(parameters)
     name = name.strip()
     if not 1 <= len(name) <= 120:
-        raise ValidationError({"name": "Use 1–120 characters."})
+        raise ValidationError({"name": gettext("Use 1–120 characters.")})
     digest = hashlib.sha256(json.dumps([template_id, name, normalized, artwork_id, expected_version], sort_keys=True).encode()).hexdigest()
     with tenant_command(makerspace_id, actor) as space:
         previous = Command.objects.filter(makerspace=space, operation_id=operation_id).first()

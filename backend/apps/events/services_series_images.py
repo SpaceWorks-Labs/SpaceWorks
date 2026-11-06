@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -19,7 +20,7 @@ def update_image(series, actor, object_key):
     if public_image_storage.public_image_key_in_use(
         locked.makerspace_id, object_key, series_id=locked.pk
     ):
-        raise ValidationError({"object_key": "This image is already in use."})
+        raise ValidationError({"object_key": gettext("This image is already in use.")})
     limits.add_storage(locked.makerspace, new_size or 0)
     if old_key:
         public_image_storage.release_public_image_on_commit(locked.makerspace, old_key)

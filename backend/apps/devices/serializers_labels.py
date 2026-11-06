@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.devices.models import LabelPrintCommand
@@ -22,7 +23,7 @@ class LabelResultSerializer(StrictSerializer):
 
     def validate(self, attrs):
         if (attrs["outcome"] == "succeeded") != (attrs["result_code"] == "ok"):
-            raise serializers.ValidationError("Result code does not match outcome.")
+            raise serializers.ValidationError(gettext("Result code does not match outcome."))
         return attrs
 
 

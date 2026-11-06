@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
@@ -38,12 +39,12 @@ def select_ticket(event, ticket_type_id, member, *, contributor=False):
         return EventTicketType.objects.select_for_update().get(pk=ticket.pk) if ticket else None
     if ticket_type_id is None:
         if ticket_selection_required(event):
-            raise ValidationError({"ticket_type_id": "Choose an available ticket type."})
+            raise ValidationError({"ticket_type_id": gettext("Choose an available ticket type.")})
         return None
     require_feature(event, "events.ticket_types")
     ticket = available_ticket_types(event, member, contributor=contributor).select_for_update().filter(pk=ticket_type_id).first()
     if not ticket:
-        raise NotFound("Ticket type not found.")
+        raise NotFound(gettext("Ticket type not found."))
     return ticket
 
 
@@ -58,7 +59,7 @@ def create_ticket(event, *, actor, **values):
     ticket = EventTicketType(event=event, makerspace=event.makerspace, **values)
     _validate(ticket)
     if ticket.sales_start_at and ticket.sales_end_at and ticket.sales_end_at <= ticket.sales_start_at:
-        raise ValidationError("Sales end must be after sales start.")
+        raise ValidationError(gettext("Sales end must be after sales start."))
     ticket.save()
     _audit(event, actor, "event.ticket_created", ticket)
     return ticket
@@ -75,7 +76,7 @@ def create_series_ticket_templates(series, templates, actor):
         row = EventTicketType(series=series, makerspace=series.makerspace, **values)
         _validate(row)
         if row.sales_start_at and row.sales_end_at and row.sales_end_at <= row.sales_start_at:
-            raise ValidationError("Sales end must be after sales start.")
+            raise ValidationError(gettext("Sales end must be after sales start."))
         row.save()
         record(actor, "event.ticket_template_created", makerspace=series.makerspace, target=row)
 

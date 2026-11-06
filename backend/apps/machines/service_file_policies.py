@@ -1,5 +1,6 @@
 """Built-in, versioned attachment policies for machine service requests."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -60,16 +61,16 @@ def get_policy(name: str, version: int) -> ServiceFilePolicy:
                 "maker_formats": _maker_formats_policy()}
     policy = policies.get(name)
     if policy is None or version != policy.version:
-        raise ValidationError("Unknown machine service file policy.")
+        raise ValidationError(gettext("Unknown machine service file policy."))
     return policy
 
 
 def validate_service_file_policy(value):
     if not isinstance(value, dict) or set(value) != {"name", "version"}:
-        raise ValidationError("File policy must contain only name and version.")
+        raise ValidationError(gettext("File policy must contain only name and version."))
     name, version = value.get("name"), value.get("version")
     if not isinstance(name, str) or not isinstance(version, int) or isinstance(version, bool):
-        raise ValidationError("File policy name and version are invalid.")
+        raise ValidationError(gettext("File policy name and version are invalid."))
     get_policy(name, version)
 
 

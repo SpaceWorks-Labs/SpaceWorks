@@ -6,6 +6,7 @@ from the "issue now" action, and every 15 minutes (`reconcile_event`). A registr
 that is no longer confirmed loses its live card (revoked, reason "registration ended").
 Valid until the event's end + 1 day (Q-I6). Never charged (C-20).
 """
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -87,7 +88,7 @@ def _revoke_locked(actor, card, reason):
 def revoke(actor, card, reason):
     from apps.card_designs.lifecycle import on_revoke
     if not (reason or "").strip():
-        raise ValidationError({"reason": "Give a reason (it stays private to the organisers)."})
+        raise ValidationError({"reason": gettext("Give a reason (it stays private to the organisers).")})
     card = EventIdCard.objects.select_for_update().get(pk=card.pk)
     if card.status != EventIdCard.Status.ACTIVE:
         return card
@@ -99,7 +100,7 @@ def revoke(actor, card, reason):
 @transaction.atomic
 def set_role(actor, card, role):
     if role not in EventIdCard.Role.values:
-        raise ValidationError({"role": "Choose attendee, speaker, mentor, judge, volunteer or crew."})
+        raise ValidationError({"role": gettext("Choose attendee, speaker, mentor, judge, volunteer or crew.")})
     if card.role != role:
         card.role = role
         card.save(update_fields=["role", "updated_at"])

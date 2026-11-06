@@ -5,6 +5,7 @@ for every existing "Single submission" event a round judges exactly what it judg
 must point at a snapshot of the stage its round judges: a team that was not shortlisted at an
 earlier gate has no later-stage snapshot, so it can never be placed in a later round or awarded.
 """
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from .stage_runtime import last_stage_id
@@ -46,4 +47,4 @@ def require_award_stage(rounds, snapshot):
     if snapshot.stage_id is None:
         return
     if snapshot.stage_id not in {round_stage_id(round) for round in rounds}:
-        raise ValidationError({"awards": "An award must go to the work of the stage its judging round judges."})
+        raise ValidationError({"awards": gettext("An award must go to the work of the stage its judging round judges.")})

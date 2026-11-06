@@ -1,5 +1,6 @@
 """Daily, type-scoped staff counts. No member names or training notes in chat."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db.models import CharField, Value, Q
@@ -48,8 +49,8 @@ def build(makerspace, reminder, now, local_tz):
     count = counts(makerspace, int(type_id), now)
     if not count:
         return None
-    return ReminderMessage(title="Expiring certifications", event="expiring",
-                           body=f"{count} certification(s) expire soon; review and renew training.")
+    return ReminderMessage(title=gettext("Expiring certifications"), event="expiring",
+                           body=gettext('{count} certification(s) expire soon; review and renew training.').format(count=count))
 
 
 def dispatch(makerspace, reminder, message):

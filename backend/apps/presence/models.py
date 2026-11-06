@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -16,16 +17,16 @@ class PresenceSession(models.Model):
 
     class EndReason(models.TextChoices):
         SUPERSEDED = "superseded", "Superseded"
-        MEMBERSHIP_REVOKED = "membership_revoked", "Membership revoked"
-        CLAIM_REVOKED = "claim_revoked", "Claim revoked"
-        USER_ENDED = "user_ended", "User ended"
+        MEMBERSHIP_REVOKED = "membership_revoked", gettext_lazy("Membership revoked")
+        CLAIM_REVOKED = "claim_revoked", gettext_lazy("Claim revoked")
+        USER_ENDED = "user_ended", gettext_lazy("User ended")
         EXPIRED = "expired", "Expired"
-        STAFF_ENDED = "staff_ended", "Staff ended"
+        STAFF_ENDED = "staff_ended", gettext_lazy("Staff ended")
 
     class Status(models.TextChoices):
         WORKING = "working", "Working"
         VISITING = "visiting", "Visiting"
-        ATTENDING_EVENT = "attending_event", "Attending an event"
+        ATTENDING_EVENT = "attending_event", gettext_lazy("Attending an event")
         GUEST = "guest", "Guest"
 
     # `member` is the legacy identity used by history/claim readers. Keep it in
@@ -78,12 +79,12 @@ class PresenceSession(models.Model):
 
     def clean(self):
         if self.account_id and self.account_id != self.member_id:
-            raise ValidationError("Account and legacy member identity must agree.")
+            raise ValidationError(gettext("Account and legacy member identity must agree."))
         if self.membership_id and self.makerspace_id and (
             self.membership.makerspace_id != self.makerspace_id
             or self.membership.user_id != self.member_id
         ):
-            raise ValidationError("Membership must belong to the member and makerspace.")
+            raise ValidationError(gettext("Membership must belong to the member and makerspace."))
 
     def save(self, *args, **kwargs):
         if not self.account_id:

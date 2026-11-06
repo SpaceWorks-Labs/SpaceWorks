@@ -1,5 +1,6 @@
 """L21b closed inputs and reads: finalists, score-next, progress, prize payouts and programme options."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -16,9 +17,9 @@ class FinalistSelection(ClosedSerializer):
 
     def validate(self, attrs):
         if attrs["selection"] == "top_n" and not attrs.get("top_n"):
-            raise serializers.ValidationError({"top_n": "Choose how many finalists advance."})
+            raise serializers.ValidationError({"top_n": gettext("Choose how many finalists advance.")})
         if attrs["selection"] == "manual" and not attrs.get("snapshot_ids"):
-            raise serializers.ValidationError({"snapshot_ids": "Pick at least one finalist."})
+            raise serializers.ValidationError({"snapshot_ids": gettext("Pick at least one finalist.")})
         return attrs
 
 

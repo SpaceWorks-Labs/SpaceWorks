@@ -6,6 +6,7 @@ when they opted into discovery (or the actor already belongs to them), and partn
 makerspaces are the central public directory plus spaces the actor already manages.
 """
 
+from django.utils.translation import gettext
 from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
@@ -32,7 +33,7 @@ def require_event_staff(actor):
     """Only people who can run events somewhere may search these directories."""
     if _is_superadmin(actor) or _manages_events_somewhere(actor):
         return
-    raise PermissionDenied("Event management access is required.")
+    raise PermissionDenied(gettext("Event management access is required."))
 
 
 def discoverable_organizations(actor):
@@ -75,7 +76,7 @@ def require_host(actor, request, makerspace_id):
     """The chosen host space, or 403 when the actor cannot host events there."""
     host = host_makerspaces(actor, request).filter(pk=makerspace_id).first()
     if host is None:
-        raise PermissionDenied("You cannot host events in that makerspace.")
+        raise PermissionDenied(gettext("You cannot host events in that makerspace."))
     return host
 
 

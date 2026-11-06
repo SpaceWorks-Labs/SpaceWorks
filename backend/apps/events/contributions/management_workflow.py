@@ -1,4 +1,5 @@
 """Posting/shift configuration belongs to the same locked contributor boundary."""
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as ModelValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -39,7 +40,7 @@ def save_posting(*, actor, event_id, payload, posting_id=None):
             if key not in ("operation_id", "expected_version", "form_schema"):
                 setattr(row, key, value)
         if posting_id and original_role != row.role:
-            raise ValidationError({"role": "A posting's role cannot change."})
+            raise ValidationError({"role": gettext("A posting's role cannot change.")})
         if schema is not None:
             row.form_schema = schema
         if not posting_id or "permission_preset" in payload:
@@ -49,7 +50,7 @@ def save_posting(*, actor, event_id, payload, posting_id=None):
                 event_authority.can(actor, event, p) for p in row.permission_preset):
             raise ProgrammeError("permission_subset", "The posting exceeds your helper permissions.", status=403)
         if row.closes_at and row.closes_at > event.ends_at:
-            raise ValidationError({"closes_at": "The posting must close before the event ends."})
+            raise ValidationError({"closes_at": gettext("The posting must close before the event ends.")})
         if posting_id:
             row.version += 1
         _valid(row)
@@ -105,7 +106,7 @@ def save_shift(*, actor, event_id, payload, shift_id=None):
                 for booking in row.bookings.select_for_update().filter(state="booked").order_by("pk"):
                     cancel_locked(actor=actor, event=event, booking_id=booking.pk, locks=locks, reason_code="slot_changed")
         if shift_id and "kind" in payload and payload["kind"] != row.kind and (row.signups.exists() or row.bookings.exists()):
-            raise ValidationError({"kind": "A slot with participation history cannot change kind."})
+            raise ValidationError({"kind": gettext("A slot with participation history cannot change kind.")})
         for key, value in payload.items():
             if key not in ("operation_id", "expected_version", "cancel_bookings", "reason"):
                 setattr(row, key, value)
@@ -117,7 +118,7 @@ def save_shift(*, actor, event_id, payload, shift_id=None):
             get_object_or_404(EventRoleAssignment, pk=row.mentor_assignment_id, event=event,
                               role="mentor", state="approved", imported_inert=False)
         if row.starts_at is None or row.ends_at is None or not event.starts_at <= row.starts_at < row.ends_at <= event.ends_at:
-            raise ValidationError({"starts_at": "Choose an interval inside the event."})
+            raise ValidationError({"starts_at": gettext("Choose an interval inside the event.")})
         booked = (row.bookings.filter(state="booked").count() if row.kind == "office_hours" else
                   row.signups.filter(state="approved").count()) if shift_id else 0
         require_capacity_edit(row, capacity=row.capacity, booked=booked)
@@ -144,7 +145,7 @@ def save_role(*, actor, event_id, payload, assignment_id=None):
             row = get_object_or_404(EventRoleAssignment.objects.select_for_update(), pk=assignment_id, event=event)
             check_version(row, payload["expected_version"])
             if set(payload) - {"operation_id", "expected_version", "display_on_page"}:
-                raise ValidationError("Existing role identity and authority use their dedicated workflows.")
+                raise ValidationError(gettext("Existing role identity and authority use their dedicated workflows."))
             return commands.changed(row, display_on_page=payload.get("display_on_page", row.display_on_page))
         _zero(payload)
         from apps.accounts.models import User

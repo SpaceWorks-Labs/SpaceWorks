@@ -1,5 +1,6 @@
 """Codes are scoped to one event and consumed inside its registration transaction."""
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import secrets
@@ -29,7 +30,7 @@ def create_invite(event, *, actor, email="", max_uses=1, expires_at=None):
     event.makerspace = require_module_locked(event.makerspace, "events")
     require_feature(event, "events.invites")
     if max_uses < 1 or (expires_at and expires_at <= timezone.now()):
-        raise ValidationError("Use a positive limit and future expiry.")
+        raise ValidationError(gettext("Use a positive limit and future expiry."))
     code = secrets.token_urlsafe(32)
     invite = EventInvite.objects.create(
         event=event, makerspace=event.makerspace, code_digest=code_digest(code, "invite"),
@@ -61,7 +62,7 @@ def redeem_invite_locked(event, code, member, *, actor):
     ) or (invite.email_digest and (not member or not member.email or not member.email_verified_at or not hmac.compare_digest(
         invite.email_digest, code_digest(member.email, "email")
     ))):
-        raise NotFound("Invitation not found.")
+        raise NotFound(gettext("Invitation not found."))
     invite.uses += 1
     invite.save(update_fields=["uses"])
     _audit(event, actor, "event.invite_consumed", invite, {"uses": invite.uses})

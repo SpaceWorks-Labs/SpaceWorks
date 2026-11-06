@@ -5,6 +5,7 @@ Split out of `service_storage` (300-line ceiling). Storage helpers are read thro
 working.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -22,13 +23,13 @@ def finalize_file(service_request, *, file_id, actor):
         ).get(pk=file_id, owner_user_id=actor.pk)
     except ServiceRequestFile.DoesNotExist as exc:
         raise ValidationError(
-            {"file_id": "Attachment is unavailable for this request."},
+            {"file_id": gettext("Attachment is unavailable for this request.")},
             code="invalid_attachment",
         ) from exc
     # Refuse an already-attached file before touching object storage so a retry or
     # concurrent finalize can never delete the live object a committed record points at.
     if file.service_request_id is not None or file.attached_at is not None:
-        raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Attachment is unavailable for this request.")}, code="invalid_attachment")
     try:
         result = _validated(file)
         with transaction.atomic():
@@ -43,7 +44,7 @@ def finalize_file(service_request, *, file_id, actor):
                 or (locked_request.queue_id and locked_file.queue_id != locked_request.queue_id)
                 or (locked_request.bucket_id and locked_file.machine_id != locked_request.bucket.machine_id)
             ):
-                raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
+                raise ValidationError({"file_id": gettext("Attachment is unavailable for this request.")}, code="invalid_attachment")
             limits.add_storage(locked_request.makerspace, result.size)
             locked_file.service_request = locked_request
             locked_file.attached_at = timezone.now()
@@ -73,7 +74,7 @@ def _validated(file):
     policy = base.policy_for_file(file)
     size = base.finalize_upload(file.object_key, policy.max_bytes)
     if size is None or not 1 <= size <= policy.max_bytes:
-        raise ValidationError({"file_id": "Uploaded attachment is invalid."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Uploaded attachment is invalid.")}, code="invalid_attachment")
     return base.validate_service_object(file, policy)
 
 
@@ -81,7 +82,7 @@ def delete_staged_file(file, *, actor):
     with transaction.atomic():
         locked = ServiceRequestFile.objects.select_for_update().select_related("makerspace").get(pk=file.pk)
         if locked.service_request_id is not None or locked.attached_at is not None:
-            raise ValidationError({"file_id": "Attached files cannot be deleted."}, code="invalid_attachment")
+            raise ValidationError({"file_id": gettext("Attached files cannot be deleted.")}, code="invalid_attachment")
         audit.record(
             actor, "machine_service.file_deleted", makerspace=locked.makerspace,
             target=locked, meta={"file_id": locked.pk, "size_bytes": locked.size_bytes},

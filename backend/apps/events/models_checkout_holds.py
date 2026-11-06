@@ -6,6 +6,7 @@ Stripe Checkout). Live holds count against event and ticket capacity in
 `events.seat_holds` off no hold is written and seats are taken only when payment lands.
 """
 
+from django.utils.translation import gettext_lazy
 from django.db import models
 from django.db.models import Q
 
@@ -14,7 +15,7 @@ class EventCheckoutHold(models.Model):
     class Reason(models.TextChoices):
         PAID = "paid", "Paid"
         EXPIRED = "expired", "Expired"
-        FAILED = "failed", "Payment failed"
+        FAILED = "failed", gettext_lazy("Payment failed")
         CANCELLED = "cancelled", "Cancelled"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")

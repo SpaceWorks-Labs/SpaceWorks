@@ -1,5 +1,6 @@
 """Booking target adapter for the shared audited, locked grant lifecycle."""
 
+from django.utils.translation import gettext
 import logging
 
 from rest_framework.exceptions import PermissionDenied
@@ -72,8 +73,8 @@ def _send_invite(row, email, token):
     try:
         base = member_area_url(row.makerspace).split("/m/", 1)[0].removesuffix("/member")
         link = f"{base.rstrip('/')}/staff/booking-invite#token={quote(token)}"
-        dispatch_email(to_email=email, subject="Booking resource staff invitation",
-                       text_body=f"Accept your resource staff invitation: {link}",
+        dispatch_email(to_email=email, subject=gettext("Booking resource staff invitation"),
+                       text_body=gettext('Accept your resource staff invitation: {link}').format(link=link),
                        makerspace=row.makerspace, persist_body=False, sync=True,
                        stream="bookings", event="booking_staff_invitation", audience="staff")
         from apps.integrations.invite_chat import dispatch_invite_chat  # X37: chat beside email

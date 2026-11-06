@@ -5,6 +5,7 @@ A member reports from their own loan, booking or machine job; anything else answ
 never see staff notes, technicians, quotes or who works the job -- only the state.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
@@ -33,7 +34,7 @@ class MemberIssuePhotoSerializer(IssuePhotoUploadSerializer):
 
     def validate(self, attrs):
         if not (attrs.get("makerspace_id") or attrs.get("makerspace_slug")):
-            raise serializers.ValidationError({"makerspace_id": "Name the makerspace."})
+            raise serializers.ValidationError({"makerspace_id": gettext("Name the makerspace.")})
         return attrs
 
 
@@ -83,7 +84,7 @@ class MemberIssueListView(APIView):
         body.is_valid(raise_exception=True)
         data = body.validated_data
         if not (data.get("makerspace_id") or data.get("makerspace_slug")):
-            raise serializers.ValidationError({"makerspace_id": "Name the makerspace."})
+            raise serializers.ValidationError({"makerspace_id": gettext("Name the makerspace.")})
         space = _space(data.get("makerspace_id"), data.get("makerspace_slug"))
         source, origin, subject_type, subject = report_subject(space, data, member=user)
         validated = photos.validate(space, data["photos"], photos.owner_for_user(user))
@@ -132,7 +133,7 @@ class MemberLoanItemsView(APIView):
         user = _require_owner_session(request)
         space_id, loan_id = request.query_params.get("makerspace", ""), request.query_params.get("loan", "")
         if not (space_id.isdigit() and loan_id.isdigit()):
-            raise serializers.ValidationError({"loan": "Give the makerspace and the loan."})
+            raise serializers.ValidationError({"loan": gettext("Give the makerspace and the loan.")})
         loan = reporting._loan(_space(int(space_id)), int(loan_id), user, None)
         units = HardwareRequestItemAsset.objects.filter(request_item__request=loan).select_related("asset__product")
         rows = [{"product_id": unit.asset.product_id, "asset_id": unit.asset_id,

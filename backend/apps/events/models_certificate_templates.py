@@ -1,5 +1,6 @@
 """Private artwork and immutable, event-owned certificate design revisions."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 from uuid import uuid4
@@ -21,7 +22,7 @@ class EventCertificateArtwork(models.Model):
             original = type(self).objects.get(pk=self.pk)
             if original.promoted_at or (self.event_id, self.object_key, self.created_at) != (
                     original.event_id, original.object_key, original.created_at):
-                raise ValidationError("Certificate artwork is immutable after promotion.")
+                raise ValidationError(gettext("Certificate artwork is immutable after promotion."))
         return super().save(*args, **kwargs)
 
 
@@ -42,13 +43,13 @@ class EventCertificateTemplateRevision(models.Model):
     def clean(self):
         from .models_certificates import EventAttendanceCertificate
         if self.certificate_kind and self.certificate_kind not in EventAttendanceCertificate.Kind.values:
-            raise ValidationError({"certificate_kind": "Choose a certificate kind or the default design."})
+            raise ValidationError({"certificate_kind": gettext("Choose a certificate kind or the default design.")})
         if self.artwork_id and (self.artwork.event_id != self.event_id
                                 or self.artwork.promoted_at is None):
-            raise ValidationError("Use promoted artwork belonging to this event.")
+            raise ValidationError(gettext("Use promoted artwork belonging to this event."))
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Certificate template revisions are immutable.")
+            raise ValidationError(gettext("Certificate template revisions are immutable."))
         self.full_clean()
         return super().save(*args, **kwargs)

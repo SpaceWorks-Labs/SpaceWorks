@@ -1,4 +1,5 @@
 """At-least-once delivery, DB ownership and bounded lazy expiry (no scheduler needed)."""
+from django.utils.translation import gettext
 import secrets
 from datetime import timedelta
 
@@ -45,7 +46,7 @@ def validate_delivery_target(makerspace, device, command):
     job = PrinterJob.objects.select_for_update().filter(command=command).first()
     try:
         if command.device_key_version != device.key_version or command.kind != "printer_job" or job is None:
-            raise ValidationError("Unknown or stale command.")
+            raise ValidationError(gettext("Unknown or stale command."))
         live_target(job, device)
     except ValidationError:
         cancel_command(makerspace, device, command, job=job)

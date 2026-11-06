@@ -8,6 +8,7 @@ only) applies as it does to a judged prize: the ledger expense is the gross, wit
 stored on the row.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from rest_framework.exceptions import ValidationError
 
@@ -59,18 +60,18 @@ def record_payout(event_id, *, actor, data):
             snapshot = runtime().snapshot(standing.submission_snapshot_id)
             recipient = values.get("recipient_id") or payouts._leader(snapshot)
             if recipient not in snapshot.member_ids:
-                raise ValidationError({"recipient_id": "Pay a member of the winning team."})
+                raise ValidationError({"recipient_id": gettext("Pay a member of the winning team.")})
             if _standing_paid(standing):
                 raise ProgrammeError("payout_exists", "This winner already has a recorded payout. Reverse it first.")
             if values["expected_version"] != 0:
                 raise ProgrammeError("stale_version", "A new payout uses expected_version 0.", current_version=0)
             amount = values.get("amount") or prize.amount_per_winner
             if not amount:
-                raise ValidationError({"amount": "This prize has no amount; enter what was paid."})
+                raise ValidationError({"amount": gettext("This prize has no amount; enter what was paid.")})
             from .prize_tax import proposed_tds
             tds = values["tds_amount"] if values.get("tds_amount") is not None else proposed_tds(event.makerspace, amount)
             if tds >= amount:
-                raise ValidationError({"tds_amount": "Tax deducted must be less than the gross prize."})
+                raise ValidationError({"tds_amount": gettext("Tax deducted must be less than the gross prize.")})
             from apps.payments.ledger_api import record_expense
             from .options import currency
             money = currency(event.makerspace)

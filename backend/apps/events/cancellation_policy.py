@@ -7,6 +7,7 @@ or higher partial percentage, an equal or lower fee -- so a buyer is never worse
 than the policy shown before they paid (`policy_less_generous`).
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -119,7 +120,7 @@ def set_override(event, *, actor, enabled, values, policy_text=""):
     row, _ = EventSalesSettings.objects.select_for_update().get_or_create(
         event=event, defaults={"makerspace": event.makerspace})
     if values["full_before_minutes"] < values["partial_before_minutes"]:
-        raise ValidationError({"partial_before_minutes": "The partial window must end before the full window."})
+        raise ValidationError({"partial_before_minutes": gettext("The partial window must end before the full window.")})
     if has_sales(event):
         old, _overridden = current_terms(event, row)
         if not enabled and row.refund_override:

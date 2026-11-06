@@ -5,6 +5,7 @@ item ones through `edit_inventory`, room ones through `manage_bookings`; each su
 kind only while its parent's maintenance switch is on (#128 C-9).
 """
 
+from django.utils.translation import gettext
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -157,5 +158,5 @@ class WorkOrderAssignView(APIView):
         assignee_id = payload.validated_data["assignee_id"]
         assignee = User.objects.filter(pk=assignee_id).first() if assignee_id else None
         if assignee_id and assignee is None:
-            raise serializers.ValidationError({"assignee_id": "Assign a staff member of this makerspace."})
+            raise serializers.ValidationError({"assignee_id": gettext("Assign a staff member of this makerspace.")})
         return Response(WorkOrderSerializer(service.assign(request.user, order, assignee)).data)

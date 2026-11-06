@@ -11,6 +11,7 @@
   Money never moves here (#59, #93); the Technician never records a payout.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -30,14 +31,14 @@ def _contact(issue, contact_id):
         return None
     row = TechnicianContact.objects.filter(makerspace_id=issue.makerspace_id, pk=contact_id).first()
     if row is None:
-        raise ValidationError({"contact_id": "Choose a technician of this makerspace."})
+        raise ValidationError({"contact_id": gettext("Choose a technician of this makerspace.")})
     return row
 
 
 def log_work(actor, issue, *, kind, note="", occurred_on=None, contact_id=None, photo_tokens=(), owner=None):
     """A visit (date, who) or a remark, with optional photos."""
     if kind not in ("visit", "remark"):
-        raise ValidationError({"kind": "Log a visit or a remark."})
+        raise ValidationError({"kind": gettext("Log a visit or a remark.")})
     validated = photos.validate(issue.makerspace, photo_tokens, owner) if photo_tokens else []
     with transaction.atomic():
         issue = history.lock(issue)
@@ -46,9 +47,9 @@ def log_work(actor, issue, *, kind, note="", occurred_on=None, contact_id=None, 
         _expect(issue, *OPEN)
         note = str(note or "").strip()
         if not note and not validated:
-            raise ValidationError({"note": "Add a note or a photo."})
+            raise ValidationError({"note": gettext("Add a note or a photo.")})
         if kind == "visit" and occurred_on is None:
-            raise ValidationError({"occurred_on": "Give the visit date."})
+            raise ValidationError({"occurred_on": gettext("Give the visit date.")})
         photos.attach(issue, validated, "work", actor)
         history.step(issue, kind, actor, f"repair.{kind}_logged", contact=_contact(issue, contact_id), note=note,
                      occurred_on=occurred_on, meta={"photos": len(validated)})
@@ -60,9 +61,9 @@ def _product(issue, product_id):
     product = InventoryProduct.objects.filter(makerspace_id=issue.makerspace_id, pk=product_id,
                                               is_archived=False).first()
     if product is None:
-        raise ValidationError({"product_id": "Choose an inventory item of this makerspace."})
+        raise ValidationError({"product_id": gettext("Choose an inventory item of this makerspace.")})
     if product.tracking_mode == TrackingMode.INDIVIDUAL:
-        raise ValidationError({"product_id": "Units tracked one by one cannot be used up as parts."})
+        raise ValidationError({"product_id": gettext("Units tracked one by one cannot be used up as parts.")})
     return product
 
 
@@ -90,15 +91,15 @@ def record_part(actor, issue, *, kind, quantity, product_id=None, name=""):
     areas.require(issue.makerspace, areas.REPAIRS[issue.area])
     _expect(issue, *OPEN)
     if type(quantity) is not int or quantity < 1:
-        raise ValidationError({"quantity": "Give a whole number of parts."})
+        raise ValidationError({"quantity": gettext("Give a whole number of parts.")})
     product = _product(issue, product_id) if product_id else None
     name = (str(name or "").strip() or getattr(product, "name", ""))[:200]
     if not name:
-        raise ValidationError({"name": "Name the part."})
+        raise ValidationError({"name": gettext("Name the part.")})
     item = None
     if kind == "used":
         if product is None:
-            raise ValidationError({"product_id": "Choose the inventory item the part came from."})
+            raise ValidationError({"product_id": gettext("Choose the inventory item the part came from.")})
         try:
             availability.consume_available(product, quantity, f"Repair issue #{issue.pk}", actor)
         except availability.InsufficientStock:
@@ -106,7 +107,7 @@ def record_part(actor, issue, *, kind, quantity, product_id=None, name=""):
     elif kind == "needed":
         item = _to_buy(actor, issue, name, quantity)
     else:
-        raise ValidationError({"kind": "A part is used or needed."})
+        raise ValidationError({"kind": gettext("A part is used or needed.")})
     part = RepairPart.objects.create(issue=issue, kind=kind, product=product, name=name, quantity=quantity,
                                      to_buy_item=item)
     history.step(issue, f"parts_{kind}", actor, f"repair.parts_{kind}", note=f"{quantity} x {name}",
@@ -119,9 +120,9 @@ def _amount(value, field="amount"):
     try:
         amount = Decimal(str(value))
     except (InvalidOperation, TypeError):
-        raise ValidationError({field: "Enter an amount."})
+        raise ValidationError({field: gettext("Enter an amount.")})
     if not amount.is_finite() or amount < 0 or amount.as_tuple().exponent < -2:
-        raise ValidationError({field: "Enter a positive amount with at most two decimals."})
+        raise ValidationError({field: gettext("Enter a positive amount with at most two decimals.")})
     return amount
 
 
@@ -133,7 +134,7 @@ def quote(actor, issue, *, amount, currency, contact_id=None, note=""):
     _expect(issue, *OPEN)
     amount, currency = _amount(amount), str(currency or "").strip().lower()
     if len(currency) != 3 or not currency.isalpha():
-        raise ValidationError({"currency": "Use a three-letter currency code."})
+        raise ValidationError({"currency": gettext("Use a three-letter currency code.")})
     contact = _contact(issue, contact_id)
     issue.quote_state, issue.quote_amount, issue.quote_currency = issue.QuoteState.PENDING, amount, currency
     issue.quote_contact, issue.quote_note = contact, str(note or "").strip()[:2000]
@@ -167,14 +168,14 @@ def record_payout(actor, issue, *, amount, currency, method, reference="", recei
         domain = areas.LEDGER_DOMAIN[issue.area]
         machine_type_id = areas.machine_type_id(issue)
         if not finance_view(actor, issue.makerspace_id).may_record(domain, machine_type_id):
-            raise PermissionDenied("You cannot record spending in this area.")
+            raise PermissionDenied(gettext("You cannot record spending in this area."))
         if issue.quote_state != issue.QuoteState.APPROVED:
             raise errors.quote_not_approved()
         if issue.payout_entry_id:
             raise errors.bad_state("This repair's payout is already recorded.", "payout_recorded")
         amount = _amount(amount)
         if amount <= 0:
-            raise ValidationError({"amount": "Enter what was paid."})
+            raise ValidationError({"amount": gettext("Enter what was paid.")})
         payee = issue.quote_contact.name if issue.quote_contact_id else ""
         entry = ledger_api.record_expense(
             issue.makerspace, domain, machine_type_id, amount, currency or issue.quote_currency, method, reference,

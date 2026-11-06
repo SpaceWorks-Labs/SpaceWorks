@@ -3,6 +3,7 @@
 Only ciphertext and canonical source references cross into the event transaction.
 The temporary binding below is internal process state, never browser input.
 """
+from django.utils.translation import gettext
 from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -44,7 +45,7 @@ def saved_dob(*, actor_id, version):
     row = MemberSavedDetail.objects.filter(user_id=actor_id, field_key="date_of_birth",
         version=version, deleted_at__isnull=True).first()
     if row is None:
-        raise ValidationError({"code": "saved_detail_changed", "fields": {"date_of_birth": ["Review saved details."]}})
+        raise ValidationError({"code": "saved_detail_changed", "fields": {"date_of_birth": [gettext("Review saved details.")]}})
     return open_value(row, "value_envelope")
 
 
@@ -63,18 +64,18 @@ def prepare(*, actor_id, subject, schema, payload, submit=True, previous_answers
             "rejected", "declined", "expired", "withdrawn")
     original = form_descriptor(event, schema or [])
     if not isinstance(payload, dict):
-        raise ValidationError({"code": "invalid_form_payload", "fields": {"form": ["Use an object."]}})
+        raise ValidationError({"code": "invalid_form_payload", "fields": {"form": [gettext("Use an object.")]}})
     validation_schema, data = deepcopy(original), deepcopy(payload)
     for key in ("answers", "derivations", "save_choices", "coc"):
         if key in data and not isinstance(data[key], dict):
-            raise ValidationError({"code": "invalid_form_payload", "fields": {key: ["Use an object."]}})
+            raise ValidationError({"code": "invalid_form_payload", "fields": {key: [gettext("Use an object.")]}})
     from apps.forms_schema.profile_fields import PROFILE_FIELDS
     supplied_choices = data.get("save_choices", {})
     if isinstance(supplied_choices, dict):
         data["save_choices"] = {**{key: False for key, info in PROFILE_FIELDS.items() if info.persistable},
                                 **supplied_choices}
     if "custom_answers" in data:
-        raise ValidationError({"code": "answer_field_conflict", "fields": {"custom_answers": ["Use answers."]}})
+        raise ValidationError({"code": "answer_field_conflict", "fields": {"custom_answers": [gettext("Use answers.")]}})
     if previous_answers:
         prior = json.loads(previous_answers) if isinstance(previous_answers, str) else previous_answers
         questions = original.get("questions", []) if isinstance(original, dict) else (original or [])

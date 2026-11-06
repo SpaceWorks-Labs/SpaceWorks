@@ -1,5 +1,6 @@
 """Staff place-photo gallery API for a bookable space (OpenAPI-documented)."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -72,9 +73,9 @@ class SpacePhotoListView(APIView):
         body.is_valid(raise_exception=True)
         key = body.validated_data["object_key"]
         if not storage.is_owned_object_key(space, key) or not storage.has_allowed_extension(key):
-            raise ValidationError({"object_key": "Photo object key is outside this space."})
+            raise ValidationError({"object_key": gettext("Photo object key is outside this space.")})
         if storage.public_image_key_in_use(space.makerspace_id, key):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
             result = storage.finalize_upload(key)
             if result.status != "ok":
@@ -82,7 +83,7 @@ class SpacePhotoListView(APIView):
                 raise ValidationError({"object_key": storage.finalize_error_message(result)})
             if not storage.sniff_is_valid_image(key):
                 services_gallery.cleanup_unattached(key)
-                raise ValidationError({"object_key": "Uploaded file is not a valid image."})
+                raise ValidationError({"object_key": gettext("Uploaded file is not a valid image.")})
         except StorageUnavailable:
             return storage_unavailable_response()
         try:

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -11,7 +12,7 @@ class EventBadgeTemplateRevision(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Badge template revisions are immutable.")
+            raise ValidationError(gettext("Badge template revisions are immutable."))
         return super().save(*args, **kwargs)
 
 
@@ -49,7 +50,7 @@ class BadgePrintJob(models.Model):
                       "template", "template_revision_id", "stock", "include_photo", "registration_ids",
                       "object_key", "created_at", "expires_at")
             if any(getattr(old, key) != getattr(self, key) for key in frozen):
-                raise ValidationError("Print-job snapshots are immutable. Prepare a new job.")
+                raise ValidationError(gettext("Print-job snapshots are immutable. Prepare a new job."))
         return super().save(*args, **kwargs)
 
 
@@ -84,7 +85,7 @@ class BadgePrintResource(models.Model):
                 mutable = {"cleaned_at"}
                 fields = [field.attname for field in self._meta.concrete_fields if field.name not in mutable]
                 if any(getattr(old, key) != getattr(self, key) for key in fields):
-                    raise ValidationError("Bound print resources are immutable.")
+                    raise ValidationError(gettext("Bound print resources are immutable."))
         return super().save(*args, **kwargs)
 
 
@@ -103,4 +104,4 @@ class BadgePrintCleanupReceipt(models.Model):
     lease_until = models.DateTimeField(null=True, blank=True)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Print cleanup custody is permanent.")
+        raise ValidationError(gettext("Print cleanup custody is permanent."))

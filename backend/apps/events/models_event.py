@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from uuid import uuid4
 
 from django.conf import settings
@@ -25,9 +26,9 @@ class Event(models.Model):
 
     class RegistrationAudience(models.TextChoices):
         MEMBERS = "members", "Members"
-        ACCOUNTS = "accounts", "Authenticated accounts"
-        INVITE = "invite", "Invited accounts"
-        PARTICIPATING_ORGANIZATIONS = "participating_organizations", "Participating organizations"
+        ACCOUNTS = "accounts", gettext_lazy("Authenticated accounts")
+        INVITE = "invite", gettext_lazy("Invited accounts")
+        PARTICIPATING_ORGANIZATIONS = "participating_organizations", gettext_lazy("Participating organizations")
 
     organization_admission_blocked = models.BooleanField(default=False, editable=False)
     registration_audience = models.CharField(max_length=32, choices=RegistrationAudience.choices, default=RegistrationAudience.MEMBERS)
@@ -43,7 +44,7 @@ class Event(models.Model):
         OFFLINE = "offline", "Offline"
 
     class DeliveryMode(models.TextChoices):
-        IN_PERSON = "in_person", "In person"
+        IN_PERSON = "in_person", gettext_lazy("In person")
         ONLINE = "online", "Online"
         HYBRID = "hybrid", "Hybrid"
 
@@ -223,13 +224,13 @@ class Event(models.Model):
         try:
             ZoneInfo(self.timezone_name)
         except (ZoneInfoNotFoundError, ValueError, TypeError) as exc:
-            raise ValidationError({"timezone_name": "Use a valid IANA timezone name."}) from exc
+            raise ValidationError({"timezone_name": gettext("Use a valid IANA timezone name.")}) from exc
         if (
             self.registration_cutoff_at is not None
             and self.registration_cutoff_lead_minutes is not None
         ):
             raise ValidationError(
-                "Choose either an absolute registration cutoff or lead minutes, not both."
+                gettext("Choose either an absolute registration cutoff or lead minutes, not both.")
             )
         if (
             self.registration_cutoff_at is not None
@@ -237,25 +238,25 @@ class Event(models.Model):
             and self.registration_cutoff_at > self.starts_at
         ):
             raise ValidationError({
-                "registration_cutoff_at": "Registration cutoff cannot be after the event starts."
+                "registration_cutoff_at": gettext("Registration cutoff cannot be after the event starts.")
             })
         if self.category_id and self.category.makerspace_id != self.makerspace_id:
-            raise ValidationError({"category": "Category must belong to this makerspace."})
+            raise ValidationError({"category": gettext("Category must belong to this makerspace.")})
         if not isinstance(self.tags, list) or len(self.tags) > 20 or any(not isinstance(tag, str) or not tag.strip() or len(tag) > 50 for tag in self.tags):
-            raise ValidationError({"tags": "Use at most 20 nonempty tags of at most 50 characters."})
+            raise ValidationError({"tags": gettext("Use at most 20 nonempty tags of at most 50 characters.")})
         identity = (
             self.series_id,
             self.series_occurrence_key,
             self.series_revision,
         )
         if any(value is None for value in identity) and any(value is not None for value in identity):
-            raise ValidationError("Series occurrence identity must be entirely set or entirely empty.")
+            raise ValidationError(gettext("Series occurrence identity must be entirely set or entirely empty."))
         if self.series_id and self.makerspace_id != self.series.makerspace_id:
-            raise ValidationError({"series": "Series and occurrence must share a makerspace."})
+            raise ValidationError({"series": gettext("Series and occurrence must share a makerspace.")})
         if not isinstance(self.series_override_fields, list) or any(
             not isinstance(value, str) for value in self.series_override_fields
         ):
-            raise ValidationError({"series_override_fields": "Expected a list of field names."})
+            raise ValidationError({"series_override_fields": gettext("Expected a list of field names.")})
     def save(self, *args, **kwargs):
         self.title = (self.title or "").strip()
         # Asset replay inserts with the PK reserved by its rolled-back first pass.

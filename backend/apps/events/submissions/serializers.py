@@ -1,4 +1,5 @@
 """Closed request/response schemas for every Lane B route."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 from .serializers_requirements import ProjectRequirementsSerializer
 
@@ -6,7 +7,7 @@ from .serializers_requirements import ProjectRequirementsSerializer
 class ClosedSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict):
-            raise serializers.ValidationError({"detail": "Expected an object."})
+            raise serializers.ValidationError({"detail": gettext("Expected an object.")})
         unknown = set(data) - set(self.fields)
         if unknown:
             raise serializers.ValidationError({key: "Unknown field." for key in sorted(unknown)})

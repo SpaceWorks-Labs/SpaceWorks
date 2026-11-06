@@ -1,5 +1,6 @@
 """Email-bound invitations disclose no admission credential to the mail outbox."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -34,13 +35,13 @@ def bulk_invites(event, actor, emails, expires_at=None, send_email=True):
         require_module(event.makerspace, "email")
         if not _email_navigation_available(event):
             raise serializers.ValidationError({
-                "send_email": "Email invitations require a public, published event that has not ended. Turn off email delivery to add only the allowlist.",
+                "send_email": gettext("Email invitations require a public, published event that has not ended. Turn off email delivery to add only the allowlist."),
             })
     for address in payload:
         invite, _code = create_invite(event, actor=actor, email=address, expires_at=expires_at)
         if send_email:
             account = User.objects.filter(person_q(), email__iexact=address).first()
-            dispatch_email(makerspace=event.makerspace, to_email=address, subject="Event invitation",
+            dispatch_email(makerspace=event.makerspace, to_email=address, subject=gettext("Event invitation"),
                            text_body="", stream="events", event="invitation", feature="events", audience="requester",
                            recipient_id=account.pk if account else None, source_kind="event_invitation",
                            source_id=invite.pk, source_metadata={"actor_id": actor.pk})
@@ -69,9 +70,8 @@ def prepare_invitation(log):
     event = invite.event
     if not _email_navigation_available(event):
         return False
-    render(log, subject=f"You're invited: {event.title}",
-           text_body=(f"You're invited to {event.title}. Sign in and verify your email to register.\n"
-                      f"{settings.PUBLIC_APP_BASE_URL.rstrip('/')}/m/{event.makerspace.slug}/events/{event.public_token}"))
+    render(log, subject=gettext("You're invited: {title}").format(title=event.title),
+           text_body=(gettext("You're invited to {title}. Sign in and verify your email to register.\n{value}/m/{slug}/events/{public_token}").format(title=event.title, value=settings.PUBLIC_APP_BASE_URL.rstrip('/'), slug=event.makerspace.slug, public_token=event.public_token)))
     return True
 
 

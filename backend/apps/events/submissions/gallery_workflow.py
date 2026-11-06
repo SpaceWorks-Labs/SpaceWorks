@@ -1,5 +1,6 @@
 """One initial gallery publication; amendments are explicit immutable history."""
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -30,16 +31,16 @@ def _entry(publication, snapshot_id, *, selection_revision=1):
     consent = GalleryConsent.objects.filter(event_id=publication.event_id, team_id=snapshot.team_id,
                                             snapshot_id=snapshot_id, metadata_public=True).first()
     if not consent or snapshot.event_id != publication.event_id or not snapshot.current or not snapshot.eligible:
-        raise ValidationError({"snapshot_ids": "Select only eligible, explicitly public frozen submissions."})
+        raise ValidationError({"snapshot_ids": gettext("Select only eligible, explicitly public frozen submissions.")})
     from .stage_gallery import gallery_stage_allowed
     if not gallery_stage_allowed(publication.event_id, snapshot):
         # #178/#179: the gallery shows the last stage (or an S18 public stage's passing teams), so a team
         # eliminated earlier never appears.
-        raise ValidationError({"snapshot_ids": "The gallery shows each project's final-stage submission."})
+        raise ValidationError({"snapshot_ids": gettext("The gallery shows each project's final-stage submission.")})
     items = list(consent.items.filter(active=True))
     if (not {i.asset_id for i in items if i.asset_id} <= set(snapshot.public_asset_ids)
             or not {i.link_id for i in items if i.link_id} <= {link.id for link in snapshot.public_links}):
-        raise ValidationError({"snapshot_ids": "Public item consent changed. Review the selection."})
+        raise ValidationError({"snapshot_ids": gettext("Public item consent changed. Review the selection.")})
     entry = GalleryEntry.objects.create(event_id=publication.event_id, publication=publication, snapshot_id=snapshot.id,
         title=snapshot.title, description=snapshot.description, metadata_generation=consent.metadata_generation,
         selection_revision=selection_revision)

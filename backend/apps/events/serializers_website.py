@@ -1,5 +1,6 @@
 """Explicit input/output contracts; object keys never cross the API boundary."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from .models_website import EventPageSection
@@ -57,7 +58,7 @@ class WebsiteContentInput(WebsitePageFields):
 
     def validate_sections(self, value):
         if sum(row["kind"] == "room" for row in value) > 30:
-            raise serializers.ValidationError("A page can have at most 30 rooms.")
+            raise serializers.ValidationError(gettext("A page can have at most 30 rooms."))
         return value
 
 

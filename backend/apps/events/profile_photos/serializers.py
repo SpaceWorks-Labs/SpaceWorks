@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.events.serializers_staff_tools import StrictSerializer
 
@@ -16,15 +17,15 @@ class PresentationWriteSerializer(StrictSerializer):
 
     def validate(self, data):
         if (data["profile_id"] is None) != (data["membership_id"] is None):
-            raise serializers.ValidationError("Select a matching profile and membership.")
+            raise serializers.ValidationError(gettext("Select a matching profile and membership."))
         scopes = data["public_card_scopes"]
         if len(scopes) != len(set(scopes)):
-            raise serializers.ValidationError({"public_card_scopes": "Choose each scope once."})
+            raise serializers.ValidationError({"public_card_scopes": gettext("Choose each scope once.")})
         if not data["public_card_consent"] and scopes:
-            raise serializers.ValidationError({"public_card_scopes": "Enable public card consent first."})
+            raise serializers.ValidationError({"public_card_scopes": gettext("Enable public card consent first.")})
         if data["profile_id"] is None and (data["source_revision"] is not None
                 or data["print_photo_consent"] or data["public_card_consent"] or scopes):
-            raise serializers.ValidationError("No profile must also clear all photo and card consents.")
+            raise serializers.ValidationError(gettext("No profile must also clear all photo and card consents."))
         return data
 
 

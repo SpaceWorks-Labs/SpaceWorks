@@ -1,5 +1,6 @@
 """Locked, audited content writes; all callers recheck live event authority."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from apps.audit.services import record
@@ -36,7 +37,7 @@ def locked_target(target, actor, permission):
     event_authority.require(actor, target, permission)
     require_feature(target, "events.website")
     if target.status in {"cancelled", "completed"}:
-        raise ValidationError("Terminal events are read-only.")
+        raise ValidationError(gettext("Terminal events are read-only."))
     return target, actor
 
 
@@ -68,9 +69,9 @@ def bump(page, target=None):
 def _validate_content(target, data, assets):
     sections = {row["slug"]: row for row in data["sections"]}
     if len(sections) != len(data["sections"]):
-        raise ValidationError("Section slugs must be unique.")
+        raise ValidationError(gettext("Section slugs must be unique."))
     if any(row["asset_id"] is not None and row["asset_id"] not in assets for row in sections.values()):
-        raise ValidationError("Images must belong to this page.")
+        raise ValidationError(gettext("Images must belong to this page."))
     slugs = set()
     start, end = window(target)
     if isinstance(target, EventSeries) and data["sessions"]:
@@ -79,19 +80,19 @@ def _validate_content(target, data, assets):
         if target.occurrences.filter(website_page__isnull=True).alias(
             website_duration=F("ends_at") - F("starts_at"),
         ).filter(website_duration__lt=duration).exists():
-            raise ValidationError("The programme exceeds an inheriting occurrence's window. Create its occurrence override first.")
+            raise ValidationError(gettext("The programme exceeds an inheriting occurrence's window. Create its occurrence override first."))
     for session in data["sessions"]:
         if session["slug"] in slugs:
-            raise ValidationError("Session slugs must be unique.")
+            raise ValidationError(gettext("Session slugs must be unique."))
         slugs.add(session["slug"])
         if not start <= session["starts_at"] < session["ends_at"] <= end:
-            raise ValidationError("Sessions must lie inside the event window.")
+            raise ValidationError(gettext("Sessions must lie inside the event window."))
         if len(session["speakers"]) != len(set(session["speakers"])):
-            raise ValidationError("A speaker can appear only once per session.")
+            raise ValidationError(gettext("A speaker can appear only once per session."))
         for kind, names in (("track", [session["track"]]), ("room", [session["room"]]),
                             ("speaker", session["speakers"])):
             if any(name is not None and (name not in sections or sections[name]["kind"] != kind) for name in names):
-                raise ValidationError(f"Choose {kind} sections from this page.")
+                raise ValidationError(gettext('Choose {kind} sections from this page.').format(kind=kind))
 
 
 @prepared_page_write
@@ -126,7 +127,7 @@ def _save_content_locked(target, actor, data, legacy_order, legacy_enabled, copi
     existing = EventPage.objects.filter(**owner(target)).first()
     from .website_projection import project
     if data["revision"] != project(target)["revision"]:
-        raise ValidationError({"revision": "The page changed. Reload before saving."})
+        raise ValidationError({"revision": gettext("The page changed. Reload before saving.")})
     before = project(target)
     if legacy_order:
         data["section_order"].remove("EDITORIAL")
@@ -149,26 +150,26 @@ def _save_content_locked(target, actor, data, legacy_order, legacy_enabled, copi
     for row in data["sessions"]:
         if row.get("session_id") is not None and existing is None:
             if row["session_id"] not in identity_map:
-                raise ValidationError({"session_id": "Choose an inherited session identity."})
+                raise ValidationError({"session_id": gettext("Choose an inherited session identity.")})
             row["session_id"] = identity_map[row["session_id"]]
     # Resolve exact inherited asset IDs, including renamed/new sections.
     if existing is None and remapped:
         for row in data["sections"]:
             if row["asset_id"] is not None:
                 if row["asset_id"] not in remapped:
-                    raise ValidationError("Images must belong to the inherited page.")
+                    raise ValidationError(gettext("Images must belong to the inherited page."))
                 row["asset_id"] = remapped[row["asset_id"]]
         if "editorial_document" in data:
             editorial = data["editorial_document"]
             if editorial.get("cover_asset_id") is not None:
                 if editorial["cover_asset_id"] not in remapped:
-                    raise ValidationError("Cover must belong to the inherited page.")
+                    raise ValidationError(gettext("Cover must belong to the inherited page."))
                 editorial["cover_asset_id"] = remapped[editorial["cover_asset_id"]]
             for group in editorial["sections"]:
                 if group["type"] == "gallery":
                     for item in group["payload"]["items"]:
                         if item["asset_id"] not in remapped:
-                            raise ValidationError("Gallery images must belong to the inherited page.")
+                            raise ValidationError(gettext("Gallery images must belong to the inherited page."))
                         item["asset_id"] = remapped[item["asset_id"]]
     assets = set(page.assets.values_list("pk", flat=True))
     _validate_content(target, data, assets)
@@ -178,11 +179,11 @@ def _save_content_locked(target, actor, data, legacy_order, legacy_enabled, copi
         fields = ("slug", "title", "body", "starts_at", "ends_at", "track", "room", "speakers", "visibility")
         if ([{key: row[key] for key in fields} for row in current]
                 != [{key: row[key] for key in fields} for row in data["sessions"]]):
-            raise ValidationError("Schedule changes require publish_schedule.")
+            raise ValidationError(gettext("Schedule changes require publish_schedule."))
         by_slug = {row["slug"]: row["session_id"] for row in current}
         if any(row.get("session_id") is not None and str(row["session_id"]) != by_slug.get(row["slug"])
                for row in data["sessions"]):
-            raise ValidationError({"session_id": "Changing session identity requires publish_schedule."})
+            raise ValidationError({"session_id": gettext("Changing session identity requires publish_schedule.")})
     from .website_session_identity import reconcile
     sessions = reconcile(page, data["sessions"])
     page.sessions.all().delete()
@@ -215,14 +216,14 @@ def set_release_locked(target, *, actor, released, revision):
     event_authority.require(actor, target, PUBLISH_SCHEDULE)
     require_feature(target, "events.website")
     if released and target.status != "published":
-        raise ValidationError("Publish the event before releasing its website.")
+        raise ValidationError(gettext("Publish the event before releasing its website."))
     page = EventPage.objects.select_for_update().filter(**owner(target)).first()
     if page is None or page.revision != revision:
-        raise ValidationError({"revision": "Save an occurrence page and reload before releasing it."})
+        raise ValidationError({"revision": gettext("Save an occurrence page and reload before releasing it.")})
     if released:
         from .website_revisions import validate_snapshot_window
         if page.draft_revision_id is None:
-            raise ValidationError({"revision": "Save a draft before releasing it."})
+            raise ValidationError({"revision": gettext("Save a draft before releasing it.")})
         validate_snapshot_window(target, page.draft_revision)
         if isinstance(target, EventSeries):
             for occurrence in target.occurrences.filter(website_page__isnull=True).select_for_update(of=("self",)).order_by("pk"):

@@ -1,5 +1,6 @@
 """Events owns target policy; always-present infrastructure owns the lifecycle."""
 
+from django.utils.translation import gettext
 import logging
 
 from rest_framework.exceptions import PermissionDenied
@@ -117,8 +118,8 @@ def _send_invite(row, email, token):
         base = member_area_url(row.makerspace).split("/m/", 1)[0].removesuffix("/member")
         # Fragment credentials do not enter HTTP referrers or server access logs.
         link = f"{base.rstrip('/')}/staff/event-invite#token={quote(token)}"
-        dispatch_email(to_email=email, subject="Event staff invitation",
-                       text_body=f"Accept your event staff invitation: {link}",
+        dispatch_email(to_email=email, subject=gettext("Event staff invitation"),
+                       text_body=gettext('Accept your event staff invitation: {link}').format(link=link),
                        makerspace=row.makerspace, persist_body=False, sync=True,
                        stream="events", event="event_staff_invitation", audience="staff")
         from apps.integrations.invite_chat import dispatch_invite_chat  # X37: chat beside email

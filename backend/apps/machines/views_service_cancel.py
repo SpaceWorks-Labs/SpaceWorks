@@ -8,6 +8,7 @@ token AND proves ownership before returning the private ``request_id``. Claim se
 staff and platform accounts are refused. Staff cancellation stays on the admin route.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db.models import Q
@@ -55,11 +56,11 @@ class MemberServiceOwnerSerializer(serializers.Serializer):
 
 def _require_owner_session(request):
     if getattr(request, "claim_session", None) is not None:
-        raise PermissionDenied("Claim sessions cannot manage machine-service jobs.")
+        raise PermissionDenied(gettext("Claim sessions cannot manage machine-service jobs."))
     user = request.user
     require_member_account(user)
     if not (user.is_active and user.access_status == "active"):
-        raise PermissionDenied("An active member account is required.")
+        raise PermissionDenied(gettext("An active member account is required."))
     return user
 
 

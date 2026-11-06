@@ -1,4 +1,5 @@
 """Staff send/reprint: DB-backed idempotency and first-send batch freeze."""
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
@@ -25,7 +26,7 @@ def create_label_command(actor, batch_id, *, device_id, request_id):
         batch = get_object_or_404(scoped_batches(actor).select_for_update(), pk=batch_id,
                                   makerspace=makerspace)
         if device.kind != Device.Kind.LABEL_PRINTER or device.status != Device.Status.ACTIVE:
-            raise ValidationError("An active label printer is required.")
+            raise ValidationError(gettext("An active label printer is required."))
         previous = rbac.scope_by_action(actor, rbac.Action.MANAGE_QR,
             LabelPrintCommand.objects.all()).filter(makerspace=makerspace, request_id=request_id).first()
         if previous is not None:
@@ -33,10 +34,10 @@ def create_label_command(actor, batch_id, *, device_id, request_id):
                 raise LabelConflict("Request ID has already been used for another payload.")
             return previous, False
         if batch.status == QrPrintBatch.Status.ARCHIVED:
-            raise ValidationError("Archived QR batches cannot be sent.")
+            raise ValidationError(gettext("Archived QR batches cannot be sent."))
         count = batch.items.count()
         if count == 0:
-            raise ValidationError("A label batch must contain at least one item.")
+            raise ValidationError(gettext("A label batch must contain at least one item."))
         command = DeviceCommand.objects.create(makerspace=makerspace, device=device,
             device_key_version=device.key_version, kind="label_print", created_by=actor)
         label = LabelPrintCommand.objects.create(command=command, makerspace=makerspace,

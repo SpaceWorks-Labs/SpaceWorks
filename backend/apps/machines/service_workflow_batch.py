@@ -8,6 +8,7 @@ completes each job through `complete`. Cancelling stays per job (staff only once
 running), and the machine frees when the batch's last job ends.
 """
 
+from django.utils.translation import gettext
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
@@ -26,17 +27,17 @@ def start_batch(jobs, actor, *, machine_id, plans=None, note=""):
     from apps.machines.service_workflow_start import start
     jobs = list(jobs)
     if len(jobs) < 2:
-        raise ValidationError({"jobs": "A batch needs at least two jobs."})
+        raise ValidationError({"jobs": gettext("A batch needs at least two jobs.")})
     spaces = {job.makerspace_id for job in jobs}
     if len(spaces) != 1:
-        raise ValidationError({"jobs": "A batch runs in one makerspace."})
+        raise ValidationError({"jobs": gettext("A batch runs in one makerspace.")})
     plans = plans or {}
     with transaction.atomic():
         space_id = spaces.pop()
         require_feature(space_id, BATCH_START)
         machine = Machine.objects.filter(pk=machine_id, makerspace_id=space_id, is_active=True).first()
         if machine is None:
-            raise ValidationError({"machine_id": "Choose an active machine."})
+            raise ValidationError({"machine_id": gettext("Choose an active machine.")})
         batch = MachineJobBatch.objects.create(makerspace_id=space_id, machine=machine, started_by=actor,
                                                note=str(note or "")[:200])
         scope = role_scope.manage_scope_for(actor, space_id)
@@ -62,7 +63,7 @@ def complete_batch(batch, actor, *, actual_minutes, actual_quantity=None, splits
     with transaction.atomic():
         jobs = list(MachineServiceRequest.objects.filter(batch=batch, status=Status.IN_PROGRESS).order_by("pk"))
         if not jobs:
-            raise ValidationError({"batch": "This batch has no running jobs."})
+            raise ValidationError({"batch": gettext("This batch has no running jobs.")})
         minutes = _shares(jobs, actual_minutes, splits, "minutes")
         quantities = _shares(jobs, actual_quantity, splits, "quantity") if actual_quantity is not None else {}
         done = []

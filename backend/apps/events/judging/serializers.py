@@ -1,5 +1,6 @@
 """Closed domain inputs. Unknown members never become dynamic model assignments."""
 
+from django.utils.translation import gettext
 from collections.abc import Mapping
 from decimal import Decimal
 
@@ -19,7 +20,7 @@ class CommandInput(ClosedSerializer):
 
     def validate_expected_version(self, value):
         if type(self.initial_data.get("expected_version")) is not int:
-            raise serializers.ValidationError("Use an integer version.")
+            raise serializers.ValidationError(gettext("Use an integer version."))
         return value
 
 
@@ -29,10 +30,10 @@ class IdList(serializers.ListField):
 
     def to_internal_value(self, data):
         if isinstance(data, list) and any(type(value) is not int for value in data):
-            raise serializers.ValidationError("Use integer IDs.")
+            raise serializers.ValidationError(gettext("Use integer IDs."))
         result = super().to_internal_value(data)
         if len(set(result)) != len(result):
-            raise serializers.ValidationError("Duplicate IDs are not allowed.")
+            raise serializers.ValidationError(gettext("Duplicate IDs are not allowed."))
         return result
 
 
@@ -49,12 +50,12 @@ class TrackInput(CommandInput):
 
     def validate_criteria(self, value):
         if len(value) > 30 or any(len(key) > 64 for key in value):
-            raise serializers.ValidationError("Use at most 30 short criterion keys.")
+            raise serializers.ValidationError(gettext("Use at most 30 short criterion keys."))
         return value
 
     def validate_eligibility_rules(self, value):
         if set(value) - {"required_tech_tags"}:
-            raise serializers.ValidationError("Only required_tech_tags is supported; age gating is forbidden.")
+            raise serializers.ValidationError(gettext("Only required_tech_tags is supported; age gating is forbidden."))
         return value
 
     def validate_form(self, value):
@@ -93,7 +94,7 @@ class CriterionInput(ClosedSerializer):
 
     def validate_anchors(self, value):
         if set(value) != {"1", "2", "3", "4", "5"}:
-            raise serializers.ValidationError("Provide an anchor for every score from 1 to 5.")
+            raise serializers.ValidationError(gettext("Provide an anchor for every score from 1 to 5."))
         return value
 
 
@@ -122,7 +123,7 @@ class RoundInput(CommandInput):
 
     def validate_criteria(self, value):
         if len({row["key"] for row in value}) != len(value):
-            raise serializers.ValidationError("Criterion keys must be distinct.")
+            raise serializers.ValidationError(gettext("Criterion keys must be distinct."))
         return value
 
 
@@ -149,7 +150,7 @@ class ScoreInput(CommandInput):
         # DRF IntegerField accepts 1.0 and true; the domain contract requires integers.
         original = self.initial_data.get("scores", {})
         if any(type(item) is not int for item in original.values()):
-            raise serializers.ValidationError("Use integer scores from 1 to 5.")
+            raise serializers.ValidationError(gettext("Use integer scores from 1 to 5."))
         return value
 
 
@@ -218,5 +219,5 @@ def validated(serializer, data, *, partial=False):
     # PATCH is partial in domain fields only; command identity is ALWAYS required.
     for key in ("operation_id", "expected_version"):
         if key not in value.validated_data:
-            raise serializers.ValidationError({key: "This field is required."})
+            raise serializers.ValidationError({key: gettext("This field is required.")})
     return value.validated_data

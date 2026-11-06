@@ -6,6 +6,7 @@ issue only accepts photos whose grant names the same uploader, so nobody can att
 someone else's upload, and a key can back one photo row only.
 """
 
+from django.utils.translation import gettext
 from django.core import signing
 from rest_framework.exceptions import ValidationError
 
@@ -33,19 +34,19 @@ def issue_upload(space, content_type, owner):
 
 def _keys(space, tokens, owner):
     if not isinstance(tokens, (list, tuple)) or len(tokens) > MAX_PER_STEP:
-        raise ValidationError({"photos": f"Attach at most {MAX_PER_STEP} photos at a time."})
+        raise ValidationError({"photos": gettext('Attach at most {MAX_PER_STEP} photos at a time.').format(MAX_PER_STEP=MAX_PER_STEP)})
     keys = []
     for token in tokens:
         try:
             data = signing.loads(str(token), salt=SALT, max_age=MAX_AGE)
         except signing.BadSignature:
-            raise ValidationError({"photos": "A photo upload has expired; upload it again."})
+            raise ValidationError({"photos": gettext("A photo upload has expired; upload it again.")})
         if (not isinstance(data, dict) or data.get("m") != space.pk or data.get("o") != owner
                 or not storage.owns_key(data.get("k"), space.pk)):
-            raise ValidationError({"photos": "A photo upload does not belong to you."})
+            raise ValidationError({"photos": gettext("A photo upload does not belong to you.")})
         keys.append(data["k"])
     if len(set(keys)) != len(keys):
-        raise ValidationError({"photos": "The same photo was attached twice."})
+        raise ValidationError({"photos": gettext("The same photo was attached twice.")})
     return keys
 
 
@@ -54,7 +55,7 @@ def validate(space, tokens, owner):
     from apps.maintenance.models import IssuePhoto
     keys = _keys(space, tokens or [], owner)
     if keys and IssuePhoto.objects.filter(object_key__in=keys).exists():
-        raise ValidationError({"photos": "A photo is already attached."})
+        raise ValidationError({"photos": gettext("A photo is already attached.")})
     return [(key, *storage.validated_photo(key)) for key in keys]
 
 

@@ -6,6 +6,7 @@ optional check-in grant is created through the same event staff-grant model the 
 shows, and only when the linking authority could have granted it directly.
 """
 
+from django.utils.translation import gettext
 import secrets
 from datetime import timedelta
 from urllib.parse import quote
@@ -61,7 +62,7 @@ def _section(event, slug):
     section = EventPageSection.objects.filter(page__event=event, kind=EventPageSection.Kind.SPEAKER,
                                              slug=slug, is_working=True).first()
     if section is None:
-        raise ValidationError({"section_slug": "No speaker section with this slug on the event website."})
+        raise ValidationError({"section_slug": gettext("No speaker section with this slug on the event website.")})
     return section
 
 
@@ -69,7 +70,7 @@ def _require_link_authority(actor, event, grant_check_in):
     event_authority.require(actor, event, EDIT_DETAILS)
     if grant_check_in and not (event_authority.can_manage_grants(actor, event)
                                and event_authority.can(actor, event, CHECK_IN)):
-        raise PermissionDenied("Only an event manager can also grant check-in access.")
+        raise PermissionDenied(gettext("Only an event manager can also grant check-in access."))
 
 
 def _ensure_check_in_grant(event, user, granted_by):
@@ -92,7 +93,7 @@ def _create(**values):
         with transaction.atomic():
             return EventSpeaker.objects.create(**values)
     except IntegrityError as exc:
-        raise ValidationError({"user_id": "This account is already a speaker at this event."}) from exc
+        raise ValidationError({"user_id": gettext("This account is already a speaker at this event.")}) from exc
 
 
 @transaction.atomic
@@ -103,7 +104,7 @@ def assign_speaker(event, *, actor, user, name="", section_slug="", grant_check_
     account = User.objects.filter(candidates_q(event), pk=getattr(user, "pk", user),
                                   is_active=True, access_status="active").distinct().first()
     if account is None:
-        raise ValidationError({"user_id": "Choose a member account known to this event."})
+        raise ValidationError({"user_id": gettext("Choose a member account known to this event.")})
     speaker = _create(makerspace=event.makerspace, event=event, user=account,
                       section=_section(event, section_slug), display_name=(name or display_name(account))[:200],
                       linked_via=EventSpeaker.LinkedVia.STAFF_ASSIGNED, grants_check_in=grant_check_in,
@@ -121,7 +122,7 @@ def invite_speaker(event, *, actor, name, section_slug="", grant_check_in=False)
     event = _locked_target(event)
     _require_link_authority(actor, event, grant_check_in)
     if not (name or "").strip():
-        raise ValidationError({"display_name": "A display name is required."})
+        raise ValidationError({"display_name": gettext("A display name is required.")})
     token = secrets.token_urlsafe(32)
     speaker = EventSpeaker.objects.create(
         makerspace=event.makerspace, event=event, section=_section(event, section_slug),
@@ -139,14 +140,14 @@ def claim_speaker(token, *, actor):
         raise PermissionDenied()
     candidate = EventSpeaker.objects.filter(claim_token_digest=_digest(token or "")).first() if token else None
     if candidate is None:
-        raise NotFound("Speaker invitation not found.")
+        raise NotFound(gettext("Speaker invitation not found."))
     event = _locked_target(candidate.event)
     speaker = EventSpeaker.objects.select_for_update().get(pk=candidate.pk)
     if (speaker.removed_at or speaker.user_id or speaker.claimed_at
             or not speaker.claim_expires_at or speaker.claim_expires_at <= timezone.now()):
-        raise NotFound("Speaker invitation not found.")
+        raise NotFound(gettext("Speaker invitation not found."))
     if EventSpeaker.objects.filter(event=event, user=actor, removed_at__isnull=True).exists():
-        raise ValidationError({"token": "You are already a speaker at this event."})
+        raise ValidationError({"token": gettext("You are already a speaker at this event.")})
     speaker.user, speaker.claimed_at = actor, timezone.now()
     speaker.linked_via = EventSpeaker.LinkedVia.CLAIMED
     speaker.save(update_fields=["user", "claimed_at", "linked_via"])

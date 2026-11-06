@@ -1,4 +1,5 @@
 """Recover C's persisted due notices through the existing tenant reminder scheduler."""
+from django.utils.translation import gettext
 from functools import partial
 
 from apps.integrations.notify import NotificationResult
@@ -32,7 +33,7 @@ def build(makerspace, schedule, now, local_tz, *, kind):
     if _notice(makerspace, schedule, kind) is None:
         return None
     # Domain adapters select recipients and render the actual personal message.
-    return ReminderMessage(title="Event programme update", event="programme_notice")
+    return ReminderMessage(title=gettext("Event programme update"), event="programme_notice")
 
 
 def dispatch(makerspace, schedule, message, now, local_tz, *, kind):

@@ -1,5 +1,6 @@
 """Idempotent seed copies with event-owned immutable bytes and revisions."""
 
+from django.utils.translation import gettext
 from copy import deepcopy
 from hashlib import sha256
 import json
@@ -25,13 +26,13 @@ from .seeds import catalogue
 
 def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None, expected_version=None, operation_id=None, seed_version=None):
     if kind not in ("certificate", "badge") or theme not in ("light", "dark"):
-        raise ValidationError({"seed_id": "Choose a certificate or badge seed and theme."})
+        raise ValidationError({"seed_id": gettext("Choose a certificate or badge seed and theme.")})
     if kind == "certificate" and stock is not None:
-        raise ValidationError({"stock": "Certificates do not use badge stock."})
+        raise ValidationError({"stock": gettext("Certificates do not use badge stock.")})
     candidates = catalogue(kind=kind, theme=theme, stock=stock)
     seed = next((row for row in candidates if row["seed_id"] == seed_id), None)
     if seed is None:
-        raise ValidationError({"seed_id": "Unknown default design."})
+        raise ValidationError({"seed_id": gettext("Unknown default design.")})
     if seed_version is not None and seed_version != seed["seed_version"]:
         raise ProgrammeConflict("The default design changed. Reload it.", code="seed_version_changed")
     recipe = json.dumps([event_id, kind, seed_id, seed["seed_version"], theme, stock], separators=(",", ":"))
@@ -83,7 +84,7 @@ def install_to_event(event_id, *, actor, seed_id, theme, kind, stock=None, expec
                 record(actor, "event.certificate_artwork_promoted", makerspace=event.makerspace,
                        target=row, meta={"size_bytes": len(payload)})
             if row.sha256 != digest:
-                raise ValidationError({"seed_id": "Installed artwork differs from the packaged seed."})
+                raise ValidationError({"seed_id": gettext("Installed artwork differs from the packaged seed.")})
         mapping[resource["id"]] = str(row.resource_id)
     for layer in document["layers"]:
         if layer["type"] == "image":

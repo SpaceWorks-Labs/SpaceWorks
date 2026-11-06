@@ -1,5 +1,6 @@
 """Staff image actions, pagination envelopes and reservation filters."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.bookings.models import Booking
@@ -66,6 +67,6 @@ class BookingListFilterSerializer(serializers.Serializer):
             and attrs['ends_at'] < attrs['starts_at']
         ):
             raise serializers.ValidationError(
-                {'ends_at': 'End of window must be at or after its start.'}
+                {'ends_at': gettext('End of window must be at or after its start.')}
             )
         return attrs

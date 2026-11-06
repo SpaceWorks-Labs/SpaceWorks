@@ -7,6 +7,7 @@ work order, which lives under maintenance. Managers act in their own scope with 
 Booking Manager on rooms; the Space Manager everywhere.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import NotFound
 
 from apps.accounts import rbac
@@ -35,7 +36,7 @@ def on(space, key):
 
 
 def refuse(key):
-    raise NotFound({"detail": f"{key} is switched off for this makerspace.", "code": "capability_disabled"})
+    raise NotFound({"detail": gettext('{key} is switched off for this makerspace.').format(key=key), "code": "capability_disabled"})
 
 
 def require(space, key):

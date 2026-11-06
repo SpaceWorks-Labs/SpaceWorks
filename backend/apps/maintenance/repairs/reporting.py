@@ -7,6 +7,7 @@ proved with the one-time code (#80). Anything else is `reporter_not_eligible`, a
 outside this space reads exactly like one that does not exist.
 """
 
+from django.utils.translation import gettext
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 
@@ -36,13 +37,13 @@ def loan_subject(space, loan_id, *, member=None, email_key=None, product_id=None
         link = HardwareRequestItemAsset.objects.filter(request_item__request=loan, asset_id=asset_id).select_related(
             "asset__product").first()
         if link is None:
-            raise ValidationError({"asset_id": "That unit was not part of this loan."})
+            raise ValidationError({"asset_id": gettext("That unit was not part of this loan.")})
         return loan, "inventory_asset", link.asset
     if product_id is None and len(items) == 1:
         return loan, "inventory_product", items[0].product
     match = next((item.product for item in items if item.product_id == product_id), None)
     if match is None:
-        raise ValidationError({"product_id": "Choose an item that was part of this loan."})
+        raise ValidationError({"product_id": gettext("Choose an item that was part of this loan.")})
     return loan, "inventory_product", match
 
 
@@ -68,5 +69,5 @@ def job_subject(space, job_id, *, member):
         raise errors.not_eligible()
     machine = job.assigned_machine or getattr(job.bucket, "machine", None)
     if machine is None:
-        raise ValidationError({"machine_job_id": "This job has not been on a machine yet."})
+        raise ValidationError({"machine_job_id": gettext("This job has not been on a machine yet.")})
     return job, "machine", machine

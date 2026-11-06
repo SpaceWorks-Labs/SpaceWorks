@@ -1,5 +1,6 @@
 """Immutable audience proofs and replay-safe composer commands."""
 
+from django.utils.translation import gettext
 import hashlib
 
 from rest_framework.exceptions import ValidationError
@@ -114,7 +115,7 @@ def create_composer(event, actor, values, operation_id):
 def create_preview(campaign, actor, payload):
     def create(row, locked_actor):
         if row.status != "draft" or row.render_schema_version != 2:
-            raise ValidationError("Only composer drafts can be previewed.")
+            raise ValidationError(gettext("Only composer drafts can be previewed."))
         count, revision = audience_proof(row)
         preview = EventBroadcastPreview.objects.create(campaign=row, created_by=locked_actor,
             content_sha256=content_digest(row), revision=revision, recipient_count=count)

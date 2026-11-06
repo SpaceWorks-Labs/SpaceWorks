@@ -6,6 +6,7 @@ Rows are append-only; a mistake is corrected with a reversal row, which voids th
 A winner of a PUBLISHED result is paid at most once while a payout stands.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from rest_framework.exceptions import ValidationError
 
@@ -60,7 +61,7 @@ def record_payout(event_id, *, actor, data):
             snapshot = runtime().snapshot(award.submission_snapshot_id)
             recipient = values.get("recipient_id") or _leader(snapshot)
             if recipient not in snapshot.member_ids:
-                raise ValidationError({"recipient_id": "Pay a member of the winning team."})
+                raise ValidationError({"recipient_id": gettext("Pay a member of the winning team.")})
             if values["expected_version"] != 0:
                 raise ProgrammeError("stale_version", "A new payout uses expected_version 0.", current_version=0)
             from .payout_split import payout_amount
@@ -68,7 +69,7 @@ def record_payout(event_id, *, actor, data):
             from .prize_tax import proposed_tds
             tds = values["tds_amount"] if values.get("tds_amount") is not None else proposed_tds(event.makerspace, amount)
             if tds >= amount:
-                raise ValidationError({"tds_amount": "Tax deducted must be less than the gross prize."})
+                raise ValidationError({"tds_amount": gettext("Tax deducted must be less than the gross prize.")})
             from apps.payments.ledger_api import record_expense
             from .options import currency
             money = currency(event.makerspace)

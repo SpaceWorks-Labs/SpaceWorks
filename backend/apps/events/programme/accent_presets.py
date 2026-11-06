@@ -1,5 +1,6 @@
 """Approved brand accents. Only editorial accents inherit these colours."""
 
+from django.utils.translation import gettext
 from types import MappingProxyType
 
 from django.core.exceptions import ValidationError
@@ -17,7 +18,7 @@ ACCENT_CHOICES = tuple((key, value["label"]) for key, value in ACCENT_PRESETS.it
 
 def validate_accent_preset(value):
     if value is not None and (not isinstance(value, str) or value not in ACCENT_PRESETS):
-        raise ValidationError("Choose a Space Works accent preset.", code="invalid_accent_preset")
+        raise ValidationError(gettext("Choose a Space Works accent preset."), code="invalid_accent_preset")
     return value
 
 

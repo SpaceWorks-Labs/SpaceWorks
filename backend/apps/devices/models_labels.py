@@ -1,4 +1,5 @@
 """Label delivery history and immutable per-operation result receipts. No artifacts."""
+from django.utils.translation import gettext_lazy
 import uuid
 
 from django.conf import settings
@@ -11,7 +12,7 @@ class LabelPrintCommand(models.Model):
     class Result(models.TextChoices):
         PENDING = "pending", "Pending"
         SUCCEEDED = "succeeded", "Succeeded"
-        RETRYABLE_FAILED = "retryable_failed", "Retryable failure"
+        RETRYABLE_FAILED = "retryable_failed", gettext_lazy("Retryable failure")
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

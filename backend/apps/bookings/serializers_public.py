@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.utils import timezone
@@ -80,15 +81,15 @@ class PublicSpaceAvailabilityQuerySerializer(serializers.Serializer):
         ends_at = attrs['ends_at']
         if ends_at <= starts_at:
             raise serializers.ValidationError(
-                {'ends_at': 'End time must be after start time.'}
+                {'ends_at': gettext('End time must be after start time.')}
             )
         if ends_at <= timezone.now():
             raise serializers.ValidationError(
-                {'ends_at': 'End time must be in the future.'}
+                {'ends_at': gettext('End time must be in the future.')}
             )
         if ends_at - starts_at > timedelta(days=31):
             raise serializers.ValidationError(
-                {'ends_at': 'Availability window cannot exceed 31 days.'}
+                {'ends_at': gettext('Availability window cannot exceed 31 days.')}
             )
         return attrs
 

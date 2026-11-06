@@ -6,6 +6,7 @@ invalid, expired, revoked, exhausted or foreign code is the same 404
 A use is spent only when the order is placed, under the promo row lock.
 """
 
+from django.utils.translation import gettext
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.utils import timezone
@@ -47,7 +48,7 @@ def discount_promo(event, code, *, lock=False):
     require_feature(event, "events.promo_codes")
     promo = _live(event, code, lock=lock)
     if promo is None or promo.kind != "discount":
-        raise NotFound("Promo code not found.")
+        raise NotFound(gettext("Promo code not found."))
     return promo
 
 
@@ -93,6 +94,6 @@ def spend(promo, uses):
         return
     locked = EventPromoCode.objects.select_for_update().get(pk=promo.pk)
     if locked.uses + uses > locked.max_uses or locked.revoked_at:
-        raise NotFound("Promo code not found.")
+        raise NotFound(gettext("Promo code not found."))
     locked.uses += uses
     locked.save(update_fields=["uses"])

@@ -6,6 +6,7 @@ accountability trail: who reported, who triaged, every send to a technician (#98
 visit and remark, parts used and needed, the quote, its approval and the payout.
 """
 
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -35,19 +36,19 @@ class IssueEvent(AppendOnly):
         REJECTED = "rejected", "Rejected"
         ASSIGNED = "assigned", "Assigned"
         UNASSIGNED = "unassigned", "Unassigned"
-        DISPATCHED = "dispatched", "Sent to technicians"
+        DISPATCHED = "dispatched", gettext_lazy("Sent to technicians")
         VISIT = "visit", "Visit"
-        STARTED = "started", "Work started"
+        STARTED = "started", gettext_lazy("Work started")
         REMARK = "remark", "Remark"
-        PARTS_USED = "parts_used", "Parts used"
-        PARTS_NEEDED = "parts_needed", "Parts needed"
+        PARTS_USED = "parts_used", gettext_lazy("Parts used")
+        PARTS_NEEDED = "parts_needed", gettext_lazy("Parts needed")
         QUOTE = "quote", "Quote"
-        QUOTE_APPROVED = "quote_approved", "Quote approved"
-        QUOTE_DECLINED = "quote_declined", "Quote declined"
-        PAYOUT = "payout", "Payout recorded"
+        QUOTE_APPROVED = "quote_approved", gettext_lazy("Quote approved")
+        QUOTE_DECLINED = "quote_declined", gettext_lazy("Quote declined")
+        PAYOUT = "payout", gettext_lazy("Payout recorded")
         FIXED = "fixed", "Fixed"
         CLOSED = "closed", "Closed"
-        SERVICE_STATE = "service_state", "Service state"
+        SERVICE_STATE = "service_state", gettext_lazy("Service state")
 
     issue = models.ForeignKey("maintenance.IssueReport", on_delete=models.CASCADE, related_name="events")
     kind = models.CharField(max_length=16, choices=Kind.choices)
@@ -70,9 +71,9 @@ class IssuePhoto(AppendOnly):
     """A private photo uploaded to the staging key and promoted exactly once (Hard Rule)."""
 
     class Stage(models.TextChoices):
-        REPORTED = "reported", "With the report"
-        WORK = "work", "During the work"
-        FIXED = "fixed", "With the fix"
+        REPORTED = "reported", gettext_lazy("With the report")
+        WORK = "work", gettext_lazy("During the work")
+        FIXED = "fixed", gettext_lazy("With the fix")
 
     issue = models.ForeignKey("maintenance.IssueReport", on_delete=models.CASCADE, related_name="photos")
     stage = models.CharField(max_length=10, choices=Stage.choices)

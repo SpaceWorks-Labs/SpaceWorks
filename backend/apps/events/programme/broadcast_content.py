@@ -1,5 +1,6 @@
 """Data-only composer payloads; never evaluate markup or caller-supplied HTML."""
 
+from django.utils.translation import gettext
 import html
 import json
 import re
@@ -41,33 +42,33 @@ def font_faces(*, preview):
 
 def validate_ctas(ctas):
     if not isinstance(ctas, list) or len(ctas) > 3:
-        raise ValidationError({"ctas": "Use at most three calls to action."})
+        raise ValidationError({"ctas": gettext("Use at most three calls to action.")})
     result = []
     for item in ctas:
         if not isinstance(item, dict):
-            raise ValidationError({"ctas": "Each call to action must be an object."})
+            raise ValidationError({"ctas": gettext("Each call to action must be an object.")})
         kind = item.get("kind")
         if not isinstance(kind, str) or kind not in {"https", "navigation"}:
-            raise ValidationError({"ctas": "Choose a typed HTTPS or navigation action."})
+            raise ValidationError({"ctas": gettext("Choose a typed HTTPS or navigation action.")})
         keys = {"kind", "label", "url" if kind == "https" else "target"}
         if set(item) != keys:
-            raise ValidationError({"ctas": "Choose a typed HTTPS or navigation action."})
+            raise ValidationError({"ctas": gettext("Choose a typed HTTPS or navigation action.")})
         label = item.get("label")
         if (not isinstance(label, str) or not label.strip() or len(label) > 80
                 or any(ord(char) < 32 for char in label) or any(char in label for char in "<>{}")):
-            raise ValidationError({"ctas": "Use a plain label of 1–80 characters."})
+            raise ValidationError({"ctas": gettext("Use a plain label of 1–80 characters.")})
         if kind == "navigation":
             if item.get("target") not in NAVIGATION_TARGETS:
-                raise ValidationError({"ctas": "Choose event or ticket navigation."})
+                raise ValidationError({"ctas": gettext("Choose event or ticket navigation.")})
         else:
             value = item.get("url")
             if not isinstance(value, str) or len(value) > 2048:
-                raise ValidationError({"ctas": "Use a valid HTTPS URL."})
+                raise ValidationError({"ctas": gettext("Use a valid HTTPS URL.")})
             try:
                 URLValidator(schemes=["https"])(value)
                 parsed = urlsplit(value)
             except (DjangoValidationError, ValueError):
-                raise ValidationError({"ctas": "Use a valid HTTPS URL."}) from None
+                raise ValidationError({"ctas": gettext("Use a valid HTTPS URL.")}) from None
             decoded = unquote(value).casefold()
             # External CTAs are public addresses. Parameters/fragments/userinfo and
             # credential-shaped paths are refused rather than persisting bearers.
@@ -75,7 +76,7 @@ def validate_ctas(ctas):
                     or any(char in decoded for char in "{}<>\\")
                     or any(ord(char) < 33 for char in decoded)
                     or re.search(r"(?:token|secret|password|credential|check-?in|invite|presign|signature)", decoded)):
-                raise ValidationError({"ctas": "Use a public URL without credentials or query parameters."})
+                raise ValidationError({"ctas": gettext("Use a public URL without credentials or query parameters.")})
         result.append({**item, "label": label.strip()})
     return result
 
@@ -83,11 +84,11 @@ def validate_ctas(ctas):
 def pack(subject, body, *, ctas, design):
     validate_strings(subject, body, PLACEHOLDERS)
     if design not in DESIGNS:
-        raise ValidationError({"design": "Choose a Space Works design."})
+        raise ValidationError({"design": gettext("Choose a Space Works design.")})
     # RestrictedMarkdown: paragraphs, line breaks, bullets, emphasis. Links have
     # their own typed control; scripts, HTML, images and embedded media refuse.
     if re.search(r"<[^>]*>|!\[|\]\s*\(|^\s*\[[^]]+\]:", body, flags=re.MULTILINE):
-        raise ValidationError({"body": "Use text and emphasis; add links as calls to action."})
+        raise ValidationError({"body": gettext("Use text and emphasis; add links as calls to action.")})
     return json.dumps({"markdown": body, "ctas": validate_ctas(ctas)}, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -101,7 +102,7 @@ def unpack(campaign):
         pack(campaign.subject, value["markdown"], ctas=value["ctas"], design=campaign.design)
         return value
     except (ValueError, TypeError, KeyError):
-        raise ValidationError({"body": "This composer payload is invalid."}) from None
+        raise ValidationError({"body": gettext("This composer payload is invalid.")}) from None
 
 
 def markdown_html(value):

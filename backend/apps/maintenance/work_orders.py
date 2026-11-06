@@ -10,6 +10,7 @@ or cancelling it brings the machine back when nothing else holds it down. Closin
 machine work order writes the immutable `MaintenanceLog`. Every step is audited.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -72,10 +73,10 @@ def create_work_order(actor, makerspace, *, subject_type, subject, title, descri
     field = {WorkOrder.Subject.MACHINE: "machine", WorkOrder.Subject.PRODUCT: "product",
              WorkOrder.Subject.ASSET: "asset", WorkOrder.Subject.SPACE: "space"}[subject_type]
     if getattr(subject, "makerspace_id", None) != makerspace.pk:
-        raise ValidationError({"subject": "The subject must belong to this makerspace."})
+        raise ValidationError({"subject": gettext("The subject must belong to this makerspace.")})
     setattr(order, field, subject)
     if not order.title:
-        raise ValidationError({"title": "Give the work order a title."})
+        raise ValidationError({"title": gettext("Give the work order a title.")})
     _check(actor, order)
     order.full_clean()
     order.save()
@@ -104,7 +105,7 @@ def move(actor, order, status, *, resolution="", log_cost=None, parts_note="", l
     order = WorkOrder.objects.select_for_update().select_related("makerspace").get(pk=order.pk)
     _check(actor, order)
     if status not in EDGES.get(order.status, set()):
-        raise ValidationError({"status": f"A {order.status} work order cannot become {status}."})
+        raise ValidationError({"status": gettext('A {status} work order cannot become {status2}.').format(status=order.status, status2=status)})
     now = timezone.now()
     order.status = status
     if status == S.IN_PROGRESS and order.started_at is None:
@@ -130,11 +131,11 @@ def assign(actor, order, assignee):
     order = WorkOrder.objects.select_for_update().select_related("makerspace").get(pk=order.pk)
     _check(actor, order)
     if order.status not in WorkOrder.OPEN_STATUSES:
-        raise ValidationError({"status": "Only an open work order can be reassigned."})
+        raise ValidationError({"status": gettext("Only an open work order can be reassigned.")})
     staff = (rbac.Action.MANAGE_MACHINES, rbac.Action.EDIT_INVENTORY, rbac.Action.MANAGE_BOOKINGS,
              rbac.Action.MANAGE_MAKERSPACE, rbac.Action.WORK_REPAIRS)
     if assignee is not None and not any(rbac.can(assignee, action, order.makerspace_id) for action in staff):
-        raise ValidationError({"assignee_id": "Assign a staff member of this makerspace."})
+        raise ValidationError({"assignee_id": gettext("Assign a staff member of this makerspace.")})
     order.assignee = assignee
     order.save(update_fields=["assignee", "updated_at"])
     record(actor, "work_order.assigned", makerspace=order.makerspace, target=order,

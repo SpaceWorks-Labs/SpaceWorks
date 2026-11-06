@@ -1,5 +1,6 @@
 """Audited replace-the-set boundary for an event's selected audience organizations."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -35,9 +36,9 @@ def replace_audience_organizations(event, *, actor, organization_ids):
     """
     requested = list(organization_ids)
     if len(requested) != len(set(requested)):
-        raise ValidationError({"organization_ids": "Organization IDs must be unique."})
+        raise ValidationError({"organization_ids": gettext("Organization IDs must be unique.")})
     if len(requested) > MAX_AUDIENCE_ORGANIZATIONS:
-        raise ValidationError({"organization_ids": f"At most {MAX_AUDIENCE_ORGANIZATIONS} organizations are allowed."})
+        raise ValidationError({"organization_ids": gettext('At most {MAX_AUDIENCE_ORGANIZATIONS} organizations are allowed.').format(MAX_AUDIENCE_ORGANIZATIONS=MAX_AUDIENCE_ORGANIZATIONS)})
     locked = _locked_event(event.pk)
     locked.makerspace = require_module_locked(locked.makerspace, "events")
     actor = lock_authority(actor, locked)
@@ -50,7 +51,7 @@ def replace_audience_organizations(event, *, actor, organization_ids):
     added = set(requested) - set(old_ids)
     findable = set(discoverable_organizations(actor).filter(pk__in=added).values_list("pk", flat=True))
     if findable != added:
-        raise ValidationError({"organization_ids": "An organization is unavailable."})
+        raise ValidationError({"organization_ids": gettext("An organization is unavailable.")})
     if old_ids != sorted(requested):
         EventAudienceOrganization.objects.filter(event=locked).exclude(organization_id__in=requested).delete()
         EventAudienceOrganization.objects.bulk_create([

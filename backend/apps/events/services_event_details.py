@@ -1,6 +1,7 @@
 """Event create/update service; explicit validation and transactional authority."""
 
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -126,7 +127,7 @@ def update_event(event, *, actor, inherit_fields=(), **changes):
             {field: "A field cannot be changed and inherited together." for field in inherit_fields & set(changes)}
         )
     if inherit_fields and locked.series_id is None:
-        raise serializers.ValidationError({"inherit_fields": "This event is not in a series."})
+        raise serializers.ValidationError({"inherit_fields": gettext("This event is not in a series.")})
     from .event_authority import require
     affected = set(changes) | inherit_fields
     if affected & {"starts_at", "ends_at"}:

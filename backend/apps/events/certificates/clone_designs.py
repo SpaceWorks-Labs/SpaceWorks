@@ -1,4 +1,5 @@
 """Clone only current person-free designs with independently owned artwork."""
+from django.utils.translation import gettext
 from copy import deepcopy
 from uuid import uuid4
 from django.utils import timezone
@@ -37,15 +38,15 @@ def prepare_designs(event, copies):
     if certificate and certificate.artwork_id and all(r.pk != certificate.artwork_id for r in resources):
         resources.append(certificate.artwork)
     if not selected <= {str(row.resource_id) for row in resources}:
-        raise ValidationError("Install every source design image before cloning.")
+        raise ValidationError(gettext("Install every source design image before cloning."))
     from apps.events.certificate_artwork_storage import read_artwork
     prepared = []
     for row in resources:
         content = read_artwork(row.object_key, row.version_id, row.sha256)
         if len(content) != row.size_bytes:
-            raise ValidationError("The source artwork size changed.")
+            raise ValidationError(gettext("The source artwork size changed."))
         if copies.total_bytes + len(content) > copies.max_total_bytes:
-            raise ValidationError("The clone asset limit was exceeded.")
+            raise ValidationError(gettext("The clone asset limit was exceeded."))
         copies.total_bytes += len(content)
         resource_id = uuid4()
         key = f"events/certificate-artwork/{event.makerspace_id}/{resource_id}.png"
@@ -63,13 +64,13 @@ def prepare_designs(event, copies):
 def copy_designs_locked(*, source, target, actor, prepared):
     certificate, badge = identities(source)
     if (certificate.pk if certificate else None, badge.pk if badge else None) != (prepared["certificate_id"], prepared["badge_id"]):
-        raise ValidationError("Source designs changed. Retry the copy.")
+        raise ValidationError(gettext("Source designs changed. Retry the copy."))
     mapping, by_id = {}, {}
     for value in prepared["resources"]:
         if not EventCertificateArtwork.objects.filter(event=source, pk=value["source_id"],
                 object_key=value["source_key"], sha256=value["sha256"], size_bytes=value["size_bytes"],
                 promoted_at__isnull=False).exists():
-            raise ValidationError("Source artwork changed. Retry the copy.")
+            raise ValidationError(gettext("Source artwork changed. Retry the copy."))
         limits.add_storage(target.makerspace, value["size_bytes"])
         row = EventCertificateArtwork.objects.create(event=target, resource_id=value["resource_id"],
             object_key=value["object_key"], sha256=value["sha256"], size_bytes=value["size_bytes"], promoted_at=timezone.now())

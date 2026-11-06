@@ -1,5 +1,6 @@
 """Explicit resource configuration clone; authority and reservation history stay put."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 
 from apps.makerspaces.resource_clone import OwnedImage, clone_transaction, copy_fields
@@ -21,7 +22,7 @@ COPY_FIELDS = frozenset({
 def clone_space(space, *, actor, copy_booking_rules=False):
     from rest_framework.exceptions import ValidationError
     if type(copy_booking_rules) is not bool:
-        raise ValidationError({"copy_booking_rules": "Must be a boolean."})
+        raise ValidationError({"copy_booking_rules": gettext("Must be a boolean.")})
     with clone_transaction() as assets:
         source = _locked_space(space.pk)
         booking_authority.require_tenant(actor, source.makerspace)

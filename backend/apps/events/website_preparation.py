@@ -7,6 +7,7 @@ event touches) and pre-allocates the EventPage primary key. Object bytes are the
 reserved, journalled and written by ``event_asset_transaction`` (Pages), which replays
 the locked domain operation and attaches each verified object in one commit.
 """
+from django.utils.translation import gettext
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -112,5 +113,5 @@ def prepared_copies(target):
     """Inside the locked operation: refuse a page that changed since preparation."""
     prepared = _prepared.get()
     if prepared is None or prepared.page_source != page_identity(current_page(target)):
-        raise ValidationError({"revision": "The website changed. Retry resource preparation."})
+        raise ValidationError({"revision": gettext("The website changed. Retry resource preparation.")})
     yield prepared

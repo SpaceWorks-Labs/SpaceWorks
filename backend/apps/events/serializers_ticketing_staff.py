@@ -1,6 +1,7 @@
 """Staff shapes for ticketing v2 (release 2 L6): add-ons, passes, sales rules, refund override,
 venue fees, orders and desk collection."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
@@ -121,7 +122,7 @@ class DeskCollectSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs.get("terminal") and not attrs.get("method"):
-            raise serializers.ValidationError({"method": "Choose how the money was received."})
+            raise serializers.ValidationError({"method": gettext("Choose how the money was received.")})
         return attrs
 
 

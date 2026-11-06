@@ -8,6 +8,7 @@ Each live check re-reads its row: it must still exist, belong to the recipient a
 servable space with events on. The copy names the event and links to the person's own
 page; it never carries anyone else's details.
 """
+from django.utils.translation import gettext
 from apps.integrations.notification_links import local_link
 from apps.integrations.notification_outbox import emit
 
@@ -36,7 +37,7 @@ def stage_advanced_notice(event, application, stage):
     return _send(event, application.member_id, "application_stage_advanced", source=STAGE_SOURCE,
                  source_id=application.pk, revision=application.version, subject=application,
                  context={"application_id": application.pk},
-                 title=f"Your application for {event.title} moved on",
+                 title=gettext('Your application for {title} moved on').format(title=event.title),
                  text=f"Your application for {event.title} has moved on to the next review stage: {stage.name}.",
                  tail="events/history")
 
@@ -47,7 +48,7 @@ def attendance_notice(reply, name, revision):
             "your place to someone else if you cannot make it.")
     return _send(event, reply.registration.member_id, name, source=ATTENDANCE_SOURCE, source_id=reply.pk,
                  revision=revision, subject=reply.registration, context={"reply_id": reply.pk},
-                 title=f"Are you still coming to {event.title}?", text=text,
+                 title=gettext('Are you still coming to {title}?').format(title=event.title), text=text,
                  tail=f"events/{event.pk}/attendance")
 
 

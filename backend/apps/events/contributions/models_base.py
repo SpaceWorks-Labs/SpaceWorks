@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -14,7 +15,7 @@ class EventBound(models.Model):
     def clean(self):
         super().clean()
         if self.event_id and self.makerspace_id != self.event.makerspace_id:
-            raise ValidationError("The host must match the event.")
+            raise ValidationError(gettext("The host must match the event."))
 
 
 class AppendOnly(models.Model):
@@ -24,8 +25,8 @@ class AppendOnly(models.Model):
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
-            raise ValidationError("History is append-only.")
+            raise ValidationError(gettext("History is append-only."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("History is append-only.")
+        raise ValidationError(gettext("History is append-only."))

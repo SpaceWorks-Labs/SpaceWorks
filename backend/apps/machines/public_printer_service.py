@@ -1,5 +1,6 @@
 """Kernel-only public printer-service contract."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 import json
 
@@ -72,7 +73,7 @@ def resolve_queue(makerspace, queue_id, *, compatibility=False):
         choices = list(rows[:2])
         row = choices[0] if len(choices) == 1 else None
     if row is None:
-        raise ValidationError({"queue_id": "Select an active public printer queue."})
+        raise ValidationError({"queue_id": gettext("Select an active public printer queue.")})
     return row
 
 
@@ -96,9 +97,9 @@ def _settings(value):
     try:
         value = json.loads(value)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({"preferred_settings": "Printer preferred settings must be an object."}) from exc
+        raise ValidationError({"preferred_settings": gettext("Printer preferred settings must be an object.")}) from exc
     if not isinstance(value, dict):
-        raise ValidationError({"preferred_settings": "Printer preferred settings must be an object."})
+        raise ValidationError({"preferred_settings": gettext("Printer preferred settings must be an object.")})
     return value
 
 
@@ -109,11 +110,11 @@ def _kernel_payload(queue, data):
             pk=data["consumable_pool_id"]
         ).first()
         if pool is None:
-            raise ValidationError({"consumable_pool_id": "Invalid or inactive consumable pool."})
+            raise ValidationError({"consumable_pool_id": gettext("Invalid or inactive consumable pool.")})
     from .material_catalogue import config_for, catalogue
     config = config_for(queue.makerspace, queue.machine_type)
     if not config["accepted_materials"] or not config["accepted_colours"]:
-        raise ValidationError({"material": "This makerspace has no accepted materials."})
+        raise ValidationError({"material": gettext("This makerspace has no accepted materials.")})
     material, color = data.get("material", ""), data.get("color", "")
     if pool:
         material, color = material or pool.material, color or pool.color
@@ -123,7 +124,7 @@ def _kernel_payload(queue, data):
         colours = next((row["colours"] for row in catalogue(queue.makerspace, queue.machine_type)
                         if row["name"].casefold() == material.casefold()), [])
         if not colours:
-            raise ValidationError({"material": "Select an accepted material with available colours."})
+            raise ValidationError({"material": gettext("Select an accepted material with available colours.")})
         color = colours[0]
     payload = {"requested_material": material, "requested_color": color, "quantity": data.get("quantity", 1), "project_brief": data.get("project_brief", "")}
     if no_preference:
@@ -151,7 +152,7 @@ def submit_request(makerspace, data, actor, *, compatibility=False):
         ids = data.get("file_ids") or []
         files = list(ServiceRequestFile.objects.select_for_update().filter(id__in=ids, makerspace=makerspace, queue=queue, owner_user_id=actor.pk, service_request__isnull=True, attached_at__isnull=True))
         if len(files) != len(set(ids)):
-            raise ValidationError({"file_ids": "One or more uploads are invalid, already used, or not yours."})
+            raise ValidationError({"file_ids": gettext("One or more uploads are invalid, already used, or not yours.")})
         for file in files:
             finalize_file(row, file_id=file.pk, actor=actor)
         return row

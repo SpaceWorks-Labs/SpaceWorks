@@ -1,5 +1,6 @@
 """Deduplicated, occurrence-authorized series guests without a global contact directory."""
 
+from django.utils.translation import gettext
 import logging
 
 from django.db.models import Case, F, IntegerField, Max, Q, Value, When
@@ -62,7 +63,7 @@ def authorized_registrations(series, actor, filters):
     if "event_id" in filters:
         events = events.filter(pk=filters["event_id"])
     if events.count() > 200:
-        raise ValidationError({"event_id": "Choose an occurrence for a series with over 200 authorized occurrences."})
+        raise ValidationError({"event_id": gettext("Choose an occurrence for a series with over 200 authorized occurrences.")})
     rows = EventRegistration.objects.filter(event__in=events)
     if "status" in filters:
         rows = rows.filter(status=filters["status"])
@@ -114,7 +115,7 @@ class SeriesGuestsView(APIView):
                    responses={200: SeriesGuestsPageSerializer, **ERRORS})
     def get(self, request, pk):
         if set(request.query_params) - set(GuestFilter().fields):
-            raise ValidationError("Unknown query parameter.")
+            raise ValidationError(gettext("Unknown query parameter."))
         filters = GuestFilter(data=request.query_params)
         filters.is_valid(raise_exception=True)
         series = event_authority.get_event(request.user, pk, VIEW, series=True)

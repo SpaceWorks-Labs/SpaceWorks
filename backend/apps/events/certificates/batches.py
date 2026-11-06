@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import json
 
@@ -37,10 +38,10 @@ def enqueue(event_id, *, actor, operation_id, expected_version, subjects, publis
     event_authority.get_event(actor, event_id, None)
     if (not isinstance(subjects, list) or not (0 if all_attended else 1) <= len(subjects) <= MAX_BATCH
             or type(publish_event_details) is not bool):
-        raise ValidationError({"subjects": "Choose 1–10000 certificate subjects."})
+        raise ValidationError({"subjects": gettext("Choose 1–10000 certificate subjects.")})
     encoded = json.dumps(subjects, sort_keys=True, separators=(",", ":"))
     if len({json.dumps(row, sort_keys=True) for row in subjects}) != len(subjects):
-        raise ValidationError({"subjects": "Subjects must be unique."})
+        raise ValidationError({"subjects": gettext("Subjects must be unique.")})
     digest = hashlib.sha256(json.dumps([encoded, expected_version, publish_event_details, all_attended, confirmed_count]).encode()).hexdigest()
     if all_attended:
         subjects = attended_subjects(event_id)

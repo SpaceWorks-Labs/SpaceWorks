@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.events.models_certificates import EventAttendanceCertificate
 from apps.events.serializers_staff_tools import StrictSerializer
@@ -22,9 +23,9 @@ class BulkIssueSerializer(CredentialCommandSerializer):
 
     def validate(self, data):
         if data["all_attended"] and data["subjects"]:
-            raise serializers.ValidationError("Choose all attended or explicit subjects.")
+            raise serializers.ValidationError(gettext("Choose all attended or explicit subjects."))
         if not data["all_attended"] and data["confirmed_count"] != len(data["subjects"]):
-            raise serializers.ValidationError({"confirmed_count": "Preview and confirm the selected subject count."})
+            raise serializers.ValidationError({"confirmed_count": gettext("Preview and confirm the selected subject count.")})
         return data
 
 

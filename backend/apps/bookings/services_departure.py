@@ -5,6 +5,7 @@ history cannot be rewritten by a second checkout. Anything but "all good" requir
 and opens one `BookingIssue` that surfaces on the bookings Issues list and dashboard.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -25,12 +26,12 @@ MEMBER_GRACE_AFTER_END = timedelta(hours=48)
 
 def clean_departure(outcome, remark):
     if outcome not in DepartureOutcome.values:
-        raise serializers.ValidationError({"outcome": "Choose how the booking went."})
+        raise serializers.ValidationError({"outcome": gettext("Choose how the booking went.")})
     remark = (remark or "").strip()
     if outcome != DepartureOutcome.ALL_GOOD and not remark:
-        raise serializers.ValidationError({"remark": "Describe what was wrong so staff can follow up."})
+        raise serializers.ValidationError({"remark": gettext("Describe what was wrong so staff can follow up.")})
     if len(remark) > MAX_REMARK:
-        raise serializers.ValidationError({"remark": f"Keep the remark under {MAX_REMARK} characters."})
+        raise serializers.ValidationError({"remark": gettext('Keep the remark under {MAX_REMARK} characters.').format(MAX_REMARK=MAX_REMARK)})
     return outcome, remark
 
 
@@ -89,7 +90,7 @@ def resolve_issue(issue, *, actor, note=""):
     booking_authority.require(actor, locked.booking.space, "manage_reservations")
     note = (note or "").strip()
     if len(note) > 500:
-        raise serializers.ValidationError({"note": "Keep the note under 500 characters."})
+        raise serializers.ValidationError({"note": gettext("Keep the note under 500 characters.")})
     if locked.resolved_at is not None:
         return locked
     locked.resolved_at, locked.resolved_by, locked.resolution_note = timezone.now(), actor, note

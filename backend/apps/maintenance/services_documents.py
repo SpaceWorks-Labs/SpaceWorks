@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -26,7 +27,7 @@ def finalize_log_document(log, *, actor, object_key):
         MaintenanceLogDocument.objects.filter(object_key=object_key).exists()
         or MachineDocument.objects.filter(object_key=object_key).exists()
     ):
-        raise ValidationError({"object_key": "This document is already attached."})
+        raise ValidationError({"object_key": gettext("This document is already attached.")})
 
     try:
         storage.finalize_upload(object_key)

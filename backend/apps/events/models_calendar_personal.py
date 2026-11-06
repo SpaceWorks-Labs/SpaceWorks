@@ -7,14 +7,15 @@ digest is stored, the raw 256-bit token is shown once, and rotation or revocatio
 old link. The rows never travel with a tenant move (the person re-issues their link).
 """
 
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 
 
 class PersonalCalendarFeed(models.Model):
     class Kind(models.TextChoices):
-        SHIFTS = "shifts", "My shifts"
-        COMBINED = "combined", "Everything of mine"
+        SHIFTS = "shifts", gettext_lazy("My shifts")
+        COMBINED = "combined", gettext_lazy("Everything of mine")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+")

@@ -13,6 +13,7 @@ manager, the Space Manager or a covering Technician, #102) records its cost; the
 records the money twice. A cost of zero or none records nothing.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework.exceptions import ValidationError
@@ -28,7 +29,7 @@ def clean_method(value):
     from apps.payments.models_ledger_entries import LedgerEntry
     value = str(value or DEFAULT_METHOD).strip().lower()
     if value not in LedgerEntry.Method.values:
-        raise ValidationError({"cost_method": "Choose how the maintenance was paid."})
+        raise ValidationError({"cost_method": gettext("Choose how the maintenance was paid.")})
     return value
 
 
@@ -40,7 +41,7 @@ def clean_currency(space, value):
             "default_currency", flat=True).first() or "usd"
     value = str(value).strip().lower()
     if len(value) != 3 or not value.isalpha():
-        raise ValidationError({"cost_currency": "Use a three-letter currency code."})
+        raise ValidationError({"cost_currency": gettext("Use a three-letter currency code.")})
     return value
 
 

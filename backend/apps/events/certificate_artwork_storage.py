@@ -1,5 +1,6 @@
 """Bounded private artwork staging; final keys are write-once and server-owned."""
 
+from django.utils.translation import gettext
 import hashlib
 from io import BytesIO
 import warnings
@@ -53,7 +54,7 @@ def _read(client, key, version=""):
     finally:
         body.close()
     if not content or len(content) > MAX_BYTES:
-        raise ValidationError({"artwork": "Artwork must be at most 10 MiB."})
+        raise ValidationError({"artwork": gettext("Artwork must be at most 10 MiB.")})
     return content, response.get("VersionId", "")
 
 
@@ -62,10 +63,10 @@ def _png(content):
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             if image_mime_from_bytes(content) not in ("image/png", "image/jpeg", "image/webp"):
-                raise ValidationError({"artwork": "Upload a PNG, JPEG or WebP image."})
+                raise ValidationError({"artwork": gettext("Upload a PNG, JPEG or WebP image.")})
             with Image.open(BytesIO(content)) as image:
                 if image.width * image.height > MAX_PIXELS or getattr(image, "n_frames", 1) != 1:
-                    raise ValidationError({"artwork": "Use one image with at most 16 million pixels."})
+                    raise ValidationError({"artwork": gettext("Use one image with at most 16 million pixels.")})
                 image.load()
                 output = BytesIO()
                 with image.convert("RGBA") as pixels:
@@ -75,11 +76,11 @@ def _png(content):
                     pixels.save(output, format="PNG")
                 result = output.getvalue()
                 if len(result) > MAX_BYTES:
-                    raise ValidationError({"artwork": "Decoded artwork exceeds 10 MiB."})
+                    raise ValidationError({"artwork": gettext("Decoded artwork exceeds 10 MiB.")})
                 return result
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError,
             Image.DecompressionBombWarning, ValueError) as exc:
-        raise ValidationError({"artwork": "Invalid artwork image."}) from exc
+        raise ValidationError({"artwork": gettext("Invalid artwork image.")}) from exc
 
 
 def promote_bytes(row):
@@ -100,7 +101,7 @@ def promote_bytes(row):
         return len(stored), hashlib.sha256(stored).hexdigest(), version
     except ClientError as exc:
         if exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode") == 404:
-            raise ValidationError({"artwork": "Upload artwork before finalizing it."}) from exc
+            raise ValidationError({"artwork": gettext("Upload artwork before finalizing it.")}) from exc
         raise ArtworkUnavailable from exc
     except (BotoCoreError, OSError) as exc:
         raise ArtworkUnavailable from exc

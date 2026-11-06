@@ -1,4 +1,5 @@
 """Private attachment storage for machine service requests."""
+from django.utils.translation import gettext
 from dataclasses import dataclass
 import logging
 import uuid
@@ -50,7 +51,7 @@ def staging_key(object_key):
 def validate_upload_declaration(policy, filename, content_type):
     ext = extension_from_name(filename)
     if not allowed_pair(ext, content_type, policy.allowed_extensions, policy.allowed_mimes):
-        raise ValidationError({"filename": "Unsupported attachment extension or content type."}, code="invalid_attachment")
+        raise ValidationError({"filename": gettext("Unsupported attachment extension or content type.")}, code="invalid_attachment")
 
 
 def policy_for_file(file):
@@ -194,9 +195,9 @@ def finalize_upload(object_key, max_bytes):
 def validate_service_object(file, policy):
     size = object_size(file.object_key)
     if size is None:
-        raise ValidationError({"file_id": "Uploaded attachment was not found."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Uploaded attachment was not found.")}, code="invalid_attachment")
     if not 1 <= size <= policy.max_bytes:
-        raise ValidationError({"file_id": "Uploaded attachment exceeds the size limit."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Uploaded attachment exceeds the size limit.")}, code="invalid_attachment")
     try:
         response = _client().get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=file.object_key)
         data = response["Body"].read(policy.max_bytes)
@@ -205,15 +206,15 @@ def validate_service_object(file, policy):
         raise StorageUnavailable from exc
     ext = extension_from_name(file.original_filename)
     if not allowed_pair(ext, stored_content_type, policy.allowed_extensions, policy.allowed_mimes):
-        raise ValidationError({"file_id": "Attachment extension and content type do not match."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Attachment extension and content type do not match.")}, code="invalid_attachment")
     sniffed = sniff_pdf_or_image(data)
     strict_mime = STRICT_MIME_BY_EXTENSION.get(ext)
     if strict_mime or sniffed:
         if not strict_mime or stored_content_type != strict_mime or sniffed != strict_mime:
-            raise ValidationError({"file_id": "Attachment content does not match its extension."}, code="invalid_attachment")
+            raise ValidationError({"file_id": gettext("Attachment content does not match its extension.")}, code="invalid_attachment")
         content_type = sniffed
     elif not has_required_signature(ext, data):
-        raise ValidationError({"file_id": "Attachment signature is invalid."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Attachment signature is invalid.")}, code="invalid_attachment")
     else:
         content_type = stored_content_type
     return ServiceObjectValidationResult(size=size, content_type=content_type)

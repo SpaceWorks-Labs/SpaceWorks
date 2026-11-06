@@ -6,6 +6,7 @@ old ID card and re-issues certificates through the existing services. The money 
 with the original payer. A recipient never exists without an account (#71).
 """
 
+from django.utils.translation import gettext_lazy
 import secrets
 
 from django.conf import settings
@@ -17,7 +18,7 @@ from apps.encryption.mappers import ScopedPiiModelMixin
 
 class EventTicketTransfer(ScopedPiiModelMixin, models.Model):
     class Status(models.TextChoices):
-        PENDING = "pending", "Waiting for the recipient"
+        PENDING = "pending", gettext_lazy("Waiting for the recipient")
         ACCEPTED = "accepted", "Accepted"
         CANCELLED = "cancelled", "Cancelled"
         EXPIRED = "expired", "Expired"

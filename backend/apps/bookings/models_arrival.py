@@ -1,5 +1,6 @@
 """Booking credentials/projection and immutable, credential-free arrival history."""
 
+from django.utils.translation import gettext_lazy
 from uuid import uuid4
 
 from django.conf import settings
@@ -17,8 +18,8 @@ class BookingArrivalFields(models.Model):
 
 class BookingCheckInEvent(models.Model):
     class Action(models.TextChoices):
-        ARRIVED = "arrived", "Arrival confirmed"
-        REVERSED = "reversed", "Arrival reversed"
+        ARRIVED = "arrived", gettext_lazy("Arrival confirmed")
+        REVERSED = "reversed", gettext_lazy("Arrival reversed")
 
     booking = models.ForeignKey("bookings.Booking", on_delete=models.PROTECT,
                                 related_name="check_in_events")

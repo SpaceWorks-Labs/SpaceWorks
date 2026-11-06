@@ -1,4 +1,5 @@
 """Durable delivery ownership; credentials are digest-only and never exported."""
+from django.utils.translation import gettext_lazy
 import uuid
 
 from django.conf import settings
@@ -12,7 +13,7 @@ class DeviceCommand(models.Model):
         QUEUED = "queued", "Queued"
         LEASED = "leased", "Leased"
         ACKNOWLEDGED = "acknowledged", "Acknowledged"
-        DELIVERY_FAILED = "delivery_failed", "Delivery failed"
+        DELIVERY_FAILED = "delivery_failed", gettext_lazy("Delivery failed")
         CANCELLED = "cancelled", "Cancelled"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

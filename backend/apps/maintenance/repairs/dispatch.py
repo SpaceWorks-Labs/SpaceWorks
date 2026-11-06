@@ -8,6 +8,7 @@ anything goes out. Every single send is an append-only `TechnicianDispatch` row
 are assigned to the issue; an in-house Technician then sees it under "My jobs".
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -48,10 +49,10 @@ def message(issue, note=""):
 def dispatch(actor, issue, *, contact_ids, channel_names=None, note=""):
     from apps.maintenance.models import IssueAssignment, TechnicianContact, TechnicianDispatch
     if not isinstance(contact_ids, list) or not contact_ids or len(contact_ids) > MAX_CONTACTS:
-        raise ValidationError({"contact_ids": f"Pick one to {MAX_CONTACTS} technicians."})
+        raise ValidationError({"contact_ids": gettext('Pick one to {MAX_CONTACTS} technicians.').format(MAX_CONTACTS=MAX_CONTACTS)})
     if channel_names is not None and (not isinstance(channel_names, list)
                                       or set(channel_names) - {"email", "telegram", "whatsapp", "sms"}):
-        raise ValidationError({"channels": "Choose email, Telegram, WhatsApp or SMS."})
+        raise ValidationError({"channels": gettext("Choose email, Telegram, WhatsApp or SMS.")})
     with transaction.atomic():
         issue = history.lock(issue)
         _require_manager(actor, issue)
@@ -60,7 +61,7 @@ def dispatch(actor, issue, *, contact_ids, channel_names=None, note=""):
         contacts = list(TechnicianContact.objects.select_related("person").filter(
             makerspace_id=issue.makerspace_id, pk__in=contact_ids, is_archived=False))
         if len(contacts) != len(set(contact_ids)):
-            raise ValidationError({"contact_ids": "Choose technicians of this makerspace."})
+            raise ValidationError({"contact_ids": gettext("Choose technicians of this makerspace.")})
         plan = _plan(contacts, channel_names)
         text, subject = message(issue, note), f"Repair request: {issue.title}"
         rows = []

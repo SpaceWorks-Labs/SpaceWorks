@@ -12,6 +12,7 @@
   and the response is linked to their registration, without a certificate.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 
 from apps.audit import services as audit
@@ -36,9 +37,9 @@ def resolve_anonymous(event, survey, requested, certificate_enabled):
             return survey.anonymous and not certificate_enabled
         return not certificate_enabled and feature_enabled(event.makerspace, FEATURE)
     if requested and certificate_enabled:
-        raise ValidationError({"anonymous": "Anonymous feedback needs certificates turned off."})
+        raise ValidationError({"anonymous": gettext("Anonymous feedback needs certificates turned off.")})
     if requested and not feature_enabled(event.makerspace, FEATURE):
-        raise ValidationError({"anonymous": "Anonymous feedback is switched off for this makerspace."})
+        raise ValidationError({"anonymous": gettext("Anonymous feedback is switched off for this makerspace.")})
     return requested
 
 
@@ -91,13 +92,13 @@ def submit(event, survey, *, user, data, registration=None):
         raise NotFound()
     if mode == "anonymous":
         if "email" in data:
-            raise ValidationError({"email": "Email is not accepted for anonymous feedback."})
+            raise ValidationError({"email": gettext("Email is not accepted for anonymous feedback.")})
         return submit_anonymous_feedback(event, data["answers"])
     if not user.is_authenticated:
         raise NotAuthenticated()
     if mode == "identified":
         return submit_member_feedback(event, actor=user, answers=data["answers"], registration=registration)
     if "email" not in data:
-        raise ValidationError({"email": "This field is required."})
+        raise ValidationError({"email": gettext("This field is required.")})
     return submit_identified_feedback(event, actor=user, email=data["email"], answers=data["answers"],
                                       registration=registration)

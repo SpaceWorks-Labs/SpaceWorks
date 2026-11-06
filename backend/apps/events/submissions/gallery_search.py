@@ -6,6 +6,7 @@ only for awards the team asked to show publicly, so nothing reveals a winner bef
 before it, `sort=awards` is the newest-first order, `awards=only` is empty and no entry has a badge.
 """
 
+from django.utils.translation import gettext
 from django.db.models.functions import Lower
 from django.http import Http404
 from rest_framework.exceptions import ValidationError
@@ -45,7 +46,7 @@ def query(event, rows, params):
                                if not key.startswith("field.")})
     sort = params.get("sort") or "newest"
     if sort not in SORTS:
-        raise ValidationError({"sort": "Use newest, az or awards."})
+        raise ValidationError({"sort": gettext("Use newest, az or awards.")})
     text = (params.get("q") or "").strip()[:100]
     if text:
         rows = rows.filter(title__icontains=text) | rows.filter(description__icontains=text)
@@ -53,7 +54,7 @@ def query(event, rows, params):
     if params.get("awards") == "only":
         rows = rows.filter(snapshot_id__in=list(badges))
     elif params.get("awards") not in (None, ""):
-        raise ValidationError({"awards": "Use awards=only."})
+        raise ValidationError({"awards": gettext("Use awards=only.")})
     from .stage_gallery import filter_by_fields
     rows = filter_by_fields(event, rows, params)  # S7: public choice fields of the final stage.
     if sort == "az":

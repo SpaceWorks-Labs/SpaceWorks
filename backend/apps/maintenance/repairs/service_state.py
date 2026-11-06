@@ -15,6 +15,7 @@ Who: the area manager (#102) or a Technician holding `set_service_state` whose c
 names the subject (Q-T1 a). Behind the area's repairs or maintenance switch.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -71,7 +72,7 @@ def _asset(asset, in_service):
 def _product(product, in_service, quantity):
     from apps.inventory import availability
     if type(quantity) is not int or quantity < 1:
-        raise ValidationError({"quantity": "Say how many units change state."})
+        raise ValidationError({"quantity": gettext("Say how many units change state.")})
     try:
         if in_service:
             availability.repair_from_needs_fix(product, quantity)
@@ -94,7 +95,7 @@ def _room(actor, space, room, in_service, reason, expected_back_at, mode, issue)
     if current is not None:
         raise errors.bad_state("This room is already out of service.", "room_out_of_service")
     if mode not in RoomOutage.Mode.values:
-        raise ValidationError({"mode": "Choose block or warn."})
+        raise ValidationError({"mode": gettext("Choose block or warn.")})
     outage = RoomOutage.objects.create(makerspace=space, room=room, mode=mode, reason=str(reason or "")[:300],
                                        expected_back_at=expected_back_at, started_by=actor, issue=issue)
     bookings = list(affected_bookings(outage))
@@ -109,7 +110,7 @@ def set_state(actor, space, *, subject_type, subject, in_service, reason="", exp
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     assert_write_allowed(space.pk)
     if subject.makerspace_id != space.pk or (issue is not None and issue.makerspace_id != space.pk):
-        raise ValidationError({"subject_id": "The subject must belong to this makerspace."})
+        raise ValidationError({"subject_id": gettext("The subject must belong to this makerspace.")})
     _gate(actor, space, subject_type, subject)
     outage, bookings = None, []
     if subject_type == "machine":

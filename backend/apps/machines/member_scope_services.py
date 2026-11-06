@@ -1,5 +1,6 @@
 """Audited, replace-only machine type assignments for one membership."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -55,11 +56,11 @@ def set_member_machine_scope(*, makerspace, membership, actor, machine_type_ids)
     if (not isinstance(machine_type_ids, (list, tuple))
             or any(type(value) is not int or value <= 0 for value in machine_type_ids)
             or len(set(machine_type_ids)) != len(machine_type_ids)):
-        raise ValidationError({"machine_type_ids": "Use distinct positive integer ids."})
+        raise ValidationError({"machine_type_ids": gettext("Use distinct positive integer ids.")})
     requested = set(machine_type_ids)
     allowed = set(assignable_machine_types(makerspace).values_list("pk", flat=True))
     if requested - allowed:
-        raise ValidationError({"machine_type_ids": "Unknown or foreign machine type ids."})
+        raise ValidationError({"machine_type_ids": gettext("Unknown or foreign machine type ids.")})
     before, after = current_scope(membership), sorted(requested)
     if before != after:
         MembershipMachineTypeScope.objects.filter(membership=membership).delete()

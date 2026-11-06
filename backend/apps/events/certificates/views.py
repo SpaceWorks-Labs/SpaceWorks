@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -137,7 +138,7 @@ class BadgeDesignView(APIView):
         event_authority.get_event(request.user, pk, EDIT_DETAILS)
         stock, theme = request.query_params.get("stock", "cr80-landscape"), request.query_params.get("theme", "light")
         if stock not in DESIGN_STOCK_CHOICES or theme not in ("light", "dark"):
-            raise ValidationError("Choose a named stock and light/dark theme.")
+            raise ValidationError(gettext("Choose a named stock and light/dark theme."))
         # Packaged default designs exist for the six frozen stocks only; A6 landscape and custom start blank.
         rows = catalogue(kind="badge", theme=theme, stock=stock) if stock in STOCKS else []
         return private(Response({"count": len(rows), "next": None, "previous": None, "results": rows}))

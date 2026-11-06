@@ -1,5 +1,6 @@
 """Foundation models for the per-machine service-request queue."""
 
+from django.utils.translation import gettext, gettext_lazy
 import uuid
 
 from django.conf import settings
@@ -17,8 +18,8 @@ class ServiceQueue(models.Model):
     """A makerspace-wide, machine-type-compatible service queue."""
 
     class AllocationPolicy(models.TextChoices):
-        FIRST_IDLE = "first_idle", "First compatible idle machine"
-        STAFF_SELECT = "staff_select", "Staff selects machine"
+        FIRST_IDLE = "first_idle", gettext_lazy("First compatible idle machine")
+        STAFF_SELECT = "staff_select", gettext_lazy("Staff selects machine")
 
     makerspace = models.ForeignKey(
         "makerspaces.Makerspace", on_delete=models.PROTECT, related_name="service_queues"
@@ -46,7 +47,7 @@ class ServiceQueue(models.Model):
 
     def clean(self):
         if self.machine_type_id and self.machine_type.makerspace_id not in (None, self.makerspace_id):
-            raise ValidationError("Queue machine type must be global or belong to its makerspace.")
+            raise ValidationError(gettext("Queue machine type must be global or belong to its makerspace."))
 
     def __str__(self):
         return f"{self.makerspace}: {self.name}"
@@ -84,7 +85,7 @@ def get_or_create_default_bucket(machine, *, makerspace=None):
     from apps.machines.models import Machine
 
     if not getattr(machine, "pk", None):
-        raise ValidationError("Machine must be saved before creating a service bucket.")
+        raise ValidationError(gettext("Machine must be saved before creating a service bucket."))
     with transaction.atomic():
         locked = Machine.objects.select_for_update().get(pk=machine.pk)
         expected_makerspace_id = getattr(makerspace, "pk", makerspace)
@@ -94,7 +95,7 @@ def get_or_create_default_bucket(machine, *, makerspace=None):
             or locked.status != Machine.Status.IDLE
             or (expected_makerspace_id is not None and locked.makerspace_id != expected_makerspace_id)
         ):
-            raise ValidationError("Only an active idle machine can receive service requests.")
+            raise ValidationError(gettext("Only an active idle machine can receive service requests."))
         try:
             bucket, _ = ServiceBucket.objects.get_or_create(
                 machine=locked,
@@ -113,15 +114,15 @@ class MachineServiceRequest(ScopedPiiModelMixin, JobFlowFields, models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         # #141: staff asked the member for a new file or notes.
-        CHANGES_REQUESTED = "changes_requested", "Needs changes"
+        CHANGES_REQUESTED = "changes_requested", gettext_lazy("Needs changes")
         # #141: a quote waits for the member's approval (or, when prepaid, the payment).
-        QUOTED = "quoted", "Quote sent"
+        QUOTED = "quoted", gettext_lazy("Quote sent")
         ACCEPTED = "accepted", "Accepted"
-        IN_PROGRESS = "in_progress", "In progress"
+        IN_PROGRESS = "in_progress", gettext_lazy("In progress")
         COMPLETED = "completed", "Completed"
         COLLECTED = "collected", "Collected"
         # #142 OQ-7: never picked up; the item is the space's, any charge stays owed.
-        UNCOLLECTED = "uncollected", "Not collected"
+        UNCOLLECTED = "uncollected", gettext_lazy("Not collected")
         REJECTED = "rejected", "Rejected"
         FAILED = "failed", "Failed"
         CANCELLED = "cancelled", "Cancelled"

@@ -1,5 +1,6 @@
 """Registration mutation boundary, kept separate from event lifecycle services."""
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 
 from django.conf import settings
@@ -151,7 +152,7 @@ def register(
     # A contact fallback is not proof of ownership. In particular an account with
     # no email must not claim another attendee's cancelled row by naming its email.
     if member is not None and existing and existing.member_id != member.pk:
-        raise ValidationError({"email": "This contact cannot be used for this registration."})
+        raise ValidationError({"email": gettext("This contact cannot be used for this registration.")})
     if existing and existing.status != EventRegistration.Status.CANCELLED:
         if existing.status == EventRegistration.Status.REJECTED:
             raise RegistrationRejected("This registration application was rejected.")

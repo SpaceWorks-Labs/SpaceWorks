@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from uuid import uuid4
 
 from django.conf import settings
@@ -14,11 +15,11 @@ class EventCheckInEvent(models.Model):
     """Immutable evidence that an attended transition happened."""
 
     class Source(models.TextChoices):
-        ONLINE = "online", "Online staff confirmation"
-        QR = "qr", "Online QR check-in"
-        OFFLINE_SYNC = "offline_sync", "Authenticated offline synchronization"
-        VENUE_STATION = "venue_station", "PIN venue station"
-        LEGACY = "legacy", "Legacy attendance history"
+        ONLINE = "online", gettext_lazy("Online staff confirmation")
+        QR = "qr", gettext_lazy("Online QR check-in")
+        OFFLINE_SYNC = "offline_sync", gettext_lazy("Authenticated offline synchronization")
+        VENUE_STATION = "venue_station", gettext_lazy("PIN venue station")
+        LEGACY = "legacy", gettext_lazy("Legacy attendance history")
 
     makerspace = models.ForeignKey(
         Makerspace,
@@ -83,10 +84,10 @@ class EventCheckInEvent(models.Model):
         super().clean()
         if self.registration_id and self.event_id:
             if self.registration.event_id != self.event_id:
-                raise ValidationError("Registration must belong to the check-in event.")
+                raise ValidationError(gettext("Registration must belong to the check-in event."))
         if self.event_id and self.makerspace_id:
             if self.event.makerspace_id != self.makerspace_id:
-                raise ValidationError("Check-in event must belong to the host makerspace.")
+                raise ValidationError(gettext("Check-in event must belong to the host makerspace."))
 
     def save(self, *args, **kwargs):
         if self.pk is not None:

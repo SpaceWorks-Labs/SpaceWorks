@@ -1,4 +1,5 @@
 """Existing claim provenance and membership revocation helpers."""
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -77,4 +78,4 @@ def _validate_claim_scope(claim, user, makerspace):
         claim.membership.user_id != user.pk
         or claim.membership.makerspace_id != makerspace.pk
     ):
-        raise PermissionDenied("Claim session does not belong to this member and makerspace.")
+        raise PermissionDenied(gettext("Claim session does not belong to this member and makerspace."))

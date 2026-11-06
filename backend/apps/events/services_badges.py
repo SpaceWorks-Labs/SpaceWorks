@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import json
 from zoneinfo import ZoneInfo
@@ -45,7 +46,7 @@ def _text(value):
     value = str(value)
     if len(value) > MAX_TEXT_LENGTH:
         raise serializers.ValidationError(
-            {"fields": f"Selected badge text exceeds {MAX_TEXT_LENGTH} characters."}
+            {"fields": gettext('Selected badge text exceeds {MAX_TEXT_LENGTH} characters.').format(MAX_TEXT_LENGTH=MAX_TEXT_LENGTH)}
         )
     return value
 
@@ -101,10 +102,10 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
                    include_attended=False):
     if not registration_ids or len(registration_ids) > MAX_BADGES:
         raise serializers.ValidationError(
-            {"registration_ids": f"Choose between 1 and {MAX_BADGES} registrations."}
+            {"registration_ids": gettext('Choose between 1 and {MAX_BADGES} registrations.').format(MAX_BADGES=MAX_BADGES)}
         )
     if len(registration_ids) != len(set(registration_ids)):
-        raise serializers.ValidationError({"registration_ids": "Duplicate IDs are not allowed."})
+        raise serializers.ValidationError({"registration_ids": gettext("Duplicate IDs are not allowed.")})
     locked = Event.objects.select_for_update().get(pk=event.pk)
     require_module_locked(locked.makerspace_id, "events")
     from apps.events.staff_grant_locks import lock_authority
@@ -128,7 +129,7 @@ def prepare_badges(event, registration_ids, *, actor, template_override=None,
     _width, _height, columns, rows = page_layout(normalized)
     pages = (len(registration_ids) + columns * rows - 1) // (columns * rows)
     if pages > MAX_PAGES:
-        raise serializers.ValidationError({"registration_ids": "The badge PDF is too large."})
+        raise serializers.ValidationError({"registration_ids": gettext("The badge PDF is too large.")})
     registrations = list(EventRegistration.objects.select_for_update().filter(
         event=locked, pk__in=registration_ids,
     ).order_by("pk"))

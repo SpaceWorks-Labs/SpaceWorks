@@ -1,4 +1,5 @@
 """E HTTP adapter over G's shared range/revocation transport, never a redirect."""
+from django.utils.translation import gettext
 from django.http import HttpResponse, StreamingHttpResponse
 from django.utils import timezone
 from rest_framework.response import Response
@@ -12,7 +13,7 @@ def private_bytes(request, content, *, authorize, expires_at, mime, locator_key,
     try:
         selected = resolve_range(request.headers.get("Range"), len(content))
     except PrivateTransportError as exc:
-        response = Response({"detail": "Requested range cannot be satisfied.", "code": exc.code}, status=exc.status)
+        response = Response({"detail": gettext("Requested range cannot be satisfied."), "code": exc.code}, status=exc.status)
         response["Content-Range"] = f"bytes */{len(content)}"
     else:
         iterator = stream_private(locator=ObjectLocator(bucket="prepared-event-render", key=locator_key),

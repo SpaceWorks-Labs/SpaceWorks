@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework import serializers
 
@@ -15,11 +16,11 @@ def _locked_space(space_id):
 def validate_space_image_key(space, object_key, storage):
     if not storage.is_owned_object_key(space, object_key):
         raise serializers.ValidationError(
-            {'object_key': 'Image object key is outside this space.'}
+            {'object_key': gettext('Image object key is outside this space.')}
         )
     if not storage.has_allowed_extension(object_key):
         raise serializers.ValidationError(
-            {'object_key': 'Image object key has an unsupported extension.'}
+            {'object_key': gettext('Image object key has an unsupported extension.')}
         )
 
 
@@ -27,7 +28,7 @@ def _active_space(space_id):
     locked = _locked_space(space_id)
     if not locked.is_active:
         raise serializers.ValidationError(
-            {'space': 'Inactive spaces cannot have images changed.'}
+            {'space': gettext('Inactive spaces cannot have images changed.')}
         )
     return locked
 
@@ -42,7 +43,7 @@ def _assert_active(space):
     """
     if not space.is_active:
         raise serializers.ValidationError(
-            {'space': 'Inactive spaces cannot have images changed.'}
+            {'space': gettext('Inactive spaces cannot have images changed.')}
         )
 
 
@@ -80,7 +81,7 @@ def set_space_image(
     validate_space_image_key(locked, object_key, storage)
     if storage.public_image_key_in_use(locked.makerspace_id, object_key):
         raise serializers.ValidationError(
-            {'object_key': 'This image is already in use.'}
+            {'object_key': gettext('This image is already in use.')}
         )
     old_key = locked.image_key
     # A concurrent replacement can move `image_key` between the unlocked snapshot and this
@@ -91,7 +92,7 @@ def set_space_image(
     # trading a rare race for lock contention on every slow bucket.
     if old_key and old_key == snapshot_key and old_size is None:
         raise serializers.ValidationError(
-            {'image': 'The existing image was not found in storage.'}
+            {'image': gettext('The existing image was not found in storage.')}
         )
     limits.add_storage(locked.makerspace, size_bytes)
     locked.image_key = object_key
@@ -117,14 +118,14 @@ def remove_space_image(space, *, actor, audit, limits, storage):
     from .booking_authority import require
     require(actor, locked, "edit_details")
     if not locked.image_key:
-        raise serializers.ValidationError({'image': 'This space has no image.'})
+        raise serializers.ValidationError({'image': gettext('This space has no image.')})
     validate_space_image_key(locked, locked.image_key, storage)
     old_key = locked.image_key
     # Same reasoning as `set_space_image`: no re-HEAD under the lock. The size only feeds
     # the validation below, and the post-commit release HEADs the key it actually deletes.
     if old_key == snapshot_key and old_size is None:
         raise serializers.ValidationError(
-            {'image': 'The existing image was not found in storage.'}
+            {'image': gettext('The existing image was not found in storage.')}
         )
     locked.image_key = None
     locked.save(update_fields=['image_key', 'updated_at'])

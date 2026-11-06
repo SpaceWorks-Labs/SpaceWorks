@@ -1,5 +1,6 @@
 """Versioned event-only extension seam. Hackathon workflows remain separate."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from typing import Callable
 from rest_framework.exceptions import ValidationError
@@ -42,7 +43,7 @@ def register(provider):
 def validate_payload(key, payload):
     provider = _providers.get(key)
     if provider is None:
-        raise ValidationError({"type": "This event section provider is not registered."})
+        raise ValidationError({"type": gettext("This event section provider is not registered.")})
     serializer = provider.schema(data=payload)
     serializer.is_valid(raise_exception=True)
     return serializer.validated_data
@@ -69,7 +70,7 @@ from .programme_sections.providers import KINDS, validate_options as programme_o
 def validate_options(kind, value):
     if kind not in KINDS:
         if value != {}:
-            raise ValidationError({"options": "This section has no supported options."})
+            raise ValidationError({"options": gettext("This section has no supported options.")})
         return {}
     try:
         return programme_options(value)

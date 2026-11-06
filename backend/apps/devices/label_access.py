@@ -1,4 +1,5 @@
 """Label adapter scope and lock order: tenant -> device -> command -> label -> batch."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -35,7 +36,7 @@ def locked_label_device(principal):
                                pk=principal.device_id, makerspace=makerspace)
     if (device.kind != Device.Kind.LABEL_PRINTER or device.status != Device.Status.ACTIVE
             or device.key_version != principal.key_version):
-        raise PermissionDenied("Device authorization is no longer active.")
+        raise PermissionDenied(gettext("Device authorization is no longer active."))
     return makerspace, device
 
 
@@ -48,7 +49,7 @@ def owned_label(device, label_id):
         pk=identity["command_id"], device=device, makerspace_id=device.makerspace_id)
     label = LabelPrintCommand.objects.select_for_update().get(pk=label_id)
     if command.device_key_version != device.key_version:
-        raise PermissionDenied("Command belongs to a previous device key.")
+        raise PermissionDenied(gettext("Command belongs to a previous device key."))
     if command.status != DeviceCommand.Status.ACKNOWLEDGED or command.kind != "label_print":
         raise LabelConflict("Command must be acknowledged and not cancelled.")
     return label, command
@@ -73,5 +74,5 @@ def locked_batch(label, device):
         pk=label.batch_id, makerspace_id=device.makerspace_id,
         status=QrPrintBatch.Status.PRINTED).first()
     if batch is not None and batch.items.count() != label.item_count_snapshot:
-        raise ValidationError("Label batch contents changed.")
+        raise ValidationError(gettext("Label batch contents changed."))
     return batch

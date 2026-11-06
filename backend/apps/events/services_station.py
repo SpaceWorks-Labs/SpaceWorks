@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
@@ -232,20 +233,20 @@ def resolve_session(public_token, cookie_value):
         station=station
     ).first()
     if binding is None:
-        raise PermissionDenied("Invalid station session.")
+        raise PermissionDenied(gettext("Invalid station session."))
     try:
         _validate_event_binding(binding)
     except ValidationError:
-        raise PermissionDenied("Invalid station session.") from None
+        raise PermissionDenied(gettext("Invalid station session.")) from None
     require_feature(binding.event.makerspace, "events.offline_checkin")
     return binding.event, credential, session_id
 
 
 def _validate_event_binding(binding):
     if binding.event.makerspace_id != binding.station.makerspace_id:
-        raise ValidationError("Event and Station must belong to the same makerspace.")
+        raise ValidationError(gettext("Event and Station must belong to the same makerspace."))
     if binding.station.kind != Station.Kind.EVENT_CHECKIN:
-        raise ValidationError("Event bindings require an event check-in Station.")
+        raise ValidationError(gettext("Event bindings require an event check-in Station."))
 
 
 def _pin_material(event_id, version, pin):

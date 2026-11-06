@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -37,29 +38,25 @@ def enforce_booking_rules(space, starts_at, ends_at, now):
     if duration < timedelta(minutes=space.min_booking_duration_minutes):
         raise serializers.ValidationError({
             'ends_at': (
-                f'Booking must be at least '
-                f'{space.min_booking_duration_minutes} minutes long.'
+                gettext('Booking must be at least {min_booking_duration_minutes} minutes long.').format(min_booking_duration_minutes=space.min_booking_duration_minutes)
             )
         })
     if duration > timedelta(minutes=space.max_booking_duration_minutes):
         raise serializers.ValidationError({
             'ends_at': (
-                f'Booking cannot exceed '
-                f'{space.max_booking_duration_minutes} minutes.'
+                gettext('Booking cannot exceed {max_booking_duration_minutes} minutes.').format(max_booking_duration_minutes=space.max_booking_duration_minutes)
             )
         })
     if starts_at < now + timedelta(minutes=space.booking_lead_time_minutes):
         raise serializers.ValidationError({
             'starts_at': (
-                f'Booking must start at least '
-                f'{space.booking_lead_time_minutes} minutes from now.'
+                gettext('Booking must start at least {booking_lead_time_minutes} minutes from now.').format(booking_lead_time_minutes=space.booking_lead_time_minutes)
             )
         })
     if starts_at > now + timedelta(days=space.max_booking_advance_days):
         raise serializers.ValidationError({
             'starts_at': (
-                f'Booking cannot start more than '
-                f'{space.max_booking_advance_days} days from now.'
+                gettext('Booking cannot start more than {max_booking_advance_days} days from now.').format(max_booking_advance_days=space.max_booking_advance_days)
             )
         })
     # Calendar traversal must be bounded by the cheap duration/advance checks.
@@ -91,15 +88,15 @@ def update_booking_rules(space, *, actor, **changes):
     ):
         value = getattr(locked, field)
         if type(value) is not int or not 0 <= value <= maximum:
-            raise serializers.ValidationError({field: f'Must be between 0 and {maximum}.'})
+            raise serializers.ValidationError({field: gettext('Must be between 0 and {maximum}.').format(maximum=maximum)})
 
     if locked.min_booking_duration_minutes < 1:
         raise serializers.ValidationError({
-            'min_booking_duration_minutes': 'Must be at least 1 minute.'
+            'min_booking_duration_minutes': gettext('Must be at least 1 minute.')
         })
     if locked.max_booking_duration_minutes < 1:
         raise serializers.ValidationError({
-            'max_booking_duration_minutes': 'Must be at least 1 minute.'
+            'max_booking_duration_minutes': gettext('Must be at least 1 minute.')
         })
     if (
         locked.max_booking_duration_minutes
@@ -107,44 +104,44 @@ def update_booking_rules(space, *, actor, **changes):
     ):
         raise serializers.ValidationError({
             'max_booking_duration_minutes': (
-                'Maximum duration cannot be below the minimum.'
+                gettext('Maximum duration cannot be below the minimum.')
             )
         })
     if locked.min_booking_duration_minutes > MAX_DURATION_MINUTES:
         raise serializers.ValidationError({
             'min_booking_duration_minutes': (
-                f'Cannot exceed {MAX_DURATION_MINUTES} minutes.'
+                gettext('Cannot exceed {MAX_DURATION_MINUTES} minutes.').format(MAX_DURATION_MINUTES=MAX_DURATION_MINUTES)
             )
         })
     if locked.max_booking_duration_minutes > MAX_DURATION_MINUTES:
         raise serializers.ValidationError({
             'max_booking_duration_minutes': (
-                f'Cannot exceed {MAX_DURATION_MINUTES} minutes.'
+                gettext('Cannot exceed {MAX_DURATION_MINUTES} minutes.').format(MAX_DURATION_MINUTES=MAX_DURATION_MINUTES)
             )
         })
     if locked.booking_lead_time_minutes < 0:
         raise serializers.ValidationError({
-            'booking_lead_time_minutes': 'Cannot be negative.'
+            'booking_lead_time_minutes': gettext('Cannot be negative.')
         })
     if locked.booking_lead_time_minutes > MAX_LEAD_MINUTES:
         raise serializers.ValidationError({
             'booking_lead_time_minutes': (
-                f'Cannot exceed {MAX_LEAD_MINUTES} minutes.'
+                gettext('Cannot exceed {MAX_LEAD_MINUTES} minutes.').format(MAX_LEAD_MINUTES=MAX_LEAD_MINUTES)
             )
         })
     if locked.max_booking_advance_days < 1:
         raise serializers.ValidationError({
-            'max_booking_advance_days': 'Must be at least 1 day.'
+            'max_booking_advance_days': gettext('Must be at least 1 day.')
         })
     if locked.max_booking_advance_days > MAX_ADVANCE_DAYS:
         raise serializers.ValidationError({
             'max_booking_advance_days': (
-                f'Cannot exceed {MAX_ADVANCE_DAYS} days.'
+                gettext('Cannot exceed {MAX_ADVANCE_DAYS} days.').format(MAX_ADVANCE_DAYS=MAX_ADVANCE_DAYS)
             )
         })
     if locked.approval_mode not in BookableSpace.ApprovalMode.values:
         raise serializers.ValidationError({
-            'approval_mode': 'Invalid approval mode.'
+            'approval_mode': gettext('Invalid approval mode.')
         })
 
     if {'buffer_before_minutes', 'buffer_after_minutes'} & set(changes):

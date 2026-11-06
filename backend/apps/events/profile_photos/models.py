@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.conf import settings
@@ -36,11 +37,11 @@ class EventMemberPresentation(models.Model):
         if self.selected_profile_id:
             if (self.selected_profile.membership_id != self.selected_membership_id
                     or self.selected_membership.user_id != self.member_id):
-                raise ValidationError("Select your own matching profile and membership.")
+                raise ValidationError(gettext("Select your own matching profile and membership."))
         if set(self.public_card_scopes) - {"team", "mentor", "judge"}:
-            raise ValidationError("Unknown public card scope.")
+            raise ValidationError(gettext("Unknown public card scope."))
         if not self.public_card_consent and self.public_card_scopes:
-            raise ValidationError("Public card scopes require separate consent.")
+            raise ValidationError(gettext("Public card scopes require separate consent."))
 
 
 class EventMemberCard(models.Model):

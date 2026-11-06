@@ -9,6 +9,7 @@ unattributed device session and the staff confirmation are separate append-only
 `MachineSessionAmendment` rows, never edits.
 """
 
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import F, Q
@@ -16,17 +17,17 @@ from django.db.models import F, Q
 
 class MachineSession(models.Model):
     class Source(models.TextChoices):
-        MEMBER_QR = "member_qr", "Member (machine QR)"
+        MEMBER_QR = "member_qr", gettext_lazy("Member (machine QR)")
         STAFF = "staff", "Staff"
-        DEVICE = "device", "Device report"
+        DEVICE = "device", gettext_lazy("Device report")
 
     class StopReason(models.TextChoices):
-        MEMBER = "member", "Stopped by the member"
-        STAFF = "staff", "Stopped by staff"
-        MAX_LENGTH = "max_length", "Reached the maximum length"
-        CHECK_OUT = "check_out", "The member checked out"
-        CLOSING = "closing", "The space closed"
-        DEVICE = "device", "The machine reported the end"
+        MEMBER = "member", gettext_lazy("Stopped by the member")
+        STAFF = "staff", gettext_lazy("Stopped by staff")
+        MAX_LENGTH = "max_length", gettext_lazy("Reached the maximum length")
+        CHECK_OUT = "check_out", gettext_lazy("The member checked out")
+        CLOSING = "closing", gettext_lazy("The space closed")
+        DEVICE = "device", gettext_lazy("The machine reported the end")
 
     #: Stop reasons the sweep sets; such a session is flagged for staff review.
     AUTO_STOP_REASONS = ("max_length", "check_out", "closing")
@@ -91,9 +92,9 @@ class MachineSessionAmendment(models.Model):
     """Append-only staff decisions on a closed session (#158.5): never an edit."""
 
     class Kind(models.TextChoices):
-        CORRECT = "correct", "Duration corrected"
-        ASSIGN = "assign", "Assigned to a member"
-        CONFIRM = "confirm", "Confirmed by staff"
+        CORRECT = "correct", gettext_lazy("Duration corrected")
+        ASSIGN = "assign", gettext_lazy("Assigned to a member")
+        CONFIRM = "confirm", gettext_lazy("Confirmed by staff")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     session = models.ForeignKey(MachineSession, on_delete=models.CASCADE, related_name="amendments")

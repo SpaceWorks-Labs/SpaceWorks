@@ -7,6 +7,7 @@ can email it to the guest's account address. An account charge never gets an L5
 bearer pay link (those are for account-less charges only): the guest signs in to pay.
 """
 
+from django.utils.translation import gettext
 from apps.audit.services import record
 
 
@@ -37,7 +38,7 @@ def pay_link(registration, *, actor, send=False):
                 f"{payment.currency.upper()} {payment.amount}.\nSign in and pay here: {url}\n")
         direct_mail_unless_routed(space=event.makerspace, source_kind="events.ticket_pay_link", row=payment,
                                   revision=str(payment.pk), event="ticket_pay_link", owner=member,
-                                  to_email=member.email, subject=f"Payment for {event.title}", text=text,
+                                  to_email=member.email, subject=gettext('Payment for {title}').format(title=event.title), text=text,
                                   stream="events", audience="requester", feature="", persist_body=False)
     record(actor, "event.pay_link_issued", makerspace=event.makerspace, target=registration,
            meta={"registration_id": registration.pk, "payment_id": payment.pk, "emailed": bool(send)})

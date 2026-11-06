@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_lazy
 from uuid import uuid4
 
 from django.conf import settings
@@ -11,16 +12,16 @@ from apps.forms_schema.validation import validate_form_schema
 
 class BookableSpace(models.Model):
     class Kind(models.TextChoices):
-        DEV_ROOM = "dev_room", "Development room"
+        DEV_ROOM = "dev_room", gettext_lazy("Development room")
         BENCH = "bench", "Bench"
-        MEETING = "meeting", "Meeting room"
+        MEETING = "meeting", gettext_lazy("Meeting room")
         OTHER = "other", "Other"
         # Machine time booking (`machines.time_booking`): one machine's time.
-        MACHINE = "machine", "Machine time"
+        MACHINE = "machine", gettext_lazy("Machine time")
 
     class ApprovalMode(models.TextChoices):
-        INSTANT = 'instant', 'Instant confirmation'
-        APPROVE = 'approve', 'Staff approval required'
+        INSTANT = 'instant', gettext_lazy('Instant confirmation')
+        APPROVE = 'approve', gettext_lazy('Staff approval required')
 
     public_token = models.UUIDField(
         default=uuid4,
@@ -172,7 +173,7 @@ class BookableSpace(models.Model):
     def save(self, *args, **kwargs):
         self.name = (self.name or "").strip()
         if not self.name:
-            raise ValidationError({"name": "This field may not be blank."})
+            raise ValidationError({"name": gettext("This field may not be blank.")})
         if self.pk:
             original = type(self).objects.only("public_token", "makerspace_id").get(
                 pk=self.pk

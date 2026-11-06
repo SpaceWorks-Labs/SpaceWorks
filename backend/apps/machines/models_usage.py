@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -20,10 +21,10 @@ class MachineUsageEntry(ScopedPiiModelMixin, models.Model):
     """Append-only generic and typed service-usage ledger."""
 
     class Source(models.TextChoices):
-        MANUAL = "manual", "Manual hours"
-        TYPED_MANUAL = "typed_manual", "Typed manual service"
+        MANUAL = "manual", gettext_lazy("Manual hours")
+        TYPED_MANUAL = "typed_manual", gettext_lazy("Typed manual service")
         # Lane L23: one entry per finished machine session (minutes).
-        SESSION = "session", "Machine session"
+        SESSION = "session", gettext_lazy("Machine session")
 
     machine = models.ForeignKey(
         Machine, on_delete=models.CASCADE, related_name="usage_entries"

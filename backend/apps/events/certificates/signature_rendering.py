@@ -1,4 +1,5 @@
 """Signature layers: the signatory's image above a rule, then their name and title (C4)."""
+from django.utils.translation import gettext
 from io import BytesIO
 
 from rest_framework.exceptions import ValidationError
@@ -15,7 +16,7 @@ def draw_signature(canvas, layer, resource, area_height_mm):
     from reportlab.lib.utils import ImageReader
     from .layer_rendering import ImageResource, SignatureResource
     if not isinstance(resource, SignatureResource):
-        raise ValidationError({"layout": "Add the signatory for this signature layer."})
+        raise ValidationError({"layout": gettext("Add the signatory for this signature layer.")})
     x, top, width, height = layer["x_mm"], layer["y_mm"], layer["width_mm"], layer["height_mm"]
     colour = HexColor(layer.get("colour") or COLOURS[layer.get("colour_token", "ink")])
     if isinstance(resource.image, ImageResource):

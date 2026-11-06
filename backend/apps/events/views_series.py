@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import Count, Min, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -141,7 +142,7 @@ class EventSeriesDetailView(APIView):
             raise PermissionDenied()
         effective_from = changes.pop("effective_from", None)
         if not manager and not changes:
-            raise ValidationError({"detail": "Supply details or schedule changes."})
+            raise ValidationError({"detail": gettext("Supply details or schedule changes.")})
         series, created, removed = services_series.update_series(
             series, actor=request.user, effective_from=effective_from, **changes
         )

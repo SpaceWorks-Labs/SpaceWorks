@@ -1,4 +1,5 @@
 """S7: a final-stage custom choice field marked public becomes a gallery filter (``field.<key>=<choice>``)."""
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from .models_stages import SubmissionStage
@@ -30,7 +31,7 @@ def filter_by_fields(event, rows, params):
     allowed = {f["key"]: f["choices"] for f in _final_stage_filters(event)}
     for key, value in wanted.items():
         if key not in allowed or value not in allowed[key]:
-            raise ValidationError({f"field.{key}": "Use a public choice field and one of its choices."})
+            raise ValidationError({f"field.{key}": gettext("Use a public choice field and one of its choices.")})
     from apps.events.judging.ports import runtime
     keep = []
     for row in rows:

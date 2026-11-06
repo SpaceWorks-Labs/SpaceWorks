@@ -10,6 +10,7 @@ machine work order writes the immutable `MaintenanceLog` as its record; nothing 
 ever deleted outside a tenant purge.
 """
 
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -18,14 +19,14 @@ from django.db.models import Q
 class WorkOrder(models.Model):
     class Subject(models.TextChoices):
         MACHINE = "machine", "Machine"
-        PRODUCT = "inventory_product", "Inventory item"
-        ASSET = "inventory_asset", "Inventory unit"
-        SPACE = "bookable_space", "Bookable space"
+        PRODUCT = "inventory_product", gettext_lazy("Inventory item")
+        ASSET = "inventory_asset", gettext_lazy("Inventory unit")
+        SPACE = "bookable_space", gettext_lazy("Bookable space")
 
     class Status(models.TextChoices):
         OPEN = "open", "Open"
-        IN_PROGRESS = "in_progress", "In progress"
-        ON_HOLD = "on_hold", "On hold"
+        IN_PROGRESS = "in_progress", gettext_lazy("In progress")
+        ON_HOLD = "on_hold", gettext_lazy("On hold")
         DONE = "done", "Done"
         CANCELLED = "cancelled", "Cancelled"
 

@@ -10,6 +10,7 @@ holding `run_maintenance` whose coverage names the subject (Q-T1 a). A Technicia
 completes MACHINE schedules in their coverage, through the machine maintenance service.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -38,7 +39,7 @@ def _name(subject):
 
 def _clean_interval(value):
     if type(value) is not int or not 1 <= value <= 3650:
-        raise ValidationError({"interval_days": "Use a whole number of days from 1 to 3650."})
+        raise ValidationError({"interval_days": gettext("Use a whole number of days from 1 to 3650.")})
     return value
 
 
@@ -46,15 +47,15 @@ def _clean_interval(value):
 def create_schedule(actor, space, *, subject_type, subject, description, interval_days, next_due):
     from apps.maintenance.models import SubjectMaintenanceSchedule
     if subject_type not in FIELDS:
-        raise ValidationError({"subject_type": "Items, units and rooms only; machines keep their own schedules."})
+        raise ValidationError({"subject_type": gettext("Items, units and rooms only; machines keep their own schedules.")})
     _require_switch(space, subject_type)
     if subject.makerspace_id != space.pk:
-        raise ValidationError({"subject_id": "The subject must belong to this makerspace."})
+        raise ValidationError({"subject_id": gettext("The subject must belong to this makerspace.")})
     if not areas.manager_may(actor, space.pk, subject_type, subject):
         raise PermissionDenied()
     description = str(description or "").strip()
     if not description:
-        raise ValidationError({"description": "Describe the maintenance."})
+        raise ValidationError({"description": gettext("Describe the maintenance.")})
     row = SubjectMaintenanceSchedule.objects.create(
         makerspace=space, subject_type=subject_type, description=description[:2000],
         interval_days=_clean_interval(interval_days), next_due=next_due, **{FIELDS[subject_type]: subject})
@@ -101,10 +102,10 @@ def run(actor, schedule, *, summary, parts_note="", performed_at=None, cost=None
     if not _may_run(actor, schedule.makerspace_id, schedule.subject_type, subject):
         raise PermissionDenied()
     if not schedule.is_active:
-        raise ValidationError({"schedule": "This schedule is inactive."})
+        raise ValidationError({"schedule": gettext("This schedule is inactive.")})
     summary = str(summary or "").strip()
     if not summary:
-        raise ValidationError({"summary": "Say what was done."})
+        raise ValidationError({"summary": gettext("Say what was done.")})
     performed_at = performed_at or timezone.now()
     log = SubjectMaintenanceLog.objects.create(
         makerspace=schedule.makerspace, schedule=schedule, subject_type=schedule.subject_type,

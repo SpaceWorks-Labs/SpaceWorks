@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -32,7 +33,7 @@ class EventRegistrationCredential(models.Model):
             frozen = ("registration_id", "generation", "token_digest", "token_ciphertext",
                       "key_version", "created_at", "expires_at")
             if old.revoked_at or any(getattr(old, key) != getattr(self, key) for key in frozen):
-                raise ValidationError("Credential generations are immutable; rotate instead.")
+                raise ValidationError(gettext("Credential generations are immutable; rotate instead."))
         return super().save(*args, **kwargs)
 
 

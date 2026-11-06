@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -53,7 +54,7 @@ class EventCertificateTemplateView(APIView):
         event = _event(request, pk)
         kind = request.query_params.get("kind", "")
         if kind not in KIND_CHOICES:
-            raise ValidationError({"kind": "Choose a certificate kind."})
+            raise ValidationError({"kind": gettext("Choose a certificate kind.")})
         revisions = event.certificate_template_revisions
         own = revisions.filter(certificate_kind=kind).first() if kind else None
         revision = own or revisions.filter(certificate_kind="").first()

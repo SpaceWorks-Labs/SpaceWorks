@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from .models import EventRegistration
@@ -8,7 +9,7 @@ from .programme.broadcast_content import DESIGNS, unpack, validate_ctas
 class ClosedSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict) or set(data) - set(self.fields):
-            raise serializers.ValidationError({"code": "unknown_fields", "detail": "Use only the documented fields."})
+            raise serializers.ValidationError({"code": "unknown_fields", "detail": gettext("Use only the documented fields.")})
         return super().to_internal_value(data)
 
 

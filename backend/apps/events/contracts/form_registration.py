@@ -1,5 +1,6 @@
 """Install A/C/D form-definition adapters into F's single schema/editor engine."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
@@ -38,7 +39,7 @@ def provider(key):
         return getattr(target, field)
     def save_locked(*, event, actor, target, schema):
         if key == "round" and target.state != "draft":
-            raise ValidationError({"schema": "Close or create a draft round before changing its form."})
+            raise ValidationError({"schema": gettext("Close or create a draft round before changing its form.")})
         # No definition callback writes answers or bypasses F's revision guard.
         setattr(target, field, schema)
         target.version += 1

@@ -1,5 +1,6 @@
 """Separate private editor/preview; public asset endpoints cannot preview drafts."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.parsers import MultiPartParser
@@ -94,7 +95,7 @@ class BookingWebsiteAssetView(StaffWebsiteBase):
         try:
             asset = upload_asset(space, actor=request.user, **data.validated_data)
         except StorageUnavailable:
-            return Response({"detail": "Image storage is unavailable."}, status=503)
+            return Response({"detail": gettext("Image storage is unavailable.")}, status=503)
         return Response(BookingWebsiteAssetSerializer(asset).data, status=201)
 
 

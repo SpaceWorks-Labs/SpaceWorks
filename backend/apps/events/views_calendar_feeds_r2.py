@@ -5,6 +5,7 @@ to a calendar app with the existing per-token and per-IP throttles. Every switch
 account that is no longer active or in good standing -- answers 404 like an unknown token.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.urls import reverse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -49,7 +50,7 @@ def _in_good_standing(user, space):
 
     require_active_account(user, space)
     if user.is_tenant_dump_stub or rbac.personal_notification_membership_refused(user, space.pk):
-        raise PermissionDenied("An active account in good standing is required.")
+        raise PermissionDenied(gettext("An active account in good standing is required."))
 
 
 def _space(makerspace_id, kind):
@@ -58,7 +59,7 @@ def _space(makerspace_id, kind):
 
     space = servable_queryset(Makerspace.objects.filter(pk=makerspace_id)).first()
     if space is None or kind not in KINDS or not feature_enabled(space, KINDS[kind]):
-        raise NotFound({"detail": "This calendar is not available here.", "code": "feature_disabled"})
+        raise NotFound({"detail": gettext("This calendar is not available here."), "code": "feature_disabled"})
     return space
 
 

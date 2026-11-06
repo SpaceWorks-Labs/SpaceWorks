@@ -7,6 +7,7 @@ private chat to use. Each consent is timestamped on the contact and audited. Ema
 no opt-in: it is always the first channel.
 """
 
+from django.utils.translation import gettext
 import hashlib
 import secrets
 from datetime import timedelta
@@ -30,7 +31,7 @@ def create_link(actor, contact):
     from . import services_contacts
     services_contacts._require(actor, contact.makerspace_id)
     if contact.is_archived:
-        raise ValidationError({"detail": "This technician is archived."})
+        raise ValidationError({"detail": gettext("This technician is archived.")})
     token = secrets.token_urlsafe(24)
     contact.opt_in_digest, contact.opt_in_expires_at = digest(token), timezone.now() + LIFETIME
     contact.save(update_fields=["opt_in_digest", "opt_in_expires_at", "updated_at"])
@@ -62,7 +63,7 @@ def contact_for_token(token, *, lock=False):
     contact = rows.filter(opt_in_digest=digest(token), opt_in_expires_at__gt=timezone.now(),
                           is_archived=False).first() if token else None
     if contact is None:
-        raise NotFound({"detail": "This opt-in link is invalid or has expired.", "code": "opt_in_invalid"})
+        raise NotFound({"detail": gettext("This opt-in link is invalid or has expired."), "code": "opt_in_invalid"})
     if lock:
         from apps.tenant_migration.gate_runtime import assert_write_allowed
         assert_write_allowed(contact.makerspace_id)
@@ -75,9 +76,9 @@ def accept(token, channels):
     contact = contact_for_token(token, lock=True)
     channels = set(channels or [])
     if not channels or channels - {"whatsapp", "sms"}:
-        raise ValidationError({"channels": "Choose WhatsApp, SMS or both."})
+        raise ValidationError({"channels": gettext("Choose WhatsApp, SMS or both.")})
     if not contact.phone:
-        raise ValidationError({"channels": "The space has no phone number for you yet."})
+        raise ValidationError({"channels": gettext("The space has no phone number for you yet.")})
     now = timezone.now()
     for channel in sorted(channels):
         setattr(contact, f"{channel}_opted_in_at", now)

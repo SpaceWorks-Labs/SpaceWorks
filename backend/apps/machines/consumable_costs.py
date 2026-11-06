@@ -1,5 +1,6 @@
 """Snapshot prices in minor currency units at consumption finalization, never at reservation."""
 
+from django.utils.translation import gettext
 from decimal import Decimal, ROUND_HALF_UP
 from django.db import transaction
 
@@ -14,7 +15,7 @@ from apps.inventory.cost_basis import UNITS, validate_price
 @transaction.atomic
 def record_cost(*, makerspace, source_kind, source_id, quantity, measurement_unit, price_source, actor=None):
     if price_source.makerspace_id != makerspace.pk:
-        raise ValidationError("Consumable price must belong to this makerspace.")
+        raise ValidationError(gettext("Consumable price must belong to this makerspace."))
     existing = ConsumableCostRecord.objects.filter(makerspace=makerspace, source_kind=source_kind, source_id=source_id).first()
     if existing is not None:
         return existing
@@ -29,7 +30,7 @@ def record_cost(*, makerspace, source_kind, source_id, quantity, measurement_uni
     normalized = (Decimal(price) * minor_factor * UNITS[measurement_unit][1] / UNITS[cost_unit][1]).quantize(Decimal("0.0000000001"))
     total = int((Decimal(quantity) * normalized).quantize(Decimal(1), rounding=ROUND_HALF_UP))
     if total > 9223372036854775807:
-        raise ValidationError({"unit_cost": "The recorded consumption cost exceeds the supported amount."})
+        raise ValidationError({"unit_cost": gettext("The recorded consumption cost exceeds the supported amount.")})
     row, created = ConsumableCostRecord.objects.get_or_create(
         makerspace=makerspace, source_kind=source_kind, source_id=source_id,
         defaults={"quantity": quantity, "measurement_unit": measurement_unit,

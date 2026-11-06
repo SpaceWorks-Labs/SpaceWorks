@@ -1,5 +1,6 @@
 """Deterministic typed-resource rendering. No URL or merge tag can fetch an image."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass, field
 from io import BytesIO
 import hashlib
@@ -16,7 +17,7 @@ class ImageResource:
 
     def __post_init__(self):
         if hashlib.sha256(self.content).hexdigest() != self.sha256:
-            raise ValidationError({"resource": "The immutable image checksum changed."})
+            raise ValidationError({"resource": gettext("The immutable image checksum changed.")})
 
 
 @dataclass(frozen=True)
@@ -70,7 +71,7 @@ def draw_document(canvas, document, values, resolver, *, preview=False):
             elif kind == "photo":
                 _initials(canvas, layer, values, x, y, width, box_height, height)
             elif resource is not None:
-                raise ValidationError({"resource": "Wrong resource type for layer."})
+                raise ValidationError({"resource": gettext("Wrong resource type for layer.")})
         finally:
             canvas.restoreState()
 

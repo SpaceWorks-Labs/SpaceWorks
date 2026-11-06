@@ -1,5 +1,6 @@
 """Per-event card settings (approval at event level, #136; the first-aid extras switch,
 Q-I5), the first-aid list itself, and the registrant's own ticket download (X49)."""
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -53,7 +54,7 @@ class EventCardSettingsView(APIView):
         approval = request.data.get("design_approval_required")
         if extras is not None:
             if type(extras) is not bool:
-                raise ValidationError({"extras_visible_to_organizers": "Use true or false."})
+                raise ValidationError({"extras_visible_to_organizers": gettext("Use true or false.")})
             row, _ = EventCardSettings.objects.get_or_create(event=event)
             if row.extras_visible_to_organizers != extras:
                 row.extras_visible_to_organizers = extras
@@ -62,7 +63,7 @@ class EventCardSettingsView(APIView):
                              target=row, meta={"event_id": event.pk, "enabled": extras})
         if clear_approval:
             if approval is not None and type(approval) is not bool:
-                raise ValidationError({"design_approval_required": "Use true, false or null (follow the space)."})
+                raise ValidationError({"design_approval_required": gettext("Use true, false or null (follow the space).")})
             assert_setting_write(request.user, event.makerspace, "events", "card_designs.approval")
             set_level(request.user, event.makerspace, "event", approval, event=event)
         return self.get(request, pk)

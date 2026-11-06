@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from .serializers import CommandSerializer, StrictSerializer
 
@@ -58,11 +59,11 @@ def requirements(value):
     # Age/guardian settings have no vocabulary here, even when nested in JSON.
     permitted = {"training_ids", "briefing_ids", "host_waiver_required"}
     if set(value) - permitted:
-        raise serializers.ValidationError({"requirements": "Unknown requirement."})
+        raise serializers.ValidationError({"requirements": gettext("Unknown requirement.")})
     for key in ("training_ids", "briefing_ids"):
         if key in value and (not isinstance(value[key], list) or len(value[key]) > 50 or any(
                 type(x) is not int or x < 1 for x in value[key])):
-            raise serializers.ValidationError({"requirements": "Use bounded positive reference IDs."})
+            raise serializers.ValidationError({"requirements": gettext("Use bounded positive reference IDs.")})
     if "host_waiver_required" in value and type(value["host_waiver_required"]) is not bool:
-        raise serializers.ValidationError({"requirements": "Use a boolean waiver requirement."})
+        raise serializers.ValidationError({"requirements": gettext("Use a boolean waiver requirement.")})
     return value

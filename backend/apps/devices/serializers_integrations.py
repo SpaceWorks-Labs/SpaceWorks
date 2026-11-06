@@ -4,6 +4,7 @@ Clamping (not refusing) keeps one wild sensor value from dropping a whole snapsh
 way the reference agent guide limits ranges; sizes, kinds and unknown fields are refused.
 No payload carries G-code, files, printer credentials or money.
 """
+from django.utils.translation import gettext
 import math
 import re
 
@@ -21,7 +22,7 @@ _TOKEN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 def clamp(value, low, high, *, label):
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
-        raise serializers.ValidationError(f"{label} must be a finite number.")
+        raise serializers.ValidationError(gettext('{label} must be a finite number.').format(label=label))
     return min(max(value, low), high)
 
 
@@ -65,13 +66,13 @@ class StatusSnapshotSerializer(StrictSerializer):
 
     def validate_clear_token(self, value):
         if value and not _TOKEN.match(value):
-            raise serializers.ValidationError("Use 1-64 letters, digits, '-' or '_'.")
+            raise serializers.ValidationError(gettext("Use 1-64 letters, digits, '-' or '_'."))
         return value
 
     def validate_spools(self, value):
         slots = [row["slot"] for row in value]
         if len(slots) != len(set(slots)):
-            raise serializers.ValidationError("Each spool slot may appear once.")
+            raise serializers.ValidationError(gettext("Each spool slot may appear once."))
         return value
 
 
@@ -124,9 +125,9 @@ class JobReportSerializer(StrictSerializer):
     def validate(self, attrs):
         terminal = {key for key in attrs if key not in {"event", "external_job_id"}}
         if attrs["event"] == "started" and terminal:
-            raise serializers.ValidationError("A started report carries only event and external_job_id.")
+            raise serializers.ValidationError(gettext("A started report carries only event and external_job_id."))
         if attrs["event"] != "started" and not {"operation_id", "actual_minutes", "consumptions"} <= terminal:
-            raise serializers.ValidationError("A terminal report needs operation_id, actual_minutes and consumptions.")
+            raise serializers.ValidationError(gettext("A terminal report needs operation_id, actual_minutes and consumptions."))
         return attrs
 
     def result_payload(self):

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.events.feedback_templates import FEEDBACK_TEMPLATES
@@ -6,7 +7,7 @@ from apps.events.feedback_templates import FEEDBACK_TEMPLATES
 class StrictSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict):
-            raise serializers.ValidationError("Expected an object.")
+            raise serializers.ValidationError(gettext("Expected an object."))
         unknown = set(data) - set(self.fields)
         if unknown:
             raise serializers.ValidationError({key: "Unexpected field." for key in sorted(unknown)})

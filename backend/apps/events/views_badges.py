@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import re
 
 from django.http import HttpResponse
@@ -84,7 +85,7 @@ class EventBadgePdfView(APIView):
                 event, actor=request.user, **serializer.validated_data
             )
         except EventRegistration.DoesNotExist as exc:
-            raise NotFound("A selected registration was not found for this event.") from exc
+            raise NotFound(gettext("A selected registration was not found for this event.")) from exc
         payload = render_badges_pdf(template, snapshots, title=f"{event.title} attendee badges")
         response = HttpResponse(payload, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{_filename(event.title)}"'

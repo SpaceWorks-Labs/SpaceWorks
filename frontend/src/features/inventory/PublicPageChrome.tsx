@@ -1,13 +1,15 @@
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
 import type { TenantBootstrap } from "../../lib/api";
+import { publicFamilies } from "../../lib/publicHome";
 
 export const LICENSE_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/LICENSE";
 
 /** Shared public navigation derives only from the bootstrap already loaded by its caller. */
 export function publicPageChrome(slug: string, name: string, path: (part?: string) => string, bootstrap?: TenantBootstrap | null) {
   const modules = new Set(bootstrap?.modules ?? []);
-  const nav = [{ label: "Catalogue", href: path() }];
+  // #183B: no "Catalogue" link while public lending is off (fails open before the bootstrap loads).
+  const nav: { label: string; href: string }[] = !bootstrap || publicFamilies(bootstrap).includes("inventory") ? [{ label: "Catalogue", href: path() }] : [];
   if (modules.has("events")) nav.push({ label: "Events", href: path("events") });
   if (modules.has("machines")) nav.push({ label: "Machines", href: path("machines") });
   if (modules.has("bookings")) nav.push({ label: "Book a space", href: path("bookings") });

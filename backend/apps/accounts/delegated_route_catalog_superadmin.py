@@ -29,7 +29,7 @@ admin-platform-subdomain-requests admin-platform-subdomain-request-approve admin
 admin-platform-chat-templates admin-platform-chat-template
 admin-platform-sms-settings admin-platform-sms-settings-test admin-platform-push-settings
 admin-platform-push-settings-test admin-platform-whatsapp-settings admin-platform-whatsapp-settings-test
-admin-platform-attestation-settings admin-platform-login-methods
+admin-platform-attestation-settings admin-platform-login-methods admin-platform-native-apps admin-platform-native-app
 admin-platform-space-keys admin-platform-space-key-rotate admin-platform-space-archive-key
 admin-platform-space-capability-purge
 admin-platform-selfhost-moves admin-platform-selfhost-move-approve admin-platform-selfhost-move-reject

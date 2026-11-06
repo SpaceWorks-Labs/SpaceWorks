@@ -7,6 +7,7 @@ import { PlatformStripeConnectPanel } from "./PlatformStripeConnectPanel";
 import { AccountsSection } from "./platformParity/AccountsSection";
 import { ChatTemplatesSection } from "./platformParity/ChatTemplatesSection";
 import { IpAccessSection } from "./platformParity/IpAccessSection";
+import { MobileAppsSection } from "./platformParity/MobileAppsSection";
 import { LOGIN_METHODS } from "./platformParity/providerSpecs";
 import { Provider, ProvidersSection } from "./platformParity/ProvidersSection";
 import { RequestsSection } from "./platformParity/RequestsSection";
@@ -24,6 +25,7 @@ export function PlatformSettingsPanel({ platformHosting, unavailableApps = [] }:
       <section aria-label="Sign-in methods" className="grid gap-3 py-4"><h3 className="title-panel">Sign-in methods</h3><Provider spec={LOGIN_METHODS} /></section></> },
     ...(platformHosting ? [{ key: "stripe", label: "Stripe Connect", rows: <PlatformStripeConnectPanel embedded /> }] : []),
     { key: "providers", label: "Messaging & apps", rows: <ProvidersSection /> },
+    { key: "mobile-apps", label: "Mobile apps", rows: <MobileAppsSection /> },
     { key: "requests", label: "Requests", rows: <RequestsSection /> },
     { key: "accounts", label: "Accounts", rows: <AccountsSection /> },
     { key: "ip-access", label: "IP access", rows: <IpAccessSection /> },

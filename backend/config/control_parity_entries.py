@@ -64,17 +64,19 @@ ENTRIES = (
     ("makerspaces.makerspacewaiver", web(f"{S} → Settings → Waiver", "admin-makerspace-waiver")),
     ("makerspaces.pendingimportedmembership", web(f"{S} → Members → Imported", "admin-member-imported")),
     ("makerspaces.importeduserreconciliation", web("Platform → space moves → identity decisions", "tenant-migration-import-decisions")),
-    ("makerspaces.memberprofile", host(f"Members edit their own profiles; correcting one by hand is raw record repair: {SERVER}")),
-    ("makerspaces.memberproject", host(f"Members edit their own projects; correcting one by hand is raw record repair: {SERVER}")),
+    # /control/ itself only reads these (change permission is GET-only): a member's own words are theirs.
+    ("makerspaces.memberprofile", host(f"Read-only even in /control/: members edit their own profiles; anything else is raw record repair: {SERVER}")),
+    ("makerspaces.memberproject", host(f"Read-only even in /control/: members edit their own projects; anything else is raw record repair: {SERVER}")),
     ("presence.presencesession", web(f"{S} → Members → In the space → End", "admin-presence-end")),
     # Security
     ("accounts.ipaccessrule", web(f"{PS} → IP access", "admin-platform-ip-rules", "admin-platform-ip-rule")),
     ("accounts.ipautoblock.unblock_selected", web(f"{PS} → IP access → Lift now", "admin-platform-ip-block-unblock")),
     ("accounts.oidcprovider", web(f"{PS} → Single sign-on", "admin-platform-oidc-providers", "admin-platform-oidc-provider")),
-    ("accounts.nativeappregistration", host(f"Mobile app identities are set once with the server's attestation setup: {SERVER}")),
+    ("accounts.nativeappregistration", web(f"{PS} → Mobile apps", "admin-platform-native-apps", "admin-platform-native-app")),
     ("accounts.platformloginmethods", web(f"{PS} → Sign-in providers → Sign-in methods", "admin-platform-login-methods")),
     ("accounts.platformsocialauthsettings", web(f"{PS} → Sign-in providers", "admin-platform-social-auth-settings")),
     ("view:accounts_nativeappregistration_mobile_readiness", web(f"{PS} → Deployment (mobile readiness)", "admin-platform-mobile-readiness")),
+    # Kept host-only [#165 auto]: lockout counters are axes' own plumbing; its recovery commands are the reviewed path.
     ("axes.accessattempt", host("Recovery command: manage.py axes_reset_username <name> (or the lockout lifts by itself)")),
     ("axes.accessattempt.cleanup_expired_attempts", host("Recovery command: manage.py axes_reset (expired lockouts also clear by themselves)")),
     ("axes.accessfailurelog", RAW_REPAIR),

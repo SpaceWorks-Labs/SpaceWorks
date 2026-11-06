@@ -27,6 +27,7 @@ from apps.integrations.views_platform_credentials import (
     PlatformAttestationSettingsView, PlatformLoginMethodsView, PlatformPushSettingsView, PlatformPushTestView,
     PlatformSmsSettingsView, PlatformSmsTestView, PlatformWhatsAppSettingsView, PlatformWhatsAppTestView,
 )
+from apps.accounts.views_platform_native_apps import NativeAppDetailView, NativeAppListCreateView
 from apps.encryption.views_space_keys import SpaceArchiveKeyView, SpaceKeyRotateView, SpaceKeysView
 from apps.makerspaces.views_capability_purge import CapabilityPurgeView
 from apps.backup.views_drills import RestoreDrillListView, RestoreDrillSettingsView
@@ -92,6 +93,8 @@ urlpatterns = [
     path("platform/attestation-settings", PlatformAttestationSettingsView.as_view(),
          name="admin-platform-attestation-settings"),
     path("platform/login-methods", PlatformLoginMethodsView.as_view(), name="admin-platform-login-methods"),
+    path("platform/native-apps", NativeAppListCreateView.as_view(), name="admin-platform-native-apps"),
+    path("platform/native-apps/<int:pk>", NativeAppDetailView.as_view(), name="admin-platform-native-app"),
     path("platform/spaces/<int:makerspace_id>/keys", SpaceKeysView.as_view(), name="admin-platform-space-keys"),
     path("platform/spaces/<int:makerspace_id>/keys/rotate", SpaceKeyRotateView.as_view(),
          name="admin-platform-space-key-rotate"),

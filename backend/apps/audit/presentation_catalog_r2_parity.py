@@ -9,5 +9,6 @@ ENTRIES = (
     P("platform.whatsapp_settings_updated", "Platform WhatsApp settings changed", ("via", "created", "changed_fields")),
     P("platform.attestation_settings_updated", "App attestation settings changed", ("via", "created", "changed_fields")),
     P("platform.login_methods_updated", "Sign-in methods changed", ("via", "created", "changed_fields")),
+    P("native_app.registration_updated", "Mobile app identity saved", ("via", "created", "changed_fields")),
     P("backup.archive_key_job_queued", "Archive re-encryption or purge queued", ("via", "job")),
 )

@@ -68,6 +68,7 @@ MORE_ENTRIES = (
     ("keys:reencrypt", web(f"{SPACES} → Manage → Keys → Archives on a retired key", "admin-platform-space-archive-key")),
     ("keys:purge", web(f"{SPACES} → Manage → Keys → Archives on a retired key (one-space archives)",
                        "admin-platform-space-archive-key")),
+    # Kept host-only [#165 auto]: the platform-wide re-encryption follows a platform/server key rotation run on the server.
     ("keys:reencrypt_all", KEY_ROTATION),
     ("keys:reencrypt_stop", KEY_ROTATION),
     ("keys:settings", web(f"{PS} → Restore drills → Settings", "admin-platform-restore-drill-settings")),
@@ -98,7 +99,7 @@ MORE_ENTRIES = (
     ("integrations.notificationdestination", web(f"{S} → Channels", "admin-notification-destinations",
                                                  "admin-notification-destination-detail")),
     ("integrations.notificationrecipient", web(f"{S} → Channels → Recipients", "admin-notification-recipients")),
-    ("integrations.dailyotpsmscounter", RAW_REPAIR),
+    ("integrations.dailyotpsmscounter", RAW_REPAIR),  # [#165 auto] a quota counter: plumbing, no workflow owns it
     ("notifications.notification", web(f"{S} → Inbox", "notifications:inbox-list", "notifications:inbox-archive")),
     ("apiclients.apiclient", web(f"{S} → API clients", "admin-api-clients", "admin-api-client")),
     ("apiclients.apikeyrequest", web(f"{PS} → Requests → API keys", "admin-platform-api-key-requests")),

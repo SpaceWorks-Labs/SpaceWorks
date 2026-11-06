@@ -8,6 +8,7 @@ import { machineStatusLabel } from "./machineStatusLabel";
 import type { CardDrag } from "./boardDrag";
 import type { BoardAction, StaffJob } from "./machineJobsApi";
 import { ServiceEtaLine } from "./ServiceEtaLine";
+import { useStaffChargesOn } from "../../useStaffChargesOn";
 
 export type CardHandlers = {
   onDialog: (job: StaffJob, action: DialogAction) => void;
@@ -35,7 +36,10 @@ export function JobBoardCard({ job, overdue, noShow, pending, move, select, drag
     job.own_material ? "Own material" : ""].filter(Boolean).join(" · ");
   const action = primaryAction(job, paid);
   const files = job.files?.length ? [{ label: `Files (${job.files.length})`, onClick: () => onFiles(job) }] : [];
-  const overflow = [...files, ...overflowActions(job, overdue, { onDialog, onDirect, onUncollected, onFiles })];
+  // #184 G3: with machine charges off there is no quote to send (the server refuses one).
+  const chargesOn = useStaffChargesOn("machines");
+  const overflow = [...files, ...overflowActions(job, overdue, { onDialog, onDirect, onUncollected, onFiles })
+    .filter(item => chargesOn || !("label" in item && /quote/i.test(item.label)))];
   const { dragging = false, over = false, ...dragHandlers } = drag ?? ({} as Partial<CardDrag>);
   const frame = over ? "border-accent outline-2 outline-dashed outline-focus" : "border-line";
   return <li className={`grid gap-2 rounded-2xl border bg-panel p-3 ${frame}${dragging ? " opacity-60" : ""}${drag ? " cursor-grab" : ""}`}

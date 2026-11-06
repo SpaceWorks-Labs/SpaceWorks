@@ -153,3 +153,6 @@ def register_event_sources():
     # Release 2 L21b: a recorded prize payout tells its winner.
     from .judging.payout_notices import register as register_payout_notices
     register_payout_notices()
+    # r2-idcards-best C4: a signatory is asked to approve a certificate design that prints them.
+    from .certificates.signatory_notifications import SOURCE as SIGNATURE_SOURCE, eligible as signature_eligible
+    register_source(SIGNATURE_SOURCE, NotificationSource(signature_eligible))

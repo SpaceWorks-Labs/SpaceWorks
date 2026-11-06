@@ -7,6 +7,8 @@ class EventCertificatePublicationPolicy(models.Model):
     enabled = models.BooleanField(default=False)
     version = models.PositiveIntegerField(default=0)
     changed_at = models.DateTimeField(auto_now=True)
+    # C4: when on, every signatory a design prints approves it before its certificates render.
+    signatory_approval_required = models.BooleanField(default=False)
 
 
 class CertificateIssueBatch(models.Model):

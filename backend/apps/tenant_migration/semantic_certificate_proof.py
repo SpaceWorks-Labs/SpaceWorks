@@ -41,6 +41,9 @@ def remap_contribution_proof(layout, map_id):
         proof["ballots"] = pairs("JudgeRankingBallot", proof.get("ballots"))
         if "comparisons" in proof:
             proof["comparisons"] = pairs("JudgePairwiseComparison", proof["comparisons"])
+    elif proof.get("role") == "co_organizer":
+        if set(proof) != {"version", "role_assignment_id", "role"}:
+            raise ValueError("Invalid organiser proof.")
     else:
         raise ValueError("Unknown contribution proof role.")
     return value

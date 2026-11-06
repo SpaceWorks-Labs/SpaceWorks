@@ -26,13 +26,15 @@ class CardDesignSerializer(serializers.ModelSerializer):
     can_approve = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     target_label = serializers.SerializerMethodField()
+    answer_fields = serializers.SerializerMethodField(
+        help_text="Answers this design may place as {{field:<key>}}: a programme's printed questions.")
 
     class Meta:
         model = CardDesign
         fields = ("id", "domain", "name", "plan_id", "title_id", "programme_id", "organization_id", "event_id",
                   "ticket_type_id", "target_label", "status", "document", "revision", "published_revision",
                   "published_at", "has_unpublished_changes", "pending_approval", "last_review", "needs_approval",
-                  "can_approve", "can_edit",
+                  "can_approve", "can_edit", "answer_fields",
                   "updated_at")
         read_only_fields = fields
 
@@ -65,6 +67,14 @@ class CardDesignSerializer(serializers.ModelSerializer):
         actor = self._actor()
         return bool(actor and actor.is_authenticated and can_edit(actor, obj))
 
+    def get_answer_fields(self, obj) -> list[dict]:
+        """Only questions the programme prints (front or back); hidden answers never reach a card."""
+        if obj.domain != "id_programme" or not obj.programme_id:
+            return []
+        return [{"key": f"field:{row['key']}", "label": str(row.get("label") or row["key"])[:80]}
+                for row in obj.programme.form_schema or ()
+                if isinstance(row, dict) and row.get("key") and row.get("placement") in ("front", "back")]
+
     def get_target_label(self, obj) -> str:
         if obj.title_id:
             return f"Title: {obj.title.name}"
@@ -87,6 +97,7 @@ class CardDesignCreateSerializer(serializers.Serializer):
     title_id = serializers.IntegerField(required=False, allow_null=True)
     template = serializers.ChoiceField(choices=("classic", "bold", "minimal", "community", "student", "event_pass"),
                                        required=False)
+    theme = serializers.ChoiceField(choices=("light", "dark"), default="light")
 
 
 class CardDesignSaveSerializer(serializers.Serializer):
@@ -101,6 +112,7 @@ class CardDesignDecisionSerializer(serializers.Serializer):
 
 class CardDesignResetSerializer(serializers.Serializer):
     template = serializers.ChoiceField(choices=("classic", "bold", "minimal", "community", "student", "event_pass"))
+    theme = serializers.ChoiceField(choices=("light", "dark"), default="light")
 
 
 class CardDesignImportSerializer(serializers.Serializer):
@@ -117,11 +129,14 @@ class CardPreviewSerializer(serializers.Serializer):
     side = serializers.ChoiceField(choices=("front", "back"), default="front")
     format = serializers.ChoiceField(choices=("png", "pdf"), default="png")
     long_names = serializers.BooleanField(default=False)
+    holder_id = serializers.IntegerField(required=False, min_value=1,
+                                         help_text="Preview as this real holder (see the design's holders list).")
 
 
 class CardTemplateSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()
+    theme = serializers.ChoiceField(choices=("light", "dark"))
     document = serializers.JSONField()
 
 
@@ -164,12 +179,19 @@ class CardJobSerializer(serializers.ModelSerializer):
         return (obj.params or {}).get("save_url", "") if obj.kind == "wallet_issue" else ""
 
 
+EVENT_CARD_ROLES = ("attendee", "speaker", "mentor", "judge", "volunteer", "crew")
+
+
 class CardJobCreateSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(choices=("bulk_sheet", "bulk_per_person", "zip", "email"))
     card_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False, max_length=1000)
     status = serializers.ChoiceField(choices=("active", "all"), default="active")
     plan_id = serializers.IntegerField(required=False)
     expiring_within_days = serializers.IntegerField(required=False, min_value=1, max_value=90)
+    roles = serializers.ListField(child=serializers.ChoiceField(choices=EVENT_CARD_ROLES), required=False,
+                                  max_length=6, help_text="Event cards only: print these roles.")
+    checked_in = serializers.BooleanField(required=False, allow_null=True, default=None,
+                                          help_text="Event cards only: true = checked in, false = not yet.")
     paper = serializers.ChoiceField(choices=("a4", "letter"), default="a4")
     order = serializers.ChoiceField(choices=("duplex", "fronts_then_backs"), default="duplex")
     crop_marks = serializers.BooleanField(default=True)

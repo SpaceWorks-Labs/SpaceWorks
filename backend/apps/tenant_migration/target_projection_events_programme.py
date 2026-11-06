@@ -31,6 +31,7 @@ RESET_VALUES = {
     ('events.EventMemberPresentation', 'selected_membership'): None,
     ('events.EventCertificatePublicationPolicy', 'enabled'): False,
     ('events.EventAttendanceCertificate', 'public_verification_enabled'): False,
+    ('events.EventAttendanceCertificate', 'holder_name_public'): False,
     ('events.EventRegistration', 'credential_mode'): 'inert',
     ('events.ResultPublicationState', 'current_announcement'): None,
     ('events.GalleryPublication', 'active'): False,

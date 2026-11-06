@@ -7,7 +7,7 @@ class CertificateLayerSerializer(PrintInputSerializer):
     id = serializers.UUIDField()
     order = serializers.IntegerField(min_value=0, max_value=19)
     type = serializers.ChoiceField(choices=("text", "image", "logo", "photo", "certificate_id",
-                                             "certificate_qr", "event_credential_qr"))
+                                             "certificate_qr", "event_credential_qr", "signature"))
     x_mm = serializers.FloatField(min_value=0)
     y_mm = serializers.FloatField(min_value=0)
     width_mm = serializers.FloatField(min_value=0.1)
@@ -28,6 +28,12 @@ class CertificateLayerSerializer(PrintInputSerializer):
     resource_slot = serializers.ChoiceField(choices=("logo", "selected_member_photo", "certificate_verification_qr",
                                                        "event_credential_qr"), required=False)
     colour_token = serializers.ChoiceField(choices=tuple(COLOURS), required=False)
+    colour = serializers.RegexField(r"^#[0-9A-Fa-f]{6}$", required=False,
+                                    help_text="Free #RRGGBB text colour; overrides colour_token when set.")
+    signature_slot = serializers.IntegerField(min_value=1, max_value=3, required=False,
+                                              help_text="Signature layers: which signatory (1-3) this prints.")
+    locked = serializers.BooleanField(required=False, help_text="Editor lock; the layer still prints.")
+    hidden = serializers.BooleanField(required=False, help_text="Hidden layers are kept in the design but never print.")
 
     def to_internal_value(self, data):
         result = super().to_internal_value(data)

@@ -5251,6 +5251,36 @@ check-in and payment routes never show easter eggs.
   data and object capture. Portable import remaps artwork keys in rows AND issuance
   JSON through the object manifest, clears source bucket VersionIds and preserves
   checksums. Deployment backups preserve the complete design/snapshot metadata.
+- **Certificates beyond yuyu (r2-idcards-best, #199).** Issuance freezes the kind, award,
+  role and place labels into `layout_snapshot["merge"]` (`certificates/merge.py`); rows issued
+  before that keep printing `crewRole` as "" and the PDF title "Attendance certificate", so a
+  retried render reproduces the stored bytes (`store_immutable_pdf` refuses different bytes).
+  `{{kind}}`/`{{award}}`/`{{role}}`/`{{place}}` are certificate-only tags; badges refuse them.
+- A template revision's `certificate_kind` ("" = default) is that kind's own design;
+  `preparation.selected_template(event, kind)` picks it or falls back to the default, and
+  `IssuancePreparation.variants` revalidates every prepared kind inside the event lock.
+  Callers preparing issuance must pass each subject's `kind`.
+- `organiser_thanks` goes only to an approved/completed, non-imported `co_organizer`
+  role assignment; its proof is the role itself and goes stale when the role does.
+- Signatories (`certificates/signatory_models.py`, at most one per slot 1-3) are frozen into
+  `layout_snapshot["signatures"]` at issuance (name, title, version, checksum-pinned artwork).
+  A design may print only an existing slot, and a slot printed by a current design cannot be
+  removed. When the event's policy requires approval (default off), rendering (never issuance,
+  never an active download) refuses until every printed signatory approved that exact revision
+  with the frozen signatory version; approvals are append-only and audited, and the last one
+  dispatches the waiting renders. A signatory must be an active member of the space.
+- Signature images reuse `EventCertificateArtwork` (purpose `signature`: PNG/JPEG/WebP, at most
+  2 MB, re-encoded to PNG, staging then one promotion), so quota, backup and purge follow artwork.
+- Public verification shows issuer, event, date, kind, award, status with a plain note, the
+  serial and the issued PDF's SHA-256; the holder's name only for a VALID certificate whose `holder_name_public` (set
+  by the holder alone, audited, reset to off on tenant import). The page compares a dropped
+  PDF in the browser; the hash is never printed inside the PDF it describes. Verify and
+  share-image responses send `X-Robots-Tag: noindex` and `Referrer-Policy: no-referrer`, keep
+  the 30/min throttle and one uniform 404. The PNG is the stored PDF rasterised by pdfium
+  (`card_designs/raster.py`); the share image has no QR code. Downloads are audited.
+- Bulk planning (`certificates/issue_plan.py`) writes nothing: it runs `require_subject` for
+  every candidate inside the event lock and reports skip reasons; staff confirm through the
+  existing batch command.
 
 ### Event websites and shared public serving (Lane C)
 
@@ -8201,6 +8231,22 @@ reconciliation may release it. Full never consults free accounting caps or free 
   designer loads the bytes through the authenticated design route. Gilroy, Unbounded and Noto are
   bundled.
 - **No fee on any ID card (C-20).** No card route raises a charge.
+- **Barcodes follow the two-codes rule (r2-idcards-best).** A `barcode` layer is Code128 of either the
+  printed number or the DESK code (the same staff-only payload as the desk QR, for USB scanners at the
+  desk). It never encodes the public check token, needs ≥ 30 mm (number) / ≥ 75 mm (desk) × 6 mm, full
+  opacity and right-angle rotation, and prints nothing when the card has no such code.
+- **Version history is append-only; restore makes a new draft.** `CardDesignRevision` rows are never
+  rewritten; `history.restore` saves the old document as a new revision through the normal
+  compare-and-swap save (audited `card_design.restored`) and never publishes.
+- **Previews with real people are bounded and audited.** "Preview as" offers only live cards the design
+  itself prints (`holder_samples`), withholds the opt-in extras and needs a PII window for a superadmin
+  (`card_design.previewed_as_holder`). The sheet preview renders at most one sheet in the request
+  (throttle `card_render`), stores nothing and audits counts only (`card_job.previewed`); every real
+  bulk output is still a `CardJob`.
+- **The calibration sheet carries no person's data** (fixed test string in both codes).
+- **Templates ship light and dark and are two-sided.** Dark recolours only text sitting on the card
+  background (contrast re-checked on save); names wrap to two lines before shrinking, values shrink to
+  60 % on one line and then end with an ellipsis, so one long name never fails a bulk job.
 - **Approval levels are written only by the host space's settings authority** (gap lane, #136):
   `admin-card-approval-levels` sets the space and organisation levels for both groups; programme and
   event levels live on the programme and the event. `null` clears a level so it inherits again. An

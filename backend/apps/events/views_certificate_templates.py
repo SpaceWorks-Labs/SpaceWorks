@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -19,6 +19,7 @@ from apps.events.serializers_certificate_templates import (
     CertificateTemplateWriteSerializer, CertificateTemplateRevisionSerializer,
     CertificateTemplateCommandSerializer, CertificateTemplateCommandResultSerializer,
     CertificateArtworkPresignSerializer, CertificateArtworkUploadSerializer, CertificateArtworkSerializer,
+    CertificatePreviewSerializer, KIND_CHOICES,
 )
 from apps.events.serializers_staff_tools import StrictSerializer
 from apps.events.throttles import CertificateArtworkThrottle, CredentialRenderThrottle
@@ -44,16 +45,27 @@ class EventCertificateTemplateView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], responses={200: CertificateTemplateRevisionSerializer, **ERRORS},
+                   parameters=[OpenApiParameter("kind", str, enum=list(KIND_CHOICES[1:]), required=False,
+                                                description="Read this certificate kind's design; it falls back to the event default.")],
                    description="Current immutable revision or default layout. Requires live edit_details and events.certificate_designer.")
     def get(self, request, pk):
+        from rest_framework.exceptions import ValidationError
         event = _event(request, pk)
-        revision = event.certificate_template_revisions.first()
+        kind = request.query_params.get("kind", "")
+        if kind not in KIND_CHOICES:
+            raise ValidationError({"kind": "Choose a certificate kind."})
+        revisions = event.certificate_template_revisions
+        own = revisions.filter(certificate_kind=kind).first() if kind else None
+        revision = own or revisions.filter(certificate_kind="").first()
         data = (CertificateTemplateRevisionSerializer(revision).data if revision else
                 {"id": None, "parameters": DEFAULT_CERTIFICATE_TEMPLATE,
                  "artwork_id": None, "created_at": None})
         data["parameters"] = read_parameters(revision.parameters if revision else {},
                                               has_artwork=bool(revision and revision.artwork_id))
         data["event_version"] = event.version
+        data["certificate_kind"] = kind
+        data["uses_default"] = bool(kind) and own is None
+        data["own_designs"] = sorted(set(revisions.exclude(certificate_kind="").values_list("certificate_kind", flat=True)))
         return _private(Response(data))
 
     @extend_schema(tags=["Admin events"], request=CertificateTemplateWriteSerializer,
@@ -80,12 +92,12 @@ class EventCertificatePreviewView(APIView):
     permission_classes = [IsActiveStaff]
     throttle_classes = [CredentialRenderThrottle]
 
-    @extend_schema(tags=["Admin events"], request=CertificateTemplateWriteSerializer,
+    @extend_schema(tags=["Admin events"], request=CertificatePreviewSerializer,
                    responses={(200, "application/pdf"): PDF, **ERRORS},
-                   description="Preview with fixed sample recipient; same geometry, artwork and overflow rules as issuance. No recipient information is accepted.")
+                   description="Preview with a sample recipient (the staff-typed sample name is never stored); same geometry, artwork and overflow rules as issuance. Kind labels and signatures use samples.")
     def post(self, request, pk):
         event = _event(request, pk)
-        serializer = CertificateTemplateWriteSerializer(data=request.data)
+        serializer = CertificatePreviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         context = preview_context(event, actor=request.user, **serializer.validated_data)
         return _private(HttpResponse(render_certificate_pdf(context), content_type="application/pdf"))
@@ -102,7 +114,8 @@ class EventCertificateArtworkPresignView(APIView):
         event = _event(request, pk)
         serializer = CertificateArtworkPresignSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        values = serializer.validated_data
+        values = dict(serializer.validated_data)
+        values.pop("purpose", None)
         row, url = reserve_artwork(event, actor=request.user, **values)
         return _private(Response({"id": row.pk, "upload_url": url,
                                   "headers": {"Content-Type": values["content_type"]}}, status=201))

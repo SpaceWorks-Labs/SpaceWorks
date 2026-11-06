@@ -184,10 +184,18 @@ def owner_fanout(events, event_name, intent):
 
 
 CERTIFICATE_COPY = {
-    "certificate_ready": ("Your attendance certificate is ready", "Your certificate for {title} is ready to download."),
-    "certificate_revoked": ("Your attendance certificate was withdrawn",
-                            "The certificate for {title} was withdrawn. Contact the organizers if this looks wrong."),
+    "certificate_ready": ("Your {noun} is ready", "Your {noun} for {title} is ready to download."),
+    "certificate_revoked": ("Your {noun} was withdrawn",
+                            "The {noun} for {title} was withdrawn. Contact the organizers if this looks wrong."),
 }
+
+
+def certificate_copy(certificate, event_name, title):
+    """Subject and text naming the real certificate kind (winner, mentor thank-you, …)."""
+    from apps.events.certificates.merge import kind_noun
+    subject, text = CERTIFICATE_COPY[event_name]
+    noun = kind_noun(getattr(certificate, "kind", "attendance"))
+    return subject.format(noun=noun), text.format(noun=noun, title=title)
 
 
 def certificate_envelope(certificate, event_name):
@@ -198,7 +206,7 @@ def certificate_envelope(certificate, event_name):
     space = registration.registered_via_makerspace or event.makerspace
     if not registration.member_id or not eligible_owner(space, registration.member_id):
         return None
-    subject, text = CERTIFICATE_COPY[event_name]
+    subject, text = certificate_copy(certificate, event_name, event.title)
     with transaction.atomic():
         return emit(
             makerspace=space, recipient=registration.member, feature="events", stream="events",
@@ -206,6 +214,6 @@ def certificate_envelope(certificate, event_name):
             dedup_key=f"ev:certificate:{certificate.pk}:{certificate.revision}:{event_name}",
             source_kind="events.certificate", source_id=str(certificate.pk), revision=str(certificate.revision),
             subject=certificate, context={"event_id": event.pk, "certificate_id": certificate.pk},
-            rendered={"subject": subject, "text": text.format(title=event.title), "html": "",
+            rendered={"subject": subject, "text": text, "html": "",
                       "link": local_link(space, "member")},
         )

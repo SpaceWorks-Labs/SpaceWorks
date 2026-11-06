@@ -1,11 +1,11 @@
 // The printed card with tilt, sheen and flip: the design drawn in the browser from its document
 // (CardFaces); the server PNG is the fallback when that cannot load. Tilt and sheen run only
 // with interface effects on and motion allowed; otherwise flip is an instant swap.
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 
 import { useDelight, useReducedMotion } from "../../../components/delight/DelightProvider";
 import { useCardImage, type MyCard } from "./api";
-import { CardFaceSvg, useCardFace, useCardFaceFonts } from "./CardFaces";
+import { CardFaceSvg, describeFace, faceAspect, useCardFace, useCardFaceFonts } from "./CardFaces";
 
 type OrientationRequest = { requestPermission?: () => Promise<"granted" | "denied"> };
 
@@ -23,6 +23,8 @@ export function HolographicCard({ card }: { card: MyCard }) {
   const front = useCardImage(card, "front", fallback);
   const back = useCardImage(card, "back", fallback && card.has_back);
   const name = `${card.title} for ${card.name}, ${flipped ? "back" : "front"}`;
+  const descriptionId = useId();
+  const description = drawn.data ? describeFace(drawn.data, flipped && card.has_back ? "back" : "front") : "";
 
   const schedule = (next: { x: number; y: number }) => {
     cancelAnimationFrame(frame.current);
@@ -56,9 +58,12 @@ export function HolographicCard({ card }: { card: MyCard }) {
     : <span className="text-sm text-muted">{label}</span>;
 
   return <div className="grid justify-items-center gap-3">
-    <button type="button" aria-label={name} onPointerMove={onPointerMove} onPointerLeave={() => schedule({ x: 0, y: 0 })}
+    {description ? <p id={descriptionId} className="sr-only">{description}</p> : null}
+    <button type="button" aria-label={name} aria-describedby={description ? descriptionId : undefined} onPointerMove={onPointerMove} onPointerLeave={() => schedule({ x: 0, y: 0 })}
       onClick={() => card.has_back && setFlipped((value) => !value)}
-      className="relative aspect-[85.6/53.98] w-full max-w-md rounded-[4%] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus">
+      style={{ aspectRatio: faceAspect(drawn.data) }}
+      className={`relative w-full rounded-[4%] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus ${
+        drawn.data && drawn.data.document.front.page_height_mm > drawn.data.document.front.page_width_mm ? "max-w-[16rem]" : "max-w-md"}`}>
       <div className="relative h-full w-full [transform-style:preserve-3d]" style={{ transform,
         transition: motion ? "transform 650ms cubic-bezier(0.32,0.72,0,1)" : undefined }}>
         <div className={face} aria-hidden={flipped} style={motion ? undefined : { visibility: flipped ? "hidden" : "visible" }}>

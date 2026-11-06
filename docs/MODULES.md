@@ -446,6 +446,20 @@ issued certificates freeze the selected design, so later changes never alter pen
 retried certificates. Turning the feature off removes editing and preview access while
 existing certificate snapshots remain readable through their ordinary authorized path.
 Artwork, revisions and certificates are removed by an Events purge in dependency order.
+With it on, an event may also keep a separate design per certificate kind (attendance,
+participant, finalist, winner, volunteer, mentor, judge, organiser), falling back to the
+default design; A4 and US Letter in either orientation or a custom size; lockable and
+hideable layers with snapping, on-canvas resize and rotate, alignment, zoom, free text
+colours with a contrast check, and `{{kind}}`, `{{award}}`, `{{role}}`, `{{place}}` merge
+tags. Up to three signatories can print a signature, name and title; an event may require
+each signatory to approve a design before its certificates are issued or emailed (off by
+default). Holders get a PNG, a share image and a LinkedIn "Add to profile" link, and choose
+whether the public verification page shows their name (off by default). Staff plan bulk
+issues by group (attendance, participants, winners and finalists, thank-yous, including
+organisers) with a recipient list, skip reasons and a sample render before confirming.
+Designs, kinds and signatories sit behind this feature; turning it off hides them (issuance
+falls back to the default layout) and keeps signatories and approvals. Issuing, the issued
+list, holder downloads, sharing and verification belong to Events itself and work without it.
 Legacy display badges use the shared positioned layout engine and remain free of contacts
 and bearer QR codes. The separate v2 desk-badge workflow permits only its typed opaque,
 event-bound check-in credential QR; it requires authenticated online resolution and
@@ -674,7 +688,10 @@ history and their owned cover images while preserving the core payment ledger.
 **Member cards (release 2 L3).** Member cards ride this module: a free card designer (space default,
 per-plan and per-title designs, approval by a Space Manager when switched on), cards issued when a
 membership starts, PNG/PDF downloads, bulk PDF/ZIP/email jobs (files kept 7 days), a desk scan that
-only identifies, and an optional public check page. There is no fee on any card. Turning the module
+only identifies, and an optional public check page. The designer has six templates in light and dark,
+live template previews with a real holder's details, version history with restore, alignment guides,
+grouping, Code128 barcodes, photo filters, preflight checks, a sheet preview before any print job and a
+printer calibration sheet. There is no fee on any card. Turning the module
 off hides them; a purge deletes cards, designs, card settings and their stored files.
 
 ### presence

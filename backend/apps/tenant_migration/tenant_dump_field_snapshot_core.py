@@ -210,7 +210,7 @@ FIRST_PARTY_FIELD_NAMES = {
     'events.EventFeedbackResponse': frozenset('answers_snapshot certificate_requested created_at id registration survey'.split()),
     'events.EventAttendanceCertificate': frozenset('content_type event_ends_at event_starts_at event_title id issued_at issuer_name layout_snapshot object_key recipient_name registration rendered_at response revision revocation_reason revoked_at revoked_by serial sha256 size_bytes status template_revision'.split()),
     'events.EventCertificateArtwork': frozenset('id event object_key size_bytes sha256 version_id promoted_at created_at'.split()),
-    'events.EventCertificateTemplateRevision': frozenset('id event artwork parameters created_at'.split()),
+    'events.EventCertificateTemplateRevision': frozenset('id event artwork parameters certificate_kind created_at'.split()),
     'bookings.BookableSpace': frozenset('approval_mode booking_lead_time_minutes capacity created_at created_by custom_form description id image_key is_active is_public kind location machine_type makerspace max_booking_advance_days max_booking_duration_minutes min_booking_duration_minutes name pass_template payment_amount public_token requester_notifications_enabled show_public_availability show_public_booker_names updated_at buffer_before_minutes buffer_after_minutes cancellation_cutoff_hours'.split()),
     'bookings.Booking': frozenset('created_at custom_answers email ends_at id member name note phone public_token space starts_at status'.split()),
     'maintenance.MaintenanceSchedule': frozenset('anchor created_at created_by description id interval_days is_active machine next_due updated_at'.split()),

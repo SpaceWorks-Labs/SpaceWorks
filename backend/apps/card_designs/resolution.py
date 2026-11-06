@@ -48,7 +48,7 @@ def resolve(makerspace_id, domain, *, plan_id=None, title_id=None, programme_id=
     return default_document(domain), None
 
 
-def get_or_create(makerspace, domain, *, actor=None, template=None, **target):
+def get_or_create(makerspace, domain, *, actor=None, template=None, theme="light", **target):
     """The design row for exactly this target, seeded from a template on first use."""
     if set(target) - set(TARGETS):
         raise ValueError("Unknown design target")
@@ -61,7 +61,7 @@ def get_or_create(makerspace, domain, *, actor=None, template=None, **target):
     if existing is not None:
         return existing, False
     from .default_templates import build
-    document = build(template, domain) if template else default_document(domain)
+    document = build(template, domain, theme) if template else default_document(domain)
     try:
         with transaction.atomic():
             row = CardDesign.objects.create(makerspace=makerspace, domain=domain, document=document,

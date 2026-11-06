@@ -173,13 +173,16 @@ FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _HM_EX
 from .catalog_r2_peoples_choice import EXTRA_FIELDS as _PC_EXTRA, FIELD_NAMES as _PC_FIELD_NAMES  # noqa: E402
 FIELD_NAMES.update(_PC_FIELD_NAMES)
 FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _PC_EXTRA.items()})
+from .catalog_r2_certificates import EXTRA_FIELDS as _CERT_EXTRA, FIELD_NAMES as _CERT_FIELD_NAMES  # noqa: E402
+FIELD_NAMES.update(_CERT_FIELD_NAMES)
+FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _CERT_EXTRA.items()})
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items() if label not in OMITTED_MODELS}
 
 EXTRA_FIELDS = {
     "events.EventTicketType": "purpose contributor_capacity_policy",
     "events.Event": "version event_date_revision accent_preset",
     "events.EventRegistration": "version answer_locked_at date_review_required credential_mode",
-    "events.EventAttendanceCertificate": "event recipient_member role_assignment kind award result_revision public_verification_enabled event_timezone_name render_token render_started_at render_attempts",
+    "events.EventAttendanceCertificate": "event recipient_member role_assignment kind award result_revision public_verification_enabled event_timezone_name render_token render_started_at render_attempts holder_name_public",
     "events.EventBroadcast": "version render_schema_version design available_at confirmed_preview",
     "events.EventCertificateArtwork": "resource_id",
 }

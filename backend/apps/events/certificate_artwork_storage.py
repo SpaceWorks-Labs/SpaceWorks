@@ -61,8 +61,8 @@ def _png(content):
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
-            if image_mime_from_bytes(content) not in ("image/png", "image/jpeg"):
-                raise ValidationError({"artwork": "Upload a PNG or JPEG image."})
+            if image_mime_from_bytes(content) not in ("image/png", "image/jpeg", "image/webp"):
+                raise ValidationError({"artwork": "Upload a PNG, JPEG or WebP image."})
             with Image.open(BytesIO(content)) as image:
                 if image.width * image.height > MAX_PIXELS or getattr(image, "n_frames", 1) != 1:
                     raise ValidationError({"artwork": "Use one image with at most 16 million pixels."})

@@ -4,6 +4,7 @@ import { ListLayout } from "../../../components/layouts";
 import { ErrorBlock, SegmentedControl } from "../../../components/ui";
 import { featureEnabled } from "../../../lib/features";
 import { CardJobList, JOB_LABELS, useStartCardJob, type CardJobKind } from "../../cards/cardJobs";
+import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { ProgrammesTab } from "../../organizations/idProgrammes/ProgrammesTab";
 import { opsQueryState, useOpsTabs } from "../opsPresentation";
 import { useMemberCards, useCardMemberships, usePrintCard, usePrintSheet } from "./memberCards/api";
@@ -27,6 +28,7 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
   const [selected, setSelected] = useState<number[]>([]);
   const memberships = useCardMemberships(makerspaceId);
   const [issueNames, setIssueNames] = useState<Record<number, string>>({});
+  const [previewing, setPreviewing] = useState(false);
   const cards = useMemberCards(makerspaceId, status);
   const activeCards = useMemberCards(makerspaceId, "active");
   const settings = useMemberCardSettings(makerspaceId);
@@ -49,8 +51,10 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
     { key: "settings", label: "Settings" }, ...(programmesOn ? [{ key: "programmes", label: "ID programmes" }] : []),
   ], "cards");
   // Bulk outputs run as server jobs; a selection narrows them, otherwise every active card.
-  const bulk = (kind: CardJobKind) => ({ label: JOB_LABELS[kind], onClick: () => startJob.mutate({
-    kind, status: "active", ...(selected.length ? { card_ids: selected } : {}) }) });
+  const scope = { status: "active" as const, ...(selected.length ? { card_ids: selected } : {}) };
+  // A print sheet is previewed first (paper, order, the first sheet); the dialog queues the job.
+  const bulk = (kind: CardJobKind) => ({ label: kind === "bulk_sheet" ? `${JOB_LABELS[kind]}…` : JOB_LABELS[kind],
+    onClick: () => (kind === "bulk_sheet" ? setPreviewing(true) : startJob.mutate({ kind, ...scope })) });
 
   if (tabs.active === "design" || tabs.active === "settings" || tabs.active === "programmes") {
     return <div onClickCapture={tabs.onClickCapture}>
@@ -83,6 +87,8 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
           onPrint={(card) => printCard.mutate(card)} onReissue={row.onReissue} onRevoke={row.onRevoke} rowActions={row.rowActions} />
         </> } : { kind: "rows", rows: tabs.active === "scan" ? <ScanCardBox makerspaceId={makerspaceId} />
           : <IssueRoster makerspaceId={makerspaceId} cardedMembershipIds={cardedMembershipIds} memberships={memberships} names={issueNames} setNames={setIssueNames} /> }}
-      detail={<>{printError ? <ErrorBlock error={printError} /> : null}{row.dialogs}</>} />
+      detail={<>{printError ? <ErrorBlock error={printError} /> : null}{row.dialogs}
+        <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={scope} jobsPath={jobsPath}
+          previewPath={`${jobsPath}/preview`} title={selected.length ? `Print sheet: ${selected.length} selected cards` : "Print sheet: all active cards"} /></>} />
   </div>;
 }

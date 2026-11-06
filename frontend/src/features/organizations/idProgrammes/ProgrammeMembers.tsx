@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { Badge, ErrorBlock, OverflowMenu } from "../../../components/ui";
 import { JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
+import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
 import { downloadProgrammeCard, programmeJobsPath, useAddProgrammeCard, useDecide, useProgrammeCards,
   type Programme, type ProgrammeCard, type ProgrammeCardStatus } from "./api";
@@ -23,6 +24,7 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [photoFor, setPhotoFor] = useState<ProgrammeCard | null>(null);
+  const [sheetFor, setSheetFor] = useState<number[] | null>(null);
   const client = useQueryClient();
   const cards = useProgrammeCards(programme.id, status, search.trim(), page);
   const decide = useDecide(programme.id);
@@ -45,6 +47,9 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
         placeholder="ID number or exact email" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} />
     </div>
     {manage ? <AddPerson programmeId={programme.id} /> : null}
+    {manage && !selected.length && programme.counts.approved ? <div>
+      <button type="button" className="desk-button min-h-11" onClick={() => setSheetFor([])}>Print sheet of all approved cards…</button>
+    </div> : null}
     {manage && selected.length ? <div className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-surface p-2 text-sm" role="region" aria-label="Selected cards">
       <span className="font-semibold text-ink">{selected.length} selected</span>
       {["approve", "reject", "revoke", "renew"].map((action) => <button key={action} type="button" className="desk-button min-h-11"
@@ -52,6 +57,7 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
         {action === "approve" ? "Approve" : action === "reject" ? "Reject…" : action === "revoke" ? "Revoke…" : "Renew"}</button>)}
       <button type="button" className="desk-button-ghost min-h-11" onClick={() => startJob.mutate({ kind: "email", card_ids: selected })}>Email</button>
       <button type="button" className="desk-button-ghost min-h-11" onClick={() => startJob.mutate({ kind: "zip", card_ids: selected })}>{JOB_LABELS.zip}</button>
+      <button type="button" className="desk-button-ghost min-h-11" onClick={() => setSheetFor(selected)}>Print sheet…</button>
       <button type="button" className="desk-button-ghost min-h-11" onClick={() => setSelected([])}>Clear</button>
     </div> : null}
     {pendingAction ? <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); run(pendingAction, selected, reason.trim()); }}>
@@ -79,6 +85,9 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
         </tbody>
       </table>
     </div>
+    <SheetPreviewDialog open={sheetFor !== null} onClose={() => setSheetFor(null)} jobsPath={programmeJobsPath(programme.id)}
+      previewPath={`${programmeJobsPath(programme.id)}/preview`} filter={sheetFor?.length ? { card_ids: sheetFor } : {}}
+      title={sheetFor?.length ? `Print sheet: ${sheetFor.length} selected cards` : "Print sheet: all approved cards"} />
     <StaffPhotoDialog holderName={photoFor?.name ?? null} photoPath={`/admin/id-programme-cards/${photoFor?.id}/photo`}
       onClose={() => setPhotoFor(null)} onSaved={() => { setPhotoFor(null); void client.invalidateQueries({ queryKey: ["id-programme-cards", programme.id] }); }} />
     {cards.data && cards.data.count > 24 ? <div className="flex gap-2">

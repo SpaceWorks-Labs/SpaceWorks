@@ -8,6 +8,12 @@ from apps.events.certificates.subjects import EligibleSubject, install_eligibili
 from apps.events.judging.provider_subjects import award_eligible
 
 
+# Role → thank-you certificate kind. Organiser certificates go to approved co-organisers (host
+# staff or collaborating organisations' people added to the event as co-organisers).
+THANKS_KINDS = {"volunteer": "volunteer_thanks", "mentor": "mentor_thanks", "judge": "judge_thanks",
+                "co_organizer": "organiser_thanks"}
+
+
 def role_eligible(*, event_id, assignment_id, kind):
     from django.db import connection
     from django.shortcuts import get_object_or_404
@@ -18,7 +24,7 @@ def role_eligible(*, event_id, assignment_id, kind):
         raise RuntimeError("Contribution eligibility requires the event transaction.")
     from apps.encryption.write_fence import assert_mapped_write_allowed
     assert_mapped_write_allowed(role.makerspace_id)
-    if kind != {"volunteer": "volunteer_thanks", "mentor": "mentor_thanks", "judge": "judge_thanks"}.get(role.role):
+    if kind != THANKS_KINDS.get(role.role):
         raise ProgrammeConflict("Certificate kind does not match the role.", code="certificate_ineligible")
     # An actor fence is not a recipient fence. Missing E scopes refuse here.
     assert_account_fence_held(role.member_id)
@@ -28,7 +34,10 @@ def role_eligible(*, event_id, assignment_id, kind):
     else:
         if role.state not in ("approved", "completed") or role.imported_inert:
             raise ProgrammeConflict("Completed contribution evidence is required.", code="certificate_ineligible")
-        if role.role == "mentor":
+        if role.role == "co_organizer":
+            # The approved co-organiser role on this event is the organising evidence.
+            worked = True
+        elif role.role == "mentor":
             from apps.events.mentoring.models_rounds import MentorRoundCheckin
             worked = MentorRoundCheckin.objects.filter(event_id=event_id, mentor=role,
                 round__practice_run_id=None, away=False).exists()

@@ -22,6 +22,7 @@ urlpatterns = [
     path("admin/", include("apps.events.certificates.urls_admin")),
     path("admin/", include("apps.events.certificates.urls_library")),
     path("public/", include("apps.events.certificates.urls_public")),
+    path("member/", include("apps.events.certificates.urls_member")),
     path("member/", include("apps.events.profile_photos.urls_member")),
     path("public/", include("apps.events.profile_photos.urls_public")),
     path("admin/", include("apps.events.programme.broadcast_urls")),

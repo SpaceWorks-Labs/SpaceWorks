@@ -163,12 +163,10 @@ class EventCardJobView(APIView):
         data = CardJobCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         values = data.validated_data
-        rows = EventIdCard.objects.filter(event=event, status="active")
-        if values.get("card_ids"):
-            rows = rows.filter(pk__in=values["card_ids"])
+        from .id_cards_preview import event_card_ids
         params = {"explicit": False} if values["kind"] == "email" else job_params(values)
         job, created = enqueue(request.user, event.makerspace, values["kind"], scope="event", scope_id=event.pk,
-                               targets=list(rows.values_list("pk", flat=True)), params=params,
+                               targets=event_card_ids(event, values), params=params,
                                revision=list(event.card_designs.values_list("published_revision", flat=True)))
         return Response(CardJobSerializer(job).data, status=201 if created else 200)
 

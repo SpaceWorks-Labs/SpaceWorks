@@ -31,12 +31,18 @@ class EventCertificateTemplateRevision(models.Model):
     artwork = models.ForeignKey(EventCertificateArtwork, on_delete=models.PROTECT,
                                 null=True, blank=True, related_name="template_revisions")
     parameters = models.JSONField(default=dict)
+    # "" is the event's default design; a certificate kind (winner, mentor_thanks, …) is that
+    # kind's own design. Issuance uses the kind's latest design, else the latest default.
+    certificate_kind = models.CharField(max_length=24, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ("-id",)
 
     def clean(self):
+        from .models_certificates import EventAttendanceCertificate
+        if self.certificate_kind and self.certificate_kind not in EventAttendanceCertificate.Kind.values:
+            raise ValidationError({"certificate_kind": "Choose a certificate kind or the default design."})
         if self.artwork_id and (self.artwork.event_id != self.event_id
                                 or self.artwork.promoted_at is None):
             raise ValidationError("Use promoted artwork belonging to this event.")

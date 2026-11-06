@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from django.db.models import Max
 from django.utils import timezone
 
@@ -33,11 +35,12 @@ def create_for_subject_locked(event, *, subject_kind, subject_id, kind="attendan
     if response is not None and (subject_kind != "registration" or response.registration_id != subject_id):
         raise ProgrammeConflict("Feedback does not belong to this registration.")
     revision = (previous.aggregate(value=Max("revision"))["value"] or 0) + 1
+    template_id, layout = prepared.variant(kind)
     publication = EventCertificatePublicationPolicy.objects.filter(event=event, enabled=True).exists()
     row = EventAttendanceCertificate(
         event=event, recipient_member_id=subject.member_id, kind=kind,
         revision=revision, response=response, award_id=award_id, result_revision_id=result_revision_id,
-        template_revision_id=prepared.template_id, layout_snapshot=dict(prepared.layout),
+        template_revision_id=template_id, layout_snapshot=deepcopy(layout),
         recipient_name=subject.recipient_name, event_title=event.title,
         event_starts_at=event.starts_at, event_ends_at=event.ends_at, issuer_name=event.makerspace.name,
         event_timezone_name=event.timezone_name,
@@ -46,6 +49,14 @@ def create_for_subject_locked(event, *, subject_kind, subject_id, kind="attendan
     if subject_kind == "role_assignment":
         from .contribution_proof import snapshot
         row.layout_snapshot["contribution_proof"] = snapshot(event_id=event.pk, assignment_id=subject_id)
+    from .signatories import capture
+    signatures = capture(event, layout)
+    if signatures:
+        row.layout_snapshot["signatures"] = signatures
+    from .merge import issuance_merge
+    row.layout_snapshot["merge"] = issuance_merge(
+        event_id=event.pk, kind=kind, member_id=subject.member_id, subject_kind=subject_kind,
+        subject_id=subject_id, award_id=award_id, result_revision_id=result_revision_id)
     # auto_now_add is populated only at save; preflight uses the same issuance date.
     row.issued_at = timezone.now()
     row.object_key = f"event-certificates/{event.makerspace_id}/{row.serial}.pdf"
@@ -98,7 +109,7 @@ def reissue_certificate(certificate, *, actor):
     event_authority.get_event(actor, certificate.event_id, None)
     subject_kind = "registration" if certificate.registration_id else "role_assignment"
     prepared = prepare_issuance(certificate.event_id, [{"subject_kind": subject_kind,
-        "subject_id": certificate.registration_id or certificate.role_assignment_id}])
+        "subject_id": certificate.registration_id or certificate.role_assignment_id, "kind": certificate.kind}])
     with event_command(certificate.event_id, actor=actor, account_ids=prepared.account_ids,
                        revalidate=prepared.revalidate) as (event, actor):
         row = EventAttendanceCertificate.objects.select_for_update().get(pk=certificate.pk, event=event)

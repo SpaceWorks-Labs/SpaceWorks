@@ -58,6 +58,8 @@ class CardFaceSerializer(serializers.Serializer):
     assets = serializers.DictField(child=serializers.CharField(allow_null=True))
     desk_qr = serializers.CharField(allow_null=True)
     verify_qr = serializers.CharField(allow_null=True)
+    barcodes = serializers.DictField(child=serializers.CharField(allow_null=True),
+                                     help_text="Code128 SVG data URIs by source: number, desk.")
 
 
 class PhotoDecisionResultSerializer(serializers.Serializer):

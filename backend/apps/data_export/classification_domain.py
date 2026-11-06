@@ -30,7 +30,7 @@ EXPORTED_MODEL_FIELDS = {
     "events.EventFeedbackResponse": "id survey registration answers_snapshot certificate_requested created_at",
     "events.EventAttendanceCertificate": "id response registration serial revision template_revision layout_snapshot recipient_name event_title event_starts_at event_ends_at issuer_name object_key content_type size_bytes sha256 status issued_at rendered_at revoked_at revoked_by revocation_reason",
     "events.EventCertificateArtwork": "id event object_key size_bytes sha256 version_id promoted_at created_at",
-    "events.EventCertificateTemplateRevision": "id event artwork parameters created_at",
+    "events.EventCertificateTemplateRevision": "id event artwork parameters certificate_kind created_at",
     "evidence.EvidencePhoto": "id makerspace evidence_type object_key content_type size_bytes uploaded_by consumption_state created_at",
     "evidence.EvidenceObjectRetentionState": "id evidence status claim_token claimed_at object_expired_at expired_size_bytes last_error updated_at",
     "evidence.EvidenceRetentionPolicy": "id makerspace object_retention_days abandoned_upload_cleanup_enabled abandoned_upload_retention_days updated_at",

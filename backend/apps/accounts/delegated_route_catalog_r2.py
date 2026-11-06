@@ -80,6 +80,12 @@ admin-card-design-submit admin-card-design-approve admin-card-design-reject admi
 admin-card-design-export admin-card-design-import admin-card-design-preview admin-card-design-assets
 admin-card-design-asset-finalize admin-card-design-asset admin-card-design-fonts admin-card-design-font-prepare
 admin-card-design-font-file admin-card-job admin-card-job-cancel admin-card-job-result""".split())
+# r2-idcards-best: version history and restore, the "Preview as" holder picker, the calibration
+# sheet (design routes, re-checked by card_designs.authority) and the three sheet previews.
+DELEGABLE_ROUTES |= frozenset("""admin-card-design-revisions admin-card-design-revision admin-card-design-restore
+admin-card-design-holders admin-card-design-calibration admin-id-programme-card-job-preview
+admin-event-card-job-preview""".split())
+MEMBERSHIP_ROUTES |= frozenset({"admin-member-card-job-preview"})
 MEMBERSHIP_ROUTES |= frozenset("""admin-member-card-settings admin-card-designs admin-member-card-jobs
 admin-member-card-download admin-member-card-email admin-member-card-photo-request admin-member-card-presence
 admin-card-approval-levels admin-member-card-photo""".split())

@@ -2,14 +2,14 @@ import { useRef, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Modal } from '../../../components/ui'
 import { staffRequest } from '../../../lib/api'
-import type { BulkIssue, CertificateEligibility, CertificateSubjectKindEnum } from '../../../generated/api'
+import type { BulkIssue, CertificateEligibility, CertificateKindEnum } from '../../../generated/api'
 import type { RoleApplication } from '../../events/contributions/types'
 import { sessionScope } from '../eventProgramme/sessionScope'
 
 export function IssueRoleCertificate({ eventId, role }: { eventId: number; role: RoleApplication }) {
   const [open, setOpen] = useState(false), [publish, setPublish] = useState(false)
   const operation = useRef(crypto.randomUUID())
-  const kind: CertificateSubjectKindEnum | undefined = role.role === 'volunteer' ? 'volunteer_thanks' : role.role === 'mentor' ? 'mentor_thanks' : role.role === 'judge' ? 'judge_thanks' : undefined
+  const kind: CertificateKindEnum | undefined = role.role === 'volunteer' ? 'volunteer_thanks' : role.role === 'mentor' ? 'mentor_thanks' : role.role === 'judge' ? 'judge_thanks' : undefined
   const eligibility = useQuery({ queryKey: ['certificate-eligibility', eventId, ...sessionScope()], enabled: open, retry: false, staleTime: 0, gcTime: 0,
     queryFn: () => staffRequest<CertificateEligibility>(`/admin/events/${eventId}/certificates/eligibility/`) })
   const issue = useMutation({ mutationFn: async () => {

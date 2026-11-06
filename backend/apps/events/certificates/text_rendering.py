@@ -22,7 +22,7 @@ def draw_text(canvas, text, layer, area_height_mm):
         if size <= 6 or not layer.get("shrink_to_fit", True):
             raise ValidationError({"layout": "Text does not fit at a legible size. Enlarge its box."})
         size = max(6, size - 0.5)
-    canvas.setFillColor(HexColor(COLOURS[layer.get("colour_token", "ink")]))
+    canvas.setFillColor(HexColor(layer.get("colour") or COLOURS[layer.get("colour_token", "ink")]))
     y = (area_height_mm - layer["y_mm"]) * mm - size
     for line in lines:
         line = visual(line)

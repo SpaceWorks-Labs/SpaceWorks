@@ -21,7 +21,7 @@ export function CertificatePublicationControls({ eventId }: { eventId: number })
     <legend className="text-sm font-semibold text-ink">Certificate publication policy</legend>
     <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={enabled} onChange={(event) => { setDirty(true); setEnabled(event.target.checked); }} />Allow event/date/status public verification for this event</label>
     <label className="grid gap-1 text-sm">Optional existing certificate IDs (comma-separated, up to 200)<input className="desk-input" value={ids} onChange={(event) => setIds(event.target.value)} /></label>
-    <p className="text-xs text-muted">Historical certificates stay private until selected here. Applying the checked policy opts selected issued or revoked certificates in. Withdrawing the event policy immediately hides all verification. Recipient names and PDFs stay private.</p>
+    <p className="text-xs text-muted">Historical certificates stay private until selected here. Applying the checked policy opts selected issued or revoked certificates in. Withdrawing the event policy immediately hides all verification. PDFs stay private, and a recipient's name shows only if they choose.</p>
     <button type="button" className="desk-button" disabled={!valid || apply.isPending} onClick={() => apply.mutate()}>Apply verification policy</button>
     {apply.isSuccess ? <p role="status" className="text-sm text-success-ink">Verification policy saved.</p> : null}
     {!valid ? <p role="alert" className="text-sm text-danger">Enter up to 200 unique numeric certificate IDs.</p> : null}

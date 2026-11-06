@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { StructuredApiError } from "../../lib/api";
 import type { CardDesign, CardDocument } from "./cardTypes";
 import { designKey, saveDesign } from "./designerApi";
+import { clearDeviceDraft, readDeviceDraft, writeDeviceDraft, type DeviceDraft } from "./deviceDraft";
 
 export type SaveStatus = "saved" | "pending" | "saving" | "error" | "conflict";
 export const SAVE_STATUS_LABELS: Record<SaveStatus, string> = {
@@ -41,14 +42,17 @@ export function useCardDesign(design: CardDesign, canEdit: boolean) {
       const saved = await saveDesign(design.id, latest.current, revision.current);
       revision.current = saved.revision;
       client.setQueryData(designKey(design.id), saved);
+      clearDeviceDraft(design.id);
       setError(null);
       setStatus((current) => (current === "pending" ? "pending" : "saved"));
     } catch (failure) {
       if (failure instanceof StructuredApiError && failure.status === 409) {
         setStatus("conflict");
       } else {
+        const kept = writeDeviceDraft(design.id, revision.current, latest.current);
         setStatus("error");
-        setError(failure instanceof Error ? failure.message : "The design couldn't be saved.");
+        setError(`${failure instanceof Error ? failure.message : "The design couldn't be saved."}${
+          kept ? " Your changes are kept on this device until it saves." : ""}`);
       }
     }
   }, [canEdit, client, design.id]);
@@ -124,6 +128,21 @@ export function useCardDesign(design: CardDesign, canEdit: boolean) {
     setError(null);
   }, []);
 
+  // Edits kept on this device after a failed save, offered back when the designer reopens.
+  const [deviceDraft, setDeviceDraft] = useState<DeviceDraft | null>(() => canEdit ? readDeviceDraft(design.id, design.revision) : null);
+  const restoreDeviceDraft = useCallback(() => {
+    if (!deviceDraft) return;
+    setUndo((stack) => [...stack.slice(-(HISTORY - 1)), latest.current]);
+    latest.current = deviceDraft.document;
+    setDocument(deviceDraft.document);
+    setDeviceDraft(null);
+    schedule();
+  }, [deviceDraft, schedule]);
+  const discardDeviceDraft = useCallback(() => { clearDeviceDraft(design.id); setDeviceDraft(null); }, [design.id]);
+
+  /** The revision the working copy is based on (for compare-and-swap actions such as a restore). */
+  const currentRevision = useCallback(() => revision.current, []);
+
   return { document, update, adopt, checkpoint, undo, redo, canUndo: undoStack.length > 0, canRedo: redoStack.length > 0,
-    status, error, retry: save, reload, flush: save };
+    status, error, retry: save, reload, flush: save, currentRevision, deviceDraft, restoreDeviceDraft, discardDeviceDraft };
 }

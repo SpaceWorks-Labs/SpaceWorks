@@ -8,14 +8,21 @@ from uuid import UUID, uuid5, NAMESPACE_URL
 from rest_framework.exceptions import ValidationError
 from apps.operations.printable_layout import number
 
-TAGS = frozenset(("name", "event", "eventDate", "organisation", "issueDate", "crewRole"))
+TAGS = frozenset(("name", "event", "eventDate", "organisation", "issueDate", "crewRole",
+                  "kind", "award", "role", "place"))
+# Kind/award/role/place are frozen at certificate issuance; badges have no such labels.
+BADGE_TAGS = TAGS - {"kind", "award", "role", "place"}
 COLOURS = {"ink": "#142C2A", "teal": "#006E63", "orange": "#FF7447", "citron": "#DFFF8F",
            "sky": "#B5CDFF", "yellow": "#FFD447", "cream": "#FFF4E8"}
 SLOTS = {"logo": "logo", "photo": "selected_member_photo", "certificate_qr": "certificate_verification_qr",
          "event_credential_qr": "event_credential_qr"}
-COMMON = {"id", "order", "type", "x_mm", "y_mm", "width_mm", "height_mm", "rotation", "opacity"}
+COMMON = {"id", "order", "type", "x_mm", "y_mm", "width_mm", "height_mm", "rotation", "opacity",
+          "locked", "hidden"}
 TEXT = {"text", "font_family", "font_weight", "font_size_pt", "align", "shrink_to_fit", "italic",
-        "uppercase", "tracking_pt", "line_height", "colour_token"}
+        "uppercase", "tracking_pt", "line_height", "colour_token", "colour"}
+# A signature prints a signatory's image, name and title; the slot names signatory 1-3 (C4).
+SIGNATURE = (TEXT - {"text"}) | {"signature_slot"}
+HEX = re.compile(r"#[0-9A-Fa-f]{6}")
 STOCKS = {"a6-portrait": (105, 148), "4x6": (101.6, 152.4), "3x4": (76.2, 101.6),
           "4x3": (101.6, 76.2), "cr80-portrait": (53.98, 85.6), "cr80-landscape": (85.6, 53.98)}
 # The six above have packaged default designs (the frozen artwork contract). A badge may also
@@ -58,10 +65,11 @@ def _layer(value, width, height, badge):
     if not isinstance(value, dict):
         raise ValidationError({"layers": "Expected layer objects."})
     kind = value.get("type")
-    kinds = {"text", "image", "logo", "certificate_id", "certificate_qr"}
+    kinds = {"text", "image", "logo", "certificate_id", "certificate_qr", "signature"}
     if badge:
         kinds = {"text", "image", "logo", "photo", "event_credential_qr"}
-    extra = TEXT if kind in ("text", "certificate_id") else {"resource_id", "resource_slot"}
+    extra = (TEXT if kind in ("text", "certificate_id") else SIGNATURE if kind == "signature"
+             else {"resource_id", "resource_slot"})
     if kind not in kinds or set(value) - (COMMON | extra):
         raise ValidationError({"layers": "Unknown layer type or properties."})
     row = deepcopy(value)
@@ -72,6 +80,11 @@ def _layer(value, width, height, badge):
         row[key] = number(value.get(key), 0.1 if key.startswith(("width", "height")) else 0, maximum, key)
     row["rotation"] = number(value.get("rotation", 0), -360, 360, "rotation")
     row["opacity"] = number(value.get("opacity", 1), 0, 1, "opacity")
+    for key in ("locked", "hidden"):
+        if key in row and type(row[key]) is not bool:
+            raise ValidationError({"layers": f"{key} must be boolean."})
+    if row.get("hidden") and kind in ("certificate_qr", "certificate_id", "event_credential_qr"):
+        raise ValidationError({"layers": "The verification QR and certificate ID cannot be hidden."})
     theta = math.radians(row["rotation"])
     half_w = (abs(math.cos(theta)) * row["width_mm"] + abs(math.sin(theta)) * row["height_mm"]) / 2
     half_h = (abs(math.sin(theta)) * row["width_mm"] + abs(math.cos(theta)) * row["height_mm"]) / 2
@@ -79,7 +92,14 @@ def _layer(value, width, height, badge):
     if min(cx-half_w, cy-half_h) < -1e-6 or cx+half_w > width+1e-6 or cy+half_h > height+1e-6:
         raise ValidationError({"layers": "A rotated layer extends beyond the page."})
     if kind in ("text", "certificate_id"):
-        _text_style(row)
+        _text_style(row, badge)
+    elif kind == "signature":
+        if type(value.get("signature_slot")) is not int or value["signature_slot"] not in (1, 2, 3):
+            raise ValidationError({"layers": "A signature names signatory 1, 2 or 3."})
+        _text_style(row, badge)
+        row.pop("text", None)
+        if min(row["width_mm"], row["height_mm"]) < 10:
+            raise ValidationError({"layers": "A signature needs at least 10 mm for its image, name and title."})
     elif kind == "image":
         row["resource_id"] = _uuid(value.get("resource_id"))
         if "resource_slot" in value:
@@ -93,7 +113,7 @@ def _layer(value, width, height, badge):
     return row
 
 
-def _text_style(row):
+def _text_style(row, badge=False):
     defaults = dict(font_family="Gilroy", font_weight=400, font_size_pt=12, align="left",
                     shrink_to_fit=True, italic=False, uppercase=False, tracking_pt=0,
                     line_height=1.3, colour_token="ink", text="")
@@ -103,11 +123,16 @@ def _text_style(row):
             or type(row["font_weight"]) is not int or row["font_weight"] not in (400, 500, 600, 700)
             or row["align"] not in ("left", "center", "right") or row["colour_token"] not in COLOURS):
         raise ValidationError({"layers": "Use approved brand type and colour tokens."})
+    if "colour" in row and (not isinstance(row["colour"], str) or not HEX.fullmatch(row["colour"])):
+        raise ValidationError({"layers": "Use a #RRGGBB colour."})
     for key in ("shrink_to_fit", "uppercase", "italic"):
         if type(row[key]) is not bool:
             raise ValidationError({"layers": f"{key} must be boolean."})
     if row["italic"]:
-        raise ValidationError({"italic": "The approved font kit has no italic face. Choose regular or bold."})
+        # Neither bundled family (Gilroy, Unbounded) ships a true italic face; a slanted
+        # regular face is not italic, so it is refused rather than faked.
+        raise ValidationError({"italic": f"{row['font_family']} has no italic face in the approved font kit. "
+                                         "Use weight or size for emphasis instead."})
     row["font_size_pt"] = number(row["font_size_pt"], 6, 96, "font_size_pt")
     row["tracking_pt"] = number(row["tracking_pt"], -1, 8, "tracking_pt")
     row["line_height"] = number(row["line_height"], 1, 3, "line_height")
@@ -116,7 +141,7 @@ def _text_style(row):
         raise ValidationError({"text": "Use at most 500 characters."})
     if "SWEC2." in text:
         raise ValidationError({"text": "Live event credentials cannot be stored in design text."})
-    if any(tag not in TAGS for tag in re.findall(r"{{(.*?)}}", text)) or re.search(r"[{}]", re.sub(r"{{[A-Za-z]+}}", "", text)):
+    if any(tag not in (BADGE_TAGS if badge else TAGS) for tag in re.findall(r"{{(.*?)}}", text)) or re.search(r"[{}]", re.sub(r"{{[A-Za-z]+}}", "", text)):
         raise ValidationError({"text": "Unknown merge tag. Contact and arbitrary object fields are forbidden."})
 
 

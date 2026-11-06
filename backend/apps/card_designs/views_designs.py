@@ -11,7 +11,7 @@ from apps.openapi_errors import errors
 
 from . import designs, resolution
 from .authority import acted_for, design_for, require_edit, space_for
-from .default_templates import LABELS, build
+from .default_templates import LABELS, THEMES, build
 from .models import CardDesign
 from .serializers import (CardDesignCreateSerializer, CardDesignSaveSerializer, CardDesignSerializer,
                           CardTemplateSerializer)
@@ -22,11 +22,12 @@ TAGS = ["Card designs"]
 class CardTemplateListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="List the six card templates, for this design's domain", request=None,
+    @extend_schema(tags=TAGS, summary="List the six card templates, light and dark, for this design's domain", request=None,
                    responses={200: CardTemplateSerializer(many=True), **errors(400, 401, 403, 404)})
     def get(self, request, pk):
         domain = require_edit(request.user, design_for(request.user, pk)).domain
-        return Response([{"key": key, "label": label, "document": build(key, domain)} for key, label in LABELS.items()])
+        return Response([{"key": key, "label": label, "theme": theme, "document": build(key, domain, theme)}
+                         for theme in THEMES for key, label in LABELS.items()])
 
 
 class SpaceCardDesignListView(APIView):
@@ -57,7 +58,8 @@ class SpaceCardDesignListView(APIView):
         else:
             target["title"] = get_object_or_404(MembershipTitle, pk=values["title_id"], makerspace=space)
         row, created = resolution.get_or_create(space, "member_cards", actor=request.user,
-                                                template=values.get("template"), **target)
+                                                template=values.get("template"), theme=values["theme"],
+                                                **target)
         return Response(CardDesignSerializer(row, context={"request": request}).data,
                         status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 

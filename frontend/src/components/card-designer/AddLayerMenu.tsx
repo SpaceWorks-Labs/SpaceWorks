@@ -1,9 +1,9 @@
 // Drop-in elements. An image layer is added once its upload finishes (it cannot save empty).
 import { useState } from "react";
-import { Image, Minus, QrCode, ScanLine, Shapes, Square, Type, UserRound, Variable, Award } from "lucide-react";
+import { Award, Barcode, Image, Minus, QrCode, ScanLine, Shapes, Square, Type, UserRound, Variable } from "lucide-react";
 
 import type { CardDomain, Layer, LayerKind, Side } from "./cardTypes";
-import { DATA_FIELDS } from "./dataFields";
+import { fieldsFor } from "./dataFields";
 import { MAX_LAYERS, newLayer } from "./designDocument";
 import { UploadButton } from "./BackgroundPicker";
 
@@ -11,12 +11,14 @@ const ITEMS: { kind: LayerKind; label: string; icon: typeof Type }[] = [
   { kind: "text", label: "Text", icon: Type }, { kind: "data_field", label: "Data field", icon: Variable },
   { kind: "photo", label: "Photo", icon: UserRound }, { kind: "logo", label: "Logo", icon: Award },
   { kind: "verify_qr", label: "Check QR", icon: QrCode }, { kind: "desk_qr", label: "Desk QR", icon: ScanLine },
+  { kind: "barcode", label: "Barcode", icon: Barcode },
   { kind: "shape", label: "Shape", icon: Shapes }, { kind: "band", label: "Band", icon: Square },
   { kind: "perforation", label: "Perforation", icon: Minus },
 ];
 
-export function AddLayerMenu({ side, stock, domain, designId, onAdd, onAssetColour, readOnly }: {
+export function AddLayerMenu({ side, stock, domain, designId, onAdd, onAssetColour, readOnly, answerFields }: {
   side: Side; stock: string; domain: CardDomain; designId: number; onAdd: (layer: Layer) => void;
+  answerFields?: { key: string; label: string }[];
   onAssetColour: (assetId: string, colour: string) => void; readOnly: boolean;
 }) {
   const [field, setField] = useState("name");
@@ -37,7 +39,7 @@ export function AddLayerMenu({ side, stock, domain, designId, onAdd, onAssetColo
     <label className="grid gap-1 text-xs font-semibold text-muted">
       <span>Field for a new data-field layer</span>
       <select className="desk-input min-h-11" value={field} onChange={(event) => setField(event.target.value)}>
-        {DATA_FIELDS.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+        {fieldsFor(answerFields).map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
       </select>
     </label>
     <div className="grid gap-1">

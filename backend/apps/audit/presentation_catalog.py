@@ -86,6 +86,7 @@ from .presentation_catalog_platform_overview import ENTRIES as _PLATFORM_OVERVIE
 from .presentation_catalog_r2_superadmin import ENTRIES as _R2_SUPERADMIN
 from .presentation_catalog_r2_control import ENTRIES as _R2_CONTROL
 from .presentation_catalog_r2_parity import ENTRIES as _R2_PARITY
+from .presentation_catalog_r2_certificates import ENTRIES as _R2_CERTIFICATES
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -119,6 +120,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_SUPERADMIN,
     _R2_CONTROL,
     _R2_PARITY,
+    _R2_CERTIFICATES,
 )
 
 

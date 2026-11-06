@@ -78,7 +78,8 @@ class CardDesignResetView(APIView):
         design = require_edit(request.user, design_for(request.user, pk))
         data = CardDesignResetSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        return _design(request, designs.reset(request.user, design, build(data.validated_data["template"], design.domain)))
+        return _design(request, designs.reset(request.user, design, build(
+            data.validated_data["template"], design.domain, data.validated_data["theme"])))
 
 
 class CardDesignExportView(APIView):
@@ -124,18 +125,28 @@ class CardDesignPreviewView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="Preview an unsaved design (watermarked PNG or PDF)",
+                   description="Sample people (short or long names), or `holder_id`: one real person this design "
+                               "prints (from the holders list), without their opt-in extras. Audited for a holder.",
                    request=CardPreviewSerializer,
                    responses={(200, "image/png"): OpenApiTypes.BINARY, (200, "application/pdf"): OpenApiTypes.BINARY,
                               **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         from .cards import sample_context
         from .rendering import render_pdf, render_png
-        space = require_edit(request.user, design_for(request.user, pk)).makerspace
+        design = require_edit(request.user, design_for(request.user, pk))
+        space = design.makerspace
         data = CardPreviewSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         values = data.validated_data
         document = designs.validated(space.pk, values["document"], check_contrast=False)
-        context = sample_context(space, document, long=values["long_names"])
+        if values.get("holder_id"):
+            from . import holder_samples
+            kind, card = holder_samples.holder(request.user, design, values["holder_id"])
+            context = holder_samples.preview_context(kind, card, document)
+            audit.record(request.user, "card_design.previewed_as_holder", makerspace=space, target=design,
+                         meta={"design_id": design.pk, "holder_kind": kind, "holder_id": card.pk})
+        else:
+            context = sample_context(space, document, long=values["long_names"])
         if values["format"] == "pdf":
             return HttpResponse(render_pdf(document, context, title="Card preview"), content_type="application/pdf")
         return HttpResponse(render_png(document, context, side=values["side"], dpi=150), content_type="image/png")

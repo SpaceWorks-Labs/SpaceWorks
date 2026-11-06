@@ -13,6 +13,11 @@ export const DATA_FIELDS: { key: string; label: string }[] = [
   { key: "emergency_contact", label: "Emergency contact (holder opt-in)" },
 ];
 
+/** The built-in fields plus a design's own answer fields (programme questions). */
+export function fieldsFor(answers: { key: string; label: string }[] = []) {
+  return [...DATA_FIELDS, ...answers.map((answer) => ({ key: answer.key, label: `Answer: ${answer.label}` }))];
+}
+
 export const SAMPLE_SHORT: Record<string, string> = {
   name: "Priya Raman", number: "TNK-0042", plan: "Monthly", valid_until: "31 Dec 2026", member_since: "Mar 2024",
   role: "Member", title: "Treasurer", team: "Night Owls", track: "Hardware", event: "Spring Build Night",

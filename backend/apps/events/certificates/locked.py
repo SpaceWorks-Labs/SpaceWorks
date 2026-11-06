@@ -11,6 +11,7 @@ def certificate_preparation(certificate, *, for_issue=False):
     return prepare_issuance(certificate.event_id, [{
         "subject_kind": "registration" if certificate.registration_id else "role_assignment",
         "subject_id": certificate.registration_id or certificate.role_assignment_id,
+        "kind": certificate.kind,
     }], for_issue=for_issue)
 
 

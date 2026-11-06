@@ -54,10 +54,16 @@ class FeedbackSurveyAdminEnvelopeSerializer(serializers.Serializer):
 
 
 class CertificateSummarySerializer(serializers.ModelSerializer):
+    kind_title = serializers.SerializerMethodField(help_text="Plain name of the certificate kind, e.g. \"Winner's certificate\".")
+
     class Meta:
         model = EventAttendanceCertificate
-        fields = ("id", "status", "revision", "issued_at", "rendered_at", "revoked_at")
+        fields = ("id", "status", "revision", "kind", "kind_title", "issued_at", "rendered_at", "revoked_at")
         read_only_fields = fields
+
+    def get_kind_title(self, obj) -> str:
+        from apps.events.certificates.merge import kind_title
+        return kind_title(obj.kind)
 
 
 class FeedbackResponseSerializer(serializers.Serializer):

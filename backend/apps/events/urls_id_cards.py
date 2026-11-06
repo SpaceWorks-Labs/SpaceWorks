@@ -5,6 +5,7 @@ from apps.card_designs.views_staff_photo import EventCardStaffPhotoView
 
 from .id_cards_views import (EventCardDesignsView, EventCardJobView, EventCardScanView, EventIdCardDetailView,
                              EventIdCardDownloadView, EventIdCardListView, EventIdCardRevokeView)
+from .id_cards_preview import EventCardSheetPreviewView
 from .id_cards_views_settings import EventCardExtrasView, EventCardSettingsView
 
 urlpatterns = [
@@ -13,6 +14,7 @@ urlpatterns = [
     path("events/<int:pk>/id-cards", EventIdCardListView.as_view(), name="admin-event-id-cards"),
     path("events/<int:pk>/id-cards/extras", EventCardExtrasView.as_view(), name="admin-event-id-card-extras"),
     path("events/<int:pk>/card-jobs", EventCardJobView.as_view(), name="admin-event-card-jobs"),
+    path("events/<int:pk>/card-jobs/preview", EventCardSheetPreviewView.as_view(), name="admin-event-card-job-preview"),
     path("events/<int:pk>/check-in/card-scan", EventCardScanView.as_view(), name="admin-event-card-scan"),
     path("event-id-cards/<int:pk>", EventIdCardDetailView.as_view(), name="admin-event-id-card"),
     path("event-id-cards/<int:pk>/revoke", EventIdCardRevokeView.as_view(), name="admin-event-id-card-revoke"),

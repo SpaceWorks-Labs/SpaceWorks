@@ -1,4 +1,15 @@
-import { t } from "@lingui/core/macro";
+import { i18n as core, type MessageDescriptor } from "@lingui/core";
+
+// Phase 8 i18n: this module is also bundled into the service worker, which has neither the
+// Lingui macro transform nor an active catalogue. Its copy is therefore written as explicit
+// `i18n._({ id, message })` descriptors (the extractor reads them) and rendered through this
+// guard, which falls back to the English source wherever no catalogue is active.
+const i18n = {
+  _(descriptor: MessageDescriptor & { values?: Record<string, unknown> }): string {
+    if (core.locale) return core._(descriptor);
+    return (descriptor.message ?? descriptor.id).replace(/\{(\w+)\}/g, (_match, key) => String(descriptor.values?.[key] ?? ""));
+  },
+};
 
 export type ApiErrorBody = Record<string, unknown> & {
   detail?: unknown;
@@ -6,9 +17,9 @@ export type ApiErrorBody = Record<string, unknown> & {
 };
 
 /** Plain-language copy for refusals any write can hit (r2-superadmin-controls), shown wherever an API error renders. */
-export const SPACE_READ_ONLY_MESSAGE = "This space is read-only: you can view and export, but nothing new can be created.";
-export const SPACE_SUSPENDED_MESSAGE = "This space is paused by the platform operator. Nothing can be changed until it reopens.";
-export const PLAN_LIMIT_MESSAGE = "This space has reached a limit of its hosting plan. A Space Manager can review the plan under Usage & limits.";
+export const SPACE_READ_ONLY_MESSAGE = i18n._({ id: "api.error.space_read_only", message: "This space is read-only: you can view and export, but nothing new can be created." });
+export const SPACE_SUSPENDED_MESSAGE = i18n._({ id: "api.error.space_suspended", message: "This space is paused by the platform operator. Nothing can be changed until it reopens." });
+export const PLAN_LIMIT_MESSAGE = i18n._({ id: "api.error.plan_limit", message: "This space has reached a limit of its hosting plan. A Space Manager can review the plan under Usage & limits." });
 
 function friendlyMessage(status: number, body: ApiErrorBody, code?: string) {
   if (status === 423 && code === "space_read_only") return SPACE_READ_ONLY_MESSAGE;
@@ -22,7 +33,7 @@ function friendlyMessage(status: number, body: ApiErrorBody, code?: string) {
 
 /** The fallback when an error response carries no readable message. */
 export function requestFailedMessage(status: number): string {
-  return t`Request failed (${status})`;
+  return i18n._({ id: "api.error.request_failed", message: "Request failed ({status})", values: { status } });
 }
 
 export class StructuredApiError extends Error {
@@ -71,16 +82,16 @@ export function apiError(status: number, value: unknown, headers?: Headers) {
 
 export function messageForStatus(status: number): string {
   if (status === 401) {
-    return "Inventory client is not authorized";
+    return i18n._({ id: "api.error.inventory_unauthorized", message: "Inventory client is not authorized" });
   }
 
   if (status === 404) {
-    return "Makerspace not found";
+    return i18n._({ id: "api.error.makerspace_not_found", message: "Makerspace not found" });
   }
 
   if (status >= 500) {
-    return "Inventory service is unavailable";
+    return i18n._({ id: "api.error.inventory_unavailable", message: "Inventory service is unavailable" });
   }
 
-  return "Unable to load inventory";
+  return i18n._({ id: "api.error.inventory_load_failed", message: "Unable to load inventory" });
 }

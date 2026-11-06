@@ -6,7 +6,8 @@ import { memberPwa } from "./scripts/member-pwa";
 
 export default defineConfig({
   // Lingui compiles imported .po catalogues and transforms its macros natively (phase 8 i18n).
-  plugins: [react(), lingui({ macroTransform: true }), memberPwa(), kioskPwa()],
+  // "message" keeps each source message beside its id, so English needs no catalogue chunk.
+  plugins: [react(), lingui({ macroTransform: { macro: { descriptorFields: "message" } } }), memberPwa(), kioskPwa()],
   server: {
     port: 5000,
     // Inside the dev container the backend is another service on the compose

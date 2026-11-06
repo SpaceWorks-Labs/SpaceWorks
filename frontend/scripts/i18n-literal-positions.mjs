@@ -5,7 +5,8 @@
 // `placeholder`, `label`, ...); a string rendered as a JSX child; a display property of an
 // object (`label: "..."`); a value of a copy map (`const STATUS_LABELS = {...}`); a toast,
 // confirm, alert or `new Error(...)` message; a message setter (`setError("...")`); or a
-// return value of a function named like a label (`statusLabel`, `emptyText`, ...).
+// return value of a function named like a label (`statusLabel`, `emptyText`, ...); or the
+// default of a display prop (`{ title = "..." }`).
 // Copy inside `t`/`msg`/`plural`/`select` or a `<Trans>` element is marked. A reviewed
 // technical exception carries `i18n-ignore: <reason>` on its line or the line above.
 import ts from "typescript";
@@ -17,7 +18,7 @@ export const LABEL_FUNCTION = /(Label|Text|Message|Title|Description|Copy|Hint|C
 export const MESSAGE_SETTER = /^set\w*(Error|Message|Notice|Status|Feedback|Hint|Toast|Copy|Warning|Info|Problem|Text)$/;
 export const TOAST_CALL = /^(toast|showToast|pushToast|notify|confirm|alert)$/;
 const MARKER_TAGS = new Set(["t", "msg", "defineMessage"]);
-const MARKER_CALLS = new Set(["t", "msg", "plural", "select", "selectOrdinal", "defineMessage"]);
+const MARKER_CALLS = new Set(["t", "msg", "plural", "select", "selectOrdinal", "defineMessage", "_"]);
 const IGNORE = "i18n-ignore:";
 
 /** Prose: a letter, plus a space, a capital start or closing punctuation. Codes, CSS, paths are not. */
@@ -109,6 +110,8 @@ export function visitPositions(sourceFile, { onText, onLiteral }) {
       literal(ts.isJsxExpression(node.initializer) ? node.initializer.expression : node.initializer, "attribute");
     } else if (ts.isJsxExpression(node) && node.expression && (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent))) {
       literal(node.expression, "jsx-child");
+    } else if (ts.isBindingElement(node) && node.initializer && DISPLAY_PROPERTY.test(name(node.propertyName ?? node.name))) {
+      literal(node.initializer, "default-prop");
     } else if (ts.isPropertyAssignment(node)) {
       if (DISPLAY_PROPERTY.test(name(node.name))) literal(node.initializer, "property");
       else if (COPY_MAP.test(copyMapName(node))) literal(node.initializer, "copy-map");

@@ -4,7 +4,8 @@
 // marked with Lingui (positions: scripts/i18n-literal-positions.mjs). The generated files
 // are covered through their GENERATORS: each listed generator renders to a temporary path
 // and that output is scanned with the generated-file exclusion off, so a generator template
-// cannot emit raw copy into an excluded file. Exit status 1 lists `path:line: category`.
+// cannot emit raw copy into an excluded file. Modules bundled into a worker are skipped
+// (scripts/i18n-worker-closure.mjs). Exit status 1 lists `path:line: category`.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -12,6 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { findUnmarked } from "./i18n-literal-positions.mjs";
+import { workerClosure } from "./i18n-worker-closure.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const GENERATED_SOURCE_FILES = [
@@ -58,8 +60,9 @@ export function scanGenerators(generators = GENERATED_SOURCE_FILES, root = ROOT)
 
 export function run() {
   const src = path.join(ROOT, "src");
+  const workers = workerClosure(ROOT);
   const findings = walk(src)
-    .filter((file) => !isExcluded(path.relative(src, file)))
+    .filter((file) => !isExcluded(path.relative(src, file)) && !workers.has(path.resolve(file)))
     .flatMap((file) => scanFile(file, path.relative(ROOT, file).split(path.sep).join("/")));
   findings.push(...scanGenerators());
   return findings;

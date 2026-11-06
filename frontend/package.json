@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@lingui/core": "6.10.1",
+    "@lingui/message-utils": "6.10.1",
     "@lingui/react": "6.10.1",
     "@simplewebauthn/browser": "14.0.0",
     "@tanstack/react-query": "^5.101.2",

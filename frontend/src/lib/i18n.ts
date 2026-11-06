@@ -10,14 +10,21 @@
 // anything that renders text. Copy evaluated at module load (labels in a constant) keeps the
 // locale it loaded in; a change of effective locale therefore reloads the page once, and the
 // last effective locale is remembered so the next load starts in it (no reload loop).
+//
+// English, the source locale, ships no catalogue: the macros keep each message beside its
+// id (vite.config.ts `descriptorFields: "message"`), so English renders from the code that is
+// already in each lazy chunk, compiled once per message. Any other locale's compiled
+// catalogue is bundled eagerly (none exists today), so activation stays synchronous.
 import { i18n, type Messages } from "@lingui/core";
-import { messages as en } from "../locales/en/messages.po";
+import { compileMessage } from "@lingui/message-utils/compileMessage";
 import { SUPPORTED_LOCALES, SYSTEM_LOCALE, type LocaleCode } from "../generated/locales";
 import { readStorage, removeStorage, writeStorage } from "./safeStorage";
 
 export type LocaleSource = "explicit" | "user" | "makerspace" | "system";
 
-const CATALOGS: Record<LocaleCode, Messages> = { en };
+const CATALOGS = import.meta.glob<{ messages: Messages }>(
+  ["../locales/*/messages.po", "!../locales/en/messages.po"], { eager: true },
+);
 const EXPLICIT_KEY = "spaceworks.locale";
 const EFFECTIVE_KEY = "spaceworks.locale.effective";
 const CODES: readonly string[] = SUPPORTED_LOCALES.map((locale) => locale.code);
@@ -56,7 +63,16 @@ function resolveLocale(): { code: LocaleCode; source: LocaleSource } {
 let current = resolveLocale();
 // Before session/bootstrap data arrives, start in the last effective locale.
 const startup: LocaleCode = explicit ?? canonicalLocale(readStorage(EFFECTIVE_KEY)) ?? SYSTEM_LOCALE;
-i18n.load(CATALOGS);
+const compiled = new Map<string, ReturnType<typeof compileMessage>>();
+i18n.setMessagesCompiler((message) => {
+  let result = compiled.get(message);
+  if (result === undefined) compiled.set(message, (result = compileMessage(message)));
+  return result;
+});
+
+const catalog = (code: LocaleCode): Messages => CATALOGS[`../locales/${code}/messages.po`]?.messages ?? {};
+
+for (const code of CODES as LocaleCode[]) i18n.load(code, catalog(code));
 i18n.activate(startup);
 
 function recompute() {

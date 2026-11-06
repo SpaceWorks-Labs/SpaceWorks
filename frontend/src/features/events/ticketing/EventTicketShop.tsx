@@ -29,8 +29,10 @@ export function shopError(error: unknown) {
 const emails = (text: string) => text.split(/[\s,;]+/).map(value => value.trim()).filter(Boolean);
 
 /** G27-G30: choose tickets and add-ons, review the priced order with its policy, then pay. */
-export function EventTicketShop({ makerspaceSlug, makerspaceId, publicToken, ordersHref }: {
+export function EventTicketShop({ makerspaceSlug, makerspaceId, publicToken, ordersHref, free = false }: {
   makerspaceSlug: string; makerspaceId: number; publicToken: string; ordersHref: (orderId: number) => string;
+  /** #184: event charges are off here, so the same shop runs with no prices and settles free. */
+  free?: boolean;
 }) {
   const [basket, setBasket] = useState<Basket>(emptyBasket);
   const [codes, setCodes] = useState("");
@@ -58,13 +60,13 @@ export function EventTicketShop({ makerspaceSlug, makerspaceId, publicToken, ord
   const change = (next: Basket) => { setBasket(next); setQuote(null); };
   return <div className="grid gap-4">
     <TicketShopPicker tickets={shop.ticket_types} addons={shop.addons} currency={shop.currency}
-      orderMax={shop.max_tickets_per_order} basket={basket} onChange={change} />
+      orderMax={shop.max_tickets_per_order} basket={basket} onChange={change} free={free} />
     <details className="grid gap-2"><summary className="cursor-pointer text-sm font-semibold">Have a code?</summary>
       <label className="grid gap-1 text-sm">Access code
         <span className="flex gap-2"><input className="desk-input flex-1" value={codes} onChange={event => setCodes(event.target.value)} />
           <button type="button" className="desk-button" disabled={!codes.trim() || unlock.isPending} onClick={() => unlock.mutate()}>Unlock</button></span>
       </label>
-      {shop.promo_codes_enabled ? <label className="grid gap-1 text-sm">Promo code
+      {shop.promo_codes_enabled && !free ? <label className="grid gap-1 text-sm">Promo code
         <input className="desk-input" value={promo} onChange={event => { setPromo(event.target.value); setQuote(null); }} /></label> : null}
       {unlock.error ? <ErrorText message={shopError(unlock.error)} /> : null}
     </details>

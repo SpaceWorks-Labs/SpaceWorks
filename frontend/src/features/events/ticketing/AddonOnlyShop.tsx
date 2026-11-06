@@ -15,8 +15,10 @@ import { fetchShop, placeOrder, policyLine, quoteOrder, ticketingKeys, type Orde
  * CONFIRMED may buy add-ons alone (a T-shirt, meals, a hardware kit). The order sells no seat and names no
  * attendees; it reuses the L6 quote -> place-order -> checkout flow with an empty ticket list.
  */
-export function AddonOnlyShop({ makerspaceSlug, makerspaceId, publicToken, ordersHref }: {
+export function AddonOnlyShop({ makerspaceSlug, makerspaceId, publicToken, ordersHref, free = false }: {
   makerspaceSlug: string; makerspaceId: number; publicToken: string; ordersHref: (orderId: number) => string;
+  /** #184: event charges are off here; add-ons are free and show no price. */
+  free?: boolean;
 }) {
   const [basket, setBasket] = useState<Basket>(emptyBasket);
   const [quote, setQuote] = useState<OrderQuote | null>(null);
@@ -42,7 +44,7 @@ export function AddonOnlyShop({ makerspaceSlug, makerspaceId, publicToken, order
     <h2 id="addon-only-title" className="title-section flex items-center gap-2"><ShoppingBag className="text-accent" aria-hidden="true" />Add-ons for your place</h2>
     <p className="text-sm text-muted">Your place is confirmed. Add extras to it; you are not buying another seat.</p>
     <TicketShopPicker tickets={[]} addons={shop.addons} currency={shop.currency} orderMax={0} basket={basket}
-      onChange={next => { setBasket(next); setQuote(null); }} />
+      onChange={next => { setBasket(next); setQuote(null); }} free={free} />
     {!quote ? <p className="text-sm text-muted">{policyLine(shop.policy)}</p> : <OrderSummary quote={quote} />}
     {review.error || pay.error ? <ErrorText message={shopError(pay.error ?? review.error)} /> : null}
     {quote ? <button type="button" className="desk-button-brand w-full" disabled={pay.isPending} onClick={() => pay.mutate()}>

@@ -23,7 +23,7 @@ export type TicketShop = {
 export type QuoteLine = { component: string; label: string; quantity: string; unit_amount: string; gross: string;
   discount: string; net: string; detail: Record<string, unknown> };
 export type OrderQuote = {
-  quote: { currency: string; lines: QuoteLine[]; subtotal: string; discount_total: string; total: string; digest: string };
+  quote: { currency: string; lines: QuoteLine[]; subtotal: string; discount_total: string; total: string; digest: string; mode?: string };
   promo_saving: string | null; seats: number; policy: RefundPolicySummary;
 };
 export type OrderSeat = { id: number; event_id: number; ticket_type_id: number | null; status: "unclaimed" | "claimed" | "void";

@@ -9,6 +9,8 @@ Pure data: ``config.settings`` imports it (through ``config.unfold``) before any
 so nothing here may import a model.
 """
 
+from django.utils.translation import gettext_lazy
+
 from typing import NamedTuple
 
 from config.control_catalog_entries import SECTION_ENTRIES
@@ -31,19 +33,19 @@ class Section(NamedTuple):
 
 # Order is the sidebar's order (#188).
 SECTION_TITLES = (
-    ("overview", "Overview"),
-    ("makerspaces", "Makerspaces"),
-    ("organizations", "Organizations"),
-    ("people", "People & access"),
-    ("security", "Security"),
-    ("money", "Money"),
-    ("events", "Events & programmes"),
-    ("machines", "Machines & devices"),
-    ("inventory", "Inventory & lending"),
-    ("backups", "Backups & recovery"),
-    ("integrations", "Integrations & messaging"),
-    ("audit", "Audit & logs"),
-    ("system", "System"),
+    ("overview", gettext_lazy("Overview")),
+    ("makerspaces", gettext_lazy("Makerspaces")),
+    ("organizations", gettext_lazy("Organizations")),
+    ("people", gettext_lazy("People & access")),
+    ("security", gettext_lazy("Security")),
+    ("money", gettext_lazy("Money")),
+    ("events", gettext_lazy("Events & programmes")),
+    ("machines", gettext_lazy("Machines & devices")),
+    ("inventory", gettext_lazy("Inventory & lending")),
+    ("backups", gettext_lazy("Backups & recovery")),
+    ("integrations", gettext_lazy("Integrations & messaging")),
+    ("audit", gettext_lazy("Audit & logs")),
+    ("system", gettext_lazy("System")),
 )
 
 

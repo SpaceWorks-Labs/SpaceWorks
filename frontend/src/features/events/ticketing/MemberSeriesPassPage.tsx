@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CenteredCardLayout } from "../../../components/layouts";
 import { ErrorText } from "../../../components/ui";
 import { getAccessToken, refreshAccessToken, StructuredApiError } from "../../../lib/api";
+import { useChargesOn } from "../../../lib/charges";
 import { useTenantPath } from "../../../lib/tenant";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
 import { useMemberSpace } from "./MemberOrdersPage";
@@ -23,6 +24,7 @@ function errorMessage(error: unknown) {
 export function MemberSeriesPassPage() {
   const { seriesId = "" } = useParams();
   const space = useMemberSpace();
+  const charged = useChargesOn("events", space.makerspaceSlug); // #184: no price while event charges are off
   const tenantPath = useTenantPath(space.makerspaceSlug);
   const navigate = useNavigate();
   const [restoring, setRestoring] = useState(!getAccessToken());
@@ -54,7 +56,7 @@ export function MemberSeriesPassPage() {
         {rows.map(row => <label key={row.id} className="flex min-h-11 items-start gap-3 rounded-card border border-line p-3 text-sm text-ink">
           <input type="radio" name="pass" value={row.id} checked={selected === row.id} onChange={() => setChoice(row.id)} />
           <span className="grid gap-0.5"><span className="font-semibold">{row.name}</span>
-            <span className="text-muted">{price(row.amount)}{row.sales_end_at ? ` · on sale until ${new Date(row.sales_end_at).toLocaleString()}` : ""}</span></span>
+            <span className="text-muted">{charged ? price(row.amount) : "Free"}{row.sales_end_at ? ` · on sale until ${new Date(row.sales_end_at).toLocaleString()}` : ""}</span></span>
         </label>)}
       </fieldset> : null}
       {buy.error ? <ErrorText message={errorMessage(buy.error)} /> : null}

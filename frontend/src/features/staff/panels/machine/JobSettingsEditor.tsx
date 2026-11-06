@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 
+import { useStaffChargesOn } from "../../useStaffChargesOn";
 import { FILE_GROUPS } from "./jobLabels";
 import { errorCode, useJobSettings, useSaveJobSettings, type JobSettings } from "./machineJobsApi";
 
@@ -15,6 +16,7 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
   const query = useJobSettings(makerspaceId, machineTypeId, visible);
   const save = useSaveJobSettings(makerspaceId, machineTypeId);
   const [draft, setDraft] = useState<JobSettings | null>(null);
+  const charges = useStaffChargesOn("machines", makerspaceId); // #184: a free machine domain shows no money settings
   useEffect(() => { if (query.data) setDraft(query.data); }, [query.data]);
   if (!visible) return null;
   const lockCode = [errorCode(save.error), errorCode(query.error)].find(code => code && READ_ONLY[code]);
@@ -38,14 +40,14 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
         {field("Quotes", <select className="desk-input" value={draft.quote_mode} onChange={event => set({ quote_mode: event.target.value as JobSettings["quote_mode"] })}>
           <option value="auto">When the job has a price</option><option value="always">Always</option><option value="above">Above an amount</option><option value="off">Never</option>
         </select>, "A quote is a price the member approves before the job joins the queue.")}
-        {draft.quote_mode === "above" ? field("Quote above this amount", <input className="desk-input" inputMode="decimal" value={draft.quote_above_amount ?? ""}
+        {charges && draft.quote_mode === "above" ? field("Quote above this amount", <input className="desk-input" inputMode="decimal" value={draft.quote_above_amount ?? ""}
           onChange={event => set({ quote_above_amount: event.target.value || null })} />) : null}
-        {field("When members pay", <select className="desk-input" value={draft.payment_timing} onChange={event => set({ payment_timing: event.target.value as JobSettings["payment_timing"] })}>
-          <option value="completion">When the job is done</option><option value="prepay">Before the job joins the queue</option></select>)}
-        {field("If a job fails through the member’s fault", <select className="desk-input" value={draft.member_fault_charge}
+        {charges ? field("When members pay", <select className="desk-input" value={draft.payment_timing} onChange={event => set({ payment_timing: event.target.value as JobSettings["payment_timing"] })}>
+          <option value="completion">When the job is done</option><option value="prepay">Before the job joins the queue</option></select>) : null}
+        {charges ? field("If a job fails through the member’s fault", <select className="desk-input" value={draft.member_fault_charge}
           onChange={event => set({ member_fault_charge: event.target.value as JobSettings["member_fault_charge"] })}>
           <option value="none">Charge nothing</option><option value="material_only">Charge the material used</option><option value="full">Charge the full job</option>
-        </select>, "A failure the space or machine caused is always free and goes back to the front of the queue.")}
+        </select>, "A failure the space or machine caused is always free and goes back to the front of the queue.") : null}
         {field("Open jobs per member", <input className="desk-input" type="number" min={1} value={draft.max_open_jobs ?? ""}
           onChange={event => set({ max_open_jobs: numberOrNull(event.target.value) })} />, "Blank for no limit.")}
         {field("Longest job (minutes)", <input className="desk-input" type="number" min={1} value={draft.max_job_minutes ?? ""}

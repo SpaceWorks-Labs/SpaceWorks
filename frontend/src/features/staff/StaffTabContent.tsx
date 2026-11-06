@@ -1,4 +1,5 @@
 import { ModuleAnalytics } from "./panels/ModuleAnalytics";
+import { StaffChargeSpaceContext } from "./useStaffChargesOn";
 import { capabilityOn } from "../../lib/features";
 import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
 import { Suspense, type ReactNode } from "react";
@@ -102,6 +103,7 @@ export function StaffTabContent({
   const allowedTabs = filterTabsByEnabledModules(getStaffAccess(actorActions, isSuperadmin, singleTenantLocked, isMachineOnly).allowedTabs, activeMakerspace);
   const has = (action: string) => isSuperadmin || actorActions.includes(action);
   return (
+    <StaffChargeSpaceContext.Provider value={activeMakerspace.id}>
     <StaffPanelErrorBoundary resetKey={`${makerspaceKey}:${activeTab}`}>
       <Suspense fallback={<div className="p-4"><Skeleton className="h-40 w-full" /></div>}>
       {activeTab === "devices" && (isSuperadmin || currentUser.makerspaces.some(
@@ -265,5 +267,6 @@ export function StaffTabContent({
       <ModuleAnalytics key={`analytics:${makerspaceKey}:${activeTab}`} makerspace={activeMakerspace} tab={activeTab} singleTenantLocked={singleTenantLocked} guestOnly={guestOnly} />
       </Suspense>
     </StaffPanelErrorBoundary>
+    </StaffChargeSpaceContext.Provider>
   );
 }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ListRow, StatusPill } from "../../components/ui";
 import { memberRequestBlob } from "../../lib/api";
+import { useChargesOn } from "../../lib/charges";
 import { useTenantPath } from "../../lib/tenant";
 import { useSpaceSwitches } from "../members/calendarFeeds/MemberCalendarLinks";
 import { donationKeys, donationsApi, giveError, money, type GiftStatus, type PledgeAction } from "./donationsApi";
@@ -31,6 +32,7 @@ export function MemberGifts({ makerspaceId, makerspaceSlug }: { makerspaceId: nu
   const path = useTenantPath(makerspaceSlug);
   const client = useQueryClient();
   const giving = on("finance.donations");
+  const charged = useChargesOn("donations", makerspaceSlug); // #184: history stays, new gifts need donation charges
   const pledgesOn = giving && on("finance.recurring_donations");
   const gifts = useQuery({ queryKey: donationKeys.memberGifts(makerspaceId), queryFn: () => donationsApi.memberGifts(makerspaceId),
     enabled: giving, retry: false });
@@ -44,7 +46,7 @@ export function MemberGifts({ makerspaceId, makerspaceSlug }: { makerspaceId: nu
   return <section className="grid gap-3" aria-labelledby="member-gifts-heading">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 id="member-gifts-heading" className="title-panel">My gifts</h2>
-      <a className="desk-button" href={path("donate")}>Give again</a>
+      {charged ? <a className="desk-button" href={path("donate")}>Give again</a> : null}
     </div>
     {gifts.data?.length ? gifts.data.map(gift => <GiftRow key={gift.id} makerspaceId={makerspaceId} gift={gift} />)
       : <p className="text-sm text-muted">You haven't given to this space yet.</p>}

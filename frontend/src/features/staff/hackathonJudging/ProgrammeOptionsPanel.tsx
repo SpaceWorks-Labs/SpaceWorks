@@ -37,10 +37,10 @@ export function ProgrammeOptionsPanel({ scope, entryFees, paidTeams, deposits = 
     <fieldset className="grid gap-2" disabled={save.isPending}><legend className="font-semibold">Emails</legend>
       {SWITCHES.map(([key, label]) => toggle(key, label))}
     </fieldset>
-    <fieldset className="grid gap-2" disabled={save.isPending}><legend className="font-semibold">Refund cases for entry fees</legend>
+    {entryFees || paidTeams ? <fieldset className="grid gap-2" disabled={save.isPending}><legend className="font-semibold">Refund cases for entry fees</legend>
       <p className="text-sm text-muted">A refund case is only opened; staff still approve every refund.</p>
       {REFUND_SWITCHES.map(([key, label]) => toggle(key, label))}
-    </fieldset>
+    </fieldset> : null}
     {entryFees && options.entry_fee ? <EntryFeeStage scope={scope} options={options} pending={save.isPending}
       onSave={stage => save.mutate({ version: options.version, fields: { entry_fee_stage: stage } })} /> : null}
     {entryFees || paidTeams ? <FeeEditor options={options} entryFees={entryFees} paidTeams={paidTeams} pending={save.isPending}

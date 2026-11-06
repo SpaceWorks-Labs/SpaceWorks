@@ -83,7 +83,7 @@ def _with_reason(text, row, event):
 
 
 def requester_content(row, event, context):
-    message = render(row.space.makerspace, "bookings", "requester", event, context)
+    message = render(row.space.makerspace, "bookings", "requester", event, context, recipient=lambda: row.member)
     reasoned = event in ("rejected", "cancelled") and bool(row.decision_reason)
     # With a reason the plain-text body carries it; the authored HTML would silently omit it.
     content = {"subject": message["subject"], "text": _with_reason(message["text_body"], row, event),

@@ -30,7 +30,7 @@ EXCEPTIONS = {"ValidationError", "PermissionDenied", "NotFound", "ParseError", "
               "UnsupportedMediaType", "Throttled", "Http404", "SuspiciousOperation", "Refused"}
 FIELD_KEYWORDS = {"verbose_name", "verbose_name_plural"}
 MODEL_FIELD_KEYWORDS = {"help_text"}
-EMAIL_KEYWORDS = {"subject", "text_body", "html_body"}
+EMAIL_KEYWORDS = {"subject", "text_body", "html_body", "default_subject", "default_text", "default_html"}
 NOTIFY_KEYWORDS = {"title", "body", "message", "summary", "heading"}
 NOTIFY_CALL = re.compile(r"^(emit_|notify|send_|dispatch_|push_|_notify|_emit|_send)|"
                          r"(Notification|Delivery|Email|Message|Push|Alert)$")
@@ -41,6 +41,9 @@ CATALOGUE_FILES = re.compile(
     r"(audit/presentation_catalog_[a-z0-9_]+|makerspaces/module_registry[a-z0-9_]*|"
     r"makerspaces/capabilit[a-z0-9_]*|makerspaces/module_groups|operations/report_definitions[a-z0-9_]*)\.py$")
 CATALOGUE_KEYWORDS = {"label", "description", "title", "summary"}
+# Email-template registry defaults: rendered through gettext in the recipient's language.
+EMAIL_DEFAULT_FILES = re.compile(r"integrations/email_templates_registry[a-z0-9_]*\.py$")
+EMAIL_DEFAULT_KEYS = {"subject", "text", "html"}
 CODE = re.compile(r"^[A-Za-z0-9_.:/\-]*$")
 SKIPPED_PARTS = {"migrations", "tests", "management"}
 IGNORE = "i18n-ignore:"
@@ -140,8 +143,15 @@ def _choice_labels(cls):
 
 
 class Finder(ast.NodeVisitor):
-    def __init__(self, catalogue):
-        self.catalogue, self.depth, self.found = catalogue, 0, []
+    def __init__(self, catalogue, email_defaults=False):
+        self.catalogue, self.email_defaults, self.depth, self.found = catalogue, email_defaults, 0, []
+
+    def visit_Dict(self, node):
+        if self.email_defaults:
+            for key, value in zip(node.keys, node.values):
+                if isinstance(key, ast.Constant) and key.value in EMAIL_DEFAULT_KEYS:
+                    self._add("email_default", value)
+        self.generic_visit(node)
 
     def _add(self, category, expr):
         for node in literals(expr):
@@ -174,7 +184,7 @@ def scan_source(source, relpath):
     """``[(node, category, in_function)]`` for every unmarked, unignored literal."""
     tree = ast.parse(source)
     lines = source.splitlines()
-    finder = Finder(bool(CATALOGUE_FILES.search(relpath)))
+    finder = Finder(bool(CATALOGUE_FILES.search(relpath)), bool(EMAIL_DEFAULT_FILES.search(relpath)))
     finder.visit(tree)
     seen, out = set(), []
     for node, category, in_function in finder.found:

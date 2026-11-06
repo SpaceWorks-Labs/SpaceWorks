@@ -1,4 +1,5 @@
 """Broadcast envelopes use the same editable email engine as lifecycle messages."""
+from django.utils.translation import gettext_noop
 
 from .email_templates_registry_helpers import EmailTemplateRegistryEntry, bag
 
@@ -9,7 +10,7 @@ def build_entries():
         fields=[{'name': 'announcement.title', 'description': 'Announcement title.'},
                 {'name': 'announcement.body', 'description': 'Announcement body.'},
                 {'name': 'makerspace.name', 'description': 'Makerspace name.'}],
-        default_subject='{{ announcement.title }}', default_text='{{ announcement.body }}', default_html='',
+        default_subject=gettext_noop('{{ announcement.title }}'), default_text=gettext_noop('{{ announcement.body }}'), default_html='',
         sample_context={'announcement': bag(title='Workshop update', body='The room opens at nine.'),
                         'makerspace': bag(name='Demo workshop')},
     ) for audience in ('staff', 'requester')}

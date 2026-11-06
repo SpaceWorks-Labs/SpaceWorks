@@ -3,14 +3,15 @@
 Only the member who asked is notified; staff see the decision in the console. The staff
 twin exists because every catalogue event carries both audiences in the editor.
 """
+from django.utils.translation import gettext_noop
 
 from .email_templates_registry_helpers import EmailTemplateRegistryEntry, bag
 
 TEXT = {
-    "erasure_approved": "{{ makerspace.name }} approved your request to erase your membership data. "
-                        "Payment records and the audit log are kept, as the law requires.",
-    "erasure_rejected": "{{ makerspace.name }} could not erase your membership data. "
-                        "{% if decision.note %}Their note: {{ decision.note }}{% endif %}",
+    "erasure_approved": gettext_noop("{{ makerspace.name }} approved your request to erase your membership data. "
+                        "Payment records and the audit log are kept, as the law requires."),
+    "erasure_rejected": gettext_noop("{{ makerspace.name }} could not erase your membership data. "
+                        "{% if decision.note %}Their note: {{ decision.note }}{% endif %}"),
 }
 
 
@@ -25,7 +26,7 @@ def build_entries():
                         for name in ("makerspace.name", "event_name", "subject.id", "subject.status", "decision.note")],
                 default_subject=f"Membership: {event.replace('_', ' ')}",
                 default_text=text if audience == "requester"
-                else "Erasure request #{{ subject.id }}: {{ event_name }}.",
+                else gettext_noop("Erasure request #{{ subject.id }}: {{ event_name }}."),
                 default_html="",
                 sample_context={"makerspace": bag(name="Demo workshop"), "event_name": event,
                                 "subject": bag(id=12, status="approved"), "decision": bag(note="")},

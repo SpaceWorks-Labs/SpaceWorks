@@ -130,7 +130,16 @@ def early_response_locale(request):
 
 
 def locale_for(user=None, makerspace=None):
-    """Background output: recipient preference, then makerspace default, then ``en``."""
+    """Background output: recipient preference, then makerspace default, then ``en``.
+
+    ``user`` may be a zero-argument callable so a caller never loads a recipient row just to
+    learn that a one-locale deployment renders in that locale.
+    """
+    codes = supported_codes()
+    if len(codes) == 1:
+        return codes[0]
+    if callable(user):
+        user = user()
     return resolve(user=user, makerspace=makerspace)[0]
 
 

@@ -13,7 +13,10 @@ def prepare_direct_admission(actor, makerspace, user, role):
         return None
     if policy.join_mode != "open" and not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk):
         raise PermissionDenied("A membership manager must decide this admission.")
-    paid = policy.joining_fee > 0 or (policy.default_plan and policy.default_plan.amount > 0)
+    from apps.payments.availability import charge_tracking_enabled
+    # #184 G8: with membership charges off joining is free, so there is nothing to pay first.
+    paid = charge_tracking_enabled(makerspace, "membership") and (
+        policy.joining_fee > 0 or (policy.default_plan and policy.default_plan.amount > 0))
     if (policy.payment_timing == "before_activation" and paid) or vouching_on(makerspace, policy) or application_schema_for(makerspace, policy):
         raise AdmissionError("membership_application_required", "Use the admission application to complete this makerspace's join conditions.")
     row = MembershipRequest.objects.create(

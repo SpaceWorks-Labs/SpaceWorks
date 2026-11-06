@@ -2,7 +2,7 @@ import type { Action } from "../../../components/ui";
 import type { HealthCard } from "./spacesApi";
 import type { SimpleAction } from "./SimpleSpaceDialog";
 
-export type DialogKind = SimpleAction | "transfer" | "schedule" | "purge" | "plan";
+export type DialogKind = SimpleAction | "transfer" | "schedule" | "purge" | "plan" | "keys" | "capabilities";
 
 /**
  * Which lifecycle controls a card offers. The server refuses anything out of place (409); this only
@@ -14,6 +14,9 @@ export function cardActions(card: HealthCard, managedPlans: boolean, open: (kind
   const suspended = card.suspended !== null || card.lifecycle_state === "suspended";
   const item = (label: string, kind: DialogKind, tone?: "danger"): Action => ({ label, onClick: () => open(kind), tone, confirms: true });
   const actions: Action[] = [];
+  // Keys and capability data stay reachable in every state: rotating after a leak or purging a switched-off
+  // capability must not wait for the space to be active (#190 follow-up).
+  actions.push({ label: "Keys", onClick: () => open("keys") }, { label: "Capability data", onClick: () => open("capabilities") });
   if (archived) {
     actions.push(item("Unarchive", "unarchive"));
     actions.push(card.schedule ? item("Cancel schedule", "schedule/cancel") : item("Schedule purge", "schedule", "danger"));

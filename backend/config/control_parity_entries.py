@@ -1,6 +1,6 @@
 """The #190 parity rows; read through ``config.control_parity`` (see its docstring)."""
 
-from config.control_parity import KEY_ROTATION, RAW_REPAIR, SERVER, host, web
+from config.control_parity import RAW_REPAIR, SERVER, host, web
 
 PS = "Platform settings"  # /admin/platform?section=...
 SP = "Platform → Spaces"  # /admin/platform-spaces
@@ -35,8 +35,10 @@ ENTRIES = (
     ("view:makerspaces_makerspace_security", web(f"{S} → Security (locks)", "admin-makerspace-security-settings",
                                                  "admin-makerspace-security-lock")),
     ("view:makerspaces_makerspace_create_staff_account", web(f"{S} → Staff & roles → Invite", "admin-staff-invitations")),
-    ("view:makerspaces_makerspace_keys", KEY_ROTATION),
-    ("view:makerspaces_makerspace_capability_purge", host(f"Deleting a switched-off capability's data, with the key typed back: {SERVER}")),
+    ("view:makerspaces_makerspace_keys", web(f"{SP} → Manage → Keys", "admin-platform-space-keys",
+                                             "admin-platform-space-key-rotate")),
+    ("view:makerspaces_makerspace_capability_purge", web(f"{SP} → Manage → Capability data",
+                                                         "admin-platform-space-capability-purge")),
     # Organizations
     ("organizations.organization", web("Organizations", "admin-organization-list", "admin-organization-detail")),
     ("organizations.organizationmakerspace", web("Organizations → Spaces", "admin-organization-links", "admin-organization-link-delete")),

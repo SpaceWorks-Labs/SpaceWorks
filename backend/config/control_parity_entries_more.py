@@ -6,6 +6,7 @@ PS = "Platform settings"
 S = "Space console"
 MOVES = "Platform settings → Self-host moves"
 PROVIDERS = f"{PS} → Messaging & apps"
+SPACES = "Platform → Spaces"
 
 MORE_ENTRIES = (
     # Money
@@ -62,8 +63,11 @@ MORE_ENTRIES = (
     ("view:backup_backupkeyfingerprint_keys", web(f"{PS} → Restore drills", "admin-platform-restore-drills")),
     ("keys:rotate_platform", KEY_ROTATION),
     ("keys:rotate_server", KEY_ROTATION),
-    ("keys:reencrypt", KEY_ROTATION),
-    ("keys:purge", KEY_ROTATION),
+    # One-space archives only: a whole-platform archive is encrypted to the platform key alone and can be
+    # neither re-encrypted on the server nor purged from a space's view; it expires or is purged on /control/.
+    ("keys:reencrypt", web(f"{SPACES} → Manage → Keys → Archives on a retired key", "admin-platform-space-archive-key")),
+    ("keys:purge", web(f"{SPACES} → Manage → Keys → Archives on a retired key (one-space archives)",
+                       "admin-platform-space-archive-key")),
     ("keys:reencrypt_all", KEY_ROTATION),
     ("keys:reencrypt_stop", KEY_ROTATION),
     ("keys:settings", web(f"{PS} → Restore drills → Settings", "admin-platform-restore-drill-settings")),

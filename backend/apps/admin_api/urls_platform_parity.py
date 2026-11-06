@@ -27,6 +27,8 @@ from apps.integrations.views_platform_credentials import (
     PlatformAttestationSettingsView, PlatformLoginMethodsView, PlatformPushSettingsView, PlatformPushTestView,
     PlatformSmsSettingsView, PlatformSmsTestView, PlatformWhatsAppSettingsView, PlatformWhatsAppTestView,
 )
+from apps.encryption.views_space_keys import SpaceArchiveKeyView, SpaceKeyRotateView, SpaceKeysView
+from apps.makerspaces.views_capability_purge import CapabilityPurgeView
 from apps.backup.views_drills import RestoreDrillListView, RestoreDrillSettingsView
 from apps.separability.registry import runtime_active
 
@@ -90,6 +92,13 @@ urlpatterns = [
     path("platform/attestation-settings", PlatformAttestationSettingsView.as_view(),
          name="admin-platform-attestation-settings"),
     path("platform/login-methods", PlatformLoginMethodsView.as_view(), name="admin-platform-login-methods"),
+    path("platform/spaces/<int:makerspace_id>/keys", SpaceKeysView.as_view(), name="admin-platform-space-keys"),
+    path("platform/spaces/<int:makerspace_id>/keys/rotate", SpaceKeyRotateView.as_view(),
+         name="admin-platform-space-key-rotate"),
+    path("platform/spaces/<int:makerspace_id>/keys/archives/<uuid:archive_id>", SpaceArchiveKeyView.as_view(),
+         name="admin-platform-space-archive-key"),
+    path("platform/spaces/<int:makerspace_id>/capability-purge", CapabilityPurgeView.as_view(),
+         name="admin-platform-space-capability-purge"),
     path("platform/restore-drills", RestoreDrillListView.as_view(), name="admin-platform-restore-drills"),
     path("platform/restore-drills/settings", RestoreDrillSettingsView.as_view(),
          name="admin-platform-restore-drill-settings"),

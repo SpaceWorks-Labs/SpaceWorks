@@ -29,10 +29,10 @@ from apps.machines.service_workflow_cancel import owner_may_cancel
 from apps.makerspaces.servability import servable_queryset
 
 OWNER_ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="Machine service is disabled for this makerspace, or invalid input."),
+    400: OpenApiResponse(ErrorSerializer, description="Invalid input."),
     401: OpenApiResponse(description="Authentication required."),
     403: OpenApiResponse(ErrorSerializer, description="A live member account is required; claim, staff and platform sessions are refused."),
-    404: OpenApiResponse(description="No job owned by the caller matches."),
+    404: OpenApiResponse(description="No job owned by the caller matches, or machine service is off for this makerspace."),
     409: OpenApiResponse(ErrorSerializer, description="The job is already terminal and cannot be cancelled."),
     429: OpenApiResponse(ErrorSerializer, description="Rate limit exceeded."),
 }

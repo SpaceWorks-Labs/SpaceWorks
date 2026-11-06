@@ -176,6 +176,8 @@ FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _PC_EX
 from .catalog_r2_certificates import EXTRA_FIELDS as _CERT_EXTRA, FIELD_NAMES as _CERT_FIELD_NAMES  # noqa: E402
 FIELD_NAMES.update(_CERT_FIELD_NAMES)
 FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _CERT_EXTRA.items()})
+from .catalog_r2_l21a import EXTRA_FIELDS as _L21A_EXTRA  # noqa: E402  (ApplicationDecision.stage)
+FIELD_NAMES.update({label: FIELD_NAMES[label] | extra for label, extra in _L21A_EXTRA.items() if label in FIELD_NAMES})
 EXPORTED_FIELDS = {label: " ".join(sorted(names)) for label, names in FIELD_NAMES.items() if label not in OMITTED_MODELS}
 
 EXTRA_FIELDS = {

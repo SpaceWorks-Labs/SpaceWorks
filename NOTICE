@@ -58,3 +58,8 @@ tldextract 5.4.0 (BSD-3-Clause) with its bundled Public Suffix List snapshot (MP
 filelock 4.2.4 (MIT) and requests-file 3.0.1 (Apache-2.0).
 
 Frontend dependency for passkeys (WebAuthn): @simplewebauthn/browser 14.0.0 (MIT, no dependencies of its own).
+
+Translation pipeline (phase 8 i18n): Lingui 6.10.1 (MIT) -- @lingui/core and @lingui/react at
+runtime; @lingui/cli, @lingui/conf, @lingui/format-po and @lingui/vite-plugin at build time, with
+@lingui/native-tools 0.1.6 (MIT) for the macro transform. The backend image installs GNU gettext
+(GPL-3.0-or-later, build tool only) to compile Django's message catalogues.

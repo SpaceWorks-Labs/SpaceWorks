@@ -10,3 +10,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Lingui catalogues are imported as .po files and compiled by @lingui/vite-plugin.
+declare module "*.po" {
+  export const messages: import("@lingui/core").Messages;
+}

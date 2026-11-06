@@ -3,9 +3,12 @@
 // locales. The output is committed: the frontend Docker build context is frontend/ and
 // cannot read backend/. Rerun after editing the registry: `npm run generate:locales`.
 import fs from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
 const registry = new URL("../../backend/config/supported_locales.json", import.meta.url);
-const output = new URL(process.env.LOCALES_OUTPUT ?? "../src/generated/locales.ts", import.meta.url);
+const output = process.env.LOCALES_OUTPUT
+  ? pathToFileURL(process.env.LOCALES_OUTPUT)
+  : new URL("../src/generated/locales.ts", import.meta.url);
 const CODE = /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/;
 
 const entries = JSON.parse(await fs.readFile(registry, "utf8"));

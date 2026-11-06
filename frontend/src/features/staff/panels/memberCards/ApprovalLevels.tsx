@@ -2,6 +2,7 @@
 // member and programme cards and for event cards and tickets. The most specific level wins:
 // event, then programme, then organisation, then space. Programme and event levels are set on
 // the programme and the event.
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ErrorBlock, Skeleton } from "../../../../components/ui";
@@ -13,7 +14,7 @@ type Levels = {
   groups: { group: Group; available: boolean; default: boolean; space: ApprovalValue }[];
   organisations: { id: number; name: string; membership: ApprovalValue; event: ApprovalValue }[];
 };
-const GROUP_LABELS: Record<Group, string> = { membership: "Member and programme cards", event: "Event cards and tickets" };
+const GROUP_LABELS: Record<Group, string> = { membership: t`Member and programme cards`, event: t`Event cards and tickets` };
 
 export function useApprovalLevels(makerspaceId: number) {
   const client = useQueryClient();
@@ -43,18 +44,17 @@ export function ApprovalLevels({ makerspaceId }: { makerspaceId: number }) {
   };
   return <section className="grid gap-3 rounded-control border border-line bg-panel p-3" aria-labelledby="approval-levels-title">
     <div className="grid gap-1">
-      <h3 id="approval-levels-title" className="text-sm font-semibold text-ink">Design approval</h3>
-      <p className="text-xs text-muted">Space Managers' own edits always publish. For everyone else, the most specific setting
-        wins: an event, then a programme, then an organisation, then this space.</p>
+      <h3 id="approval-levels-title" className="text-sm font-semibold text-ink">{t`Design approval`}</h3>
+      <p className="text-xs text-muted">{t`Space Managers' own edits always publish. For everyone else, the most specific setting wins: an event, then a programme, then an organisation, then this space.`}</p>
     </div>
     {save.error ? <ErrorBlock error={save.error} /> : null}
     <div className="grid gap-3 sm:grid-cols-2">
-      {groups.map((row) => <ApprovalLevelSelect key={row.group} label={`${GROUP_LABELS[row.group]}, this space`}
+      {groups.map((row) => <ApprovalLevelSelect key={row.group} label={t`${GROUP_LABELS[row.group]}, this space`}
         value={row.space} inherited={row.default} inheritLabel="Built-in default" disabled={save.isPending}
         onChange={(required) => save.mutate({ group: row.group, required })} />)}
     </div>
     {query.data.organisations.length && groups.length ? <div className="grid gap-2">
-      <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Organisations</h4>
+      <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{t`Organisations`}</h4>
       <ul className="grid gap-2">
         {query.data.organisations.map((org) => <li key={org.id} className="grid gap-2 rounded-control border border-line p-3">
           <span className="text-sm font-semibold text-ink">{org.name}</span>
@@ -65,8 +65,8 @@ export function ApprovalLevels({ makerspaceId }: { makerspaceId: number }) {
           </div>
         </li>)}
       </ul>
-    </div> : <p className="text-xs text-muted">No organisation works with this space yet, so only the space level applies.</p>}
-    <p className="sr-only" aria-live="polite">{save.isSuccess ? "Approval setting saved." : ""}</p>
-    {groups.length === 0 ? <p className="text-xs text-muted">Card designs are switched off here.</p> : null}
+    </div> : <p className="text-xs text-muted">{t`No organisation works with this space yet, so only the space level applies.`}</p>}
+    <p className="sr-only" aria-live="polite">{save.isSuccess ? t`Approval setting saved.` : ""}</p>
+    {groups.length === 0 ? <p className="text-xs text-muted">{t`Card designs are switched off here.`}</p> : null}
   </section>;
 }

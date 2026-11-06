@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListLayout } from "../../../../components/layouts";
@@ -31,8 +32,8 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
   const [resetting, setResetting] = useState<StaffRoleRow>();
   const [reason, setReason] = useState("");
   const [notice, setNotice] = useState("");
-  const tabs = [{ key: "staff", label: "Staff" }, { key: "invitations", label: "Invitations" },
-    ...(canManageRoles ? [{ key: "roles", label: "Roles" }] : [])];
+  const tabs = [{ key: "staff", label: t`Staff` }, { key: "invitations", label: t`Invitations` },
+    ...(canManageRoles ? [{ key: "roles", label: t`Roles` }] : [])];
   // Authority can change after a refresh or a makerspace switch; always render a valid tab.
   const activeTab = tabs.some(item => item.key === tab) ? tab : "staff";
   const list = useQuery({ queryKey: [...staffRolesKey(space), page, includeRevoked], queryFn: () => listStaffRoles(space, page, includeRevoked), enabled: space > 0 });
@@ -56,20 +57,20 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
     : active.isError && !(activeTab === "invitations" && invitesOff)
       ? { status: "error", error: staffRoleErrorText(active.error), onRetry: () => void active.refetch() } : { status: "ready" };
   const empty = activeTab === "invitations"
-    ? { message: invitesOff ? "Staff invitations are turned off for this makerspace." : "No staff invitations yet." }
-    : activeTab === "roles" ? { message: "No roles to show." }
-      : { message: includeRevoked ? "No staff here yet." : "No active staff here. Grant a role to a member of this space, or invite someone by email." };
+    ? { message: invitesOff ? t`Staff invitations are turned off for this makerspace.` : t`No staff invitations yet.` }
+    : activeTab === "roles" ? { message: t`No roles to show.` }
+      : { message: includeRevoked ? t`No staff here yet.` : t`No active staff here. Grant a role to a member of this space, or invite someone by email.` };
   const isEmpty = activeTab === "staff" ? list.data?.count === 0
     : activeTab === "invitations" ? invitesOff || invites.data?.count === 0 : roles.data?.length === 0;
   const actionError = activeTab === "staff" ? restore.error : null;
   return <ListLayout tabs={tabs} activeTab={activeTab} onTabChange={key => { setTab(key); setNotice(""); }}
-    header={{ title: "Staff & roles", secondary,
-      subtitle: "Staff roles belong to people's own accounts. Grant one to a member of this space, or invite someone by email.",
-      primary: policy?.grantable_roles.length ? { label: "Add staff", icon: "Plus", onClick: () => setAdding(true) } : undefined }}
+    header={{ title: t`Staff & roles`, secondary,
+      subtitle: t`Staff roles belong to people's own accounts. Grant one to a member of this space, or invite someone by email.`,
+      primary: policy?.grantable_roles.length ? { label: t`Add staff`, icon: "Plus", onClick: () => setAdding(true) } : undefined }}
     state={state} isEmpty={isEmpty} empty={empty}
     filters={{ toolbar: <div className="grid gap-3">{toolbar}
       {activeTab === "staff" ? <label className="flex min-h-11 items-center gap-3 text-sm">
-        <input type="checkbox" className="h-5 w-5 accent-accent" checked={includeRevoked} onChange={e => { setIncludeRevoked(e.target.checked); setPage(1); }} />Show revoked</label> : null}
+        <input type="checkbox" className="h-5 w-5 accent-accent" checked={includeRevoked} onChange={e => { setIncludeRevoked(e.target.checked); setPage(1); }} />{t`Show revoked`}</label> : null}
       {notice ? <p className="text-sm text-ink" role="status">{notice}</p> : null}
       {actionError ? <ErrorText message={staffRoleErrorText(actionError)} /> : null}
     </div> }}
@@ -81,9 +82,9 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
             onEdit={setEditing} onRestore={row => restore.mutate(row)} onResetMfa={setResetting}
             onRevoke={row => { revoke.reset(); setReason(""); setRevoking(row); }} />
           {list.data?.previous || list.data?.next ? <div className="flex items-center gap-3">
-            <button type="button" className="desk-button min-h-11" disabled={!list.data?.previous} onClick={() => setPage(value => value - 1)}>Previous</button>
-            <span className="text-sm text-muted">Page {page}</span>
-            <button type="button" className="desk-button min-h-11" disabled={!list.data?.next} onClick={() => setPage(value => value + 1)}>Next</button>
+            <button type="button" className="desk-button min-h-11" disabled={!list.data?.previous} onClick={() => setPage(value => value - 1)}>{t`Previous`}</button>
+            <span className="text-sm text-muted">{t`Page ${page}`}</span>
+            <button type="button" className="desk-button min-h-11" disabled={!list.data?.next} onClick={() => setPage(value => value + 1)}>{t`Next`}</button>
           </div> : null}
         </> }}
     detail={<>

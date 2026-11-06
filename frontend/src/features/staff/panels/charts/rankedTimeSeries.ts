@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReportChartSpec } from "../analyticsApi";
 import type { ChartData, ChartPoint, ChartSeries, ChartSpec } from "./chartSpec";
 
@@ -7,7 +8,7 @@ import type { ChartData, ChartPoint, ChartSeries, ChartSpec } from "./chartSpec"
 export function rankedTimeSeries(spec: ChartSpec | ReportChartSpec, data: ChartData): ChartData {
   if (!("values" in spec) || !spec.truncation || spec.x.kind !== "time") return data;
   const { top_n: count, other_label: otherLabel } = spec.truncation;
-  if (!Number.isInteger(count) || count < 1) throw new Error("Invalid top N.");
+  if (!Number.isInteger(count) || count < 1) throw new Error(t`Invalid top N.`);
   const groups = new Map<string, ChartSeries[]>();
   for (const series of data.series) {
     const key = JSON.stringify([series.panelKey, series.valueField]);

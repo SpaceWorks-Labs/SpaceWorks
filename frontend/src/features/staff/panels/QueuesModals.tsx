@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { RequestFlowDialog } from "./RequestFlowDialog";
 import { useEffect, useState } from "react";
 
@@ -31,10 +32,10 @@ export function ReturnDueModal({
   }, [defaultValue, open]);
 
   return (
-    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Set due for request #${row.id}` : "Set due"} formId="return-due-form" pending={pending} submitLabel="Save due date">
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? t`Set due for request #${row.id}` : t`Set due`} formId="return-due-form" pending={pending} submitLabel={t`Save due date`}>
       <form id="return-due-form" className="grid gap-3" onSubmit={(event) => submitForm(event, () => onSubmit({ returnDueAt }))}>
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-ink">Return due date and time</span>
+          <span className="font-medium text-ink">{t`Return due date and time`}</span>
           <input className="desk-input" type="datetime-local" value={returnDueAt} disabled={pending} onChange={(event) => setReturnDueAt(event.target.value)} />
         </label>
         <ErrorText message={error} />
@@ -55,10 +56,10 @@ export function RejectRequestModal({ row, open, pending, error, onClose, onSubmi
   }, [open]);
 
   return (
-    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Reject request #${row.id}` : "Reject request"} formId="reject-request-form" pending={pending} submitLabel="Reject request" danger>
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? t`Reject request #${row.id}` : t`Reject request`} formId="reject-request-form" pending={pending} submitLabel={t`Reject request`} danger>
       <form id="reject-request-form" className="grid gap-3" onSubmit={(event) => submitForm(event, submitReject)}>
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-ink">Reason</span>
+          <span className="font-medium text-ink">{t`Reason`}</span>
           <textarea className="desk-input min-h-24 w-full resize-y" value={reason} disabled={pending} onChange={(event) => setReason(event.target.value)} />
         </label>
         <ErrorText message={validationError || error} />
@@ -67,7 +68,7 @@ export function RejectRequestModal({ row, open, pending, error, onClose, onSubmi
   );
 
   function submitReject() {
-    if (!reason.trim()) return setValidationError("Reason is required.");
+    if (!reason.trim()) return setValidationError(t`Reason is required.`);
     onSubmit({ reason: reason.trim() });
   }
 }

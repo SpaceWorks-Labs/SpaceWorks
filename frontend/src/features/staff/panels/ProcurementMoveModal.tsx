@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -43,7 +44,7 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
 
   const moveHardware = useMutation({
     mutationFn: () => {
-      if (!item) return Promise.reject(new Error("Select an item first."));
+      if (!item) return Promise.reject(new Error(t`Select an item first.`));
       return staffRequest(`/procurement/to-buy/${item.id}/move-to-inventory`, { method: "POST", body: JSON.stringify(hardwarePayload(hardware)) });
     },
     onSuccess: () => {
@@ -55,7 +56,7 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
   });
   const movePrinting = useMutation({
     mutationFn: () => {
-      if (!item) return Promise.reject(new Error("Select an item first."));
+      if (!item) return Promise.reject(new Error(t`Select an item first.`));
       return staffRequest(`/procurement/to-buy/${item.id}/move-to-printing`, { method: "POST", body: JSON.stringify(printingPayload(printing)) });
     },
     onSuccess: () => {
@@ -70,9 +71,9 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
   const error = moveHardware.error ?? movePrinting.error;
   const canSubmit = isHardware ? canSubmitHardware(hardware) : canSubmitPrinting(printing);
 
-  return <FlowLayout presentation="dialog" open={open} title={isHardware ? "Move to inventory" : "Move to printing"} subject={item ? `${item.name} · ${item.quantity} received` : ""}
-    state={{ status: "ready" }} steps={[{ key: "destination", label: "Choose a destination", state: "current" }]} current="destination" onCancel={onClose}
-    footer={{ next: { label: "Move", pending, pendingLabel: "Moving…", disabled: !canSubmit, disabledReason: "Choose a destination and complete the required fields.", onClick: () => isHardware ? moveHardware.mutate() : movePrinting.mutate() } }}
+  return <FlowLayout presentation="dialog" open={open} title={isHardware ? t`Move to inventory` : t`Move to printing`} subject={item ? `${item.name} · ${item.quantity} received` : ""}
+    state={{ status: "ready" }} steps={[{ key: "destination", label: t`Choose a destination`, state: "current" }]} current="destination" onCancel={onClose}
+    footer={{ next: { label: t`Move`, pending, pendingLabel: "Moving…", disabled: !canSubmit, disabledReason: "Choose a destination and complete the required fields.", onClick: () => isHardware ? moveHardware.mutate() : movePrinting.mutate() } }}
     work={<div className="grid gap-4">{isHardware ? <HardwareMoveForm form={hardware} setForm={setHardware} products={products.data?.results ?? []} categories={categoryResults(categories.data)} containers={containers.data?.results ?? []} />
       : <PrintingMoveForm form={printing} setForm={setPrinting} printers={printers.data?.results ?? []} />}
       <ErrorText message={error instanceof Error ? error.message : undefined} />

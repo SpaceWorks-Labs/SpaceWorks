@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { InventoryDetailNavigation } from "./InventoryDetailNavigation";
 import type { Dispatch, SetStateAction } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -29,12 +30,12 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
     identity={product.image_url ? { kind: "image", src: product.image_url } : { kind: "icon", icon: "Circle", tone: "accent" }}
     status={<InventoryAvailability product={product} />} state={{ status: "ready" }}
     meta={[product.tracking_mode === "individual" ? "Individual units" : "Count-tracked", form.is_public ? "Public item" : "Private item"]}
-    actions={product.is_public ? { secondary: { label: "View public page ↗", href: `/m/${makerspace.slug}/items/${product.id}`, external: true } } : undefined}
+    actions={product.is_public ? { secondary: { label: t`View public page ↗`, href: `/m/${makerspace.slug}/items/${product.id}`, external: true } } : undefined}
     tabs={allowed.map(key => ({ key, label: ({ details: "Details", stock: "Stock", qr: "QR & assets", history: "History", custody: "Custody" } as Record<string, string>)[key], href: href(key) }))} activeTab={active}
     main={<>
       {active === "details" ? <><InventoryItemFields form={form} setForm={setForm} categories={categories} error={error} makerspace={makerspace}>
         {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
-        <ImageUploader endpoint={`/admin/inventory/${product.id}/image`} currentUrl={product.image_url} label="Item photo" onChanged={invalidate} />
+        <ImageUploader endpoint={`/admin/inventory/${product.id}/image`} currentUrl={product.image_url} label={t`Item photo`} onChanged={invalidate} />
         <PriceOverrideCard makerspaceId={makerspace.id} targetType="inventory_product" targetId={product.id} />
       </InventoryItemFields>{dirty ? <SettingsActions onDiscard={() => setForm(original)} onSave={onSave} pending={pending} disabled={!form.name.trim()} /> : null}</> : null}
       {active === "stock" ? <div className="@container grid gap-6"><div className="grid grid-cols-2 gap-3 @xl:grid-cols-3">{[
@@ -43,10 +44,10 @@ export function InventoryItemDetail({ product, makerspace, canViewAudit, kitEnab
         <QuantityAdjust product={product} form={adjustForm} setForm={setAdjustForm} pending={adjustPending} error={adjustError} onSubmit={onAdjust} />
         {product.tracking_mode === "individual" ? <IndividualAssets productId={product.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}
         {capabilityOn(makerspace, "loans.waitlist") ? <ItemWaitlist makerspaceId={makerspace.id} productId={product.id} /> : null}</div> : null}
-      {active === "qr" ? <><QrHistory defaultOpen title="Product QR history" queryKey={["product-qr-history", product.id]} path={`/admin/inventory/${product.id}/qr-history`} />{product.tracking_mode === "individual" ? <IndividualAssets productId={product.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}</> : null}
+      {active === "qr" ? <><QrHistory defaultOpen title={t`Product QR history`} queryKey={["product-qr-history", product.id]} path={`/admin/inventory/${product.id}/qr-history`} />{product.tracking_mode === "individual" ? <IndividualAssets productId={product.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}</> : null}
       {active === "history" && canViewAudit ? <LendingHistory productId={product.id} /> : null}
       {active === "custody" && canViewAudit ? <ChainOfCustodyBlock productId={product.id} /> : null}
       <ErrorText message={error} />
     </>}
-    danger={!product.is_archived ? [{ title: "Archive item", consequence: "Hides this item from active inventory and the public catalogue. You can undo this change.", action: { label: "Archive", onClick: onArchive, confirm: { title: `Archive ${product.name}?`, message: "It leaves the catalogue and can no longer be requested. You can bring it back from the Archived tab." } } }] : undefined} /></InventoryDetailNavigation>;
+    danger={!product.is_archived ? [{ title: t`Archive item`, consequence: "Hides this item from active inventory and the public catalogue. You can undo this change.", action: { label: t`Archive`, onClick: onArchive, confirm: { title: t`Archive ${product.name}?`, message: t`It leaves the catalogue and can no longer be requested. You can bring it back from the Archived tab.` } } }] : undefined} /></InventoryDetailNavigation>;
 }

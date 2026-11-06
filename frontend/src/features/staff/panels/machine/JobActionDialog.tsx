@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import type { PrinterPool } from "../../../../generated/api";
@@ -9,8 +10,8 @@ import { ACTION_ERROR_HELP } from "./jobLabels";
 import { errorCode, useJobAction, type StaffJob } from "./machineJobsApi";
 
 const TITLES: Record<DialogAction, string> = {
-  accept: "Accept job", start: "Start job", quote: "Send quote", "request-changes": "Ask for changes", reject: "Reject job",
-  complete: "Complete job", fail: "Mark job failed", collect: "Hand over job", urgent: "Mark urgent", assign: "Assign to a machine",
+  accept: t`Accept job`, start: t`Start job`, quote: t`Send quote`, "request-changes": t`Ask for changes`, reject: t`Reject job`,
+  complete: t`Complete job`, fail: t`Mark job failed`, collect: t`Hand over job`, urgent: t`Mark urgent`, assign: t`Assign to a machine`,
 };
 const CONFIRM: Partial<Record<DialogAction, string>> = { quote: "Send quote", "request-changes": "Send to member", reject: "Reject job",
   fail: "Mark failed", collect: "Mark collected", urgent: "Pin as urgent", assign: "Save machine" };
@@ -49,9 +50,9 @@ export function JobActionDialog({ job, action: initialAction, makerspaceId, type
         {code && ACTION_ERROR_HELP[code] && run.error.message !== ACTION_ERROR_HELP[code] ? <span className="mt-1 block text-muted">{run.error.message}</span> : null}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
         {blocker ? <p className="mr-auto self-center text-sm text-muted">{blocker}</p> : null}
-        <button type="button" className="desk-button-ghost" onClick={onClose}>Cancel</button>
+        <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
         <button type="submit" className={action === "reject" || action === "fail" ? "desk-button-danger" : "desk-button-primary"}
-          disabled={!!blocker || run.isPending}>{run.isPending ? "Saving…" : CONFIRM[action] ?? TITLES[action]}</button>
+          disabled={!!blocker || run.isPending}>{run.isPending ? t`Saving…` : CONFIRM[action] ?? TITLES[action]}</button>
       </div>
     </form>
   </Modal>;

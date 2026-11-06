@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { Field, Modal } from "../../../../components/ui";
@@ -39,17 +40,17 @@ export function ResetPasswordModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={`Reset password for ${userLabel}`}
+      title={t`Reset password for ${userLabel}`}
       footer={
         result ? (
           <div className="desk-actions flex flex-wrap justify-end gap-2">
-            <button className="desk-button-primary" type="button" onClick={onClose}>Close</button>
+            <button className="desk-button-primary" type="button" onClick={onClose}>{t`Close`}</button>
           </div>
         ) : (
           <ModalActions
             pending={pending}
             disabled={disabled}
-            submitLabel="Reset password"
+            submitLabel={t`Reset password`}
             onClose={onClose}
             onSubmit={onSubmit}
           />
@@ -58,7 +59,7 @@ export function ResetPasswordModal({
     >
       {result ? (
         <div className="grid gap-3 text-sm">
-          <p className="text-muted">Share this with the user securely. It won't be shown again.</p>
+          <p className="text-muted">{t`Share this with the user securely. It won't be shown again.`}</p>
           <div className="rounded-md border border-accent/40 bg-accent-soft p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <code className="break-all code-text text-base font-semibold text-ink">
@@ -71,7 +72,7 @@ export function ResetPasswordModal({
                   void navigator.clipboard.writeText(result.temporary_password).then(() => setCopied(true));
                 }}
               >
-                {copied ? "Copied" : "Copy"}
+                {copied ? t`Copied` : t`Copy`}
               </button>
             </div>
           </div>
@@ -79,11 +80,10 @@ export function ResetPasswordModal({
       ) : (
         <form className="grid gap-3 text-sm" onSubmit={(event) => { event.preventDefault(); if (!disabled) onSubmit(); }}>
           <p className="text-muted">
-            A temporary password will be generated. The user must change it at next sign-in. You can run this again anytime.
-          </p>
+            {t`A temporary password will be generated. The user must change it at next sign-in. You can run this again anytime.`}</p>
           <Field
-            label="Temporary password"
-            hint="Optional. Leave blank to auto-generate."
+            label={t`Temporary password`}
+            hint={t`Optional. Leave blank to auto-generate.`}
             error={errors.password ?? (hasShortPassword ? "Use at least 8 characters, or leave blank to auto-generate." : undefined)}
           >
             <input

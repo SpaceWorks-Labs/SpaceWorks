@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef, useState } from "react";
 
 import { ConfirmDialog } from "../../../../components/ui";
@@ -44,7 +45,7 @@ export function MaintenanceDocuments({
       setPendingKey(contract.object_key);
       await finish(contract.object_key);
     } catch (caught) {
-      setUploadError(caught instanceof Error ? caught : new Error("Unable to upload document."));
+      setUploadError(caught instanceof Error ? caught : new Error(t`Unable to upload document.`));
     }
   };
   const retryFinalize = async () => {
@@ -52,39 +53,36 @@ export function MaintenanceDocuments({
     try {
       await finish(pendingKey);
     } catch (caught) {
-      setUploadError(caught instanceof Error ? caught : new Error("Unable to finalize document."));
+      setUploadError(caught instanceof Error ? caught : new Error(t`Unable to finalize document.`));
     }
   };
   const error = uploadError ?? presign.error ?? finalize.error ?? view.error ?? remove.error;
 
   return (
     <div className="mt-3 grid gap-2 border-t border-line pt-3">
-      <h4 className="title-section">Attachments</h4>
+      <h4 className="title-section">{t`Attachments`}</h4>
       {documents.map((document) => (
         <div key={document.id} className="flex flex-wrap items-center gap-2 text-xs">
           <span className="min-w-0 flex-1 text-muted">
-            Attachment #{document.id} · {formatBytes(document.size_bytes)}
+            {t`Attachment #${document.id} · ${formatBytes(document.size_bytes)}`}
           </span>
           <button className="desk-button-ghost" type="button" onClick={() => view.mutate(document.id)}>
-            Download
-          </button>
+            {t`Download`}</button>
           {canDelete && !retired ? (
             <button
               className="desk-button-danger"
               type="button"
               onClick={() => setDeleteDocumentId(document.id)}
             >
-              Delete
-            </button>
+              {t`Delete`}</button>
           ) : null}
         </div>
       ))}
-      {!documents.length ? <span className="text-xs text-muted">No attachments.</span> : null}
+      {!documents.length ? <span className="text-xs text-muted">{t`No attachments.`}</span> : null}
       {!retired ? (
         <div className="flex flex-wrap items-end gap-2">
           <label className="eyebrow grid min-w-0 flex-1 gap-1">
-            Add supporting document
-            <input
+            {t`Add supporting document`}<input
               ref={input}
               className="desk-input"
               type="file"
@@ -101,12 +99,11 @@ export function MaintenanceDocuments({
             disabled={!file || presign.isPending || finalize.isPending}
             onClick={() => void upload()}
           >
-            {presign.isPending || finalize.isPending ? "Uploading..." : "Upload"}
+            {presign.isPending || finalize.isPending ? t`Uploading...` : t`Upload`}
           </button>
           {pendingKey && finalize.isError ? (
             <button className="desk-button-primary" type="button" onClick={() => void retryFinalize()}>
-              Retry finalize
-            </button>
+              {t`Retry finalize`}</button>
           ) : null}
         </div>
       ) : null}
@@ -115,9 +112,9 @@ export function MaintenanceDocuments({
       ) : null}
       <ConfirmDialog
         open={deleteDocumentId !== null}
-        title="Delete maintenance attachment?"
-        message="Permanently delete this maintenance attachment?"
-        confirmLabel="Delete attachment"
+        title={t`Delete maintenance attachment?`}
+        message={t`Permanently delete this maintenance attachment?`}
+        confirmLabel={t`Delete attachment`}
         tone="danger"
         pending={remove.isPending}
         onConfirm={() => {

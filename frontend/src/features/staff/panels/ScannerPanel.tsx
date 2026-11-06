@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ListLayout } from "../../../components/layouts";
 import { ConfirmDialog, DangerZone, ErrorText, ScanWorkbench, StatusPill } from "../../../components/ui";
 import { ScannerMoveAssetForm, ScannerRebindForm } from "./ScannerPanelForms";
@@ -14,8 +15,8 @@ export function ScannerPanel(props: { makerspace: Makerspace; isSuperadmin: bool
     setDestProductId, destinationProductRows, destinationProducts, moveTag, setMoveTag, moveAsset,
     destinationProductError, moveError, contents,
 } = useStaffScanner(props);
-  return <ListLayout header={{ title: "Scanner", subtitle: "Scan a label to find a box, product or asset and choose the next step." }} state={{ status: "ready" }}
-    empty={{ message: "Scan a QR code or find an item to get started." }}
+  return <ListLayout header={{ title: t`Scanner`, subtitle: t`Scan a label to find a box, product or asset and choose the next step.` }} state={{ status: "ready" }}
+    empty={{ message: t`Scan a QR code or find an item to get started.` }}
     body={{ kind: "rows", rows: <ScanWorkbench searchLabel="QR payload" onFind={doResolve} onScan={resolveFromScan} findPending={resolve.isPending}
       recent={recent} controls={<>
         {scanNote && resolve.isPending ? <p role="status" className="text-sm text-muted">{scanNote}</p> : null}
@@ -24,24 +25,22 @@ export function ScannerPanel(props: { makerspace: Makerspace; isSuperadmin: bool
       {resolved && target ? (
         <div className="mt-4 rounded-md border border-line bg-surface p-3">
           <h3 className="title-section [overflow-wrap:anywhere]">
-            {target.type === "box" ? `Box: ${target.label} (${target.code})`
-              : target.type === "product" ? `Product: ${target.name}`
-              : `Asset: ${target.asset_tag} - ${target.product} (${target.status})`}
+            {target.type === "box" ? t`Box: ${target.label} (${target.code})`
+              : target.type === "product" ? t`Product: ${target.name}`
+              : t`Asset: ${target.asset_tag} - ${target.product} (${target.status})`}
           </h3>
-          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">QR #{resolved.qr.id}<StatusPill label={resolved.qr.status} /></p>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">{t`QR #${resolved.qr.id}`}<StatusPill label={resolved.qr.status} /></p>
           <div className="desk-actions mt-3 flex flex-wrap gap-2 text-sm">
             {actions.includes("contents") && target.type === "box" ? (
-              <button className="desk-button-ghost" type="button" disabled={loadContents.isPending} onClick={() => loadContents.mutate(target.id)}>View contents</button>
+              <button className="desk-button-ghost" type="button" disabled={loadContents.isPending} onClick={() => loadContents.mutate(target.id)}>{t`View contents`}</button>
             ) : null}
             {canRebind ? (
               <button className="desk-button-ghost" type="button" onClick={() => setShowRebind((open) => !open)}>
-                Rename & rebind
-              </button>
+                {t`Rename & rebind`}</button>
             ) : null}
             {canMoveAsset ? (
               <button className="desk-button-ghost" type="button" onClick={() => setShowMove((open) => !open)}>
-                Move to makerspace
-              </button>
+                {t`Move to makerspace`}</button>
             ) : null}
           </div>
           {showRebind ? (
@@ -83,23 +82,21 @@ export function ScannerPanel(props: { makerspace: Makerspace; isSuperadmin: bool
           ) : null}
           {actions.some((action) => ["checkout", "return", "direct_handout"].includes(action)) ? (
             <p className="mt-2 text-xs text-muted">
-              This item supports {actions.filter((a) => ["checkout", "return", "direct_handout"].includes(a)).join(" / ")} -
-              use the Direct handout tab (or the public self-checkout page) which collect the borrower identity.
-            </p>
+              {t`This item supports ${actions.filter((a) => ["checkout", "return", "direct_handout"].includes(a)).join(" / ")} - use the Direct handout tab (or the public self-checkout page) which collect the borrower identity.`}</p>
           ) : null}
           {revokeError ? <p className="mt-2 text-sm text-danger">{revokeError}</p> : null}
           {contents ? (
             <div className="mt-3 rounded-md border border-line bg-bg p-2 text-xs text-muted [overflow-wrap:anywhere]">
-              <h4 className="title-section">Contents</h4>
+              <h4 className="title-section">{t`Contents`}</h4>
               {contents.products.map((product) => <p key={`p-${product.id}`}>{product.name} - {product.available_quantity} available</p>)}
               {contents.assets.map((asset) => <p key={`a-${asset.id}`}>{asset.asset_tag} ({asset.status})</p>)}
-              {!contents.products.length && !contents.assets.length ? <p>Empty.</p> : null}
+              {!contents.products.length && !contents.assets.length ? <p>{t`Empty.`}</p> : null}
             </div>
           ) : null}
-          {actions.includes("revoke") ? <DangerZone title="Revoke this QR code" consequence="This label will stop resolving for future scans." action={{ label: "Revoke QR", pending: revoke.isPending, pendingLabel: "Revoking…", onClick: () => setConfirmRevoke(true) }} /> : null}
+          {actions.includes("revoke") ? <DangerZone title={t`Revoke this QR code`} consequence="This label will stop resolving for future scans." action={{ label: t`Revoke QR`, pending: revoke.isPending, pendingLabel: "Revoking…", onClick: () => setConfirmRevoke(true) }} /> : null}
         </div>
       ) : null}
 
       </>} /> }}
-    detail={<ConfirmDialog open={confirmRevoke} title="Revoke this QR code?" message="This label will stop resolving for future scans. Print a new label to replace it." confirmLabel="Revoke QR" tone="danger" pending={revoke.isPending} onCancel={() => setConfirmRevoke(false)} onConfirm={() => { if (resolved) revoke.mutate(resolved.qr.id); }} />} />;
+    detail={<ConfirmDialog open={confirmRevoke} title={t`Revoke this QR code?`} message={t`This label will stop resolving for future scans. Print a new label to replace it.`} confirmLabel={t`Revoke QR`} tone="danger" pending={revoke.isPending} onCancel={() => setConfirmRevoke(false)} onConfirm={() => { if (resolved) revoke.mutate(resolved.qr.id); }} />} />;
 }

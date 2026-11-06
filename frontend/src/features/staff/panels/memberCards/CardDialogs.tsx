@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Field, Modal } from "../../../../components/ui";
 import { REISSUE_REASONS, type MemberCard, type ReissueReason } from "./types";
 
@@ -22,23 +23,22 @@ export function ReissueCardDialog({
     <Modal
       open={Boolean(card)}
       onClose={onClose}
-      title="Reissue card"
+      title={t`Reissue card`}
       footer={
         <div className="desk-actions flex flex-wrap justify-end gap-2">
           <button className="desk-button" type="button" disabled={pending} onClick={onClose}>
-            Cancel
-          </button>
+            {t`Cancel`}</button>
           <button className="desk-button-primary" type="button" disabled={pending} onClick={onSubmit}>
-            {pending ? "Reissuing…" : "Reissue"}
+            {pending ? t`Reissuing…` : t`Reissue`}
           </button>
         </div>
       }
     >
       <p className="text-sm text-muted">
-        Replaces <span className="tabular-nums">{card?.card_number}</span> for {card?.printed_name}. The
+        {t`Replaces `}<span className="tabular-nums">{card?.card_number}</span> for {card?.printed_name}. The
         old card stops resolving as soon as the new one is issued.
       </p>
-      <Field label="Reason" className="mt-3">
+      <Field label={t`Reason`} className="mt-3">
         <select
           className="desk-input"
           value={reason}
@@ -83,23 +83,20 @@ export function RevokeCardDialog({
     <Modal
       open={Boolean(card)}
       onClose={onClose}
-      title="Revoke this card?"
+      title={t`Revoke this card?`}
       footer={
         <div className="desk-actions flex flex-wrap justify-end gap-2">
           <button className="desk-button" type="button" disabled={pending} onClick={onClose}>
-            Cancel
-          </button>
+            {t`Cancel`}</button>
           <button className="desk-button-danger" type="button" disabled={pending || !ready} onClick={onSubmit}>
-            {pending ? "Revoking…" : "Revoke card"}
+            {pending ? t`Revoking…` : t`Revoke card`}
           </button>
         </div>
       }
     >
       <p className="text-sm text-muted">
-        <span className="tabular-nums">{card?.number_display || card?.card_number}</span> for {card?.printed_name} stops
-        working at the door and on the check page, and its photo is deleted.
-      </p>
-      <Field label="Why is it revoked?" hint="Seen by staff only." className="mt-3">
+        <span className="tabular-nums">{card?.number_display || card?.card_number}</span> for {card?.printed_name} {t` stops working at the door and on the check page, and its photo is deleted.`}</p>
+      <Field label={t`Why is it revoked?`} hint={t`Seen by staff only.`} className="mt-3">
         <input className="desk-input" value={note} maxLength={500} onChange={(event) => onNoteChange(event.target.value)} />
       </Field>
       {error ? (
@@ -116,15 +113,14 @@ export function PhotoRequestDialog({ card, reason, pending, error, onReasonChang
   onReasonChange: (reason: string) => void; onClose: () => void; onSubmit: () => void;
 }) {
   return (
-    <Modal open={Boolean(card)} onClose={onClose} title="Ask for a new photo?"
+    <Modal open={Boolean(card)} onClose={onClose} title={t`Ask for a new photo?`}
       footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
-        <button className="desk-button" type="button" disabled={pending} onClick={onClose}>Cancel</button>
+        <button className="desk-button" type="button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
         <button className="desk-button-primary" type="button" disabled={pending} onClick={onSubmit}>
-          {pending ? "Sending…" : "Ask for a new photo"}</button>
+          {pending ? t`Sending…` : t`Ask for a new photo`}</button>
       </div>}>
-      <p className="text-sm text-muted">{card?.printed_name} is asked to upload a new photo, with one reminder a week later.
-        The card stays valid meanwhile.</p>
-      <Field label="What is wrong with the current one? (optional)" className="mt-3">
+      <p className="text-sm text-muted">{card?.printed_name} {t` is asked to upload a new photo, with one reminder a week later. The card stays valid meanwhile.`}</p>
+      <Field label={t`What is wrong with the current one? (optional)`} className="mt-3">
         <input className="desk-input" value={reason} maxLength={300} onChange={(event) => onReasonChange(event.target.value)} />
       </Field>
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}

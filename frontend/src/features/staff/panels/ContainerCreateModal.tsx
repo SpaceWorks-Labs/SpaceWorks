@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ErrorText, Field, Modal } from "../../../components/ui";
@@ -23,15 +24,15 @@ export function ContainerCreateModal({ makerspaceId, open, onClose, onCreated }:
     },
   });
   const close = () => { if (!create.isPending) { reset(); onClose(); } };
-  return <Modal open={open} onClose={close} title="New container" footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
-    <button className="desk-button-ghost" type="button" disabled={create.isPending} onClick={close}>Cancel</button>
-    <button className="desk-button-primary" type="submit" form="container-create" disabled={create.isPending || !label.trim()}>{create.isPending ? "Creating…" : "Create container"}</button>
+  return <Modal open={open} onClose={close} title={t`New container`} footer={<div className="desk-actions flex flex-wrap justify-end gap-2">
+    <button className="desk-button-ghost" type="button" disabled={create.isPending} onClick={close}>{t`Cancel`}</button>
+    <button className="desk-button-primary" type="submit" form="container-create" disabled={create.isPending || !label.trim()}>{create.isPending ? t`Creating…` : t`Create container`}</button>
   </div>}>
     <form id="container-create" className="grid gap-4" onSubmit={event => { event.preventDefault(); if (label.trim()) create.mutate(); }}>
-      <p className="text-sm text-muted">A QR label is created with it. Print it from QR labels.</p>
-      <Field label="Label"><input className="desk-input" value={label} onChange={event => setLabel(event.target.value)} /></Field>
-      <Field label="Location (optional)"><input className="desk-input" value={location} onChange={event => setLocation(event.target.value)} /></Field>
-      <Field label="Description (optional)"><textarea className="desk-input min-h-20" value={description} onChange={event => setDescription(event.target.value)} /></Field>
+      <p className="text-sm text-muted">{t`A QR label is created with it. Print it from QR labels.`}</p>
+      <Field label={t`Label`}><input className="desk-input" value={label} onChange={event => setLabel(event.target.value)} /></Field>
+      <Field label={t`Location (optional)`}><input className="desk-input" value={location} onChange={event => setLocation(event.target.value)} /></Field>
+      <Field label={t`Description (optional)`}><textarea className="desk-input min-h-20" value={description} onChange={event => setDescription(event.target.value)} /></Field>
       <ErrorText message={create.error?.message} />
     </form>
   </Modal>;

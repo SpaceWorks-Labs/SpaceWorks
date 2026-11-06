@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StaffLoanRenew } from "../StaffLoanRenew";
 import { featureEnabled } from "../../../lib/features";
 import { useContext, useEffect, useState } from "react";
@@ -130,7 +131,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
       await action.mutateAsync({ path, body });
       onDone();
     } catch (error) {
-      setModalError(error instanceof Error ? error.message : "Action failed.");
+      setModalError(error instanceof Error ? error.message : t`Action failed.`);
     }
   };
   const submitReturnDue = (values: ReturnDueValues) => {
@@ -159,24 +160,24 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
       closeModals();
     } catch (error) {
       const message = issueErrorMessage(error);
-      setModalError(boxAssigned ? `Box assigned, but issue failed: ${message} The request still needs the issue step; retry with the assigned box.` : message);
+      setModalError(boxAssigned ? t`Box assigned, but issue failed: ${message} The request still needs the issue step; retry with the assigned box.` : message);
     }
   };
 
   const primary = (row: HardwareRequest, queue: RequestView | undefined = tab): Action | undefined => {
-    if (queue === "pending") return { label: "Accept", onClick: () => openModal(setAcceptRow, row), disabled: action.isPending };
+    if (queue === "pending") return { label: t`Accept`, onClick: () => openModal(setAcceptRow, row), disabled: action.isPending };
     if (queue === "accepted") return can("issue_request") && can("assign_box") && can("upload_evidence")
-      ? { label: "Start handover", onClick: () => openGuided(row, "issue") }
-      : { label: "Assign + issue", onClick: () => openModal(setAssignIssueRow, row) };
+      ? { label: t`Start handover`, onClick: () => openGuided(row, "issue") }
+      : { label: t`Assign + issue`, onClick: () => openModal(setAssignIssueRow, row) };
     if (queue === "active") return can("return_request") && can("upload_evidence")
-      ? { label: "Record return", onClick: () => openGuided(row, "return") }
-      : { label: "Return", onClick: () => openModal(setReturnRow, row) };
+      ? { label: t`Record return`, onClick: () => openGuided(row, "return") }
+      : { label: t`Return`, onClick: () => openModal(setReturnRow, row) };
   };
   const menu = (row: HardwareRequest, queue: RequestView | undefined = tab): Action[] => queue === "history" ? [] : [
-    { label: "Set due", onClick: () => openModal(setDueRow, row), disabled: action.isPending },
-    ...(queue === "accepted" ? [{ label: "Assign + issue (quick form)", onClick: () => openModal(setAssignIssueRow, row), disabled: action.isPending }] : []),
-    ...(queue === "active" ? [{ label: "Partial return (quick form)", onClick: () => openModal(setReturnRow, row), disabled: action.isPending }] : []),
-    ...((queue === "pending" || queue === "accepted") && can("accept_request") ? [{ label: "Cancel request", tone: "danger" as const, confirms: true, onClick: () => openModal(setCancelRow, row) }] : []),
+    { label: t`Set due`, onClick: () => openModal(setDueRow, row), disabled: action.isPending },
+    ...(queue === "accepted" ? [{ label: t`Assign + issue (quick form)`, onClick: () => openModal(setAssignIssueRow, row), disabled: action.isPending }] : []),
+    ...(queue === "active" ? [{ label: t`Partial return (quick form)`, onClick: () => openModal(setReturnRow, row), disabled: action.isPending }] : []),
+    ...((queue === "pending" || queue === "accepted") && can("accept_request") ? [{ label: t`Cancel request`, tone: "danger" as const, confirms: true, onClick: () => openModal(setCancelRow, row) }] : []),
   ];
   const messages: Record<RequestView, string> = {
     all: "No requests in any queue yet. New requests land in Pending review.",
@@ -196,31 +197,31 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
     const next = new URL((anchor as HTMLAnchorElement).href).searchParams.get("queue");
     if (next && (next === "all" ? visible.length > 1 : visible.includes(next as RequestTab))) { event.preventDefault(); list.update({ queue: next, history: "false", request: "", requestView: "overview" }); }
   }}>
-    <ListLayout header={{ title: "Requests", subtitle: "Borrow requests from members, from review to return.",
-      meta: queues.finding ? <span role="status">Finding request #{list.values.id || list.values.request}…</span> : undefined,
+    <ListLayout header={{ title: t`Requests`, subtitle: t`Borrow requests from members, from review to return.`,
+      meta: queues.finding ? <span role="status">{t`Finding request #${list.values.id || list.values.request}…`}</span> : undefined,
       primary: tab === "accepted" && selected.count === 1 && selected.results[0] ? primary(selected.results[0]) : undefined }}
       callout={callout}
       tabs={[...visible, ...(visible.length > 1 ? ["all" as const] : [])].map(key => ({ key, label: requestTabLabels[key], href: requestTabHref(location.pathname, location.search, key),
         count: key === "pending" ? counts?.pending_requests : key === "accepted" ? counts?.awaiting_issue : undefined }))}
       activeTab={tab} state={state} isEmpty={!visible.length || queues.notFound || involved.every(key => !queries[key].results.length)}
-      empty={{ message: !visible.length ? "You don't have access to request queues in this makerspace."
-        : queues.notFound ? `We couldn't find request #${list.values.id || list.values.request} in your queues.` : messages[tab ?? "pending"] }}
+      empty={{ message: !visible.length ? t`You don't have access to request queues in this makerspace.`
+        : queues.notFound ? t`We couldn't find request #${list.values.id || list.values.request} in your queues.` : messages[tab ?? "pending"] }}
       filtered={Boolean(search || list.values.id || list.values.request)}
-      filteredEmpty={{ message: queues.notFound ? `We couldn't find request #${list.values.id || list.values.request} in your queues.` : "No requests match these filters. Clear filters to see your queue.",
-        action: { label: "Clear filters", onClick: () => list.update({ search: "", id: "", request: "", requestView: "overview" }) } }}
-      filters={{ toolbar: <ListViewControls searchControl={{ label: "Search requests", placeholder: "Search by name, email, phone or purpose", value: search, onChange: value => list.setFilter("search", value) }} state={list} makerspaceId={makerspace.id} entity="requests" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["return_due_at", "Due first"]]} /> }}
+      filteredEmpty={{ message: queues.notFound ? t`We couldn't find request #${list.values.id || list.values.request} in your queues.` : t`No requests match these filters. Clear filters to see your queue.`,
+        action: { label: t`Clear filters`, onClick: () => list.update({ search: "", id: "", request: "", requestView: "overview" }) } }}
+      filters={{ toolbar: <ListViewControls searchControl={{ label: t`Search requests`, placeholder: t`Search by name, email, phone or purpose`, value: search, onChange: value => list.setFilter("search", value) }} state={list} makerspaceId={makerspace.id} entity="requests" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["return_due_at", "Due first"]]} /> }}
       body={{ kind: "rows", rows: <div role="region" aria-label={requestTabLabels[tab ?? "pending"]} className={tab === "all" ? "grid gap-8" : undefined}>
         {involved.map(key => {
           const rows = queries[key].results;
           if (tab === "all" && !rows.length) return null;
           const list = <RequestList rows={rows} canViewAudit={canViewAudit} primary={row => primary(row, key)} menu={row => menu(row, key)}
-            reject={key === "pending" ? row => ({ label: "Reject", tone: "danger", onClick: () => openModal(setRejectRow, row) }) : undefined}
+            reject={key === "pending" ? row => ({ label: t`Reject`, tone: "danger", onClick: () => openModal(setRejectRow, row) }) : undefined}
             extra={key === "active" && makerspace.enabled_features?.includes("loans.renewals") ? row => <StaffLoanRenew makerspaceId={makerspace.id} requestId={row.id} /> : undefined} />;
           return tab !== "all" ? <div key={key}>{list}</div> : <section key={key} aria-label={requestTabLabels[key]} className="grid gap-3">
             <h2 className="title-section">{requestTabLabels[key]} <span className="font-normal text-muted">({queries[key].count})</span></h2>
             {list}
             {queries[key].count > rows.length ? <RouteLink className="inline-flex min-h-11 w-fit items-center text-sm font-semibold text-accent-ink underline" href={requestTabHref(location.pathname, location.search, key)}>
-              Show all {queries[key].count} in {requestTabLabels[key]}</RouteLink> : null}
+              {t`Show all ${queries[key].count} in ${requestTabLabels[key]}`}</RouteLink> : null}
           </section>;
         })}
       </div> }}

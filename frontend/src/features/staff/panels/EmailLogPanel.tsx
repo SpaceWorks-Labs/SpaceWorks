@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ListLayout } from "../../../components/layouts";
 import { ErrorBlock, ListRow, RelativeTime, StatusPill } from "../../../components/ui";
 import { useUrlListState } from "../../../lib/useUrlListState";
@@ -52,22 +53,22 @@ export function EmailLogPanel({ makerspace }: { makerspace: Makerspace }) {
   const updateStatus = (value: EmailLogStatus) => {
     list.setFilter("status", value);
   };
-  return <ListLayout header={{ title: "Email log", subtitle: "See what reached people and retry deliveries that need attention." }}
+  return <ListLayout header={{ title: t`Email log`, subtitle: t`See what reached people and retry deliveries that need attention.` }}
     state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: "Couldn't load email logs. Try again.", onRetry: () => { void logs.refetch(); } }}
     isEmpty={logs.data?.results.length === 0} filtered={Boolean(status || list.values.recent_days)}
-    empty={{ message: "No email logs yet. Sent emails will appear here." }}
-    filteredEmpty={{ message: "No email logs match. Try another status or date range." }}
+    empty={{ message: t`No email logs yet. Sent emails will appear here.` }}
+    filteredEmpty={{ message: t`No email logs match. Try another status or date range.` }}
     filters={{ controls: <div className="grid gap-3">
-      {list.values.recent_days ? <button className="desk-button" onClick={() => list.setFilter("recent_days", "")}>Show all dates (currently last {list.values.recent_days} days)</button> : null}
-      <select aria-label="Email log status" className="desk-input w-full" value={status} onChange={event => updateStatus(event.target.value as EmailLogStatus)}>
-        <option value="">All</option>{["sent", "failed", "pending", "sending", "skipped"].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}
+      {list.values.recent_days ? <button className="desk-button" onClick={() => list.setFilter("recent_days", "")}>{t`Show all dates (currently last ${list.values.recent_days} days)`}</button> : null}
+      <select aria-label={t`Email log status`} className="desk-input w-full" value={status} onChange={event => updateStatus(event.target.value as EmailLogStatus)}>
+        <option value="">{t`All`}</option>{["sent", "failed", "pending", "sending", "skipped"].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}
       </select></div> }}
     body={{ kind: "rows", rows: <>{retry.error ? <ErrorBlock error={retry.error} /> : null}{logs.data?.results.map(log => <ListRow key={log.id}
-      title={log.subject || log.event || "Email"} identity={{ kind: "date", date: log.created_at }}
+      title={log.subject || log.event || t`Email`} identity={{ kind: "date", date: log.created_at }}
       meta={<span className="grid gap-1"><span className="[overflow-wrap:anywhere]">{log.to_email} · {log.event || "email"} · {log.stream || "general"}</span>
         <RelativeTime date={log.created_at} />{log.status === "failed" || log.status === "skipped" ? <span>{truncate(log.error)}</span> : null}</span>}
       right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={log.status} tone={log.status === "failed" ? "danger" : log.status === "sent" ? "success" : "neutral"} />
-        {log.status === "failed" || log.status === "sending" ? <button className="desk-button" disabled={retry.isPending} onClick={() => retry.mutate(log.id)}>Retry</button> : null}</div>} />)}</> }}
+        {log.status === "failed" || log.status === "sending" ? <button className="desk-button" disabled={retry.isPending} onClick={() => retry.mutate(log.id)}>{t`Retry`}</button> : null}</div>} />)}</> }}
     pagination={{ page, pageSize: 24, count: logs.data?.count ?? 0, onChange: setPage }} />;
 }
 

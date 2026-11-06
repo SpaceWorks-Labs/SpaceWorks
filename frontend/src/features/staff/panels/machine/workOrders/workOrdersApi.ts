@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../../../lib/api";
@@ -18,8 +19,8 @@ export type WorkOrderInput = {
 };
 
 export const OPEN_STATUSES: WorkOrderStatus[] = ["open", "in_progress", "on_hold"];
-export const STATUS_LABELS: Record<WorkOrderStatus, string> = { open: "Open", in_progress: "In progress", on_hold: "On hold", done: "Done", cancelled: "Cancelled" };
-export const PRIORITY_LABELS: Record<WorkOrderPriority, string> = { low: "Low", normal: "Normal", high: "High", urgent: "Urgent" };
+export const STATUS_LABELS: Record<WorkOrderStatus, string> = { open: t`Open`, in_progress: t`In progress`, on_hold: t`On hold`, done: t`Done`, cancelled: t`Cancelled` };
+export const PRIORITY_LABELS: Record<WorkOrderPriority, string> = { low: t`Low`, normal: t`Normal`, high: t`High`, urgent: t`Urgent` };
 
 export const workOrderKeys = {
   all: ["work-orders"] as const,

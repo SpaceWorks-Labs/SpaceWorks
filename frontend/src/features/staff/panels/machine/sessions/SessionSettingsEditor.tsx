@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -22,16 +23,15 @@ export function SessionSettingsEditor({ makerspaceId, machineTypeId, visible = t
   if (!visible) return null;
   const lock = READ_ONLY[errorCode(save.error) ?? ""];
   return <section className="rounded-xl border border-line bg-panel p-3" aria-labelledby={`${id}-title`}>
-    <h3 id={`${id}-title`} className="title-panel">Machine sessions</h3>
-    <p className="my-2 text-sm text-muted">A session nobody stops ends by itself after this long, at check-out or at closing time, and waits for a staff check.</p>
-    {query.isLoading ? <p role="status">Loading session settings…</p> : null}
+    <h3 id={`${id}-title`} className="title-panel">{t`Machine sessions`}</h3>
+    <p className="my-2 text-sm text-muted">{t`A session nobody stops ends by itself after this long, at check-out or at closing time, and waits for a staff check.`}</p>
+    {query.isLoading ? <p role="status">{t`Loading session settings…`}</p> : null}
     {query.data ? <form className="flex flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); save.mutate(Number(minutes)); }}>
-      <label className="grid gap-1 text-sm">Longest session (minutes)
-        <input className="desk-input w-40" type="number" min={5} max={1440} required value={minutes}
+      <label className="grid gap-1 text-sm">{t`Longest session (minutes)`}<input className="desk-input w-40" type="number" min={5} max={1440} required value={minutes}
           onChange={event => setMinutes(event.target.value)} disabled={save.isPending || Boolean(lock)} /></label>
-      {!lock ? <button className="desk-button-primary" disabled={save.isPending}>{save.isPending ? "Saving…" : "Save"}</button> : null}
+      {!lock ? <button className="desk-button-primary" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Save`}</button> : null}
     </form> : null}
-    {save.isSuccess ? <p role="status" className="mt-2 text-sm">Session setting saved.</p> : null}
+    {save.isSuccess ? <p role="status" className="mt-2 text-sm">{t`Session setting saved.`}</p> : null}
     {lock ? <p role="status" className="mt-2 text-sm">{lock}</p> : null}
     {query.error ? <p role="alert" className="mt-2 text-sm text-danger">{sessionErrorMessage(query.error)}</p> : null}
     {save.error && !lock ? <p role="alert" className="mt-2 text-sm text-danger">{sessionErrorMessage(save.error)}</p> : null}

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useUrlListState } from "../../../lib/useUrlListState";
 
@@ -55,28 +57,28 @@ export function WarrantyPanel({
 
   const href = (value: string) => { const next = new URLSearchParams(params); next.set("status", value); next.delete("page"); return `?${next}`; };
   const selected = visibleRows.find(row => `${row.host_kind}-${row.host_id}` === expanded);
-  return <ListLayout header={{ title: "Warranties", subtitle: `Coverage for equipment you can manage in ${makerspace.name}.`, meta: `${warranties.data?.count ?? 0} hosts` }}
+  return <ListLayout header={{ title: t`Warranties`, subtitle: t`Coverage for equipment you can manage in ${makerspace.name}.`, meta: `${warranties.data?.count ?? 0} hosts` }}
     state={inventoryQueryState(warranties, "warranties")} isEmpty={!visibleRows.length} filtered={filtersActive}
-    empty={{ message: "No warranties recorded yet. Add one from a machine or asset." }}
-    filteredEmpty={{ message: "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
+    empty={{ message: t`No warranties recorded yet. Add one from a machine or asset.` }}
+    filteredEmpty={{ message: t`Nothing matches these filters.`, action: { label: t`Clear filters`, onClick: () => list.restore({}) } }}
     tabs={["all", "active", "expiring_soon", "expired", "unknown"].map(key => ({ key, label: ({ all: "All", active: "Active", expiring_soon: "Expiring soon", expired: "Expired", unknown: "Not covered" } as Record<string, string>)[key], href: href(key) }))} activeTab={status}
-    filters={{ views: <button type="button" className={missingDocs ? "desk-button-primary" : "desk-button"} aria-pressed={missingDocs} onClick={() => list.setFilter("missing_docs", String(!missingDocs))}>Missing docs</button>,
-      controls: <Field label="Expires before"><input className="desk-input" type="date" value={expiresBefore} onChange={event => list.setFilter("expires_before", event.target.value)} /></Field>,
+    filters={{ views: <button type="button" className={missingDocs ? "desk-button-primary" : "desk-button"} aria-pressed={missingDocs} onClick={() => list.setFilter("missing_docs", String(!missingDocs))}>{t`Missing docs`}</button>,
+      controls: <Field label={t`Expires before`}><input className="desk-input" type="date" value={expiresBefore} onChange={event => list.setFilter("expires_before", event.target.value)} /></Field>,
       activeCount: expiresBefore ? 1 : 0,
-      chips: expiresBefore ? [{ key: "expires_before", label: `expires before ${expiresBefore}`, onRemove: () => list.setFilter("expires_before", "") }] : [] }}
+      chips: expiresBefore ? [{ key: "expires_before", label: t`expires before ${expiresBefore}`, onRemove: () => list.setFilter("expires_before", "") }] : [] }}
     body={{ kind: "rows", rows: visibleRows.map(row => <ListRow key={`${row.host_kind}-${row.host_id}`} title={row.host_label}
-      identity={{ kind: "icon", icon: HOST_KINDS[row.host_kind].icon, tone: "accent" }} meta={<>{HOST_KINDS[row.host_kind].label} · {row.vendor_name || "No vendor recorded"} · Purchased {formatDate(row.purchased_on)} · {row.warranty_expires_on ? <>Expires <RelativeTime date={row.warranty_expires_on} /></> : "No expiry recorded"}{row.serial_number ? ` · Serial: ${row.serial_number}` : ""}</>}
+      identity={{ kind: "icon", icon: HOST_KINDS[row.host_kind].icon, tone: "accent" }} meta={<>{HOST_KINDS[row.host_kind].label} · {row.vendor_name || t`No vendor recorded`} {t` · Purchased ${formatDate(row.purchased_on)} · `}{row.warranty_expires_on ? <>{t`Expires `}<RelativeTime date={row.warranty_expires_on} /></> : t`No expiry recorded`}{row.serial_number ? t` · Serial: ${row.serial_number}` : ""}</>}
       right={<div className="flex flex-wrap items-center gap-3"><WarrantyStatusBadge status={row.status} /><span className="text-sm tabular-nums">{row.document_count} docs</span>
-        {canManageRow(row) ? <button className="desk-button-ghost" onClick={() => setExpanded(`${row.host_kind}-${row.host_id}`)}>Manage</button> : null}</div>} />) }}
+        {canManageRow(row) ? <button className="desk-button-ghost" onClick={() => setExpanded(`${row.host_kind}-${row.host_id}`)}>{t`Manage`}</button> : null}</div>} />) }}
     pagination={{ page, pageSize: PAGE_SIZE, count: warranties.data?.count ?? 0, onChange: setPage }}
     detail={selected && canManageRow(selected) ? <DetailLayout presentation="drawer" open onClose={() => setExpanded(null)} title={selected.host_label} state={{ status: "ready" }}
       status={<WarrantyStatusBadge status={selected.status} />} main={<WarrantySection hostKind={selected.host_kind} hostId={selected.host_id} />} /> : null} />;
 }
 const HOST_KINDS: Record<WarrantyReportRow["host_kind"], { label: string; icon: IconName }> = {
- asset: { label: "Asset", icon: "Wrench" }, machine: { label: "Machine", icon: "Cog" }, printer: { label: "Printer", icon: "Printer" },
+ asset: { label: t`Asset`, icon: "Wrench" }, machine: { label: t`Machine`, icon: "Cog" }, printer: { label: t`Printer`, icon: "Printer" },
 };
 function formatDate(value: string | null) {
  if (!value) return "—";
  const date = new Date(value);
- return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+ return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString(formatLocale(), { year: "numeric", month: "short", day: "numeric" });
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Field, SegmentedControl } from "../../../components/ui";
 import type { Product } from "./shared";
 
@@ -44,33 +45,33 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
 }) {
   return (
     <div className="grid gap-3">
-      <SegmentedControl label="Inventory destination" value={form.mode} options={[{ value: "create", label: "Create item" }, { value: "topup", label: "Top up" }]} onChange={mode => setForm({ ...form, mode: mode as HardwareMode })} />
-      <Field label="Quantity"><input className="desk-input" type="number" min="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>
+      <SegmentedControl label={t`Inventory destination`} value={form.mode} options={[{ value: "create", label: t`Create item` }, { value: "topup", label: t`Top up` }]} onChange={mode => setForm({ ...form, mode: mode as HardwareMode })} />
+      <Field label={t`Quantity`}><input className="desk-input" type="number" min="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>
       {form.mode === "topup" ? (
-        <Field label="Existing product">
+        <Field label={t`Existing product`}>
           <select className="desk-input" value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })}>
-            <option value="">Select product</option>
+            <option value="">{t`Select product`}</option>
             {products.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.available_quantity} available)</option>)}
           </select>
         </Field>
       ) : (
         <>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Name"><input className="desk-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-            <Field label="Tracking mode"><select className="desk-input" value={form.trackingMode} onChange={(e) => setForm({ ...form, trackingMode: e.target.value as HardwareForm["trackingMode"] })}><option value="quantity">Quantity</option><option value="individual">Individual</option></select></Field>
+            <Field label={t`Name`}><input className="desk-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+            <Field label={t`Tracking mode`}><select className="desk-input" value={form.trackingMode} onChange={(e) => setForm({ ...form, trackingMode: e.target.value as HardwareForm["trackingMode"] })}><option value="quantity">{t`Quantity`}</option><option value="individual">{t`Individual`}</option></select></Field>
           </div>
-          <Field label="Description"><textarea className="desk-input h-20" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+          <Field label={t`Description`}><textarea className="desk-input h-20" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Category"><select className="desk-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="">Uncategorized</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
-            <Field label="Container"><select className="desk-input" value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })}><option value="">No container</option>{containers.map((container) => <option key={container.id} value={container.id}>{container.label}</option>)}</select></Field>
+            <Field label={t`Category`}><select className="desk-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="">{t`Uncategorized`}</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
+            <Field label={t`Container`}><select className="desk-input" value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })}><option value="">{t`No container`}</option>{containers.map((container) => <option key={container.id} value={container.id}>{container.label}</option>)}</select></Field>
           </div>
           <div className="flex flex-wrap gap-x-6">
-            <Check label="Public" checked={form.isPublic} onChange={(value) => setForm({ ...form, isPublic: value })} />
-            <Check label="Show count" checked={form.showPublicCount} onChange={(value) => setForm({ ...form, showPublicCount: value })} />
-            <Check label="Self checkout" checked={form.publicSelfCheckoutEnabled} onChange={(value) => setForm({ ...form, publicSelfCheckoutEnabled: value })} />
+            <Check label={t`Public`} checked={form.isPublic} onChange={(value) => setForm({ ...form, isPublic: value })} />
+            <Check label={t`Show count`} checked={form.showPublicCount} onChange={(value) => setForm({ ...form, showPublicCount: value })} />
+            <Check label={t`Self checkout`} checked={form.publicSelfCheckoutEnabled} onChange={(value) => setForm({ ...form, publicSelfCheckoutEnabled: value })} />
           </div>
           <div className="grid gap-2">
-            <Field label="Visibility"><select className="desk-input" value={form.publicAvailabilityMode} onChange={(e) => setForm({ ...form, publicAvailabilityMode: e.target.value as HardwareForm["publicAvailabilityMode"] })}><option value="status_only">Status only</option><option value="exact_count">Exact count</option><option value="hidden">Hidden</option></select></Field>
+            <Field label={t`Visibility`}><select className="desk-input" value={form.publicAvailabilityMode} onChange={(e) => setForm({ ...form, publicAvailabilityMode: e.target.value as HardwareForm["publicAvailabilityMode"] })}><option value="status_only">{t`Status only`}</option><option value="exact_count">{t`Exact count`}</option><option value="hidden">{t`Hidden`}</option></select></Field>
           </div>
         </>
       )}
@@ -81,21 +82,21 @@ export function HardwareMoveForm({ form, setForm, products, categories, containe
 export function PrintingMoveForm({ form, setForm, printers }: { form: PrintingForm; setForm: (form: PrintingForm) => void; printers: PrinterOption[] }) {
   return (
     <div className="grid gap-3">
-      <SegmentedControl label="Printing destination" value={form.target} options={[{ value: "spool", label: "Spool" }, { value: "printer", label: "Printer" }]} onChange={target => setForm({ ...form, target: target as PrintingTarget })} />
+      <SegmentedControl label={t`Printing destination`} value={form.target} options={[{ value: "spool", label: t`Spool` }, { value: "printer", label: t`Printer` }]} onChange={target => setForm({ ...form, target: target as PrintingTarget })} />
       {form.target === "spool" ? (
         <>
-          <Field label="Printer"><select className="desk-input" value={form.printerId} onChange={(e) => setForm({ ...form, printerId: e.target.value })}><option value="">Unassigned printer</option>{printers.map((printer) => <option key={printer.id} value={printer.id}>{printer.name}</option>)}</select></Field>
-          <div className="grid gap-2 sm:grid-cols-2"><Field label="Material"><input className="desk-input" value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} /></Field><Field label="Brand"><input className="desk-input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></Field></div>
-          <Field label="Color"><input className="desk-input" value={form.color} onChange={(event) => setForm({ ...form, color: event.target.value })} /></Field>
+          <Field label={t`Printer`}><select className="desk-input" value={form.printerId} onChange={(e) => setForm({ ...form, printerId: e.target.value })}><option value="">{t`Unassigned printer`}</option>{printers.map((printer) => <option key={printer.id} value={printer.id}>{printer.name}</option>)}</select></Field>
+          <div className="grid gap-2 sm:grid-cols-2"><Field label={t`Material`}><input className="desk-input" value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} /></Field><Field label={t`Brand`}><input className="desk-input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} /></Field></div>
+          <Field label={t`Color`}><input className="desk-input" value={form.color} onChange={(event) => setForm({ ...form, color: event.target.value })} /></Field>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Initial weight (g)"><input className="desk-input" type="number" min="0" step="0.01" value={form.initialWeight} onChange={(e) => setForm({ ...form, initialWeight: e.target.value, remainingWeight: form.remainingWeight || e.target.value })} /></Field>
-            <Field label="Remaining weight (g)"><input className="desk-input" type="number" min="0" step="0.01" value={form.remainingWeight} onChange={(e) => setForm({ ...form, remainingWeight: e.target.value })} /></Field>
+            <Field label={t`Initial weight (g)`}><input className="desk-input" type="number" min="0" step="0.01" value={form.initialWeight} onChange={(e) => setForm({ ...form, initialWeight: e.target.value, remainingWeight: form.remainingWeight || e.target.value })} /></Field>
+            <Field label={t`Remaining weight (g)`}><input className="desk-input" type="number" min="0" step="0.01" value={form.remainingWeight} onChange={(e) => setForm({ ...form, remainingWeight: e.target.value })} /></Field>
           </div>
         </>
       ) : (
         <>
-          <Field label="Printer name"><input className="desk-input" value={form.printerName} onChange={(e) => setForm({ ...form, printerName: e.target.value })} /></Field>
-          <div className="grid gap-2 sm:grid-cols-2"><Field label="Model"><input className="desk-input" value={form.printerModel} onChange={(e) => setForm({ ...form, printerModel: e.target.value })} /></Field><Field label="Status"><select className="desk-input" value={form.printerStatus} onChange={(e) => setForm({ ...form, printerStatus: e.target.value as PrintingForm["printerStatus"] })}><option value="active">Active</option><option value="maintenance">Maintenance</option><option value="offline">Offline</option></select></Field></div>
+          <Field label={t`Printer name`}><input className="desk-input" value={form.printerName} onChange={(e) => setForm({ ...form, printerName: e.target.value })} /></Field>
+          <div className="grid gap-2 sm:grid-cols-2"><Field label={t`Model`}><input className="desk-input" value={form.printerModel} onChange={(e) => setForm({ ...form, printerModel: e.target.value })} /></Field><Field label={t`Status`}><select className="desk-input" value={form.printerStatus} onChange={(e) => setForm({ ...form, printerStatus: e.target.value as PrintingForm["printerStatus"] })}><option value="active">{t`Active`}</option><option value="maintenance">{t`Maintenance`}</option><option value="offline">{t`Offline`}</option></select></Field></div>
         </>
       )}
     </div>

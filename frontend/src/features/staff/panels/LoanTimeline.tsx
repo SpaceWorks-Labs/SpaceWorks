@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { plural } from "../../../lib/plural";
 import { useState } from "react";
 
@@ -40,8 +42,8 @@ export function RequestTimelineBlock({ requestId }: { requestId: number }) {
   const timeline = useStaffGet<RequestTimelineResponse>(["request-timeline", requestId], `/admin/requests/${requestId}/timeline?limit=200`);
   return (
     <div className="mt-4 rounded-xl border border-line bg-panel p-4">
-      <h4 className="title-section">Loan timeline</h4>
-      <QueryState loading={timeline.isLoading} error={timeline.error} retry={() => { void timeline.refetch(); }} empty={!timeline.data?.events.length} emptyLabel="No timeline events yet." />
+      <h4 className="title-section">{t`Loan timeline`}</h4>
+      <QueryState loading={timeline.isLoading} error={timeline.error} retry={() => { void timeline.refetch(); }} empty={!timeline.data?.events.length} emptyLabel={t`No timeline events yet.`} />
       {timeline.data ? <EventList events={timeline.data.events} truncated={timeline.data.truncated} /> : null}
     </div>
   );
@@ -53,10 +55,10 @@ export function ChainOfCustodyBlock({ productId }: { productId: number }) {
   return (
     <div className="grid gap-2 border-t border-line pt-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="title-section">Chain of custody</h3>
-        <button className="desk-button-ghost" type="button" onClick={() => setOpen((value) => !value)}>{open ? "Hide" : "Open"}</button>
+        <h3 className="title-section">{t`Chain of custody`}</h3>
+        <button className="desk-button-ghost" type="button" onClick={() => setOpen((value) => !value)}>{open ? t`Hide` : t`Open`}</button>
       </div>
-      {open ? <QueryState loading={chain.isLoading} error={chain.error} retry={() => { void chain.refetch(); }} empty={!chain.data?.events.length} emptyLabel="No custody events yet." /> : null}
+      {open ? <QueryState loading={chain.isLoading} error={chain.error} retry={() => { void chain.refetch(); }} empty={!chain.data?.events.length} emptyLabel={t`No custody events yet.`} /> : null}
       {open && chain.data?.quantity_summary ? <QuantitySummaryView summary={chain.data.quantity_summary} /> : null}
       {open && chain.data?.asset_groups.length ? <AssetGroups groups={chain.data.asset_groups} /> : null}
       {open && chain.data ? <EventList events={chain.data.events} truncated={chain.data.truncated} /> : null}
@@ -65,7 +67,7 @@ export function ChainOfCustodyBlock({ productId }: { productId: number }) {
 }
 
 function QueryState({ loading, error, retry, empty, emptyLabel }: { loading: boolean; error?: Error | null; retry: () => void; empty: boolean; emptyLabel: string }) {
-  if (loading) return <p role="status" className="text-sm text-muted">Loading…</p>;
+  if (loading) return <p role="status" className="text-sm text-muted">{t`Loading…`}</p>;
   if (error) return <ErrorBlock error={error} resource="loan history" onRetry={retry} />;
   if (empty) return <EmptyState message={emptyLabel} />;
   return null;
@@ -76,7 +78,7 @@ function AssetGroups({ groups }: { groups: AssetGroup[] }) {
     <div className="grid gap-2">
       {groups.map((group) => (
         <div key={group.asset_id ?? group.asset_tag} className="rounded-xl border border-line bg-surface p-4 text-sm">
-          <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{group.asset_tag || `Asset #${group.asset_id}`} <StatusPill label={humanize(group.status)} tone="neutral" /></p>
+          <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{group.asset_tag || t`Asset #${String(group.asset_id)}`} <StatusPill label={humanize(group.status)} tone="neutral" /></p>
           <p className="text-muted [overflow-wrap:anywhere]">{group.events.map((event) => humanize(String(event.detail.outcome ?? event.kind))).join(" | ")}</p>
         </div>
       ))}
@@ -100,19 +102,19 @@ function QuantitySummaryView({ summary }: { summary: QuantitySummary }) {
 function EventList({ events, truncated }: { events: TimelineEvent[]; truncated: boolean }) {
   if (!events.length) return null;
   return (
-    <ActivityRail title="History">
+    <ActivityRail title={t`History`}>
       {events.map((event, index) => (
         <ActivityItem exact key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} actor={event.actor ? formatActor(event.actor) : "Space Works"} date={event.at}>
           {/* Audit meta can carry long IDs, keys and URLs; let them break instead of widening the drawer. */}
           <span className="font-medium text-ink [overflow-wrap:anywhere]">
             {event.kind === "audit" ? String(event.detail.action_label ?? "Audit entry") : humanize(event.kind)}
           </span>
-          {event.evidence_id ? ` · evidence #${event.evidence_id}` : ""}
-          {event.evidence_retention ? ` (photo ${retentionLabel(event.evidence_retention)})` : ""}
+          {event.evidence_id ? t` · evidence #${event.evidence_id}` : ""}
+          {event.evidence_retention ? t` (photo ${retentionLabel(event.evidence_retention)})` : ""}
           {event.kind === "audit" ? <AuditDetail detail={event.detail} /> : <DetailText detail={event.detail} />}
         </ActivityItem>
       ))}
-      {truncated ? <li className="text-muted">History truncated at the requested limit.</li> : null}
+      {truncated ? <li className="text-muted">{t`History truncated at the requested limit.`}</li> : null}
     </ActivityRail>
   );
 }
@@ -134,8 +136,8 @@ function AuditDetail({ detail }: { detail: Record<string, unknown> }) {
 
 function retentionLabel(retention: NonNullable<TimelineEvent["evidence_retention"]>) {
   return retention.state === "expired"
-    ? `bytes expired${retention.object_expired_at ? ` ${formatDate(retention.object_expired_at)}` : ""}`
-    : "scheduled to expire";
+    ? t`bytes expired${retention.object_expired_at ? ` ${formatDate(retention.object_expired_at)}` : ""}`
+    : t`scheduled to expire`;
 }
 
 function formatActor(actor: Actor) {
@@ -148,5 +150,5 @@ function humanize(value: string) {
 
 function formatDate(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(formatLocale());
 }

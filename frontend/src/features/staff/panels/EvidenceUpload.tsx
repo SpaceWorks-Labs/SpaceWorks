@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 
 import { CameraCapture, StatusPill } from "../../../components/ui";
@@ -63,7 +64,7 @@ export function EvidenceUpload({
           body: file,
           headers: presigned.headers,
         });
-        if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+        if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
       } else {
         const formData = new FormData();
         Object.entries(presigned.fields).forEach(([key, value]) => formData.append(key, value));
@@ -71,13 +72,13 @@ export function EvidenceUpload({
         // Direct presigned POST to object storage - no auth header, and we must NOT
         // set Content-Type so the browser adds the multipart boundary itself.
         const upload = await fetch(presigned.upload_url, { method: "POST", body: formData });
-        if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+        if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
       }
       setStatus("done");
       onUploaded(presigned.evidence_id);
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : t`Upload failed.`);
       onUploaded(null);
     }
   }
@@ -106,9 +107,8 @@ export function EvidenceUpload({
           className="desk-input min-h-11 min-w-0 flex-1 basis-full @sm:basis-0 file:mr-3 file:min-h-11 file:rounded-control file:border-0 file:bg-accent file:px-3 file:text-sm file:font-semibold file:text-on-accent"
         />
         {cameraSupported ? (
-          <button className="desk-button min-h-11 w-full @sm:w-auto" type="button" aria-label={`Take ${label ?? `${evidenceType} photo`}`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
-            Camera
-          </button>
+          <button className="desk-button min-h-11 w-full @sm:w-auto" type="button" aria-label={t`Take ${label ?? `${evidenceType} photo`}`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
+            {t`Camera`}</button>
         ) : null}
       </div>
       <CameraCapture open={cameraOpen} onClose={() => setCameraOpen(false)} onCapture={(file) => { void handleFile(file); }} label={label ?? `${evidenceType} photo`} />
@@ -121,9 +121,9 @@ export function EvidenceUpload({
         className={`text-xs ${status === "error" ? "text-danger" : status === "done" ? "text-success-ink" : "text-muted"}`}
       >
         {status === "uploading"
-          ? `Uploading ${fileName}…`
+          ? t`Uploading ${fileName}…`
           : status === "done"
-            ? <StatusPill tone="success" label="Photo uploaded" />
+            ? <StatusPill tone="success" label={t`Photo uploaded`} />
             : status === "error"
               ? error
               : ""}

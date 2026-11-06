@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ListRow, StatusPill, OverflowMenu } from "../../../../components/ui";
 import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
@@ -67,8 +68,8 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
 
   return (
     <section className="grid gap-3">
-      <h3 className="title-section">Consumables</h3>
-      <MachineTabContent query={consumables} resource="consumables" empty={!items.length} message="No consumables linked. Add the first consumable.">
+      <h3 className="title-section">{t`Consumables`}</h3>
+      <MachineTabContent query={consumables} resource="consumables" empty={!items.length} message={t`No consumables linked. Add the first consumable.`}>
       <div className="grid gap-2">
         {items.map((item) => (
           <ConsumableRow key={item.id} item={item} machineId={machineId} canOperate={canOperate}
@@ -81,43 +82,37 @@ export function ConsumablesTab({ machineId, canEdit, canOperate }: {
         <form className="grid gap-2 rounded-md border border-line bg-bg p-3"
           onSubmit={(event) => { event.preventDefault(); link.mutate(); }}>
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="eyebrow grid gap-1">Measurement
-              <select className="desk-input" value={measurement}
+            <label className="eyebrow grid gap-1">{t`Measurement`}<select className="desk-input" value={measurement}
                 onChange={(event) => setMeasurement(event.target.value as ConsumableMeasurement)}>
-                <option value="count">Count (inventory)</option>
-                <option value="grams">Grams (local ledger)</option>
+                <option value="count">{t`Count (inventory)`}</option>
+                <option value="grams">{t`Grams (local ledger)`}</option>
               </select>
             </label>
             {measurement === "count" ? (
-              <label className="eyebrow grid gap-1">Inventory product
-                <select className="desk-input" value={productId} onChange={(event) => setProductId(event.target.value)} required>
-                  <option value="">Select a product</option>
+              <label className="eyebrow grid gap-1">{t`Inventory product`}<select className="desk-input" value={productId} onChange={(event) => setProductId(event.target.value)} required>
+                  <option value="">{t`Select a product`}</option>
                   {eligible.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.available} available)</option>)}
                 </select>
               </label>
             ) : (
-              <label className="eyebrow grid gap-1">Label
-                <input className="desk-input" maxLength={200} value={label}
+              <label className="eyebrow grid gap-1">{t`Label`}<input className="desk-input" maxLength={200} value={label}
                   onChange={(event) => setLabel(event.target.value)} required />
               </label>
             )}
             {measurement === "grams" ? (
-              <label className="eyebrow grid gap-1">Starting grams
-                <input className="desk-input" type="number" min="0" step="0.01" value={remaining}
+              <label className="eyebrow grid gap-1">{t`Starting grams`}<input className="desk-input" type="number" min="0" step="0.01" value={remaining}
                   onChange={(event) => setRemaining(event.target.value)} />
               </label>
             ) : null}
-            <label className="eyebrow grid gap-1">Low threshold ({measurement})
-              <input className="desk-input" type="number" min="0" step={measurement === "count" ? "1" : "0.01"}
+            <label className="eyebrow grid gap-1">{t`Low threshold (${measurement})`}<input className="desk-input" type="number" min="0" step={measurement === "count" ? "1" : "0.01"}
                 value={lowThreshold} onChange={(event) => setLowThreshold(event.target.value)} />
             </label>
           </div>
-          <label className="eyebrow grid gap-1">Note
-            <input className="desk-input" maxLength={255} value={note} onChange={(event) => setNote(event.target.value)} />
+          <label className="eyebrow grid gap-1">{t`Note`}<input className="desk-input" maxLength={255} value={note} onChange={(event) => setNote(event.target.value)} />
           </label>
           <button className="desk-button-primary justify-self-start" type="submit"
             disabled={link.isPending || (measurement === "count" ? !productId : !label.trim())}>
-            {link.isPending ? "Linking..." : measurement === "count" ? "Link product" : "Add grams consumable"}
+            {link.isPending ? t`Linking...` : measurement === "count" ? t`Link product` : t`Add grams consumable`}
           </button>
         </form>
       ) : null}
@@ -147,17 +142,16 @@ function ConsumableRow({ item, machineId, canOperate, canEdit, removing, onRemov
 
   return (
     <div className="grid gap-3">
-      <ListRow title={item.product_name ?? item.label} meta={<>{item.measurement === "count" ? `${item.available ?? 0} available` : `${item.remaining ?? "0.00"} g remaining`}{item.note ? <span className="block">{item.note}</span> : null}</>}
-        right={<div className="flex flex-wrap gap-2">{isLow ? <StatusPill label="Low" tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: "Unlink", tone: "danger", disabled: removing, disabledReason: "Wait for the current change to finish.", onClick: onRemove }]} /> : null}</div>} />
+      <ListRow title={item.product_name ?? item.label} meta={<>{item.measurement === "count" ? `${item.available ?? 0} available` : t`${item.remaining ?? "0.00"} g remaining`}{item.note ? <span className="block">{item.note}</span> : null}</>}
+        right={<div className="flex flex-wrap gap-2">{isLow ? <StatusPill label={t`Low`} tone="warn" /> : null}{canEdit ? <OverflowMenu actions={[{ label: t`Unlink`, tone: "danger", disabled: removing, disabledReason: "Wait for the current change to finish.", onClick: onRemove }]} /> : null}</div>} />
       {canOperate ? (
         <form className="mt-2 flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); log.mutate(); }}>
-          <label className="eyebrow grid gap-1">Use ({item.measurement})
-            <input className="desk-input w-32" type="number" min={item.measurement === "count" ? "1" : "0.01"}
+          <label className="eyebrow grid gap-1">{t`Use (${item.measurement})`}<input className="desk-input w-32" type="number" min={item.measurement === "count" ? "1" : "0.01"}
               step={item.measurement === "count" ? "1" : "0.01"} value={quantity}
               onChange={(event) => setQuantity(event.target.value)} required />
           </label>
           <button className="desk-button-primary" type="submit" disabled={log.isPending || !quantity}>
-            {log.isPending ? "Logging..." : "Log consumption"}
+            {log.isPending ? t`Logging...` : t`Log consumption`}
           </button>
         </form>
       ) : null}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { machineStatusLabel } from "./machine/machineStatusLabel";
 import { useQuery } from "@tanstack/react-query";
@@ -30,16 +31,16 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
   const scheduleRows = enabled && maintenance ? schedules.data?.results : undefined;
   const jobRows = enabled && !maintenance ? jobs.data : undefined;
   const loading = enabled && (types.isLoading || jobs.isLoading || schedules.isLoading);
-  return <ListLayout header={{ title: labels[queue], secondary: { label: "All machines", href } }}
+  return <ListLayout header={{ title: labels[queue], secondary: { label: t`All machines`, href } }}
     state={loading ? { status: "loading" } : error ? { status: "error", error: "Couldn't load work list. Try again.", onRetry: () => { void types.refetch(); void jobs.refetch(); void schedules.refetch(); } } : { status: "ready" }}
     isEmpty={enabled && (scheduleRows?.length === 0 || jobRows?.length === 0)}
-    empty={{ message: "No work in this queue. Open All machines to review your equipment." }}
+    empty={{ message: t`No work in this queue. Open All machines to review your equipment.` }}
     body={{ kind: "rows", rows: <>
-      {!enabled ? <p role="alert">This queue is unavailable because its module is disabled.</p> : null}
-      {enabled && !maintenance && types.isSuccess && !printer ? <p>No built-in printer type is available in your scope.</p> : null}
+      {!enabled ? <p role="alert">{t`This queue is unavailable because its module is disabled.`}</p> : null}
+      {enabled && !maintenance && types.isSuccess && !printer ? <p>{t`No built-in printer type is available in your scope.`}</p> : null}
       {scheduleRows?.map(row => <ListRow key={row.id} title={`${row.machine_name}: ${row.description}`}
-        href={consoleSessionHref(`${baseHref}?machine=${row.machine_id}&detail_tab=Maintenance`)} meta={<>Due <RelativeTime date={row.next_due} /></>}
-        right={<StatusPill label="Overdue" tone="danger" />} />)}
+        href={consoleSessionHref(`${baseHref}?machine=${row.machine_id}&detail_tab=Maintenance`)} meta={<>{t`Due `}<RelativeTime date={row.next_due} /></>}
+        right={<StatusPill label={t`Overdue`} tone="danger" />} />)}
       {jobRows?.map(row => <ListRow key={row.id} title={row.title} right={<StatusBadge status={row.status} label={machineStatusLabel(row.status)} />}
         href={printer ? consoleSessionHref(`${staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}?view=queue&job_status=${statuses[queue]}`) : undefined}
         meta="Open printer queue" />)}

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CollapsibleSection, ErrorText, StatusPill } from "../../../components/ui";
@@ -37,16 +38,16 @@ export function MemberRolesControl({ msId, membershipId, membership, roles, onAu
   const isMachineManager = membership.roles.some((role) => role.slug === "machine_manager");
   return <div className="grid min-w-0 gap-3">
     <div className="flex flex-wrap items-center gap-2">
-      {membership.roles.length ? membership.roles.map((role) => <StatusPill key={role.id} label={role.name} tone="accent" />) : <StatusPill label="Member" />}
-      {isMachineManager ? <button className="desk-button" type="button" onClick={() => setMachineOpen(true)}>Machine types</button> : null}
+      {membership.roles.length ? membership.roles.map((role) => <StatusPill key={role.id} label={role.name} tone="accent" />) : <StatusPill label={t`Member`} />}
+      {isMachineManager ? <button className="desk-button" type="button" onClick={() => setMachineOpen(true)}>{t`Machine types`}</button> : null}
     </div>
-    <CollapsibleSection title="Change roles" open={open} onToggle={() => setOpen((value) => !value)}>
+    <CollapsibleSection title={t`Change roles`} open={open} onToggle={() => setOpen((value) => !value)}>
       <div className="grid gap-3 p-3">
         <RoleSetPicker roles={roles} value={ids} onChange={setDraft} disabled={save.isPending} />
         {save.error ? <ErrorText message={save.error.message} /> : null}
         <div className="desk-actions flex flex-wrap justify-end gap-2">
-          {draft !== null ? <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={() => { setDraft(null); save.reset(); }}>Discard</button> : null}
-          <button className="desk-button-primary" type="button" disabled={save.isPending || !ids.length || draft === null || ids.some((id) => !roles.some((role) => role.id === id))} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : "Save roles"}</button>
+          {draft !== null ? <button className="desk-button-ghost" type="button" disabled={save.isPending} onClick={() => { setDraft(null); save.reset(); }}>{t`Discard`}</button> : null}
+          <button className="desk-button-primary" type="button" disabled={save.isPending || !ids.length || draft === null || ids.some((id) => !roles.some((role) => role.id === id))} onClick={() => save.mutate()}>{save.isPending ? t`Saving…` : t`Save roles`}</button>
         </div>
       </div>
     </CollapsibleSection>

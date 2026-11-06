@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type React from "react";
 import { useEffect, useState } from "react";
 
@@ -42,37 +43,37 @@ export function BoxCodeField({ value, onChange, makerspaceId, pending }: { value
         setScanned({ code: res.target.code, label: res.target.label ?? "" });
         setScanError("");
       } else {
-        setScanError("Scanned QR is not a box/container.");
+        setScanError(t`Scanned QR is not a box/container.`);
       }
     } catch {
-      setScanError("Could not resolve the scanned QR.");
+      setScanError(t`Could not resolve the scanned QR.`);
     }
   };
 
   return (
     <div className="grid gap-1 text-sm">
-      <span className="font-medium text-ink">Container</span>
+      <span className="font-medium text-ink">{t`Container`}</span>
       <div className="flex min-w-0 flex-wrap gap-2">
         <div className="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span title={value ? displayLabel || value : undefined} className={value ? "min-w-0 truncate font-medium text-ink" : "min-w-0 truncate text-muted"}>{value ? displayLabel || value : "No container selected"}</span>
-            {value ? <StatusPill label="Selected" tone="success" /> : null}
+            <span title={value ? displayLabel || value : undefined} className={value ? "min-w-0 truncate font-medium text-ink" : "min-w-0 truncate text-muted"}>{value ? displayLabel || value : t`No container selected`}</span>
+            {value ? <StatusPill label={t`Selected`} tone="success" /> : null}
           </div>
         </div>
-        <button className="desk-button shrink-0" type="button" disabled={pending} onClick={() => setScanOpen(true)}>Scan</button>
+        <button className="desk-button shrink-0" type="button" disabled={pending} onClick={() => setScanOpen(true)}>{t`Scan`}</button>
       </div>
       {containers.length ? (
-        <Field label="Available container">
+        <Field label={t`Available container`}>
           <select className="desk-input" value="" disabled={pending} onChange={(event) => event.target.value && onChange(event.target.value)}>
-            <option value="">Choose an available container…</option>
+            <option value="">{t`Choose an available container…`}</option>
             {containers.map((container) => <option key={container.id} value={container.code ?? ""}>{container.label}</option>)}
           </select>
         </Field>
       ) : null}
       <button className="desk-button-ghost justify-self-start" type="button" disabled={pending} onClick={() => setManualOpen((open) => !open)}>
-        {manualOpen ? "Hide manual code entry" : "Enter code manually"}
+        {manualOpen ? t`Hide manual code entry` : t`Enter code manually`}
       </button>
-      {manualOpen ? <Field label="Container code"><input className="desk-input min-w-0" value={value} disabled={pending} onChange={(event) => onChange(event.target.value)} /></Field> : null}
+      {manualOpen ? <Field label={t`Container code`}><input className="desk-input min-w-0" value={value} disabled={pending} onChange={(event) => onChange(event.target.value)} /></Field> : null}
       {scanError ? <p className="text-xs text-danger">{scanError}</p> : null}
       {scanOpen ? <QrScanner onScan={handleScan} onClose={() => setScanOpen(false)} /> : null}
     </div>
@@ -82,8 +83,8 @@ export function BoxCodeField({ value, onChange, makerspaceId, pending }: { value
 export function FormFooter({ formId, pending, submitLabel, tone = "default", onCancel }: { formId: string; pending: boolean; submitLabel: string; tone?: "danger" | "default"; onCancel: () => void }) {
   return (
     <div className="desk-actions flex flex-wrap justify-end gap-2">
-      <button className="desk-button-ghost" type="button" disabled={pending} onClick={onCancel}>Cancel</button>
-      <button className={tone === "danger" ? "desk-button-danger" : "desk-button-success"} type="submit" form={formId} disabled={pending}>{pending ? "Working…" : submitLabel}</button>
+      <button className="desk-button-ghost" type="button" disabled={pending} onClick={onCancel}>{t`Cancel`}</button>
+      <button className={tone === "danger" ? "desk-button-danger" : "desk-button-success"} type="submit" form={formId} disabled={pending}>{pending ? t`Working…` : submitLabel}</button>
     </div>
   );
 }
@@ -92,7 +93,7 @@ export function FormFooter({ formId, pending, submitLabel, tone = "default", onC
 // fetch or return the item during handover. Renders nothing when no shelf is recorded.
 export function ShelfLine({ location }: { location?: string | null }) {
   return location ? (
-    <p className="text-xs text-muted">Shelf: <span className="font-medium text-ink">{location}</span></p>
+    <p className="text-xs text-muted">{t`Shelf: `}<span className="font-medium text-ink">{location}</span></p>
   ) : null;
 }
 

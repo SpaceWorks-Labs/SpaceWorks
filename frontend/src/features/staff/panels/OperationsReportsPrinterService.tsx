@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StackedBarChart } from "./OperationsReportsParts";
 import { type Makerspace, useStaffGet } from "./shared";
@@ -24,10 +25,10 @@ export function OperationsReportsPrinterService({ makerspace, aggregate, canMana
     enabled,
   );
   if (!canManageMachines) return null;
-  if (!enabled) return <Panel title="Printer service"><p className="text-sm text-muted">Module disabled</p></Panel>;
+  if (!enabled) return <Panel title={t`Printer service`}><p className="text-sm text-muted">{t`Module disabled`}</p></Panel>;
   const rows = report.data?.printer_metrics ?? [];
   return (
-    <Panel title="Printer service">
+    <Panel title={t`Printer service`}>
       <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!rows.length}>
         {aggregate ? <div className="space-y-5">{groups(rows).map(([id, metrics]) => (
           <section key={id} className="rounded-md border border-line p-4">
@@ -43,14 +44,14 @@ function PrinterMetrics({ rows }: { rows: PrinterMetric[] }) {
   return <>
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
       <StackedBarChart rows={rows.map((row) => ({ label: row.machine_name, segments: [
-        { label: "Completed", value: row.completed_hours },
-        { label: "Failed partial", value: row.failed_partial_hours },
-        { label: "Manual", value: row.manual_hours },
+        { label: t`Completed`, value: row.completed_hours },
+        { label: t`Failed partial`, value: row.failed_partial_hours },
+        { label: t`Manual`, value: row.manual_hours },
       ] }))} valueLabel="hours" />
       <BarChart rows={rows.map((row) => ({ label: row.machine_name, value: Number(row.consumed_grams) }))} valueLabel="grams" />
       <StackedBarChart rows={rows.map((row) => ({ label: row.machine_name, segments: [
-        { label: "Due", value: Number(row.payment_due) },
-        { label: "Paid", value: Number(row.payment_paid) },
+        { label: t`Due`, value: Number(row.payment_due) },
+        { label: t`Paid`, value: Number(row.payment_paid) },
       ] }))} valueLabel="money" />
     </div>
     <ReportTable data={table(rows)} />

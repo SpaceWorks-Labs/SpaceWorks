@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SegmentedControl } from "../../../components/ui";
 export type MachineTypeOption = {
   id: number;
@@ -17,7 +18,7 @@ export function EmailTemplateTypeSelector({
   selectedTypeId: number | null;
   onSelect: (machineType: MachineTypeOption | null) => void;
 }) {
-  return <SegmentedControl label="Machine type" value={selectedTypeId === null ? "space" : String(selectedTypeId)}
-    options={[...(canEditSpaceDefault ? [{ value: "space", label: "Space default" }] : []), ...types.map(type => ({ value: String(type.id), label: `${type.name}${type.is_overridden ? " · Edited" : ""}` }))]}
+  return <SegmentedControl label={t`Machine type`} value={selectedTypeId === null ? "space" : String(selectedTypeId)}
+    options={[...(canEditSpaceDefault ? [{ value: "space", label: t`Space default` }] : []), ...types.map(type => ({ value: String(type.id), label: `${type.name}${type.is_overridden ? " · Edited" : ""}` }))]}
     onChange={value => onSelect(value === "space" ? null : types.find(type => String(type.id) === value) ?? null)} />;
 }

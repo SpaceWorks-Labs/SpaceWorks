@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation } from "@tanstack/react-query";
 import { ErrorText, ListRow, OverflowMenu, RelativeTime, StatusPill } from "../../../../components/ui";
 import {
@@ -21,22 +22,22 @@ export function StaffRoleInvitations({ space, data, page, onPage, onChanged, onN
     {data.results.map(row => {
       const open = !row.accepted_at && !row.revoked_at;
       return <ListRow key={row.id} title={row.email} identity={{ kind: "avatar", name: row.email, seed: `invite-${row.id}` }}
-        meta={<>{row.role_name}{open ? <> · Expires <RelativeTime date={row.expires_at} /></> : null}</>}
+        meta={<>{row.role_name}{open ? <> {t` · Expires `}<RelativeTime date={row.expires_at} /></> : null}</>}
         right={<div className="flex flex-wrap items-center gap-2">
           <StatusPill label={invitationState(row)} tone={row.accepted_at ? "success" : open && !isExpired(row) ? "accent" : "neutral"} />
           {open ? <>
-            <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => resend.mutate(row)}>Resend</button>
-            <OverflowMenu label={`Actions for ${row.email}`} actions={[{ label: "Revoke", tone: "danger", disabled: pending,
+            <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => resend.mutate(row)}>{t`Resend`}</button>
+            <OverflowMenu label={t`Actions for ${row.email}`} actions={[{ label: t`Revoke`, tone: "danger", disabled: pending,
               disabledReason: pending ? "Wait for the current invitation update." : undefined,
-              confirm: { title: "Revoke invitation?", message: `The invitation sent to ${row.email} stops working. Send a new one if they still need access.`, confirmLabel: "Revoke" },
+              confirm: { title: t`Revoke invitation?`, message: t`The invitation sent to ${row.email} stops working. Send a new one if they still need access.`, confirmLabel: t`Revoke` },
               onClick: () => revoke.mutate(row) }]} />
           </> : null}
         </div>} />;
     })}
     {data.previous || data.next ? <div className="flex items-center gap-3">
-      <button type="button" className="desk-button min-h-11" disabled={!data.previous} onClick={() => onPage(page - 1)}>Previous</button>
-      <span className="text-sm text-muted">Page {page}</span>
-      <button type="button" className="desk-button min-h-11" disabled={!data.next} onClick={() => onPage(page + 1)}>Next</button>
+      <button type="button" className="desk-button min-h-11" disabled={!data.previous} onClick={() => onPage(page - 1)}>{t`Previous`}</button>
+      <span className="text-sm text-muted">{t`Page ${page}`}</span>
+      <button type="button" className="desk-button min-h-11" disabled={!data.next} onClick={() => onPage(page + 1)}>{t`Next`}</button>
     </div> : null}
   </div>;
 }

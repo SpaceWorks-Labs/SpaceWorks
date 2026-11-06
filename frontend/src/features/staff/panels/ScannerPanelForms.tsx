@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Makerspace, Product } from "./shared";
 
 export function ScannerRebindForm({
@@ -36,7 +37,7 @@ export function ScannerRebindForm({
       }}
     >
       <label className="grid gap-1">
-        <span className="eyebrow">QR makerspace</span>
+        <span className="eyebrow">{t`QR makerspace`}</span>
         <input
           className="desk-input"
           value={makerspaceLabel}
@@ -44,7 +45,7 @@ export function ScannerRebindForm({
         />
       </label>
       <label className="grid gap-1">
-        <span className="eyebrow">Target product</span>
+        <span className="eyebrow">{t`Target product`}</span>
         <select
           className="desk-input"
           value={selectedProductId}
@@ -58,16 +59,16 @@ export function ScannerRebindForm({
       </label>
       <input
         className="desk-input"
-        aria-label="Rename target"
-        placeholder="Rename (optional)"
+        aria-label={t`Rename target`}
+        placeholder={t`Rename (optional)`}
         value={newName}
         onChange={(event) => onNewNameChange(event.target.value)}
       />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={!selectedProductId || pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? t`Saving…` : t`Save`}
         </button>
-        <button className="desk-button-ghost" type="button" onClick={onCancel}>Cancel</button>
+        <button className="desk-button-ghost" type="button" onClick={onCancel}>{t`Cancel`}</button>
       </div>
       {productError ? <p className="text-sm text-danger">{productError}</p> : null}
       {rebindError ? <p className="text-sm text-danger">{rebindError}</p> : null}
@@ -115,7 +116,7 @@ export function ScannerMoveAssetForm({
       }}
     >
       <label className="grid gap-1">
-        <span className="eyebrow">Destination makerspace</span>
+        <span className="eyebrow">{t`Destination makerspace`}</span>
         <select
           className="desk-input"
           required
@@ -124,21 +125,21 @@ export function ScannerMoveAssetForm({
             onDestMakerspaceChange(event.target.value);
           }}
         >
-          <option value="">Select makerspace</option>
+          <option value="">{t`Select makerspace`}</option>
           {destinationMakerspaces.map((space) => (
             <option key={space.id} value={space.id}>{space.name}</option>
           ))}
         </select>
       </label>
       <label className="grid gap-1">
-        <span className="eyebrow">Destination product</span>
+        <span className="eyebrow">{t`Destination product`}</span>
         <select
           className="desk-input"
           value={destProductId}
           disabled={!destMakerspaceId || destinationProductsLoading}
           onChange={(event) => onDestProductChange(event.target.value)}
         >
-          <option value="">Auto - match by name or create</option>
+          <option value="">{t`Auto - match by name or create`}</option>
           {destinationProductRows.map((product) => (
             <option key={product.id} value={product.id}>{product.name}</option>
           ))}
@@ -146,16 +147,16 @@ export function ScannerMoveAssetForm({
       </label>
       <input
         className="desk-input"
-        aria-label="New asset tag"
-        placeholder="New asset tag (optional)"
+        aria-label={t`New asset tag`}
+        placeholder={t`New asset tag (optional)`}
         value={moveTag}
         onChange={(event) => onMoveTagChange(event.target.value)}
       />
       <div className="flex flex-wrap gap-2">
         <button className="desk-button-primary" type="submit" disabled={!destMakerspaceId || pending}>
-          {pending ? "Moving…" : "Move"}
+          {pending ? t`Moving…` : t`Move`}
         </button>
-        <button className="desk-button-ghost" type="button" onClick={onCancel}>Cancel</button>
+        <button className="desk-button-ghost" type="button" onClick={onCancel}>{t`Cancel`}</button>
       </div>
       {destinationProductError ? <p className="text-sm text-danger">{destinationProductError}</p> : null}
       {moveError ? <p className="text-sm text-danger">{moveError}</p> : null}

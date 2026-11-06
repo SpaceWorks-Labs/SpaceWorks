@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import { plural } from "../../../lib/plural";
 import { useEffect, useMemo, useState } from "react";
@@ -160,8 +161,8 @@ function MachinesWorkspace({
   // early.
   if (requestedTypeId !== null && !selectedType && !sourcesSettled) {
     return (
-      <ListLayout header={{ title: "Machines" }} state={opsQueryState(machines.isLoading || machines.isError ? machines : machineTypes, "machine type")}
-        body={{ kind: "rows", rows: null }} empty={{ message: "No machine types available. Ask your space manager to configure your machine access." }} />
+      <ListLayout header={{ title: t`Machines` }} state={opsQueryState(machines.isLoading || machines.isError ? machines : machineTypes, "machine type")}
+        body={{ kind: "rows", rows: null }} empty={{ message: t`No machine types available. Ask your space manager to configure your machine access.` }} />
     );
   }
 
@@ -199,19 +200,19 @@ function MachinesWorkspace({
       onStatusFilter={setStatusFilter} onRetry={() => { void machines.refetch(); void machineTypes.refetch(); }}
       poolError={poolQuery.error instanceof Error ? poolQuery.error.message : undefined} onRetryPools={() => { void poolQuery.refetch(); }}
       onWorkOrders={maintenanceEnabled ? openWorkOrders : undefined} /> :
-      <ListLayout header={{ title: "Machines", subtitle: `${plural(allMachines.length, "machine")} across ${plural(reachableTypes.length, "type")}`,
-        primary: canConfigureMachineTypes ? { label: "Add machine type", icon: "Plus", onClick: () => {
+      <ListLayout header={{ title: t`Machines`, subtitle: `${plural(allMachines.length, "machine")} across ${plural(reachableTypes.length, "type")}`,
+        primary: canConfigureMachineTypes ? { label: t`Add machine type`, icon: "Plus", onClick: () => {
           const section = document.querySelector<HTMLDetailsElement>("#machine-type-settings");
           if (section) { section.open = true; section.scrollIntoView({ behavior: "smooth", block: "start" }); section.querySelector<HTMLInputElement>("input")?.focus(); }
         } } : undefined, secondary: maintenanceEnabled && sessionsEnabled
-          ? { label: "Views", menu: [{ label: "Work orders", onClick: openWorkOrders }, { label: "Sessions", onClick: openSessions }] }
-          : maintenanceEnabled ? { label: "Work orders", onClick: openWorkOrders }
-          : sessionsEnabled ? { label: "Sessions", onClick: openSessions } : undefined }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
-        callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: "Retry", onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } }
-          : poolQuery.isError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: () => { void poolQuery.refetch(); } } } : undefined}
+          ? { label: t`Views`, menu: [{ label: t`Work orders`, onClick: openWorkOrders }, { label: t`Sessions`, onClick: openSessions }] }
+          : maintenanceEnabled ? { label: t`Work orders`, onClick: openWorkOrders }
+          : sessionsEnabled ? { label: t`Sessions`, onClick: openSessions } : undefined }} state={reachableTypes.length ? { status: "ready" } : opsQueryState(machines.isError ? machines : machineTypes, "machines")}
+        callout={machineTypes.isError || machines.isError ? { size: "banner", tone: "warn", lead: "Some machine information couldn’t be loaded.", action: { label: t`Retry`, onClick: () => { void machines.refetch(); void machineTypes.refetch(); } } }
+          : poolQuery.isError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: t`Retry`, onClick: () => { void poolQuery.refetch(); } } } : undefined}
         body={{ kind: "rows", rows: <><MachineTypeCards machineTypes={reachableTypes} machines={allMachines}
           machinesLoading={machines.isLoading} machinesFailed={machines.isError} typesLoading={machineTypes.isLoading}
           typesFailed={machineTypes.isError} hrefFor={hrefFor} />{settings}</> }}
-        empty={{ message: "No machine types available. Add your first machine type or ask your space manager for access." }} detail={detail} />}
+        empty={{ message: t`No machine types available. Add your first machine type or ask your space manager for access.` }} detail={detail} />}
   </div>;
 }

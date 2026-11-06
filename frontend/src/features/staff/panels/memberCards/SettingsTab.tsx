@@ -1,5 +1,6 @@
 // Member-card settings: issuing, email, the public check page, and the design approval levels.
 // Each switch saves on its own; the server checks the settings authority per key.
+import { t } from "@lingui/core/macro";
 import { ErrorBlock, Skeleton } from "../../../../components/ui";
 import { useMemberCardSettings, useSaveMemberCardSettings } from "./apiCards";
 import { ApprovalLevels } from "./ApprovalLevels";
@@ -8,13 +9,13 @@ import type { MemberCardSettings } from "./types";
 type Key = "auto_issue" | "email_on_issue" | "public_verify" | "verify_show_plan";
 
 const ROWS: { key: Key; label: string; help: string }[] = [
-  { key: "auto_issue", label: "Issue a card when a membership starts",
+  { key: "auto_issue", label: t`Issue a card when a membership starts`,
     help: "New members get a card straight away. Existing members keep theirs." },
-  { key: "email_on_issue", label: "Email the card when it is issued",
+  { key: "email_on_issue", label: t`Email the card when it is issued`,
     help: "The holder gets their card as a PDF, or as PNG images if they chose that. Needs email to be on for this space." },
-  { key: "public_verify", label: "Public check page",
+  { key: "public_verify", label: t`Public check page`,
     help: "A QR on the card opens a page that says whether the card is valid. It never shows the desk code." },
-  { key: "verify_show_plan", label: "Show the plan on the check page", help: "Off shows only that the person is a member." },
+  { key: "verify_show_plan", label: t`Show the plan on the check page`, help: "Off shows only that the person is a member." },
 ];
 
 export function SettingsTab({ makerspaceId }: { makerspaceId: number }) {
@@ -35,14 +36,13 @@ export function SettingsTab({ makerspaceId }: { makerspaceId: number }) {
               onChange={(event) => save.mutate({ [row.key]: event.target.checked })} />
             <span className="grid gap-1"><span className="text-sm font-semibold text-ink">{row.label}</span>
               <span className="text-xs text-muted">{row.help}
-                {row.key === "email_on_issue" && !values.email_available ? " Email is off for this space." : ""}</span></span>
+                {row.key === "email_on_issue" && !values.email_available ? t` Email is off for this space.` : ""}</span></span>
           </label>
         </li>;
       })}
     </ul>
     <ApprovalLevels makerspaceId={makerspaceId} />
-    <p className="text-xs text-muted">The member number and its pattern are set under Membership settings.
-      {values.photo_cleanup_available ? " Members can tidy their photo's background on the server." : ""}
-      {values.wallet_platforms.length ? ` Wallet passes: ${values.wallet_platforms.join(", ")}.` : ""}</p>
+    <p className="text-xs text-muted">{t`The member number and its pattern are set under Membership settings.`}{values.photo_cleanup_available ? t` Members can tidy their photo's background on the server.` : ""}
+      {values.wallet_platforms.length ? t` Wallet passes: ${values.wallet_platforms.join(", ")}.` : ""}</p>
   </div>;
 }

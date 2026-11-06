@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import type { PrinterPool } from "../../../../generated/api";
@@ -32,23 +33,23 @@ export function BatchStartDialog({ jobs, makerspaceId, typeId, machines, pools, 
       ...(hasPool && plan.quantity ? { [printer ? "planned_grams" : "planned_quantity"]: plan.quantity } : {}),
     }]; })),
   }, { onSuccess: () => onClose(true) });
-  return <Modal open size="xl" title={`Start ${jobs.length} jobs as one batch`} onClose={() => onClose(false)}>
+  return <Modal open size="xl" title={t`Start ${jobs.length} jobs as one batch`} onClose={() => onClose(false)}>
     <form className="grid gap-4" onSubmit={event => { event.preventDefault(); if (machineId) submit(); }}>
-      <label className="eyebrow grid gap-1">Machine<select className="desk-input" value={machineId} onChange={event => setMachineId(event.target.value)}>
-        <option value="">Choose a machine</option>{machines.map(machine => <option key={machine.id} value={machine.id}>{machine.name}</option>)}</select></label>
-      <ul className="grid gap-3" aria-label="Jobs in this batch">{jobs.map(job => { const plan = plans[job.id]; return <li key={job.id} className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-3">
-        <p className="title-section sm:col-span-3">{job.title} <span className="text-sm font-normal text-muted">· {percent(Number(plan.estimated_minutes || 0), total)}% of the run</span></p>
-        <label className="eyebrow grid gap-1">Estimated minutes<input className="desk-input" inputMode="numeric" value={plan.estimated_minutes} onChange={event => update(job.id, { estimated_minutes: event.target.value })} /></label>
-        {hasPool ? <><label className="eyebrow grid gap-1">Pool<select className="desk-input" value={plan.consumable_pool_id} onChange={event => update(job.id, { consumable_pool_id: event.target.value })}>
-          <option value="">No pool</option>{pools(machineId).map(pool => <option key={pool.id} value={pool.id}>{poolLabel(pool)}</option>)}</select></label>
-          <label className="eyebrow grid gap-1">Planned {unitLabel}<input className="desk-input" inputMode="decimal" value={plan.quantity} onChange={event => update(job.id, { quantity: event.target.value })} /></label></> : null}
+      <label className="eyebrow grid gap-1">{t`Machine`}<select className="desk-input" value={machineId} onChange={event => setMachineId(event.target.value)}>
+        <option value="">{t`Choose a machine`}</option>{machines.map(machine => <option key={machine.id} value={machine.id}>{machine.name}</option>)}</select></label>
+      <ul className="grid gap-3" aria-label={t`Jobs in this batch`}>{jobs.map(job => { const plan = plans[job.id]; return <li key={job.id} className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-3">
+        <p className="title-section sm:col-span-3">{job.title} <span className="text-sm font-normal text-muted">{t`· ${percent(Number(plan.estimated_minutes || 0), total)}% of the run`}</span></p>
+        <label className="eyebrow grid gap-1">{t`Estimated minutes`}<input className="desk-input" inputMode="numeric" value={plan.estimated_minutes} onChange={event => update(job.id, { estimated_minutes: event.target.value })} /></label>
+        {hasPool ? <><label className="eyebrow grid gap-1">{t`Pool`}<select className="desk-input" value={plan.consumable_pool_id} onChange={event => update(job.id, { consumable_pool_id: event.target.value })}>
+          <option value="">{t`No pool`}</option>{pools(machineId).map(pool => <option key={pool.id} value={pool.id}>{poolLabel(pool)}</option>)}</select></label>
+          <label className="eyebrow grid gap-1">{t`Planned ${unitLabel}`}<input className="desk-input" inputMode="decimal" value={plan.quantity} onChange={event => update(job.id, { quantity: event.target.value })} /></label></> : null}
       </li>; })}</ul>
-      <p className="text-sm text-muted">Estimated run: {total} min in all. Each job keeps its own estimate, material and charge.</p>
-      <label className="eyebrow grid gap-1">Note (optional)<input className="desk-input" maxLength={200} value={note} onChange={event => setNote(event.target.value)} /></label>
+      <p className="text-sm text-muted">{t`Estimated run: ${total} min in all. Each job keeps its own estimate, material and charge.`}</p>
+      <label className="eyebrow grid gap-1">{t`Note (optional)`}<input className="desk-input" maxLength={200} value={note} onChange={event => setNote(event.target.value)} /></label>
       {start.error ? <p role="alert" className="text-sm text-danger">{errorText(start.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
-        <button type="button" className="desk-button-ghost" onClick={() => onClose(false)}>Cancel</button>
-        <button type="submit" className="desk-button-primary" disabled={!machineId || start.isPending}>{start.isPending ? "Starting…" : "Start batch"}</button>
+        <button type="button" className="desk-button-ghost" onClick={() => onClose(false)}>{t`Cancel`}</button>
+        <button type="submit" className="desk-button-primary" disabled={!machineId || start.isPending}>{start.isPending ? t`Starting…` : t`Start batch`}</button>
       </div>
     </form>
   </Modal>;
@@ -72,17 +73,17 @@ export function BatchCompleteDialog({ batchId, jobs, makerspaceId, typeId, unitL
     ...(adjust ? { splits: { minutes: Object.fromEntries(jobs.map(job => [String(job.id), Number(value(job.id, "minutes"))])),
       ...(hasPool && quantity ? { quantity: Object.fromEntries(jobs.map(job => [String(job.id), value(job.id, "quantity")])) } : {}) } } : {}),
   } }, { onSuccess: onClose });
-  return <Modal open size="xl" title={`Complete batch ${batchId}`} onClose={onClose}>
+  return <Modal open size="xl" title={t`Complete batch ${batchId}`} onClose={onClose}>
     <form className="grid gap-4" onSubmit={event => { event.preventDefault(); submit(); }}>
       <div className="grid gap-3 sm:grid-cols-3">
-        <label className="eyebrow grid gap-1">Total minutes<input className="desk-input" inputMode="numeric" value={minutes} onChange={event => setMinutes(event.target.value)} /></label>
-        {hasPool ? <label className="eyebrow grid gap-1">Total {unitLabel} used<input className="desk-input" inputMode="decimal" value={quantity} onChange={event => setQuantity(event.target.value)} /></label> : null}
-        <label className="eyebrow grid gap-1">Pickup place<input className="desk-input" value={pickup} onChange={event => setPickup(event.target.value)} /></label>
+        <label className="eyebrow grid gap-1">{t`Total minutes`}<input className="desk-input" inputMode="numeric" value={minutes} onChange={event => setMinutes(event.target.value)} /></label>
+        {hasPool ? <label className="eyebrow grid gap-1">{t`Total ${unitLabel} used`}<input className="desk-input" inputMode="decimal" value={quantity} onChange={event => setQuantity(event.target.value)} /></label> : null}
+        <label className="eyebrow grid gap-1">{t`Pickup place`}<input className="desk-input" value={pickup} onChange={event => setPickup(event.target.value)} /></label>
       </div>
-      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={adjust} onChange={event => setAdjust(event.target.checked)} />Adjust the split by hand</label>
-      <ul className="grid gap-2" aria-label="Split per job">{jobs.map(job => <li key={job.id} className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-3 sm:items-center">
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={adjust} onChange={event => setAdjust(event.target.checked)} />{t`Adjust the split by hand`}</label>
+      <ul className="grid gap-2" aria-label={t`Split per job`}>{jobs.map(job => <li key={job.id} className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-3 sm:items-center">
         <span className="title-section">{job.title}</span>
-        {adjust ? <label className="eyebrow grid gap-1">Minutes<input className="desk-input" inputMode="decimal" value={value(job.id, "minutes")}
+        {adjust ? <label className="eyebrow grid gap-1">{t`Minutes`}<input className="desk-input" inputMode="decimal" value={value(job.id, "minutes")}
           onChange={event => setManual(current => ({ ...current, [job.id]: { minutes: event.target.value, quantity: value(job.id, "quantity") } }))} /></label>
           : <span className="text-sm">{minuteSplit[job.id]} min</span>}
         {hasPool && quantity ? adjust ? <label className="eyebrow grid gap-1">{unitLabel}<input className="desk-input" inputMode="decimal" value={value(job.id, "quantity")}
@@ -91,8 +92,8 @@ export function BatchCompleteDialog({ batchId, jobs, makerspaceId, typeId, unitL
       </li>)}</ul>
       {complete.error ? <p role="alert" className="text-sm text-danger">{errorText(complete.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
-        <button type="button" className="desk-button-ghost" onClick={onClose}>Cancel</button>
-        <button type="submit" className="desk-button-success" disabled={complete.isPending}>{complete.isPending ? "Completing…" : "Complete batch"}</button>
+        <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
+        <button type="submit" className="desk-button-success" disabled={complete.isPending}>{complete.isPending ? t`Completing…` : t`Complete batch`}</button>
       </div>
     </form>
   </Modal>;

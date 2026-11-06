@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
@@ -29,7 +30,7 @@ export function ProblemReportCard({ row, makerspace, onTriaged }: { row: Problem
     <div className="grid gap-3 rounded-md border border-line bg-surface p-3 text-sm">
       <ListRow title={row.label || "(tool)"} identity={{ kind: "avatar", name: row.requester_username, seed: row.requester_username }}
         meta={<>{row.requester_username} · <RelativeTime date={row.created_at} /><span className="mt-1 block line-clamp-2">{row.note}</span></>} />
-      <button className="desk-button-ghost w-fit" aria-expanded={detailsOpen} onClick={() => setDetailsOpen(!detailsOpen)}>Problem details</button>
+      <button className="desk-button-ghost w-fit" aria-expanded={detailsOpen} onClick={() => setDetailsOpen(!detailsOpen)}>{t`Problem details`}</button>
       {detailsOpen ? <p className="whitespace-pre-wrap break-words">{row.note}</p> : null}
       <div className="flex flex-wrap gap-2">
         {OUTCOME_OPTIONS.map((option) => (
@@ -57,12 +58,12 @@ export function ProblemReportCard({ row, makerspace, onTriaged }: { row: Problem
           ))}
         </div>
       ) : null}
-      <Field label="Triage note"><textarea className="desk-input min-h-20" value={note} onChange={(event) => setNote(event.target.value)} /></Field>
-      {actionable && resolutions.length === 0 ? <p className="text-sm text-muted">Choose at least one item quantity to save this outcome.</p> : null}
+      <Field label={t`Triage note`}><textarea className="desk-input min-h-20" value={note} onChange={(event) => setNote(event.target.value)} /></Field>
+      {actionable && resolutions.length === 0 ? <p className="text-sm text-muted">{t`Choose at least one item quantity to save this outcome.`}</p> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {triage.error ? <p className="text-sm text-danger">{(triage.error as Error).message}</p> : <span />}
         <button className="desk-button-primary" type="button" disabled={triage.isPending || (actionable && resolutions.length === 0)} onClick={() => triage.mutate()}>
-          {triage.isPending ? "Saving…" : "Save triage"}
+          {triage.isPending ? t`Saving…` : t`Save triage`}
         </button>
       </div>
     </div>

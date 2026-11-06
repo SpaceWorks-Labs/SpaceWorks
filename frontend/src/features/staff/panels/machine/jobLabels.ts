@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 /** Reason-code wording for the uniform job flow (#141/#142). Codes mirror the backend choices. */
 export const CHANGE_CODES: [string, string][] = [
   ["file_problem", "Problem with the file"], ["wrong_format", "Wrong file format"], ["too_large", "Too large for the machine"],
@@ -24,9 +25,9 @@ export const FILE_GROUPS: [string, string][] = [
 
 /** #142 OQ-6: the at-risk flag's wording per reason (the needed-by date never reorders the queue). */
 export const AT_RISK_LABELS: Record<string, string> = {
-  needed_by_passed: "Past its needed-by date",
-  eta_after_needed_by: "At risk: finishes after its needed-by date",
-  needed_by_soon: "At risk: needed by tomorrow, no estimate yet",
+  needed_by_passed: t`Past its needed-by date`,
+  eta_after_needed_by: t`At risk: finishes after its needed-by date`,
+  needed_by_soon: t`At risk: needed by tomorrow, no estimate yet`,
 };
 
 /** Staff-facing explanation for a refused job action, keyed by the API error code. */

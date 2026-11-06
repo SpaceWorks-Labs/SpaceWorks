@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { plural } from "../../../../lib/plural";
 import { machineStatusLabel } from "./machineStatusLabel";
 import { useEffect, useRef, useState } from "react";
@@ -62,17 +63,17 @@ export function MachineDrawer({
   ];
 
   return <DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={720}
-    title={details?.name ?? "Machine details"} state={opsQueryState(machine, "machine")}
+    title={details?.name ?? t`Machine details`} state={opsQueryState(machine, "machine")}
     identity={details?.image_url ? { kind: "image", src: details.image_url } : { kind: "icon", icon: "Cog", tone: "accent" }}
-    status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label="Retired" tone="warn" /> : null}{maintenanceAllowed ? <LockoutBadge machineId={machineId} /> : null}</> : undefined}
-    actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? "Mark running" : "Mark idle", pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
+    status={details ? <><StatusBadge status={details.status} label={machineStatusLabel(details.status)} />{!details.is_active ? <StatusPill label={t`Retired`} tone="warn" /> : null}{maintenanceAllowed ? <LockoutBadge machineId={machineId} /> : null}</> : undefined}
+    actions={{ primary: details?.can_operate ? { label: details.status === "idle" ? t`Mark running` : t`Mark idle`, pending: changeStatus.isPending, onClick: () => changeStatus.mutate() } : undefined }}
     meta={details ? [details.machine_type.name, plural(Number(details.usage_hours), "total hour")] : undefined}
     /* Phones keep the shared tab bar's single scrolling row (eight tabs wrapped into three ragged
        rows there); from `sm` the drawer is wide enough that every tab fits once wrapped, so the
        row wraps instead of hiding tabs behind a scroll. */
     main={details ? <div ref={mainRef} className="grid min-w-0 gap-6 sm:[&_[role=tablist]]:flex-wrap sm:[&_[role=tablist]]:overflow-visible sm:[&_[role=tablist]]:[mask-image:none]">
       {changeStatus.error ? <p role="alert" className="text-sm text-danger">{changeStatus.error.message}</p> : null}
-      <Tabs label="Machine details" tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)}>
+      <Tabs label={t`Machine details`} tabs={tabs.map(tab => ({ key: tab, label: tab, href: "#" }))} activeKey={activeTab} onChange={key => setActiveTab(key as MachineTab)}>
             {activeTab === "Overview" ? (
               <OverviewTab
                 publicDetailsEnabled={enabledFeatures.includes("machines.public_detail")}
@@ -116,7 +117,7 @@ export function MachineDrawer({
             {activeTab === "Sessions" ? <div className="grid gap-4">
               <SessionQrCard machineId={machineId} machineName={details.name} basePath={publicBase} />
               {(["live", "review", "closed"] as const).map(status => <section key={status} className="grid gap-2" aria-label={`${status} sessions`}>
-                <h3 className="title-section">{status === "live" ? "Live" : status === "review" ? "To check" : "Closed"}</h3>
+                <h3 className="title-section">{status === "live" ? t`Live` : status === "review" ? t`To check` : t`Closed`}</h3>
                 <SessionList makerspaceId={makerspaceId} machineId={machineId} status={status} /></section>)}
             </div> : null}
             {activeTab === "Warranty" && details.can_edit ? (

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -15,15 +16,15 @@ export function MachineWorkOrders({ makerspaceId, machineId, canCreate }: { make
   const rows = orders.data ?? [];
   return <section className="grid gap-3" aria-labelledby={`work-orders-${machineId}`}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h3 id={`work-orders-${machineId}`} className="title-section">Work orders</h3>
+      <h3 id={`work-orders-${machineId}`} className="title-section">{t`Work orders`}</h3>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="desk-button-ghost" onClick={() => openScreen()}>All work orders</button>
-        {canCreate ? <button type="button" className="desk-button-primary" onClick={() => setCreating(true)}>New work order</button> : null}
+        <button type="button" className="desk-button-ghost" onClick={() => openScreen()}>{t`All work orders`}</button>
+        {canCreate ? <button type="button" className="desk-button-primary" onClick={() => setCreating(true)}>{t`New work order`}</button> : null}
       </div>
     </div>
     {orders.error ? <ErrorBlock error={orders.error} resource="work orders" onRetry={() => { void orders.refetch(); }} /> : null}
-    {orders.isLoading ? <p role="status" className="text-sm text-muted">Loading work orders…</p> : null}
-    {orders.isSuccess && !rows.length ? <EmptyState message="No open work orders for this machine." /> : null}
+    {orders.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading work orders…`}</p> : null}
+    {orders.isSuccess && !rows.length ? <EmptyState message={t`No open work orders for this machine.`} /> : null}
     {rows.length ? <div className="grid gap-2">{rows.map(order => <WorkOrderRow key={order.id} order={order} onOpen={() => openScreen(order.id)} />)}</div> : null}
     {creating ? <WorkOrderCreateDialog makerspaceId={makerspaceId} machineId={machineId} onClose={() => setCreating(false)} /> : null}
   </section>;

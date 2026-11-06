@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import type React from "react";
 
 import { EmptyState, Skeleton, SkeletonRows, StatCard } from "../../../components/ui";
@@ -39,10 +41,10 @@ export function chartRows(data: ReportRows | undefined, labelKey: string, valueK
 export function DataState(props: { loading: boolean; error: unknown; empty: boolean; onRetry?: () => void; children: React.ReactNode }) {
   if (props.loading) return <ReportSkeleton />;
   if (props.error) return <div role="alert" className="mt-3 rounded-xl border border-danger-line bg-panel p-4 text-sm text-danger">
-    <p>Couldn't load this report. Try again.</p>
-    {props.onRetry ? <button type="button" className="desk-button mt-3" onClick={props.onRetry}>Retry</button> : null}
+    <p>{t`Couldn't load this report. Try again.`}</p>
+    {props.onRetry ? <button type="button" className="desk-button mt-3" onClick={props.onRetry}>{t`Retry`}</button> : null}
   </div>;
-  if (props.empty) return <EmptyState message="No activity in this period. Try a longer range." />;
+  if (props.empty) return <EmptyState message={t`No activity in this period. Try a longer range.`} />;
   return <>{props.children}</>;
 }
 
@@ -77,10 +79,10 @@ export function formatReportCell(value: ReportCell | undefined) {
   if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "number") return formatNumber(value);
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value).toLocaleString();
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value).toLocaleString(formatLocale());
   return value;
 }
 
 export function formatNumber(value: number) {
-  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value);
+  return new Intl.NumberFormat(formatLocale(), { maximumFractionDigits: 1 }).format(value);
 }

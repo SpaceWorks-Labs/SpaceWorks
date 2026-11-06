@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../../lib/api";
@@ -236,12 +237,12 @@ export async function uploadToContract(file: File, contract: UploadContract) {
     const response = await fetch(contract.upload.url, {
       method: "PUT", body: file, headers: contract.upload.headers,
     });
-    if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+    if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
     return;
   }
   const body = new FormData();
   Object.entries(contract.upload.fields ?? {}).forEach(([key, value]) => body.append(key, value));
   body.append("file", file);
   const response = await fetch(contract.upload.url, { method: "POST", body });
-  if (!response.ok) throw new Error(`Storage upload failed (${response.status})`);
+  if (!response.ok) throw new Error(t`Storage upload failed (${response.status})`);
 }

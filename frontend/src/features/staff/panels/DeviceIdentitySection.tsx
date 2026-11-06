@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -23,13 +24,13 @@ export function DeviceCreateForm({ makerspaceId, onGrant }: {
     },
   });
   return <form id="device-create-form" className="grid gap-4" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
-    <label>Device name<input className="desk-input block" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></label>
-    <label>Device kind<select className="desk-input block" value={kind} onChange={(e) => setKind(e.target.value as DeviceKind)}>
-      <option value="generic">Generic</option><option value="printer">Printer</option><option value="label_printer">Label printer</option>
+    <label>{t`Device name`}<input className="desk-input block" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></label>
+    <label>{t`Device kind`}<select className="desk-input block" value={kind} onChange={(e) => setKind(e.target.value as DeviceKind)}>
+      <option value="generic">{t`Generic`}</option><option value="printer">{t`Printer`}</option><option value="label_printer">{t`Label printer`}</option>
     </select></label>
-    <button hidden disabled={create.isPending || !name.trim()}>Create device</button>
-    {create.isPending ? <p role="status">Creating device...</p> : null}
-    {create.error ? <p role="alert">Could not create device. Please retry.</p> : null}
+    <button hidden disabled={create.isPending || !name.trim()}>{t`Create device`}</button>
+    {create.isPending ? <p role="status">{t`Creating device...`}</p> : null}
+    {create.error ? <p role="alert">{t`Could not create device. Please retry.`}</p> : null}
   </form>;
 }
 
@@ -51,27 +52,27 @@ export function DeviceIdentitySection({ device, onGrant }: { device: Device; onG
     },
   });
   const dirty = name !== device.name || threshold !== device.offline_threshold_seconds;
-  return <section aria-label={`Identity for ${device.name}`}>
-    <SettingsSection title="Device identity" description={`Fingerprint: ${device.key_fingerprint ? `${device.key_fingerprint.slice(0, 12)}…` : "Not enrolled"} · Key version ${device.key_version}`}>
+  return <section aria-label={t`Identity for ${device.name}`}>
+    <SettingsSection title={t`Device identity`} description={t`Fingerprint: ${device.key_fingerprint ? `${device.key_fingerprint.slice(0, 12)}…` : "Not enrolled"} · Key version ${device.key_version}`}>
       <form onSubmit={e => { e.preventDefault(); action.mutate("save"); }}>
-        <SettingsRow label="Name" htmlFor="device-name"><input id="device-name" className="desk-input w-full" required maxLength={120} value={name} onChange={e => setName(e.target.value)} /></SettingsRow>
-        <SettingsRow label="Offline threshold (seconds)" htmlFor="device-threshold" helper="Space Works marks the device offline when a heartbeat is late by this amount.">
+        <SettingsRow label={t`Name`} htmlFor="device-name"><input id="device-name" className="desk-input w-full" required maxLength={120} value={name} onChange={e => setName(e.target.value)} /></SettingsRow>
+        <SettingsRow label={t`Offline threshold (seconds)`} htmlFor="device-threshold" helper="Space Works marks the device offline when a heartbeat is late by this amount.">
           <input id="device-threshold" className="desk-input w-full" required type="number" min={1} max={604800} value={threshold} onChange={e => setThreshold(Number(e.target.value))} />
         </SettingsRow>
         {dirty || action.isPending ? <SettingsActions onDiscard={() => { setName(device.name); setThreshold(device.offline_threshold_seconds); }} pending={action.isPending} /> : null}
       </form>
-      <SettingsRow label="Enrollment" helper="A new enrollment replaces the device key. Copy the one-time token before closing it.">
+      <SettingsRow label={t`Enrollment`} helper="A new enrollment replaces the device key. Copy the one-time token before closing it.">
         <button className="desk-button" disabled={action.isPending} onClick={() => action.mutate("enrollment")}>
-          {device.status === "active" ? "Rotate key" : device.status === "revoked" ? "Reactivate device" : "Issue enrollment"}
+          {device.status === "active" ? t`Rotate key` : device.status === "revoked" ? t`Reactivate device` : t`Issue enrollment`}
         </button>
       </SettingsRow>
     </SettingsSection>
-    <p role="status">{action.isPending ? "Saving…" : action.isSuccess ? "Device updated." : ""}</p>
-    {action.error ? <p role="alert">Device change failed. Please retry.</p> : null}
-    <DangerZone title="Revoke device" consequence="Stops signed requests immediately. Enroll the device again to reactivate it."
-      action={{ label: "Revoke device", disabled: action.isPending || device.status === "revoked", disabledReason: device.status === "revoked" ? "This device is already revoked." : "Wait for the current change to finish.", onClick: () => setConfirmRevoke(true) }} />
-    <ConfirmDialog open={confirmRevoke} onCancel={() => setConfirmRevoke(false)} title="Revoke device"
+    <p role="status">{action.isPending ? t`Saving…` : action.isSuccess ? t`Device updated.` : ""}</p>
+    {action.error ? <p role="alert">{t`Device change failed. Please retry.`}</p> : null}
+    <DangerZone title={t`Revoke device`} consequence="Stops signed requests immediately. Enroll the device again to reactivate it."
+      action={{ label: t`Revoke device`, disabled: action.isPending || device.status === "revoked", disabledReason: device.status === "revoked" ? "This device is already revoked." : "Wait for the current change to finish.", onClick: () => setConfirmRevoke(true) }} />
+    <ConfirmDialog open={confirmRevoke} onCancel={() => setConfirmRevoke(false)} title={t`Revoke device`}
       onConfirm={() => action.mutate("revoke")} pending={action.isPending} tone="danger"
-      message="This immediately stops signed requests from this device. Re-enrollment is required to activate it again." />
+      message={t`This immediately stops signed requests from this device. Re-enrollment is required to activate it again.`} />
   </section>;
 }

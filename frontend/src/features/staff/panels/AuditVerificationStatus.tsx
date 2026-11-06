@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { plural } from "../../../lib/plural";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -95,27 +96,25 @@ export function AuditVerificationStatus({
           disabled={!makerspaceId || start.isPending || (accepted !== null && !run?.terminal)}
           onClick={() => start.mutate()}
         >
-          {start.isPending ? "Starting verification\u2026" : "Verify these entries"}
+          {start.isPending ? t`Starting verification…` : t`Verify these entries`}
         </button>
-        {!makerspaceId ? <span className="text-muted">Choose one makerspace to verify.</span> : null}
-        {accepted && !run ? <span className="text-muted">Loading verification status…</span> : null}
+        {!makerspaceId ? <span className="text-muted">{t`Choose one makerspace to verify.`}</span> : null}
+        {accepted && !run ? <span className="text-muted">{t`Loading verification status…`}</span> : null}
         {run ? <StatusPill label={verificationVerdict(run)} tone={verificationVerdict(run).includes("problems") ? "danger" : verificationVerdict(run) === "All entries fully verified." ? "success" : "warn"} /> : null}
       </div>
       {start.error ? <p className="mt-2 text-danger">{start.error.message}</p> : null}
       {status.error ? (
         <p className="mt-2 text-danger">
           {status.error.message}{" "}
-          <button type="button" className="desk-button-ghost" onClick={() => void status.refetch()}>Retry status</button>
+          <button type="button" className="desk-button-ghost" onClick={() => void status.refetch()}>{t`Retry status`}</button>
         </p>
       ) : null}
       {run?.terminal && gaps(run.coverage).length ? (
-        <p className="mt-2 text-muted">Coverage gaps: {gaps(run.coverage).join(", ")}.</p>
+        <p className="mt-2 text-muted">{t`Coverage gaps: ${gaps(run.coverage).join(", ")}.`}</p>
       ) : null}
       {run?.terminal ? (
         <p className="mt-1 text-xs text-muted">
-          {plural(run.coverage.row_count, "row")} · {run.coverage.mac_valid_count} MAC-valid ·{" "}
-          {run.coverage.local_batch_verified_count} in a verified batch · chain {run.coverage.chain_status} ·
-          anchor {run.coverage.anchor_status.replace("_", " ")}
+          {t`${plural(run.coverage.row_count, "row")} · ${run.coverage.mac_valid_count} MAC-valid ·${" "}${run.coverage.local_batch_verified_count} in a verified batch · chain ${run.coverage.chain_status} · anchor ${run.coverage.anchor_status.replace("_", " ")}`}
         </p>
       ) : null}
     </div>

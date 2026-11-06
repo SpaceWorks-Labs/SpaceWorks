@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../../lib/api";
 
 /** One row of the merged consumables list (MI-40): an item, a per-machine consumable or a material pool. */
@@ -39,11 +40,11 @@ export function logConsumableUse(makerspaceId: number, productId: number, quanti
   });
 }
 
-export const SOURCE_LABELS: Record<ConsumableRow["source"], string> = { item: "Item", machine: "Machine", pool: "Material pool" };
+export const SOURCE_LABELS: Record<ConsumableRow["source"], string> = { item: t`Item`, machine: t`Machine`, pool: t`Material pool` };
 export const SOURCE_TONES = { item: "accent", machine: "info", pool: "neutral" } as const;
 
 export function unitLabel(unit: string) {
   if (unit === "count") return "left";
-  if (unit === "grams") return "g left";
+  if (unit === "grams") return t`g left`;
   return `${unit} left`;
 }

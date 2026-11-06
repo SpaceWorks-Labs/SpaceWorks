@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { FlowLayout } from "../../../components/layouts";
 
@@ -7,7 +8,7 @@ export function RequestFlowDialog({ title, open, pending, onClose, formId, submi
   submitLabel: string; canSubmit?: boolean; danger?: boolean; children: ReactNode;
 }) {
   return <FlowLayout presentation="dialog" open={open} title={title} compact
-    state={{ status: "ready" }} steps={[{ key: "confirm", label: "Review and confirm", state: "current" }]} current="confirm"
+    state={{ status: "ready" }} steps={[{ key: "confirm", label: t`Review and confirm`, state: "current" }]} current="confirm"
     onCancel={() => { if (!pending) onClose(); }} work={children}
     footer={{ next: { label: submitLabel, pending, pendingLabel: "Saving…", disabled: !canSubmit,
       disabledReason: !canSubmit ? "Accept at least one unit before continuing." : undefined, tone: danger ? "danger" : "default",

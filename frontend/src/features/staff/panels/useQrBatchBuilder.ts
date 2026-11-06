@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -76,8 +77,8 @@ export function useQrBatchBuilder({ makerspace }: { makerspace: Makerspace }) {
   };
   const addProduct = useMutation({
     mutationFn: async () => {
-      if (!selectedProduct) throw new Error("Choose an inventory item.");
-      if (selectedProduct.tracking_mode === "individual") throw new Error("Generate unit QRs for individual inventory.");
+      if (!selectedProduct) throw new Error(t`Choose an inventory item.`);
+      if (selectedProduct.tracking_mode === "individual") throw new Error(t`Generate unit QRs for individual inventory.`);
       const qr = await staffRequest<QrCode>("/admin/qr/tools", {
         method: "POST",
         body: JSON.stringify({ makerspace_id: makerspace.id, product_id: selectedProduct.id }),
@@ -89,7 +90,7 @@ export function useQrBatchBuilder({ makerspace }: { makerspace: Makerspace }) {
   const reprintAsset = useMutation({
     mutationFn: async () => {
       const asset = assets.data?.results?.find((item) => item.id === Number(assetId));
-      if (!asset) throw new Error("Choose an existing unit.");
+      if (!asset) throw new Error(t`Choose an existing unit.`);
       const qr = await staffRequest<QrCode>(`/admin/assets/${asset.id}/qr`, {
         method: "POST",
         body: JSON.stringify({}),
@@ -105,7 +106,7 @@ export function useQrBatchBuilder({ makerspace }: { makerspace: Makerspace }) {
   });
   const generateAssets = useMutation({
     mutationFn: () => {
-      if (!selectedProduct) return Promise.reject(new Error("Choose an inventory item."));
+      if (!selectedProduct) return Promise.reject(new Error(t`Choose an inventory item.`));
       return staffRequest(`/admin/products/${selectedProduct.id}/assets/generate`, {
         method: "POST",
         body: JSON.stringify({

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { MaintenanceFeedControl } from "./MaintenanceFeedControl";
 import { useState } from "react";
 
@@ -35,7 +36,7 @@ export function MaintenanceTab({
 
   if (schedules.isLoading || logs.isLoading) {
     return (
-      <div className="grid gap-3" aria-label="Loading maintenance details">
+      <div className="grid gap-3" aria-label={t`Loading maintenance details`}>
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -80,11 +81,10 @@ export function MaintenanceTab({
       ) : null}
       <section className="grid gap-3" aria-labelledby="maintenance-history-title">
         <h3 id="maintenance-history-title" className="title-section">
-          Maintenance history
-        </h3>
+          {t`Maintenance history`}</h3>
         {!logRows.length ? (
           <EmptyState
-            message="No maintenance logged. Record the first completed maintenance."
+            message={t`No maintenance logged. Record the first completed maintenance.`}
           />
         ) : null}
         {logRows.map((log) => (
@@ -95,7 +95,7 @@ export function MaintenanceTab({
             <div className="mt-3 border-t border-line pt-3 text-sm text-muted">
               {log.parts_note ? (
                 <p className="whitespace-pre-wrap break-words">{log.parts_note}</p>
-              ) : <p>No parts notes.</p>}
+              ) : <p>{t`No parts notes.`}</p>}
               <MaintenanceDocuments
                 machineId={machineId}
                 logId={log.id}
@@ -128,8 +128,7 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
   return (
     <section aria-labelledby={`complete-maintenance-${schedule.id}`}>
       <h3 id={`complete-maintenance-${schedule.id}`} className="title-section mb-3">
-        Complete scheduled maintenance
-      </h3>
+        {t`Complete scheduled maintenance`}</h3>
       <form
         className="grid gap-2 rounded-lg border border-line bg-surface p-3 sm:grid-cols-2"
         onSubmit={(event) => {
@@ -145,34 +144,29 @@ function ScheduleCompletionForm({ makerspaceId, machineId, schedule, onCancel, o
         }}
       >
         <label className="eyebrow grid gap-1 sm:col-span-2">
-          Summary
-          <input className="desk-input" value={summary}
+          {t`Summary`}<input className="desk-input" value={summary}
             onChange={(event) => setSummary(event.target.value)} required />
         </label>
         <label className="eyebrow grid gap-1">
-          Performed at (optional)
-          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
+          {t`Performed at (optional)`}<input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <MaintenanceCostInput value={cost} onChange={setCost} />
         <label className="eyebrow grid gap-1 sm:col-span-2">
-          Parts and notes (optional)
-          <textarea className="desk-input min-h-20" value={partsNote}
+          {t`Parts and notes (optional)`}<textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
         <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
-          Set machine status to idle
-        </label>
+          {t`Set machine status to idle`}</label>
         <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button className="desk-button-primary" type="submit"
             disabled={complete.isPending || !summary.trim()}>
-            {complete.isPending ? "Completing..." : "Complete maintenance"}
+            {complete.isPending ? t`Completing...` : t`Complete maintenance`}
           </button>
           <button className="desk-button-ghost" type="button" onClick={onCancel} disabled={complete.isPending}>
-            Cancel
-          </button>
+            {t`Cancel`}</button>
         </div>
       </form>
       {complete.error instanceof Error ? (
@@ -204,8 +198,7 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
   return (
     <section aria-labelledby="log-maintenance-title">
       <h3 id="log-maintenance-title" className="title-section mb-3">
-        Log maintenance
-      </h3>
+        {t`Log maintenance`}</h3>
       <form
         className="grid gap-2 rounded-lg border border-line bg-surface p-3 sm:grid-cols-2"
         onSubmit={(event) => {
@@ -221,29 +214,25 @@ function MaintenanceLogForm({ makerspaceId, machineId }: {
         }}
       >
         <label className="eyebrow grid gap-1 sm:col-span-2">
-          Summary
-          <input className="desk-input" value={summary}
+          {t`Summary`}<input className="desk-input" value={summary}
             onChange={(event) => setSummary(event.target.value)} required />
         </label>
         <label className="eyebrow grid gap-1">
-          Performed at (optional)
-          <input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
+          {t`Performed at (optional)`}<input className="desk-input w-full min-w-0" type="datetime-local" value={performedAt}
             onChange={(event) => setPerformedAt(event.target.value)} />
         </label>
         <MaintenanceCostInput value={cost} onChange={setCost} />
         <label className="eyebrow grid gap-1 sm:col-span-2">
-          Parts and notes (optional)
-          <textarea className="desk-input min-h-20" value={partsNote}
+          {t`Parts and notes (optional)`}<textarea className="desk-input min-h-20" value={partsNote}
             onChange={(event) => setPartsNote(event.target.value)} />
         </label>
         <label className="eyebrow flex min-h-11 items-center gap-2 sm:col-span-2">
           <input type="checkbox" checked={setIdle}
             onChange={(event) => setSetIdle(event.target.checked)} />
-          Set machine status to idle
-        </label>
+          {t`Set machine status to idle`}</label>
         <button className="desk-button-primary justify-self-start" type="submit"
           disabled={log.isPending || !summary.trim()}>
-          {log.isPending ? "Logging..." : "Log maintenance"}
+          {log.isPending ? t`Logging...` : t`Log maintenance`}
         </button>
       </form>
       {log.error instanceof Error ? (

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, ReportTable, StatCards } from "./OperationsReportsParts";
 import { type Makerspace, useStaffGet } from "./shared";
@@ -25,11 +26,11 @@ export function OperationsReportsMachineService({ makerspace, aggregate, canMana
   if (endDate) query.set("end", endDate);
   const report = useStaffGet<Report>(["machine-service-report", aggregate ? "all" : makerspace.id, startDate, endDate], `${base}${query.size ? `?${query}` : ""}`, enabled);
   if (!canManageMachines) return null;
-  if (!enabled) return <Panel title="Machine service"><p className="text-sm text-muted">Module disabled</p></Panel>;
+  if (!enabled) return <Panel title={t`Machine service`}><p className="text-sm text-muted">{t`Module disabled`}</p></Panel>;
   const hasRows = Boolean(report.data?.status_totals.length || report.data?.machines.length || report.data?.consumption.length);
   const groups = aggregate ? groupsFor(report.data) : [];
   return (
-    <Panel title="Machine service">
+    <Panel title={t`Machine service`}>
       <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!hasRows}>
         {aggregate ? <div className="mt-4 space-y-6">{groups.map((group) => (
           <section key={group.id} className="rounded-md border border-line p-4">
@@ -50,11 +51,11 @@ function MachineServiceReport({ report }: { report: Report }) {
   return <>
     {status ? <StatCards stats={[["Submitted", status.submitted], ["Completed", status.completed + status.collected], ["Failed", status.failed], ["In progress", status.in_progress], ["Cancelled", status.cancelled ?? 0]]} /> : null}
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
-      <div><h5 className="title-section">Recorded service hours</h5><div className="mt-2"><BarChart rows={machines.slice(0, 10).map((row) => ({ label: row.machine_name, value: row.total_recorded_service_hours }))} valueLabel="hours" /></div></div>
-      <div><h5 className="title-section">Failures</h5><div className="mt-2"><BarChart rows={failures.slice(0, 10).map((row) => ({ label: row.machine_name, value: row.failed_count }))} valueLabel="requests" /></div></div>
+      <div><h5 className="title-section">{t`Recorded service hours`}</h5><div className="mt-2"><BarChart rows={machines.slice(0, 10).map((row) => ({ label: row.machine_name, value: row.total_recorded_service_hours }))} valueLabel="hours" /></div></div>
+      <div><h5 className="title-section">{t`Failures`}</h5><div className="mt-2"><BarChart rows={failures.slice(0, 10).map((row) => ({ label: row.machine_name, value: row.failed_count }))} valueLabel="requests" /></div></div>
     </div>
     <ReportTable data={table(machines)} />
-    {consumption.length ? <><h5 className="title-section mt-5">Consumables</h5><ReportTable data={table(consumption)} /></> : null}
+    {consumption.length ? <><h5 className="title-section mt-5">{t`Consumables`}</h5><ReportTable data={table(consumption)} /></> : null}
   </>;
 }
 

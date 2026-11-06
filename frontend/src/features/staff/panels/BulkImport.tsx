@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { plural } from "../../../lib/plural";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -51,7 +52,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
       body.append("mapping", JSON.stringify(mapping));
       return staffRequest<BulkImportJob>(`/admin/makerspace/${makerspace.id}/inventory/import/jobs`, { method: "POST", body });
     },
-    onSuccess: (job, _variables, session) => { setStep(job.mode === "apply" ? "import" : "review"); setJobId(job.id); trackJob({ key: `import:${makerspace.id}:${job.id}`, label: `Inventory ${job.mode} #${job.id}`, makerspaceId: makerspace.id, status: job.status, endpoint: `/admin/makerspace/${makerspace.id}/inventory/import/jobs/${job.id}` }, session); },
+    onSuccess: (job, _variables, session) => { setStep(job.mode === "apply" ? "import" : "review"); setJobId(job.id); trackJob({ key: `import:${makerspace.id}:${job.id}`, label: t`Inventory ${job.mode} #${job.id}`, makerspaceId: makerspace.id, status: job.status, endpoint: `/admin/makerspace/${makerspace.id}/inventory/import/jobs/${job.id}` }, session); },
   });
   const jobQuery = useQuery({
     queryKey: ["bulk-import-job", makerspace.id, jobId],
@@ -70,7 +71,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
   };
   const startFileJob = (mode: "preview" | "apply") => {
     if (!selectedFile) {
-      setError("Select a CSV, TSV, or XLSX file first.");
+      setError(t`Select a CSV, TSV, or XLSX file first.`);
       return;
     }
     setError("");
@@ -80,17 +81,17 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
     try {
       const parsed = JSON.parse(rawJson);
       if (!Array.isArray(parsed) || parsed.some((row) => !row || typeof row !== "object" || Array.isArray(row))) {
-        setError("Advanced JSON must be an array of row objects.");
+        setError(t`Advanced JSON must be an array of row objects.`);
         return;
       }
       submitRows(apply, parsed as RawRow[]);
     } catch {
-      setError("Advanced JSON could not be parsed. Check commas, quotes, and brackets.");
+      setError(t`Advanced JSON could not be parsed. Check commas, quotes, and brackets.`);
     }
   };
   const loadRows = (rows: RawRow[]) => {
     if (!rows.length) {
-      setError("No rows were found.");
+      setError(t`No rows were found.`);
       return;
     }
     const nextHeaders = Object.keys(rows[0]);
@@ -100,38 +101,38 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
     setStep("map");
     setError("");
   };
-  const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file, makerspace.id).then(loadRows).catch((exc: unknown) => setError(`We couldn't read that file${exc instanceof Error && exc.message ? `: ${exc.message}` : ""}. Save it as CSV or .xlsx and try again.`)); };
+  const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file, makerspace.id).then(loadRows).catch((exc: unknown) => setError(t`We couldn't read that file${exc instanceof Error && exc.message ? `: ${exc.message}` : ""}. Save it as CSV or .xlsx and try again.`)); };
   const errors = result?.summary?.errors ?? result?.errors?.length ?? 0;
   const finish = step === "import" && !pending && Boolean(result) && activeJob?.status !== "failed";
   const preview = () => selectedFile ? startFileJob("preview") : submitRows(false, mappedRows());
   const apply = () => selectedFile ? startFileJob("apply") : source === "json" ? submitJson(true) : submitRows(true, mappedRows());
   const failure = error || syncMutation.error?.message || jobMutation.error?.message || jobQuery.error?.message || (activeJob?.status === "failed" ? activeJob.error || "Import job failed." : "");
-  return <FlowLayout title="Bulk import" subject="Add or update inventory from a spreadsheet. Review every change before importing." standalone={false}
-    state={{ status: "ready" }} current={step} steps={[{ key: "upload", label: "Upload" }, { key: "map", label: "Match columns" }, { key: "review", label: "Review" }, { key: "import", label: "Import" }].map((item, index) => ({ ...item, state: item.key === step ? "current" : index < ["upload", "map", "review", "import"].indexOf(step) ? "done" : "todo" }))}
+  return <FlowLayout title={t`Bulk import`} subject="Add or update inventory from a spreadsheet. Review every change before importing." standalone={false}
+    state={{ status: "ready" }} current={step} steps={[{ key: "upload", label: t`Upload` }, { key: "map", label: t`Match columns` }, { key: "review", label: t`Review` }, { key: "import", label: t`Import` }].map((item, index) => ({ ...item, state: item.key === step ? "current" : index < ["upload", "map", "review", "import"].indexOf(step) ? "done" : "todo" }))}
     onCancel={() => { setStep("upload"); setSourceRows([]); setSelectedFile(null); setJobId(null); syncMutation.reset(); jobMutation.reset(); }}
     leaveGuard={sourceRows.length && !finish ? "Leave this import? Your selected file and mapping will be cleared. A running import continues in the background." : undefined}
-    footer={{ back: step === "import" && failure && !pending ? { label: "Review and try again", onClick: () => setStep(source === "json" ? "upload" : "map") } : step !== "upload" && step !== "import" ? { label: "Back", disabled: pending, onClick: () => setStep(step === "review" ? source === "json" ? "upload" : "map" : "upload") } : undefined,
-      next: { label: step === "upload" ? "Match columns" : step === "map" ? "Preview" : step === "review" ? errors > 0 ? `Import ${plural(Math.max(0, (result?.summary?.total ?? sourceRows.length) - errors), "valid row")}, skip ${errors}` : `Import ${plural(result?.summary?.total ?? sourceRows.length, "row")}` : "Importing…",
+    footer={{ back: step === "import" && failure && !pending ? { label: t`Review and try again`, onClick: () => setStep(source === "json" ? "upload" : "map") } : step !== "upload" && step !== "import" ? { label: t`Back`, disabled: pending, onClick: () => setStep(step === "review" ? source === "json" ? "upload" : "map" : "upload") } : undefined,
+      next: { label: step === "upload" ? t`Match columns` : step === "map" ? t`Preview` : step === "review" ? errors > 0 ? t`Import ${plural(Math.max(0, (result?.summary?.total ?? sourceRows.length) - errors), "valid row")}, skip ${errors}` : t`Import ${plural(result?.summary?.total ?? sourceRows.length, "row")}` : t`Importing…`,
         pending, pendingLabel: step === "review" ? "Importing…" : "Preparing…", disabled: step === "review" ? !result : step === "import",
         disabledReason: step === "import" ? "Wait for the import to finish." : undefined,
         onClick: () => { if (step === "upload") { if (source === "json") submitJson(false); else if (selectedFile) setStep("map"); else loadRows(parseDelimited(tableText)); } else if (step === "map") preview(); else if (step === "review") { setStep("import"); apply(); } } } }}
-    result={finish ? { tone: "success", title: "Import complete", summary: <><p>Your inventory is ready to review.</p>{result ? <ImportSummary result={result} /> : null}</>, next: { label: "View inventory →", href: `/m/${makerspace.slug}/admin/inventory` } } : undefined}
+    result={finish ? { tone: "success", title: t`Import complete`, summary: <><p>{t`Your inventory is ready to review.`}</p>{result ? <ImportSummary result={result} /> : null}</>, next: { label: t`View inventory →`, href: `/m/${makerspace.slug}/admin/inventory` } } : undefined}
     work={<div className="grid gap-6">
       {step === "upload" ? <>
         <div onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); const file = event.dataTransfer.files[0]; if (file && !pending) chooseFile(file); }}>
-        <Field label="Upload CSV or XLSX" hint="Drop a CSV or Excel file here, or choose a file."><input className="desk-input min-h-32 border-dashed" type="file" accept=".csv,.tsv,.xlsx" disabled={pending}
+        <Field label={t`Upload CSV or XLSX`} hint={t`Drop a CSV or Excel file here, or choose a file.`}><input className="desk-input min-h-32 border-dashed" type="file" accept=".csv,.tsv,.xlsx" disabled={pending}
           onChange={event => { const file = event.target.files?.[0]; if (file) chooseFile(file); }} /></Field></div>
-        <Field label="Paste table"><textarea className="desk-input min-h-32" value={tableText} onChange={event => { setSource("table"); setSelectedFile(null); setTableText(event.target.value); }} /></Field>
-        <details open={advancedOpen} onToggle={event => setAdvancedOpen(event.currentTarget.open)}><summary className="desk-button-ghost">Use JSON instead</summary>
-          <Field label="JSON rows"><textarea className="desk-input min-h-32 code-text" value={rawJson} onChange={event => { setSource("json"); setSelectedFile(null); setRawJson(event.target.value); }} /></Field>
-          <button className="desk-button" disabled={pending} onClick={() => { setSource("json"); setSelectedFile(null); submitJson(false); }}>Preview JSON</button>
+        <Field label={t`Paste table`}><textarea className="desk-input min-h-32" value={tableText} onChange={event => { setSource("table"); setSelectedFile(null); setTableText(event.target.value); }} /></Field>
+        <details open={advancedOpen} onToggle={event => setAdvancedOpen(event.currentTarget.open)}><summary className="desk-button-ghost">{t`Use JSON instead`}</summary>
+          <Field label={t`JSON rows`}><textarea className="desk-input min-h-32 code-text" value={rawJson} onChange={event => { setSource("json"); setSelectedFile(null); setRawJson(event.target.value); }} /></Field>
+          <button className="desk-button" disabled={pending} onClick={() => { setSource("json"); setSelectedFile(null); submitJson(false); }}>{t`Preview JSON`}</button>
         </details>
       </> : null}
       {step === "map" ? <div className="grid gap-4 sm:grid-cols-2">{fields.map(field => <Field key={field} label={labelFor(field)}><select className="desk-input" value={mapping[field] ?? ""}
-        onChange={event => setMapping(current => ({ ...current, [field]: event.target.value || undefined }))}><option value="">Do not import</option>{headers.map(header => <option key={header} value={header}>{header}</option>)}</select></Field>)}</div> : null}
+        onChange={event => setMapping(current => ({ ...current, [field]: event.target.value || undefined }))}><option value="">{t`Do not import`}</option>{headers.map(header => <option key={header} value={header}>{header}</option>)}</select></Field>)}</div> : null}
       {pending || activeJob ? <ImportProgress job={activeJob} loading={pending} /> : null}
       {(step === "review" || step === "import") && result ? <ImportSummary result={result} /> : null}
-      <ErrorText message={failure} />{jobQuery.error ? <button className="desk-button" onClick={() => { void jobQuery.refetch(); }}>Retry</button> : null}
+      <ErrorText message={failure} />{jobQuery.error ? <button className="desk-button" onClick={() => { void jobQuery.refetch(); }}>{t`Retry`}</button> : null}
     </div>} />;
 }
 function isRunning(job?: BulkImportJob) { return job?.status === "pending" || job?.status === "running"; }

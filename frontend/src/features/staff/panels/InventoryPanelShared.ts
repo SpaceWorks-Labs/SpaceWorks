@@ -1,3 +1,4 @@
+import { formatLocale } from "../../../lib/format";
 import type { Product } from "./shared";
 import type { KitComponent } from "../../inventory/KitChecklist";
 
@@ -78,5 +79,5 @@ export function humanize(value: string) {
 
 export function formatDate(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(formatLocale());
 }

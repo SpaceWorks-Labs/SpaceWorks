@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Box } from "lucide-react";
 
@@ -50,7 +51,7 @@ export function JobFilePreview({ fileId, filename, bytes, load }: {
     stop.current = finish;
     try {
       const blob = await load(controller.signal);
-      if (controller.signal.aborted || !blob.size || blob.size > limit) throw new Error("Preview unavailable.");
+      if (controller.signal.aborted || !blob.size || blob.size > limit) throw new Error(t`Preview unavailable.`);
       if (kind === "image") { const svg = sanitizeSvg(await blob.text()); finish(); showSvg(svg); return; }
       const buffer = await blob.arrayBuffer();
       worker = new Worker(new URL("./jobPreview.worker.ts", import.meta.url), { type: "module" });
@@ -68,17 +69,16 @@ export function JobFilePreview({ fileId, filename, bytes, load }: {
       worker.postMessage({ buffer, extension, stroke: strokeColour() }, [buffer]);
     } catch { const aborted = controller.signal.aborted; finish(); if (!aborted) fail(); }
   };
-  return <section aria-label={`Preview of ${filename}`} className="grid gap-3">
+  return <section aria-label={t`Preview of ${filename}`} className="grid gap-3">
     <div className="flex flex-wrap items-center gap-2 text-sm text-muted"><Box aria-hidden="true" size={18} />{KIND_LABELS[kind]}</div>
     {state === "confirm" ? <Callout size="panel" tone="warn" lead="This is a large file."
       body="The preview may use a lot of memory on this device. You can download the original instead." /> : null}
-    {state === "failed" ? <p role="status" className="text-sm text-muted">Preview unavailable. You can still download the original file.</p> : null}
-    {state === "loading" ? <div role="status" className="flex flex-wrap items-center gap-2"><Spinner />Preparing preview…
-      <ActionControl action={{ label: "Cancel preview", onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
-    {state === "ready" && mesh?.kind === "mesh" ? <Suspense fallback={<Spinner />}><MeshCanvas meshes={mesh.meshes} label={`3D preview of ${filename}`} /></Suspense> : null}
+    {state === "failed" ? <p role="status" className="text-sm text-muted">{t`Preview unavailable. You can still download the original file.`}</p> : null}
+    {state === "loading" ? <div role="status" className="flex flex-wrap items-center gap-2"><Spinner />{t`Preparing preview…`}<ActionControl action={{ label: t`Cancel preview`, onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
+    {state === "ready" && mesh?.kind === "mesh" ? <Suspense fallback={<Spinner />}><MeshCanvas meshes={mesh.meshes} label={t`3D preview of ${filename}`} /></Suspense> : null}
     {state === "ready" && image ? <img src={image} alt={`${KIND_LABELS[kind]} of ${filename}`}
       className="max-h-96 w-full rounded-xl border border-line bg-panel object-contain p-2" /> : null}
     {state !== "loading" && state !== "ready" ? <div><ActionControl action={{
-      label: state === "confirm" ? "Load large preview" : "Load preview", onClick: () => { void run(); } }} /></div> : null}
+      label: state === "confirm" ? t`Load large preview` : t`Load preview`, onClick: () => { void run(); } }} /></div> : null}
   </section>;
 }

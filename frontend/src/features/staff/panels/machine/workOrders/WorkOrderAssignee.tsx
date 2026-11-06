@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
 import { getOperatorCandidates, machineKeys } from "../../../machinesApi";
@@ -16,15 +17,14 @@ export function WorkOrderAssignee({ order, disabled }: { order: WorkOrder; disab
   const rows = candidates.data ?? [];
   const current = order.assignee_id;
   return <div className="grid gap-1">
-    <label className="eyebrow grid gap-1">Assigned to
-      <select className="desk-input" value={current ?? ""} disabled={disabled || assign.isPending || !machineId}
+    <label className="eyebrow grid gap-1">{t`Assigned to`}<select className="desk-input" value={current ?? ""} disabled={disabled || assign.isPending || !machineId}
         onChange={event => assign.mutate({ id: order.id, assignee_id: event.target.value ? Number(event.target.value) : null })}>
-        <option value="">Nobody yet</option>
-        {current && !rows.some(row => row.user_id === current) ? <option value={current}>Staff member #{current}</option> : null}
+        <option value="">{t`Nobody yet`}</option>
+        {current && !rows.some(row => row.user_id === current) ? <option value={current}>{t`Staff member #${current}`}</option> : null}
         {rows.map(row => <option key={row.user_id} value={row.user_id}>{row.display_name}{row.display_name !== row.username ? ` (${row.username})` : ""}</option>)}
       </select>
     </label>
-    {candidates.isError ? <p className="text-sm text-muted">Staff choices are unavailable: {candidates.error.message}</p> : null}
+    {candidates.isError ? <p className="text-sm text-muted">{t`Staff choices are unavailable: ${candidates.error.message}`}</p> : null}
     {assign.error ? <p role="alert" className="text-sm text-danger">{assign.error.message}</p> : null}
   </div>;
 }

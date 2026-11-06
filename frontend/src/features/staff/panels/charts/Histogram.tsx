@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ChartFrame, ChartLegend, valueText, type ChartProps } from "./ChartFrame";
 import { ink, seriesColor } from "./chartStyle";
 
@@ -9,7 +10,7 @@ export function Histogram({ title, data }: ChartProps) {
   const y = (value: number) => 220 - (value - low) / (high - low || 1) * 170;
   const width = Math.max(480, rows.length * 120 + 100);
   return <ChartFrame title={title} data={data}>
-    <svg viewBox={`0 0 ${width} 290`} style={{ minWidth: width }} className="w-full" role="img" aria-label={`${title}: ${data.xLabel} bins on horizontal axis, frequency on vertical axis.`}>
+    <svg viewBox={`0 0 ${width} 290`} style={{ minWidth: width }} className="w-full" role="img" aria-label={t`${title}: ${data.xLabel} bins on horizontal axis, frequency on vertical axis.`}>
       <path d={`M64 30 V220 M64 ${y(0)} H${width - 12}`} stroke={ink} fill="none" />
       {[low, high].map((value, index) => <text key={index} x="56" y={y(value)} textAnchor="end" fill={ink} fontSize="12">{value}</text>)}
       {rows.map(({ series, point }, index) => {

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 /**
  * A member's own SVG, made safe to show as an <img> (GAP2 M5). An image element never runs scripts or
  * fetches anything, and this strips what could on its own anyway: scripts, foreign content, event
@@ -8,11 +9,11 @@ const REMOVED = new Set(["script", "foreignobject", "iframe", "object", "embed",
 const OUTSIDE = /url\(\s*['"]?(?!#)|@import|expression\(|javascript:/i;
 
 export function sanitizeSvg(text: string) {
-  if (text.length > MAX_SVG_BYTES || /<!DOCTYPE|<!ENTITY/i.test(text)) throw new Error("Unsafe SVG.");
+  if (text.length > MAX_SVG_BYTES || /<!DOCTYPE|<!ENTITY/i.test(text)) throw new Error(t`Unsafe SVG.`);
   const doc = new DOMParser().parseFromString(text, "image/svg+xml");
-  if (doc.querySelector("parsererror") || doc.documentElement.localName !== "svg") throw new Error("Invalid SVG.");
+  if (doc.querySelector("parsererror") || doc.documentElement.localName !== "svg") throw new Error(t`Invalid SVG.`);
   const nodes = Array.from(doc.querySelectorAll("*"));
-  if (nodes.length > 200_000) throw new Error("SVG exceeds the preview limit.");
+  if (nodes.length > 200_000) throw new Error(t`SVG exceeds the preview limit.`);
   for (const node of nodes) {
     const name = node.localName.toLowerCase();
     if (REMOVED.has(name) || (name === "style" && OUTSIDE.test(node.textContent ?? ""))) { node.remove(); continue; }

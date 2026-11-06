@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { toast } from "../../../components/ui/toastStore";
 import type { Key } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -100,7 +101,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     // Reopen the just-created item in the edit modal so the user can add a photo.
     // The image uploader needs an existing product id, so it can't live on the add
     // form - this hands off straight into editing instead of forcing a manual re-open.
-    onSuccess: (created) => { setAddOpen(false); invalidate(); openEdit(created); toast("Item created. Add a photo so members can recognise it."); },
+    onSuccess: (created) => { setAddOpen(false); invalidate(); openEdit(created); toast(t`Item created. Add a photo so members can recognise it.`); },
   });
   const update = useMutation({
     mutationFn: () => editing ? staffRequest(`/admin/inventory/${editing.id}`, { method: "PATCH", body: JSON.stringify(payloadFromForm(form, false)) }) : Promise.resolve(),
@@ -113,7 +114,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const { archive, unarchive } = useInventoryArchive(invalidate, () => {});
   const moveToFix = useMutation({
     mutationFn: () => {
-      if (!fixTarget) return Promise.reject(new Error("Select an item first."));
+      if (!fixTarget) return Promise.reject(new Error(t`Select an item first.`));
       return staffRequest(`/admin/inventory/${fixTarget.id}/needs-fix`, {
         method: "POST",
         body: JSON.stringify({ action: "shelve", quantity: Number(fixQty) || 1 }),
@@ -145,7 +146,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     },
     onSuccess: (result) => {
       setQrConfirm(null);
-      setBulkQrMessage(`${result.succeeded} of ${result.total} items updated. ${result.failed} failed.`);
+      setBulkQrMessage(t`${result.succeeded} of ${result.total} items updated. ${result.failed} failed.`);
       invalidate();
     },
   });
@@ -176,7 +177,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const toBuy = useMutation({
     mutationFn: () => {
       if (!toBuyTarget) {
-        return Promise.reject(new Error("Select an item first."));
+        return Promise.reject(new Error(t`Select an item first.`));
       }
       return staffRequest(`/procurement/makerspace/${makerspace.id}/to-buy`, {
         method: "POST",
@@ -184,7 +185,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
       });
     },
     onSuccess: () => {
-      setToBuyMessage(toBuyTarget ? `${toBuyTarget.name} added to To buy.` : "Item added to To buy.");
+      setToBuyMessage(toBuyTarget ? t`${toBuyTarget.name} added to To buy.` : t`Item added to To buy.`);
       setToBuyTarget(null);
       setToBuyQty("1");
       queryClient.invalidateQueries({ queryKey: ["procurement", makerspace.id] });
@@ -212,21 +213,21 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const reorder = useReorderSuggestions({ makerspaceId: makerspace.id, canProcure: canUseToBuy });
   const selectedSuffix = selectedIds.length ? ` (${selectedIds.length} selected)` : "";
   const columns = inventoryColumns({ openEdit, openFix, openToBuy, archive: item => archive.mutate(item), unarchive: item => unarchive.mutate(item), canUseToBuy, pending: archive.isPending || unarchive.isPending, stockTab: showLowStock || outOfStock });
-  const addItem = { label: "Add item", onClick: () => { setForm(emptyForm); setAddOpen(true); } };
+  const addItem = { label: t`Add item`, onClick: () => { setForm(emptyForm); setAddOpen(true); } };
   const href = (archived: string, low: string, out: string) => { const next = new URLSearchParams(params); next.set("archived", archived); next.set("low_stock", low); next.set("out_of_stock", out); next.delete("page"); return `?${next}`; };
   const activeTab = showArchived ? "archived" : outOfStock ? "out" : showLowStock ? "low" : "all";
-  if (addOpen) return <ItemModal title="Add item" open onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} makerspace={makerspace} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
+  if (addOpen) return <ItemModal title={t`Add item`} open onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} makerspace={makerspace} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
     {kitEnabled ? <KitDefinitionEditor value={form.kit_components ?? []} onChange={value => setForm(current => ({ ...current, kit_components: value }))} /> : null}
   </ItemModal>;
   return (
-    <ListLayout width="wide" header={{ title: "Inventory", subtitle: "Parts, tools and the stock ready for your next project.", primary: addItem,
-      secondary: { label: "Export", menu: [{ label: `Export CSV${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: `Export Excel${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, overflow: domainSettings.actions.length ? domainSettings.actions : undefined, meta: plural(products.data?.count ?? 0, "item") }}
+    <ListLayout width="wide" header={{ title: t`Inventory`, subtitle: t`Parts, tools and the stock ready for your next project.`, primary: addItem,
+      secondary: { label: t`Export`, menu: [{ label: t`Export CSV${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: t`Export Excel${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, overflow: domainSettings.actions.length ? domainSettings.actions : undefined, meta: plural(products.data?.count ?? 0, "item") }}
       callout={reorder.callout} state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id)}
-      empty={{ message: "No parts added yet. Add your first item.", action: addItem }} filteredEmpty={{ message: showArchived ? "No archived items." : showLowStock ? "Nothing low on stock." : "Nothing matches these filters.", action: { label: "Clear filters", onClick: () => list.restore({}) } }}
-      tabs={[{ key: "all", label: "All", href: href("false", "false", "false") }, { key: "low", label: "Low stock", href: href("false", "true", "false") }, { key: "out", label: "Out of stock", href: href("false", "false", "true") }, { key: "archived", label: "Archived", href: href("true", "false", "false") }]} activeTab={activeTab}
+      empty={{ message: t`No parts added yet. Add your first item.`, action: addItem }} filteredEmpty={{ message: showArchived ? t`No archived items.` : showLowStock ? t`Nothing low on stock.` : t`Nothing matches these filters.`, action: { label: t`Clear filters`, onClick: () => list.restore({}) } }}
+      tabs={[{ key: "all", label: t`All`, href: href("false", "false", "false") }, { key: "low", label: t`Low stock`, href: href("false", "true", "false") }, { key: "out", label: t`Out of stock`, href: href("false", "false", "true") }, { key: "archived", label: t`Archived`, href: href("true", "false", "false") }]} activeTab={activeTab}
       filters={{ toolbar: <ListViewControls state={list} makerspaceId={makerspace.id} entity="inventory" searchLabel="Search inventory"
         sorts={[["name", "Name"], ["-name", "Name descending"], ["available_quantity", "Available first"], ["-available_quantity", "Available last"]]} /> }}
-      bulkBar={{ count: selectedIds.length, onClear: () => setSelectedIds([]), actions: [{ label: "Enable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(true); } }, { label: "Disable QR", pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(false); } }, { label: "Export CSV", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: "Export Excel", pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }}
+      bulkBar={{ count: selectedIds.length, onClear: () => setSelectedIds([]), actions: [{ label: t`Enable QR`, pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(true); } }, { label: t`Disable QR`, pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(false); } }, { label: t`Export CSV`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: t`Export Excel`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }}
       body={{ kind: "table", table: <DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={value => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={row => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} /> }}
       pagination={{ page: list.page, pageSize: 24, count: products.data?.count ?? 0, onChange: list.setPage }}
       detail={<>
@@ -234,29 +235,29 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
       <p role="status" className="text-sm text-muted">{toBuyMessage || bulkQrMessage}</p><ErrorText message={exportInventory.error?.message} />
       {editing ? <InventoryItemDetail product={editing} makerspace={makerspace} canViewAudit={canViewAudit} kitEnabled={kitEnabled} form={form} setForm={setForm} categories={categoryRows} onClose={closeEdit}
         pending={update.isPending} error={update.error?.message} onSave={() => update.mutate()} onArchive={() => { archive.mutate(editing); closeEdit(); }}
-        adjustForm={adjustForm} setAdjustForm={setAdjustForm} adjustPending={adjust.isPending} adjustError={adjust.error?.message} onAdjust={() => adjust.mutate()} invalidate={invalidate} /> : itemId ? <DetailLayout presentation="drawer" open onClose={closeEdit} title="Inventory item" state={inventoryQueryState(linkedItem, "this item")} isEmpty={!linkedItem.data?.results.length} empty={{ message: "This item isn't available in this makerspace. Close this drawer to return to inventory." }} main={null} /> : null}
+        adjustForm={adjustForm} setAdjustForm={setAdjustForm} adjustPending={adjust.isPending} adjustError={adjust.error?.message} onAdjust={() => adjust.mutate()} invalidate={invalidate} /> : itemId ? <DetailLayout presentation="drawer" open onClose={closeEdit} title={t`Inventory item`} state={inventoryQueryState(linkedItem, "this item")} isEmpty={!linkedItem.data?.results.length} empty={{ message: t`This item isn't available in this makerspace. Close this drawer to return to inventory.` }} main={null} /> : null}
       {canUseToBuy ? (
-        <Modal open={Boolean(toBuyTarget)} onClose={() => setToBuyTarget(null)} title="Add to To buy" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={toBuy.isPending} onClick={() => setToBuyTarget(null)}>Cancel</button><button className="desk-button-primary" type="button" disabled={toBuy.isPending} onClick={() => toBuy.mutate()}>{toBuy.isPending ? "Adding…" : "Add"}</button></div>}>
+        <Modal open={Boolean(toBuyTarget)} onClose={() => setToBuyTarget(null)} title={t`Add to To buy`} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={toBuy.isPending} onClick={() => setToBuyTarget(null)}>{t`Cancel`}</button><button className="desk-button-primary" type="button" disabled={toBuy.isPending} onClick={() => toBuy.mutate()}>{toBuy.isPending ? t`Adding…` : t`Add`}</button></div>}>
           <div className="grid gap-3 text-sm">
             <p className="font-semibold text-ink">{toBuyTarget?.name}</p>
-            <Field label="Quantity"><QuantityStepper label="quantity" min={1} value={toBuyQty} onValueChange={setToBuyQty} /></Field>
+            <Field label={t`Quantity`}><QuantityStepper label="quantity" min={1} value={toBuyQty} onValueChange={setToBuyQty} /></Field>
             {toBuy.error ? <p className="text-sm text-danger">{toBuy.error.message}</p> : null}
           </div>
         </Modal>
       ) : null}
-      <Modal open={Boolean(fixTarget)} onClose={() => setFixTarget(null)} title="Move to repair shelf" footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={moveToFix.isPending} onClick={() => setFixTarget(null)}>Cancel</button><button className="desk-button-warn" type="button" disabled={moveToFix.isPending || !fixTarget || Number(fixQty) < 1 || Number(fixQty) > (fixTarget?.available_quantity ?? 0)} onClick={() => moveToFix.mutate()}>{moveToFix.isPending ? "Moving…" : "Move to repair shelf"}</button></div>}>
+      <Modal open={Boolean(fixTarget)} onClose={() => setFixTarget(null)} title={t`Move to repair shelf`} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={moveToFix.isPending} onClick={() => setFixTarget(null)}>{t`Cancel`}</button><button className="desk-button-warn" type="button" disabled={moveToFix.isPending || !fixTarget || Number(fixQty) < 1 || Number(fixQty) > (fixTarget?.available_quantity ?? 0)} onClick={() => moveToFix.mutate()}>{moveToFix.isPending ? t`Moving…` : t`Move to repair shelf`}</button></div>}>
         <div className="grid gap-3 text-sm">
           <p className="font-semibold text-ink">{fixTarget?.name}</p>
-          <p className="text-muted">Move available units out of circulation for repair.</p>
-          <Field label={`Quantity (${fixTarget?.available_quantity ?? 0} available)`}><QuantityStepper label="quantity" min={1} max={fixTarget?.available_quantity ?? 1} value={fixQty} onValueChange={setFixQty} /></Field>
+          <p className="text-muted">{t`Move available units out of circulation for repair.`}</p>
+          <Field label={t`Quantity (${fixTarget?.available_quantity ?? 0} available)`}><QuantityStepper label="quantity" min={1} max={fixTarget?.available_quantity ?? 1} value={fixQty} onValueChange={setFixQty} /></Field>
           {moveToFix.error ? <p className="text-sm text-danger">{moveToFix.error.message}</p> : null}
         </div>
       </Modal>
-      <Modal open={Boolean(assetFixTarget)} onClose={() => setAssetFixTarget(null)} title={assetFixTarget ? `Choose an asset to repair · ${assetFixTarget.name}` : "Choose an asset to repair"} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" onClick={() => setAssetFixTarget(null)}>Close</button></div>}>
+      <Modal open={Boolean(assetFixTarget)} onClose={() => setAssetFixTarget(null)} title={assetFixTarget ? t`Choose an asset to repair · ${assetFixTarget.name}` : t`Choose an asset to repair`} footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" onClick={() => setAssetFixTarget(null)}>{t`Close`}</button></div>}>
         {assetFixTarget ? <IndividualAssets productId={assetFixTarget.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}
       </Modal>
       {domainSettings.dialog}
-      <ConfirmDialog open={qrConfirm !== null} title={qrConfirm ? "Enable public QR" : "Disable public QR"} message={`${qrConfirm ? "Enable" : "Disable"} public self-checkout QR for ${selectedIds.length} selected items?`} confirmLabel={qrConfirm ? "Enable" : "Disable"} pending={bulkQr.isPending} onCancel={() => setQrConfirm(null)} onConfirm={() => { if (qrConfirm !== null) bulkQr.mutate(qrConfirm); }} />
+      <ConfirmDialog open={qrConfirm !== null} title={qrConfirm ? t`Enable public QR` : t`Disable public QR`} message={t`${qrConfirm ? "Enable" : "Disable"} public self-checkout QR for ${selectedIds.length} selected items?`} confirmLabel={qrConfirm ? t`Enable` : t`Disable`} pending={bulkQr.isPending} onCancel={() => setQrConfirm(null)} onConfirm={() => { if (qrConfirm !== null) bulkQr.mutate(qrConfirm); }} />
       </>} />
   );
 }

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { DataTable, StatusPill } from "../../../components/ui";
 import { STICKY_FIRST_COLUMN } from "../matrixColumns";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
@@ -33,8 +35,8 @@ export function OperationsReportsPayments({ analyticsBase, scopeKey, startDate, 
   const rows = report.data?.typed_rows ?? [];
 
   return (
-    <Panel title="Payment reconciliation">
-      <p className="mb-3 text-xs text-muted">Private totals are grouped by makerspace, currency, subject, and status. Pending payments remain visible across date ranges.</p>
+    <Panel title={t`Payment reconciliation`}>
+      <p className="mb-3 text-xs text-muted">{t`Private totals are grouped by makerspace, currency, subject, and status. Pending payments remain visible across date ranges.`}</p>
       <DataState loading={report.isLoading} error={report.error} onRetry={() => void report.refetch()} empty={!rows.length}>
         {scopeKey === "all" ? (
           <div className="space-y-5">
@@ -65,7 +67,7 @@ function PaymentChart({ rows }: { rows: PaymentReportRow[] }) {
           space that has collected nothing yet simply gets no slice. */}
       {methodSlices(group).length ? (
         <div className="mt-4">
-          <h5 className="eyebrow">Settled by method</h5>
+          <h5 className="eyebrow">{t`Settled by method`}</h5>
           <PieChart rows={methodSlices(group)} valueLabel={`${currency.toUpperCase()} settled`} />
         </div>
       ) : null}
@@ -118,7 +120,7 @@ function label(value: string) {
 
 function money(amount: string, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
+    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
   } catch {
     return `${currency.toUpperCase()} ${amount}`;
   }

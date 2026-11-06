@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMemo, type Dispatch, type SetStateAction } from "react";
 
 import { Badge, ErrorBlock, ListRow } from "../../../../components/ui";
@@ -28,20 +29,20 @@ export function IssueRoster({
   const carded = useMemo(() => new Set(cardedMembershipIds), [cardedMembershipIds]);
   const rows = (memberships.data ?? []).filter((row) => !carded.has(row.id));
 
-  return <section aria-label="Members without a card">
-    <h2 className="title-section mb-4">Members without a card</h2>
+  return <section aria-label={t`Members without a card`}>
+    <h2 className="title-section mb-4">{t`Members without a card`}</h2>
     <QueryContent state={opsQueryState(memberships, "members")} isEmpty={!rows.length}
-      empty={{ message: "Every active member has a card." }}>
+      empty={{ message: t`Every active member has a card.` }}>
       <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={memberLabel(row)}
         identity={{ kind: "avatar", name: memberLabel(row), seed: String(row.id) }}
         right={<div className="flex flex-wrap items-center gap-3">
           {row.status ? <Badge tone={row.status === "active" ? "success" : "warn"}>{opsStatusLabel(row.status)}</Badge> : null}
-          <label className="sr-only" htmlFor={"printed-name-" + row.id}>Printed name for {memberLabel(row)}</label>
-          <input id={"printed-name-" + row.id} className="desk-input w-full sm:w-56" placeholder="Printed name (optional)"
+          <label className="sr-only" htmlFor={"printed-name-" + row.id}>{t`Printed name for ${memberLabel(row)}`}</label>
+          <input id={"printed-name-" + row.id} className="desk-input w-full sm:w-56" placeholder={t`Printed name (optional)`}
             value={names[row.id] ?? ""} onChange={event => setNames({ ...names, [row.id]: event.target.value })} />
           <button className="desk-button" type="button" disabled={issue.isPending}
             onClick={() => issue.mutate({ membershipId: row.id, printedName: names[row.id]?.trim() || undefined })}>
-            {issue.isPending && issue.variables?.membershipId === row.id ? "Issuing…" : "Issue card"}</button>
+            {issue.isPending && issue.variables?.membershipId === row.id ? t`Issuing…` : t`Issue card`}</button>
         </div>} />)}</div>
     </QueryContent>
     {issue.error ? <ErrorBlock error={issue.error} /> : null}

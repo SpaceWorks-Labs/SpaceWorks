@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ErrorBlock, Field, ListRow, RelativeTime, SettingsRow, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { SettingsLayout } from "../../../components/layouts";
@@ -21,24 +22,24 @@ export function StocktakeDiscipline({ makerspaceId }: { makerspaceId: number }) 
   const [days, setDays] = useState(30);
   const [due, setDue] = useState("");
   useEffect(() => { if (policy.data) setDraft(policy.data); }, [policy.data]);
-  const save = useMutation({ mutationFn: () => staffRequest(`${base}/stocktake-policy`, { method: "PUT", body: JSON.stringify(draft) }), onSuccess: () => { toast("Count policy saved."); client.invalidateQueries({ queryKey: ["stocktake-policy", makerspaceId] }); } });
-  const create = useMutation({ mutationFn: () => staffRequest(`${base}/stocktake-schedules`, { method: "POST", body: JSON.stringify({ name, interval_days: days, next_due: due, blind: draft.blind_default }) }), onSuccess: () => { toast("Count schedule updated."); client.invalidateQueries({ queryKey: ["stocktake-schedules", makerspaceId] }); } });
-  const toggle = useMutation({ mutationFn: (row: Schedule) => staffRequest(`${base}/stocktake-schedules/${row.id}`, { method: "PATCH", body: JSON.stringify({ is_active: !row.is_active }) }), onSuccess: () => { toast("Count schedule updated."); client.invalidateQueries({ queryKey: ["stocktake-schedules", makerspaceId] }); } });
-  return <SettingsLayout header={{ title: "Count policy and schedule", subtitle: "Choose how counts are checked and when the next one is due." }} state={inventoryQueryState(policy, "count policy")}
-    sections={[{ id: "policy", title: "Count policy", rows: <>
-      <SettingsRow label="Blind counts by default" helper="Counters enter what they find without seeing expected quantities."><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={draft.blind_default} onChange={event => setDraft({ ...draft, blind_default: event.target.checked })} />Blind counts by default</label></SettingsRow>
-      <SettingsRow label="Variance threshold" helper="Leave blank to require approval for every count."><Field label="Variance units allowed without approval"><input className="desk-input" type="number" min={0} value={draft.variance_threshold ?? ""} onChange={event => setDraft({ ...draft, variance_threshold: event.target.value === "" ? null : Number(event.target.value) })} /></Field></SettingsRow>
+  const save = useMutation({ mutationFn: () => staffRequest(`${base}/stocktake-policy`, { method: "PUT", body: JSON.stringify(draft) }), onSuccess: () => { toast(t`Count policy saved.`); client.invalidateQueries({ queryKey: ["stocktake-policy", makerspaceId] }); } });
+  const create = useMutation({ mutationFn: () => staffRequest(`${base}/stocktake-schedules`, { method: "POST", body: JSON.stringify({ name, interval_days: days, next_due: due, blind: draft.blind_default }) }), onSuccess: () => { toast(t`Count schedule updated.`); client.invalidateQueries({ queryKey: ["stocktake-schedules", makerspaceId] }); } });
+  const toggle = useMutation({ mutationFn: (row: Schedule) => staffRequest(`${base}/stocktake-schedules/${row.id}`, { method: "PATCH", body: JSON.stringify({ is_active: !row.is_active }) }), onSuccess: () => { toast(t`Count schedule updated.`); client.invalidateQueries({ queryKey: ["stocktake-schedules", makerspaceId] }); } });
+  return <SettingsLayout header={{ title: t`Count policy and schedule`, subtitle: t`Choose how counts are checked and when the next one is due.` }} state={inventoryQueryState(policy, "count policy")}
+    sections={[{ id: "policy", title: t`Count policy`, rows: <>
+      <SettingsRow label={t`Blind counts by default`} helper="Counters enter what they find without seeing expected quantities."><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={draft.blind_default} onChange={event => setDraft({ ...draft, blind_default: event.target.checked })} />{t`Blind counts by default`}</label></SettingsRow>
+      <SettingsRow label={t`Variance threshold`} helper="Leave blank to require approval for every count."><Field label={t`Variance units allowed without approval`}><input className="desk-input" type="number" min={0} value={draft.variance_threshold ?? ""} onChange={event => setDraft({ ...draft, variance_threshold: event.target.value === "" ? null : Number(event.target.value) })} /></Field></SettingsRow>
     </>, save: { dirty: JSON.stringify(draft) !== JSON.stringify(policy.data), pending: save.isPending, disabled: !policy.data, onSave: () => save.mutate(), onDiscard: () => { if (policy.data) setDraft(policy.data); }, error: save.error?.message } },
-    { id: "schedules", title: "Schedules", rows: <div className="grid gap-6">
+    { id: "schedules", title: t`Schedules`, rows: <div className="grid gap-6">
       <form className="grid gap-4" onSubmit={event => { event.preventDefault(); create.mutate(); }}>
-        <SettingsRow label="Next count"><Field label="Count name"><input required className="desk-input" value={name} onChange={event => setName(event.target.value)} /></Field></SettingsRow>
-        <SettingsRow label="Repeat interval"><Field label="Every days"><input required type="number" min={1} className="desk-input" value={days} onChange={event => setDays(Number(event.target.value))} /></Field></SettingsRow>
-        <SettingsRow label="Start date"><Field label="First count due"><input required type="date" className="desk-input" value={due} onChange={event => setDue(event.target.value)} /></Field></SettingsRow>
-        <button className="desk-button" disabled={create.isPending}>{create.isPending ? "Scheduling…" : "Schedule count"}</button>
+        <SettingsRow label={t`Next count`}><Field label={t`Count name`}><input required className="desk-input" value={name} onChange={event => setName(event.target.value)} /></Field></SettingsRow>
+        <SettingsRow label={t`Repeat interval`}><Field label={t`Every days`}><input required type="number" min={1} className="desk-input" value={days} onChange={event => setDays(Number(event.target.value))} /></Field></SettingsRow>
+        <SettingsRow label={t`Start date`}><Field label={t`First count due`}><input required type="date" className="desk-input" value={due} onChange={event => setDue(event.target.value)} /></Field></SettingsRow>
+        <button className="desk-button" disabled={create.isPending}>{create.isPending ? t`Scheduling…` : t`Schedule count`}</button>
         {create.error ? <ErrorBlock error={create.error} /> : null}
       </form>
-      {schedules.results.map(row => <ListRow key={row.id} title={row.name} meta={<>Due <RelativeTime date={row.next_due} /> · Every {row.interval_days} days</>}
-        right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={row.is_active ? "Active" : "Paused"} tone={row.is_active ? "success" : "neutral"} /><button className="desk-button-ghost" disabled={toggle.isPending} onClick={() => toggle.mutate(row)}>{toggle.isPending && toggle.variables?.id === row.id ? "Updating…" : row.is_active ? "Pause schedule" : "Enable schedule"}</button></div>} />)}
+      {schedules.results.map(row => <ListRow key={row.id} title={row.name} meta={<>{t`Due `}<RelativeTime date={row.next_due} /> {t` · Every ${row.interval_days} days`}</>}
+        right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={row.is_active ? t`Active` : t`Paused`} tone={row.is_active ? "success" : "neutral"} /><button className="desk-button-ghost" disabled={toggle.isPending} onClick={() => toggle.mutate(row)}>{toggle.isPending && toggle.variables?.id === row.id ? t`Updating…` : row.is_active ? t`Pause schedule` : t`Enable schedule`}</button></div>} />)}
       <Pagination page={schedules.page} totalPages={schedules.totalPages} count={schedules.count} pageSize={schedules.pageSize} onChange={schedules.setPage} />
       {schedules.error ? <ErrorBlock error={schedules.error} resource="schedules" onRetry={() => { void schedules.refetch(); }} /> : null}{toggle.error ? <ErrorBlock error={toggle.error} /> : null}
     </div> }]} />;

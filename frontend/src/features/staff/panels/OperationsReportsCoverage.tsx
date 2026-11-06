@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import {
   BarChart, DataState, LineChart, PerMakerspaceTables, ReportTable, StackedBarChart,
@@ -34,7 +35,7 @@ export function OperationsReportsCoverage({ catalog, analyticsBase, scopeKey, st
   startDate: string; endDate: string; grain: string; aggregate: boolean;
   makerspaceName: (id: number) => string;
 }) {
-  return <section className="contents" aria-label="Module coverage reports">{catalog.filter((report) => COVERAGE_KEYS.has(report.key)).map((report) => <CoverageReport key={report.key} report={report} analyticsBase={analyticsBase} scopeKey={scopeKey} startDate={startDate} endDate={endDate} grain={grain} aggregate={aggregate} makerspaceName={makerspaceName} />)}</section>;
+  return <section className="contents" aria-label={t`Module coverage reports`}>{catalog.filter((report) => COVERAGE_KEYS.has(report.key)).map((report) => <CoverageReport key={report.key} report={report} analyticsBase={analyticsBase} scopeKey={scopeKey} startDate={startDate} endDate={endDate} grain={grain} aggregate={aggregate} makerspaceName={makerspaceName} />)}</section>;
 }
 
 function CoverageReport({ report, analyticsBase, scopeKey, startDate, endDate, grain, aggregate, makerspaceName }: {
@@ -53,10 +54,10 @@ function CoverageReport({ report, analyticsBase, scopeKey, startDate, endDate, g
   const stacked = STACKED_FIELDS[report.key];
   return (
     <Panel title={report.title} reportKey={report.key}>
-      {!enabled ? <p className="text-sm text-muted">{report.unavailable_reason ?? "Module disabled"}</p> : (
+      {!enabled ? <p className="text-sm text-muted">{report.unavailable_reason ?? t`Module disabled`}</p> : (
         <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={!reportRows(result.data).length}>
           {aggregate ? <PerMakerspaceTables data={result.data} nameOf={makerspaceName} /> : <>{stacked ? <StackedBarChart rows={stackedChartRows(result.data, ...stacked.slice(0, 3) as [string, string, string])} valueLabel={stacked[3]} /> : <Chart rows={chartRows(result.data, labelKey, valueKey)} valueLabel={valueLabel} />}<ReportTable data={result.data} /></>}
-          {result.data?.meta ? <p className="mt-2 text-xs text-muted">Source: {result.data.meta.source ?? "live"} / {result.data.meta.grain ?? effectiveGrain}</p> : null}
+          {result.data?.meta ? <p className="mt-2 text-xs text-muted">{t`Source: ${result.data.meta.source ?? "live"} / ${result.data.meta.grain ?? effectiveGrain}`}</p> : null}
         </DataState>
       )}
     </Panel>

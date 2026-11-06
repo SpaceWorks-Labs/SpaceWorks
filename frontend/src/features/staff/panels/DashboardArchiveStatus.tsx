@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { KeyValueCard, RelativeTime, StatusPill } from "../../../components/ui";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
@@ -11,19 +12,19 @@ export function BackupStatusCard({ makerspaceId }: { makerspaceId: number }) {
   const status = useQuery({ queryKey: ["backup-status", makerspaceId], queryFn: () => getMakerspaceBackupStatus(makerspaceId) });
   if (!status.isSuccess) return null;
   const data = status.data;
-  return <KeyValueCard title="Backup status" items={[
-    { label: "Last backup", value: data.last_backed_up_at
+  return <KeyValueCard title={t`Backup status`} items={[
+    { label: t`Last backup`, value: data.last_backed_up_at
       ? <RelativeTime date={data.last_backed_up_at} />
-      : <StatusPill tone="warn" label="No backup yet" /> },
-    { label: "Nightly backups", value: <StatusPill label={data.nightly_backups_enabled ? "On" : "Off"}
+      : <StatusPill tone="warn" label={t`No backup yet`} /> },
+    { label: t`Nightly backups`, value: <StatusPill label={data.nightly_backups_enabled ? t`On` : t`Off`}
       tone={data.nightly_backups_enabled ? "success" : "warn"} /> },
   ]} />;
 }
 
 /** BK-17: the Space Manager's own backup status on the dashboard. */
 export function DashboardArchiveStatus({ makerspaceId, slug, guestOnly, singleTenantLocked }: Props) {
-  return <section aria-label="Backup status" className="grid gap-3">
+  return <section aria-label={t`Backup status`} className="grid gap-3">
     <BackupStatusCard makerspaceId={makerspaceId} />
-    <a className="desk-button" href={consoleSessionHref(staffTabPath("backups", guestOnly, slug, singleTenantLocked))}>Backups</a>
+    <a className="desk-button" href={consoleSessionHref(staffTabPath("backups", guestOnly, slug, singleTenantLocked))}>{t`Backups`}</a>
   </section>;
 }

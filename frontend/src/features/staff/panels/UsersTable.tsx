@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { EmptyState, ErrorText, ListRow, Modal, OverflowMenu, StatusPill } from "../../../components/ui";
@@ -31,25 +32,25 @@ export function UsersTable({ rows, makerspaceNames, loading, assignableRoles, on
     setAssignPending(true);
     onChangeRole(changeTarget, roleIds)
       .then(() => setChangeTarget(null))
-      .catch((error) => setAssignError(error instanceof Error ? error.message : "Unable to change role"))
+      .catch((error) => setAssignError(error instanceof Error ? error.message : t`Unable to change role`))
       .finally(() => setAssignPending(false));
   };
-  if (loading) return <p className="text-sm text-muted">Loading staff...</p>;
-  if (!rows.length) return <EmptyState title="No staff" description="No memberships match this filter." />;
+  if (loading) return <p className="text-sm text-muted">{t`Loading staff...`}</p>;
+  if (!rows.length) return <EmptyState title={t`No staff`} description={t`No memberships match this filter.`} />;
   return (
     <>
       <div className="grid gap-3">{rows.map(membership => <ListRow key={membership.id}
         title={membership.user.username} identity={{ kind: "avatar", name: membership.user.username, seed: String(membership.user.id) }}
-        meta={<><span className="[overflow-wrap:anywhere]">{membership.user.email || "No email"}</span> · {roleLabel(membership)} · {makerspaceNames.get(membership.makerspace_id) ?? membership.makerspace_slug}</>}
+        meta={<><span className="[overflow-wrap:anywhere]">{membership.user.email || t`No email`}</span> · {roleLabel(membership)} · {makerspaceNames.get(membership.makerspace_id) ?? membership.makerspace_slug}</>}
         right={<div className="flex flex-wrap items-center gap-3"><AccessBadge status={membership.user.access_status} />
-          {membership.user.access_status !== "active" ? <button className="desk-button" type="button" onClick={() => onRestore(membership)}>Restore</button> : null}
-          <button className="desk-button" type="button" disabled={!assignableRoles.length} onClick={() => openChange(membership)}>Change roles</button>
-          <OverflowMenu label={`Actions for ${membership.user.username}`} actions={[
+          {membership.user.access_status !== "active" ? <button className="desk-button" type="button" onClick={() => onRestore(membership)}>{t`Restore`}</button> : null}
+          <button className="desk-button" type="button" disabled={!assignableRoles.length} onClick={() => openChange(membership)}>{t`Change roles`}</button>
+          <OverflowMenu label={t`Actions for ${membership.user.username}`} actions={[
             // Machine Manager reach is per person: the machine types picked here.
-            ...(membership.status === "active" && membership.roles.some((role) => role.slug === "machine_manager") ? [{ label: "Machine types", onClick: () => onMachineTypes(membership.id) }] : []),
-            { label: "Restrict", tone: "danger", onClick: () => onRestrict(membership) },
-            { label: "Reset password", onClick: () => onResetPassword(membership) },
-            { label: "Revoke", tone: "danger", onClick: () => onRevoke(membership) },
+            ...(membership.status === "active" && membership.roles.some((role) => role.slug === "machine_manager") ? [{ label: t`Machine types`, onClick: () => onMachineTypes(membership.id) }] : []),
+            { label: t`Restrict`, tone: "danger", onClick: () => onRestrict(membership) },
+            { label: t`Reset password`, onClick: () => onResetPassword(membership) },
+            { label: t`Revoke`, tone: "danger", onClick: () => onRevoke(membership) },
           ]} />
         </div>} />)}</div>
       <ChangeRoleModal target={changeTarget} roleIds={roleIds} roles={assignableRoles} pending={assignPending} error={assignError} onClose={() => setChangeTarget(null)} onChange={setRoleIds} onSubmit={submitChange} />
@@ -67,9 +68,9 @@ function ChangeRoleModal({ target, roleIds, roles, pending, error, onClose, onCh
   onChange: (roleIds: number[]) => void;
   onSubmit: () => void;
 }) {
-  return <Modal open={Boolean(target)} onClose={onClose} title={target ? `Change roles for ${target.user.username}` : "Change roles"}
-    footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button>
-      <button className="desk-button-primary" type="button" disabled={!roleIds.length || pending || roleIds.some((id) => !roles.some((role) => role.id === id))} onClick={onSubmit}>{pending ? "Saving..." : "Save roles"}</button></div>}>
+  return <Modal open={Boolean(target)} onClose={onClose} title={target ? t`Change roles for ${target.user.username}` : t`Change roles`}
+    footer={<div className="desk-actions flex flex-wrap justify-end gap-2"><button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
+      <button className="desk-button-primary" type="button" disabled={!roleIds.length || pending || roleIds.some((id) => !roles.some((role) => role.id === id))} onClick={onSubmit}>{pending ? t`Saving...` : t`Save roles`}</button></div>}>
     <div className="grid gap-3"><RoleSetPicker roles={roles} value={roleIds} onChange={onChange} disabled={pending} />{error ? <ErrorText message={error} /> : null}</div>
   </Modal>;
 }

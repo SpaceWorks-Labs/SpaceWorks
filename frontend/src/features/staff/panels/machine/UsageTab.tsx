@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { UsageAttributionFields } from "./UsageAttributionFields";
 import { ListRow, RelativeTime } from "../../../../components/ui";
 import { MachineTabContent } from "./MachineTabContent";
@@ -38,8 +39,8 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
 
   return (
     <section>
-      <h3 className="title-section mb-3">Usage</h3>
-      <MachineTabContent query={usage} resource="usage" empty={!items.length} message="No usage logged yet. Add the first entry.">
+      <h3 className="title-section mb-3">{t`Usage`}</h3>
+      <MachineTabContent query={usage} resource="usage" empty={!items.length} message={t`No usage logged yet. Add the first entry.`}>
       <div className="grid gap-2">
         {items.map((entry) => (
           <ListRow key={entry.id} title={`${entry.hours} h`} meta={<>{entry.note ? <span className="block break-words">{entry.note}</span> : null}{entry.source}{entry.logged_by_username ? ` · ${entry.logged_by_username}` : ""}</>}
@@ -50,18 +51,16 @@ export function UsageTab({ machineId, makerspaceId, canOperate }: {
       {canOperate ? (
         <form className="mt-3 grid gap-2 sm:grid-cols-[8rem_minmax(0,1fr)_auto] sm:items-end"
           onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
-          <label className="eyebrow grid gap-1">Hours
-            <input className="desk-input" type="number" min="0.01" step="0.01" value={hours}
+          <label className="eyebrow grid gap-1">{t`Hours`}<input className="desk-input" type="number" min="0.01" step="0.01" value={hours}
               onChange={(event) => setHours(event.target.value)} required />
           </label>
-          <label className="eyebrow grid gap-1">Note
-            <input className="desk-input" maxLength={255} value={note}
+          <label className="eyebrow grid gap-1">{t`Note`}<input className="desk-input" maxLength={255} value={note}
               onChange={(event) => setNote(event.target.value)} />
           </label>
           <UsageAttributionFields machineId={machineId} member={member} startedAt={startedAt}
             onChange={value => { if (value.member !== undefined) setMember(value.member); if (value.started_at !== undefined) setStartedAt(value.started_at); }} />
           <button className="desk-button-primary" type="submit" disabled={add.isPending || !hours}>
-            {add.isPending ? "Logging..." : "Add usage"}
+            {add.isPending ? t`Logging...` : t`Add usage`}
           </button>
         </form>
       ) : null}

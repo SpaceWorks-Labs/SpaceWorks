@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId } from "react";
 
 type Props = {
@@ -36,8 +37,7 @@ export function PoolColourSwatchControl({ value, onChange, legend = "Display swa
       <legend className="eyebrow px-1">{legend}</legend>
       <div className="flex flex-wrap items-end gap-3">
         <label className="eyebrow grid gap-1" htmlFor={`${id}-picker`}>
-          Colour picker
-          <input
+          {t`Colour picker`}<input
             className={`min-h-11 w-20 cursor-pointer rounded-md border border-line bg-bg p-1 ${focusRing}`}
             id={`${id}-picker`}
             type="color"
@@ -46,12 +46,11 @@ export function PoolColourSwatchControl({ value, onChange, legend = "Display swa
           />
         </label>
         <output className="min-h-11 content-center tabular-nums text-sm text-ink" htmlFor={`${id}-picker`}>
-          Display hex: {activeHex || "Not set"}
+          {t`Display hex: `}{activeHex || t`Not set`}
         </output>
         {activeHex ? (
           <button className="desk-button-ghost" type="button" onClick={() => onChange("")}>
-            Clear display colour
-          </button>
+            {t`Clear display colour`}</button>
         ) : null}
       </div>
       <div className="grid gap-2 sm:grid-cols-3">

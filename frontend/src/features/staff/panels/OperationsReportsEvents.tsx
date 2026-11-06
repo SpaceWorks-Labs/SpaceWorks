@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, LineChart, PieChart, ReportTable, StatCards } from "./OperationsReportsParts";
 
@@ -5,11 +6,11 @@ import { groupReportByMakerspace, sum, useFablabReport, type EventAttendanceRow,
 
 export function OperationsReportsEvents(props: FablabPanelProps) {
   const query = useFablabReport<EventAttendanceRow>("event-attendance", props);
-  if (!props.enabled) return <Panel title="Events"><p className="text-sm text-muted">Module disabled</p></Panel>;
+  if (!props.enabled) return <Panel title={t`Events`}><p className="text-sm text-muted">{t`Module disabled`}</p></Panel>;
   const rows = query.data?.typed_rows ?? [];
   const groups = groupReportByMakerspace(query.data);
   return (
-    <Panel title="Events attendance">
+    <Panel title={t`Events attendance`}>
       <DataState loading={query.isLoading} error={query.error} onRetry={() => void query.refetch()} empty={!rows.length}>
         {props.aggregate ? <div className="mt-4 space-y-6">{groups.map((group) => (
           <section key={group.makerspaceId} className="rounded-md border border-line p-4">

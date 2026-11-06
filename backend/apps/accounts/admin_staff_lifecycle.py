@@ -44,6 +44,12 @@ class StaffLifecycleAdminMixin:
             raise PermissionDenied("Platform accounts and inert shells cannot be deleted.")
         return super().delete_queryset(request, queryset)
 
+    def _refuse_lifecycle_bulk(self, queryset):
+        """The bulk reset/restrict/restore actions act on personal accounts only; a platform
+        account or inert shell in the selection refuses the whole batch (403)."""
+        if queryset.exclude(person_q()).exists():
+            raise PermissionDenied("Platform accounts and inert shells require their explicit lifecycle actions.")
+
     def _one_person(self, request, queryset):
         try:
             require_recent_reauth(request)

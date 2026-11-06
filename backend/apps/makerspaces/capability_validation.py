@@ -75,7 +75,13 @@ def validate_capabilities(enabled_modules, enabled_features):
             for module in required_modules
             if module not in module_set or module not in FEATURE_MODULES
         ]
-        missing_features = [
+        # A DEFAULT-ON feature that needs a default-off one (`events.gallery_search` on
+        # `events.project_gallery`, `shop.public_stock` on `shop.online`, the maintenance
+        # reminders on their maintenance switch) is stored dormant and wakes when its
+        # prerequisite is switched on. Refusing it made every default row invalid, so no
+        # module could be uninstalled and no settings save could re-validate (R4 audit B).
+        # A default-off feature still demands its prerequisite.
+        missing_features = [] if definition.default_enabled else [
             feature for feature in definition.requires_features if feature not in features
         ]
         if missing_modules or missing_features:

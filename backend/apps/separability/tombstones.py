@@ -53,6 +53,41 @@ SEPARABLE_APPS = frozenset({
 })
 
 
+# Every other first-party app, each with the reason it cannot be tombstoned (#183B(g)).
+# Declared so a new app is a decision, not an accident: the local completeness test
+# fails when an installed `apps.*` app sits in neither set. Analytics, managed hosting,
+# space controls and the OAuth/token surfaces in `apiclients` are switched per space or
+# per deployment by their own settings, not by removing their code.
+CORE_APPS = {
+    "accounts": "people, sign-in and RBAC: every request resolves through it",
+    "makerspaces": "the tenant root, its module registry and settings authority",
+    "organizations": "organisation accounts own spaces and programmes",
+    "payments": "the money LEDGER must stay readable and settleable (donations live here as a capability)",
+    "encryption": "scoped PII keys; tombstoning would strand ciphertext",
+    "apiclients": "API clients, personal tokens and OAuth apps authenticate requests (off = no credentials issued)",
+    "boxes": "core lending: box QR codes",
+    "inventory": "core lending: items and availability math",
+    "hardware_requests": "the request workflow state machine",
+    "printing": "legacy print queue kept inside the machines stack",
+    "audit": "append-only audit log",
+    "evidence": "immutable handover evidence",
+    "admin_api": "the staff console API every module mounts into",
+    "data_export": "the classification registry every model must join",
+    "integrations": "email, chat and notification delivery infrastructure",
+    "operations": "reports, reminders, the scheduler and the platform overview",
+    "machines": "machines, printing and machine service share one app",
+    "roadmap": "the public roadmap page",
+    "backup": "backups, restore and the deployment recovery gate",
+    "hosting_requests": "the onboarding request queue (inert on self-host)",
+    "card_designs": "the shared card engine used by member, event and programme cards",
+    "tenant_rls": "the row-level-security backstop is never removed",
+    "analytics": "per-space analytics logins; off unless a space turns the module on",
+    "space_controls": "pause, read-only and schedules guard every write",
+    "managed_hosting": "the limiter is dormant unless MANAGED_PLANS_ENABLED on a managed deployment",
+    "separability": "this registry itself",
+}
+
+
 def unavailable_apps():
     """Separable apps this deployment does not ship, for clients that must hide UI.
 

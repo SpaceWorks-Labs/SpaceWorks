@@ -25,8 +25,11 @@ export function CustomDomainGuide({ domain, record, status }: {
     <p className="text-sm text-muted">
       Building something else on top of the space? Use <a className="underline underline-offset-4" href="/admin/api">API
       clients</a> for server access, the webhooks under <a className="underline underline-offset-4"
-      href="/admin/settings">Settings › Email &amp; integrations</a> for alerts, and the event and booking embeds for other
-      websites. The guide is docs/own-domain-and-frontend.md.
+      href="/admin/settings#integrations">Settings › Email &amp; integrations</a> for alerts, and the <a
+      className="underline underline-offset-4" href="/admin/settings#features">event and booking embeds</a> for other
+      websites. Full guide: <a className="underline underline-offset-4" target="_blank" rel="noreferrer"
+      href="https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/docs/own-domain-and-frontend.md">Run your space on your own
+      domain or frontend ↗</a>.
     </p>
   </div>;
 }

@@ -1,5 +1,6 @@
 """Execute claimed imports with lock retention and attempt-token fencing."""
 
+from django.utils.translation import gettext
 import logging
 import uuid
 
@@ -38,7 +39,7 @@ def run_import_job(job_id, *, actor_id, target_identity=None):
         _require_superadmin(actor)
         return _execute(job, actor=actor)
     if job.status != TenantImportJob.Status.MATERIALIZING:
-        raise ValidationError({"detail": "The import has not been claimed for execution."})
+        raise ValidationError({"detail": gettext("The import has not been claimed for execution.")})
 
     with import_run_lock(job.pk) as lock:
         if not lock.acquired:

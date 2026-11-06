@@ -1,5 +1,6 @@
 """Archive request, build, promotion, and failure lifecycles."""
 
+from django.utils.translation import gettext
 import logging
 import os
 import uuid
@@ -47,9 +48,9 @@ def create_archive(
     from .cloud_operations import require_managed_tenant_capture
     require_managed_tenant_capture()
     if scope == BackupArchive.Scope.DEPLOYMENT and makerspace is not None:
-        raise ValidationError("A deployment archive cannot be scoped to a makerspace.")
+        raise ValidationError(gettext("A deployment archive cannot be scoped to a makerspace."))
     if scope == BackupArchive.Scope.MAKERSPACE and makerspace is None:
-        raise ValidationError("A makerspace archive requires a makerspace.")
+        raise ValidationError(gettext("A makerspace archive requires a makerspace."))
     with transaction.atomic():
         locked_run = _lock_archive_run(backup_run)
         if makerspace is not None:
@@ -59,7 +60,7 @@ def create_archive(
                 and str(makerspace.pk) not in locked_run.flag_snapshot
             ):
                 raise ValidationError(
-                    "The makerspace is not in the backup run cohort."
+                    gettext("The makerspace is not in the backup run cohort.")
                 )
         archive_id = uuid.uuid4()
         archive = BackupArchive.objects.create(
@@ -91,7 +92,7 @@ def _lock_archive_run(run):
             "Backup archive creation refused because the run holder does not match."
         )
     if locked.status not in (BackupRun.Status.PENDING, BackupRun.Status.RUNNING):
-        raise ValidationError("A terminal backup run cannot create another archive.")
+        raise ValidationError(gettext("A terminal backup run cannot create another archive."))
     return locked
 
 

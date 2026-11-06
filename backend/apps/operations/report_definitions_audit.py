@@ -1,5 +1,6 @@
 """The ``audit-trail`` report: tenant-only, CSV-only, export-only, never scheduled."""
 
+from django.utils.translation import gettext_lazy
 from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
 from apps.operations.report_charts_remaining import AUDIT_CHART
@@ -13,7 +14,7 @@ AUDIT_REPORT_DEFINITIONS = (
         required_modules=(),
         required_action=rbac.Action.VIEW_AUDIT,
         exportable=True,
-        title="Audit trail",
+        title=gettext_lazy("Audit trail"),
         chart_hint="table",
         version=1,
         chart_spec=AUDIT_CHART,

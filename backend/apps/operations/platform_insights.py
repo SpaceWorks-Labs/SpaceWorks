@@ -1,5 +1,6 @@
 """Platform-only aggregates. No roster, message content or credential field is read."""
 
+from django.utils.translation import gettext
 from datetime import UTC, datetime, time, timedelta
 
 from django.db.models import Count, Min, Q
@@ -51,7 +52,7 @@ def _organization_insights(spaces):
 def platform_insights(actor, *, days=30, now=None):
     require_platform(actor)
     if type(days) is not int or not 1 <= days <= 30:
-        raise ValidationError({"days": "Choose a window from 1 to 30 days."})
+        raise ValidationError({"days": gettext("Choose a window from 1 to 30 days.")})
     now = now or timezone.now()
     first = now.astimezone(UTC).date() - timedelta(days=days - 1)
     start = datetime.combine(first, time.min, tzinfo=UTC)
@@ -137,9 +138,9 @@ class PlatformInsightsView(APIView):
                               **{code: InsightsError for code in (400, 401, 403, 429)}})
     def get(self, request):
         if set(request.query_params) - {"days"}:
-            raise ValidationError("Unknown query parameter.")
+            raise ValidationError(gettext("Unknown query parameter."))
         raw = request.query_params.get("days", "30")
         if len(raw) > 2 or not raw.isascii() or not raw.isdecimal():
-            raise ValidationError({"days": "Choose a window from 1 to 30 days."})
+            raise ValidationError({"days": gettext("Choose a window from 1 to 30 days.")})
         data = platform_insights(request.user, days=int(raw))
         return Response(PlatformInsightsSerializer(data).data, headers={"Cache-Control": "private, no-store"})

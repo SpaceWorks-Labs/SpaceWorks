@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -31,7 +32,7 @@ FIELD_ERRORS = OpenApiResponse(
 def protocol_error(exc):
     if isinstance(exc, Http404):
         return Response(
-            {"detail": "The import job was not found or has expired.", "code": "not_found"},
+            {"detail": gettext("The import job was not found or has expired."), "code": "not_found"},
             status=status.HTTP_404_NOT_FOUND,
         )
     if isinstance(exc, SourceMigrationGateError):
@@ -71,7 +72,7 @@ def protocol_error(exc):
             extra={"exception_type": type(exc).__name__},
         )
         return Response(
-            {"detail": "The tenant migration request failed unexpectedly.", "code": "internal_error"},
+            {"detail": gettext("The tenant migration request failed unexpectedly."), "code": "internal_error"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 

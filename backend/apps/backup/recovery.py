@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -47,7 +48,7 @@ def assert_principal_allowed(user):
     if state and state.mode == DeploymentRecoveryState.Mode.QUARANTINED:
         if not is_recovery_principal(user, state):
             raise AuthenticationFailed(
-                "Only the out-of-band recovery superadmin may authenticate during quarantine.",
+                gettext("Only the out-of-band recovery superadmin may authenticate during quarantine."),
                 code="deployment_quarantined",
             )
 
@@ -170,7 +171,7 @@ def set_recovery_principal(user, raw_password):
     from apps.accounts.staff_identity import is_platform
 
     if not is_platform(locked) or not (locked.is_superuser and locked.role == User.Role.SUPERADMIN):
-        raise ValidationError("The recovery principal must already be a superadmin.")
+        raise ValidationError(gettext("The recovery principal must already be a superadmin."))
     locked.is_active = True
     locked.is_staff = True
     locked.is_superuser = True
@@ -181,7 +182,7 @@ def set_recovery_principal(user, raw_password):
     locked.save()
     state = _locked_state()
     if state.mode != DeploymentRecoveryState.Mode.QUARANTINED:
-        raise ValidationError("The deployment is not quarantined.")
+        raise ValidationError(gettext("The deployment is not quarantined."))
     state.recovery_principal = locked
     state.save(update_fields=("recovery_principal", "updated_at"))
     audit.record(
@@ -197,11 +198,11 @@ def set_recovery_principal(user, raw_password):
 def acknowledge_quarantine(actor, acknowledgement):
     state = _locked_state()
     if state.mode != DeploymentRecoveryState.Mode.QUARANTINED:
-        raise ValidationError("The deployment is not quarantined.")
+        raise ValidationError(gettext("The deployment is not quarantined."))
     if not is_recovery_principal(actor, state):
-        raise PermissionDenied("Only the recovered superadmin may acknowledge quarantine.")
+        raise PermissionDenied(gettext("Only the recovered superadmin may acknowledge quarantine."))
     if acknowledgement != RESIDUAL_RISK:
-        raise ValidationError({"acknowledgement": "The residual-risk acknowledgement must match exactly."})
+        raise ValidationError({"acknowledgement": gettext("The residual-risk acknowledgement must match exactly.")})
     now = timezone.now()
     state.mode = DeploymentRecoveryState.Mode.NORMAL
     state.acknowledged_at = now

@@ -7,6 +7,7 @@ write every audit row; decisions and the file deletion pass the space's source g
 the /control/ form does.
 """
 
+from django.utils.translation import gettext
 import hashlib
 from datetime import timedelta
 
@@ -132,7 +133,7 @@ class PlatformMoveDownloadLinkView(_MoveAction):
     def post(self, request, pk):
         move = _move(pk)
         if move.status != SelfHostMoveRequest.Status.EXPORTED or not move.artifact_path:
-            return Response({"detail": "There is no export file to download."}, status=404)
+            return Response({"detail": gettext("There is no export file to download.")}, status=404)
         token = signing.dumps({"m": str(move.pk), "a": request.user.pk, "d": move.artifact_sha256}, salt=SALT)
         url = request.build_absolute_uri(reverse("selfhost-move-download", args=(move.pk, token)))
         return Response({"url": url, "expires_at": timezone.now() + timedelta(seconds=LINK_SECONDS)})
@@ -154,18 +155,18 @@ class SelfHostMoveDownloadView(APIView):
         try:
             claims = signing.loads(token, salt=SALT, max_age=LINK_SECONDS)
         except signing.BadSignature:
-            return Response({"detail": "The download link is invalid or expired."}, status=404)
+            return Response({"detail": gettext("The download link is invalid or expired.")}, status=404)
         move = SelfHostMoveRequest.objects.select_related("makerspace").filter(pk=pk).first()
         actor = User.objects.filter(pk=claims.get("a"), is_active=True, is_superuser=True).first()
         if (move is None or actor is None or claims.get("m") != str(pk) or not move.artifact_path
                 or claims.get("d") != move.artifact_sha256 or move.status != SelfHostMoveRequest.Status.EXPORTED):
-            return Response({"detail": "The download link is invalid or expired."}, status=404)
+            return Response({"detail": gettext("The download link is invalid or expired.")}, status=404)
         if not cache.add(f"{SALT}:{hashlib.sha256(token.encode()).hexdigest()}", 1, LINK_SECONDS):
-            return Response({"detail": "This download link was already used."}, status=404)
+            return Response({"detail": gettext("This download link was already used.")}, status=404)
         try:
             handle = open(move.artifact_path, "rb")
         except OSError:
-            return Response({"detail": "The export file is no longer on this server."}, status=404)
+            return Response({"detail": gettext("The export file is no longer on this server.")}, status=404)
         audit.record(actor, "selfhost_move.downloaded", makerspace=move.makerspace, target=move,
                      meta={"status": move.status, "artifact_sha256": move.artifact_sha256})
         response = FileResponse(handle, as_attachment=True, filename=f"{move.makerspace.slug}-move.tar.age",

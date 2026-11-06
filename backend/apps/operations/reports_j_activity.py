@@ -1,5 +1,6 @@
 """Counts and deliberately separate, tenant-only person rankings."""
 
+from django.utils.translation import gettext
 from collections import defaultdict
 import re
 from zoneinfo import ZoneInfo
@@ -80,7 +81,7 @@ def _tenant(makerspace_id):
 def _ranking_authority(actor, makerspace_id, action):
     _tenant(makerspace_id)
     if not rbac.can(actor, action, makerspace_id) or not rbac.can(actor, rbac.Action.VIEW_AUDIT, makerspace_id):
-        raise PermissionDenied("Person rankings require domain authority and audit access.")
+        raise PermissionDenied(gettext("Person rankings require domain authority and audit access."))
 
 
 def build_presence_top_visitors(makerspace_id, *, actor=None, limit=None, date_range=None):

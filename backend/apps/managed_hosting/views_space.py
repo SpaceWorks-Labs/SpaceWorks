@@ -1,6 +1,7 @@
 """The Space Manager's plan usage and hosting invoices (#187A), plus the platform's own
 provider callbacks for online payment. All 404 while MANAGED_PLANS_ENABLED is off."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
 from rest_framework import serializers
@@ -27,7 +28,7 @@ def _space(request, makerspace_id):
     require_plans_enabled()
     space = get_object_or_404(servable_queryset(Makerspace.objects.all()), pk=makerspace_id)
     if not rbac.can(request.user, rbac.Action.MANAGE_MAKERSPACE, space.pk):
-        raise PermissionDenied("Managing this makerspace is required.")
+        raise PermissionDenied(gettext("Managing this makerspace is required."))
     return space
 
 
@@ -74,7 +75,7 @@ class _ProviderCallbackView(APIView):
         try:
             event = type(self).verify(request.body, request.headers.get(self.signature_header, ""))
         except Exception:
-            return Response({"detail": "Invalid signature."}, status=400)
+            return Response({"detail": gettext("Invalid signature.")}, status=400)
         if event and str(event.get("invoice_id") or "").isdigit():
             from apps.space_controls.write_policy import permitted, BOTH
             from apps.tenant_migration.gate_runtime import tenant_write

@@ -4,12 +4,13 @@ Every action sits under the dynamic `event.*` namespace, which withholds metadat
 these entries name the action only. A ballot entry never names the project voted for.
 """
 
+from django.utils.translation import gettext_lazy
 from .presentation_catalog_types import P
 
 
 ENTRIES = (
-    P("event.peoples_choice.updated", "People's choice settings changed"),
-    P("event.peoples_choice.ballot_cast", "People's choice vote cast or changed"),
-    P("event.peoples_choice.vote_voided", "People's choice vote voided"),
-    P("event.peoples_choice.published", "People's choice result published"),
+    P("event.peoples_choice.updated", gettext_lazy("People's choice settings changed")),
+    P("event.peoples_choice.ballot_cast", gettext_lazy("People's choice vote cast or changed")),
+    P("event.peoples_choice.vote_voided", gettext_lazy("People's choice vote voided")),
+    P("event.peoples_choice.published", gettext_lazy("People's choice result published")),
 )

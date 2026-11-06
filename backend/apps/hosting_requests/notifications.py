@@ -7,6 +7,7 @@ sweep can delete those ``EmailLog`` rows together with the request's personal de
 A send failure is logged and swallowed: mail never rolls back or breaks a transition.
 """
 
+from django.utils.translation import gettext
 import logging
 from urllib.parse import urlencode
 
@@ -69,7 +70,7 @@ def schedule_verify(row, raw_token):
         "nothing will happen."
     )
     transaction.on_commit(lambda: _send(
-        row_id, to_email=to_email, subject="Confirm your Space Works hosting request",
+        row_id, to_email=to_email, subject=gettext("Confirm your Space Works hosting request"),
         text_body=body, event="hosting_request_verify", audience="applicant",
     ))
 
@@ -92,7 +93,7 @@ def _send_new(row_id):
     for email in recipients:
         email = (email or "").strip()
         if email:
-            _send(row_id, to_email=email, subject="New hosting request", text_body=body,
+            _send(row_id, to_email=email, subject=gettext("New hosting request"), text_body=body,
                   event="hosting_request_new", audience="superadmin", applicant=False)
 
 
@@ -103,7 +104,7 @@ def schedule_accepted(row):
         "The platform team will set up your space and contact you."
     )
     transaction.on_commit(lambda: _send(
-        row_id, to_email=to_email, subject="Your hosting request was accepted",
+        row_id, to_email=to_email, subject=gettext("Your hosting request was accepted"),
         text_body=body, event="hosting_request_accepted", audience="applicant",
     ))
 
@@ -117,7 +118,7 @@ def schedule_rejected(row):
         f"Reason: {reason}"
     )
     transaction.on_commit(lambda: _send(
-        row_id, to_email=to_email, subject="Your hosting request was not accepted",
+        row_id, to_email=to_email, subject=gettext("Your hosting request was not accepted"),
         text_body=body, event="hosting_request_rejected", audience="applicant",
     ))
 
@@ -127,7 +128,7 @@ def schedule_changes_requested(row, raw_token):
     body = (f"The platform team asked for some changes to your request to host {space} on Space Works.\n\n"
             f"What to change: {note}\n\nUpdate and resubmit your request: {status_link(raw_token)}\n")
     transaction.on_commit(lambda: _send(
-        row_id, to_email=to_email, subject="Changes requested on your hosting request",
+        row_id, to_email=to_email, subject=gettext("Changes requested on your hosting request"),
         text_body=body, event="hosting_request_changes_requested", audience="applicant",
     ))
 
@@ -146,7 +147,7 @@ def send_invitation(row, raw_token, inviter_name):
     lines += ["", "If you weren't expecting this, you can ignore it."]
     status = _send(
         row.pk, to_email=row.applicant_email,
-        subject=f"{inviter_name} invited you to host your makerspace on Space Works",
+        subject=gettext('{inviter_name} invited you to host your makerspace on Space Works').format(inviter_name=inviter_name),
         text_body="\n".join(lines), event="hosting_invitation", audience="applicant",
     )
     return link, status

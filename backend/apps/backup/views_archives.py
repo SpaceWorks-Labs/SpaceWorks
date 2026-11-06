@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -100,7 +101,7 @@ class BackupArchiveDownloadView(APIView):
             archive = services.consume_download_token(archive_id, token)
             body = storage.open_archive(archive.object_key)
         except (services.DownloadTokenError, storage.BackupStorageError):
-            return Response({"detail": "The backup download is unavailable."}, status=404)
+            return Response({"detail": gettext("The backup download is unavailable.")}, status=404)
         response = StreamingHttpResponse(body.iter_chunks(), content_type="application/octet-stream")
         response["Content-Disposition"] = f'attachment; filename="spaceworks-{archive.scope}-{archive.id}.tar.age"'
         response["X-Content-Type-Options"] = "nosniff"

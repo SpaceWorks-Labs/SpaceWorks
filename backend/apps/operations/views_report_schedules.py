@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
@@ -162,12 +163,12 @@ class ReportScheduleRunNowView(APIView):
         schedule = _scoped_schedule(request.user, pk)
         definition = REPORT_REGISTRY.get(schedule.report_key)
         if definition is None:
-            raise ValidationError({"report_key": ["Report is unavailable on this deployment."]})
+            raise ValidationError({"report_key": [gettext("Report is unavailable on this deployment.")]})
         require_action(request.user, definition.required_action, schedule.makerspace_id)
         delivery = run_schedule(schedule.pk, force=True, actor=request.user)
         if delivery is None:
             return Response(
-                {"detail": "Schedule is inactive or was skipped.", "code": "report_schedule_skipped"},
+                {"detail": gettext("Schedule is inactive or was skipped."), "code": "report_schedule_skipped"},
                 status=status.HTTP_409_CONFLICT,
             )
         return Response(ReportDeliverySerializer(delivery).data)

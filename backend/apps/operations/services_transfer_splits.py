@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from apps.inventory import availability
@@ -7,11 +8,11 @@ from apps.inventory.models import InventoryProduct, TrackingMode
 def move_quantity_stock(source_product, destination_container, quantity):
     if source_product.tracking_mode == TrackingMode.INDIVIDUAL:
         raise ValidationError(
-            {"product_id": "Individual-tracked products must be moved by asset."}
+            {"product_id": gettext("Individual-tracked products must be moved by asset.")}
         )
     if quantity > source_product.available_quantity:
         raise ValidationError(
-            {"quantity": "Cannot transfer more than the available stock."}
+            {"quantity": gettext("Cannot transfer more than the available stock.")}
         )
 
     destination_product = _destination_product(source_product, destination_container)

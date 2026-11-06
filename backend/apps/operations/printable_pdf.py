@@ -1,5 +1,6 @@
 """Already-authorized text -> bounded ReportLab boxes; no domain model imports."""
 
+from django.utils.translation import gettext
 from io import BytesIO
 import unicodedata
 
@@ -26,7 +27,7 @@ def text_box(canvas, text, element, *, origin_x=0, origin_y=0, area_height_mm):
     from reportlab.platypus import Paragraph
 
     if len(str(text)) > 500:
-        raise ValidationError({"layout": "Printable text exceeds 500 characters."})
+        raise ValidationError({"layout": gettext("Printable text exceeds 500 characters.")})
     width, height = element["width_mm"] * mm, element["height_mm"] * mm
     text = str(text or "-")
     rtl = any(unicodedata.bidirectional(char) in ("R", "AL") for char in text)
@@ -60,7 +61,7 @@ def text_box(canvas, text, element, *, origin_x=0, origin_y=0, area_height_mm):
         if size == 6:
             break
         size = max(6, size - 0.5)
-    raise ValidationError({"layout": "Text does not fit. Enlarge its box or shorten the selected field."})
+    raise ValidationError({"layout": gettext("Text does not fit. Enlarge its box or shorten the selected field.")})
 
 
 def _line_widths_fit(paragraph):

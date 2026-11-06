@@ -7,6 +7,7 @@ actor and its ``source``, and only a lift naming the same source may undo it.
 Lock order: makerspace -> control state. Reasons are never copied into audit meta.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -29,7 +30,7 @@ PAUSED_REASON = "This space is paused by the platform operator."
 def clean_reason(value):
     text = str(value or "").strip()
     if not REASON_MIN <= len(text) <= REASON_MAX:
-        raise ValidationError({"reason": f"Give a reason of {REASON_MIN} to {REASON_MAX} characters."})
+        raise ValidationError({"reason": gettext('Give a reason of {REASON_MIN} to {REASON_MAX} characters.').format(REASON_MIN=REASON_MIN, REASON_MAX=REASON_MAX)})
     return text
 
 

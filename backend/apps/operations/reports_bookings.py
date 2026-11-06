@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -30,7 +31,7 @@ def build_booking_utilization(makerspace_id, *, limit=None, date_range=None, sub
     if subject_kind is not None or subject_id is not None:
         from rest_framework.exceptions import ValidationError
         if makerspace_id is None or subject_kind != "bookable_space" or subject_id is None:
-            raise ValidationError("Resource utilization requires a tenant-local bookable_space subject.")
+            raise ValidationError(gettext("Resource utilization requires a tenant-local bookable_space subject."))
     aggregate = makerspace_id is None
     now = timezone.now()
     overlap = Q()

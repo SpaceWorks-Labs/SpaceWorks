@@ -6,6 +6,7 @@ Area reports carry the area manager's own action so each manager sees that area'
 builder, so those are not schedulable (a scheduled copy has no viewer to narrow for).
 """
 
+from django.utils.translation import gettext_lazy
 from apps.accounts import rbac
 from apps.operations.report_charts_remaining import table
 from apps.operations.report_types import ReportDefinition
@@ -56,22 +57,22 @@ L5_FINANCE_REPORT_DEFINITIONS = (
     _ledger("finance-donations", "build_finance_donations", "Donations and sponsorship money",
             rbac.Action.VIEW_FINANCE),
     ReportDefinition("event-finance", _LEDGER + "build_event_finance", EVENT_FIELDS,
-                     required_action=rbac.Action.MANAGE_EVENTS, title="Money per event against budget",
+                     required_action=rbac.Action.MANAGE_EVENTS, title=gettext_lazy("Money per event against budget"),
                      deployment_aggregate=False, required_feature="finance.ledger", schedulable=False,
                      chart_spec=EVENT_CHART),
     # Hack-money G6: announced prizes not yet settled, and recoveries owed back (finance-events scope).
     ReportDefinition("prizes-owed", "apps.operations.reports_prizes_owed.build_prizes_owed", PRIZE_FIELDS,
-                     ("events",), required_action=rbac.Action.MANAGE_EVENTS, title="Prizes owed",
+                     ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_lazy("Prizes owed"),
                      alternate_actions=(rbac.Action.VIEW_FINANCE,), deployment_aggregate=False,
                      required_feature="events.prize_payouts", schedulable=False, chart_spec=table("prize")),
     ReportDefinition("receipts-payments", _OPS + "reports_bookkeeping_fy.build_receipts_payments", RP_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title="Receipts and payments by financial year",
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Receipts and payments by financial year"),
                      deployment_aggregate=False, required_feature="finance.ledger", chart_spec=RP_CHART),
     ReportDefinition("subscription-income", _OPS + "reports_bookkeeping_fy.build_subscription_income", SUB_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title="Membership income earned by financial year",
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Membership income earned by financial year"),
                      deployment_aggregate=False, required_feature="finance.ledger", chart_spec=SUB_CHART),
     ReportDefinition("money-methods", _OPS + "reports_money_methods.build_money_methods", METHOD_FIELDS,
-                     required_action=rbac.Action.VIEW_FINANCE, title="Money by provider and method",
+                     required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Money by provider and method"),
                      deployment_aggregate=False, chart_hint="grouped_bar", chart_spec=METHOD_CHART),
     _tax("gstr1", "reports_tax_gst.build_gstr1", TABLE_FIELDS, "GSTR-1 outward supplies", table("document")),
     _tax("gstr3b", "reports_tax_returns.build_gstr3b", B3_FIELDS, "GSTR-3B summary and liability", table("section")),

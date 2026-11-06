@@ -1,4 +1,5 @@
 """Bounded declarative conditions over earlier, visible answers only."""
+from django.utils.translation import gettext
 import math
 from django.core.exceptions import ValidationError
 
@@ -8,42 +9,42 @@ OPERATORS = frozenset({"eq", "ne", "in", "contains", "is_set"})
 def validate_condition(node, earlier, *, depth=1, budget=None):
     budget = [0] if budget is None else budget
     if not isinstance(node, dict) or depth > 3:
-        raise ValidationError("Conditions allow at most three levels.", code="invalid_condition")
+        raise ValidationError(gettext("Conditions allow at most three levels."), code="invalid_condition")
     if set(node) in ({"all"}, {"any"}):
         key = next(iter(node))
         children = node[key]
         if not isinstance(children, list) or not 1 <= len(children) <= 20:
-            raise ValidationError("Use 1–20 condition clauses.", code="invalid_condition")
+            raise ValidationError(gettext("Use 1–20 condition clauses."), code="invalid_condition")
         return {key: [validate_condition(child, earlier, depth=depth + 1, budget=budget)
                       for child in children]}
     if set(node) not in ({"field_id", "op"}, {"field_id", "op", "value"}):
-        raise ValidationError("Unknown condition keys.", code="invalid_condition")
+        raise ValidationError(gettext("Unknown condition keys."), code="invalid_condition")
     budget[0] += 1
     if budget[0] > 20:
-        raise ValidationError("Use at most 20 condition clauses.", code="invalid_condition")
+        raise ValidationError(gettext("Use at most 20 condition clauses."), code="invalid_condition")
     field_id, op = node["field_id"], node["op"]
     if not isinstance(field_id, str) or field_id not in earlier:
-        raise ValidationError("Conditions must reference an earlier question.", code="invalid_condition")
+        raise ValidationError(gettext("Conditions must reference an earlier question."), code="invalid_condition")
     if earlier[field_id]["type"] in {"age_at_event", "date_of_birth"}:
-        raise ValidationError("Age and birth dates cannot control eligibility.", code="age_gating_forbidden")
+        raise ValidationError(gettext("Age and birth dates cannot control eligibility."), code="age_gating_forbidden")
     if not isinstance(op, str) or op not in OPERATORS:
-        raise ValidationError("Unsupported comparison.", code="invalid_condition")
+        raise ValidationError(gettext("Unsupported comparison."), code="invalid_condition")
     value = node.get("value")
     if op == "is_set":
         if "value" in node and type(value) is not bool:
-            raise ValidationError("is_set takes a boolean.", code="invalid_condition")
+            raise ValidationError(gettext("is_set takes a boolean."), code="invalid_condition")
     elif "value" not in node:
-        raise ValidationError("Comparison value is required.", code="invalid_condition")
+        raise ValidationError(gettext("Comparison value is required."), code="invalid_condition")
     elif op == "in":
         if not isinstance(value, list) or not 1 <= len(value) <= 50:
-            raise ValidationError("in takes 1–50 values.", code="invalid_condition")
+            raise ValidationError(gettext("in takes 1–50 values."), code="invalid_condition")
         if any(type(item) not in (str, int, float, bool) for item in value):
-            raise ValidationError("Use primitive comparison values.", code="invalid_condition")
+            raise ValidationError(gettext("Use primitive comparison values."), code="invalid_condition")
     elif type(value) not in (str, int, float, bool):
-        raise ValidationError("Use a primitive comparison value.", code="invalid_condition")
+        raise ValidationError(gettext("Use a primitive comparison value."), code="invalid_condition")
     if ((isinstance(value, str) and len(value) > 5000)
             or (isinstance(value, list) and any(isinstance(item, str) and len(item) > 5000 for item in value))):
-        raise ValidationError("Condition value is too long.", code="invalid_condition")
+        raise ValidationError(gettext("Condition value is too long."), code="invalid_condition")
     _validate_operand(earlier[field_id], op, value)
     return dict(node)
 
@@ -69,7 +70,7 @@ def _validate_operand(question, op, value):
         elif kind in {"short_text", "long_text", "email", "phone", "url", "date"}:
             valid = isinstance(operand, str)
         if not valid:
-            raise ValidationError("Comparison value must match its earlier question type.", code="invalid_condition")
+            raise ValidationError(gettext("Comparison value must match its earlier question type."), code="invalid_condition")
 
 
 def _comparison(value):

@@ -6,6 +6,7 @@ they are deployment coordination state, omitted from every tenant export, and on
 ``apps.hosting_requests.workflow`` writes ``status``.
 """
 
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -14,15 +15,15 @@ from django.db.models import Q
 class HostingRequest(models.Model):
     class Status(models.TextChoices):
         INVITED = "invited", "Invited"
-        PENDING_VERIFICATION = "pending_verification", "Awaiting email confirmation"
+        PENDING_VERIFICATION = "pending_verification", gettext_lazy("Awaiting email confirmation")
         SUBMITTED = "submitted", "Submitted"
-        CHANGES_REQUESTED = "changes_requested", "Changes requested"
+        CHANGES_REQUESTED = "changes_requested", gettext_lazy("Changes requested")
         ACCEPTED = "accepted", "Accepted"
         REJECTED = "rejected", "Rejected"
         WITHDRAWN = "withdrawn", "Withdrawn"
 
     class Source(models.TextChoices):
-        PUBLIC = "public", "Public form"
+        PUBLIC = "public", gettext_lazy("Public form")
         INVITED = "invited", "Invitation"
 
     class InviterKind(models.TextChoices):
@@ -30,8 +31,8 @@ class HostingRequest(models.Model):
         ORGANIZATION = "organization", "Organization"
 
     class OrganizationChoice(models.TextChoices):
-        OWN = "own", "Create my own organization"
-        JOIN = "join", "Join the inviting organization"
+        OWN = "own", gettext_lazy("Create my own organization")
+        JOIN = "join", gettext_lazy("Join the inviting organization")
 
     status = models.CharField(max_length=24, choices=Status.choices, db_index=True)
     source = models.CharField(max_length=16, choices=Source.choices)
@@ -130,7 +131,7 @@ class HostingRequestRevision(models.Model):
     """
 
     class Kind(models.TextChoices):
-        CHANGES_REQUESTED = "changes_requested", "Changes requested"
+        CHANGES_REQUESTED = "changes_requested", gettext_lazy("Changes requested")
         RESUBMITTED = "resubmitted", "Resubmitted"
 
     request = models.ForeignKey(HostingRequest, on_delete=models.CASCADE, related_name="revisions")

@@ -5,6 +5,7 @@ in the restored space. The heavy steps (preview, apply) run in Celery; these fun
 only move the journal and dispatch. The views own re-authentication and the typed slug.
 """
 
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -22,7 +23,7 @@ OPEN_FOR_ABORT = (Op.Stage.REQUESTED, Op.Stage.STAGING, Op.Stage.PREVIEW_READY)
 
 def _require_superadmin(actor):
     if not is_platform_superadmin(actor):
-        raise PermissionDenied("Only the platform superadmin restores a makerspace.")
+        raise PermissionDenied(gettext("Only the platform superadmin restores a makerspace."))
 
 
 def request_restore(actor, makerspace, archive):
@@ -40,7 +41,7 @@ def request_restore(actor, makerspace, archive):
             audit.record(actor, "backup.space_restore_requested", makerspace=makerspace, target=op,
                          meta={"restore_id": str(op.pk), "archive_id": str(archive.pk), "source": op.source})
     except IntegrityError:
-        raise ValidationError({"detail": "This makerspace already has a restore in progress.",
+        raise ValidationError({"detail": gettext("This makerspace already has a restore in progress."),
                                "code": "restore_in_progress"}) from None
     from .tasks_space_restore import dispatch_preview
     dispatch_preview(op)
@@ -63,14 +64,14 @@ def transition(op_id, expected, stage, **fields):
 def confirm_restore(actor, op, typed_slug):
     _require_superadmin(actor)
     if typed_slug != op.makerspace.slug:
-        raise ValidationError({"detail": "Type the makerspace's slug exactly to confirm.", "code": "confirmation_mismatch"})
+        raise ValidationError({"detail": gettext("Type the makerspace's slug exactly to confirm."), "code": "confirmation_mismatch"})
     if op.preview.get("blocked"):
-        raise ValidationError({"detail": "Rows outside this space would be left pointing at removed rows.",
+        raise ValidationError({"detail": gettext("Rows outside this space would be left pointing at removed rows."),
                                "code": "dangling_references"})
     moved = transition(op.pk, (Op.Stage.PREVIEW_READY,), Op.Stage.APPLYING, confirmed_by=actor,
                        progress={"step": "queued", "percent": 0})
     if moved is None:
-        raise ValidationError({"detail": "This restore is not waiting for confirmation.", "code": "stage_conflict"})
+        raise ValidationError({"detail": gettext("This restore is not waiting for confirmation."), "code": "stage_conflict"})
     audit.record(actor, "backup.space_restore_confirmed", makerspace=moved.makerspace, target=moved,
                  meta={"restore_id": str(moved.pk), "archive_id": str(moved.archive_id)})
     from .tasks_space_restore import dispatch_apply
@@ -83,7 +84,7 @@ def abort_restore(actor, op):
     previous = op.stage
     moved = transition(op.pk, OPEN_FOR_ABORT, Op.Stage.ABORTED, finished_at=timezone.now())
     if moved is None:
-        raise ValidationError({"detail": "Only a restore that has not started applying can be cancelled.",
+        raise ValidationError({"detail": gettext("Only a restore that has not started applying can be cancelled."),
                                "code": "stage_conflict"})
     audit.record(actor, "backup.space_restore_aborted", makerspace=moved.makerspace, target=moved,
                  meta={"restore_id": str(moved.pk), "stage": previous})

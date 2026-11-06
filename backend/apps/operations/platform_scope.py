@@ -5,6 +5,7 @@ must call require_platform_context too, including when called outside the regist
 This capability is server-owned; no request/filter dictionary can supply it.
 """
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from rest_framework.exceptions import PermissionDenied
@@ -29,7 +30,7 @@ def _require_active_superadmin(actor):
     from apps.accounts.native_session import is_native_session
 
     if not active_user(actor) or not _is_superadmin(actor) or is_native_session(actor):
-        raise PermissionDenied("Active superadmin platform authority required.")
+        raise PermissionDenied(gettext("Active superadmin platform authority required."))
 
 
 def _platform_context_for_view(request):
@@ -39,7 +40,7 @@ def _platform_context_for_view(request):
 
 def require_platform_context(ctx):
     if not isinstance(ctx, PlatformContext):
-        raise PermissionDenied("Platform context required.")
+        raise PermissionDenied(gettext("Platform context required."))
     _require_active_superadmin(ctx.actor)
     return ctx
 

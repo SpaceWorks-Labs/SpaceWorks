@@ -6,6 +6,7 @@ the dashboard number; it never carries a URL, a secret or a password. The passwo
 returned once, by create and rotate, and is only ever stored as ciphertext.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -76,7 +77,7 @@ def update(scope, actor, data):
         if "embed_secret" in data:
             secret = (data["embed_secret"] or "").strip()
             if secret and len(secret) < 32:
-                raise ValidationError({"embed_secret": ["The Metabase embedding secret is at least 32 characters."]})
+                raise ValidationError({"embed_secret": [gettext("The Metabase embedding secret is at least 32 characters.")]})
             row.set_embed_secret(secret) if secret else setattr(row, "embed_secret", "")
             changed.append("embed_secret")
         if "dashboards" in data:

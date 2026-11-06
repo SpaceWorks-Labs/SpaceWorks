@@ -6,14 +6,15 @@ name the action only. The join link itself is never in an audit row in any case 
 whether it changed). The closed-for-now banner's leaves are public page facts.
 """
 
+from django.utils.translation import gettext_lazy
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("event.short_link.created", "Event short link created"),
-    P("event.short_link.regenerated", "Event short link regenerated"),
-    P("event.publishing_changed", "Event publishing changed"),
-    P("event.delivery_mode_changed", "Event delivery mode changed"),
-    P("event.embed_policy_updated", "Event embed allow-list updated"),
-    P("makerspace.closed_notice_updated", "Closed-for-now banner updated",
+    P("event.short_link.created", gettext_lazy("Event short link created")),
+    P("event.short_link.regenerated", gettext_lazy("Event short link regenerated")),
+    P("event.publishing_changed", gettext_lazy("Event publishing changed")),
+    P("event.delivery_mode_changed", gettext_lazy("Event delivery mode changed")),
+    P("event.embed_policy_updated", gettext_lazy("Event embed allow-list updated")),
+    P("makerspace.closed_notice_updated", gettext_lazy("Closed-for-now banner updated"),
       ("notice_set", "reopens_on", "changed_fields")),
 )

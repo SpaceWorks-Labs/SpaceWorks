@@ -1,5 +1,6 @@
 """Public print geometry schema shared by separable domain adapters."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from .printable_layout import FONTS
@@ -8,7 +9,7 @@ from .printable_layout import FONTS
 class PrintInputSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict):
-            raise serializers.ValidationError("Expected an object.")
+            raise serializers.ValidationError(gettext("Expected an object."))
         unknown = set(data) - set(self.fields)
         if unknown:
             raise serializers.ValidationError({key: "Unexpected field." for key in sorted(unknown)})

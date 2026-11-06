@@ -1,5 +1,6 @@
 """Durable Phase S capture and publication lineage for Lane D."""
 
+from django.utils.translation import gettext_lazy
 import uuid
 
 from django.conf import settings
@@ -12,9 +13,9 @@ class TenantDumpCapture(models.Model):
         CAPTURING = "capturing", "Capturing"
         CAPTURED = "captured", "Captured"
         DERIVING = "deriving", "Deriving"
-        PENDING_PUBLICATION = "pending_publication", "Pending publication"
+        PENDING_PUBLICATION = "pending_publication", gettext_lazy("Pending publication")
         PUBLISHED = "published", "Published"
-        REFUSED = "refused", "Publication refused"
+        REFUSED = "refused", gettext_lazy("Publication refused")
         FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

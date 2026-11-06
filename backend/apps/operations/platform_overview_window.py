@@ -6,6 +6,7 @@ analytics: "this month" starts at the first UTC midnight of the month, "this yea
 to `end` inclusive. Every window ends no later than now.
 """
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 
@@ -43,11 +44,11 @@ def _midnight(day):
 
 def _parse_day(raw, field):
     if not isinstance(raw, str) or len(raw) != 10:
-        raise ValidationError({field: "Use a date like 2026-01-31."})
+        raise ValidationError({field: gettext("Use a date like 2026-01-31.")})
     try:
         return date.fromisoformat(raw)
     except ValueError:
-        raise ValidationError({field: "Use a date like 2026-01-31."}) from None
+        raise ValidationError({field: gettext("Use a date like 2026-01-31.")}) from None
 
 
 def resolve_window(preset="this_month", start=None, end=None, *, now=None):
@@ -55,9 +56,9 @@ def resolve_window(preset="this_month", start=None, end=None, *, now=None):
     now = now or timezone.now()
     today = now.astimezone(UTC).date()
     if preset not in PRESETS:
-        raise ValidationError({"period": f"Choose one of: {', '.join(PRESETS)}."})
+        raise ValidationError({"period": gettext('Choose one of: {value}.').format(value=', '.join(PRESETS))})
     if preset != "custom" and (start or end):
-        raise ValidationError({"period": "Start and end dates are only used with the custom period."})
+        raise ValidationError({"period": gettext("Start and end dates are only used with the custom period.")})
     if preset == "this_month":
         return OverviewWindow(preset, _midnight(today.replace(day=1)), now)
     if preset == "this_year":
@@ -66,9 +67,9 @@ def resolve_window(preset="this_month", start=None, end=None, *, now=None):
         return OverviewWindow(preset, None, now)
     first, last = _parse_day(start, "start"), _parse_day(end, "end")
     if last < first:
-        raise ValidationError({"end": "The end date must be on or after the start date."})
+        raise ValidationError({"end": gettext("The end date must be on or after the start date.")})
     if first > today:
-        raise ValidationError({"start": "The start date cannot be in the future."})
+        raise ValidationError({"start": gettext("The start date cannot be in the future.")})
     if (last - first).days >= MAX_CUSTOM_DAYS:
-        raise ValidationError({"end": "Choose a period of ten years or less."})
+        raise ValidationError({"end": gettext("Choose a period of ten years or less.")})
     return OverviewWindow(preset, _midnight(first), min(_midnight(last + timedelta(days=1)), now))

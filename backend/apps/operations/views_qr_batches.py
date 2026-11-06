@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -93,7 +94,7 @@ class QrPrintBatchItemView(APIView):
         serializer.is_valid(raise_exception=True)
         qr = get_object_or_404(QrCode, pk=serializer.validated_data["qr_code_id"], makerspace=batch.makerspace)
         if qr.target_type not in {QrCode.TargetType.PRODUCT, QrCode.TargetType.ASSET}:
-            raise ValidationError("QR print batches only accept inventory item or unit QR codes.")
+            raise ValidationError(gettext("QR print batches only accept inventory item or unit QR codes."))
         item = services.add_qr_to_batch(
             batch,
             qr,

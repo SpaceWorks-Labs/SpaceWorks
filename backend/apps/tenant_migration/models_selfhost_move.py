@@ -7,6 +7,7 @@ key (#111 Q7, #160). The request is platform coordination state: it never travel
 export, a tenant dump or a per-space backup. ``artifact_path`` is server-local and is
 never returned by any API.
 """
+from django.utils.translation import gettext_lazy
 import uuid
 
 from django.conf import settings
@@ -22,7 +23,7 @@ class SelfHostMoveRequest(models.Model):
         EXPORTING = "exporting", "Exporting"
         EXPORTED = "exported", "Exported"
         REJECTED = "rejected", "Rejected"
-        FAILED = "failed", "Export failed"
+        FAILED = "failed", gettext_lazy("Export failed")
         CANCELLED = "cancelled", "Cancelled"
 
     OPEN_STATUSES = ("requested", "approved", "exporting")

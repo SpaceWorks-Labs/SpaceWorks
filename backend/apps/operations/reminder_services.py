@@ -4,6 +4,7 @@ A notification may have escaped before a worker died. Automatic claim expiry
 would violate at-most-once dispatch. Claims therefore have no lease or retry.
 """
 
+from django.utils.translation import gettext
 from datetime import datetime, timedelta, timezone as datetime_timezone
 from contextlib import contextmanager
 from uuid import uuid4
@@ -31,7 +32,7 @@ def _reminder_write(makerspace_id):
     if makerspace_id is None or not rbac.scope_for_scheduled_work(
         Makerspace.objects.all(), makerspace_id=makerspace_id, field="pk",
     ).exists():
-        raise ValidationError("Reminder makerspace is unavailable for scheduled work.")
+        raise ValidationError(gettext("Reminder makerspace is unavailable for scheduled work."))
     if makerspace_id in _boundary_shared_locks.get():
         with transaction.atomic():
             yield
@@ -48,16 +49,16 @@ def _reminders(makerspace):
 
 def utc_time(value):
     if not isinstance(value, datetime) or timezone.is_naive(value):
-        raise ValidationError("Reminder timestamps must be timezone-aware.")
+        raise ValidationError(gettext("Reminder timestamps must be timezone-aware."))
     try:
         return value.astimezone(datetime_timezone.utc)
     except (OverflowError, ValueError) as exc:
-        raise ValidationError("Reminder UTC timestamp is out of range.") from exc
+        raise ValidationError(gettext("Reminder UTC timestamp is out of range.")) from exc
 
 
 def _identifier(value, name, maximum):
     if not isinstance(value, str) or not value.strip() or len(value) > maximum:
-        raise ValidationError(f"{name} must contain 1 to {maximum} characters.")
+        raise ValidationError(gettext('{name} must contain 1 to {maximum} characters.').format(name=name, maximum=maximum))
     return value
 
 
@@ -73,13 +74,13 @@ def schedule_reminders(*, makerspace, source, subject, kind, due_at, offsets=(0,
     kind = _identifier(kind, "Kind", 80)
     due_at = utc_time(due_at)
     if not isinstance(offsets, (list, tuple)) or len(offsets) > 100:
-        raise ValidationError("Offsets must be a list or tuple with at most 100 steps.")
+        raise ValidationError(gettext("Offsets must be a list or tuple with at most 100 steps."))
     if any(type(offset) is not int or not -(2**31) <= offset < 2**31 for offset in offsets):
-        raise ValidationError("Offsets must be signed 32-bit integral seconds.")
+        raise ValidationError(gettext("Offsets must be signed 32-bit integral seconds."))
     try:
         times = {offset: due_at + timedelta(seconds=offset) for offset in offsets}
     except OverflowError as exc:
-        raise ValidationError("Reminder time is out of range.") from exc
+        raise ValidationError(gettext("Reminder time is out of range.")) from exc
     with _reminder_write(makerspace.pk):
         rows = []
         for offset, remind_at in times.items():
@@ -108,7 +109,7 @@ def claim_reminders(*, makerspace, source, now=None, limit=200, normalize_claim=
     source = _identifier(source, "Source", 80)
     now = utc_time(timezone.now() if now is None else now)
     if type(limit) is not int or limit < 1:
-        raise ValidationError("Claim limit must be a positive integer.")
+        raise ValidationError(gettext("Claim limit must be a positive integer."))
     with _reminder_write(makerspace.pk):
         rows = list(
             _reminders(makerspace).select_for_update(skip_locked=True)
@@ -133,7 +134,7 @@ def claim_reminders(*, makerspace, source, now=None, limit=200, normalize_claim=
         if updated != len(rows):
             # RBAC visibility can change while the row locks are held. Never
             # return an in-memory token whose claim was not persisted.
-            raise ValidationError("Reminder makerspace changed while claiming.")
+            raise ValidationError(gettext("Reminder makerspace changed while claiming."))
     return tuple(rows)
 
 

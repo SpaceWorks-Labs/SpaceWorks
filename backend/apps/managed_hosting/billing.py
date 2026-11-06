@@ -7,6 +7,7 @@ the payer opened). Every write is superadmin-only (the online settlement is the
 provider's signed callback) and audited at platform level and in the space.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
@@ -64,7 +65,7 @@ def record_payment(actor, invoice_id, *, method, reference, received_on, note=""
     require_platform_superadmin(actor)
     require_plans_enabled()
     if method.startswith("online_"):
-        raise ValidationError({"method": "Online payments are recorded by the provider's callback."})
+        raise ValidationError({"method": gettext("Online payments are recorded by the provider's callback.")})
     with transaction.atomic():
         invoice = HostingInvoice.objects.select_for_update().get(pk=invoice_id)
         if invoice.status != HostingInvoice.Status.OPEN:
@@ -79,7 +80,7 @@ def void(actor, invoice_id, reason):
     require_plans_enabled()
     reason = str(reason or "").strip()
     if not 3 <= len(reason) <= 300:
-        raise ValidationError({"reason": "Give a reason of 3 to 300 characters."})
+        raise ValidationError({"reason": gettext("Give a reason of 3 to 300 characters.")})
     with transaction.atomic():
         invoice = HostingInvoice.objects.select_for_update().get(pk=invoice_id)
         if invoice.status != HostingInvoice.Status.OPEN:

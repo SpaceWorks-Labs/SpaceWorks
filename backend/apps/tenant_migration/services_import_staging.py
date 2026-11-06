@@ -1,5 +1,6 @@
 """Accept ciphertext quickly and stage it under a fenced per-job claim."""
 
+from django.utils.translation import gettext
 from contextlib import contextmanager
 from datetime import timedelta
 import logging
@@ -232,7 +233,7 @@ def stage_import_job(job_id, *, actor_id):
             raise PermissionError("Superadmin access is required.") from exc
         if sha256_file(job.archive_path) != job.source_archive_digest:
             failure_code = "digest_mismatch"
-            raise ValidationError({"detail": "The encrypted archive digest does not match."})
+            raise ValidationError({"detail": gettext("The encrypted archive digest does not match.")})
         with decrypted_archive(job.archive_path) as (root, _carried):
             portable = PortableArchive(root)
             manifest = portable.json("migration-manifest.json")
@@ -243,7 +244,7 @@ def stage_import_job(job_id, *, actor_id):
                 manifest.get("format") != FORMAT
                 or manifest.get("format_version") not in READABLE_FORMAT_VERSIONS
             ):
-                raise ValidationError({"detail": "The tenant migration format is unsupported."})
+                raise ValidationError({"detail": gettext("The tenant migration format is unsupported.")})
             source = manifest.get("source", {}).get("makerspace", {})
             source_identity = _validated_identity(
                 manifest.get("source", {}).get("deployment"), "source"

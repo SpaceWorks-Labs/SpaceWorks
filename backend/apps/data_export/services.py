@@ -1,5 +1,6 @@
 """Short transactional lifecycle operations around the long-running export."""
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import logging
@@ -201,13 +202,13 @@ def _fail_job(job, code, detail, manifest=None, *, queryset=None):
 
 def issue_download_token(job, actor):
     if job.fidelity == "SUBJECT":
-        raise ValidationError({"detail": "Personal exports require the owner download endpoint."})
+        raise ValidationError({"detail": gettext("Personal exports require the owner download endpoint.")})
     raw = secrets.token_urlsafe(32)
     now = timezone.now()
     with transaction.atomic():
         locked = DataExportJob.objects.select_for_update().select_related("makerspace").get(pk=job.pk)
         if locked.status != DataExportJob.Status.AVAILABLE or locked.expires_at <= now:
-            raise ValidationError({"detail": "This export is not available for download."})
+            raise ValidationError({"detail": gettext("This export is not available for download.")})
         locked.download_token_digest = _token_digest(raw)
         locked.download_token_expires_at = now + timedelta(
             seconds=settings.DATA_EXPORT_DOWNLOAD_TTL_SECONDS

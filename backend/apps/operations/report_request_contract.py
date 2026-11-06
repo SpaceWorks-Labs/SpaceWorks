@@ -4,6 +4,7 @@ Split out of ``views_reports`` (phase 10) so the views stay under the file ceili
 names are re-exported there, where existing callers import them.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework import serializers
@@ -55,7 +56,7 @@ def _export_format(request, definition=None):
     fmt = (request.query_params.get("format") or "csv").strip().lower()
     allowed = definition.allowed_formats if definition is not None else ("csv", "xlsx")
     if fmt not in allowed:
-        raise ValidationError({"format": f"Use {' or '.join(allowed)}."})
+        raise ValidationError({"format": gettext('Use {value}.').format(value=' or '.join(allowed))})
     return fmt
 
 
@@ -76,7 +77,7 @@ def _report_filters(request, report_key):
     subjects.is_valid(raise_exception=True)
     values = dict(subjects.validated_data)
     if values and not any(report_key in adapter.report_keys for adapter in SUBJECTS.values()):
-        raise ValidationError({"subject_kind": "Unsupported subject for this report."})
+        raise ValidationError({"subject_kind": gettext("Unsupported subject for this report.")})
     serializer_class = FILTER_SERIALIZERS.get(report_key)
     if serializer_class is None:
         return values
@@ -89,5 +90,5 @@ def _grain_param(request, definition):
     value = (request.query_params.get("grain") or (definition.grains or ("day",))[0]).strip().lower()
     allowed = definition.grains or ("day",)
     if value not in allowed:
-        raise ValidationError({"grain": f"Use one of: {', '.join(allowed)}."})
+        raise ValidationError({"grain": gettext('Use one of: {value}.').format(value=', '.join(allowed))})
     return value

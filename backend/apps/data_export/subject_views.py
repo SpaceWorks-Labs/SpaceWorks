@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.operations.durable_dispatch import dispatch
 """Authenticated owner-only subject export API."""
 
@@ -35,7 +36,7 @@ class SubjectExportCreateSerializer(serializers.Serializer):
         # which otherwise produces a list where Serializer.errors needs a mapping.
         if not isinstance(data, dict) or data:
             raise serializers.ValidationError({
-                "non_field_errors": ["Supply an empty object; identity comes from authentication."],
+                "non_field_errors": [gettext("Supply an empty object; identity comes from authentication.")],
             })
         return super().run_validation(data)
 
@@ -132,7 +133,7 @@ class SubjectExportDownloadView(SubjectExportBaseView):
         try:
             payload = signed_download(job, request.user)
         except storage.ExportStorageError:
-            return Response({"detail": "Export storage is temporarily unavailable.", "code": "storage_unavailable"}, status=503)
+            return Response({"detail": gettext("Export storage is temporarily unavailable."), "code": "storage_unavailable"}, status=503)
         response = Response(DataExportDownloadUrlSerializer(payload).data)
         response["Cache-Control"] = "private, no-store"
         return response

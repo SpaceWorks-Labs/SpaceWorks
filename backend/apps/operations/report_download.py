@@ -1,4 +1,5 @@
 """Report registry download dispatch, shared by tenant and aggregate views."""
+from django.utils.translation import gettext
 from contextlib import nullcontext
 
 from apps.operations import reports
@@ -48,7 +49,7 @@ def _export_response(request, definition, makerspace_id, *, platform_context=Non
         from django.utils.module_loading import import_string
         if not definition.pdf_renderer_path:
             from rest_framework.exceptions import ValidationError
-            raise ValidationError("PDF is unavailable for this report.")
+            raise ValidationError(gettext("PDF is unavailable for this report."))
         response = HttpResponse(import_string(definition.pdf_renderer_path)(rows, provenance=provenance,
                                 title=definition.title), content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{definition.key}.pdf"'

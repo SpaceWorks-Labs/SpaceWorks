@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import math
 import re
 from datetime import date
@@ -226,7 +227,7 @@ def validate_answers(schema, raw_answers):
         raw_answers = {}
     if not isinstance(raw_answers, dict):
         raise serializers.ValidationError(
-            {'custom_answers': 'Must be an object or null.'}
+            {'custom_answers': gettext('Must be an object or null.')}
         )
 
     questions = canonical_schema or []

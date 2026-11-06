@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from collections.abc import Mapping
 
 from django.shortcuts import get_object_or_404
@@ -31,7 +32,7 @@ def space_for(actor, pk):
 class StrictModelSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         if not isinstance(data, Mapping):
-            raise serializers.ValidationError("Expected an object.")
+            raise serializers.ValidationError(gettext("Expected an object."))
         unknown = set(data) - {name for name, field in self.fields.items() if not field.read_only}
         if unknown:
             raise serializers.ValidationError({name: "Unexpected field." for name in sorted(unknown)})
@@ -64,7 +65,7 @@ class ScheduleSerializer(StrictModelSerializer):
 
     def validate_container(self, value):
         if value and value.makerspace_id != self.context["space"].pk:
-            raise serializers.ValidationError("Container belongs to another makerspace.")
+            raise serializers.ValidationError(gettext("Container belongs to another makerspace."))
         return value
 
 

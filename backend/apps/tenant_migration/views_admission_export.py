@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.operations.durable_dispatch import dispatch
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -161,7 +162,7 @@ class MigrationExportListCreateView(MigrationAPIView):
             )
             job.refresh_from_db()
             return Response(
-                {"detail": "The migration export worker is unavailable.", "code": "worker_unavailable"},
+                {"detail": gettext("The migration export worker is unavailable."), "code": "worker_unavailable"},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         job.refresh_from_db()

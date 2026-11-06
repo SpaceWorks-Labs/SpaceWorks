@@ -1,5 +1,6 @@
 """Typed subject adapters keep resource authority outside tenant RBAC scope."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from typing import Callable
 from rest_framework import serializers
@@ -35,9 +36,9 @@ class SubjectFilterSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if ("subject_kind" in attrs) != ("subject_id" in attrs):
-            raise serializers.ValidationError("Supply subject_kind and subject_id together.")
+            raise serializers.ValidationError(gettext("Supply subject_kind and subject_id together."))
         if attrs.get("subject_kind") and attrs["subject_kind"] not in SUBJECTS:
-            raise serializers.ValidationError({"subject_kind": "Unknown or unavailable subject kind."})
+            raise serializers.ValidationError({"subject_kind": gettext("Unknown or unavailable subject kind.")})
         return attrs
 
 
@@ -46,16 +47,16 @@ def authorize(actor, space, definition, filters):
     serializer.is_valid(raise_exception=True)
     values = serializer.validated_data
     if definition.subject_kind and values.get("subject_kind") != definition.subject_kind:
-        raise ValidationError({"subject_kind": f"This report requires {definition.subject_kind}."})
+        raise ValidationError({"subject_kind": gettext('This report requires {subject_kind}.').format(subject_kind=definition.subject_kind)})
     if definition.required_feature:
         require_feature(space, definition.required_feature)
     if not values:
         return None
     if space is None:
-        raise PermissionDenied("Subject reports are tenant-local.")
+        raise PermissionDenied(gettext("Subject reports are tenant-local."))
     adapter = SUBJECTS[values["subject_kind"]]
     if definition.key not in adapter.report_keys:
-        raise ValidationError({"subject_kind": "Unsupported subject for this report."})
+        raise ValidationError({"subject_kind": gettext("Unsupported subject for this report.")})
     require_module(space, "reports")
     if not (adapter.tenant_action and rbac.can(actor, adapter.tenant_action, space.pk)):
         require_action(actor, rbac.Action.VIEW_AUDIT, space.pk)
@@ -66,7 +67,7 @@ def authorize(actor, space, definition, filters):
 
 def reject_aggregate(filters):
     if any(key in filters for key in ("subject_kind", "subject_id")):
-        raise ValidationError("Subject filters cannot be scheduled or aggregated.")
+        raise ValidationError(gettext("Subject filters cannot be scheduled or aggregated."))
 
 
 def subject_capable(definition):

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from apps.accounts import rbac
 from apps.operations.report_types import ReportDefinition
 from apps.operations.report_fields_de import UTILIZATION_FIELDS
@@ -25,7 +26,7 @@ EXISTING_REPORT_DEFINITIONS = (
     ReportDefinition(
         "payment-cash-book", "apps.operations.reports_cash_book.build_payment_cash_book",
         ("currency", "method", "collected_amount", "refunded_amount", "net_amount"),
-        required_action=rbac.Action.VIEW_FINANCE, title="Cash book",
+        required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Cash book"),
         chart_hint="grouped_bar", chart_spec=PAYMENT_CASH_CHART,
     ),
     _legacy("summary", ("products", "assets", "active_loans", "available_quantity", "issued_quantity", "damaged_quantity", "missing_quantity"), exportable=False, summary=True, chart_hint="stats"),
@@ -38,27 +39,27 @@ EXISTING_REPORT_DEFINITIONS = (
     _legacy("most-lent", ("product_name", "times_lent", "total_quantity_lent")),
     _legacy("top-borrowers", ("holder", "requests", "items_borrowed"), chart_hint="grouped_bar", identity_bearing=True),
     _legacy("recently-added", ("product_name", "created_at", "total_quantity"), chart_hint="line"),
-    ReportDefinition("machine-usage", "apps.operations.reports_machine_usage.build_machine_usage", ("machine_id", "machine_name", "machine_type", "is_active", "usage_entries", "usage_hours"), ("machines",), title="Machine usage", chart_hint="bar"),
-    ReportDefinition("event-attendance", "apps.operations.reports_events.build_event_attendance", ("event_id", "series_id", "series_title", "series_occurrence_key", "title", "starts_at", "status", "capacity", "registrations", "confirmed", "pending_approval", "registered", "waitlisted", "rejected", "cancelled", "attended", "attendance_rate_percent", "feedback_responses", "active_certificates", "revoked_certificates", "organizers"), ("events",), required_action=rbac.Action.MANAGE_EVENTS, title="Event attendance", chart_hint="line", chart_spec=ATTENDANCE_CHART),
-    ReportDefinition("booking-utilization", "apps.operations.reports_bookings.build_booking_utilization", ("makerspace_id", *UTILIZATION_FIELDS), ("bookings",), required_action=rbac.Action.MANAGE_BOOKINGS, title="Booking utilization", chart_hint="line", grains=("day", "week", "month"), version=2,
+    ReportDefinition("machine-usage", "apps.operations.reports_machine_usage.build_machine_usage", ("machine_id", "machine_name", "machine_type", "is_active", "usage_entries", "usage_hours"), ("machines",), title=gettext_lazy("Machine usage"), chart_hint="bar"),
+    ReportDefinition("event-attendance", "apps.operations.reports_events.build_event_attendance", ("event_id", "series_id", "series_title", "series_occurrence_key", "title", "starts_at", "status", "capacity", "registrations", "confirmed", "pending_approval", "registered", "waitlisted", "rejected", "cancelled", "attended", "attendance_rate_percent", "feedback_responses", "active_certificates", "revoked_certificates", "organizers"), ("events",), required_action=rbac.Action.MANAGE_EVENTS, title=gettext_lazy("Event attendance"), chart_hint="line", chart_spec=ATTENDANCE_CHART),
+    ReportDefinition("booking-utilization", "apps.operations.reports_bookings.build_booking_utilization", ("makerspace_id", *UTILIZATION_FIELDS), ("bookings",), required_action=rbac.Action.MANAGE_BOOKINGS, title=gettext_lazy("Booking utilization"), chart_hint="line", grains=("day", "week", "month"), version=2,
                      chart_spec=chart("period", (("booked", "reservations"), ("no_show", "reservations"), ("cancelled", "reservations"), ("completed", "reservations")), series=("space_id", "space_name"), time=True)),
-    ReportDefinition("maintenance-activity", "apps.operations.reports_maintenance.build_maintenance_activity", ("machine_id", "machine_name", "machine_type", "is_active", "log_count", "costed_log_count", "total_cost", "average_cost", "last_performed_at", "average_interval_days", "active_schedules", "overdue_schedules"), ("machines", "machines.maintenance"), title="Maintenance activity", chart_hint="line"),
-    ReportDefinition("member-activity", "apps.operations.reports_members.build_member_activity", ("makerspace_name", "membership_policy", "referrals_enabled", "new_members", "active_members", "revoked_members", "pending_requests", "open_invites", "referred_joins", "verified_members"), ("membership",), title="Member activity", chart_hint="bar", chart_spec=MEMBER_ACTIVITY_CHART),
-    ReportDefinition("machine-service", "apps.machines.service_reports.build_machine_service_report", ("row_kind", "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed", "cancelled", "machine_id", "machine_name", "machine_type", "request_count", "completed_count", "failed_count", "completed_hours", "failed_partial_hours", "total_recorded_service_hours", "failure_rate", "measurement", "product_id", "product_label", "completed_amount", "failed_partial_amount", "total_used", "outcome", "failed_count_amount", "failed_grams_amount"), ("machine_service",), title="Machine service", chart_hint="grouped_bar"),
-    ReportDefinition("printer-service", "apps.machines.service_reports.build_printer_service_report", ("machine_id", "machine_name", "model", "completed_hours", "failed_partial_hours", "manual_hours", "consumed_grams", "payment_due", "payment_paid"), ("printing",), title="Printer service", chart_hint="grouped_bar", chart_spec=PRINTER_SERVICE_CHART),
+    ReportDefinition("maintenance-activity", "apps.operations.reports_maintenance.build_maintenance_activity", ("machine_id", "machine_name", "machine_type", "is_active", "log_count", "costed_log_count", "total_cost", "average_cost", "last_performed_at", "average_interval_days", "active_schedules", "overdue_schedules"), ("machines", "machines.maintenance"), title=gettext_lazy("Maintenance activity"), chart_hint="line"),
+    ReportDefinition("member-activity", "apps.operations.reports_members.build_member_activity", ("makerspace_name", "membership_policy", "referrals_enabled", "new_members", "active_members", "revoked_members", "pending_requests", "open_invites", "referred_joins", "verified_members"), ("membership",), title=gettext_lazy("Member activity"), chart_hint="bar", chart_spec=MEMBER_ACTIVITY_CHART),
+    ReportDefinition("machine-service", "apps.machines.service_reports.build_machine_service_report", ("row_kind", "submitted", "accepted", "in_progress", "completed", "collected", "rejected", "failed", "cancelled", "machine_id", "machine_name", "machine_type", "request_count", "completed_count", "failed_count", "completed_hours", "failed_partial_hours", "total_recorded_service_hours", "failure_rate", "measurement", "product_id", "product_label", "completed_amount", "failed_partial_amount", "total_used", "outcome", "failed_count_amount", "failed_grams_amount"), ("machine_service",), title=gettext_lazy("Machine service"), chart_hint="grouped_bar"),
+    ReportDefinition("printer-service", "apps.machines.service_reports.build_printer_service_report", ("machine_id", "machine_name", "model", "completed_hours", "failed_partial_hours", "manual_hours", "consumed_grams", "payment_due", "payment_paid"), ("printing",), title=gettext_lazy("Printer service"), chart_hint="grouped_bar", chart_spec=PRINTER_SERVICE_CHART),
     ReportDefinition("fablab-health", "apps.operations.reports_health.build_fablab_health", (
         "events_enabled", "events_available", "events_in_period", "events_registrations", "events_attended", "events_completed_attendance_rate_percent",
         "bookings_enabled", "bookings_available", "bookings_active_spaces", "bookings_non_cancelled", "bookings_reserved_hours", "bookings_upcoming", "bookings_no_shows", "bookings_reservation_utilization_percent",
         "machines_enabled", "machines_available", "machines_active", "machines_usage_hours",
         "maintenance_enabled", "maintenance_available", "maintenance_logs", "maintenance_total_cost", "maintenance_overdue_schedules",
-    ), title="FabLab health", version=2, chart_hint="grouped_bar", chart_spec=HEALTH_CHART, section_modules=("events", "bookings", "machines", "machines.maintenance")),
+    ), title=gettext_lazy("FabLab health"), version=2, chart_hint="grouped_bar", chart_spec=HEALTH_CHART, section_modules=("events", "bookings", "machines", "machines.maintenance")),
     ReportDefinition(
         "payment-reconciliation", "apps.operations.reports_payments.build_payment_reconciliation",
         (
             "currency", "subject_type", "status", "settlement_method",
             "payment_count", "amount_total", "outstanding_amount", "refunded_amount",
         ),
-        required_action=rbac.Action.VIEW_FINANCE, title="Payment reconciliation",
+        required_action=rbac.Action.VIEW_FINANCE, title=gettext_lazy("Payment reconciliation"),
         chart_hint="stacked_bar",
         chart_spec=RECONCILIATION_CHART,
         # v5 publishes the F1 chart spec; v4 counts effective refund correction heads; v3 added succeeded refund

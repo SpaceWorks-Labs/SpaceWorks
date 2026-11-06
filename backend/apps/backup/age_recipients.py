@@ -10,6 +10,7 @@ preview and restore that space while the platform key stays offline. Without tha
 the archive is still built for the platform key alone, and an in-app restore refuses it.
 """
 
+from django.utils.translation import gettext
 import hashlib
 
 from django.conf import settings
@@ -31,17 +32,17 @@ _BECH32_MESSAGES = {
 def canonical_recipient(raw) -> str:
     """Validate and return the canonical lowercase native age recipient."""
     if not isinstance(raw, str):
-        raise ValidationError("The recipient must be text.", code="recipient_type")
+        raise ValidationError(gettext("The recipient must be text."), code="recipient_type")
 
     value = raw.strip()
     if any(character.isspace() for character in value):
         raise ValidationError(
-            "The recipient cannot contain internal whitespace.",
+            gettext("The recipient cannot contain internal whitespace."),
             code="recipient_whitespace",
         )
     if value.upper().startswith("AGE-SECRET-KEY"):
         raise ValidationError(
-            "A private age identity cannot be used as a public recipient.",
+            gettext("A private age identity cannot be used as a public recipient."),
             code="private_key",
         )
 
@@ -51,12 +52,12 @@ def canonical_recipient(raw) -> str:
         value = value.lower()
     else:
         raise ValidationError(
-            "Bech32 recipients cannot use mixed case.", code="mixed_case"
+            gettext("Bech32 recipients cannot use mixed case."), code="mixed_case"
         )
 
     if value.startswith("age-plugin-"):
         raise ValidationError(
-            "Plugin recipients are not supported.", code="plugin_recipient"
+            gettext("Plugin recipients are not supported."), code="plugin_recipient"
         )
 
     try:
@@ -65,13 +66,13 @@ def canonical_recipient(raw) -> str:
         raise ValidationError(_BECH32_MESSAGES[exc.code], code=exc.code) from exc
     if hrp != "age":
         raise ValidationError(
-            "The recipient must use the age human-readable prefix.",
+            gettext("The recipient must use the age human-readable prefix."),
             code="invalid_hrp",
         )
     decoded = convert_bits(payload, 5, 8, pad=False)
     if decoded is None or len(decoded) != 32:
         raise ValidationError(
-            "The recipient payload must decode to 32 bytes.",
+            gettext("The recipient payload must decode to 32 bytes."),
             code="invalid_payload_length",
         )
     return encode("age", convert_bits(decoded, 8, 5, pad=True))

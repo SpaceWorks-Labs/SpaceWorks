@@ -8,6 +8,7 @@
 * The platform connection is the superadmin's alone.
 """
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from django.http import Http404
@@ -53,14 +54,14 @@ def _space(user, makerspace_id):
 def viewer_scope(user, makerspace_id):
     makerspace = _space(user, makerspace_id)
     if not rbac.can(user, rbac.Action.VIEW_ANALYTICS, makerspace.pk):
-        raise PermissionDenied("Viewing analytics needs view_analytics in this space.")
+        raise PermissionDenied(gettext("Viewing analytics needs view_analytics in this space."))
     return Scope(makerspace)
 
 
 def manager_scope(user, makerspace_id):
     makerspace = _space(user, makerspace_id)
     if not rbac.is_space_manager_identity(user, makerspace.pk):
-        raise PermissionDenied("Only this space's Space Manager or the superadmin manages analytics.")
+        raise PermissionDenied(gettext("Only this space's Space Manager or the superadmin manages analytics."))
     return Scope(makerspace)
 
 
@@ -72,5 +73,5 @@ def can_manage(user, scope):
 
 def platform_scope(user):
     if not is_superadmin(user):
-        raise PermissionDenied("The platform analytics connection is superadmin-only.")
+        raise PermissionDenied(gettext("The platform analytics connection is superadmin-only."))
     return Scope(None)

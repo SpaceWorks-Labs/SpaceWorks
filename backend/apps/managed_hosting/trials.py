@@ -4,6 +4,7 @@ Read-only reuses #185's mode with ``source=trial_expired``; assigning a plan aga
 only that source. Reminders are platform mail to the space's Space Managers.
 """
 
+from django.utils.translation import gettext
 import math
 
 from django.db import transaction
@@ -26,7 +27,7 @@ def remind(row, now):
         return False
     space = row.makerspace
     plural = "day" if days_left == 1 else "days"
-    schedule_manager_mail(space.pk, subject=f"{space.name}: your trial ends in {days_left} {plural}",
+    schedule_manager_mail(space.pk, subject=gettext('{name}: your trial ends in {days_left} {plural}').format(name=space.name, days_left=days_left, plural=plural),
                           body=(f"The {row.plan.name} trial for {space.name} ends on "
                                 f"{timezone.localtime(row.trial_ends_at):%Y-%m-%d}. After that the space becomes "
                                 "read-only until a plan is chosen. Contact the platform operator to continue."),

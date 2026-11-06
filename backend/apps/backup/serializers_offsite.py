@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from urllib.parse import urlsplit
 
 from rest_framework import serializers
@@ -35,13 +36,13 @@ class BackupDestinationSerializer(serializers.ModelSerializer):
 
     def validate_endpoint_url(self, value):
         if value and urlsplit(value).scheme not in {"http", "https"}:
-            raise serializers.ValidationError("The endpoint must be an http(s) URL.")
+            raise serializers.ValidationError(gettext("The endpoint must be an http(s) URL."))
         return value
 
     def validate_prefix(self, value):
         value = value.strip("/")
         if ".." in value.split("/"):
-            raise serializers.ValidationError("The prefix may not contain '..'.")
+            raise serializers.ValidationError(gettext("The prefix may not contain '..'."))
         return value
 
     def validate(self, attrs):
@@ -49,17 +50,17 @@ class BackupDestinationSerializer(serializers.ModelSerializer):
             attrs.get("access_key_id") and attrs.get("secret_access_key")
         ):
             raise serializers.ValidationError(
-                {"credentials": "Both access_key_id and secret_access_key are required."}
+                {"credentials": gettext("Both access_key_id and secret_access_key are required.")}
             )
         if self.instance is not None and self.instance.retired_at is not None:
-            raise serializers.ValidationError("A retired destination cannot be changed.")
+            raise serializers.ValidationError(gettext("A retired destination cannot be changed."))
         if self.instance is not None and self.instance.uploads.exists():
             # Journal locators address this bucket/endpoint. Moving it would strand
             # every recorded copy and send retention deletes to the wrong store.
             for field in ("endpoint_url", "bucket", "region", "prefix", "addressing_style"):
                 if field in attrs and attrs[field] != getattr(self.instance, field):
                     raise serializers.ValidationError({
-                        field: "This destination already has a journal; register a new destination to change its location.",
+                        field: gettext("This destination already has a journal; register a new destination to change its location."),
                     })
         return attrs
 

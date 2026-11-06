@@ -7,6 +7,7 @@ a retired fingerprint is refused for every later archive build, so an old (possi
 compromised) key is never used again. Fingerprints are SHA-256 of the canonical public
 recipient: public facts, never key material.
 """
+from django.utils.translation import gettext_lazy
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -14,8 +15,8 @@ from django.utils import timezone
 
 class BackupKeyFingerprint(models.Model):
     class Kind(models.TextChoices):
-        PLATFORM = "platform", "Platform key"
-        SERVER = "server", "This server's restore key"
+        PLATFORM = "platform", gettext_lazy("Platform key")
+        SERVER = "server", gettext_lazy("This server's restore key")
 
     kind = models.CharField(max_length=16, choices=Kind.choices)
     fingerprint = models.CharField(max_length=64)

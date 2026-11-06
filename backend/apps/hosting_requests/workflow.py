@@ -13,6 +13,7 @@ append-only log); every later transition is. Lock order: makerspace -> organizat
 organization membership -> hosting row.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -81,7 +82,7 @@ def create_public(data):
 def create_invitation(actor, *, makerspace_id=None, organization_id=None, invitee_email,
                       space_name="", note=""):
     if (makerspace_id is None) == (organization_id is None):
-        raise ValidationError({"detail": "Name exactly one inviting makerspace or organization."})
+        raise ValidationError({"detail": gettext("Name exactly one inviting makerspace or organization.")})
     with transaction.atomic():
         if makerspace_id is not None:
             makerspace = authority.resolve_makerspace_inviter(actor, makerspace_id)
@@ -113,7 +114,7 @@ def create_invitation(actor, *, makerspace_id=None, organization_id=None, invite
 @transaction.atomic
 def cancel_invitation(actor, *, pk, makerspace_id=None, organization_id=None):
     if (makerspace_id is None) == (organization_id is None):
-        raise ValidationError({"detail": "Name exactly one inviting makerspace or organization."})
+        raise ValidationError({"detail": gettext("Name exactly one inviting makerspace or organization.")})
     kind = (HostingRequest.InviterKind.MAKERSPACE if makerspace_id is not None
             else HostingRequest.InviterKind.ORGANIZATION)
     scope = ({"inviter_makerspace_id": makerspace_id} if makerspace_id is not None
@@ -163,7 +164,7 @@ def submit_invited(raw_invite_token, data):
     row = _live_invitation(raw_invite_token, lock=True)
     choice = data.get("organization_choice") or HostingRequest.OrganizationChoice.OWN
     if choice == HostingRequest.OrganizationChoice.JOIN and not join_available(row):
-        raise ValidationError({"organization_choice": "Joining the inviting organization is not offered."})
+        raise ValidationError({"organization_choice": gettext("Joining the inviting organization is not offered.")})
     apply_applicant_fields(row, data)
     row.organization_choice = choice
     if choice == HostingRequest.OrganizationChoice.JOIN:

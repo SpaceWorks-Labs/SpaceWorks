@@ -231,15 +231,20 @@ export const openApiPaths = [
   "/api/v1/admin/card-designs/{id}/assets",
   "/api/v1/admin/card-designs/{id}/assets/finalize",
   "/api/v1/admin/card-designs/{id}/assets/{asset_id}",
+  "/api/v1/admin/card-designs/{id}/calibration",
   "/api/v1/admin/card-designs/{id}/export",
   "/api/v1/admin/card-designs/{id}/fonts",
   "/api/v1/admin/card-designs/{id}/fonts/prepare",
   "/api/v1/admin/card-designs/{id}/fonts/{family_slug}/{weight}",
+  "/api/v1/admin/card-designs/{id}/holders",
   "/api/v1/admin/card-designs/{id}/import",
   "/api/v1/admin/card-designs/{id}/preview",
   "/api/v1/admin/card-designs/{id}/publish",
   "/api/v1/admin/card-designs/{id}/reject",
   "/api/v1/admin/card-designs/{id}/reset",
+  "/api/v1/admin/card-designs/{id}/revisions",
+  "/api/v1/admin/card-designs/{id}/revisions/{revision}",
+  "/api/v1/admin/card-designs/{id}/revisions/{revision}/restore",
   "/api/v1/admin/card-designs/{id}/submit",
   "/api/v1/admin/card-designs/{id}/templates",
   "/api/v1/admin/card-jobs/{id}",
@@ -360,6 +365,7 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/cancel/",
   "/api/v1/admin/events/{id}/card-designs",
   "/api/v1/admin/events/{id}/card-jobs",
+  "/api/v1/admin/events/{id}/card-jobs/preview",
   "/api/v1/admin/events/{id}/card-settings",
   "/api/v1/admin/events/{id}/certificate-artwork/",
   "/api/v1/admin/events/{id}/certificate-artwork/{artwork_id}/",
@@ -369,7 +375,15 @@ export const openApiPaths = [
   "/api/v1/admin/events/{id}/certificates/batches/{batch_id}/",
   "/api/v1/admin/events/{id}/certificates/bulk/",
   "/api/v1/admin/events/{id}/certificates/eligibility/",
+  "/api/v1/admin/events/{id}/certificates/issue-plan/",
+  "/api/v1/admin/events/{id}/certificates/issue-plan/sample.pdf",
+  "/api/v1/admin/events/{id}/certificates/issued/",
+  "/api/v1/admin/events/{id}/certificates/signatories/",
+  "/api/v1/admin/events/{id}/certificates/signatories/approval-policy/",
+  "/api/v1/admin/events/{id}/certificates/signatories/candidates/",
+  "/api/v1/admin/events/{id}/certificates/signatories/{slot}/",
   "/api/v1/admin/events/{id}/certificates/verification-policy/",
+  "/api/v1/admin/events/{id}/certificates/{certificate_id}/png/",
   "/api/v1/admin/events/{id}/certificates/{certificate_id}/reissue/",
   "/api/v1/admin/events/{id}/certificates/{certificate_id}/revoke/",
   "/api/v1/admin/events/{id}/check-in/card-scan",
@@ -611,6 +625,7 @@ export const openApiPaths = [
   "/api/v1/admin/id-programmes/{id}",
   "/api/v1/admin/id-programmes/{id}/approval",
   "/api/v1/admin/id-programmes/{id}/card-jobs",
+  "/api/v1/admin/id-programmes/{id}/card-jobs/preview",
   "/api/v1/admin/id-programmes/{id}/cards",
   "/api/v1/admin/id-programmes/{id}/cards/decide",
   "/api/v1/admin/id-programmes/{id}/design",
@@ -1010,6 +1025,7 @@ export const openApiPaths = [
   "/api/v1/admin/makerspaces/{makerspace_id}/maintenance/feed",
   "/api/v1/admin/makerspaces/{makerspace_id}/maintenance/feed/{raw_token}.ics",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-card-jobs",
+  "/api/v1/admin/makerspaces/{makerspace_id}/member-card-jobs/preview",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-card-settings",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-card-template",
   "/api/v1/admin/makerspaces/{makerspace_id}/member-cards",
@@ -1582,6 +1598,13 @@ export const openApiPaths = [
   "/api/v1/member/makerspaces/{makerspace_id}/admission/{request_id}/cancel",
   "/api/v1/member/makerspaces/{makerspace_id}/admission/{request_id}/vouch",
   "/api/v1/member/makerspaces/{makerspace_id}/calendar-feeds/{kind}/",
+  "/api/v1/member/makerspaces/{makerspace_id}/certificate-approvals/",
+  "/api/v1/member/makerspaces/{makerspace_id}/certificate-approvals/{signatory_id}/approve/",
+  "/api/v1/member/makerspaces/{makerspace_id}/certificate-approvals/{signatory_id}/designs/{revision_id}/preview.pdf",
+  "/api/v1/member/makerspaces/{makerspace_id}/certificates/",
+  "/api/v1/member/makerspaces/{makerspace_id}/certificates/{id}/holder-name/",
+  "/api/v1/member/makerspaces/{makerspace_id}/certificates/{id}/png/",
+  "/api/v1/member/makerspaces/{makerspace_id}/certificates/{id}/share-image/",
   "/api/v1/member/makerspaces/{makerspace_id}/certifications",
   "/api/v1/member/makerspaces/{makerspace_id}/collaborative-events/",
   "/api/v1/member/makerspaces/{makerspace_id}/collaborative-events/{id}/register/",
@@ -1802,6 +1825,8 @@ export const openApiPaths = [
   "/api/v1/public/donation-links/{token}/checkout",
   "/api/v1/public/donation-links/{token}/claim",
   "/api/v1/public/donation-links/{token}/tax-receipt.pdf",
+  "/api/v1/public/event-certificates/{verification_id}/share.png",
+  "/api/v1/public/event-certificates/{verification_id}/share/",
   "/api/v1/public/event-certificates/{verification_id}/verify/",
   "/api/v1/public/event-codes/{code}/",
   "/api/v1/public/event-codes/{public_token}/",
@@ -5264,6 +5289,9 @@ export type CardDesign = {
   "needs_approval": boolean;
   "can_approve": boolean;
   "can_edit": boolean;
+  "answer_fields": Array<{
+  [key: string]: unknown;
+}>;
   "updated_at": string;
 };
 
@@ -5272,6 +5300,7 @@ export type CardDesignCreate = {
   "plan_id"?: number | null;
   "title_id"?: number | null;
   "template"?: TemplateC12Enum;
+  "theme"?: ThemeEnum;
 };
 
 export type CardDesignDecision = {
@@ -5301,6 +5330,39 @@ export type CardDesignPair = {
 
 export type CardDesignReset = {
   "template": TemplateC12Enum;
+  "theme"?: ThemeEnum;
+};
+
+export type CardDesignRestore = {
+  "revision": number;
+};
+
+export type CardDesignRevision = {
+  "revision": number;
+  "created_at": string;
+  "created_by": string;
+  "is_current": boolean;
+  "is_published": boolean;
+  "review": string;
+  "layers": number;
+};
+
+export type CardDesignRevisionDetail = {
+  "revision": number;
+  "created_at": string;
+  "created_by": string;
+  "is_current": boolean;
+  "is_published": boolean;
+  "review": string;
+  "layers": number;
+  "document": unknown;
+};
+
+export type CardDesignRevisionPage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<CardDesignRevision>;
 };
 
 export type CardDesignSave = {
@@ -5337,6 +5399,9 @@ export type CardFace = {
 };
   "desk_qr": string | null;
   "verify_qr": string | null;
+  "barcodes": {
+  [key: string]: string | null;
+};
 };
 
 export type CardFont = {
@@ -5351,6 +5416,14 @@ export type CardFont = {
 export type CardFontPage = {
   "count": number;
   "results": Array<CardFont>;
+};
+
+export type CardHolderSample = {
+  "id": number;
+  "kind": string;
+  "name": string;
+  "number": string;
+  "label": string;
 };
 
 export type CardJob = {
@@ -5375,17 +5448,17 @@ export type CardJob = {
 export type CardJobCreate = {
   "kind": CardJobCreateKindEnum;
   "card_ids"?: Array<number>;
-  "status"?: CardJobCreateStatusEnum;
+  "status"?: Status0f8Enum;
   "plan_id"?: number;
   "expiring_within_days"?: number;
+  "roles"?: Array<RolesEnum>;
+  "checked_in"?: boolean | null;
   "paper"?: PaperEnum;
   "order"?: OrderEnum;
   "crop_marks"?: boolean;
 };
 
 export type CardJobCreateKindEnum = "bulk_sheet" | "bulk_per_person" | "zip" | "email";
-
-export type CardJobCreateStatusEnum = "active" | "all";
 
 export type CardJobKindEnum = "bulk_sheet" | "bulk_per_person" | "zip" | "email" | "wallet_issue" | "wallet_update" | "photo_cleanup";
 
@@ -5404,6 +5477,7 @@ export type CardPreview = {
   "side"?: SideEnum;
   "format"?: Format519Enum;
   "long_names"?: boolean;
+  "holder_id"?: number;
 };
 
 export type CardScan = {
@@ -5442,6 +5516,7 @@ export type CardSettings = {
 export type CardTemplate = {
   "key": string;
   "label": string;
+  "theme": ThemeEnum;
   "document": unknown;
 };
 
@@ -5537,17 +5612,27 @@ export type CertificateAction = {
 
 export type CertificateActionReasonEnum = "attendance_corrected" | "event_cancelled" | "staff_revoked";
 
+export type CertificateApprovalResult = {
+  "id": number;
+  "approved_at": string;
+};
+
+export type CertificateApprove = {
+  "template_revision_id": number;
+};
+
 export type CertificateArtwork = {
   "id": number;
   "resource_id": string;
 };
 
 export type CertificateArtworkPresign = {
-  "content_type": CertificateArtworkPresignContentTypeEnum;
+  "content_type": ContentType12dEnum;
   "content_length": number;
+  "purpose"?: CertificateArtworkPresignPurposeEnum;
 };
 
-export type CertificateArtworkPresignContentTypeEnum = "image/png" | "image/jpeg";
+export type CertificateArtworkPresignPurposeEnum = "artwork" | "signature";
 
 export type CertificateArtworkUpload = {
   "id": number;
@@ -5555,6 +5640,15 @@ export type CertificateArtworkUpload = {
   "headers": {
   [key: string]: string;
 };
+};
+
+export type CertificateDesignApproval = {
+  "template_revision_id": number;
+  "certificate_kind": string;
+  "slots": Array<{
+  [key: string]: unknown;
+}>;
+  "released": boolean;
 };
 
 export type CertificateDownload = {
@@ -5567,6 +5661,25 @@ export type CertificateEligibility = {
   "event_version": number;
   "disclosure": string;
 };
+
+export type CertificateHolderName = {
+  "show": boolean;
+};
+
+export type CertificateIssuePlan = {
+  "event_version": number;
+  "recipients": Array<CertificatePlannedRow>;
+  "skipped": Array<CertificatePlannedRow>;
+  "counts": {
+  [key: string]: number;
+};
+};
+
+export type CertificateIssuePlanRequest = {
+  "groups": Array<GroupsEnum>;
+};
+
+export type CertificateKindEnum = "attendance" | "participant" | "finalist" | "winner" | "volunteer_thanks" | "mentor_thanks" | "judge_thanks" | "organiser_thanks";
 
 export type CertificateLayer = {
   "id": string;
@@ -5591,9 +5704,13 @@ export type CertificateLayer = {
   "resource_id"?: string;
   "resource_slot"?: ResourceSlotEnum;
   "colour_token"?: ColourTokenEnum;
+  "colour"?: string;
+  "signature_slot"?: number;
+  "locked"?: boolean;
+  "hidden"?: boolean;
 };
 
-export type CertificateLayerTypeEnum = "text" | "image" | "logo" | "photo" | "certificate_id" | "certificate_qr" | "event_credential_qr";
+export type CertificateLayerTypeEnum = "text" | "image" | "logo" | "photo" | "certificate_id" | "certificate_qr" | "event_credential_qr" | "signature";
 
 export type CertificateParameters = {
   "version"?: number;
@@ -5604,28 +5721,102 @@ export type CertificateParameters = {
   "layers"?: Array<CertificateLayer>;
 };
 
+export type CertificatePendingApproval = {
+  "signatory_id": number;
+  "slot": number;
+  "event_id": number;
+  "event_title": string;
+  "template_revision_id": number;
+  "certificate_kind": string;
+  "approved": boolean;
+  "name": string;
+  "title": string;
+};
+
+export type CertificatePlannedRow = {
+  "pii_masked"?: boolean;
+  "subject_kind": string;
+  "subject_id": number;
+  "kind": string;
+  "award_id": number | null;
+  "result_revision_id": number | null;
+  "name": string;
+  "kind_title": string;
+  "award"?: string;
+  "reason"?: string;
+};
+
+export type CertificatePlannedSubject = {
+  "subject_kind": SubjectKindFd0Enum;
+  "subject_id": number;
+  "kind": KindAa2Enum;
+  "award_id"?: number | null;
+  "result_revision_id"?: number | null;
+};
+
+export type CertificatePreview = {
+  "parameters": CertificateParameters;
+  "artwork_id"?: number | null;
+  "certificate_kind"?: CertificateKindEnum | BlankEnum;
+  "sample_name"?: string;
+};
+
 export type CertificateRevoke = {
   "reason": CertificateRevokeReasonEnum;
 };
 
 export type CertificateRevokeReasonEnum = "staff_revoked";
 
+export type CertificateSignatory = {
+  "pii_masked"?: boolean;
+  "id": number;
+  "slot": number;
+  "name": string;
+  "title": string;
+  "member_id": number | null;
+  "member_name": string | null;
+  "signature_artwork_id": number | null;
+  "version": number;
+};
+
+export type CertificateSignatoryCandidate = {
+  "pii_masked"?: boolean;
+  "id": number;
+  "name": string;
+};
+
+export type CertificateSignatoryPolicy = {
+  "required": boolean;
+};
+
+export type CertificateSignatoryState = {
+  "approval_required": boolean;
+  "signatories": Array<CertificateSignatory>;
+  "designs": Array<CertificateDesignApproval>;
+};
+
+export type CertificateSignatoryWrite = {
+  "slot": number;
+  "name": string;
+  "title"?: string;
+  "member_id"?: number | null;
+  "signature_artwork_id"?: number | null;
+};
+
 export type CertificateSubject = {
-  "subject_kind": CertificateSubjectSubjectKindEnum;
+  "subject_kind": SubjectKindFd0Enum;
   "subject_id": number;
-  "kind": CertificateSubjectKindEnum;
+  "kind": KindC2eEnum;
   "award_id"?: number | null;
   "result_revision_id"?: number | null;
 };
-
-export type CertificateSubjectKindEnum = "attendance" | "participant" | "finalist" | "winner" | "volunteer_thanks" | "mentor_thanks" | "judge_thanks";
-
-export type CertificateSubjectSubjectKindEnum = "registration" | "role_assignment";
 
 export type CertificateSummary = {
   "id": number;
   "status": CertificateSummaryStatusEnum;
   "revision": number;
+  "kind": KindC2eEnum;
+  "kind_title": string;
   "issued_at": string;
   "rendered_at": string | null;
   "revoked_at": string | null;
@@ -5636,6 +5827,7 @@ export type CertificateSummaryStatusEnum = "pending" | "rendering" | "active" | 
 export type CertificateTemplateCommand = {
   "parameters": CertificateParameters;
   "artwork_id"?: number | null;
+  "certificate_kind"?: CertificateKindEnum | BlankEnum;
   "operation_id": string;
   "expected_version": number;
 };
@@ -5646,6 +5838,9 @@ export type CertificateTemplateCommandResult = {
   "artwork_id": number | null;
   "created_at": string | null;
   "event_version"?: number;
+  "certificate_kind"?: string;
+  "uses_default"?: boolean;
+  "own_designs"?: Array<string>;
   "event_id": number;
   "version": number;
   "state": string;
@@ -5658,11 +5853,15 @@ export type CertificateTemplateRevision = {
   "artwork_id": number | null;
   "created_at": string | null;
   "event_version"?: number;
+  "certificate_kind"?: string;
+  "uses_default"?: boolean;
+  "own_designs"?: Array<string>;
 };
 
 export type CertificateTemplateWrite = {
   "parameters": CertificateParameters;
   "artwork_id"?: number | null;
+  "certificate_kind"?: CertificateKindEnum | BlankEnum;
 };
 
 export type CertificationGrant = {
@@ -10349,6 +10548,8 @@ export type GrantsUpdate = {
 
 export type Group4d3Enum = "membership" | "event";
 
+export type GroupsEnum = "attendance" | "participants" | "awards" | "roles";
+
 export type Growth = {
   "date": string;
   "accounts": number;
@@ -10632,6 +10833,26 @@ export type Holder = {
   "name": string | null;
   "photo_url": string | null;
 };
+
+export type HolderCertificate = {
+  "id": number;
+  "event_id": number;
+  "event_title": string;
+  "event_date": string;
+  "issuer_name": string;
+  "kind": KindAa2Enum;
+  "kind_title": string;
+  "award": string;
+  "status": HolderCertificateStatusEnum;
+  "issued_at": string;
+  "revision": number;
+  "serial": string;
+  "verifiable": boolean;
+  "verify_url": string | null;
+  "holder_name_public": boolean;
+};
+
+export type HolderCertificateStatusEnum = "pending" | "rendering" | "active" | "failed" | "revoked";
 
 export type HostingAck = {
   "detail": string;
@@ -11770,6 +11991,27 @@ export type IssueAssignment = {
   "name": string;
 };
 
+export type IssuedCertificate = {
+  "pii_masked"?: boolean;
+  "id": number;
+  "recipient_name": string;
+  "kind": KindAa2Enum;
+  "kind_title": string;
+  "award": string;
+  "status": string;
+  "revision": number;
+  "issued_at": string;
+  "public_verification_enabled": boolean;
+  "revocation_reason": string;
+};
+
+export type IssuedCertificatePage = {
+  "count": number;
+  "next": string | null;
+  "previous": string | null;
+  "results": Array<IssuedCertificate>;
+};
+
 export type IssuedClient = {
   "request": ApiKeyRequestRow;
   "client_id": string;
@@ -12199,9 +12441,13 @@ export type Kind9f3Enum = "cash" | "item" | "credit" | "perk";
 
 export type KindA1dEnum = "training" | "briefing";
 
+export type KindAa2Enum = "attendance" | "participant" | "finalist" | "winner" | "volunteer_thanks" | "mentor_thanks" | "judge_thanks" | "organiser_thanks";
+
 export type KindAf4Enum = "rules" | "amenity" | "faq" | "link" | "sponsor" | "gallery";
 
 export type KindB02Enum = "rollback_in_place" | "disaster";
+
+export type KindC2eEnum = "attendance" | "participant" | "finalist" | "winner" | "volunteer_thanks" | "mentor_thanks" | "judge_thanks" | "organiser_thanks";
 
 export type KindDa9Enum = "archive";
 
@@ -25493,6 +25739,8 @@ export type RoleReason = {
   "reason": string;
 };
 
+export type RolesEnum = "attendee" | "speaker" | "mentor" | "judge" | "volunteer" | "crew";
+
 export type RoleSlugEnum = "space_manager" | "inventory_manager" | "machine_manager" | "event_manager" | "booking_manager" | "handover" | "technician" | "shop_manager";
 
 export type RoleStateEnum = "draft" | "proposed" | "applied" | "approved" | "declined" | "withdrawn" | "revoked" | "completed";
@@ -26398,6 +26646,29 @@ export type ShareRespondInput = {
 export type ShareRow = {
   "member_id": number;
   "amount": string;
+};
+
+export type SheetPreview = {
+  "total": number;
+  "per_page": number;
+  "sheets": number;
+  "paper": string;
+  "order": string;
+  "front": string | null;
+  "back": string | null;
+  "mixed_sizes": boolean;
+};
+
+export type SheetPreviewRequest = {
+  "status"?: Status0f8Enum;
+  "card_ids"?: Array<number>;
+  "plan_id"?: number;
+  "expiring_within_days"?: number;
+  "roles"?: Array<RolesEnum>;
+  "checked_in"?: boolean | null;
+  "paper"?: PaperEnum;
+  "order"?: OrderEnum;
+  "crop_marks"?: boolean;
 };
 
 export type Shift = {
@@ -28571,6 +28842,8 @@ export type Status028Enum = "pending" | "approved" | "declined" | "withdrawn";
 
 export type Status0bfEnum = "working" | "visiting" | "attending_event" | "guest";
 
+export type Status0f8Enum = "active" | "all";
+
 export type Status2caEnum = "pending" | "confirmed" | "rejected" | "cancelled" | "completed" | "no_show";
 
 export type Status37fEnum = "active" | "revoked";
@@ -28818,6 +29091,8 @@ export type SubjectExportList = {
   "previous": string | null;
   "results": Array<SubjectExport>;
 };
+
+export type SubjectKindFd0Enum = "registration" | "role_assignment";
 
 export type SubjectLog = {
   "id": number;
@@ -30007,6 +30282,14 @@ export type Verification = {
   "event": string;
   "date": string;
   "status": VerificationStatusEnum;
+  "issuer": string;
+  "kind": KindAa2Enum;
+  "kind_title": string;
+  "award": string;
+  "recipient_name": string | null;
+  "status_note": string;
+  "serial": string;
+  "sha256": string;
 };
 
 export type VerificationAccepted = {

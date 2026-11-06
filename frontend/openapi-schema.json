@@ -4616,6 +4616,73 @@
                 }
             }
         },
+        "/api/v1/admin/card-designs/{id}/calibration": {
+            "get": {
+                "operationId": "api_v1_admin_card_designs_calibration_retrieve",
+                "summary": "Print calibration sheet (PDF) for this design's card size",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "paper",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "a4",
+                                "card",
+                                "letter"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Card designs"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/card-designs/{id}/export": {
             "get": {
                 "operationId": "api_v1_admin_card_designs_export_retrieve",
@@ -4888,6 +4955,61 @@
                 }
             }
         },
+        "/api/v1/admin/card-designs/{id}/holders": {
+            "get": {
+                "operationId": "api_v1_admin_card_designs_holders_list",
+                "description": "The 30 newest live cards the design applies to. Names are masked for a superadmin without a PII window; ticket designs have none.",
+                "summary": "People with a live card this design prints (for \"Preview as\")",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card designs"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CardHolderSample"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/card-designs/{id}/import": {
             "post": {
                 "operationId": "api_v1_admin_card_designs_import_create",
@@ -4969,7 +5091,7 @@
         "/api/v1/admin/card-designs/{id}/preview": {
             "post": {
                 "operationId": "api_v1_admin_card_designs_preview_create",
-                "description": "A watermarked render of an UNSAVED document with sample people (short or long names).",
+                "description": "Sample people (short or long names), or `holder_id`: one real person this design prints (from the holders list), without their opt-in extras. Audited for a holder.",
                 "summary": "Preview an unsaved design (watermarked PNG or PDF)",
                 "parameters": [
                     {
@@ -5254,6 +5376,209 @@
                 }
             }
         },
+        "/api/v1/admin/card-designs/{id}/revisions": {
+            "get": {
+                "operationId": "api_v1_admin_card_designs_revisions_retrieve",
+                "summary": "Version history: every saved revision, newest first",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Card designs"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CardDesignRevisionPage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/card-designs/{id}/revisions/{revision}": {
+            "get": {
+                "operationId": "api_v1_admin_card_designs_revisions_retrieve_2",
+                "summary": "One saved revision's document, to preview before restoring",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "revision",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card designs"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CardDesignRevisionDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/card-designs/{id}/revisions/{revision}/restore": {
+            "post": {
+                "operationId": "api_v1_admin_card_designs_revisions_restore_create",
+                "description": "Saves the old document as a NEW revision (history is never rewritten) with compare-and-swap on the current revision; cards keep the published version until you publish. Audited `card_design.restored`.",
+                "summary": "Restore a saved revision as the new draft",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "revision",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card designs"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CardDesignRestore"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CardDesignRestore"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CardDesignRestore"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CardDesign"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "409": {
+                        "description": "Conflicts with the current state."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/card-designs/{id}/submit": {
             "post": {
                 "operationId": "api_v1_admin_card_designs_submit_create",
@@ -5312,7 +5637,7 @@
         "/api/v1/admin/card-designs/{id}/templates": {
             "get": {
                 "operationId": "api_v1_admin_card_designs_templates_list",
-                "summary": "List the six card templates, for this design's domain",
+                "summary": "List the six card templates, light and dark, for this design's domain",
                 "parameters": [
                     {
                         "in": "path",
@@ -22493,6 +22818,83 @@
                 }
             }
         },
+        "/api/v1/admin/events/{id}/card-jobs/preview": {
+            "post": {
+                "operationId": "api_v1_admin_events_card_jobs_preview_create",
+                "description": "Renders at most one sheet (front and mirrored back) at screen resolution and says how many sheets the real job prints. Nothing is queued or stored. Audited `card_job.previewed` (counts only); a superadmin needs a PII window.",
+                "summary": "Preview the first print sheet of an event card bulk job",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event ID cards"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SheetPreview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
+                    }
+                }
+            }
+        },
         "/api/v1/admin/events/{id}/card-settings": {
             "get": {
                 "operationId": "api_v1_admin_events_card_settings_retrieve",
@@ -23001,6 +23403,24 @@
                             "type": "integer"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "kind",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "attendance",
+                                "finalist",
+                                "judge_thanks",
+                                "mentor_thanks",
+                                "organiser_thanks",
+                                "participant",
+                                "volunteer_thanks",
+                                "winner"
+                            ]
+                        },
+                        "description": "Read this certificate kind's design; it falls back to the event default."
                     }
                 ],
                 "tags": [
@@ -23363,7 +23783,7 @@
         "/api/v1/admin/events/{id}/certificate-template/preview.pdf": {
             "post": {
                 "operationId": "api_v1_admin_events_certificate_template_preview.pdf_create",
-                "description": "Preview with fixed sample recipient; same geometry, artwork and overflow rules as issuance. No recipient information is accepted.",
+                "description": "Preview with a sample recipient (the staff-typed sample name is never stored); same geometry, artwork and overflow rules as issuance. Kind labels and signatures use samples.",
                 "parameters": [
                     {
                         "in": "path",
@@ -23381,17 +23801,17 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/CertificateTemplateWrite"
+                                "$ref": "#/components/schemas/CertificatePreview"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/CertificateTemplateWrite"
+                                "$ref": "#/components/schemas/CertificatePreview"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/CertificateTemplateWrite"
+                                "$ref": "#/components/schemas/CertificatePreview"
                             }
                         }
                     },
@@ -23461,6 +23881,137 @@
                         "description": ""
                     },
                     "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/{certificate_id}/png/": {
+            "get": {
+                "operationId": "api_v1_admin_events_certificates_png_retrieve",
+                "description": "An issued certificate as a 300 dpi PNG, rasterised from its PDF. Audited.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "certificate_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -24094,6 +24645,1498 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/CertificateEligibility"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/issue-plan/": {
+            "post": {
+                "operationId": "api_v1_admin_events_certificates_issue_plan_create",
+                "description": "Who would receive which certificate (attendance, participants, award winners and finalists from published results, role thank-yous), and who is skipped and why. Writes nothing; confirm through the bulk issue command.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateIssuePlanRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateIssuePlanRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateIssuePlanRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateIssuePlan"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/issue-plan/sample.pdf": {
+            "post": {
+                "operationId": "api_v1_admin_events_certificates_issue_plan_sample.pdf_create",
+                "description": "Render one planned recipient's certificate with the design their kind uses. Not stored.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificatePlannedSubject"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificatePlannedSubject"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificatePlannedSubject"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/issued/": {
+            "get": {
+                "operationId": "api_v1_admin_events_certificates_issued_retrieve",
+                "description": "Every certificate issued for this event (50 per page), newest first, with kind and status.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "kind",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IssuedCertificatePage"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/signatories/": {
+            "get": {
+                "operationId": "api_v1_admin_events_certificates_signatories_retrieve",
+                "description": "Signatories, the approval switch and each current design's approvals. Requires edit_details and events.certificate_designer.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateSignatoryState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_events_certificates_signatories_create",
+                "description": "Add or change the signatory in one slot (1-3). A change asks for fresh approvals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryWrite"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateSignatoryState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/signatories/{slot}/": {
+            "get": {
+                "operationId": "api_v1_admin_events_certificates_signatories_retrieve_2",
+                "description": "Signatories, the approval switch and each current design's approvals. Requires edit_details and events.certificate_designer.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "slot",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateSignatoryState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_events_certificates_signatories_create_2",
+                "description": "Add or change the signatory in one slot (1-3). A change asks for fresh approvals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "slot",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryWrite"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryWrite"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryWrite"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateSignatoryState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "api_v1_admin_events_certificates_signatories_destroy",
+                "description": "Remove a signatory. 409 signatory_in_use while a current design prints them.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "slot",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateSignatoryState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/signatories/approval-policy/": {
+            "get": {
+                "operationId": "api_v1_admin_events_certificates_signatories_approval_policy_retrieve",
+                "description": "Signatories, the approval switch and each current design's approvals. Requires edit_details and events.certificate_designer.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateSignatoryState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "api_v1_admin_events_certificates_signatories_approval_policy_create",
+                "description": "Require (or stop requiring) every printed signatory to approve a design before its certificates render or are emailed. Default off.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryPolicy"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryPolicy"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateSignatoryPolicy"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateSignatoryState"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/events/{id}/certificates/signatories/candidates/": {
+            "get": {
+                "operationId": "api_v1_admin_events_certificates_signatories_candidates_list",
+                "description": "Active accounts of this space a signatory can be linked to (at most 10).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "At least two characters.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CertificateSignatoryCandidate"
+                                    }
                                 }
                             }
                         },
@@ -68961,6 +71004,83 @@
                     },
                     "404": {
                         "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/id-programmes/{id}/card-jobs/preview": {
+            "post": {
+                "operationId": "api_v1_admin_id_programmes_card_jobs_preview_create",
+                "description": "Renders at most one sheet (front and mirrored back) at screen resolution and says how many sheets the real job prints. Nothing is queued or stored. Audited `card_job.previewed` (counts only); a superadmin needs a PII window.",
+                "summary": "Preview the first print sheet of a programme bulk job",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "ID programmes"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SheetPreview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
                     }
                 }
             }
@@ -119764,6 +121884,83 @@
                     },
                     "404": {
                         "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/makerspaces/{makerspace_id}/member-card-jobs/preview": {
+            "post": {
+                "operationId": "api_v1_admin_makerspaces_member_card_jobs_preview_create",
+                "description": "Renders at most one sheet (front and mirrored back) at screen resolution and says how many sheets the real job prints. Nothing is queued or stored. Audited `card_job.previewed` (counts only); a superadmin needs a PII window.",
+                "summary": "Preview the first print sheet of a member-card bulk job",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Card jobs"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetPreviewRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SheetPreview"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Validation failed."
+                    },
+                    "401": {
+                        "description": "Not signed in."
+                    },
+                    "403": {
+                        "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded; retry after the interval in Retry-After."
                     }
                 }
             }
@@ -186256,6 +188453,957 @@
                 }
             }
         },
+        "/api/v1/member/makerspaces/{makerspace_id}/certificate-approvals/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_certificate_approvals_list",
+                "description": "Certificate designs that print your signature in this space, approved or waiting.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CertificatePendingApproval"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/certificate-approvals/{signatory_id}/approve/": {
+            "post": {
+                "operationId": "api_v1_member_makerspaces_certificate_approvals_approve_create",
+                "description": "Approve a design that prints your signature, with your current name, title and image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "signatory_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateApprove"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateApprove"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateApprove"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CertificateApprovalResult"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/certificate-approvals/{signatory_id}/designs/{revision_id}/preview.pdf": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_certificate_approvals_designs_preview.pdf_retrieve",
+                "description": "The design you are asked to approve, rendered with a sample recipient.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "revision_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "signatory_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/certificates/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_certificates_list",
+                "description": "Your certificates issued through this space, every kind, newest first.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/HolderCertificate"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/certificates/{id}/holder-name/": {
+            "post": {
+                "operationId": "api_v1_member_makerspaces_certificates_holder_name_create",
+                "description": "Show or hide your name on this certificate's public verification page and share image. Off by default; audited.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateHolderName"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateHolderName"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CertificateHolderName"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HolderCertificate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/certificates/{id}/png/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_certificates_png_retrieve",
+                "description": "Your issued certificate as a 300 dpi PNG, rasterised from the issued PDF. Audited.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "PNG image."
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/certificates/{id}/share-image/": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_certificates_share_image_retrieve",
+                "description": "A 1200 x 627 share image (no QR code; your name only if you chose to show it). Audited.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "PNG image."
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/member/makerspaces/{makerspace_id}/certifications": {
             "get": {
                 "operationId": "api_v1_member_makerspaces_certifications_retrieve",
@@ -229497,10 +232645,139 @@
                 ]
             }
         },
+        "/api/v1/public/event-certificates/{verification_id}/share/": {
+            "get": {
+                "operationId": "api_v1_public_event_certificates_share_retrieve",
+                "description": "Link-preview card for crawlers: Open Graph tags pointing at the share image and the verification page. noindex; same 404 as verification.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "verification_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "ServerHMAC": []
+                    },
+                    {
+                        "BrowserClient": []
+                    },
+                    {
+                        "PublishableKey": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "text/html": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/public/event-certificates/{verification_id}/share.png": {
+            "get": {
+                "operationId": "api_v1_public_event_certificates_share.png_retrieve",
+                "description": "Link-preview image for a publicly verifiable certificate: no QR code, and the holder's name only when they chose to show it. Same 404 as verification otherwise.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "verification_id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Event certificates"
+                ],
+                "security": [
+                    {
+                        "ServerHMAC": []
+                    },
+                    {
+                        "BrowserClient": []
+                    },
+                    {
+                        "PublishableKey": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": "PNG image."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/public/event-certificates/{verification_id}/verify/": {
             "get": {
                 "operationId": "api_v1_public_event_certificates_verify_retrieve",
-                "description": "Explicitly published event/date/status only, including revoked certificates. No identity or PDF access.",
+                "description": "Explicitly published certificates only, including revoked ones: issuer, event, date, kind, award, status, the issued PDF's SHA-256 and the holder's name only if they chose to show it. No PDF access; unknown, private and pending IDs share one 404.",
                 "parameters": [
                     {
                         "in": "path",
@@ -249723,6 +253000,15 @@
                         "type": "boolean",
                         "readOnly": true
                     },
+                    "answer_fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "description": "Answers this design may place as {{field:<key>}}: a programme's printed questions.",
+                        "readOnly": true
+                    },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time",
@@ -249730,6 +253016,7 @@
                     }
                 },
                 "required": [
+                    "answer_fields",
                     "can_approve",
                     "can_edit",
                     "document",
@@ -249775,6 +253062,14 @@
                     },
                     "template": {
                         "$ref": "#/components/schemas/TemplateC12Enum"
+                    },
+                    "theme": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ThemeEnum"
+                            }
+                        ],
+                        "default": "light"
                     }
                 }
             },
@@ -249854,10 +253149,137 @@
                 "properties": {
                     "template": {
                         "$ref": "#/components/schemas/TemplateC12Enum"
+                    },
+                    "theme": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ThemeEnum"
+                            }
+                        ],
+                        "default": "light"
                     }
                 },
                 "required": [
                     "template"
+                ]
+            },
+            "CardDesignRestore": {
+                "type": "object",
+                "properties": {
+                    "revision": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The design's CURRENT revision (compare-and-swap)."
+                    }
+                },
+                "required": [
+                    "revision"
+                ]
+            },
+            "CardDesignRevision": {
+                "type": "object",
+                "properties": {
+                    "revision": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_by": {
+                        "type": "string"
+                    },
+                    "is_current": {
+                        "type": "boolean"
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    },
+                    "review": {
+                        "type": "string",
+                        "description": "pending | approved | rejected | withdrawn, or blank."
+                    },
+                    "layers": {
+                        "type": "integer",
+                        "description": "Layers on both sides of this revision."
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "created_by",
+                    "is_current",
+                    "is_published",
+                    "layers",
+                    "review",
+                    "revision"
+                ]
+            },
+            "CardDesignRevisionDetail": {
+                "type": "object",
+                "properties": {
+                    "revision": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_by": {
+                        "type": "string"
+                    },
+                    "is_current": {
+                        "type": "boolean"
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    },
+                    "review": {
+                        "type": "string",
+                        "description": "pending | approved | rejected | withdrawn, or blank."
+                    },
+                    "layers": {
+                        "type": "integer",
+                        "description": "Layers on both sides of this revision."
+                    },
+                    "document": {}
+                },
+                "required": [
+                    "created_at",
+                    "created_by",
+                    "document",
+                    "is_current",
+                    "is_published",
+                    "layers",
+                    "review",
+                    "revision"
+                ]
+            },
+            "CardDesignRevisionPage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CardDesignRevision"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
                 ]
             },
             "CardDesignSave": {
@@ -249965,10 +253387,19 @@
                     "verify_qr": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "barcodes": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "description": "Code128 SVG data URIs by source: number, desk."
                     }
                 },
                 "required": [
                     "assets",
+                    "barcodes",
                     "desk_qr",
                     "document",
                     "logos",
@@ -250030,6 +253461,34 @@
                 "required": [
                     "count",
                     "results"
+                ]
+            },
+            "CardHolderSample": {
+                "type": "object",
+                "description": "A \"Preview as\" row. Rows are plain dicts, so the space comes from the context.",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "number": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "kind",
+                    "label",
+                    "name",
+                    "number"
                 ]
             },
             "CardJob": {
@@ -250152,7 +253611,7 @@
                     "status": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/CardJobCreateStatusEnum"
+                                "$ref": "#/components/schemas/Status0f8Enum"
                             }
                         ],
                         "default": "active"
@@ -250164,6 +253623,19 @@
                         "type": "integer",
                         "maximum": 90,
                         "minimum": 1
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RolesEnum"
+                        },
+                        "description": "Event cards only: print these roles.",
+                        "maxItems": 6
+                    },
+                    "checked_in": {
+                        "type": "boolean",
+                        "nullable": true,
+                        "description": "Event cards only: true = checked in, false = not yet."
                     },
                     "paper": {
                         "allOf": [
@@ -250199,14 +253671,6 @@
                 ],
                 "type": "string",
                 "description": "* `bulk_sheet` - bulk_sheet\n* `bulk_per_person` - bulk_per_person\n* `zip` - zip\n* `email` - email"
-            },
-            "CardJobCreateStatusEnum": {
-                "enum": [
-                    "active",
-                    "all"
-                ],
-                "type": "string",
-                "description": "* `active` - active\n* `all` - all"
             },
             "CardJobKindEnum": {
                 "enum": [
@@ -250276,6 +253740,11 @@
                     "long_names": {
                         "type": "boolean",
                         "default": false
+                    },
+                    "holder_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Preview as this real holder (see the design's holders list)."
                     }
                 },
                 "required": [
@@ -250405,12 +253874,16 @@
                     "label": {
                         "type": "string"
                     },
+                    "theme": {
+                        "$ref": "#/components/schemas/ThemeEnum"
+                    },
                     "document": {}
                 },
                 "required": [
                     "document",
                     "key",
-                    "label"
+                    "label",
+                    "theme"
                 ]
             },
             "CardVerification": {
@@ -250807,6 +254280,34 @@
                 "type": "string",
                 "description": "* `attendance_corrected` - Attendance corrected\n* `event_cancelled` - Event cancelled\n* `staff_revoked` - Staff revoked"
             },
+            "CertificateApprovalResult": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "approved_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "approved_at",
+                    "id"
+                ]
+            },
+            "CertificateApprove": {
+                "type": "object",
+                "properties": {
+                    "template_revision_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "template_revision_id"
+                ]
+            },
             "CertificateArtwork": {
                 "type": "object",
                 "properties": {
@@ -250827,12 +254328,21 @@
                 "type": "object",
                 "properties": {
                     "content_type": {
-                        "$ref": "#/components/schemas/CertificateArtworkPresignContentTypeEnum"
+                        "$ref": "#/components/schemas/ContentType12dEnum"
                     },
                     "content_length": {
                         "type": "integer",
                         "maximum": 10485760,
                         "minimum": 1
+                    },
+                    "purpose": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CertificateArtworkPresignPurposeEnum"
+                            }
+                        ],
+                        "default": "artwork",
+                        "description": "A signature is PNG, JPEG or WebP up to 2 MB; artwork is PNG or JPEG up to 10 MiB.\n\n* `artwork` - artwork\n* `signature` - signature"
                     }
                 },
                 "required": [
@@ -250840,13 +254350,13 @@
                     "content_type"
                 ]
             },
-            "CertificateArtworkPresignContentTypeEnum": {
+            "CertificateArtworkPresignPurposeEnum": {
                 "enum": [
-                    "image/png",
-                    "image/jpeg"
+                    "artwork",
+                    "signature"
                 ],
                 "type": "string",
-                "description": "* `image/png` - image/png\n* `image/jpeg` - image/jpeg"
+                "description": "* `artwork` - artwork\n* `signature` - signature"
             },
             "CertificateArtworkUpload": {
                 "type": "object",
@@ -250869,6 +254379,33 @@
                     "headers",
                     "id",
                     "upload_url"
+                ]
+            },
+            "CertificateDesignApproval": {
+                "type": "object",
+                "properties": {
+                    "template_revision_id": {
+                        "type": "integer"
+                    },
+                    "certificate_kind": {
+                        "type": "string"
+                    },
+                    "slots": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        }
+                    },
+                    "released": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "certificate_kind",
+                    "released",
+                    "slots",
+                    "template_revision_id"
                 ]
             },
             "CertificateDownload": {
@@ -250906,6 +254443,80 @@
                     "eligible_count",
                     "event_version"
                 ]
+            },
+            "CertificateHolderName": {
+                "type": "object",
+                "properties": {
+                    "show": {
+                        "type": "boolean",
+                        "description": "Show your name on the public verification page and share image."
+                    }
+                },
+                "required": [
+                    "show"
+                ]
+            },
+            "CertificateIssuePlan": {
+                "type": "object",
+                "properties": {
+                    "event_version": {
+                        "type": "integer"
+                    },
+                    "recipients": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CertificatePlannedRow"
+                        }
+                    },
+                    "skipped": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CertificatePlannedRow"
+                        }
+                    },
+                    "counts": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "required": [
+                    "counts",
+                    "event_version",
+                    "recipients",
+                    "skipped"
+                ]
+            },
+            "CertificateIssuePlanRequest": {
+                "type": "object",
+                "properties": {
+                    "groups": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GroupsEnum"
+                        },
+                        "maxItems": 4,
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "groups"
+                ]
+            },
+            "CertificateKindEnum": {
+                "enum": [
+                    "attendance",
+                    "participant",
+                    "finalist",
+                    "winner",
+                    "volunteer_thanks",
+                    "mentor_thanks",
+                    "judge_thanks",
+                    "organiser_thanks"
+                ],
+                "type": "string",
+                "description": "* `` - \n* `attendance` - attendance\n* `participant` - participant\n* `finalist` - finalist\n* `winner` - winner\n* `volunteer_thanks` - volunteer_thanks\n* `mentor_thanks` - mentor_thanks\n* `judge_thanks` - judge_thanks\n* `organiser_thanks` - organiser_thanks"
             },
             "CertificateLayer": {
                 "type": "object",
@@ -251004,6 +254615,25 @@
                     },
                     "colour_token": {
                         "$ref": "#/components/schemas/ColourTokenEnum"
+                    },
+                    "colour": {
+                        "type": "string",
+                        "description": "Free #RRGGBB text colour; overrides colour_token when set.",
+                        "pattern": "^#[0-9A-Fa-f]{6}$"
+                    },
+                    "signature_slot": {
+                        "type": "integer",
+                        "maximum": 3,
+                        "minimum": 1,
+                        "description": "Signature layers: which signatory (1-3) this prints."
+                    },
+                    "locked": {
+                        "type": "boolean",
+                        "description": "Editor lock; the layer still prints."
+                    },
+                    "hidden": {
+                        "type": "boolean",
+                        "description": "Hidden layers are kept in the design but never print."
                     }
                 },
                 "required": [
@@ -251024,10 +254654,11 @@
                     "photo",
                     "certificate_id",
                     "certificate_qr",
-                    "event_credential_qr"
+                    "event_credential_qr",
+                    "signature"
                 ],
                 "type": "string",
-                "description": "* `text` - text\n* `image` - image\n* `logo` - logo\n* `photo` - photo\n* `certificate_id` - certificate_id\n* `certificate_qr` - certificate_qr\n* `event_credential_qr` - event_credential_qr"
+                "description": "* `text` - text\n* `image` - image\n* `logo` - logo\n* `photo` - photo\n* `certificate_id` - certificate_id\n* `certificate_qr` - certificate_qr\n* `event_credential_qr` - event_credential_qr\n* `signature` - signature"
             },
             "CertificateParameters": {
                 "type": "object",
@@ -251066,36 +254697,108 @@
                     }
                 }
             },
-            "CertificateRevoke": {
+            "CertificatePendingApproval": {
                 "type": "object",
                 "properties": {
-                    "reason": {
-                        "$ref": "#/components/schemas/CertificateRevokeReasonEnum"
+                    "signatory_id": {
+                        "type": "integer"
+                    },
+                    "slot": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "event_title": {
+                        "type": "string"
+                    },
+                    "template_revision_id": {
+                        "type": "integer"
+                    },
+                    "certificate_kind": {
+                        "type": "string"
+                    },
+                    "approved": {
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
                     }
                 },
                 "required": [
-                    "reason"
+                    "approved",
+                    "certificate_kind",
+                    "event_id",
+                    "event_title",
+                    "name",
+                    "signatory_id",
+                    "slot",
+                    "template_revision_id",
+                    "title"
                 ]
             },
-            "CertificateRevokeReasonEnum": {
-                "enum": [
-                    "staff_revoked"
-                ],
-                "type": "string",
-                "description": "* `staff_revoked` - staff_revoked"
+            "CertificatePlannedRow": {
+                "type": "object",
+                "description": "Account names are masked for a superadmin without an open PII window on the space.",
+                "properties": {
+                    "pii_masked": {
+                        "type": "boolean"
+                    },
+                    "subject_kind": {
+                        "type": "string"
+                    },
+                    "subject_id": {
+                        "type": "integer"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "award_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "result_revision_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "kind_title": {
+                        "type": "string"
+                    },
+                    "award": {
+                        "type": "string"
+                    },
+                    "reason": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "award_id",
+                    "kind",
+                    "kind_title",
+                    "name",
+                    "result_revision_id",
+                    "subject_id",
+                    "subject_kind"
+                ]
             },
-            "CertificateSubject": {
+            "CertificatePlannedSubject": {
                 "type": "object",
                 "properties": {
                     "subject_kind": {
-                        "$ref": "#/components/schemas/CertificateSubjectSubjectKindEnum"
+                        "$ref": "#/components/schemas/SubjectKindFd0Enum"
                     },
                     "subject_id": {
                         "type": "integer",
                         "minimum": 1
                     },
                     "kind": {
-                        "$ref": "#/components/schemas/CertificateSubjectKindEnum"
+                        "$ref": "#/components/schemas/KindAa2Enum"
                     },
                     "award_id": {
                         "type": "integer",
@@ -251114,26 +254817,223 @@
                     "subject_kind"
                 ]
             },
-            "CertificateSubjectKindEnum": {
-                "enum": [
-                    "attendance",
-                    "participant",
-                    "finalist",
-                    "winner",
-                    "volunteer_thanks",
-                    "mentor_thanks",
-                    "judge_thanks"
-                ],
-                "type": "string",
-                "description": "* `attendance` - Attendance\n* `participant` - Participant\n* `finalist` - Finalist\n* `winner` - Winner\n* `volunteer_thanks` - Volunteer thanks\n* `mentor_thanks` - Mentor thanks\n* `judge_thanks` - Judge thanks"
+            "CertificatePreview": {
+                "type": "object",
+                "properties": {
+                    "parameters": {
+                        "$ref": "#/components/schemas/CertificateParameters"
+                    },
+                    "artwork_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "certificate_kind": {
+                        "default": "",
+                        "description": "Blank saves the event default design; a kind saves that kind's own design.\n\n* `` - \n* `attendance` - attendance\n* `participant` - participant\n* `finalist` - finalist\n* `winner` - winner\n* `volunteer_thanks` - volunteer_thanks\n* `mentor_thanks` - mentor_thanks\n* `judge_thanks` - judge_thanks\n* `organiser_thanks` - organiser_thanks",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CertificateKindEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "sample_name": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Sample recipient name for this preview only; never stored.",
+                        "maxLength": 120
+                    }
+                },
+                "required": [
+                    "parameters"
+                ]
             },
-            "CertificateSubjectSubjectKindEnum": {
+            "CertificateRevoke": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "$ref": "#/components/schemas/CertificateRevokeReasonEnum"
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "CertificateRevokeReasonEnum": {
                 "enum": [
-                    "registration",
-                    "role_assignment"
+                    "staff_revoked"
                 ],
                 "type": "string",
-                "description": "* `registration` - registration\n* `role_assignment` - role_assignment"
+                "description": "* `staff_revoked` - staff_revoked"
+            },
+            "CertificateSignatory": {
+                "type": "object",
+                "description": "Account names are masked for a superadmin without an open PII window on the space.",
+                "properties": {
+                    "pii_masked": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "integer"
+                    },
+                    "slot": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "member_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "member_name": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "signature_artwork_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "version": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "member_id",
+                    "member_name",
+                    "name",
+                    "signature_artwork_id",
+                    "slot",
+                    "title",
+                    "version"
+                ]
+            },
+            "CertificateSignatoryCandidate": {
+                "type": "object",
+                "description": "Account names are masked for a superadmin without an open PII window on the space.",
+                "properties": {
+                    "pii_masked": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
+            "CertificateSignatoryPolicy": {
+                "type": "object",
+                "properties": {
+                    "required": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "required"
+                ]
+            },
+            "CertificateSignatoryState": {
+                "type": "object",
+                "properties": {
+                    "approval_required": {
+                        "type": "boolean"
+                    },
+                    "signatories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CertificateSignatory"
+                        }
+                    },
+                    "designs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CertificateDesignApproval"
+                        }
+                    }
+                },
+                "required": [
+                    "approval_required",
+                    "designs",
+                    "signatories"
+                ]
+            },
+            "CertificateSignatoryWrite": {
+                "type": "object",
+                "properties": {
+                    "slot": {
+                        "type": "integer",
+                        "maximum": 3,
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
+                    "title": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 120
+                    },
+                    "member_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "The account that approves designs (required while approval is on)."
+                    },
+                    "signature_artwork_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "A finalised upload made with purpose=signature."
+                    }
+                },
+                "required": [
+                    "name",
+                    "slot"
+                ]
+            },
+            "CertificateSubject": {
+                "type": "object",
+                "properties": {
+                    "subject_kind": {
+                        "$ref": "#/components/schemas/SubjectKindFd0Enum"
+                    },
+                    "subject_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/KindC2eEnum"
+                    },
+                    "award_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "result_revision_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "kind",
+                    "subject_id",
+                    "subject_kind"
+                ]
             },
             "CertificateSummary": {
                 "type": "object",
@@ -251153,6 +255053,19 @@
                     "revision": {
                         "type": "integer",
                         "readOnly": true
+                    },
+                    "kind": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/KindC2eEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "kind_title": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Plain name of the certificate kind, e.g. \"Winner's certificate\"."
                     },
                     "issued_at": {
                         "type": "string",
@@ -251175,6 +255088,8 @@
                 "required": [
                     "id",
                     "issued_at",
+                    "kind",
+                    "kind_title",
                     "rendered_at",
                     "revision",
                     "revoked_at",
@@ -251202,6 +255117,18 @@
                         "type": "integer",
                         "minimum": 1,
                         "nullable": true
+                    },
+                    "certificate_kind": {
+                        "default": "",
+                        "description": "Blank saves the event default design; a kind saves that kind's own design.\n\n* `` - \n* `attendance` - attendance\n* `participant` - participant\n* `finalist` - finalist\n* `winner` - winner\n* `volunteer_thanks` - volunteer_thanks\n* `mentor_thanks` - mentor_thanks\n* `judge_thanks` - judge_thanks\n* `organiser_thanks` - organiser_thanks",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CertificateKindEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
                     },
                     "operation_id": {
                         "type": "string",
@@ -251239,6 +255166,20 @@
                     },
                     "event_version": {
                         "type": "integer"
+                    },
+                    "certificate_kind": {
+                        "type": "string"
+                    },
+                    "uses_default": {
+                        "type": "boolean",
+                        "description": "True when this kind has no design of its own."
+                    },
+                    "own_designs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Certificate kinds that have a design of their own."
                     },
                     "event_id": {
                         "type": "integer"
@@ -251288,6 +255229,20 @@
                     },
                     "event_version": {
                         "type": "integer"
+                    },
+                    "certificate_kind": {
+                        "type": "string"
+                    },
+                    "uses_default": {
+                        "type": "boolean",
+                        "description": "True when this kind has no design of its own."
+                    },
+                    "own_designs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Certificate kinds that have a design of their own."
                     }
                 },
                 "required": [
@@ -251307,6 +255262,18 @@
                         "type": "integer",
                         "minimum": 1,
                         "nullable": true
+                    },
+                    "certificate_kind": {
+                        "default": "",
+                        "description": "Blank saves the event default design; a kind saves that kind's own design.\n\n* `` - \n* `attendance` - attendance\n* `participant` - participant\n* `finalist` - finalist\n* `winner` - winner\n* `volunteer_thanks` - volunteer_thanks\n* `mentor_thanks` - mentor_thanks\n* `judge_thanks` - judge_thanks\n* `organiser_thanks` - organiser_thanks",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CertificateKindEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
                     }
                 },
                 "required": [
@@ -273006,6 +276973,16 @@
                 "type": "string",
                 "description": "* `membership` - membership\n* `event` - event"
             },
+            "GroupsEnum": {
+                "enum": [
+                    "attendance",
+                    "participants",
+                    "awards",
+                    "roles"
+                ],
+                "type": "string",
+                "description": "* `attendance` - attendance\n* `participants` - participants\n* `awards` - awards\n* `roles` - roles"
+            },
             "Growth": {
                 "type": "object",
                 "properties": {
@@ -274137,6 +278114,90 @@
                     "name",
                     "photo_url"
                 ]
+            },
+            "HolderCertificate": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "event_id": {
+                        "type": "integer"
+                    },
+                    "event_title": {
+                        "type": "string"
+                    },
+                    "event_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "issuer_name": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/KindAa2Enum"
+                    },
+                    "kind_title": {
+                        "type": "string"
+                    },
+                    "award": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/HolderCertificateStatusEnum"
+                    },
+                    "issued_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "revision": {
+                        "type": "integer"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "verifiable": {
+                        "type": "boolean",
+                        "description": "Public verification is on; sharing and LinkedIn links work."
+                    },
+                    "verify_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "holder_name_public": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "award",
+                    "event_date",
+                    "event_id",
+                    "event_title",
+                    "holder_name_public",
+                    "id",
+                    "issued_at",
+                    "issuer_name",
+                    "kind",
+                    "kind_title",
+                    "revision",
+                    "serial",
+                    "status",
+                    "verifiable",
+                    "verify_url"
+                ]
+            },
+            "HolderCertificateStatusEnum": {
+                "enum": [
+                    "pending",
+                    "rendering",
+                    "active",
+                    "failed",
+                    "revoked"
+                ],
+                "type": "string",
+                "description": "* `pending` - pending\n* `rendering` - rendering\n* `active` - active\n* `failed` - failed\n* `revoked` - revoked"
             },
             "HostOption": {
                 "type": "object",
@@ -279671,6 +283732,86 @@
                     "assignment_id"
                 ]
             },
+            "IssuedCertificate": {
+                "type": "object",
+                "description": "Account names are masked for a superadmin without an open PII window on the space.",
+                "properties": {
+                    "pii_masked": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "integer"
+                    },
+                    "recipient_name": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/KindAa2Enum"
+                    },
+                    "kind_title": {
+                        "type": "string"
+                    },
+                    "award": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "revision": {
+                        "type": "integer"
+                    },
+                    "issued_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "public_verification_enabled": {
+                        "type": "boolean"
+                    },
+                    "revocation_reason": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "award",
+                    "id",
+                    "issued_at",
+                    "kind",
+                    "kind_title",
+                    "public_verification_enabled",
+                    "recipient_name",
+                    "revision",
+                    "revocation_reason",
+                    "status"
+                ]
+            },
+            "IssuedCertificatePage": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IssuedCertificate"
+                        }
+                    }
+                },
+                "required": [
+                    "count",
+                    "next",
+                    "previous",
+                    "results"
+                ]
+            },
             "IssuedClient": {
                 "type": "object",
                 "properties": {
@@ -280782,6 +284923,20 @@
                 "type": "string",
                 "description": "* `training` - training\n* `briefing` - briefing"
             },
+            "KindAa2Enum": {
+                "enum": [
+                    "attendance",
+                    "participant",
+                    "finalist",
+                    "winner",
+                    "volunteer_thanks",
+                    "mentor_thanks",
+                    "judge_thanks",
+                    "organiser_thanks"
+                ],
+                "type": "string",
+                "description": "* `attendance` - attendance\n* `participant` - participant\n* `finalist` - finalist\n* `winner` - winner\n* `volunteer_thanks` - volunteer_thanks\n* `mentor_thanks` - mentor_thanks\n* `judge_thanks` - judge_thanks\n* `organiser_thanks` - organiser_thanks"
+            },
             "KindAf4Enum": {
                 "enum": [
                     "rules",
@@ -280801,6 +284956,20 @@
                 ],
                 "type": "string",
                 "description": "* `rollback_in_place` - Rollback in place\n* `disaster` - Disaster or cross-server"
+            },
+            "KindC2eEnum": {
+                "enum": [
+                    "attendance",
+                    "participant",
+                    "finalist",
+                    "winner",
+                    "volunteer_thanks",
+                    "mentor_thanks",
+                    "judge_thanks",
+                    "organiser_thanks"
+                ],
+                "type": "string",
+                "description": "* `attendance` - Attendance\n* `participant` - Participant\n* `finalist` - Finalist\n* `winner` - Winner\n* `volunteer_thanks` - Volunteer thanks\n* `mentor_thanks` - Mentor thanks\n* `judge_thanks` - Judge thanks\n* `organiser_thanks` - Organiser thanks"
             },
             "KindDa9Enum": {
                 "enum": [
@@ -338406,6 +342575,18 @@
                 "type": "string",
                 "description": "* `draft` - draft\n* `proposed` - proposed\n* `applied` - applied\n* `approved` - approved\n* `declined` - declined\n* `withdrawn` - withdrawn\n* `revoked` - revoked\n* `completed` - completed"
             },
+            "RolesEnum": {
+                "enum": [
+                    "attendee",
+                    "speaker",
+                    "mentor",
+                    "judge",
+                    "volunteer",
+                    "crew"
+                ],
+                "type": "string",
+                "description": "* `attendee` - attendee\n* `speaker` - speaker\n* `mentor` - mentor\n* `judge` - judge\n* `volunteer` - volunteer\n* `crew` - crew"
+            },
             "RoomOutage": {
                 "type": "object",
                 "properties": {
@@ -341921,6 +346102,115 @@
                     "amount",
                     "member_id"
                 ]
+            },
+            "SheetPreview": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer",
+                        "description": "Cards the job would print."
+                    },
+                    "per_page": {
+                        "type": "integer"
+                    },
+                    "sheets": {
+                        "type": "integer",
+                        "description": "Sheets of paper (fronts; backs add as many again)."
+                    },
+                    "paper": {
+                        "type": "string"
+                    },
+                    "order": {
+                        "type": "string"
+                    },
+                    "front": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "PNG data URI of the first sheet's fronts."
+                    },
+                    "back": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "PNG data URI of the same sheet's backs, mirrored."
+                    },
+                    "mixed_sizes": {
+                        "type": "boolean",
+                        "description": "Some cards use a different stock and print on their own sheets."
+                    }
+                },
+                "required": [
+                    "back",
+                    "front",
+                    "mixed_sizes",
+                    "order",
+                    "paper",
+                    "per_page",
+                    "sheets",
+                    "total"
+                ]
+            },
+            "SheetPreviewRequest": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Status0f8Enum"
+                            }
+                        ],
+                        "default": "active"
+                    },
+                    "card_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 1000
+                    },
+                    "plan_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "expiring_within_days": {
+                        "type": "integer",
+                        "maximum": 365,
+                        "minimum": 1
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RolesEnum"
+                        },
+                        "description": "Event cards only: print these roles.",
+                        "maxItems": 6
+                    },
+                    "checked_in": {
+                        "type": "boolean",
+                        "nullable": true,
+                        "description": "Event cards only: true = checked in, false = not yet."
+                    },
+                    "paper": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PaperEnum"
+                            }
+                        ],
+                        "default": "a4"
+                    },
+                    "order": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OrderEnum"
+                            }
+                        ],
+                        "default": "duplex"
+                    },
+                    "crop_marks": {
+                        "type": "boolean",
+                        "default": true
+                    }
+                }
             },
             "Shift": {
                 "type": "object",
@@ -350821,6 +355111,14 @@
                 "type": "string",
                 "description": "* `working` - Working\n* `visiting` - Visiting\n* `attending_event` - Attending an event\n* `guest` - Guest"
             },
+            "Status0f8Enum": {
+                "enum": [
+                    "active",
+                    "all"
+                ],
+                "type": "string",
+                "description": "* `active` - active\n* `all` - all"
+            },
             "Status2caEnum": {
                 "enum": [
                     "pending",
@@ -351883,6 +356181,14 @@
                     "previous",
                     "results"
                 ]
+            },
+            "SubjectKindFd0Enum": {
+                "enum": [
+                    "registration",
+                    "role_assignment"
+                ],
+                "type": "string",
+                "description": "* `registration` - registration\n* `role_assignment` - role_assignment"
             },
             "SubjectLog": {
                 "type": "object",
@@ -356798,12 +361104,48 @@
                     },
                     "status": {
                         "$ref": "#/components/schemas/VerificationStatusEnum"
+                    },
+                    "issuer": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/KindAa2Enum"
+                    },
+                    "kind_title": {
+                        "type": "string"
+                    },
+                    "award": {
+                        "type": "string"
+                    },
+                    "recipient_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Only when the holder chose to show it."
+                    },
+                    "status_note": {
+                        "type": "string"
+                    },
+                    "serial": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "sha256": {
+                        "type": "string",
+                        "description": "SHA-256 of the issued PDF bytes; compare a file you were given."
                     }
                 },
                 "required": [
+                    "award",
                     "date",
                     "event",
-                    "status"
+                    "issuer",
+                    "kind",
+                    "kind_title",
+                    "recipient_name",
+                    "serial",
+                    "sha256",
+                    "status",
+                    "status_note"
                 ]
             },
             "VerificationAccepted": {

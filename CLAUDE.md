@@ -329,6 +329,15 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   leave `TODO`/stub auth or scoping in a merged path. Every state-changing endpoint must emit its audit log
   entry (PRD §11). Honor the immutability/append-only and makerspace-scoping invariants as enforced code,
   not convention.
+- **Every user-facing literal is marked (phase 8 i18n).** Backend copy goes through `gettext` (runtime),
+  `gettext_lazy` (class/module declarations) or `gettext_noop` (email-template defaults), with named
+  `.format()` placeholders rather than f-strings. Frontend copy goes through the Lingui `t` macro, and
+  dates/numbers go through `src/lib/format.ts`. Stable identifiers (audit actions, error codes, module,
+  feature, report and event keys, enum values) and tenant-authored text are never translated. Both
+  literal guards (`backend/scripts/check_i18n_literals.py`, `npm run i18n:check`) must report 0, and the
+  two English catalogues (`backend/locale/en/LC_MESSAGES/django.po`, `frontend/src/locales/en/messages.po`)
+  are regenerated in the same commit as the wording. A worker-bundled module never imports a Lingui macro.
+  How-to: `docs/i18n.md`; rules: **Internationalisation** in `docs/INVARIANTS.md`.
 
 ## Learning And Explanation Contract
 
@@ -551,6 +560,7 @@ because none are quoted here — this index is a router, not a summary.
 | **Organization accounts and organization-derived authority** | `apps/organizations/`, `OrganizationMembership`, the rbac org branch, `resolve_scope` vs `scope_by_action`, the auth payload `source` field, `EventOrganizer`, org purge scoping |
 | **API client scopes and the protected-route registry** | `apps/apiclients/scope_registry*.py`, `legacy:v1`, unknown-route denial, target resolution, the system check, the HMAC signed message and nonce namespace. The client-facing protocol is written up in `docs/api-client-protocol.md` |
 | **Member cards, ID programmes and event cards** (and its **Google Sheets import source** subsection) | `apps/card_designs/`, `apps/id_programmes/`, `events/id_cards*.py`, member cards, card designs and approval, the public card check, door scans, wallet passes, card fonts and photos; member and ID-programme imports from a public Google Sheet |
+| **Internationalisation** | the locale registry, `config/locale_*.py`, the locale middleware order, `preferred_locale`/`default_locale`, who renders in which language, email-template defaults vs edited rows, the two literal guards and catalogues, the Lingui runtime, `src/lib/format.ts` |
 | **Container / deployment invariants** | `Dockerfile`, the compose files, Celery beat, MinIO/CORS, browser-facing storage URLs, production compose defaults, the opt-in `/control/` proxy route and SSH-tunnel listener (`CONTROL_PLANE_*`, `scripts/apply-settings.sh`) |
 
 Two rules are repeated here because they bite outside their own area: **a new model must be classified in

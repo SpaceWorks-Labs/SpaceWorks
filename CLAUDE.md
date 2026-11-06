@@ -200,8 +200,9 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   clause; `online_payments_enabled` still governs the Stripe/Razorpay rail only and keeps all four of
   its clauses. The `charges.*` capability family carries tracking — `charges.enabled` is a standalone
   master switch (off = the space charges for nothing) and each domain key keeps its real DOMAIN parent,
-  never a payments one. All six charge seams record first and add a rail second; the sixth is the
-  scheduled renewal in `makerspaces/membership_plan_services.py`, which gates independently.
+  never a payments one. All seven charge seams record first and add a rail second; the sixth is the
+  scheduled renewal in `makerspaces/membership_plan_services.py`, which gates independently, and the
+  seventh a term staff open from the console (`makerspaces/membership_term_charges.py`, #184).
   **`payments` is now opt-in** and buys the online rail alone. A charge raised with no gateway is
   stamped `provider=unclaimed` and claimed exactly once by the first checkout that reaches a provider
   (DB-enforced). Marking one paid offline requires a `ManualSettlement` receipt — method, reference,

@@ -23,6 +23,11 @@ def provider_settings(env):
         "ALLOWED_REDIRECT_URI_SCHEMES": ["https", "http"] if env.bool("DEBUG", default=False) else ["https"],
         "OIDC_ENABLED": bool(key),
         "OIDC_RSA_PRIVATE_KEY": key,
+        # /control/ shows credential rows read-only; revoking is the one write (R4).
+        "ACCESS_TOKEN_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyAccessTokenAdmin",
+        "REFRESH_TOKEN_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyRefreshTokenAdmin",
+        "GRANT_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyGrantAdmin",
+        "ID_TOKEN_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyIDTokenAdmin",
     }
 
 

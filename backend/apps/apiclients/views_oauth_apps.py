@@ -3,6 +3,8 @@
 The client secret of a confidential app is shown once and stored hashed by
 django-oauth-toolkit. Deleting an app (or switching it off) ends every connection to it.
 """
+from urllib.parse import urlsplit
+
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -47,16 +49,34 @@ class OAuthAppCreatedSerializer(OAuthAppSerializer):
                                           help_text="Confidential apps only; shown once.")
 
 
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+BAD_REDIRECT = "Use https:// redirect URIs (http:// only for localhost, 127.0.0.1 or [::1])."
+
+
+def _redirect_uri(uri):
+    # Parsed, not prefix-matched: http://localhost.evil.example/ is not loopback (RFC 8252 s7.3).
+    uri = uri.strip()
+    try:
+        parts = urlsplit(uri)
+        host = parts.hostname
+    except ValueError:
+        raise ValidationError({"redirect_uris": BAD_REDIRECT}) from None
+    loopback = parts.scheme == "http" and host in LOOPBACK_HOSTS
+    if not host or (parts.scheme != "https" and not loopback) or parts.username is not None or parts.fragment:
+        raise ValidationError({"redirect_uris": BAD_REDIRECT})
+    return uri
+
+
 def _clean(data):
-    uris = []
-    for uri in data["redirect_uris"]:
-        if not uri.startswith("https://") and not uri.startswith("http://localhost"):
-            raise ValidationError({"redirect_uris": "Use https:// redirect URIs (http://localhost for development)."})
-        uris.append(uri.strip())
+    uris = [_redirect_uri(uri) for uri in data["redirect_uris"]]
     unknown = set(data["allowed_scopes"]) - person_scopes.person_scope_vocabulary() - {"openid"}
     if unknown:
         raise ValidationError({"allowed_scopes": f"Unknown scope(s): {', '.join(sorted(unknown))}."})
-    validate_exact_origins([uri.split("/", 3)[0] + "//" + uri.split("/", 3)[2] for uri in uris])
+    if uris:  # a scopes-only update passes no URIs; the origin check needs at least one
+        try:
+            validate_exact_origins([uri.split("/", 3)[0] + "//" + uri.split("/", 3)[2] for uri in uris])
+        except ValueError as exc:
+            raise ValidationError({"redirect_uris": str(exc)}) from None
     return uris
 
 
@@ -93,7 +113,9 @@ class OAuthAppListCreateView(RecentReauthenticationMixin, APIView):
                                                       is_active=values["is_active"], created_by=request.user)
             audit.record(request.user, "oauth_app.created", makerspace=space, target=application,
                          meta={"scopes": values["allowed_scopes"], "client_type": application.client_type})
-        return Response({**OAuthAppSerializer(row).data, "client_secret": secret}, status=status.HTTP_201_CREATED)
+        response = Response({**OAuthAppSerializer(row).data, "client_secret": secret}, status=status.HTTP_201_CREATED)
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response
 
 
 def _oidc():

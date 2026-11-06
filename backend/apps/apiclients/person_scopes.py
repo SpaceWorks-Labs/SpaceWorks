@@ -27,7 +27,8 @@ STAFF_PREFIXES = ("/api/v1/admin/", "/api/v1/procurement/", "/api/v1/guest-admin
 # Space Manager whose token holds staff:write.
 CREDENTIAL_NAME_PARTS = ("api-client", "api-key", "api-settings", "access-token", "oauth", "security-settings",
                          "pii-access", "mfa", "passkey", "reauth", "staff-invitation", "staff-role",
-                         "backup", "tenant-migration", "payment-settings", "integration-credential")
+                         "backup", "tenant-migration", "payment-settings", "integration-credential",
+                         "account-session")
 
 
 def person_scope_vocabulary():

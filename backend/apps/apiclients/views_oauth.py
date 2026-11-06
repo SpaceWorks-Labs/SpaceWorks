@@ -71,6 +71,10 @@ def _validated(request):
         raise ValidationError({"detail": exc.description or exc.error}) from exc
     except Exception as exc:  # DOT wraps invalid client/redirect as its own fatal error type
         raise ValidationError({"detail": "This app request is not valid."}) from exc
+    # oauthlib also accepts the "plain" method (and assumes it when none is named), where the
+    # challenge IS the verifier; only S256 is offered, so refuse anything else.
+    if info.get("code_challenge_method") != "S256":
+        raise ValidationError({"detail": "Use PKCE with code_challenge_method=S256."})
     application = get_application_model().objects.select_related("spaceworks_registration__makerspace").get(
         client_id=info["client_id"])
     return scopes, {key: info[key] for key in CREDENTIAL_KEYS if info.get(key)}, application

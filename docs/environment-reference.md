@@ -257,6 +257,7 @@ See `docs/api-client-protocol.md`.
 | `THROTTLE_CLIENT_PUBLIC` | `'30/min'` | Public-route budget for an API client in the `public` tier. |
 | `THROTTLE_CLIENT_STANDARD` | `'120/min'` | The same budget for the `standard` tier. |
 | `THROTTLE_CLIENT_TRUSTED` | `'600/min'` | The same budget for the `trusted` tier. |
+| `PERSON_CREDENTIAL_RATE_PER_MINUTE` | `120` | Requests per minute for one personal access token or app connection acting as its person (#196), counted apart from the person's own sessions. |
 
 ## Install-time sign-in choices
 

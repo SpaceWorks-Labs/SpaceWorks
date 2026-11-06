@@ -53,7 +53,8 @@ downloading** that questionnaire; a source checkout asks it near the end.
    with automatic HTTPS, an optional loopback HTTPS SSH-tunnel port. SaaS and API-only behind your
    own proxy skip this choice. See [control-plane access](PROJECT-STATUS.md#admin-control-plane-superadmin-only).
    The recommended answer is the default, **No**: the control plane is then reachable only from the
-   server itself (this machine, or the SSH tunnel). Choosing **Yes** serves `/control/` on the site's own address;
+   server itself through the SSH tunnel, so give a tunnel port (automatic HTTPS only) if you want it; with
+   neither, `/control/` is off and the web superadmin console covers platform work. Choosing **Yes** serves `/control/` on the site's own address;
    if you do, give an IP allowlist and keep MFA on. The managed-hosting limiter is never asked about
    and stays off. Every hosting shape is compared in [choose your hosting](choose-your-hosting.md).
 6. **Web address:** hostname/IP if not already supplied.

@@ -89,7 +89,7 @@ third party. The [Quick start](../README.md#quick-start) is the recommended path
 | Public catalog | `http://localhost` |
 | Staff console | `http://localhost/admin` |
 | API | `http://localhost/api` (Swagger at `/docs/`) |
-| Django control plane | `/control/`, server-only by default (SSH tunnel or this machine); the public port answers 404 |
+| Django control plane | `/control/`, server-only by default (the SSH-tunnel port; off when none is set); the public port answers 404 |
 
 Create the first superadmin + makerspace (the wizard does this for you; for a manual instance):
 

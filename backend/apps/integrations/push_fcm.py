@@ -29,7 +29,12 @@ def fcm_message(token, title, body, data):
     return message
 
 
-def send_fcm(settings_row, token, title, body, data):
+def fcm_access_token(settings_row):
+    """Sign in to FCM with the stored service account: ``(access_token, project_id)``.
+
+    Shared by every send and by the console's credential check (#190), so the check proves
+    exactly what a real send needs.
+    """
     try:
         account = json.loads(settings_row.get_fcm_service_account())
         if not isinstance(account, dict):
@@ -55,11 +60,19 @@ def send_fcm(settings_row, token, title, body, data):
             "assertion": assertion,
         }, timeout=10)
         payload = oauth.json() if oauth.status_code == 200 else {}
-        access_token = payload.get("access_token") if isinstance(payload, dict) else None
-        if not isinstance(access_token, str) or not access_token.strip():
-            raise PushProviderError("FCM authorization failed.")
+    except (requests.RequestException, ValueError, TypeError) as exc:
+        raise PushProviderError("FCM request failed.") from exc
+    access_token = payload.get("access_token") if isinstance(payload, dict) else None
+    if not isinstance(access_token, str) or not access_token.strip():
+        raise PushProviderError("FCM authorization failed.")
+    return access_token, required["project_id"]
+
+
+def send_fcm(settings_row, token, title, body, data):
+    access_token, project_id = fcm_access_token(settings_row)
+    try:
         response = requests.post(
-            f"https://fcm.googleapis.com/v1/projects/{required['project_id']}/messages:send",
+            f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send",
             headers={"Authorization": f"Bearer {access_token}"},
             json={"message": fcm_message(token, title, body, data)}, timeout=10,
         )

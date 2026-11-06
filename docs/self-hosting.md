@@ -499,9 +499,15 @@ previously stored tokens/passwords can no longer be decrypted.
 The Django control plane (`/control/`, with its MFA step at `/mfa/control/` and its re-authentication
 step at `/mfa/reauth/`) is the superadmin's **server-side power tool and fallback**. Day-to-day platform
 work happens in the **web superadmin console** (`/admin` → Platform), which offers every operation the
-control plane has except the few that need the server by design: platform key rotation with the private
-key, whole-platform restore, recovery commands, platform provider credentials entered once at setup, and
-repair of plumbing rows no workflow owns. The control plane's home page lists what needs attention and
+control plane has except the few that need the server by design: platform and server backup key rotation
+(and the platform-wide re-encryption that follows it), whole-platform restore, recovery commands (row-level
+security sync, sign-in lockout resets), and repair of plumbing rows no workflow owns. Platform SMS, push,
+WhatsApp and app-attestation credentials are entered under **Platform settings → Messaging & apps** (secrets
+are write-only: the page only says whether each is set and when it last changed; SMS has a "Send test",
+push and WhatsApp a "Check credentials"); mobile app identities under **Platform settings → Mobile apps**;
+a space's key rotation, its archives on a retired backup key and its capability-data purge from that
+space's card under **Platform → Spaces → Manage → Keys / Capability data** (each one typed back, then a
+fresh sign-in). The control plane's home page lists what needs attention and
 says, for each item, where the web console handles it.
 
 **By default the control plane is server-only** (`CONTROL_PLANE_PROXY=false`). It answers only:

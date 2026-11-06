@@ -174,6 +174,8 @@ BODYLESS_POSTS = {
     "apps.tenant_migration.views_selfhost_moves_platform": (
         "PlatformMoveDiscardView", "PlatformMoveDownloadLinkView",
     ),
+    # r2-parity-followups (#190): provider credential checks name the act in the path.
+    "apps.integrations.views_platform_credentials": ("PlatformPushTestView", "PlatformWhatsAppTestView"),
 }
 
 

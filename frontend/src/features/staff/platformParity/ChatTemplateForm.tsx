@@ -2,15 +2,16 @@ import { useState, type FormEvent } from "react";
 import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
-import { useSaveChatTemplate, type ChatTemplate, type ChatTemplateBody } from "./chatTemplatesApi";
+import { useSaveChatTemplate, type ChatTemplate, type ChatTemplateBody, type ChatTemplateSurface } from "./chatTemplatesApi";
 import { fieldError } from "./parityRequest";
 
 const EMPTY: ChatTemplateBody = { feature: "", event: "", text_body: "", is_active: true };
 const FIELDS = ["feature", "event", "text_body"] as const;
 
 /** Add a template, or change one when `row` is given. The server checks the event and renders the body. */
-export function ChatTemplateForm({ spaceId, row, onDone }: { spaceId: number; row?: ChatTemplate; onDone?: () => void }) {
-  const save = useSaveChatTemplate(spaceId, row?.id ?? null);
+export function ChatTemplateForm({ spaceId, surface = "platform", row, onDone }: {
+  spaceId: number; surface?: ChatTemplateSurface; row?: ChatTemplate; onDone?: () => void }) {
+  const save = useSaveChatTemplate(spaceId, row?.id ?? null, surface);
   const [form, setForm] = useState<ChatTemplateBody>(row
     ? { feature: row.feature, event: row.event, text_body: row.text_body, is_active: row.is_active } : EMPTY);
   const set = <K extends keyof ChatTemplateBody>(key: K, value: ChatTemplateBody[K]) => setForm(current => ({ ...current, [key]: value }));

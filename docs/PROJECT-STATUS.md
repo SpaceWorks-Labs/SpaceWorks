@@ -45,7 +45,9 @@ and [acceptance checklist](events/acceptance.md).
 The **Unfold Django admin is the Super Admin's server-side power tool and fallback**, mounted at
 **`/control/`** (NOT `/admin/` — that belongs to the React staff console SPA route), locked to superadmins.
 Day-to-day platform work is in the web superadmin console, which has a path for every `/control/` write
-except host-only ones (`config/control_parity.py`, #190). Its sidebar is thirteen ordered sections built
+except host-only ones (`config/control_parity.py`, #190; after the r2-parity-followups lane only
+platform/server backup key rotation and the platform-wide re-encryption, the RLS sync, axes recovery and raw
+plumbing rows remain host-only). Its sidebar is thirteen ordered sections built
 from one catalogue (`config/control_catalog.py`, #188) and its home is a dashboard of totals, items needing
 attention and quick links. **It is server-only by default (#189/#191):** with `CONTROL_PLANE_PROXY=false`
 `config/control_plane_access.py` answers 404 to everything but loopback and the SSH tunnel, and the website

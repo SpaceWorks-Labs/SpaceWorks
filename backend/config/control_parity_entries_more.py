@@ -5,7 +5,8 @@ from config.control_parity import KEY_ROTATION, RAW_REPAIR, SERVER, host, web
 PS = "Platform settings"
 S = "Space console"
 MOVES = "Platform settings → Self-host moves"
-CREDENTIALS = host(f"Platform provider credentials (keys, service accounts) are entered once at setup: {SERVER}")
+PROVIDERS = f"{PS} → Messaging & apps"
+SPACES = "Platform → Spaces"
 
 MORE_ENTRIES = (
     # Money
@@ -62,8 +63,12 @@ MORE_ENTRIES = (
     ("view:backup_backupkeyfingerprint_keys", web(f"{PS} → Restore drills", "admin-platform-restore-drills")),
     ("keys:rotate_platform", KEY_ROTATION),
     ("keys:rotate_server", KEY_ROTATION),
-    ("keys:reencrypt", KEY_ROTATION),
-    ("keys:purge", KEY_ROTATION),
+    # One-space archives only: a whole-platform archive is encrypted to the platform key alone and can be
+    # neither re-encrypted on the server nor purged from a space's view; it expires or is purged on /control/.
+    ("keys:reencrypt", web(f"{SPACES} → Manage → Keys → Archives on a retired key", "admin-platform-space-archive-key")),
+    ("keys:purge", web(f"{SPACES} → Manage → Keys → Archives on a retired key (one-space archives)",
+                       "admin-platform-space-archive-key")),
+    # Kept host-only [#165 auto]: the platform-wide re-encryption follows a platform/server key rotation run on the server.
     ("keys:reencrypt_all", KEY_ROTATION),
     ("keys:reencrypt_stop", KEY_ROTATION),
     ("keys:settings", web(f"{PS} → Restore drills → Settings", "admin-platform-restore-drill-settings")),
@@ -74,15 +79,19 @@ MORE_ENTRIES = (
                                                           "admin-platform-selfhost-move-download-url")),
     # Integrations & messaging
     ("payments.platformstripeconnectsettings", web(f"{PS} → Stripe Connect", "admin-platform-payment-settings")),
-    ("integrations.platformsmssettings", CREDENTIALS),
-    ("integrations.platformpushsettings", CREDENTIALS),
-    ("integrations.platformwhatsappsettings", CREDENTIALS),
-    ("accounts.platformattestationsettings", CREDENTIALS),
+    ("integrations.platformsmssettings", web(f"{PROVIDERS} → SMS", "admin-platform-sms-settings",
+                                             "admin-platform-sms-settings-test")),
+    ("integrations.platformpushsettings", web(f"{PROVIDERS} → Push", "admin-platform-push-settings",
+                                              "admin-platform-push-settings-test")),
+    ("integrations.platformwhatsappsettings", web(f"{PROVIDERS} → WhatsApp", "admin-platform-whatsapp-settings",
+                                                  "admin-platform-whatsapp-settings-test")),
+    ("accounts.platformattestationsettings", web(f"{PROVIDERS} → App attestation", "admin-platform-attestation-settings")),
     ("integrations.platformemailsettings", web(f"{PS} → Email", "admin-platform-email-settings")),
     ("integrations.emailtemplate", web(f"{S} → Email templates", "admin-email-templates", "admin-email-template-detail")),
     ("integrations.machinetypeemailtemplate", web(f"{S} → Machines → Types → Email", "admin-machine-type-email-template-detail")),
-    ("integrations.chattemplate", web("Platform → Spaces → a space's chat templates", "admin-platform-chat-templates",
-                                      "admin-platform-chat-template")),
+    ("integrations.chattemplate", web(f"{PS} → Chat templates; {S} → Settings → Notifications (Space Manager)",
+                                      "admin-platform-chat-templates", "admin-platform-chat-template",
+                                      "admin-chat-templates", "admin-chat-template")),
     ("integrations.emaillog.retry_selected", web(f"{S} → Delivery log → Retry", "admin-email-log-retry")),
     ("integrations.notificationdeliverylog.requeue_failed_deliveries", web(f"{S} → Delivery log → Retry", "delivery-log-retry")),
     ("integrations.emailsuppression", web(f"{S} → Delivery log → Blocked addresses", "email-suppression-list",
@@ -90,7 +99,7 @@ MORE_ENTRIES = (
     ("integrations.notificationdestination", web(f"{S} → Channels", "admin-notification-destinations",
                                                  "admin-notification-destination-detail")),
     ("integrations.notificationrecipient", web(f"{S} → Channels → Recipients", "admin-notification-recipients")),
-    ("integrations.dailyotpsmscounter", RAW_REPAIR),
+    ("integrations.dailyotpsmscounter", RAW_REPAIR),  # [#165 auto] a quota counter: plumbing, no workflow owns it
     ("notifications.notification", web(f"{S} → Inbox", "notifications:inbox-list", "notifications:inbox-archive")),
     ("apiclients.apiclient", web(f"{S} → API clients", "admin-api-clients", "admin-api-client")),
     ("apiclients.apikeyrequest", web(f"{PS} → Requests → API keys", "admin-platform-api-key-requests")),

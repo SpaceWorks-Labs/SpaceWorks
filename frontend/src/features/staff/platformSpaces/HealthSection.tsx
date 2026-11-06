@@ -6,6 +6,8 @@ import type { DialogKind } from "./cardActions";
 import { HealthCardView } from "./HealthCardView";
 import { PlanAssignDialog } from "./PlanAssignDialog";
 import { PurgeDialog } from "./PurgeDialog";
+import { CapabilityPurgeDrawer } from "../platformSpaceKeys/CapabilityPurgeDrawer";
+import { SpaceKeysDrawer } from "../platformSpaceKeys/SpaceKeysDrawer";
 import { ScheduleDialog } from "./ScheduleDialog";
 import { SimpleSpaceDialog, type SimpleAction } from "./SimpleSpaceDialog";
 import { SpaceDetailDrawer } from "./SpaceDetailDrawer";
@@ -17,6 +19,8 @@ function SpaceDialog({ card, kind, onClose }: { card: HealthCard; kind: DialogKi
   if (kind === "schedule") return <ScheduleDialog card={card} onClose={onClose} />;
   if (kind === "purge") return <PurgeDialog card={card} onClose={onClose} />;
   if (kind === "plan") return <PlanAssignDialog card={card} onClose={onClose} />;
+  if (kind === "keys") return <SpaceKeysDrawer card={card} onClose={onClose} />;
+  if (kind === "capabilities") return <CapabilityPurgeDrawer card={card} onClose={onClose} />;
   return <SimpleSpaceDialog card={card} action={kind as SimpleAction} onClose={onClose} />;
 }
 

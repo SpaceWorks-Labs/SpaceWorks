@@ -40,6 +40,7 @@ import { EventDefaultsSettings } from "./EventDefaultsSettings";
 import { BorrowRequestAccessSettings } from "./BorrowRequestAccessSettings";
 import { NotificationTimingSettings } from "./NotificationTimingSettings";
 import { NotificationDestinations } from "./NotificationDestinations";
+import { SpaceChatTemplates } from "./SpaceChatTemplates";
 import { EvidenceRetentionPanel } from "./EvidenceRetentionPanel";
 import { NotificationMuteMatrix } from "./NotificationMuteMatrix";
 import { NotificationRecipientPicker } from "./NotificationRecipientPicker";
@@ -203,6 +204,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       {canManageMakerspace && enabledModules.includes("notifications") ? <NotificationTimingSettings key={makerspace.id} makerspaceId={makerspace.id} /> : null}
       <NotificationMuteMatrix makerspaceId={makerspace.id} /><NotificationRecipientPicker makerspaceId={makerspace.id} />
       <NotificationDestinations availableChannels={enabledModules} makerspaceId={makerspace.id} />
+      {canManageMakerspace ? <SpaceChatTemplates makerspace={makerspace} /> : null}
     </> },
     ...(canManageMakerspace ? [{ id: "channels", title: "Communication channels",
       description: "Choose the mediums this space uses and set up their credentials. Staff and members can only pick channels you turn on here.",

@@ -291,9 +291,10 @@ requiring `machines.maintenance`.
   `inventory.tobuy`, plus `machines.tobuy` where `machines` is installed; warranty rows on
   assets/machines → the matching `*.warranty`. The old keys are stripped from stored rows and
   audited as `makerspace.module_retired`. No row of any table is changed.
-- **Purge.** Switching off keeps the data. Deleting it is the separate superadmin
-  `/control/` action **Purge capability data** (recent re-authentication, a preview of the
-  rows, the key typed back, audited `makerspace.capability_purged`), split per parent:
+- **Purge.** Switching off keeps the data. Deleting it is the separate superadmin action
+  **Purge capability data**, in the web console (Platform → Spaces → Manage → Capability data)
+  or `/control/` (a preview of the rows, the key typed back, recent re-authentication, audited
+  `makerspace.capability_purged`), split per parent:
   purging `machines.tobuy` never deletes an inventory row.
 - **Who switches them.** The Space Manager; a module's manager with that module's settings
   grant (see [Settings authority](INVARIANTS.md#settings-authority-release-2-lane-l17-101-128-c-11)).

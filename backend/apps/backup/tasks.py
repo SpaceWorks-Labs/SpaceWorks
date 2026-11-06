@@ -11,6 +11,7 @@ from apps.backup.tasks_space_restore import (  # noqa: E402,F401  (task registra
     run_space_restore_apply_task,
     run_space_restore_preview_task,
 )
+from apps.backup.tasks_space_keys import space_archive_key_task  # noqa: E402,F401  (task registration, #190)
 from apps.backup.tasks_offsite import (  # noqa: E402,F401  (task registration)
     dispatch_offsite_push,
     push_offsite_backups_task,

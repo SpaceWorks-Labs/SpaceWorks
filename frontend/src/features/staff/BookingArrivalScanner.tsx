@@ -67,7 +67,7 @@ export function BookingArrivalScanner({ makerspaceId, spaceId }: { makerspaceId:
   return <section aria-labelledby="booking-arrival-title" className="grid gap-4">
     <div><h2 id="booking-arrival-title" className="title-panel">{t`QR arrival`}</h2>
       <p className="mt-1 text-sm text-muted">{t`Scan or paste the private booking QR for this resource. Resolve checks details; confirm records arrival. Arrival does not complete a booking or authorize physical access.`}</p></div>
-    <ScanWorkbench onFind={find} searchLabel="Booking QR" helper="Paste the private booking QR. Check the details before confirming arrival."
+    <ScanWorkbench onFind={find} searchLabel="Booking QR" helper={t`Paste the private booking QR. Check the details before confirming arrival.`}
       cameraLabel="Hold the booking QR inside the frame" findPending={busy} recent={recent} recentTitle="Recent arrivals"
       result={result ? { title: result.display_name, tone: result.arrived_at || result.can_arrive ? "success" : "warn",
         summary: <div className="grid gap-2">

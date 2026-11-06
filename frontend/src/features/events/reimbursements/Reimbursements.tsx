@@ -17,7 +17,7 @@ export function Reimbursements({ scope, onRequest, onClaim, onAppeal, onPayout }
   const now = useNow();
   const row = query.data;
   const allowed = (action: string) => row?.allowed_actions.includes(action);
-  return <DetailLayout title={t`Travel support`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: "Travel support could not be loaded.", onRetry: () => void query.refetch() }} main={<div className="grid gap-5">
+  return <DetailLayout title={t`Travel support`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Travel support could not be loaded.`, onRetry: () => void query.refetch() }} main={<div className="grid gap-5">
     <Wallet className="text-accent" size={28} aria-hidden="true" />
     {!row?.available ? <p>{t`Travel support is unavailable for this event.`}</p> : <>
       <p>{t`Support requests, award acceptance and expense claims each need your confirmation.`}</p>

@@ -29,7 +29,7 @@ export function BillingDocumentsSettings({ makerspaceId }: { makerspaceId: numbe
     },
     onSuccess: (data) => { client.setQueryData(key, data); void client.invalidateQueries({ queryKey: ["operations-report", "accounting-journal"] }); },
   });
-  return <SettingsRow label={t`Billing documents and accounting`} helper="Gross-only documents. Settings apply to newly issued bills, receipts and credit notes."><div className="@container grid min-w-0 gap-4">
+  return <SettingsRow label={t`Billing documents and accounting`} helper={t`Gross-only documents. Settings apply to newly issued bills, receipts and credit notes.`}><div className="@container grid min-w-0 gap-4">
 
 
     <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{t`Configure documents`}</button>

@@ -5,7 +5,7 @@ import { Callout } from "../../components/ui";
 export function ApiClientSecretReveal({ secret, onDismiss }: { secret: string; onDismiss: () => void }) {
   return (
     <div className="mt-3 rounded-md border border-line bg-warn-soft p-3">
-      <Callout size="inline" tone="warn" lead="Copy the secret now." body="It’s shown once." />
+      <Callout size="inline" tone="warn" lead="Copy the secret now." body={t`It’s shown once.`} />
       <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 code-text text-xs text-ink">{secret}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button className="desk-button" type="button" onClick={() => void navigator.clipboard.writeText(secret)}>{t`Copy`}</button>

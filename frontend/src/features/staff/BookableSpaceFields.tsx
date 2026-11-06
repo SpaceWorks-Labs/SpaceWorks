@@ -28,13 +28,13 @@ export function BookableSpaceFields({ values, set, machineTypes, typesError, pag
         <option value="dev_room">{t`Development room`}</option><option value="bench">{t`Bench`}</option><option value="meeting">{t`Meeting room`}</option><option value="other">{t`Other`}</option>
         {machineTime?.available || machineKind ? <option value="machine">{t`Machine time`}</option> : null}
       </select></SettingsRow>
-      {machineKind && machineTime ? <SettingsRow label={t`Machine`} htmlFor={id + "-booked-machine"} helper="Members book time on this machine. Its machine type, and that type's training rules, apply automatically.">
+      {machineKind && machineTime ? <SettingsRow label={t`Machine`} htmlFor={id + "-booked-machine"} helper={t`Members book time on this machine. Its machine type, and that type's training rules, apply automatically.`}>
         {machineTime.picker(id + "-booked-machine")}
       </SettingsRow> : null}
-      <SettingsRow label={t`Capacity`} htmlFor={id + "-capacity"} helper="Use 0 when no capacity is published.">
+      <SettingsRow label={t`Capacity`} htmlFor={id + "-capacity"} helper={t`Use 0 when no capacity is published.`}>
         <input id={id + "-capacity"} className="desk-input w-full" type="number" min={0} value={values.capacity} onChange={event => set("capacity", Number(event.target.value))} />
       </SettingsRow>
-      {machineKind ? null : <SettingsRow label={t`Machine type for certification`} htmlFor={id + "-machine"} helper="Required booking certifications apply when enabled for this machine type.">
+      {machineKind ? null : <SettingsRow label={t`Machine type for certification`} htmlFor={id + "-machine"} helper={t`Required booking certifications apply when enabled for this machine type.`}>
         <select id={id + "-machine"} className="desk-input w-full" value={values.machine_type ?? ""} onChange={event => set("machine_type", event.target.value ? Number(event.target.value) : null)}>
           <option value="">{t`No machine type`}</option>
           {values.machine_type && !machineTypes.some(type => type.id === values.machine_type) ? <option value={values.machine_type}>{t`Linked machine type #${values.machine_type}`}</option> : null}
@@ -47,7 +47,7 @@ export function BookableSpaceFields({ values, set, machineTypes, typesError, pag
         value={values.description} onChange={event => set("description", event.target.value)} /></SettingsRow>
     </SettingsSection>
     <SettingsSection title={t`Booking and visibility`} description={t`Space Managers set approval mode, duration limits, buffers and cancellation policy in makerspace booking rules.`}>
-      {chargesOn ? <SettingsRow label={t`Booking price`} htmlFor={id + "-price"} helper="Use 0 for no charge."><input id={id + "-price"} className="desk-input w-full" type="number" min="0" step="0.01"
+      {chargesOn ? <SettingsRow label={t`Booking price`} htmlFor={id + "-price"} helper={t`Use 0 for no charge.`}><input id={id + "-price"} className="desk-input w-full" type="number" min="0" step="0.01"
         value={values.payment_amount} onChange={event => set("payment_amount", event.target.value)} /></SettingsRow>
         : <p className="text-sm text-muted">{t`Booking charges are off in this space, so bookings are free.`}</p>}
       <SettingsRow label={t`Requester email`} htmlFor={id + "-email"}><select id={id + "-email"} className="desk-input w-full" value={notificationsValue}
@@ -58,7 +58,7 @@ export function BookableSpaceFields({ values, set, machineTypes, typesError, pag
         onChange={event => set("is_public", event.target.checked)} />{t`Show this space on the public Bookings page`}</label></SettingsRow>
       <SettingsRow label={t`Published availability`}><label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={values.show_public_availability}
         onChange={event => changeAvailability(event.target.checked)} />{t`Publish confirmed booking intervals`}</label></SettingsRow>
-      <SettingsRow label={t`Booker names`} helper="Names can appear only when booking intervals are published.">
+      <SettingsRow label={t`Booker names`} helper={t`Names can appear only when booking intervals are published.`}>
         <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={values.show_public_booker_names} disabled={!values.show_public_availability}
           onChange={event => set("show_public_booker_names", event.target.checked)} />{t`Show booker names with published intervals`}</label>
       </SettingsRow>

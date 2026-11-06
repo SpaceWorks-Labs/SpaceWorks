@@ -70,7 +70,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
         {scannable ? <ScanQrView src={scannable} name={row.printed_name} /> : null}
         {compact ? <a className="desk-button w-full sm:w-auto" href={cardHref}>{t`View your member card`}</a> : null}
       </div> : null}
-      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead="This card was revoked." body="Ask staff for a new one." /></div> : null}
+      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead="This card was revoked." body={t`Ask staff for a new one.`} /></div> : null}
       {!compact ? <>
       <label className="mt-6 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
         {t`Name printed on the card`}</label>

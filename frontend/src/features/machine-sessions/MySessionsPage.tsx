@@ -24,7 +24,7 @@ function SessionList({ context }: { context: MemberJobsContext }) {
   return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine sessions`,
     subtitle: t`Time you spent on the space's machines. Scan a machine's QR to start one.` }}
     state={context.bootstrapError || sessions.isError
-      ? { status: "error", error: "Couldn't load your sessions. Try again.", onRetry: () => { void sessions.refetch(); } }
+      ? { status: "error", error: t`Couldn't load your sessions. Try again.`, onRetry: () => { void sessions.refetch(); } }
       : !context.ready || sessions.isPending ? { status: "loading" } : { status: "ready" }}
     isEmpty={sessions.isSuccess && !rows.length}
     empty={{ message: t`No machine sessions yet. Scan the QR on a machine to start one.` }}

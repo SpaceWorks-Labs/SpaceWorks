@@ -36,7 +36,7 @@ export function HandoverConsole({ makerspaceId, enabled }: Props) {
   const shown = rows.filter(row => requester(row).toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   return <ListLayout standalone={false}
     header={{ title: t`Ready to collect`, subtitle: t`Finished jobs waiting for their owners.` }}
-    state={{ status: waiting.isLoading ? "loading" : waiting.isError ? "error" : "ready", error: "Couldn't load finished jobs. Try again.", onRetry: () => void waiting.refetch() }}
+    state={{ status: waiting.isLoading ? "loading" : waiting.isError ? "error" : "ready", error: t`Couldn't load finished jobs. Try again.`, onRetry: () => void waiting.refetch() }}
     stats={[{ label: t`Waiting`, value: rows.length }, { label: t`Unpaid`, value: rows.filter(row => paymentInfo(row.payment)?.paid === false).length }]}
     filters={{ search: { label: t`Search by requester`, value: search, onChange: setSearch } }}
     isEmpty={!shown.length} empty={{ message: t`Nothing waiting. Finished jobs show up here for handover.` }}

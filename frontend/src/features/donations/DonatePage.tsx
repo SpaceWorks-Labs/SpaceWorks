@@ -62,7 +62,7 @@ export function DonatePage() {
   }
   const data = page.data;
   const state = page.isLoading ? { status: "loading" as const } : page.error ? { status: "error" as const,
-    error: "Couldn't load the donation page.", onRetry: () => { void page.refetch(); } } : { status: "ready" as const };
+    error: t`Couldn't load the donation page.`, onRetry: () => { void page.refetch(); } } : { status: "ready" as const };
   return <DonationShell title={data ? t`Support ${data.makerspace}` : t`Support this space`} subtitle={data?.intro || undefined}
     state={state}>
     {done ? <GiftStatusView gift={done} /> : data ? <Card><form className="grid gap-6" aria-label={t`Give to this space`}

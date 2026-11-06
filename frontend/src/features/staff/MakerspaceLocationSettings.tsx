@@ -53,7 +53,7 @@ export function MakerspaceLocationSettings({ makerspace, settings, loading }: Pr
   const savedMapUrl = currentMapUrl.trim();
 
   return (
-    <SettingsRow label={t`Location`} helper="Public location label and optional Google Maps link shown on public pages."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Location`} helper={t`Public location label and optional Google Maps link shown on public pages.`}><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {

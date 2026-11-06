@@ -57,12 +57,12 @@ export function MemberRow({ makerspaceId, member, roles, onAuthRefresh, canManag
       state={{ status: "ready" }} main={<div className="grid gap-4">
         {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
         {/* Only a Space Manager edits the role set; a manage_members actor sees it read-only. */}
-        <SettingsRow label={t`Roles`} helper="The actions this member can take in this space.">{active && manageable && canManageMakerspace
+        <SettingsRow label={t`Roles`} helper={t`The actions this member can take in this space.`}>{active && manageable && canManageMakerspace
           ? <MemberRolesControl msId={makerspaceId} membershipId={member.id} membership={member} roles={roles} onAuthRefresh={onAuthRefresh} />
           : <span>{roleNames}</span>}</SettingsRow>
         {active && membershipEnabled ? <>
-          <SettingsRow label={t`Can refer`} helper="Can vouch for a new member."><label className="flex min-h-11 items-center gap-3"><input aria-label={t`Can refer`} className="h-5 w-5 accent-accent" type="checkbox" checked={member.can_refer} disabled={changingCapabilities} onChange={event => onCapability({ can_refer: event.target.checked })} />{t`Allow referrals`}</label></SettingsRow>
-          <SettingsRow label={t`Can verify`} helper="Can verify other members."><label className="flex min-h-11 items-center gap-3"><input aria-label={t`Can verify`} className="h-5 w-5 accent-accent" type="checkbox" checked={member.can_verify} disabled={changingCapabilities} onChange={event => onCapability({ can_verify: event.target.checked })} />{t`Allow verification`}</label></SettingsRow>
+          <SettingsRow label={t`Can refer`} helper={t`Can vouch for a new member.`}><label className="flex min-h-11 items-center gap-3"><input aria-label={t`Can refer`} className="h-5 w-5 accent-accent" type="checkbox" checked={member.can_refer} disabled={changingCapabilities} onChange={event => onCapability({ can_refer: event.target.checked })} />{t`Allow referrals`}</label></SettingsRow>
+          <SettingsRow label={t`Can verify`} helper={t`Can verify other members.`}><label className="flex min-h-11 items-center gap-3"><input aria-label={t`Can verify`} className="h-5 w-5 accent-accent" type="checkbox" checked={member.can_verify} disabled={changingCapabilities} onChange={event => onCapability({ can_verify: event.target.checked })} />{t`Allow verification`}</label></SettingsRow>
           <SettingsRow label={t`Verification`}><button className="desk-button" disabled={changingVerification} onClick={onVerify}>{member.verified_at ? t`Unverify` : t`Verify`}</button></SettingsRow>
           <SettingsRow label={t`Membership terms`}><button className="desk-button" onClick={() => { setOpen(false); onTerms(); }}>{t`Terms`}</button></SettingsRow>
         </> : null}

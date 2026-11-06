@@ -19,11 +19,11 @@ export function ReauthenticationReturn({ confirmation }: { confirmation: boolean
   } });
   // The provider return is the verification popup; the window that opened it reads the result and closes it.
   if (!confirmation) return <CenteredCardLayout state={{ status: "ready" }} eyebrow={t`Account access`} media={{ icon: "ShieldCheck", tone: "accent" }}
-    title={t`Identity provider returned`} body="Return to the browser window that opened this page."
+    title={t`Identity provider returned`} body={t`Return to the browser window that opened this page.`}
     primary={{ label: t`Close this window`, onClick: () => window.close() }} />;
   return <CenteredCardLayout state={{ status: "ready" }} eyebrow={t`Account access`} media={{ icon: "ShieldCheck", tone: confirm.isSuccess ? "success" : "accent" }}
     title={t`Confirm authenticator enrollment`}
-    body={confirm.isSuccess ? "Confirmed. Continue to enroll your authenticator." : "This link works once, in the same browser session that requested it."}
+    body={confirm.isSuccess ? t`Confirmed. Continue to enroll your authenticator.` : t`This link works once, in the same browser session that requested it.`}
     content={confirm.error ? <ErrorText message={confirm.error.message} /> : undefined}
     primary={confirm.isSuccess ? { label: t`Enroll authenticator`, href: "/mfa" } : { label: t`Confirm enrollment`, pending: confirm.isPending, pendingLabel: "Confirming...",
       disabled: !token, disabledReason: "This confirmation link is missing its token. Request a new one.", onClick: () => confirm.mutate() }} />;

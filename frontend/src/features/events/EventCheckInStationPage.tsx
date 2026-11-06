@@ -46,7 +46,7 @@ export function EventCheckInStationPage() {
 
   return <KioskLayout context={{ title: active ? t`Event check-in station` : t`Enter the station PIN`, subtitle: t`Door check-in · Station` }}
     connection={{ online }} state={{ status: "ready" }} mode={active ? "work" : "lock"}
-    lock={{ title: t`Enter the station PIN`, helper: "Ask an organiser for the 8-digit PIN. It unlocks check-in on this device only.",
+    lock={{ title: t`Enter the station PIN`, helper: t`Ask an organiser for the 8-digit PIN. It unlocks check-in on this device only.`,
       pending, error: error ?? undefined, disabledReason: !online ? "Reconnect to unlock this station." : undefined,
       submitLabel: t`Unlock station`, pendingLabel: "Unlocking…", onSubmit: pin => { void submit(pin); } }}
     headerActions={active ? [{ label: t`Lock station`, onClick: () => { void requestExit(); } }] : []}

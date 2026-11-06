@@ -16,7 +16,7 @@ export function enrolmentHref() {
 export function NoStaffRoleScreen({ memberHref, onSignOut }: { memberHref: string; onSignOut: () => void }) {
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Lock", tone: "warn" }}
     eyebrow={t`Staff console`} title={t`You don't have a staff role yet`}
-    body="Staff roles are given to people's own accounts. Ask a Space Manager to add you, or accept the staff invitation they emailed you."
+    body={t`Staff roles are given to people's own accounts. Ask a Space Manager to add you, or accept the staff invitation they emailed you.`}
     primary={{ label: t`Go to your member area`, href: memberHref }} escape={{ label: t`Sign out`, onClick: onSignOut }}
     footer={<ThemeToggle />} />;
 }
@@ -30,7 +30,7 @@ const FACTORS = [
 export function MfaEnrollmentScreen({ memberHref, onSignOut }: { memberHref: string; onSignOut: () => void }) {
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldCheck", tone: "accent" }}
     eyebrow={t`Staff console`} title={t`Set up two-step sign-in`}
-    body="Staff screens need a second step at sign-in. Add a passkey here now, or set up an authenticator app; you'll come straight back. Your member area keeps working meanwhile."
+    body={t`Staff screens need a second step at sign-in. Add a passkey here now, or set up an authenticator app; you'll come straight back. Your member area keeps working meanwhile.`}
     content={<div className="grid gap-4"><ul className="grid gap-3" aria-label={t`Ways to add a second step`}>
       {FACTORS.map(({ Glyph, title, body }) => <li key={title} className="flex items-start gap-3 rounded-xl border border-line bg-surface p-4">
         <Glyph aria-hidden="true" size={20} className="mt-0.5 shrink-0 text-accent-ink" />

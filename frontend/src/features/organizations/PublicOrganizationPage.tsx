@@ -44,7 +44,7 @@ export function PublicOrganizationPage({ profileSlug, profileOnly = false }: { p
   return <div style={style}><PublicLayout makerspace={{ name, logo: legacy?.logo_url || undefined, slug: "", homeHref: "/" }}
     nav={[{ label: t`Directory`, href: "/" }]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle />}
     hero={page ? <PublicPageHero page={page} /> : <header className="mb-6"><p className="eyebrow">{t`Organization`}</p><h1 className="title-page">{name}</h1>{ready ? <><p className="mt-3 text-muted">{legacy?.description}</p>{legacy?.website ? <a className="desk-button mt-3" href={legacy.website} rel="noopener noreferrer">{t`Visit website`}</a> : null}</> : null}</header>}
-    state={error ? { status: "error", error: error instanceof Error ? error.message : "Couldn't load organization.", onRetry: () => { void projection.refetch(); void organization.refetch(); } } : ready ? { status: "ready" } : { status: "loading" }}
+    state={error ? { status: "error", error: error instanceof Error ? error.message : t`Couldn't load organization.`, onRetry: () => { void projection.refetch(); void organization.refetch(); } } : ready ? { status: "ready" } : { status: "loading" }}
     footer={{ credit: "Powered by Space Works", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Staff sign-in`, href: "/admin" }] }}>
     <div className="grid gap-8">
       {ready ? <PageMetadata title={name} description={page?.description ?? legacy?.description ?? ""} path={page?.canonical_url ?? legacy?.canonical_url ?? `/o/${slug}`} image={page ? page.cover?.url : legacy?.logo_url} imageAlt={page?.cover?.alt} /> : null}

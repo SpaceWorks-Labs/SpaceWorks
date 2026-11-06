@@ -37,7 +37,7 @@ export function AssignSpeakerForm({ eventId, sections, disabled }: { eventId: nu
     assign.mutate({ user_id: picked.id, grant_check_in: checkIn, ...(section ? { section_slug: section } : {}) }, { onSuccess: () => { setPicked(null); setSection(""); } });
   }}>
     <h4 className="title-section">{t`Assign an account`}</h4>
-    <AsyncSearchPicker label={t`Speaker account`} helper="Search members, staff and people registered for this event. Type at least two characters."
+    <AsyncSearchPicker label={t`Speaker account`} helper={t`Search members, staff and people registered for this event. Type at least two characters.`}
       placeholder={t`Search by name or username`} selected={picked ? [picked] : []} options={options}
       loading={term.length >= 2 && candidates.isFetching} error={candidates.error ? eventErrorText(candidates.error) : null}
       emptyText={term.length >= 2 ? t`No matching accounts.` : t`Type at least two characters.`}

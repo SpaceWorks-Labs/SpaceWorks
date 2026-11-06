@@ -26,7 +26,7 @@ export function PublicStatsSettingsPanel({ makerspaceId, slug }: { makerspaceId:
 
   return <div className="grid">
     {!canEdit ? <div className="py-4"><Callout size="inline" tone="warn" lead="Only the Space Manager can change the public stats page." /></div> : null}
-    <SettingsRow label={t`Public stats page`} helper="Counts only, never names. Any count below 3 shows as “fewer than 3”.">
+    <SettingsRow label={t`Public stats page`} helper={t`Counts only, never names. Any count below 3 shows as “fewer than 3”.`}>
       <div className="grid gap-3">
         <StatusPill label={value.enabled ? t`On` : t`Off`} tone={value.enabled ? "success" : "neutral"} />
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.enabled}
@@ -34,16 +34,16 @@ export function PublicStatsSettingsPanel({ makerspaceId, slug }: { makerspaceId:
         <ActionControl action={{ label: t`Preview the stats page`, href: `/m/${slug}/stats`, external: true }} />
       </div>
     </SettingsRow>
-    <SettingsRow label={t`Sections and order`} helper="Tick the sections to show and move them into the order you want. A section whose module is off stays hidden.">
+    <SettingsRow label={t`Sections and order`} helper={t`Tick the sections to show and move them into the order you want. A section whose module is off stays hidden.`}>
       <SectionOrderList choices={choices.sections} value={value.sections} disabled={!canEdit} onChange={sections => set({ sections })} />
     </SettingsRow>
-    <SettingsRow label={t`Period`} helper="Every period count uses this one period. Visitors cannot change it.">
+    <SettingsRow label={t`Period`} helper={t`Every period count uses this one period. Visitors cannot change it.`}>
       <Field label={t`Stats period`}><select className="desk-input w-full" value={value.period} disabled={!canEdit}
         onChange={event => set({ period: event.target.value as PublicStatsSettings["period"] })}>
         {choices.periods.map(period => <option key={period.key} value={period.key}>{period.label}</option>)}
       </select></Field>
     </SettingsRow>
-    <SettingsRow label={t`Headline numbers`} helper={`Pick up to ${choices.max_headline}; they lead the page and the TV board in the order you tick them.`}>
+    <SettingsRow label={t`Headline numbers`} helper={t`Pick up to ${choices.max_headline}; they lead the page and the TV board in the order you tick them.`}>
       <fieldset className="grid gap-4"><legend className="sr-only">{t`Headline numbers`}</legend>
         {choices.sections.map(section => <div key={section.key} className="grid gap-1">
           <p className="text-sm font-semibold">{section.label}{shownSections.has(section.key) ? "" : t` (section hidden)`}</p>
@@ -57,7 +57,7 @@ export function PublicStatsSettingsPanel({ makerspaceId, slug }: { makerspaceId:
         </div>)}
       </fieldset>
     </SettingsRow>
-    <SettingsRow label={t`TV mode`} helper="A full-screen board for a lobby screen. It refreshes itself and has no navigation.">
+    <SettingsRow label={t`TV mode`} helper={t`A full-screen board for a lobby screen. It refreshes itself and has no navigation.`}>
       <div className="grid gap-3">
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.tv_mode_enabled}
           disabled={!canEdit} onChange={event => set({ tv_mode_enabled: event.target.checked })} />{t`Turn on TV mode`}</label>

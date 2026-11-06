@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { MouseEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { QueryState, Tab } from "../../components/ui";
@@ -32,7 +33,7 @@ export function useOpsTabs(key: string, choices: { key: string; label: string; c
 /** Use the same query status/error contract in each ops layout without moving its hooks. */
 export function opsQueryState(query: { isLoading: boolean; error: unknown; refetch: () => unknown }, resource: string): QueryState {
   return query.isLoading ? { status: "loading" } : query.error
-    ? { status: "error", error: `Couldn't load ${resource}. Try again.`, onRetry: () => { void query.refetch(); } }
+    ? { status: "error", error: t`Couldn't load ${resource}. Try again.`, onRetry: () => { void query.refetch(); } }
     : { status: "ready" };
 }
 

@@ -45,7 +45,7 @@ export function TicketClaimPage({ kind }: { kind: "claim" | "transfer" }) {
   return <CenteredCardLayout width={480} eyebrow={t`Event ticket`} title={copy.title}
     state={restoring || preview.isLoading ? { status: "loading" } : { status: "ready" }}
     body={done ? copy.done : data ? <>{t`${data.from_name} has a ${data.ticket_type ? `${data.ticket_type} ` : ""}ticket for you to`}<strong className="text-ink"> {data.event_title}</strong> on {new Date(data.starts_at).toLocaleString(formatLocale())}.</>
-      : "This ticket link could not be opened."}
+      : t`This ticket link could not be opened.`}
     content={<div className="grid gap-3">
       {preview.error ? <ErrorText message={errorText(preview.error)} /> : null}
       {data && !data.email_matches && !done ? <ErrorText message={t`You are signed in with a different email address than the one this ticket was sent to.`} /> : null}

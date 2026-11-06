@@ -23,7 +23,7 @@ export function MakerspaceDirectoryVisibility({ makerspace, settings, loading }:
     },
   });
   return <SettingsRow label={t`Hide from the platform`}
-    helper="Leave this space out of the platform directory, Discover, cross-space search and the shared event listings.">
+    helper={t`Leave this space out of the platform directory, Discover, cross-space search and the shared event listings.`}>
     <div className="grid min-w-0 max-w-xl gap-2">
       <label className="flex min-h-11 items-start gap-3 text-sm text-ink">
         <input className="mt-1 h-4 w-4" type="checkbox" checked={hidden} disabled={loading || save.isPending}

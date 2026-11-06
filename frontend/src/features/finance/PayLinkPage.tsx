@@ -28,18 +28,18 @@ export function PayLinkPage() {
   });
   if (token === "complete") {
     return <CenteredCardLayout media={{ icon: "CheckCircle", tone: "success" }} title={t`Thank you`}
-      body="Your payment is being confirmed by the provider. You can close this page."
+      body={t`Your payment is being confirmed by the provider. You can close this page.`}
       primary={{ label: t`Close`, onClick: () => window.close() }} state={{ status: "ready" }} />;
   }
   const gone = link.error instanceof StructuredApiError && link.error.status === 404;
   if (gone) {
     return <CenteredCardLayout media={{ icon: "CircleAlert", tone: "warn" }} title={t`This payment link has expired`}
-      body="Ask the space for a new link." primary={{ label: t`Go home`, href: "/" }} state={{ status: "ready" }} />;
+      body={t`Ask the space for a new link.`} primary={{ label: t`Go home`, href: "/" }} state={{ status: "ready" }} />;
   }
   const data = link.data;
   const paid = data && data.status !== "pending";
   return <CenteredCardLayout eyebrow={data?.makerspace} title={data ? t`Pay ${data.currency.toUpperCase()} ${data.amount}` : t`Payment`}
-    state={link.isLoading ? { status: "loading" } : link.error ? { status: "error", error: "Couldn't open this link.",
+    state={link.isLoading ? { status: "loading" } : link.error ? { status: "error", error: t`Couldn't open this link.`,
       onRetry: () => { void link.refetch(); } } : { status: "ready" }}
     body={data ? <p>{paid ? t`This charge is already settled. Nothing more to pay.` : t`For ${data.label}.`}</p> : null}
     content={data && !paid ? <OfflinePayment offline={data} onClaim={body => claim.mutate(body)} pending={claim.isPending}

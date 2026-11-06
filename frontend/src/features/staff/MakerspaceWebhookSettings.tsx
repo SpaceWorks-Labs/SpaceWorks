@@ -40,7 +40,7 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
   );
 
   return (
-    <SettingsQueryState query={settings} resource="webhook"><SettingsRow label={t`Chat webhooks`} helper="Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."><div className="@container grid min-w-0 gap-4">
+    <SettingsQueryState query={settings} resource="webhook"><SettingsRow label={t`Chat webhooks`} helper={t`Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid max-w-2xl gap-2">
 
 

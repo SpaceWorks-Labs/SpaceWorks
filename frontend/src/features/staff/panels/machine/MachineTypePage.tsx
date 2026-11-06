@@ -125,7 +125,7 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
         overflow: onWorkOrders ? [{ label: t`Work orders`, onClick: onWorkOrders }] : undefined }}
       banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: t`Retry`, onClick: onRetryPools } } : undefined}
       tabs={view.tabs} activeTab={view.active} main={main}
-      state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: "Couldn't load machines. Try again.", onRetry } : { status: "ready" }} />
+      state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: t`Couldn't load machines. Try again.`, onRetry } : { status: "ready" }} />
 
   </div>;
 }

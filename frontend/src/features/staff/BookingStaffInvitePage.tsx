@@ -69,7 +69,7 @@ export function BookingStaffInvitePage() {
     media={{ banner: redeem.isSuccess ? "success" : "accent" }}
     title={t`Booking resource staff invitation`}
     body={redeem.isSuccess ? <p role="status">{t`Your resource staff access is active. Open your helper workspace to use it.`}</p>
-      : "Sign in with the invited account and verify its email before accepting. This invitation can be used once."}
+      : t`Sign in with the invited account and verify its email before accepting. This invitation can be used once.`}
     content={<div className="grid gap-3 empty:hidden">
       {!token ? <p className="text-sm text-danger" role="alert">{t`The invitation link is missing its token. Open the original invitation link again.`}</p> : null}
       {user && !redeem.isSuccess ? <p className="text-sm text-ink">{t`Signed in as ${user.username}.`}</p> : null}

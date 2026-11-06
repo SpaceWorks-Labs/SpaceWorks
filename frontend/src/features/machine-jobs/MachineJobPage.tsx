@@ -43,9 +43,9 @@ function JobDetail({ id, context }: { id: number; context: MemberJobsContext }) 
   const missing = query.error instanceof StructuredApiError && [403, 404].includes(query.error.status);
   const label = job ? jobLabel(job.label) : undefined;
   return <DetailLayout back={{ label: t`My machine jobs`, href: context.path("member/machine-jobs") }}
-    state={context.bootstrapError ? { status: "error", error: "Couldn't load this makerspace. Try again." }
+    state={context.bootstrapError ? { status: "error", error: t`Couldn't load this makerspace. Try again.` }
       : !context.ready || query.isPending && id > 0 ? { status: "loading" } : query.isError && !missing
-      ? { status: "error", error: "Couldn't load this job. Try again.", onRetry: () => { void query.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load this job. Try again.`, onRetry: () => { void query.refetch(); } } : { status: "ready" }}
     isEmpty={missing || id <= 0} empty={{ message: t`We couldn't find that job in your account.`, action: { label: t`My machine jobs`, href: context.path("member/machine-jobs") } }}
     title={job?.title ?? t`Machine job`} identity={{ kind: "icon", icon: "Wrench", tone: "info" }}
     status={label ? <StatusPill label={label.text} tone={label.tone} /> : undefined}

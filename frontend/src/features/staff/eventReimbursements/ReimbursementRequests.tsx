@@ -14,7 +14,7 @@ export function ReimbursementRequests({ scope }: { scope: EventScope }) {
   const [selected, setSelected] = useState<RequestReviewRow | null>(null);
   const query = useRequestQueue(scope, page);
   return <ListLayout header={{ title: t`Support request screening`, subtitle: t`Offer awards within the approved policy and available budget.` }}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: "Requests could not be loaded.", onRetry: () => void query.refetch() }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Requests could not be loaded.`, onRetry: () => void query.refetch() }}
     isEmpty={query.data?.count === 0} empty={{ message: t`No support requests to review.` }} pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: "rows", rows: query.data?.results.map(row => <article key={row.id} className="grid gap-3 rounded-2xl border border-line bg-panel p-5">
       <h2 className="title-section">{row.owner_label}</h2><p>{t`${row.state} · Estimated ${row.estimated_total_minor} minor units (${row.currency})`}</p>

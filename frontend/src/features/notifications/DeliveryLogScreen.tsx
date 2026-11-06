@@ -75,7 +75,7 @@ function DeliveryLogContent({ makerspaceId, search, dialogs }: { makerspaceId: n
       { key: "suppression", label: t`Suppressed addresses`, href: viewHref("suppression") }]}
     activeTab={suppressed ? "suppression" : "deliveries"}
     state={{ status: suppressed ? "ready" : logs.isLoading ? "loading" : logs.error ? "error" : "ready",
-      error: "Couldn't load deliveries. Try again.", onRetry: () => { void logs.refetch(); } }}
+      error: t`Couldn't load deliveries. Try again.`, onRetry: () => { void logs.refetch(); } }}
     isEmpty={!suppressed && logs.data?.results.length === 0}
     empty={{ message: t`Nothing sent yet. Send a test to check your setup.` }}
     filtered={Object.values(filters).some(Boolean)} filteredEmpty={{ message: t`No deliveries match. Try another filter.`,

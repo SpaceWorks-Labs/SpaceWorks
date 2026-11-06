@@ -20,7 +20,7 @@ export function ClaimReview({ scope, claimId, onReceipt, onDirtyChange }: { scop
   useEffect(() => { onDirtyChange?.(Object.values(dirtySections).some(Boolean)); }, [dirtySections, onDirtyChange]);
   useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const row = query.data;
-  return <DetailLayout title={t`Claim review`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: "This claim is unavailable for your access.", onRetry: () => void query.refetch() }}
+  return <DetailLayout title={t`Claim review`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`This claim is unavailable for your access.`, onRetry: () => void query.refetch() }}
     main={row ? <div className="grid gap-5"><section className="grid gap-3 rounded-2xl border border-line bg-panel p-5"><h2 className="title-section">{row.owner_label}</h2>
       <p>{t`${row.state.replace(/_/g, " ")} · ${row.claimed_minor} minor units (${row.currency}) · Accepted cap ${row.accepted_cap_minor}`}</p>
       <ul className="list-disc pl-5">{row.eligibility_facts.map(fact => <li key={fact}>{fact}</li>)}</ul>

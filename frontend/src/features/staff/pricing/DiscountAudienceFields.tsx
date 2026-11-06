@@ -48,7 +48,7 @@ export function DiscountAudienceFields({ makerspaceId, form, problems, membershi
     </Field> : null}
     {plans.error ? <p role="alert" className="text-sm text-danger">{plans.error.message}</p> : null}
     {form.audience === "member" ? <AsyncSearchPicker label={t`Member`} placeholder={t`Search active members`}
-      helper="Type at least two letters of a name or username." selected={form.member ? [form.member] : []}
+      helper={t`Type at least two letters of a name or username.`} selected={form.member ? [form.member] : []}
       options={options} loading={members.isFetching} onSearch={setTerm}
       error={problems.member ?? (members.error ? members.error.message : null)}
       emptyText={term.length < 2 ? t`Type at least two letters.` : t`No active members match.`}

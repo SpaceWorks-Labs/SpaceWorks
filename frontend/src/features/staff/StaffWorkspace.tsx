@@ -138,7 +138,7 @@ export function StaffWorkspace({
             closes the window (the Users tab already renders it, so it is not shown twice there). */}
         {isSuperadmin && activeMakerspace && actions.length > 0 ? <div className="mb-4 grid gap-3"><Callout size="inline" tone="warn"
           lead={`Working in ${activeMakerspace.name} as the platform superadmin.`}
-          body="Every change is audited in this space." />
+          body={t`Every change is audited in this space.`} />
           {activeTab !== "users" ? <PiiAccessBanner key={`pii:${activeMakerspace.id}`} makerspaceId={activeMakerspace.id} compact /> : null}</div> : null}
         {routeTabDenied ? <PageHeader title={t`Page unavailable`} /> : null}
         {routeTabDenied ? null : <StaffScreenHelp tab={activeTab} makerspace={activeMakerspace} singleTenant={singleTenantLocked} platform={isSuperadmin} />}

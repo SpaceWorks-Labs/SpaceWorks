@@ -61,7 +61,7 @@ export function EventStaffAccess({ target }: { target: StaffGrantTarget }) {
         </div>
         {editing?.id === grant.id ? <form className="grid gap-3" onSubmit={(event) => {
           event.preventDefault(); update.mutate({ id: grant.id, permissions: editing.permissions, role_label: editing.role_label ?? "" }, { onSuccess: () => setEditing(null) });
-        }}><EventPermissionFields legend={`Permissions for account #${grant.user}`} value={editing.permissions} disabled={pending} onChange={(next) => setEditing({ ...editing, permissions: next })} />
+        }}><EventPermissionFields legend={t`Permissions for account #${grant.user}`} value={editing.permissions} disabled={pending} onChange={(next) => setEditing({ ...editing, permissions: next })} />
           <RoleLabelField label={t`Role label for account #${grant.user}`} value={editing.role_label ?? ""} disabled={pending} onChange={(next) => setEditing({ ...editing, role_label: next })} />
           <div className="flex flex-wrap gap-2"><button className="desk-button-primary" type="submit" disabled={pending || !editing.permissions.length}>{t`Save permissions`}</button><button className="desk-button" type="button" onClick={() => setEditing(null)}>{t`Cancel`}</button></div>
         </form> : <p className="text-sm text-muted">{permissionList(grant.permissions)}</p>}

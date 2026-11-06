@@ -34,7 +34,7 @@ export function PublicShopPage() {
     setCategories(current => [...new Set([...current, ...seen])].sort());
   }, [category, products.data]);
   const failed = !space.slug || shop.error || products.error;
-  const state: QueryState = failed ? { status: "error", error: !space.slug ? "This shop is not available." : shopErrorMessage(shop.error ?? products.error),
+  const state: QueryState = failed ? { status: "error", error: !space.slug ? t`This shop is not available.` : shopErrorMessage(shop.error ?? products.error),
     onRetry: shop.error || products.error ? () => { void shop.refetch(); void products.refetch(); } : undefined }
     : shop.isPending || products.isPending ? { status: "loading" } : { status: "ready" };
   const rows = products.data?.results ?? [];

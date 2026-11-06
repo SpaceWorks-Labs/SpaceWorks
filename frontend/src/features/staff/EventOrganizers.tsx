@@ -25,7 +25,7 @@ export function EventOrganizers({ visible = true, event, makerspaceId, disabled 
         <h3 className="title-section" id={`event-${event.id}-organizers`}>{t`Organization organizers`}</h3>
         <p className="mt-1 text-sm text-muted">{t`Attribution and event-specific authority. The host makerspace remains the owner. Co-organizers someone else added stay until you remove them.`}</p>
       </div>
-      <OrganizerPicker selected={selected} onChange={setSelected} disabled={disabled} label={t`Organizers`} helper="Search the organizations you belong to." />
+      <OrganizerPicker selected={selected} onChange={setSelected} disabled={disabled} label={t`Organizers`} helper={t`Search the organizations you belong to.`} />
       {!disabled && dirty ? <button className="desk-button-primary justify-self-start" type="button" disabled={replace.isPending}
         onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? t`Saving...` : t`Save organizers`}</button> : null}
       {replace.error ? <p className="text-sm text-danger" role="alert">{replace.error.message}</p> : null}

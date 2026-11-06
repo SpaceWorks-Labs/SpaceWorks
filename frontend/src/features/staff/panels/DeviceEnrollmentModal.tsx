@@ -8,7 +8,7 @@ export function DeviceEnrollmentModal({ grant, onClose }: { grant: EnrollmentGra
   const [copyState, setCopyState] = useState("");
   return <FlowLayout presentation="dialog" open title={t`One-time device enrollment`} state={{ status: "ready" }} steps={[]} current="token"
     onCancel={onClose} footer={{ next: { label: t`I’ve copied it`, onClick: onClose } }} work={<div className="grid gap-4">
-    <Callout size="inline" tone="warn" lead="Copy this now." body="It won’t be shown again." />
+    <Callout size="inline" tone="warn" lead="Copy this now." body={t`It won’t be shown again.`} />
     <p>{t`Copy this bearer token to the device now. Closing discards it; it cannot be read again.`}</p>
     <p className="text-sm text-muted">{t`Purpose: ${grant.purpose} · Expires `}<RelativeTime date={grant.expires_at} /></p>
     <label>{t`Enrollment identifier`}<input className="desk-input block w-full" readOnly value={grant.enrollment_id} /></label>

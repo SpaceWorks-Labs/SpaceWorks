@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type * as Api from "../../generated/api";
 
 // Input-derived local rows also represent new unsaved sections/sessions without output-only fields.
@@ -15,7 +16,7 @@ export type WebsiteGroup = typeof websiteGroups[number];
 export const emptyVenue = (): WebsiteVenue => ({ name: "", address: "", city: "", country: "", latitude: null, longitude: null,
   map_url: "", directions: "", parking: "", public_transport: "", accessibility_notes: "" });
 export const sectionGroup = (kind: WebsiteSection["kind"]): WebsiteGroup => ({
-  intro: "ABOUT", logo: "HERO", highlight: "HIGHLIGHTS", speaker: "SPEAKERS", sponsor: "SPONSORS",
+  intro: t`ABOUT`, logo: "HERO", highlight: "HIGHLIGHTS", speaker: "SPEAKERS", sponsor: "SPONSORS",
   track: "SCHEDULE", room: "VENUE", faq: "FAQ", resource: "RESOURCES",
   prizes: "SPONSORS", judges: "SPEAKERS", mentors: "SPEAKERS", project_gallery: "HIGHLIGHTS", results: "HIGHLIGHTS",
 })[kind] as WebsiteGroup;

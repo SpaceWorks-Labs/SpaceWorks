@@ -33,7 +33,7 @@ export function HostingRequestStatusPage() {
   const request = open.data;
   if (!request) {
     return <CenteredCardLayout width={480} title={t`Opening your request`} body="" primary={home}
-      state={open.error ? { status: "error", error: open.error instanceof Error ? open.error.message : "Couldn't open this request. Try again.", onRetry: open.retry } : { status: "loading" }} />;
+      state={open.error ? { status: "error", error: open.error instanceof Error ? open.error.message : t`Couldn't open this request. Try again.`, onRetry: open.retry } : { status: "loading" }} />;
   }
   const status = STATUS[request.status] ?? STATUS.invited;
   if (editing && token && request.editable) return <HostingResubmitFlow token={token} request={request} onDone={() => { setEditing(false); open.retry(); }} />;

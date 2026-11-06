@@ -58,8 +58,8 @@ export function MfaAccountPage() {
     <Link to="/member" className={linkClass}>{t`Member sign-in`}</Link></div>;
   if (codes || !ready || status.error) {
     return <CenteredCardLayout title={codes ? t`Save your recovery codes` : t`Two-step sign-in`} media={{ icon: "ShieldCheck", tone: "accent" }}
-      state={status.error && ready ? { status: "error", error: "Couldn't load authenticator settings. Try again.", onRetry: () => { void status.refetch(); } } : { status: "ready" }}
-      body={codes ? "Each code works once. Save them somewhere secure before you continue." : notice || "Sign in to manage your authenticator."}
+      state={status.error && ready ? { status: "error", error: t`Couldn't load authenticator settings. Try again.`, onRetry: () => { void status.refetch(); } } : { status: "ready" }}
+      body={codes ? t`Each code works once. Save them somewhere secure before you continue.` : notice || t`Sign in to manage your authenticator.`}
       content={codes ? <MfaRecoveryCodes codes={codes} /> : undefined}
       primary={codes ? { label: t`I've saved my codes`, onClick: () => { setCodes(undefined); setNotice(ready ? "" : t`Your recovery codes are saved. Sign in again to continue.`); } }
         : { label: t`Sign in`, href: signInHref }}

@@ -19,7 +19,7 @@ export function EventSettings({ event, makerspaceId, values, setValues, save, pe
     : ["starts_at", "ends_at"].includes(field) ? access.publish : access.edit);
   return <div className="grid gap-6">
     {access.edit ? <SettingsSection title={t`Event photo`} description={t`This photo appears on the public event page.`}>
-      <SettingsRow label={t`Public event image`} helper="Choose a wide image for the event listing."><ImageUploader endpoint={`/admin/events/${event.id}/image`} currentUrl={event.image_url} label={t`Event photo (shown publicly)`} shape="wide" disabled={readOnly} onChanged={invalidate} /></SettingsRow>
+      <SettingsRow label={t`Public event image`} helper={t`Choose a wide image for the event listing.`}><ImageUploader endpoint={`/admin/events/${event.id}/image`} currentUrl={event.image_url} label={t`Event photo (shown publicly)`} shape="wide" disabled={readOnly} onChanged={invalidate} /></SettingsRow>
     </SettingsSection> : null}
     {access.edit || access.publish ? <SettingsSection title={event.series_summary ? t`Edit this occurrence` : t`Event details`}>
       <form onSubmit={e => { e.preventDefault(); save(); }} className="grid gap-4">

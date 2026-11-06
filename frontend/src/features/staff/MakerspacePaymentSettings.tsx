@@ -63,7 +63,7 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
 
   return <>
     <SettingsQueryState query={settings} resource="payment">
-      <SettingsRow label={t`Online payments`} helper="Choose one provider for this makerspace. Saved credentials are encrypted and never displayed again. Credential changes require recent identity verification.">
+      <SettingsRow label={t`Online payments`} helper={t`Choose one provider for this makerspace. Saved credentials are encrypted and never displayed again. Credential changes require recent identity verification.`}>
         <div className="@container grid min-w-0 gap-4">
           <StatusPill label={settings.data?.effective_mode === "raw" ? t`Own credentials`
             : settings.data?.effective_mode === "connect" ? t`Stripe Connect` : t`Unavailable`}

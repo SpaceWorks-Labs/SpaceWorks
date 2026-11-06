@@ -9,7 +9,7 @@ export function PlatformEmailPanel({ embedded = false }: { embedded?: boolean })
   return <PlatformConfigurationSection title={t`Platform email`}
     subtitle={t`Instance-wide email for authentication, password resets and spaces that inherit platform delivery.`}
     embedded={embedded} state={{ status: editor.settings.isLoading ? "loading" : editor.settings.error ? "error" : "ready",
-      error: "Couldn't load platform email. Try again.", onRetry: () => { void editor.settings.refetch(); } }}
+      error: t`Couldn't load platform email. Try again.`, onRetry: () => { void editor.settings.refetch(); } }}
     save={{ dirty: editor.dirty, pending: editor.save.isPending, error: editor.save.error?.message,
       disabled: !editor.settings.isSuccess || !!editor.validation, onDiscard: editor.discard, onSave: () => editor.save.mutate() }}>
     <StatusPill label={editor.settings.data?.email_provider_configured || editor.settings.data?.smtp_host

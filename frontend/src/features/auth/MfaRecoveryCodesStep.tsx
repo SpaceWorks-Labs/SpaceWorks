@@ -15,7 +15,7 @@ export function MfaRecoveryCodesStep({ completed, onContinue, embedded, eyebrow,
   }
   return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }}
     media={{ icon: "CheckCircle", tone: "success" }} title={t`Save your recovery codes`}
-    body="Each code works once. Save these somewhere secure; they will not be shown again."
+    body={t`Each code works once. Save these somewhere secure; they will not be shown again.`}
     primary={{ label: t`I saved my codes. Continue`, onClick: onContinue }} footer={extra}
     content={<div className="grid gap-4">
       <ul className="grid grid-cols-2 gap-2">{codes.map(value => <li className="min-w-0 break-all rounded-control border border-line bg-surface p-3 code-text text-sm" key={value}>{value}</li>)}</ul>

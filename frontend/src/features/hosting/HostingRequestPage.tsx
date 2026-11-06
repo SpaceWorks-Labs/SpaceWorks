@@ -37,7 +37,7 @@ export function HostingRequestPage() {
   return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
     nav={[{ label: t`Browse spaces`, href: "/" }, { label: t`About`, href: "/about" }]} headerAction={{ label: t`Sign in`, href: "/member" }}
     liveStatus={<ThemeToggle variant="icon" />} width="narrow" hero={<HostingHero />}
-    state={config.isError ? { status: "error", error: "Couldn't load this page. Try again.", onRetry: () => { void config.refetch(); } }
+    state={config.isError ? { status: "error", error: t`Couldn't load this page. Try again.`, onRetry: () => { void config.refetch(); } }
       : config.isLoading ? { status: "loading" } : { status: "ready" }}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }] }}>
     <div className="grid gap-8">

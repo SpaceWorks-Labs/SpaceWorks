@@ -175,7 +175,7 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
                 onChange={(event) => { setCustomName(event.target.value); setCustomError(""); appendColour.reset(); }}
               />
             </label>
-            <PoolColourSwatchControl legend="Custom colour swatch" value={customHex} onChange={setCustomHex} />
+            <PoolColourSwatchControl legend={t`Custom colour swatch`} value={customHex} onChange={setCustomHex} />
             <div className="flex flex-wrap gap-2">
               <button className="desk-button-primary" disabled={appendColour.isPending} type="button" onClick={confirmCustom}>
                 {appendColour.isPending ? t`Saving...` : t`Save custom colour`}

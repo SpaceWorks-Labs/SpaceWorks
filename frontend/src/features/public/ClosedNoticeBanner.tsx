@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { formatLocale } from "../../lib/format";
 import { Callout } from "../../components/ui";
 import type { TenantBootstrap } from "../../lib/api";
@@ -13,5 +14,5 @@ export function ClosedNoticeBanner({ bootstrap }: { bootstrap: TenantBootstrap }
     ? new Intl.DateTimeFormat(formatLocale(), { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
       .format(new Date(`${notice.reopens_on}T00:00:00Z`))
     : null;
-  return <Callout size="banner" tone="warn" lead={notice.text} body={reopens ? `Reopening ${reopens}.` : undefined} />;
+  return <Callout size="banner" tone="warn" lead={notice.text} body={reopens ? t`Reopening ${reopens}.` : undefined} />;
 }

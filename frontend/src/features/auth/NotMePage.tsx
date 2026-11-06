@@ -59,7 +59,7 @@ export function NotMePage() {
   }
   if (!token) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldAlert", tone: "warn" }} title={t`This link is incomplete`}
-      body="Open the link from the security email again. If it still doesn't work, reset your password to secure your account."
+      body={t`Open the link from the security email again. If it still doesn't work, reset your password to secure your account.`}
       primary={{ label: t`Reset your password`, href: "/reset-password" }} footer={help} />;
   }
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "ShieldAlert", tone: "warn" }} eyebrow={t`Security alert`}

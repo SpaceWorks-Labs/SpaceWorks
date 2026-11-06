@@ -20,7 +20,7 @@ export function SpaceKeysDrawer({ card, onClose }: { card: HealthCard; onClose: 
     {keys.isLoading ? <Skeleton className="h-40 w-full" /> : keys.isError || !data
       ? <ErrorText resource="this space's keys" onRetry={() => { void keys.refetch(); }} /> : <div className="grid gap-6">
       {data.rls_mode !== "enforce" ? <Callout size="inline" tone="warn" lead={`Row-level security is ${data.rls_mode}.`}
-        body="The database does not yet stop a cross-space read on this deployment." /> : null}
+        body={t`The database does not yet stop a cross-space read on this deployment.`} /> : null}
       <KeyValueCard title={t`Keys`} items={[
         { label: t`Data key version`, value: data.active_dek_version ?? "None yet" },
         { label: t`Search key version`, value: data.search_key_version ?? "Deployment key" },

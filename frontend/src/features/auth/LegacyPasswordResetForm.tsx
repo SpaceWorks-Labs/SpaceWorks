@@ -28,7 +28,7 @@ export function LegacyPasswordResetForm({ uid, token }: { uid: string; token: st
   return <CenteredCardLayout state={{ status: "ready" }} eyebrow={t`Account access`}
     media={{ icon: updated ? "Check" : "KeyRound", tone: updated ? "success" : "accent" }}
     title={updated ? t`Password updated` : t`Set a new password`}
-    body={updated ? "Your password has been updated. You can now sign in." : "Choose a new password for your Space Works account."}
+    body={updated ? t`Your password has been updated. You can now sign in.` : t`Choose a new password for your Space Works account.`}
     primary={updated ? { label: t`Go to sign in`, href: "/admin" } : {
       label: t`Update password`, pending, pendingLabel: "Updating…", disabled: !canSubmit,
       disabledReason: "Enter matching passwords with at least 8 characters.",

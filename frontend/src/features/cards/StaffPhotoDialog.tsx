@@ -41,7 +41,7 @@ export function StaffPhotoDialog({ holderName, photoPath, aspect = 18 / 22, onCl
       setConsent(false);
       onSaved();
     } catch (error) {
-      setState({ busy: false, error: error instanceof Error ? error.message : "The photo couldn't be saved." });
+      setState({ busy: false, error: error instanceof Error ? error.message : t`The photo couldn't be saved.` });
     }
   }
   return <Modal open={holderName !== null} onClose={close} title={t`Card photo for ${holderName ?? ""}`}

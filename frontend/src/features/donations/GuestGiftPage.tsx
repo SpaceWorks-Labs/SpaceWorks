@@ -28,7 +28,7 @@ export function GuestGiftPage() {
     </DonationShell>;
   }
   const state = gift.isLoading ? { status: "loading" as const } : gift.error ? { status: "error" as const,
-    error: "Couldn't load your gift.", onRetry: () => { void gift.refetch(); } } : { status: "ready" as const };
+    error: t`Couldn't load your gift.`, onRetry: () => { void gift.refetch(); } } : { status: "ready" as const };
   return <DonationShell title={t`Your gift`} state={state}>
     {gift.data ? <div className="grid gap-3">
       <GiftStatusView gift={gift.data} taxReceiptHref={donationsApi.taxReceiptUrl(token)} onPayOnline={() => pay.mutate()}

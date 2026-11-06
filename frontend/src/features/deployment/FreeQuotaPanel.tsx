@@ -38,7 +38,7 @@ export function FreeQuotaPanel({ usage }: { usage: FreeUsage }) {
       <p className="text-muted">{t`Other provider workloads: `}{account.provider_usage_known ? t`Included` : t`Unknown; check the provider account`}.</p>
     </div>)}
     {(usage.notification_uncertain ?? 0) > 0 ? <Callout size="inline" tone="warn" lead="Some notification outcomes are uncertain."
-      body={`${usage.notification_uncertain} delivery claims need operator review with provider evidence. Elapsed time cannot prove they were not accepted.`} /> : null}
+      body={t`${String(usage.notification_uncertain)} delivery claims need operator review with provider evidence. Elapsed time cannot prove they were not accepted.`} /> : null}
     <div className="rounded-xl border border-line bg-panel p-4">
       <div className="flex flex-wrap items-center gap-3"><h3 className="font-semibold text-ink">{t`Scheduled work`}</h3>
         <StatusPill tone={stale ? "warn" : "neutral"} label={tickLabel} /></div>
@@ -47,6 +47,6 @@ export function FreeQuotaPanel({ usage }: { usage: FreeUsage }) {
       {stale ? <p className="mt-2 text-sm text-ink">{t`Ask the operator to check the trigger, provider pause status and job failures. Contact alone does not prove successful progress.`}</p> : null}
     </div>
     {(usage.tick.failed_tasks ?? 0) > 0 ? <Callout size="inline" tone="danger" lead="Some scheduled work failed."
-      body="Review job failures and backlog even if the trigger connected recently." /> : null}
+      body={t`Review job failures and backlog even if the trigger connected recently.`} /> : null}
   </section>;
 }

@@ -121,7 +121,7 @@ function LoanSettingsEditor({ makerspaceId }: { makerspaceId: number }) {
   const depositOn = form.loan_deposit_mode !== "none";
 
   return (
-    <SettingsQueryState query={settings} resource="loan"><SettingsRow label={t`Loans`} helper="Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue."><form
+    <SettingsQueryState query={settings} resource="loan"><SettingsRow label={t`Loans`} helper={t`Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue.`}><form
       className="@container mt-4 rounded-md border border-line bg-surface p-3"
 
       onSubmit={(event) => {

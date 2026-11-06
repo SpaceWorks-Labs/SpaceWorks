@@ -38,11 +38,11 @@ export function TaxSettings({ makerspaceId }: { makerspaceId: number }) {
   });
   if (!policy.data || !draft) return null;
   if (!policy.data.enabled) {
-    return <SettingsRow label={t`Tax`} helper="Turn on “Tax on charges” under Features to charge VAT or India GST. Until then no tax is charged and documents stay exactly as they are." >{null}</SettingsRow>;
+    return <SettingsRow label={t`Tax`} helper={t`Turn on “Tax on charges” under Features to charge VAT or India GST. Until then no tax is charged and documents stay exactly as they are.`} >{null}</SettingsRow>;
   }
   const set = (patch: Partial<Editable>) => setDraft({ ...draft, ...patch });
   const gst = draft.mode === "gst_india";
-  return <SettingsRow label={t`Tax`} helper="Applies to charges raised from now on. Existing charges and issued documents never change.">
+  return <SettingsRow label={t`Tax`} helper={t`Applies to charges raised from now on. Existing charges and issued documents never change.`}>
     <form className="grid min-w-0 gap-3" onSubmit={event => { event.preventDefault(); save.mutate(); }}>
       <fieldset className="grid gap-2"><legend className="text-sm font-semibold">{t`How you charge tax`}</legend>
         {MODES.map(([value, label]) => <label key={value} className="flex min-h-11 items-center gap-2">

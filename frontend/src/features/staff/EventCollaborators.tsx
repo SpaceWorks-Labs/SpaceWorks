@@ -79,7 +79,7 @@ export function EventCollaborators({ visible = true,
 
       <Card>
         <PartnerMakerspacePicker hostId={makerspaceId} selected={[]} disabled={replace.isPending}
-          label={t`Invite a partner makerspace`} helper="Choosing a makerspace sends the invitation straight away."
+          label={t`Invite a partner makerspace`} helper={t`Choosing a makerspace sends the invitation straight away.`}
           onChange={(next) => { const slug = next[next.length - 1]?.detail; if (slug) invite(slug); }} />
       </Card>
 

@@ -36,7 +36,7 @@ export function PiiAccessBanner({ makerspaceId, compact = false }: { makerspaceI
     return <div className="grid gap-3" aria-live="polite">
       {data.space_grants.length ? <>
         <Callout size="banner" tone="warn" lead="A platform administrator can see personal data in this space right now."
-          body="Each window lasts at most 30 minutes and is recorded in your audit log." />
+          body={t`Each window lasts at most 30 minutes and is recorded in your audit log.`} />
         <ul className="grid gap-2">{data.space_grants.map(grant => <li key={grant.id} className="text-sm text-ink">
           {t`${grant.opened_by}, until ${time(grant.expires_at)}. Reason: ${grant.reason}`}</li>)}</ul>
       </> : <p className="text-sm text-muted">{t`No platform administrator is viewing personal data here right now.`}</p>}
@@ -46,14 +46,14 @@ export function PiiAccessBanner({ makerspaceId, compact = false }: { makerspaceI
   if (data.active) {
     return <div className="grid gap-3" aria-live="polite">
       <Callout size="banner" tone="warn" lead={`Personal data is visible to you until ${time(data.active.expires_at)}.`}
-        body={`Reason: ${data.active.reason}. This space's managers can see this in their audit log.`}
+        body={t`Reason: ${data.active.reason}. This space's managers can see this in their audit log.`}
         action={{ label: t`Close now`, onClick: () => close.mutate(), pending: close.isPending, pendingLabel: "Closing…" }} />
       {close.error ? <ErrorText message={close.error.message} /> : null}
     </div>;
   }
   return <div className="grid gap-3" aria-live="polite">
     <Callout size="banner" tone="warn" lead="Personal data in this space is masked for you."
-      body="Open a 30-minute window to see names, emails and phone numbers. It needs a reason and is recorded in the space's audit log."
+      body={t`Open a 30-minute window to see names, emails and phone numbers. It needs a reason and is recorded in the space's audit log.`}
       action={asking ? undefined : { label: t`Open PII access`, onClick: () => setAsking(true) }} />
     {asking ? <form className="grid gap-3" onSubmit={submit}>
       <Field label={t`Reason`} hint={t`10 to 300 characters. The space's managers can read it.`}>

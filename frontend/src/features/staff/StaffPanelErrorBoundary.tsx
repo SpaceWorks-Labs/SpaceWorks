@@ -34,7 +34,7 @@ export class StaffPanelErrorBoundary extends Component<Props, State> {
 
     return <CenteredCardLayout standalone={false} state={{ status: "ready" }}
       media={{ icon: "TriangleAlert", tone: "danger" }} title={t`This page couldn't load`}
-      body="Something went wrong on our side. Reloading usually fixes it."
+      body={t`Something went wrong on our side. Reloading usually fixes it.`}
       primary={{ label: t`Reload page`, onClick: () => window.location.reload() }} />;
   }
 }

@@ -13,7 +13,7 @@ export function InventoryLendingFlags({ form, setForm, makerspace }: {
   const consumables = capabilityOn(makerspace, "inventory.consumables") && form.tracking_mode === "quantity";
   const expectedBack = capabilityOn(makerspace, "inventory.expected_back");
   if (!consumables && !expectedBack) return null;
-  return <SettingsRow label={t`Use and return`} helper="How this item is used up or when it is expected back."><div className="grid gap-2">
+  return <SettingsRow label={t`Use and return`} helper={t`How this item is used up or when it is expected back.`}><div className="grid gap-2">
     {consumables ? <label className="inline-flex min-h-11 items-center gap-2"><input type="checkbox" checked={Boolean(form.is_consumable)}
       onChange={event => setForm(current => ({ ...current, is_consumable: event.target.checked }))} />{t`Consumable (logged as used, never lent)`}</label> : null}
     {expectedBack ? <label className="inline-flex min-h-11 items-center gap-2"><input type="checkbox" checked={Boolean(form.public_show_expected_back)}

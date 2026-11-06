@@ -16,7 +16,7 @@ export function PublicHandlePage() {
   const query = usePageHandle(handle.toLowerCase(), valid);
   if (!valid || query.data === null || query.error instanceof StructuredApiError && query.error.status === 404) return <NotFoundPage />;
   // A failed refetch keeps the last resolution; the error state is only for a handle never resolved.
-  if (query.error && !query.data) return <CenteredCardLayout state={{ status: "error", error: "Couldn't load this public page.", onRetry: () => { void query.refetch(); } }} title={t`Public page`} body="" primary={{ label: t`Try again`, onClick: () => { void query.refetch(); } }} />;
+  if (query.error && !query.data) return <CenteredCardLayout state={{ status: "error", error: t`Couldn't load this public page.`, onRetry: () => { void query.refetch(); } }} title={t`Public page`} body="" primary={{ label: t`Try again`, onClick: () => { void query.refetch(); } }} />;
   if (!query.data) return <CenteredCardLayout state={{ status: "loading" }} title={t`Opening public page…`} body="" primary={{ label: t`Loading`, disabled: true }} />;
   const resolution = query.data;
   let url: URL; let path: string;

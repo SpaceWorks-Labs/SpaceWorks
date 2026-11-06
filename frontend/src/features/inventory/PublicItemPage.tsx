@@ -44,10 +44,10 @@ export function PublicItemPage() {
   const description = product?.description || `Browse public tools and equipment at ${name}.`;
   const modules = new Set(bootstrap?.modules ?? []);
   const state = id && item.isLoading ? { status: "loading" as const } : item.error || missing
-    ? { status: "error" as const, error: missing ? "This item isn't in the public catalogue." : disabled ? "This makerspace is not publishing inventory." : "Couldn't load this item. Try again.", onRetry: () => { void item.refetch(); } }
+    ? { status: "error" as const, error: missing ? t`This item isn't in the public catalogue.` : disabled ? t`This makerspace is not publishing inventory.` : t`Couldn't load this item. Try again.`, onRetry: () => { void item.refetch(); } }
     : { status: "ready" as const };
   if (missing || disabled) return <div style={brandStyle}><PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${id ?? itemId}`)} image={bootstrap?.makerspace.logo_url} siteName={name} /><CenteredCardLayout state={{ status: "ready" }} title={title}
-    body={missing ? "This item isn't in the public catalogue." : "This makerspace is not publishing inventory."}
+    body={missing ? t`This item isn't in the public catalogue.` : t`This makerspace is not publishing inventory.`}
     primary={{ label: t`Back to the catalogue`, href: tenantPath() }} /></div>;
   return <div style={brandStyle}>
     <PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${product?.id ?? id ?? itemId}`)} image={product?.image_url || bootstrap?.makerspace.logo_url} siteName={name} />

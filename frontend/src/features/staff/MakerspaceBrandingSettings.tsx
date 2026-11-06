@@ -63,21 +63,21 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
   const displayNameSaveDisabled = loading || updateDisplayName.isPending || !displayNameChanged;
 
   return <>
-    <SettingsRow label={t`Logo`} helper="Use your makerspace logo on public pages. Without one, the makerspace name becomes the wordmark."><ImageUploader
+    <SettingsRow label={t`Logo`} helper={t`Use your makerspace logo on public pages. Without one, the makerspace name becomes the wordmark.`}><ImageUploader
           endpoint={`/admin/makerspace/${makerspace.id}/logo`}
           currentUrl={settings?.logo_url}
           label={t`Logo`}
           fit="contain"
           onChanged={refreshBranding}
         /></SettingsRow>
-    <SettingsRow label={t`Cover image`} helper="Welcome visitors with a wide banner on your public site."><ImageUploader
+    <SettingsRow label={t`Cover image`} helper={t`Welcome visitors with a wide banner on your public site.`}><ImageUploader
           endpoint={`/admin/makerspace/${makerspace.id}/cover`}
           currentUrl={settings?.cover_image_url}
           label={t`Cover image (wide banner)`}
           shape="wide"
           onChanged={refreshBranding}
         /></SettingsRow>
-    <SettingsRow label={t`Registered name`} helper="The official name used across Space Works."><form
+    <SettingsRow label={t`Registered name`} helper={t`The official name used across Space Works.`}><form
           className="@container grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();
@@ -104,7 +104,7 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
             <p className="text-sm text-danger">{updateRegisteredName.error.message}</p>
           ) : null}
         </form></SettingsRow>
-    <SettingsRow label={t`Public display name`} helper="Leave blank to use the registered name."><form
+    <SettingsRow label={t`Public display name`} helper={t`Leave blank to use the registered name.`}><form
           className="@container grid min-w-0 gap-2"
           onSubmit={(event) => {
             event.preventDefault();

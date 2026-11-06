@@ -74,7 +74,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
 
   return <form className="grid min-w-0 gap-4" aria-label={`${spec.label} settings`} onSubmit={event => { event.preventDefault(); submit(); }}>
     {!moduleInstalled ? <Callout size="inline" tone="warn" lead={`The ${spec.label} module is not installed here.`}
-      body="You can prepare these settings, but nothing is sent until the platform administrator installs it." /> : null}
+      body={t`You can prepare these settings, but nothing is sent until the platform administrator installs it.`} /> : null}
     {!row ? <p role="note" className="text-sm text-muted">{t`Not set up yet. Until you save, existing rooms and email keep working exactly as today.`}</p> : null}
     <fieldset className="grid gap-1"><legend className="sr-only">{spec.label} delivery</legend>
       {toggle("enabled", `Use ${spec.label}`, "Turn the whole channel on or off for this space.")}
@@ -121,7 +121,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
       disabled={save.isPending || !row?.credentials_set || rotates || !sameTemplates(draft.templates, initial.templates)}
       onRefresh={templates => set({ templates })} /> : null}
     {rotates && row ? <Callout size="inline" tone="warn" lead="Saving reconnects this channel."
-      body={`Changing the provider, ${provider.identityLabel?.toLowerCase() ?? "identity"} or credentials disconnects everyone's personal ${CHANNEL_LABELS[spec.key]} connection. They will need to connect again.`} /> : null}
+      body={t`Changing the provider, ${provider.identityLabel?.toLowerCase() ?? "identity"} or credentials disconnects everyone's personal ${CHANNEL_LABELS[spec.key]} connection. They will need to connect again.`} /> : null}
     {problem ? <p role="alert" className="text-sm text-danger">{problem}</p> : null}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
     {save.isSuccess && !save.isPending ? <p role="status" className="text-sm text-muted">{t`${spec.label} settings saved.`}</p> : null}

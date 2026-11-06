@@ -20,10 +20,10 @@ export function InviteAcceptPage() {
   const valid = Boolean(invite) && card > 0;
   return <CenteredCardLayout title={accept.isSuccess ? t`Invite accepted` : t`Accept your ID card invite`}
     state={restoring || identity.isLoading ? { status: "loading" } : { status: "ready" }}
-    body={accept.isSuccess ? (accept.data.status === "approved" ? "Your card is ready in My cards."
-      : "You're on the list. Your card appears in My cards once it's approved.")
-      : valid ? "This links the card to the account you're signed in with. Use the account whose email received the invite."
-        : "This invite link is incomplete. Open the link from your email again."}
+    body={accept.isSuccess ? (accept.data.status === "approved" ? t`Your card is ready in My cards.`
+      : t`You're on the list. Your card appears in My cards once it's approved.`)
+      : valid ? t`This links the card to the account you're signed in with. Use the account whose email received the invite.`
+        : t`This invite link is incomplete. Open the link from your email again.`}
     content={accept.error ? <ErrorText message={accept.error.message} /> : undefined}
     primary={accept.isSuccess ? { label: t`Open My cards`, href: "/member/cards" }
       : { label: t`Accept the invite`, onClick: () => accept.mutate({ card, invite }), pending: accept.isPending,

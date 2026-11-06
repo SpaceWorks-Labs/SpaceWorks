@@ -50,7 +50,7 @@ export function PaymentDocuments({ makerspaceId, audience, initiallyExpanded = f
         <option value="receipt">{t`Receipts`}</option><option value="credit_note">{t`Credit notes`}</option>
       </select>
     </label><QueryContent state={documents.isLoading ? { status: "loading" } : documents.error
-      ? { status: "error", error: "Couldn't load documents. Try again.", onRetry: () => { void documents.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load documents. Try again.`, onRetry: () => { void documents.refetch(); } } : { status: "ready" }}
       isEmpty={documents.data?.count === 0} empty={{ message: t`No issued documents match this filter.` }}>
       <div className="grid gap-3">{documents.data?.results.map(document => <ListRow key={document.id}
         title={`${{ receipt: "Receipt", credit_note: "Credit note", bill: "Bill" }[document.kind]} ${document.number}`}

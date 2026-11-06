@@ -12,7 +12,7 @@ export function MemberPayoutDetail({ actorId, id }: { actorId: number; id: strin
   const row = query.data;
   const payee = collectedPayee(row?.payee);
   return <DetailLayout title={row?.event_title ?? t`Your reimbursement`} status={row?.state}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: "Your reimbursement could not be loaded.", onRetry: () => { void query.refetch(); } }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Your reimbursement could not be loaded.`, onRetry: () => { void query.refetch(); } }}
     main={row ? <div key={`${scopeIdentity(actorId)}:${id}:${row.version}`} className="grid gap-6">
       <p>{t`${money(row.approved_minor, row.currency)} approved · ${money(row.effective_paid_minor, row.currency)} recorded paid · ${money(row.remaining_minor, row.currency)} remaining`}</p>
       <p>{t`Eligibility: ${row.eligibility_status.replace(/_/g, " ")}`}</p>

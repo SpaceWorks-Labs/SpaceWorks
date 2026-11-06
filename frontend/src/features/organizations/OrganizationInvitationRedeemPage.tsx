@@ -61,8 +61,8 @@ export function OrganizationInvitationRedeemPage() {
   return <CenteredCardLayout width={480} state={{ status: restoring || redeem.isPending ? "loading" : "ready" }}
     media={{ banner: redeem.isSuccess ? "success" : "accent" }} eyebrow={t`Organization invitation`}
     title={redeem.isSuccess ? t`You're in` : t`Join an organization`}
-    body={redeem.isSuccess ? "Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces."
-      : redeem.isError ? redeem.error.message : "You've been invited to join. Sign in to bind this single-use invitation to your account. This link works once."}
+    body={redeem.isSuccess ? t`Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces.`
+      : redeem.isError ? redeem.error.message : t`You've been invited to join. Sign in to bind this single-use invitation to your account. This link works once.`}
     primary={redeem.isSuccess ? { label: t`Open organizations`, href: "/admin/organizations" }
       : redeem.isError ? { label: t`Return to directory`, href: "/" } : {
         label: t`Sign in and continue`, pending: login.isPending,

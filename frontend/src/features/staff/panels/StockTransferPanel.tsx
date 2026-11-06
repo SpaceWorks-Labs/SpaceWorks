@@ -94,7 +94,7 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
               <input className="desk-input w-full" value={reason} placeholder={t`Why is this stock moving?`} onChange={(event) => setReason(event.target.value)} />
             </Field>
             {isCrossMakerspace ? <Callout size="panel" tone="warn" lead={`This moves stock to ${makerspaceNames.get(destinationMakerspaceId) ?? "the destination"}.`}
-              body="A matching product is created there if needed and stays private until they publish it." /> : null}
+              body={t`A matching product is created there if needed and stays private until they publish it.`} /> : null}
             {isCrossMakerspace ? <details><summary className="desk-button-ghost">{t`Read the details`}</summary><p className="text-sm text-muted">{t`Only available stock can move. Individual asset-tracked products are not supported. The source container is ignored for transfers between makerspaces.`}</p></details> : null}
 
         <ErrorText message={validationError || create.error?.message || products.error?.message} />

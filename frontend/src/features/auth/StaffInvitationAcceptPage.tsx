@@ -52,8 +52,8 @@ export function StaffInvitationAcceptPage() {
     media={{ avatars: [{ kind: "icon", icon: "Building2", tone: "accent" }, { kind: "icon", icon: "ShieldCheck", tone: "info" }] }}
     title={done ? t`You're on the team` : t`Accept your staff invitation`}
     body={done ? <p role="status">{t`${confirm.data!.detail} Staff screens need two-step sign-in within three days.`}</p>
-      : send.data ? "We emailed a 6-digit code to the invitation address. Enter it to accept."
-      : "The staff role is added to the account you're signed in to. We'll email a code to the invited address to confirm it's yours."}
+      : send.data ? t`We emailed a 6-digit code to the invitation address. Enter it to accept.`
+      : t`The staff role is added to the account you're signed in to. We'll email a code to the invited address to confirm it's yours.`}
     primary={done ? { label: t`Open the staff console`, href: consoleHref }
       : mismatch ? { label: t`Sign out and use another account`, onClick: signOut }
       : !send.data ? { label: t`Email me a code`, pending: send.isPending, disabled: !link.get("token") || !link.get("space"),

@@ -31,7 +31,7 @@ export function LoanReservationPolicySettings({ makerspaceId }: { makerspaceId: 
   });
   const dirty = Boolean(form && query.data && JSON.stringify(form) !== JSON.stringify(query.data));
   return <SettingsQueryState query={query} resource="pickup and waitlist timing">{form ? <SettingsRow label={t`Pickup and waitlist timing`}
-    helper="Applies when Pickup windows, Loan reservations or the Loan waitlist are switched on in Features.">
+    helper={t`Applies when Pickup windows, Loan reservations or the Loan waitlist are switched on in Features.`}>
     <form className="@container grid gap-3 rounded-md border border-line p-4" onSubmit={event => { event.preventDefault(); save.mutate(form); }}>
       <div className="grid gap-3 @md:grid-cols-3">
         {FIELDS.map(([field, label, hint]) => <Field key={field} label={label} hint={hint}>

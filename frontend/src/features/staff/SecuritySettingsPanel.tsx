@@ -40,7 +40,7 @@ export function SecuritySettingsPanel({ makerspace }: { makerspace: Makerspace }
         description: data?.can_lock ? t`You can lock a setting so this space cannot loosen it: a switch is held at its stricter value, any other setting at its current value or stricter. Only a platform superadmin removes a lock.`
           : t`A setting locked by the platform cannot be loosened here.`,
         rows: data ? <>
-          <SettingsRow label={t`Staff MFA`} helper="Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it.">
+          <SettingsRow label={t`Staff MFA`} helper={t`Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it.`}>
             <p className="text-sm text-ink">{t`Required for every staff role (platform rule)`}</p>
           </SettingsRow>
           {data.settings.map(setting => <SecurityRow key={setting.key} setting={setting} data={data} pending={pending}

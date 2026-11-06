@@ -16,7 +16,7 @@ export function PresenceNowPage() {
   const brandStyle = useTenantBranding(bootstrap ?? undefined);
   if (!bootstrap) {
     const failed = tenant.mode === "central" ? bootstrapQuery.isError : Boolean(tenant.error);
-    return <CenteredCardLayout state={failed ? { status: "error", error: "Couldn't load this makerspace. Try again.", onRetry: () => void bootstrapQuery.refetch() } : { status: "loading" }}
+    return <CenteredCardLayout state={failed ? { status: "error", error: t`Couldn't load this makerspace. Try again.`, onRetry: () => void bootstrapQuery.refetch() } : { status: "loading" }}
       title={t`Opening the display…`} body="" primary={{ label: t`Loading…`, disabled: true, disabledReason: "The display is opening." }} />;
   }
   const spaceName = bootstrap.branding.display_name || bootstrap.makerspace.name;

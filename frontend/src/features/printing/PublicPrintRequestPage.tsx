@@ -61,11 +61,11 @@ export function PublicPrintRequestPage() {
   if (activeStatusToken) trackingUrl.searchParams.set("token", activeStatusToken);
   const loading = bootstrapQuery.isLoading || (moduleEnabled && queuesQuery.isLoading);
   const failed = bootstrapQuery.isError || queuesQuery.isError;
-  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: "Couldn't reach the print service. Try again.", onRetry: () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } } : { status: "ready" as const };
+  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: t`Couldn't reach the print service. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } } : { status: "ready" as const };
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
     <PublicDetailLayout state={state} title={t`Send a print job to ${displayName}`}
       chips={[{ label: t`3D printing`, tone: "accent" }]} sections={[{ id: "your-print", label: t`Your print`, content:
-        submitted ? <Callout size="panel" tone="success" lead="Request sent." body="We'll update this page as it moves." action={{ label: t`Send another request`, onClick: () => setSubmitted(false) }} />
+        submitted ? <Callout size="panel" tone="success" lead="Request sent." body={t`We'll update this page as it moves.`} action={{ label: t`Send another request`, onClick: () => setSubmitted(false) }} />
           : enabled ? <><PrintDetailsForm catalogue={catalogueQuery.data} form={form} updateField={updateField} poolsQuery={poolsQuery}
             modelFiles={modelFiles} setModelFiles={setModelFiles} screenshotFiles={screenshotFiles} setScreenshotFiles={setScreenshotFiles}
             submitPending={submitMutation.isPending} submitError={submitMutation.error} uploadProgress={uploadProgress} website={website} onWebsiteChange={setWebsite}

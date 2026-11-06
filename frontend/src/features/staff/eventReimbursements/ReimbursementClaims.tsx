@@ -8,7 +8,7 @@ export function ReimbursementClaims({ scope, onOpen }: { scope: EventScope; onOp
   const [page, setPage] = useState(1);
   const query = useClaimQueue(scope, page);
   return <ListLayout header={{ title: t`Expense claims`, subtitle: t`Screen claims or open the authorized finance decision view.` }}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: "Claims could not be loaded.", onRetry: () => void query.refetch() }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Claims could not be loaded.`, onRetry: () => void query.refetch() }}
     isEmpty={query.data?.count === 0} empty={{ message: t`No claims to review.` }} pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: "rows", rows: query.data?.results.map(row => <article key={row.id} className="grid gap-3 rounded-2xl border border-line bg-panel p-5"><h2 className="title-section">{row.owner_label}</h2>
       <p>{t`${row.state.replace(/_/g, " ")} · ${row.claimed_minor} minor units (${row.currency})`}</p><p>{t`Due ${new Date(row.due_at).toLocaleString(formatLocale())}`}</p>

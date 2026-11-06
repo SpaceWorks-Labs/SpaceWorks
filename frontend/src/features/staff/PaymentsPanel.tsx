@@ -120,7 +120,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     header={{ title: t`Payments`, subtitle: eventOnly ? t`Event registration fees owed to ${makerspaceName ?? "your makerspace"}, and how they were paid.` : t`Money owed to ${makerspaceName ?? "your makerspace"}, and how it was paid.`,
       secondary: !forRecording && !eventOnly ? { label: t`Billing documents`, onClick: () => setDocumentsOpen(true) } : undefined }}
     state={payments.isLoading ? { status: "loading" } : payments.error && !payments.data
-      ? { status: "error", error: "Couldn't load payments. Try again.", onRetry: () => { void payments.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load payments. Try again.`, onRetry: () => { void payments.refetch(); } } : { status: "ready" }}
     isEmpty={payments.data?.count === 0}
     empty={{ message: status === "pending" ? t`Nothing to collect. Every charge here is paid or waived.` : t`No payments yet. Charges appear here when someone books, registers or borrows.` }}
     filtered={Boolean(list.values.subject_type || dueState)} filteredEmpty={{ message: t`No matching payments. Try another filter.`, action: { label: t`Clear filters`, onClick: () => list.update({ subject_type: "", due_state: "" }) } }}

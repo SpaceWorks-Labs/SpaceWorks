@@ -42,7 +42,7 @@ export function EventMoneySettings({ makerspaceId }: { makerspaceId: number }) {
   const dirty = Boolean(draft && data && JSON.stringify(draft) !== JSON.stringify(draftFrom(data)));
   const togglePair = (pair: string) => draft && setDraft({ ...draft, payee_templates: draft.payee_templates.includes(pair)
     ? draft.payee_templates.filter(item => item !== pair) : [...draft.payee_templates, pair].sort() });
-  return <SettingsRow label={t`Event prizes: tax and payee options`} helper="How prize payouts propose tax, and where winners and reimbursed people can be paid."><div className="@container grid min-w-0 gap-4">
+  return <SettingsRow label={t`Event prizes: tax and payee options`} helper={t`How prize payouts propose tax, and where winners and reimbursed people can be paid.`}><div className="@container grid min-w-0 gap-4">
     <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{t`Configure prize tax and payees`}</button>
     {expanded ? <SettingsQueryState query={settings} resource="event money settings"><>
       {settings.error || save.error ? <p role="alert" className="text-danger">{(settings.error || save.error)?.message}</p> : null}

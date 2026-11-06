@@ -41,7 +41,7 @@ export function MakerspacePublicStatsSettings({ makerspace, settings, loading }:
     },
   });
 
-  return <SettingsRow label={t`Public borrower names`} helper="When on, the “Out right now” list publishes the borrower’s name on the public stats page. When off, every borrower is shown as Member. Nothing else on the page ever carries a name.">
+  return <SettingsRow label={t`Public borrower names`} helper={t`When on, the “Out right now” list publishes the borrower’s name on the public stats page. When off, every borrower is shown as Member. Nothing else on the page ever carries a name.`}>
     <div className="@container grid gap-3"><Badge label="" tone={showHolderNames ? "warn" : "neutral"}>{showHolderNames ? t`On` : t`Off`}</Badge>
       <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={showHolderNames}
         disabled={loading || updateHolderNames.isPending} onChange={event => updateHolderNames.mutate(event.target.checked)} />{t`Publish borrower names publicly`}</label>

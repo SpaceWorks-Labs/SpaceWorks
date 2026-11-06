@@ -87,7 +87,7 @@ export function ArchivedPayments() {
   const removed = discovery.error instanceof StructuredApiError
     && discovery.error.status === 404;
 
-  if (removed) return <CenteredCardLayout title={t`Page not found`} body="This page is unavailable on this deployment." primary={{ label: t`Back to Space Works`, href: "/" }} state={{ status: "ready" }} />;
+  if (removed) return <CenteredCardLayout title={t`Page not found`} body={t`This page is unavailable on this deployment.`} primary={{ label: t`Back to Space Works`, href: "/" }} state={{ status: "ready" }} />;
 
   if (unauthenticated) {
     return (

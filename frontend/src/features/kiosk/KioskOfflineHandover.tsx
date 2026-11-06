@@ -63,7 +63,7 @@ export function KioskOfflineHandover({ queue, onChange, retry, acknowledge }: {
   }
 
   return <div className="grid gap-4">
-    <Callout size="panel" tone="warn" lead="Handovers stay encrypted on this device." body="Continue only a loaded handover. Work is queued until the server confirms it, and syncs when you reconnect." action={{ label: t`Retry now`, onClick: retry }} />
+    <Callout size="panel" tone="warn" lead="Handovers stay encrypted on this device." body={t`Continue only a loaded handover. Work is queued until the server confirms it, and syncs when you reconnect.`} action={{ label: t`Retry now`, onClick: retry }} />
     <FlowLayout presentation="kiosk" state={{ status: "ready" }} title={t`Queue a handover`} current="capture"
       steps={[{ key: "capture", label: t`Capture handover`, state: "current" }]} pending={busy}
       onCancel={() => { setPhoto(null); setBox(""); setRemark(""); setAssetQrs(""); }}

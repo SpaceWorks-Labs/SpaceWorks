@@ -48,8 +48,8 @@ export function MemberSeriesPassPage() {
   const selected = choice || rows[0]?.id || 0;
   return <CenteredCardLayout width={480} eyebrow={t`Series pass`} title={t`Buy a series pass`}
     state={restoring || space.loading || passes.isLoading ? { status: "loading" } : { status: "ready" }}
-    body={offSale || (!error && passes.data && !rows.length) ? "Passes for this series are not on sale."
-      : "One pass gives you a place at every upcoming public date of this series."}
+    body={offSale || (!error && passes.data && !rows.length) ? t`Passes for this series are not on sale.`
+      : t`One pass gives you a place at every upcoming public date of this series.`}
     content={<div className="grid gap-3">
       {error && !offSale ? <ErrorText message={errorMessage(error)} /> : null}
       {rows.length ? <fieldset className="grid gap-2"><legend className="mb-1 text-sm font-semibold text-ink">{t`Choose a pass`}</legend>

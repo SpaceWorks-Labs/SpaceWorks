@@ -53,9 +53,9 @@ function UseMachine({ machineId, context }: { machineId: number; context: Member
   const live = data?.live_session ?? null;
   const history = context.path("member/machine-sessions");
   return <DetailLayout back={{ label: t`My machine sessions`, href: history }}
-    state={context.bootstrapError ? { status: "error", error: "Couldn't load this makerspace. Try again." }
+    state={context.bootstrapError ? { status: "error", error: t`Couldn't load this makerspace. Try again.` }
       : !context.ready || (preview.isPending && machineId > 0) ? { status: "loading" }
-      : preview.isError && !missing ? { status: "error", error: "Couldn't load this machine. Try again.", onRetry: () => { void preview.refetch(); } }
+      : preview.isError && !missing ? { status: "error", error: t`Couldn't load this machine. Try again.`, onRetry: () => { void preview.refetch(); } }
       : { status: "ready" }}
     isEmpty={missing || machineId <= 0}
     empty={{ message: t`This machine isn't available for sessions here. Ask staff if you think it should be.`, action: { label: t`My machine sessions`, href: history } }}

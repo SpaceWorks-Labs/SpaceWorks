@@ -43,7 +43,7 @@ function EligibleOrganizationSelfCreation({ onCreated }: { onCreated?: (id: numb
       <SettingsRow label={t`Organization name`} htmlFor="self-organization-name">
         <input id="self-organization-name" className="desk-input w-full" required maxLength={200} value={name} onChange={event => setName(event.target.value)} />
       </SettingsRow>
-      <SettingsRow label={t`Organization slug`} htmlFor="self-organization-slug" helper="Letters, numbers, hyphens and underscores.">
+      <SettingsRow label={t`Organization slug`} htmlFor="self-organization-slug" helper={t`Letters, numbers, hyphens and underscores.`}>
         <input id="self-organization-slug" className="desk-input w-full" required maxLength={50} pattern="[-a-zA-Z0-9_]+" value={slug} onChange={event => setSlug(event.target.value)} />
       </SettingsRow>
       <div className="flex justify-end py-5"><button className="desk-button-primary w-full sm:w-auto" disabled={create.isPending || !name.trim() || !slug.trim()}>{create.isPending ? t`Creating…` : t`Create private organization`}</button></div>

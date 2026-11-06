@@ -61,7 +61,7 @@ function changes(values: DomainSettingValues, initial: Draft, draft: Draft): { p
       if (!hours) return { error: HOURS_ERROR };
       patch[field] = hours;
     } else if (field === "filament_low_stock_threshold_grams") {
-      if (!/^\d+(\.\d{1,2})?$/.test(String(value).trim())) return { error: "Enter a weight of 0 or more grams." };
+      if (!/^\d+(\.\d{1,2})?$/.test(String(value).trim())) return { error: t`Enter a weight of 0 or more grams.` };
       patch[field] = String(value).trim();
     } else {
       patch[field] = value;

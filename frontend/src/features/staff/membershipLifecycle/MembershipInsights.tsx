@@ -43,7 +43,7 @@ export function MembershipInsights({ makerspaceId }: { makerspaceId: number }) {
   const loading = fy.isLoading || bridge.isLoading || renewals.isLoading;
   const failed = fy.isError || bridge.isError || renewals.isError || funnel.isError;
   const drill = (standing: string) => `?section=register${standing ? `&standing=${standing}` : ""}`;
-  return <DashboardLayout state={{ status: loading ? "loading" : failed ? "error" : "ready", error: "Couldn't load membership insights." }}
+  return <DashboardLayout state={{ status: loading ? "loading" : failed ? "error" : "ready", error: t`Couldn't load membership insights.` }}
     header={{ eyebrow: range ? range.label : t`Membership`, title: t`Membership insights`, headingLevel: 2,
       meta: fy.data ? <label className="grid gap-1 text-sm">{t`Financial year`}<select className="desk-input max-w-full" value={preset || range?.key || ""} onChange={(event) => setPreset(event.target.value)}>
           {fy.data.presets.map((row) => <option key={row.key} value={row.key}>{row.label}</option>)}

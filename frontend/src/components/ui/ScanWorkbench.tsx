@@ -26,7 +26,7 @@ export type ScanWorkbenchProps = {
   state?: QueryState;
 };
 /** Camera access stays user-initiated and all decoding/stream cleanup stays in QrScanner. */
-export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a QR code or item", helper = "You can also paste a QR link.",
+export function ScanWorkbench({ onFind, onScan = onFind, searchLabel = "Find a QR code or item", helper = t`You can also paste a QR link.`,
   findPending, cameraLabel = "Hold the QR code inside the frame", result, controls, recent = [], recentTitle = "Recent scans",
   state = { status: "ready" } }: ScanWorkbenchProps) {
   const [cameraOpen, setCameraOpen] = useState(false);

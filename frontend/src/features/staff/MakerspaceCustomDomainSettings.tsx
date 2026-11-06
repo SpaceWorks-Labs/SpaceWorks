@@ -86,7 +86,7 @@ export function MakerspaceCustomDomainSettings({ makerspace, settings, loading }
 
   return (
     <SettingsRow label={t`Your own domain or frontend`}
-      helper="Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend."><div className="@container grid min-w-0 gap-4">
+      helper={t`Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend.`}><div className="@container grid min-w-0 gap-4">
       <form
         className="grid min-w-0 gap-4"
         onSubmit={(event) => {

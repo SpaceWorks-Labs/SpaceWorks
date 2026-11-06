@@ -70,7 +70,7 @@ export function JoinPage() {
   const data = programme.data;
   if (data?.state === "signed_out") return <MemberAuthPanel onAuthenticated={() => { void programme.refetch(); }} />;
   if (!data) return <CenteredCardLayout state={programme.isLoading ? { status: "loading" } : { status: "ready" }}
-    title={t`We can't find this programme`} body="The link may be wrong, or the programme has closed." primary={{ label: t`Home`, href: "/" }} />;
+    title={t`We can't find this programme`} body={t`The link may be wrong, or the programme has closed.`} primary={{ label: t`Home`, href: "/" }} />;
   const done = STATE_COPY[data.state];
   if (done) return <CenteredCardLayout state={{ status: "ready" }} eyebrow={data.organization_name} title={done.title} body={done.body}
     primary={data.state === "approved" ? { label: t`Open My cards`, href: "/member/cards" } : { label: t`Home`, href: "/" }} />;
@@ -78,7 +78,7 @@ export function JoinPage() {
     || (data.photo_mode === "required" && !photo) || (Boolean(photo) && !consent);
 
   return <CenteredCardLayout state={{ status: "ready" }} width="wide" eyebrow={data.organization_name} title={data.name}
-    body={data.description || (data.requires_approval ? "The organiser approves each request." : "Your card is issued straight away.")}
+    body={data.description || (data.requires_approval ? t`The organiser approves each request.` : t`Your card is issued straight away.`)}
     content={<form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); join.mutate(); }}>
       {data.questions.some((question) => question.prefill) ? <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="desk-button-ghost min-h-11" disabled={prefill.isPending} onClick={() => prefill.mutate()}>

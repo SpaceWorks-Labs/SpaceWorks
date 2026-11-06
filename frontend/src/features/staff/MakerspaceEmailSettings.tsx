@@ -64,7 +64,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
 
   return <>
     <SettingsQueryState query={editor.settings} resource="email settings">
-      <SettingsRow label={t`Email delivery`} helper="Select the sender used for tenant notifications.">
+      <SettingsRow label={t`Email delivery`} helper={t`Select the sender used for tenant notifications.`}>
         <div className="@container grid min-w-0 gap-4">
           <EmailTransportFields form={editor.form} onChange={editor.setForm} platform={false}
             disabled={!editor.settings.isSuccess || editor.save.isPending}
@@ -81,7 +81,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
         </div>
       </SettingsRow>
     </SettingsQueryState>
-      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label={t`Notification recipients`} helper="Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace."><div className="@container grid min-w-0 gap-4">
+      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label={t`Notification recipients`} helper={t`Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace.`}><div className="@container grid min-w-0 gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
 

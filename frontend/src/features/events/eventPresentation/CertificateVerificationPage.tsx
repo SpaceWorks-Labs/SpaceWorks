@@ -36,7 +36,7 @@ export function CertificateVerificationPage() {
       media={data ? { icon: valid ? "ShieldCheck" : "ShieldAlert", tone: valid ? "success" : "danger" } : undefined}
       state={query.isLoading ? { status: "loading" } : { status: "ready" }}
       body={data ? <span className={valid ? "text-success-ink" : "text-danger"}><strong>{valid ? t`Valid.` : t`Withdrawn.`}</strong> {data.status_note}</span>
-        : "This certificate is not available for public checking."}
+        : t`This certificate is not available for public checking.`}
       content={data ? <div className="grid gap-6">
         <dl className="grid gap-3 rounded-control border border-line p-4">
           {data.recipient_name ? <Row label={t`Awarded to`}><span className="font-semibold">{data.recipient_name}</span></Row> : null}

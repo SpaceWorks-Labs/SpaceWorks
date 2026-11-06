@@ -6,6 +6,6 @@ export function StaffAccessDenied({ makerspaceName, onSignOut }: { makerspaceNam
   const space = makerspaceName ?? "this makerspace";
   return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Lock", tone: "warn" }}
     eyebrow={t`Access denied`} title={t`You do not have access to ${space}`}
-    body={`This console is only for ${space}'s team. Sign in with an account that's a member here.`}
+    body={t`This console is only for ${space}'s team. Sign in with an account that's a member here.`}
     primary={{ label: t`Sign out`, onClick: onSignOut }} footer={<ThemeToggle />} />;
 }

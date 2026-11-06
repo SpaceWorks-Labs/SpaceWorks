@@ -27,7 +27,7 @@ export function EventDefaultsSettings({ makerspaceId }: { makerspaceId: number }
     },
   });
   return <SettingsRow label={t`Default registration audience`} htmlFor={selectId}
-    helper="New events and recurring series start with this audience. Existing events keep their audience. Ticket currency uses the default in Location & hours.">
+    helper={t`New events and recurring series start with this audience. Existing events keep their audience. Ticket currency uses the default in Location & hours.`}>
     <form className="grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
       <select id={selectId} className="desk-input w-full min-w-0" value={audience} disabled={!query.data || save.isPending} onChange={(event) => { setDraft(event.target.value as Audience); save.reset(); }}>
         <AudienceOptions value={audience} organizationAudienceEnabled={organizationAudienceEnabled} />

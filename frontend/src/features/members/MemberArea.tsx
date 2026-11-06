@@ -162,7 +162,7 @@ export function MemberArea() {
   // The card panel exists only where the `membership` module is installed -- the card is
   // hung off a membership, so every one of its endpoints refuses with 400 without it.
 
-  if (restoring) return <CenteredCardLayout title={t`Your makerspace access`} body="Restoring session..." primary={{ label: t`Browse catalogue`, href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
+  if (restoring) return <CenteredCardLayout title={t`Your makerspace access`} body={t`Restoring session...`} primary={{ label: t`Browse catalogue`, href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} name={spaceName} logoUrl={spaceLogo} /></div>;
   if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
@@ -176,7 +176,7 @@ export function MemberArea() {
         onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(slug ? `/m/${slug}/member` : "/member"); }); } }}>
     <MemberSectionNavigation><MemberScreenLayout tab={activeTab} section={section} hasPartnerEvents={hasPartnerEvents} accountSections={accountSections} accountSelfService={accountSelfService} canRefer={Boolean(membershipModuleOn && membership?.membership_status === "active" && membership.can_refer && membership.referrals_enabled)} member={membership?.membership_status === "active"} status={membership?.membership_status} requested={requested}
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
-      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: "Couldn't load your makerspace. Try again.", onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
+      activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: t`Couldn't load your makerspace. Try again.`, onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
       primary={presenceOn && activeTab === "overview" && presence.isSuccess && !presence.data.active ? { label: t`Check in`, onClick: () => setPresenceSheet(true) } : undefined}>
     {membershipModuleOn ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
     {activeTab === "account" && profile.data ? <Link className="desk-button-brand inline-flex" to="/mfa">{t`Manage two-step sign-in`}</Link> : null}

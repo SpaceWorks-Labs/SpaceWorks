@@ -60,7 +60,7 @@ export function TenantMigrationPanel({ makerspace }: { makerspace: Makerspace })
     steps={stages.map((stage, index) => ({ ...stage, state: index === current ? "current" : index <= furthest ? "done" : "todo" }))}
     onStepSelect={key => go(stages.findIndex(stage => stage.key === key))}
     work={<div className="@container grid gap-6">
-      <Callout size="panel" tone="danger" lead="This is one-way." body="Cut-over archives the source space; it isn't deleted, and archives sit outside the purge guarantee." />
+      <Callout size="panel" tone="danger" lead="This is one-way." body={t`Cut-over archives the source space; it isn't deleted, and archives sit outside the purge guarantee.`} />
       {/* A failed list stays inline: the other stages keep working without it. */}
       {pairings.isError ? <ErrorText resource="deployment pairings" onRetry={() => { void pairings.refetch(); }} /> : null}
       {closure.isError ? <ErrorText resource="disclosure closure" onRetry={() => { void closure.refetch(); }} /> : null}

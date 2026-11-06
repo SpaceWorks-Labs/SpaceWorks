@@ -81,7 +81,7 @@ export function DirectHandoverWizard({ makerspace, onClose, compactWork, compact
   const stepKeys = ["borrower", "tools", "photo", "receipt"];
   return <FlowLayout presentation="dialog" open standalone={false} title={t`Guided direct handout`}
     subject="Record who borrowed the tools and the evidence of handover."
-    state={{ status: members.isLoading || products.isLoading ? "loading" : members.error || products.error ? "error" : "ready", error: "Couldn't load handout details. Try again.", onRetry: () => { void members.refetch(); void products.refetch(); } }}
+    state={{ status: members.isLoading || products.isLoading ? "loading" : members.error || products.error ? "error" : "ready", error: t`Couldn't load handout details. Try again.`, onRetry: () => { void members.refetch(); void products.refetch(); } }}
     steps={["Borrower card", "Scan or select tools", "Issue photo", "Receipt"].map((label, index) => ({ key: stepKeys[index], label, state: index < step ? "done" : index === step ? "current" : "todo" }))}
     current={stepKeys[step]} compact={compact}
     onCancel={() => { if (!issue.isPending && !compactAction?.pending) onClose(); }}

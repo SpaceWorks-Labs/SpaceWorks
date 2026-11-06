@@ -51,7 +51,7 @@ function ReportDialog({ source, onClose }: { source: ReportSource; onClose: () =
         description: description.trim(), photos, ...(chosen ? chosen.asset_id ? { asset_id: chosen.asset_id } : { product_id: chosen.product_id } : {}) }) });
       setState({ busy: false, error: "", done: true });
     } catch (problem) {
-      setState({ busy: false, error: problem instanceof Error ? problem.message : "Couldn't send the report. Try again.", done: false });
+      setState({ busy: false, error: problem instanceof Error ? problem.message : t`Couldn't send the report. Try again.`, done: false });
     }
   }
   const ready = !!title.trim() && !!description.trim() && (choices.length <= 1 || !!item);

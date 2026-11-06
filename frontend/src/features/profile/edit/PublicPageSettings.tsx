@@ -27,11 +27,11 @@ export function PublicPageSettings({ makerspaceId, profile }: { makerspaceId: nu
   const publish = () => publication.mutate({ public_visible: true, publication_consent: true }, { onSuccess: () => setConsenting(false) });
   return <SettingsSection title={t`Public profile page`}
     description={t`A page anyone can open at your own address. It is separate from the member directory and stays offline until you publish it.`}>
-    <SettingsRow label={t`Handle`} helper="Your public address. One per account." htmlFor={`profile-handle-${makerspaceId}`}>
+    <SettingsRow label={t`Handle`} helper={t`Your public address. One per account.`} htmlFor={`profile-handle-${makerspaceId}`}>
       <HandleField makerspaceId={makerspaceId} handle={handle} />
     </SettingsRow>
     <SettingsRow label={t`Publication`} helper={published && profile.public_consented_at
-      ? `Published with your consent on ${new Date(profile.public_consented_at).toLocaleDateString(formatLocale())}.` : "Only you can publish, and only after confirming."}>
+      ? t`Published with your consent on ${new Date(profile.public_consented_at).toLocaleDateString(formatLocale())}.` : t`Only you can publish, and only after confirming.`}>
       <div className="grid gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill tone={published ? "success" : "neutral"} label={published ? t`Published` : t`Not published`} />
@@ -47,7 +47,7 @@ export function PublicPageSettings({ makerspaceId, profile }: { makerspaceId: nu
         {publication.error && !consenting ? <p role="alert" className="text-sm text-danger">{fieldError(publication.error, "public_visible")}</p> : null}
       </div>
     </SettingsRow>
-    <SettingsRow label={t`What visitors see`} helper="Every section starts hidden. Switching one on takes effect straight away.">
+    <SettingsRow label={t`What visitors see`} helper={t`Every section starts hidden. Switching one on takes effect straight away.`}>
       <VisibilitySwitches makerspaceId={makerspaceId} flags={profile} />
     </SettingsRow>
     <PublishConsentDialog open={consenting} handle={handle ?? ""} pending={publication.isPending}

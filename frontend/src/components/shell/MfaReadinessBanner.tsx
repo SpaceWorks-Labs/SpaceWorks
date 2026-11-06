@@ -15,6 +15,6 @@ function lockDate(endsAt: string) {
 export function MfaReadinessBanner({ endsAt, href }: { endsAt: string; href: string }) {
   const when = lockDate(endsAt);
   return <Callout size="banner" tone="warn" lead="Set up two-step sign-in"
-    body={`${when ? `Staff screens lock on ${when}.` : "Staff screens lock soon."} Use an authenticator app or a passkey. Your member area keeps working.`}
+    body={t`${when ? `Staff screens lock on ${when}.` : "Staff screens lock soon."} Use an authenticator app or a passkey. Your member area keeps working.`}
     action={{ label: t`Set it up now`, href }} />;
 }

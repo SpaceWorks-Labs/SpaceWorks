@@ -74,7 +74,7 @@ export function AssetPreview({ assetId, bytes, filename, extension, load, downlo
   return <section aria-label={t`Preview ${filename}`} className="grid gap-4">
     <div className="flex flex-wrap items-center gap-3"><Box aria-hidden size={20} /><span className="font-semibold text-ink">{t`Maker file preview`}</span></div>
     {state === "confirm" ? <Callout size="panel" tone="warn" lead="This is a large file."
-      body="Loading the preview may use significant memory. You can download the original instead." /> : null}
+      body={t`Loading the preview may use significant memory. You can download the original instead.`} /> : null}
     {state === "failed" ? <p role="status" className="text-sm text-muted">{t`Preview unavailable. You can still download the original file.`}</p> : null}
     {state === "loading" ? <div role="status"><Spinner />{t`Preparing preview… `}<ActionControl action={{ label: t`Cancel preview`, onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
     {state === "ready" && result?.kind === "mesh" ? <Suspense fallback={<Spinner />}><MeshCanvas meshes={result.meshes} /></Suspense> : null}

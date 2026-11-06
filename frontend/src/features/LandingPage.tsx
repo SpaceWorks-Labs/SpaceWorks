@@ -37,7 +37,7 @@ export function LandingPage() {
   const loading = makerspacesQuery.isLoading;
   return <div className="sw-landing"><PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
     nav={[{ label: t`About`, href: "/about" }, ...hostLink]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle variant="icon" />}
-    state={makerspacesQuery.isError ? { status: "error", error: "Couldn't load spaces. Try again.", onRetry: () => { void makerspacesQuery.refetch(); } } : { status: "ready" }}
+    state={makerspacesQuery.isError ? { status: "error", error: t`Couldn't load spaces. Try again.`, onRetry: () => { void makerspacesQuery.refetch(); } } : { status: "ready" }}
     hero={<LandingHero search={searchInput} onSearch={setSearchInput} shown={filtered.length} total={total} />}
     isEmpty={!loading && !filtered.length} empty={{ message: emptyMessage, action: searchQuery ? { label: t`Clear search`, onClick: clear } : undefined }}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, ...hostLink, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Platform sign-in`, href: "/admin" }] }}>

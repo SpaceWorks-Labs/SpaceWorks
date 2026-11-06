@@ -1520,6 +1520,10 @@ msgstr "{0} damaged, {1} missing. These have no person to rank or restrict, so t
 msgid "{0} data purged."
 msgstr "{0} data purged."
 
+#. placeholder {0}: String(usage.notification_uncertain)
+msgid "{0} delivery claims need operator review with provider evidence. Elapsed time cannot prove they were not accepted."
+msgstr "{0} delivery claims need operator review with provider evidence. Elapsed time cannot prove they were not accepted."
+
 #. placeholder {0}: kindLabel(row.certificate_kind)
 #. placeholder {1}: row.name
 #. placeholder {2}: row.title ? `, ${row.title}` : ""
@@ -1623,6 +1627,12 @@ msgstr "{0} is archived on the date you choose and its data is deleted for good 
 #. placeholder {0}: card.name
 msgid "{0} is archived. Its data is deleted for good when the grace period ends. You can cancel the schedule until then."
 msgstr "{0} is archived. Its data is deleted for good when the grace period ends. You can cancel the schedule until then."
+
+#. placeholder {0}: op.makerspace_name
+#. placeholder {1}: op.report.money_after_restore_point?.length ?? 0
+#. placeholder {2}: op.report.objects_restored ?? 0
+msgid "{0} is back at its restore point. {1} payment record(s) made after it were kept for review; {2} file(s) were restored."
+msgstr "{0} is back at its restore point. {1} payment record(s) made after it were kept for review; {2} file(s) were restored."
 
 #. placeholder {0}: file.name
 #. placeholder {1}: Math.floor(staged.max_bytes / 1_048_576)
@@ -1888,6 +1898,10 @@ msgstr "{0} returned, {1} damaged, {2} missing"
 msgid "{0} review{1} each · {2} criteria"
 msgstr "{0} review{1} each · {2} criteria"
 
+#. placeholder {0}: preview.blocking_count ?? 0
+msgid "{0} row(s) outside this space would point at records the restore removes."
+msgstr "{0} row(s) outside this space would point at records the restore removes."
+
 #. placeholder {0}: selections.length
 msgid "{0} selected application subjects."
 msgstr "{0} selected application subjects."
@@ -1947,6 +1961,10 @@ msgstr "{0} tool QR scans · Evidence photo #"
 #. placeholder {0}: transfer.lines.reduce((sum, line) => sum + line.quantity, 0)
 msgid "{0} units transferred"
 msgstr "{0} units transferred"
+
+#. placeholder {0}: when ? `Staff screens lock on ${when}.` : "Staff screens lock soon."
+msgid "{0} Use an authenticator app or a passkey. Your member area keeps working."
+msgstr "{0} Use an authenticator app or a passkey. Your member area keeps working."
 
 #. placeholder {0}: round.submitted / 2
 #. placeholder {1}: round.assigned
@@ -2280,6 +2298,10 @@ msgstr "{name} is checked in. Print the current event credential and separately 
 msgid "{name}: only {available} left. Lower the quantity and try again."
 msgstr "{name}: only {available} left. Lower the quantity and try again."
 
+#. placeholder {0}: noun.endsWith("s") ? "aren't" : "isn't"
+msgid "{noun} {0} turned on at this makerspace."
+msgstr "{noun} {0} turned on at this makerspace."
+
 msgid "{pending} pending · {failed} failed"
 msgstr "{pending} pending · {failed} failed"
 
@@ -2384,6 +2406,9 @@ msgstr "1 place"
 msgid "1 receipt"
 msgstr "1 receipt"
 
+msgid "1. Who can see it?"
+msgstr "1. Who can see it?"
+
 msgid "10 Landing demo"
 msgstr "10 Landing demo"
 
@@ -2418,11 +2443,17 @@ msgstr "2 hours"
 msgid "2 Result card"
 msgstr "2 Result card"
 
+msgid "2. Who can find it?"
+msgstr "2. Who can find it?"
+
 msgid "3 × 4 in badge"
 msgstr "3 × 4 in badge"
 
 msgid "3 Loader and moods"
 msgstr "3 Loader and moods"
+
+msgid "3. Who can sign up?"
+msgstr "3. Who can sign up?"
 
 msgid "30 days"
 msgstr "30 days"
@@ -2547,6 +2578,9 @@ msgstr "A flag never disqualifies or hides a project. Ask the team before drawin
 msgid "A full-page picture sits behind this text, so check its contrast in the PDF preview."
 msgstr "A full-page picture sits behind this text, so check its contrast in the PDF preview."
 
+msgid "A full-screen board for a lobby screen. It refreshes itself and has no navigation."
+msgstr "A full-screen board for a lobby screen. It refreshes itself and has no navigation."
+
 msgid "A job in line (or this one) has no time estimate yet."
 msgstr "A job in line (or this one) has no time estimate yet."
 
@@ -2568,6 +2602,9 @@ msgstr "A makerspace is temporarily read-only. Try again later."
 msgid "A makerspace keeps at least one active Space Manager."
 msgstr "A makerspace keeps at least one active Space Manager."
 
+msgid "A matching product is created there if needed and stays private until they publish it."
+msgstr "A matching product is created there if needed and stays private until they publish it."
+
 msgid "A member of this space"
 msgstr "A member of this space"
 
@@ -2579,6 +2616,9 @@ msgstr "A named member"
 
 msgid "A new data key is used for every write at once; older records are re-encrypted in the background, then the old key is retired."
 msgstr "A new data key is used for every write at once; older records are re-encrypted in the background, then the old key is retired."
+
+msgid "A new enrollment replaces the device key. Copy the one-time token before closing it."
+msgstr "A new enrollment replaces the device key. Copy the one-time token before closing it."
 
 msgid "A new grant will record reassessed training from today. The previous record stays in history."
 msgstr "A new grant will record reassessed training from today. The previous record stays in history."
@@ -2627,6 +2667,9 @@ msgstr "A place is on offer"
 
 msgid "A price difference: only the Space Manager or a finance admin (view finance and record payments) can approve or decline it."
 msgstr "A price difference: only the Space Manager or a finance admin (view finance and record payments) can approve or decline it."
+
+msgid "A private event is never listed. Make it public first."
+msgstr "A private event is never listed. Make it public first."
 
 msgid "A private event is never listed. Make it visible first."
 msgstr "A private event is never listed. Make it visible first."
@@ -2682,6 +2725,9 @@ msgstr "A side holds at most {MAX_LAYERS} layers."
 msgid "A space fault puts the job back at the front of the queue for free. A member fault applies this type’s failure charge."
 msgstr "A space fault puts the job back at the front of the queue for free. A member fault applies this type’s failure charge."
 
+msgid "A Space Works colour for this event's decorative accents."
+msgstr "A Space Works colour for this event's decorative accents."
+
 msgid "a staff member"
 msgstr "a staff member"
 
@@ -2691,11 +2737,17 @@ msgstr "A stage that ends with a shortlist."
 msgid "A stage that has submissions, a shortlist, an extension or a judging round cannot be removed. Edit it instead."
 msgstr "A stage that has submissions, a shortlist, an extension or a judging round cannot be removed. Edit it instead."
 
+msgid "A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person."
+msgstr "A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person."
+
 msgid "a superadmin"
 msgstr "a superadmin"
 
 msgid "A temporary password will be generated. The user must change it at next sign-in. You can run this again anytime."
 msgstr "A temporary password will be generated. The user must change it at next sign-in. You can run this again anytime."
+
+msgid "A ticket download is available once your registration is confirmed."
+msgstr "A ticket download is available once your registration is confirmed."
 
 msgid "A to Z"
 msgstr "A to Z"
@@ -2750,6 +2802,9 @@ msgstr "Abort target {tenantName}"
 
 msgid "About"
 msgstr "About"
+
+msgid "ABOUT"
+msgstr "ABOUT"
 
 #. placeholder {0}: query.data.title
 msgid "About {0}"
@@ -2892,6 +2947,9 @@ msgstr "Accepted by"
 #. placeholder {1}: row.currency
 msgid "Accepted cap: {0} minor units ({1}). Approved total: {total}. A positive approval records an amount owed."
 msgstr "Accepted cap: {0} minor units ({1}). Approved total: {total}. A positive approval records an amount owed."
+
+msgid "Accepted file types (none ticked = every type)"
+msgstr "Accepted file types (none ticked = every type)"
 
 #. placeholder {0}: stage.rules.accepted_families.join(", ")
 msgid "Accepted file types: {0}."
@@ -3411,6 +3469,9 @@ msgstr "Add help trigger"
 
 msgid "Add HTTPS links to your code, demonstration or maker files. Each stays private unless you choose to share it."
 msgstr "Add HTTPS links to your code, demonstration or maker files. Each stays private unless you choose to share it."
+
+msgid "Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."
+msgstr "Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses."
 
 msgid "Add inventory"
 msgstr "Add inventory"
@@ -4070,6 +4131,9 @@ msgstr "Allow"
 msgid "Allow attended registrations"
 msgstr "Allow attended registrations"
 
+msgid "Allow eligible active members to invite someone. Individual referral permission is managed in the member roster."
+msgstr "Allow eligible active members to invite someone. Individual referral permission is managed in the member roster."
+
 msgid "Allow embeds on the sites below"
 msgstr "Allow embeds on the sites below"
 
@@ -4129,6 +4193,9 @@ msgstr "Allowed networks"
 
 msgid "Allowed sites"
 msgstr "Allowed sites"
+
+msgid "Allowed video hosts for video links (none ticked = any host)"
+msgstr "Allowed video hosts for video links (none ticked = any host)"
 
 msgid "Almost there"
 msgstr "Almost there"
@@ -4248,6 +4315,9 @@ msgstr "An exception replaces that date's regular hours. Leave it empty for a ho
 
 msgid "An existing organization"
 msgstr "An existing organization"
+
+msgid "An https:// meeting link. Only people with a confirmed place see it, on their ticket, email and calendar."
+msgstr "An https:// meeting link. Only people with a confirmed place see it, on their ticket, email and calendar."
 
 msgid "An offer needs your RSVP before you have a confirmed place. Saved details remain private until you submit them to an event."
 msgstr "An offer needs your RSVP before you have a confirmed place. Saved details remain private until you submit them to an event."
@@ -4610,8 +4680,14 @@ msgstr "Applications, review and teams stay inside this event."
 msgid "Applies if this space lets people hide their name; you'll see the outcome after checking in."
 msgstr "Applies if this space lets people hide their name; you'll see the outcome after checking in."
 
+msgid "Applies to charges raised from now on. Existing charges and issued documents never change."
+msgstr "Applies to charges raised from now on. Existing charges and issued documents never change."
+
 msgid "Applies to loans issued after you change it."
 msgstr "Applies to loans issued after you change it."
+
+msgid "Applies when Pickup windows, Loan reservations or the Loan waitlist are switched on in Features."
+msgstr "Applies when Pickup windows, Loan reservations or the Loan waitlist are switched on in Features."
 
 msgid "Apply"
 msgstr "Apply"
@@ -4930,6 +5006,9 @@ msgstr "Archives "
 msgid "Archives on a retired backup key"
 msgstr "Archives on a retired backup key"
 
+msgid "Archives you request by hand. Choose between 1 and 3,650 days."
+msgstr "Archives you request by hand. Choose between 1 and 3,650 days."
+
 msgid "Are you still coming?"
 msgstr "Are you still coming?"
 
@@ -4945,6 +5024,9 @@ msgstr "Areas"
 
 msgid "Arrange"
 msgstr "Arrange"
+
+msgid "Arrange a daily external encrypted backup with verified private storage, object and key custody, or an eligible portable tenant export. Provider recovery may be unavailable on your plan. These alternatives do not provide coordinated host recovery."
+msgstr "Arrange a daily external encrypted backup with verified private storage, object and key custody, or an eligible portable tenant export. Provider recovery may be unavailable on your plan. These alternatives do not provide coordinated host recovery."
 
 msgid "Arrival"
 msgstr "Arrival"
@@ -4991,6 +5073,9 @@ msgstr "ASC · utf8 · 5 MiB"
 msgid "Ascending"
 msgstr "Ascending"
 
+msgid "Ask a manager for the 8-digit PIN. It unlocks this device only."
+msgstr "Ask a manager for the 8-digit PIN. It unlocks this device only."
+
 msgid "Ask a membership manager to review this application"
 msgstr "Ask a membership manager to review this application"
 
@@ -4999,6 +5084,12 @@ msgstr "Ask a mentor"
 
 msgid "Ask a space manager for an invitation."
 msgstr "Ask a space manager for an invitation."
+
+msgid "Ask an organiser for the 8-digit PIN. It unlocks check-in on this device only."
+msgstr "Ask an organiser for the 8-digit PIN. It unlocks check-in on this device only."
+
+msgid "Ask an organiser for the PIN."
+msgstr "Ask an organiser for the PIN."
 
 msgid "Ask at the front desk."
 msgstr "Ask at the front desk."
@@ -5020,6 +5111,9 @@ msgstr "Ask for changes"
 
 msgid "Ask registered people to confirm. Replies show in the guest list, at the desk and in the export."
 msgstr "Ask registered people to confirm. Replies show in the guest list, at the desk and in the export."
+
+msgid "Ask staff for a new one."
+msgstr "Ask staff for a new one."
 
 msgid "Ask staff to check you in."
 msgstr "Ask staff to check you in."
@@ -5050,6 +5144,12 @@ msgstr "Ask the operator to refresh usage and verify the provider account allowa
 
 msgid "Ask the organiser if you think this is a mistake."
 msgstr "Ask the organiser if you think this is a mistake."
+
+msgid "Ask the platform team to provision a dedicated subdomain for this makerspace."
+msgstr "Ask the platform team to provision a dedicated subdomain for this makerspace."
+
+msgid "Ask the space for a new link."
+msgstr "Ask the space for a new link."
 
 msgid "Ask this space to erase what it holds about your membership. If staff approve, your membership here ends and your record, titles, profile and answers are erased. Payment records and the audit log are kept. Your account stays."
 msgstr "Ask this space to erase what it holds about your membership. If staff approve, your membership here ends and your record, titles, profile and answers are erased. Payment records and the audit log are kept. Your account stays."
@@ -5200,6 +5300,9 @@ msgstr "Assignment planning"
 msgid "Assignments"
 msgstr "Assignments"
 
+msgid "Assignments could not be loaded."
+msgstr "Assignments could not be loaded."
+
 msgid "At"
 msgstr "At"
 
@@ -5268,6 +5371,9 @@ msgstr "Attach a ready receipt and check that its full total covers the amount c
 #. placeholder {0}: event.series_summary.title
 msgid "Attach to {0} (requires series management permission)"
 msgstr "Attach to {0} (requires series management permission)"
+
+msgid "Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window."
+msgstr "Attached evidence rows are immutable and are never deleted; audit history is append-only. Stored image bytes expire after the effective window."
 
 #. placeholder {0}: document.id
 #. placeholder {1}: formatBytes(document.size_bytes)
@@ -5385,6 +5491,9 @@ msgstr "Auto · low stock"
 
 msgid "auto from name"
 msgstr "auto from name"
+
+msgid "Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off."
+msgstr "Auto-add a printing to-buy item when an active spool reaches this remaining weight. Set 0 to turn it off."
 
 msgid "Automatic and Inventory now show the combined makerspace page. If the selected family is disabled, the home uses an available family."
 msgstr "Automatic and Inventory now show the combined makerspace page. If the selected family is disabled, the home uses an available family."
@@ -6311,6 +6420,9 @@ msgstr "Budgets, claims and recorded payouts, separated by currency."
 msgid "Buffer before (minutes)"
 msgstr "Buffer before (minutes)"
 
+msgid "Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts."
+msgstr "Buffers reserve time around each booking. A cancellation cutoff of 0 allows members to cancel any time before the booking starts."
+
 msgid "Build together."
 msgstr "Build together."
 
@@ -6484,6 +6596,12 @@ msgstr "Can refer"
 
 msgid "Can verify"
 msgstr "Can verify"
+
+msgid "Can verify other members."
+msgstr "Can verify other members."
+
+msgid "Can vouch for a new member."
+msgstr "Can vouch for a new member."
 
 msgid "Can't judge this one "
 msgstr "Can't judge this one "
@@ -7090,6 +7208,11 @@ msgstr "Changes the released programme only. This session was removed from the d
 msgid "Changes this session in both the saved draft and released programme."
 msgstr "Changes this session in both the saved draft and released programme."
 
+#. placeholder {0}: provider.identityLabel?.toLowerCase() ?? "identity"
+#. placeholder {1}: CHANNEL_LABELS[spec.key]
+msgid "Changing the provider, {0} or credentials disconnects everyone's personal {1} connection. They will need to connect again."
+msgstr "Changing the provider, {0} or credentials disconnects everyone's personal {1} connection. They will need to connect again."
+
 msgid "Changing this type will remove its choices. Continue?"
 msgstr "Changing this type will remove its choices. Continue?"
 
@@ -7131,6 +7254,9 @@ msgstr "Charge the material used"
 
 msgid "Charged"
 msgstr "Charged"
+
+msgid "Charged only when a place is confirmed."
+msgstr "Charged only when a place is confirmed."
 
 msgid "Charged when a place is confirmed. After the event you approve one settlement: people who came get a refund case, no-shows keep the charge."
 msgstr "Charged when a place is confirmed. After the event you approve one settlement: people who came get a refund case, no-shows keep the charge."
@@ -7219,6 +7345,9 @@ msgstr "Check box QR"
 msgid "Check card"
 msgstr "Check card"
 
+msgid "Check connected services and delivery before sending alerts."
+msgstr "Check connected services and delivery before sending alerts."
+
 msgid "Check corrective replay"
 msgstr "Check corrective replay"
 
@@ -7302,6 +7431,9 @@ msgstr "Check the kit"
 
 msgid "Check the lodging dates and number of nights."
 msgstr "Check the lodging dates and number of nights."
+
+msgid "Check the new quote below and approve it again if it suits you."
+msgstr "Check the new quote below and approve it again if it suits you."
 
 msgid "Check the reason and retry the affected deliveries."
 msgstr "Check the reason and retry the affected deliveries."
@@ -7565,6 +7697,9 @@ msgstr "Choose a mode"
 msgid "Choose a new password"
 msgstr "Choose a new password"
 
+msgid "Choose a new password for your Space Works account."
+msgstr "Choose a new password for your Space Works account."
+
 msgid "Choose a new password from the reset page to sign in again."
 msgstr "Choose a new password from the reset page to sign in again."
 
@@ -7627,6 +7762,9 @@ msgstr "Choose a project"
 
 msgid "Choose a queue above to continue a physical handover."
 msgstr "Choose a queue above to continue a physical handover."
+
+msgid "Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."
+msgstr "Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."
 
 msgid "Choose a revision"
 msgstr "Choose a revision"
@@ -7693,6 +7831,9 @@ msgstr "Choose a valid JSON design file."
 
 msgid "Choose a valid JSON design."
 msgstr "Choose a valid JSON design."
+
+msgid "Choose a wide image for the event listing."
+msgstr "Choose a wide image for the event listing."
 
 msgid "Choose a winner"
 msgstr "Choose a winner"
@@ -7789,6 +7930,9 @@ msgstr "Choose how counts are checked and when the next one is due."
 msgid "Choose how people get notified"
 msgstr "Choose how people get notified"
 
+msgid "Choose how people recover a public print request when they lose their status link."
+msgstr "Choose how people recover a public print request when they lose their status link."
+
 msgid "Choose how to be paid"
 msgstr "Choose how to be paid"
 
@@ -7812,6 +7956,9 @@ msgstr "Choose one makerspace to verify."
 
 msgid "Choose one posting ID."
 msgstr "Choose one posting ID."
+
+msgid "Choose one provider for this makerspace. Saved credentials are encrypted and never displayed again. Credential changes require recent identity verification."
+msgstr "Choose one provider for this makerspace. Saved credentials are encrypted and never displayed again. Credential changes require recent identity verification."
 
 msgid "Choose optional messages for each family and personal channel. Safety and account recovery emails always remain enabled. Makerspace channel switches still apply."
 msgstr "Choose optional messages for each family and personal channel. Safety and account recovery emails always remain enabled. Makerspace channel switches still apply."
@@ -7860,6 +8007,9 @@ msgstr "Choose waitlist"
 msgid "Choose where this space pays winners and reimbursed people. Leave every box empty to keep the deployment operator's setting."
 msgstr "Choose where this space pays winners and reimbursed people. Leave every box empty to keep the deployment operator's setting."
 
+msgid "Choose whether people join immediately, request approval, or need an invitation. This only controls self-join; manager invitations remain available."
+msgstr "Choose whether people join immediately, request approval, or need an invitation. This only controls self-join; manager invitations remain available."
+
 msgid "Choose whether to submit a travel support request."
 msgstr "Choose whether to submit a travel support request."
 
@@ -7877,6 +8027,9 @@ msgstr "Choose your résumé"
 
 msgid "Choose…"
 msgstr "Choose…"
+
+msgid "Choosing a makerspace sends the invitation straight away."
+msgstr "Choosing a makerspace sends the invitation straight away."
 
 msgid "Choosing a preset replaces the application form below. Each applicant can separately opt in to sharing; consent starts off. Review the questions before enabling applications."
 msgstr "Choosing a preset replaces the application form below. Each applicant can separately opt in to sharing; consent starts off. Review the questions before enabling applications."
@@ -7986,6 +8139,9 @@ msgstr "Claiming…"
 
 msgid "Claims"
 msgstr "Claims"
+
+msgid "Claims could not be loaded."
+msgstr "Claims could not be loaded."
 
 msgid "ClamAV (fails closed on scan failure)"
 msgstr "ClamAV (fails closed on scan failure)"
@@ -8266,6 +8422,9 @@ msgstr "Codes copied."
 msgid "Codes sent to both emails"
 msgstr "Codes sent to both emails"
 
+msgid "Cold starts, missed ticks, provider restarts or pauses, and quota suspension can delay requests and reminders. Schedules run at the tick interval plus backlog and outages. There is no always-awake guarantee or SLA."
+msgstr "Cold starts, missed ticks, provider restarts or pauses, and quota suspension can delay requests and reminders. Schedules run at the tick interval plus backlog and outages. There is no always-awake guarantee or SLA."
+
 msgid "Collect"
 msgstr "Collect"
 
@@ -8475,8 +8634,14 @@ msgstr "Complete your journey and support statement."
 msgid "Completed"
 msgstr "Completed"
 
+msgid "Completed bookings, on the activity graph."
+msgstr "Completed bookings, on the activity graph."
+
 msgid "Completed jobs"
 msgstr "Completed jobs"
+
+msgid "Completed machine jobs, on the activity graph."
+msgstr "Completed machine jobs, on the activity graph."
 
 msgid "Completed visits"
 msgstr "Completed visits"
@@ -8666,6 +8831,9 @@ msgstr "Confirmed"
 msgid "Confirmed bookings only. Empty dates do not guarantee a bookable time; rules are checked when you submit."
 msgstr "Confirmed bookings only. Empty dates do not guarantee a bookable time; rules are checked when you submit."
 
+msgid "Confirmed. Continue to enroll your authenticator."
+msgstr "Confirmed. Continue to enroll your authenticator."
+
 msgid "Confirming email"
 msgstr "Confirming email"
 
@@ -8831,6 +8999,9 @@ msgstr "Continue"
 msgid "Continue editing"
 msgstr "Continue editing"
 
+msgid "Continue only a loaded handover. Work is queued until the server confirms it, and syncs when you reconnect."
+msgstr "Continue only a loaded handover. Work is queued until the server confirms it, and syncs when you reconnect."
+
 msgid "Continue registration"
 msgstr "Continue registration"
 
@@ -8934,6 +9105,9 @@ msgstr "Copy all codes"
 
 msgid "Copy booking rules"
 msgstr "Copy booking rules"
+
+msgid "Copy configuration between spaces. Packs contain policies, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack."
+msgstr "Copy configuration between spaces. Packs contain policies, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack."
 
 msgid "Copy enrollment"
 msgstr "Copy enrollment"
@@ -9144,6 +9318,9 @@ msgstr "Could not load evidence photo."
 msgid "Could not load printer service. Try again in a moment."
 msgstr "Could not load printer service. Try again in a moment."
 
+msgid "Could not load this restore."
+msgstr "Could not load this restore."
+
 msgid "Could not load your card."
 msgstr "Could not load your card."
 
@@ -9238,6 +9415,9 @@ msgstr "Couldn't change this module. Try again."
 msgid "Couldn’t check in"
 msgstr "Couldn’t check in"
 
+msgid "Couldn't check that card. Try again."
+msgstr "Couldn't check that card. Try again."
+
 msgid "Couldn't clear these settings. Try again."
 msgstr "Couldn't clear these settings. Try again."
 
@@ -9301,6 +9481,11 @@ msgstr "Couldn't get the file. Try again."
 msgid "Couldn't install Slack: {0}"
 msgstr "Couldn't install Slack: {0}"
 
+#. placeholder {0}: noun.toLowerCase()
+#. placeholder {0}: tab === "requests" ? "requests" : "members"
+msgid "Couldn't load {0}. Try again."
+msgstr "Couldn't load {0}. Try again."
+
 msgid "Couldn't load {resource}. Try again."
 msgstr "Couldn't load {resource}. Try again."
 
@@ -9312,6 +9497,25 @@ msgstr "Couldn't load analytics."
 
 msgid "Couldn't load announcements. Try again."
 msgstr "Couldn't load announcements. Try again."
+
+msgid "Couldn't load API access requests. Try again."
+msgstr "Couldn't load API access requests. Try again."
+
+msgid "Couldn't load API clients. Try again."
+msgstr "Couldn't load API clients. Try again."
+
+msgid "Couldn't load API scopes. Try again."
+msgstr "Couldn't load API scopes. Try again."
+
+msgid "Couldn't load API settings. Try again."
+msgstr "Couldn't load API settings. Try again."
+
+#. placeholder {0}: logs.error?.message ? ` (${logs.error.message})` : ""
+msgid "Couldn't load audit entries{0}. Try again."
+msgstr "Couldn't load audit entries{0}. Try again."
+
+msgid "Couldn't load authenticator settings. Try again."
+msgstr "Couldn't load authenticator settings. Try again."
 
 msgid "Couldn't load bookable spaces."
 msgstr "Couldn't load bookable spaces."
@@ -9329,8 +9533,29 @@ msgstr "Couldn't load channel settings ({0})."
 msgid "Couldn't load check-in durations. "
 msgstr "Couldn't load check-in durations. "
 
+msgid "Couldn't load checkout access. Try again."
+msgstr "Couldn't load checkout access. Try again."
+
+msgid "Couldn't load dashboard. Try again."
+msgstr "Couldn't load dashboard. Try again."
+
+msgid "Couldn't load deliveries. Try again."
+msgstr "Couldn't load deliveries. Try again."
+
 msgid "Couldn't load delivery destinations. Try again."
 msgstr "Couldn't load delivery destinations. Try again."
+
+msgid "Couldn't load direct handouts. Try again."
+msgstr "Couldn't load direct handouts. Try again."
+
+msgid "Couldn't load documents. Try again."
+msgstr "Couldn't load documents. Try again."
+
+msgid "Couldn't load email logs. Try again."
+msgstr "Couldn't load email logs. Try again."
+
+msgid "Couldn't load email templates. Try again."
+msgstr "Couldn't load email templates. Try again."
 
 msgid "Couldn't load events."
 msgstr "Couldn't load events."
@@ -9338,20 +9563,50 @@ msgstr "Couldn't load events."
 msgid "Couldn't load events. Try again."
 msgstr "Couldn't load events. Try again."
 
+msgid "Couldn't load finished jobs. Try again."
+msgstr "Couldn't load finished jobs. Try again."
+
+msgid "Couldn't load handout details. Try again."
+msgstr "Couldn't load handout details. Try again."
+
 msgid "Couldn't load history. "
 msgstr "Couldn't load history. "
 
 msgid "Couldn't load integration health. Try again."
 msgstr "Couldn't load integration health. Try again."
 
+msgid "Couldn't load inventory. Try again."
+msgstr "Couldn't load inventory. Try again."
+
+msgid "Couldn't load machines. Try again."
+msgstr "Couldn't load machines. Try again."
+
+msgid "Couldn't load membership insights."
+msgstr "Couldn't load membership insights."
+
 msgid "Couldn't load notification recipients. Try again."
 msgstr "Couldn't load notification recipients. Try again."
+
+msgid "Couldn't load organization."
+msgstr "Couldn't load organization."
+
+msgid "Couldn't load organization. Try again."
+msgstr "Couldn't load organization. Try again."
 
 msgid "Couldn't load organizations."
 msgstr "Couldn't load organizations."
 
+msgid "Couldn't load organizations. Try again."
+msgstr "Couldn't load organizations. Try again."
+
+msgid "Couldn't load payments. Try again."
+msgstr "Couldn't load payments. Try again."
+
 msgid "Couldn't load PII access. Try again."
 msgstr "Couldn't load PII access. Try again."
+
+msgid "Couldn't load platform email. Try again."
+msgstr "Couldn't load platform email. Try again."
 
 msgid "Couldn't load problems. Try again."
 msgstr "Couldn't load problems. Try again."
@@ -9362,18 +9617,30 @@ msgstr "Couldn't load profile. Try again."
 msgid "Couldn't load projects. Try again."
 msgstr "Couldn't load projects. Try again."
 
+msgid "Couldn't load refunds. Try again."
+msgstr "Couldn't load refunds. Try again."
+
 msgid "Couldn't load registrations. Try again."
 msgstr "Couldn't load registrations. Try again."
 
 msgid "Couldn't load reorder suggestions. Try again."
 msgstr "Couldn't load reorder suggestions. Try again."
 
+msgid "Couldn't load reports. Try again."
+msgstr "Couldn't load reports. Try again."
+
 #. placeholder {0}: catalog.error instanceof Error && catalog.error.message ? ` ${catalog.error.message}` : ""
 msgid "Couldn't load reports. Try again.{0}"
 msgstr "Couldn't load reports. Try again.{0}"
 
+msgid "Couldn't load requests. Try again."
+msgstr "Couldn't load requests. Try again."
+
 msgid "Couldn't load settings access."
 msgstr "Couldn't load settings access."
+
+msgid "Couldn't load sign-in providers. Try again."
+msgstr "Couldn't load sign-in providers. Try again."
 
 msgid "Couldn't load SMS consent."
 msgstr "Couldn't load SMS consent."
@@ -9384,11 +9651,26 @@ msgstr "Couldn't load space pack profile. Try again."
 msgid "Couldn't load spaces."
 msgstr "Couldn't load spaces."
 
+msgid "Couldn't load spaces. Try again."
+msgstr "Couldn't load spaces. Try again."
+
+msgid "Couldn't load Stripe Connect settings. Try again."
+msgstr "Couldn't load Stripe Connect settings. Try again."
+
 msgid "Couldn't load subdomain. Try again."
 msgstr "Couldn't load subdomain. Try again."
 
+msgid "Couldn't load suppressions. Try again."
+msgstr "Couldn't load suppressions. Try again."
+
 msgid "Couldn't load Telegram settings. Try again."
 msgstr "Couldn't load Telegram settings. Try again."
+
+msgid "Couldn't load terms. Try again."
+msgstr "Couldn't load terms. Try again."
+
+msgid "Couldn't load the donation page."
+msgstr "Couldn't load the donation page."
 
 msgid "Couldn't load the filament list. You can still send the job; staff will confirm the material."
 msgstr "Couldn't load the filament list. You can still send the job; staff will confirm the material."
@@ -9396,6 +9678,9 @@ msgstr "Couldn't load the filament list. You can still send the job; staff will 
 #. placeholder {0}: settings.error.message
 msgid "Couldn't load the latest settings ({0}). Showing the last known values."
 msgstr "Couldn't load the latest settings ({0}). Showing the last known values."
+
+msgid "Couldn't load the machines taking jobs. Try again."
+msgstr "Couldn't load the machines taking jobs. Try again."
 
 msgid "Couldn't load the makerspace picker."
 msgstr "Couldn't load the makerspace picker."
@@ -9409,18 +9694,36 @@ msgstr "Couldn't load the register."
 msgid "Couldn't load the scanner."
 msgstr "Couldn't load the scanner."
 
+msgid "Couldn't load the template. Try again."
+msgstr "Couldn't load the template. Try again."
+
 msgid "Couldn't load the waitlist. Try again."
 msgstr "Couldn't load the waitlist. Try again."
 
 msgid "Couldn't load these settings."
 msgstr "Couldn't load these settings."
 
+msgid "Couldn't load this event."
+msgstr "Couldn't load this event."
+
+msgid "Couldn't load this item. Try again."
+msgstr "Couldn't load this item. Try again."
+
 msgid "Couldn't load this item's price."
 msgstr "Couldn't load this item's price."
+
+msgid "Couldn't load this job. Try again."
+msgstr "Couldn't load this job. Try again."
 
 #. placeholder {0}: " "
 msgid "Couldn't load this loan's charges.{0}"
 msgstr "Couldn't load this loan's charges.{0}"
+
+msgid "Couldn't load this machine. Try again."
+msgstr "Couldn't load this machine. Try again."
+
+msgid "Couldn't load this makerspace. Try again."
+msgstr "Couldn't load this makerspace. Try again."
 
 msgid "Couldn't load this makerspace's dashboard."
 msgstr "Couldn't load this makerspace's dashboard."
@@ -9428,8 +9731,14 @@ msgstr "Couldn't load this makerspace's dashboard."
 msgid "Couldn't load this page. Try again."
 msgstr "Couldn't load this page. Try again."
 
+msgid "Couldn't load this public page."
+msgstr "Couldn't load this public page."
+
 msgid "Couldn't load this report. Try again."
 msgstr "Couldn't load this report. Try again."
+
+msgid "Couldn't load this space. Try again."
+msgstr "Couldn't load this space. Try again."
 
 msgid "Couldn't load upcoming events."
 msgstr "Couldn't load upcoming events."
@@ -9437,14 +9746,38 @@ msgstr "Couldn't load upcoming events."
 msgid "Couldn't load vendors. Type the supplier name instead."
 msgstr "Couldn't load vendors. Type the supplier name instead."
 
+msgid "Couldn't load who's in. Retrying automatically."
+msgstr "Couldn't load who's in. Retrying automatically."
+
+msgid "Couldn't load work list. Try again."
+msgstr "Couldn't load work list. Try again."
+
+msgid "Couldn't load your account. Try again."
+msgstr "Couldn't load your account. Try again."
+
+msgid "Couldn't load your gift."
+msgstr "Couldn't load your gift."
+
+msgid "Couldn't load your jobs. Try again."
+msgstr "Couldn't load your jobs. Try again."
+
+msgid "Couldn't load your makerspace. Try again."
+msgstr "Couldn't load your makerspace. Try again."
+
 msgid "Couldn't load your notification settings."
 msgstr "Couldn't load your notification settings."
+
+msgid "Couldn't load your pledge."
+msgstr "Couldn't load your pledge."
 
 msgid "Couldn't load your print status. Try again."
 msgstr "Couldn't load your print status. Try again."
 
 msgid "Couldn't load your projects. Choose Visiting, or retry later."
 msgstr "Couldn't load your projects. Choose Visiting, or retry later."
+
+msgid "Couldn't load your sessions. Try again."
+msgstr "Couldn't load your sessions. Try again."
 
 msgid "Couldn't load your timeline. Try again."
 msgstr "Couldn't load your timeline. Try again."
@@ -9458,8 +9791,21 @@ msgstr "Couldn't load your waitlist places. Try again later."
 msgid "Couldn't mark it bought. Try again."
 msgstr "Couldn't mark it bought. Try again."
 
+#. placeholder {0}: list.values.id || list.values.request
+msgid "Couldn't open request #{0}. Try again."
+msgstr "Couldn't open request #{0}. Try again."
+
 msgid "Couldn't open this invitation. Try again."
 msgstr "Couldn't open this invitation. Try again."
+
+msgid "Couldn't open this link."
+msgstr "Couldn't open this link."
+
+msgid "Couldn't open this request. Try again."
+msgstr "Couldn't open this request. Try again."
+
+msgid "Couldn't reach the print service. Try again."
+msgstr "Couldn't reach the print service. Try again."
 
 msgid "Couldn't read local check-ins. Keep this station open and try again."
 msgstr "Couldn't read local check-ins. Keep this station open and try again."
@@ -9479,6 +9825,9 @@ msgstr "Couldn't save the price."
 
 msgid "Couldn't save the sender."
 msgstr "Couldn't save the sender."
+
+msgid "Couldn't send the report. Try again."
+msgstr "Couldn't send the report. Try again."
 
 msgid "Couldn't share the link. Copy it from the address bar."
 msgstr "Couldn't share the link. Copy it from the address bar."
@@ -9560,6 +9909,9 @@ msgstr "Counted from when results are announced. Leave empty for no deadline; af
 msgid "Counted so far"
 msgstr "Counted so far"
 
+msgid "Counters enter what they find without seeing expected quantities."
+msgstr "Counters enter what they find without seeing expected quantities."
+
 msgid "counting…"
 msgstr "counting…"
 
@@ -9630,6 +9982,11 @@ msgstr "Create a draft copy of the event, ticket types, registration form and fe
 
 msgid "Create a full deployment archive each day"
 msgstr "Create a full deployment archive each day"
+
+#. placeholder {0}: data.daily_keep_days
+#. placeholder {1}: data.weekly_keep_weeks
+msgid "Create a full deployment archive each day. Each is kept {0} days, and the first of each week is kept {1} weeks."
+msgstr "Create a full deployment archive each day. Each is kept {0} days, and the first of each week is kept {1} weeks."
 
 msgid "Create a place your community can book."
 msgstr "Create a place your community can book."
@@ -10100,6 +10457,9 @@ msgstr "Custom check-in lists"
 msgid "Custom colour name"
 msgstr "Custom colour name"
 
+msgid "Custom colour swatch"
+msgstr "Custom colour swatch"
+
 msgid "Custom days"
 msgstr "Custom days"
 
@@ -10117,6 +10477,9 @@ msgstr "Custom: {code} {0}{1}"
 msgid "Cut over"
 msgstr "Cut over"
 
+msgid "Cut-over archives the source space; it isn't deleted, and archives sit outside the purge guarantee."
+msgstr "Cut-over archives the source space; it isn't deleted, and archives sit outside the purge guarantee."
+
 msgid "Cutoff time"
 msgstr "Cutoff time"
 
@@ -10131,6 +10494,9 @@ msgstr "Daily and monthly counters reset with their quota period."
 
 msgid "Daily cap: "
 msgstr "Daily cap: "
+
+msgid "Daily counts only, plus your GitHub graph if you linked one."
+msgstr "Daily counts only, plus your GitHub graph if you linked one."
 
 msgid "Daily digest at"
 msgstr "Daily digest at"
@@ -10640,6 +11006,9 @@ msgstr "Delete…"
 msgid "Deleting account…"
 msgstr "Deleting account…"
 
+msgid "Deletion request received."
+msgstr "Deletion request received."
+
 msgid "Deliver to this room"
 msgstr "Deliver to this room"
 
@@ -10718,6 +11087,9 @@ msgstr "Deployment or saved pack defaults"
 msgid "Deployment recovery"
 msgstr "Deployment recovery"
 
+msgid "Deployment recovery uses your database provider's backups/PITR and object-store durability, with the limitations documented for your providers. Portable tenant recovery uses a separately exported tenant dump and its supported import target. Ordinary tenant archives are archive-and-purge records and cannot be restored."
+msgstr "Deployment recovery uses your database provider's backups/PITR and object-store durability, with the limitations documented for your providers. Portable tenant recovery uses a separately exported tenant dump and its supported import target. Ordinary tenant archives are archive-and-purge records and cannot be restored."
+
 msgid "Deployment-wide settings, security and recovery."
 msgstr "Deployment-wide settings, security and recovery."
 
@@ -10750,6 +11122,9 @@ msgstr "Deposit, late fee and rental are set in Settings > Pricing > Lending."
 
 msgid "Deposits"
 msgstr "Deposits"
+
+msgid "Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue."
+msgstr "Deposits are raised when a request is issued; late fees accrue per day after the grace period once a loan is overdue."
 
 msgid "Deposits are refundable and never discounted. Late fees start once a loan is overdue and the grace days have passed."
 msgstr "Deposits are refundable and never discounted. Late fees start once a loan is overdue and the grace days have passed."
@@ -11369,6 +11744,9 @@ msgstr "Download ticket PNG"
 msgid "Download your profile, membership, history and payment records held by this makerspace as JSON in a ZIP. Export requests are limited to one per day. Files expire automatically."
 msgstr "Download your profile, membership, history and payment records held by this makerspace as JSON in a ZIP. Export requests are limited to one per day. Files expire automatically."
 
+msgid "Download your ticket and bring it to event check-in."
+msgstr "Download your ticket and bring it to event check-in."
+
 msgid "Download ZIP"
 msgstr "Download ZIP"
 
@@ -11580,6 +11958,12 @@ msgstr "e.g. Soldering iron"
 msgid "Each bearer link works once. Its token is shown only after creation."
 msgstr "Each bearer link works once. Its token is shown only after creation."
 
+msgid "Each code works once. Save them somewhere secure before you continue."
+msgstr "Each code works once. Save them somewhere secure before you continue."
+
+msgid "Each code works once. Save these somewhere secure; they will not be shown again."
+msgstr "Each code works once. Save these somewhere secure; they will not be shown again."
+
 msgid "Each criterion has a positive weight and a clear description for every score. Opening the round freezes this rubric."
 msgstr "Each criterion has a positive weight and a clear description for every score. Opening the round freezes this rubric."
 
@@ -11591,6 +11975,9 @@ msgstr "Each occurrence is booked and charged separately. The result lists every
 
 msgid "Each one asks you to type "
 msgstr "Each one asks you to type "
+
+msgid "Each partner must accept before its members can register."
+msgstr "Each partner must accept before its members can register."
 
 msgid "Each period you get a reminder to pay. No card is stored and you can pause or cancel any time."
 msgstr "Each period you get a reminder to pay. No card is stored and you can pause or cancel any time."
@@ -11619,6 +12006,9 @@ msgstr "Each stage has its own window and requirements. Times are entered in UTC
 
 msgid "Each starter fills in the subject, message, audience and design. You still preview and confirm before anyone receives it."
 msgstr "Each starter fills in the subject, message, audience and design. You still preview and confirm before anyone receives it."
+
+msgid "Each window lasts at most 30 minutes and is recorded in your audit log."
+msgstr "Each window lasts at most 30 minutes and is recorded in your audit log."
 
 msgid "Eager"
 msgstr "Eager"
@@ -11925,6 +12315,9 @@ msgstr "Email the receipt to (optional)"
 msgid "Email the superadmins when a requested archive is ready"
 msgstr "Email the superadmins when a requested archive is ready"
 
+msgid "Email this makerspace’s managers when hardware and print request statuses change."
+msgstr "Email this makerspace’s managers when hardware and print request statuses change."
+
 msgid "Email to my account"
 msgstr "Email to my account"
 
@@ -12003,6 +12396,9 @@ msgstr "Enable certification or maintenance reminders in makerspace features and
 
 msgid "Enable hackathon applications"
 msgstr "Enable hackathon applications"
+
+msgid "Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."
+msgstr "Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."
 
 msgid "Enable public event, date and certificate status verification"
 msgstr "Enable public event, date and certificate status verification"
@@ -12153,6 +12549,9 @@ msgstr "Enter a valid date and time."
 
 msgid "Enter a valid date of birth to review your age."
 msgstr "Enter a valid date of birth to review your age."
+
+msgid "Enter a weight of 0 or more grams."
+msgstr "Enter a weight of 0 or more grams."
 
 msgid "Enter a whole number of the currency’s smallest units. No currency conversion is applied."
 msgstr "Enter a whole number of the currency’s smallest units. No currency conversion is applied."
@@ -12618,6 +13017,9 @@ msgstr "Events you attended, hosted or spoke at appear here once the page is pub
 msgid "Events you registered for or spoke at here, including past ones."
 msgstr "Events you registered for or spoke at here, including past ones."
 
+msgid "Events you registered for or spoke at in this space."
+msgstr "Events you registered for or spoke at in this space."
+
 msgid "Events you run with your organization, across spaces."
 msgstr "Events you run with your organization, across spaces."
 
@@ -12649,6 +13051,9 @@ msgstr "Every active member has a card."
 msgid "Every amount "
 msgstr "Every amount "
 
+msgid "Every change is audited in this space."
+msgstr "Every change is audited in this space."
+
 msgid "Every change needs a fresh sign-in check and is recorded in the platform audit log, by field name only. Saved secrets are never shown again."
 msgstr "Every change needs a fresh sign-in check and is recorded in the platform audit log, by field name only. Saved secrets are never shown again."
 
@@ -12676,6 +13081,9 @@ msgstr "Every notification routed to this endpoint arrives as JSON with an HMAC-
 msgid "Every People’s choice winner has a recorded payout. See Prize payouts to reverse one."
 msgstr "Every People’s choice winner has a recorded payout. See Prize payouts to reverse one."
 
+msgid "Every period count uses this one period. Visitors cannot change it."
+msgstr "Every period count uses this one period. Visitors cannot change it."
+
 msgid "Every project (“Score next” may pull any)"
 msgstr "Every project (“Score next” may pull any)"
 
@@ -12690,6 +13098,9 @@ msgstr "Every record, file and account link of "
 
 msgid "Every role"
 msgstr "Every role"
+
+msgid "Every section starts hidden. Switching one on takes effect straight away."
+msgstr "Every section starts hidden. Switching one on takes effect straight away."
 
 msgid "Every session ends and its staff roles are revoked."
 msgstr "Every session ends and its staff roles are revoked."
@@ -12708,6 +13119,9 @@ msgstr "Every space has the same built-in roles. Space Manager and Member are he
 
 msgid "Every space's totals combined, with each space's own numbers beside them. Counts and money only; no member names."
 msgstr "Every space's totals combined, with each space's own numbers beside them. Counts and money only; no member names."
+
+msgid "Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it."
+msgstr "Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it."
 
 msgid "Every standing"
 msgstr "Every standing"
@@ -12780,6 +13194,9 @@ msgstr "Exact closure digest"
 
 msgid "Exact count"
 msgstr "Exact count"
+
+msgid "Exact counts appear only when Show count is enabled."
+msgstr "Exact counts appear only when Show count is enabled."
 
 msgid "Exact preview"
 msgstr "Exact preview"
@@ -13150,6 +13567,9 @@ msgstr "Feedback from the judges"
 msgid "Feedback question"
 msgstr "Feedback question"
 
+msgid "Feedback questions"
+msgstr "Feedback questions"
+
 msgid "Feedback recorded."
 msgstr "Feedback recorded."
 
@@ -13254,6 +13674,9 @@ msgstr "Files"
 #. placeholder {0}: job.files.length
 msgid "Files ({0})"
 msgstr "Files ({0})"
+
+msgid "Files are validated by type and size, but are not scanned for malware. Configure an external ClamAV service to enable scanning."
+msgstr "Files are validated by type and size, but are not scanned for malware. Configure an external ClamAV service to enable scanning."
 
 msgid "Files authorized for this assignment"
 msgstr "Files authorized for this assignment"
@@ -13701,6 +14124,9 @@ msgstr "Former account"
 
 msgid "Former editor"
 msgstr "Former editor"
+
+msgid "Forms could not be loaded."
+msgstr "Forms could not be loaded."
 
 msgid "Forms open only after their trigger and audience match. A checklist milestone does not change admission or registration."
 msgstr "Forms open only after their trigger and audience match. A checklist milestone does not change admission or registration."
@@ -14160,6 +14586,9 @@ msgstr "Gross {0} · tax deducted {1} · net {2} {money}"
 msgid "Gross amount paid"
 msgstr "Gross amount paid"
 
+msgid "Gross-only documents. Settings apply to newly issued bills, receipts and credit notes."
+msgstr "Gross-only documents. Settings apply to newly issued bills, receipts and credit notes."
+
 msgid "Group (Ctrl or Cmd + G)"
 msgstr "Group (Ctrl or Cmd + G)"
 
@@ -14313,6 +14742,9 @@ msgstr "Hardware loans"
 msgid "Hardware requests"
 msgstr "Hardware requests"
 
+msgid "Hardware you borrowed and returned, on the activity graph."
+msgstr "Hardware you borrowed and returned, on the activity graph."
+
 msgid "Has a server (keeps a client secret)"
 msgstr "Has a server (keeps a client secret)"
 
@@ -14373,6 +14805,9 @@ msgstr "Help centre"
 
 msgid "Help for this page"
 msgstr "Help for this page"
+
+msgid "Help members recognise this item."
+msgstr "Help members recognise this item."
 
 msgid "Help queue"
 msgstr "Help queue"
@@ -14665,6 +15100,12 @@ msgstr "How people attend"
 
 msgid "How people checked in"
 msgstr "How people checked in"
+
+msgid "How prize payouts propose tax, and where winners and reimbursed people can be paid."
+msgstr "How prize payouts propose tax, and where winners and reimbursed people can be paid."
+
+msgid "How this item is used up or when it is expected back."
+msgstr "How this item is used up or when it is expected back."
 
 msgid "How to choose"
 msgstr "How to choose"
@@ -15791,6 +16232,9 @@ msgstr "It closes without logging maintenance. A machine it took down goes back 
 msgid "It does contain member contact details."
 msgstr "It does contain member contact details."
 
+msgid "It is shown once. Paste these into Metabase as a PostgreSQL database."
+msgstr "It is shown once. Paste these into Metabase as a PostgreSQL database."
+
 msgid "It leaves the catalogue and can no longer be requested. You can bring it back from the Archived tab."
 msgstr "It leaves the catalogue and can no longer be requested. You can bring it back from the Archived tab."
 
@@ -15821,8 +16265,14 @@ msgstr "It was me"
 msgid "It wasn't picked up within 14 days, so it now belongs to the space."
 msgstr "It wasn't picked up within 14 days, so it now belongs to the space."
 
+msgid "It won’t be shown again."
+msgstr "It won’t be shown again."
+
 msgid "It's just you so far. Create an invitation to bring in your team."
 msgstr "It's just you so far. Create an invitation to bring in your team."
+
+msgid "It’s shown once."
+msgstr "It’s shown once."
 
 msgid "Italic"
 msgstr "Italic"
@@ -16509,8 +16959,17 @@ msgstr "Leave blank for the space's currency."
 msgid "Leave blank if your verified account email was invited."
 msgstr "Leave blank if your verified account email was invited."
 
+msgid "Leave blank to allow cancellation until the event starts. Settled refunds are handled by staff."
+msgstr "Leave blank to allow cancellation until the event starts. Settled refunds are handled by staff."
+
+msgid "Leave blank to require approval for every count."
+msgstr "Leave blank to require approval for every count."
+
 msgid "Leave blank to use Maker Teal. Staff screens always use the Space Works palette."
 msgstr "Leave blank to use Maker Teal. Staff screens always use the Space Works palette."
+
+msgid "Leave blank to use the registered name."
+msgstr "Leave blank to use the registered name."
 
 msgid "Leave empty for no deposit."
 msgstr "Leave empty for no deposit."
@@ -16569,6 +17028,9 @@ msgstr "Leave the waitlist for {0}?"
 
 msgid "Leave these unchanged to use the deployment or saved pack profile. Editing them explicitly overrides the pack."
 msgstr "Leave these unchanged to use the deployment or saved pack profile. Editing them explicitly overrides the pack."
+
+msgid "Leave this space out of the platform directory, Discover, cross-space search and the shared event listings."
+msgstr "Leave this space out of the platform directory, Discover, cross-space search and the shared event listings."
 
 msgid "Leave this task?"
 msgstr "Leave this task?"
@@ -16651,6 +17113,9 @@ msgstr "Letter spacing"
 
 msgid "Letter spacing (pt)"
 msgstr "Letter spacing (pt)"
+
+msgid "Letters, numbers, hyphens and underscores."
+msgstr "Letters, numbers, hyphens and underscores."
 
 #. placeholder {0}: index + 1
 msgid "Level for skill {0}"
@@ -16902,6 +17367,9 @@ msgstr "Load request"
 
 msgid "Load saved schema"
 msgstr "Load saved schema"
+
+msgid "Load the event to review its current requirements."
+msgstr "Load the event to review its current requirements."
 
 msgid "Load their version"
 msgstr "Load their version"
@@ -17430,6 +17898,9 @@ msgstr "Loading the current plan…"
 
 msgid "Loading the persisted verification report…"
 msgstr "Loading the persisted verification report…"
+
+msgid "Loading the preview may use significant memory. You can download the original instead."
+msgstr "Loading the preview may use significant memory. You can download the original instead."
 
 msgid "Loading the register…"
 msgstr "Loading the register…"
@@ -18566,11 +19037,17 @@ msgstr "Members and visitors"
 msgid "Members at the end"
 msgstr "Members at the end"
 
+msgid "Members book time on this machine. Its machine type, and that type's training rules, apply automatically."
+msgstr "Members book time on this machine. Its machine type, and that type's training rules, apply automatically."
+
 msgid "Members can send job requests for this type"
 msgstr "Members can send job requests for this type"
 
 msgid "Members of teams with an eligible project."
 msgstr "Members of teams with an eligible project."
+
+msgid "Members of these organizations may register. Choosing one gives it no say over the event."
+msgstr "Members of these organizations may register. Choosing one gives it no say over the event."
 
 msgid "Members of these organizations, of the organizers, and of the venue's owning organization may register."
 msgstr "Members of these organizations, of the organizers, and of the venue's owning organization may register."
@@ -18601,6 +19078,9 @@ msgstr "Membership application"
 
 msgid "Membership application form"
 msgstr "Membership application form"
+
+msgid "Membership application questions"
+msgstr "Membership application questions"
 
 msgid "Membership applications are closed"
 msgstr "Membership applications are closed"
@@ -19315,6 +19795,9 @@ msgstr "Name, code or slug"
 msgid "Name, slug or code"
 msgstr "Name, slug or code"
 
+msgid "Names can appear only when booking intervals are published."
+msgstr "Names can appear only when booking intervals are published."
+
 msgid "Native app audiences"
 msgstr "Native app audiences"
 
@@ -19409,6 +19892,9 @@ msgstr "Never"
 msgid "Never changed."
 msgstr "Never changed."
 
+msgid "Never put them in browser code or URLs."
+msgstr "Never put them in browser code or URLs."
+
 msgid "Never run"
 msgstr "Never run"
 
@@ -19502,6 +19988,9 @@ msgstr "New end (your local time)"
 
 msgid "New event"
 msgstr "New event"
+
+msgid "New events and recurring series start with this audience. Existing events keep their audience. Ticket currency uses the default in Location & hours."
+msgstr "New events and recurring series start with this audience. Existing events keep their audience. Ticket currency uses the default in Location & hours."
 
 msgid "New events and recurring series start with this audience. Existing events keep theirs."
 msgstr "New events and recurring series start with this audience. Existing events keep theirs."
@@ -21840,9 +22329,15 @@ msgstr "ODP · odp · 50 MiB"
 msgid "Off"
 msgstr "Off"
 
+msgid "Off by default. When on, staff at other makerspaces can find this organization and invite its members to their events. It gives them no access to the organization."
+msgstr "Off by default. When on, staff at other makerspaces can find this organization and invite its members to their events. It gives them no access to the organization."
+
 #. placeholder {0}: offIn === 1 ? "space" : "spaces"
 msgid "Off in {offIn} {0}"
 msgstr "Off in {offIn} {0}"
+
+msgid "Off: everyone appears as “A member” or “A guest”, with no project or event titles."
+msgstr "Off: everyone appears as “A member” or “A guest”, with no project or event titles."
 
 msgid "Offer"
 msgstr "Offer"
@@ -22008,6 +22503,9 @@ msgstr "On track"
 msgid "On-demand archive retention (days)"
 msgstr "On-demand archive retention (days)"
 
+msgid "On: anyone can choose to appear anonymously. Off: names are always shown, and people are told so when they check in."
+msgstr "On: anyone can choose to appear anonymously. Off: names are always shown, and people are told so when they check in."
+
 msgid "Onboarding"
 msgstr "Onboarding"
 
@@ -22057,6 +22555,9 @@ msgstr "One of these is for me"
 
 msgid "One of these items is no longer on sale."
 msgstr "One of these items is no longer on sale."
+
+msgid "One pass gives you a place at every upcoming public date of this series."
+msgstr "One pass gives you a place at every upcoming public date of this series."
 
 msgid "One PDF per card"
 msgstr "One PDF per card"
@@ -22135,6 +22636,9 @@ msgstr "Only after the claim window closes. Nothing was paid, so nothing reaches
 msgid "Only answers disclosed to organizers are included. Sensitive answers are omitted."
 msgstr "Only answers disclosed to organizers are included. Sensitive answers are omitted."
 
+msgid "Only applies while names are shown."
+msgstr "Only applies while names are shown."
+
 msgid "Only available stock can move. Individual asset-tracked products are not supported. The source container is ignored for transfers between makerspaces."
 msgstr "Only available stock can move. Individual asset-tracked products are not supported. The source container is ignored for transfers between makerspaces."
 
@@ -22155,6 +22659,9 @@ msgstr "Only for a custom interval."
 
 msgid "Only for buyers of an add-on"
 msgstr "Only for buyers of an add-on"
+
+msgid "Only labels available to this operator shift can be resolved."
+msgstr "Only labels available to this operator shift can be resolved."
 
 msgid "Only metrics supported for this owner are accepted by the server. No private activity or hidden stock totals are published."
 msgstr "Only metrics supported for this owner are accepted by the server. No private activity or hidden stock totals are published."
@@ -22237,6 +22744,9 @@ msgstr "Only you and the event's full managers can read these."
 msgid "Only you can change these."
 msgstr "Only you can change these."
 
+msgid "Only you can publish, and only after confirming."
+msgstr "Only you can publish, and only after confirming."
+
 msgid "Only your team"
 msgstr "Only your team"
 
@@ -22274,6 +22784,9 @@ msgstr "Open {label} to connect ↗"
 
 msgid "Open {name}"
 msgstr "Open {name}"
+
+msgid "Open a 30-minute window to see names, emails and phone numbers. It needs a reason and is recorded in the space's audit log."
+msgstr "Open a 30-minute window to see names, emails and phone numbers. It needs a reason and is recorded in the space's audit log."
 
 msgid "Open a new drawer"
 msgstr "Open a new drawer"
@@ -22476,6 +22989,9 @@ msgstr "Open the confirmation link in this browser, then enroll an authenticator
 msgid "Open the drawer"
 msgstr "Open the drawer"
 
+msgid "Open the link from the security email again. If it still doesn't work, reset your password to secure your account."
+msgstr "Open the link from the security email again. If it still doesn't work, reset your password to secure your account."
+
 msgid "Open the map"
 msgstr "Open the map"
 
@@ -22551,6 +23067,9 @@ msgstr "Opening session…"
 msgid "Opening Space Works…"
 msgstr "Opening Space Works…"
 
+msgid "Opening the current public address."
+msgstr "Opening the current public address."
+
 msgid "Opening the display…"
 msgstr "Opening the display…"
 
@@ -22624,6 +23143,9 @@ msgstr "Optional"
 
 msgid "Optional existing certificate IDs (comma-separated, up to 200)"
 msgstr "Optional existing certificate IDs (comma-separated, up to 200)"
+
+msgid "Optional features for this area. Each has its own switch; turning one off keeps its data."
+msgstr "Optional features for this area. Each has its own switch; turning one off keeps its data."
 
 msgid "Optional icon"
 msgstr "Optional icon"
@@ -22987,6 +23509,9 @@ msgstr "Page link copied."
 msgid "Page not found"
 msgstr "Page not found"
 
+msgid "Page not found."
+msgstr "Page not found."
+
 msgid "Page sections"
 msgstr "Page sections"
 
@@ -23195,6 +23720,9 @@ msgstr "Passes"
 msgid "Passes available (0 = unlimited)"
 msgstr "Passes available (0 = unlimited)"
 
+msgid "Passes for this series are not on sale."
+msgstr "Passes for this series are not on sale."
+
 msgid "Passkey added. Save these recovery codes: each works once if you lose your device."
 msgstr "Passkey added. Save these recovery codes: each works once if you lose your device."
 
@@ -23272,6 +23800,9 @@ msgstr "Paste table"
 
 msgid "Paste the client secret"
 msgstr "Paste the client secret"
+
+msgid "Paste the private booking QR. Check the details before confirming arrival."
+msgstr "Paste the private booking QR. Check the details before confirming arrival."
 
 msgid "Paste the private key"
 msgstr "Paste the private key"
@@ -23477,6 +24008,9 @@ msgstr "Payout email"
 msgid "Payout history"
 msgstr "Payout history"
 
+msgid "Payout history could not be loaded."
+msgstr "Payout history could not be loaded."
+
 msgid "Payout obligation"
 msgstr "Payout obligation"
 
@@ -23665,6 +24199,10 @@ msgstr "Perks"
 
 msgid "Permanently delete this maintenance attachment?"
 msgstr "Permanently delete this maintenance attachment?"
+
+#. placeholder {0}: grant.user
+msgid "Permissions for account #{0}"
+msgstr "Permissions for account #{0}"
 
 msgid "Permissions on approval"
 msgstr "Permissions on approval"
@@ -23875,6 +24413,10 @@ msgstr "Pick up {0}."
 
 msgid "Pick up a request when you are ready. Release it if another mentor should take over."
 msgstr "Pick up a request when you are ready. Release it if another mentor should take over."
+
+#. placeholder {0}: choices.max_headline
+msgid "Pick up to {0}; they lead the page and the TV board in the order you tick them."
+msgstr "Pick up to {0}; they lead the page and the TV board in the order you tick them."
 
 msgid "Picker report scope"
 msgstr "Picker report scope"
@@ -24158,6 +24700,9 @@ msgstr "Play Integrity service account JSON"
 
 msgid "Play result sound"
 msgstr "Play result sound"
+
+msgid "Please slow down. Too many requests were made; wait a moment and retry."
+msgstr "Please slow down. Too many requests were made; wait a moment and retry."
 
 msgid "Please wait one hour after the last archive request before filing another."
 msgstr "Please wait one hour after the last archive request before filing another."
@@ -25259,6 +25804,9 @@ msgstr "Projects shared by their teams."
 msgid "Projects tied at the cutoff all advance."
 msgstr "Projects tied at the cutoff all advance."
 
+msgid "Projects you mark public below."
+msgstr "Projects you mark public below."
+
 #. placeholder {0}: row.id
 msgid "Promo {0}"
 msgstr "Promo {0}"
@@ -25400,6 +25948,9 @@ msgstr "Public events calendar link"
 msgid "Public events from makerspaces on this deployment that opted into its directory."
 msgstr "Public events from makerspaces on this deployment that opted into its directory."
 
+msgid "Public events you attended or hosted."
+msgstr "Public events you attended or hosted."
+
 msgid "Public handle"
 msgstr "Public handle"
 
@@ -25421,6 +25972,9 @@ msgstr "Public library"
 
 msgid "Public listing"
 msgstr "Public listing"
+
+msgid "Public location label and optional Google Maps link shown on public pages."
+msgstr "Public location label and optional Google Maps link shown on public pages."
 
 msgid "Public longitude"
 msgstr "Public longitude"
@@ -25457,6 +26011,10 @@ msgstr "Public page builder · Space Works"
 
 msgid "Public page preview"
 msgstr "Public page preview"
+
+#. placeholder {0}: values.slug
+msgid "Public page: /o/{0}"
+msgstr "Public page: /o/{0}"
 
 msgid "Public plan pages"
 msgstr "Public plan pages"
@@ -25605,6 +26163,10 @@ msgstr "Published replacement revision"
 
 msgid "Published with the team’s consent."
 msgstr "Published with the team’s consent."
+
+#. placeholder {0}: new Date(profile.public_consented_at).toLocaleDateString(formatLocale())
+msgid "Published with your consent on {0}."
+msgstr "Published with your consent on {0}."
 
 msgid "Published. The settings and ballots are final."
 msgstr "Published. The settings and ballots are final."
@@ -26137,6 +26699,10 @@ msgstr "Reason: "
 #. placeholder {0}: row.void_reason
 msgid "Reason: {0}"
 msgstr "Reason: {0}"
+
+#. placeholder {0}: data.active.reason
+msgid "Reason: {0}. This space's managers can see this in their audit log."
+msgstr "Reason: {0}. This space's managers can see this in their audit log."
 
 #. placeholder {0}: hold.reason_code.replace(/_/g, " ")
 #. placeholder {1}: hold.note ? ` · ${hold.note}` : ""
@@ -26755,6 +27321,10 @@ msgstr "Register for this event"
 msgid "Registered"
 msgstr "Registered"
 
+#. placeholder {0}: app.space_name
+msgid "Registered by {0}. It can do only what you could do yourself, and you can disconnect it any time under API access."
+msgstr "Registered by {0}. It can do only what you could do yourself, and you can disconnect it any time under API access."
+
 msgid "Registered name"
 msgstr "Registered name"
 
@@ -27256,6 +27826,9 @@ msgstr "Removed"
 msgid "Removed by the organisers"
 msgstr "Removed by the organisers"
 
+msgid "Removes only old upload slots that were never used by any handover. Attached evidence rows are immutable and are never deleted, and photos recorded before this feature (legacy) are never eligible."
+msgstr "Removes only old upload slots that were never used by any handover. Attached evidence rows are immutable and are never deleted, and photos recorded before this feature (legacy) are never eligible."
+
 msgid "Removing…"
 msgstr "Removing…"
 
@@ -27346,6 +27919,9 @@ msgstr "Rental timing"
 
 msgid "Rental timing saved."
 msgstr "Rental timing saved."
+
+msgid "Reopening {reopens}."
+msgstr "Reopening {reopens}."
 
 msgid "Reopening date (optional)"
 msgstr "Reopening date (optional)"
@@ -27725,6 +28301,9 @@ msgstr "Requests"
 msgid "Requests "
 msgstr "Requests "
 
+msgid "Requests could not be loaded."
+msgstr "Requests could not be loaded."
+
 #. placeholder {0}: block.network
 msgid "Requests from {0} are accepted again right away. Failed sign-ins against many accounts can block it again."
 msgstr "Requests from {0} are accepted again right away. Failed sign-ins against many accounts can block it again."
@@ -27760,6 +28339,9 @@ msgstr "Required - share it with the new staff member."
 msgid "Required before: {0}."
 msgstr "Required before: {0}."
 
+msgid "Required booking certifications apply when enabled for this machine type."
+msgstr "Required booking certifications apply when enabled for this machine type."
+
 msgid "Required briefing IDs"
 msgstr "Required briefing IDs"
 
@@ -27781,6 +28363,9 @@ msgstr "Required form"
 
 msgid "Required information missing"
 msgstr "Required information missing"
+
+msgid "Required link kinds"
+msgstr "Required link kinds"
 
 msgid "Required nonconflicted reviews per project"
 msgstr "Required nonconflicted reviews per project"
@@ -27978,6 +28563,9 @@ msgstr "Resource staff grants"
 
 msgid "Resource unavailable"
 msgstr "Resource unavailable"
+
+msgid "Resource unavailable. This resource may be private or no longer available."
+msgstr "Resource unavailable. This resource may be private or no longer available."
 
 msgid "Resource usage against effective limits"
 msgstr "Resource usage against effective limits"
@@ -28363,6 +28951,9 @@ msgstr "Return to directory"
 msgid "Return to sign-in"
 msgstr "Return to sign-in"
 
+msgid "Return to the browser window that opened this page."
+msgstr "Return to the browser window that opened this page."
+
 msgid "Return…"
 msgstr "Return…"
 
@@ -28505,6 +29096,9 @@ msgstr "Review failed handover online"
 
 msgid "Review failures"
 msgstr "Review failures"
+
+msgid "Review job failures and backlog even if the trigger connected recently."
+msgstr "Review job failures and backlog even if the trigger connected recently."
 
 msgid "Review liabilities and record completed payments."
 msgstr "Review liabilities and record completed payments."
@@ -29072,6 +29666,9 @@ msgstr "Run now"
 msgid "Run reviewed import"
 msgstr "Run reviewed import"
 
+msgid "Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend."
+msgstr "Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend."
+
 msgid "Running"
 msgstr "Running"
 
@@ -29506,6 +30103,9 @@ msgstr "Save the domain first; the DNS steps and the verification check appear a
 msgid "Save the event revision first to include images. The copy owns its own private artwork and stays independent of later event edits."
 msgstr "Save the event revision first to include images. The copy owns its own private artwork and stays independent of later event edits."
 
+msgid "Save the Machine Manager role first. Space Managers already cover all types."
+msgstr "Save the Machine Manager role first. Space Managers already cover all types."
+
 msgid "Save the project to add an image."
 msgstr "Save the project to add an image."
 
@@ -29762,6 +30362,15 @@ msgstr "Scan offline"
 
 msgid "Scan online"
 msgstr "Scan online"
+
+msgid "Scan or paste a card payload to check whether it is still valid."
+msgstr "Scan or paste a card payload to check whether it is still valid."
+
+msgid "Scan or paste QR payload. Only labels your staff role in this makerspace can see are resolved."
+msgstr "Scan or paste QR payload. Only labels your staff role in this makerspace can see are resolved."
+
+msgid "Scan or paste the guest’s ticket code, or scan their member or event ID card. Confirm their name before recording attendance."
+msgstr "Scan or paste the guest’s ticket code, or scan their member or event ID card. Confirm their name before recording attendance."
 
 msgid "Scan or paste the private booking QR for this resource. Resolve checks details; confirm records arrival. Arrival does not complete a booking or authorize physical access."
 msgstr "Scan or paste the private booking QR for this resource. Resolve checks details; confirm records arrival. Arrival does not complete a booking or authorize physical access."
@@ -30025,6 +30634,9 @@ msgstr "Search makerspaces"
 msgid "Search members"
 msgstr "Search members"
 
+msgid "Search members, staff and people registered for this event. Type at least two characters."
+msgstr "Search members, staff and people registered for this event. Type at least two characters."
+
 msgid "Search or jump to…"
 msgstr "Search or jump to…"
 
@@ -30054,6 +30666,9 @@ msgstr "Search staff console"
 
 msgid "Search the guide"
 msgstr "Search the guide"
+
+msgid "Search the organizations you belong to."
+msgstr "Search the organizations you belong to."
 
 msgid "Search tools, machines, kits, or materials"
 msgstr "Search tools, machines, kits, or materials"
@@ -30236,6 +30851,9 @@ msgstr "Select both dates to download a PDF."
 msgid "Select category"
 msgstr "Select category"
 
+msgid "Select explicit replacement scopes and save. Viewing this client never changes its access."
+msgstr "Select explicit replacement scopes and save. Viewing this client never changes its access."
+
 msgid "Select makerspace"
 msgstr "Select makerspace"
 
@@ -30254,6 +30872,9 @@ msgstr "Select row {0}"
 
 msgid "Select the original file to resume this upload."
 msgstr "Select the original file to resume this upload."
+
+msgid "Select the sender used for tenant notifications."
+msgstr "Select the sender used for tenant notifications."
 
 msgid "Select two or more queued jobs to run them together."
 msgstr "Select two or more queued jobs to run them together."
@@ -30312,6 +30933,9 @@ msgstr "Selected: {0}. Preview and CSV contain masked routing only. Exporting ne
 
 msgid "Selected: {label}"
 msgstr "Selected: {label}"
+
+msgid "Self check-in requires a location inside the configured radius. Without a configured geofence, self check-in is unavailable. GPS can be spoofed. Staff or kiosk check-in is the alternative. Browsers require HTTPS or localhost for location access."
+msgstr "Self check-in requires a location inside the configured radius. Without a configured geofence, self check-in is unavailable. GPS can be spoofed. Staff or kiosk check-in is the alternative. Browsers require HTTPS or localhost for location access."
 
 msgid "Self check-ins and staff check-ins appear here."
 msgstr "Self check-ins and staff check-ins appear here."
@@ -30663,6 +31287,9 @@ msgstr "Sessions"
 msgid "Sessions and devices"
 msgstr "Sessions and devices"
 
+msgid "Sessions you spoke at, on the activity graph."
+msgstr "Sessions you spoke at, on the activity graph."
+
 msgid "Set"
 msgstr "Set"
 
@@ -30704,8 +31331,14 @@ msgstr "Set opening hours"
 msgid "Set status"
 msgstr "Set status"
 
+msgid "Set the amount charged when a membership is activated. Use 0 for no charge."
+msgstr "Set the amount charged when a membership is activated. Use 0 for no charge."
+
 msgid "Set the check-in area"
 msgstr "Set the check-in area"
+
+msgid "Set the default for booking submitted, confirmed, and rejected emails. Each space may inherit or override this setting."
+msgstr "Set the default for booking submitted, confirmed, and rejected emails. Each space may inherit or override this setting."
 
 msgid "Set the profile and location"
 msgstr "Set the profile and location"
@@ -30730,6 +31363,9 @@ msgstr "Set up two-step sign-in within 3 days to keep using staff screens. Membe
 
 msgid "Set up your space"
 msgstr "Set up your space"
+
+msgid "Set weekly hours and dated exceptions in the makerspace timezone."
+msgstr "Set weekly hours and dated exceptions in the makerspace timezone."
 
 msgid "Set weekly opening hours"
 msgstr "Set weekly opening hours"
@@ -31158,8 +31794,14 @@ msgstr "Show revision history"
 msgid "Show revoked"
 msgstr "Show revoked"
 
+msgid "Show the organization profile and eligible event catalogue."
+msgstr "Show the organization profile and eligible event catalogue."
+
 msgid "Show the plan on the check page"
 msgstr "Show the plan on the check page"
+
+msgid "Show the public catalogue. Turning this off keeps your inventory data."
+msgstr "Show the public catalogue. Turning this off keeps your inventory data."
 
 msgid "Show the whole image"
 msgstr "Show the whole image"
@@ -31312,6 +31954,9 @@ msgstr "Sign in to buy tickets."
 msgid "Sign in to check your membership in a participating organization."
 msgstr "Sign in to check your membership in a participating organization."
 
+msgid "Sign in to continue."
+msgstr "Sign in to continue."
+
 msgid "Sign in to get your certificate."
 msgstr "Sign in to get your certificate."
 
@@ -31320,6 +31965,9 @@ msgstr "Sign in to join"
 
 msgid "Sign in to manage memberships, waivers, visits, and payments."
 msgstr "Sign in to manage memberships, waivers, visits, and payments."
+
+msgid "Sign in to manage your authenticator."
+msgstr "Sign in to manage your authenticator."
 
 msgid "Sign in to order from this shop."
 msgstr "Sign in to order from this shop."
@@ -31362,6 +32010,9 @@ msgstr "Sign in with a full account to manage profile, sessions or exports."
 
 msgid "Sign in with a passkey"
 msgstr "Sign in with a passkey"
+
+msgid "Sign in with an active member account to view saved details."
+msgstr "Sign in with an active member account to view saved details."
 
 msgid "Sign in with current handover permission to inspect this failure."
 msgstr "Sign in with current handover permission to inspect this failure."
@@ -31695,6 +32346,9 @@ msgstr "Something was damaged"
 msgid "Something was wrong"
 msgstr "Something was wrong"
 
+msgid "Something went wrong on our side. Reloading usually fixes it."
+msgstr "Something went wrong on our side. Reloading usually fixes it."
+
 msgid "Something went wrong."
 msgstr "Something went wrong."
 
@@ -31887,6 +32541,9 @@ msgstr "Space Works home"
 
 msgid "Space Works keeps that promise visible. A request becomes a handover, a handover leaves a record, and a returned tool makes room for another idea."
 msgstr "Space Works keeps that promise visible. A request becomes a handover, a handover leaves a record, and a returned tool makes room for another idea."
+
+msgid "Space Works marks the device offline when a heartbeat is late by this amount."
+msgstr "Space Works marks the device offline when a heartbeat is late by this amount."
 
 msgid "Space Works symbol"
 msgstr "Space Works symbol"
@@ -32135,8 +32792,14 @@ msgstr "Staff reservation tools"
 msgid "Staff review every request. Nothing is refunded until they approve it, and you will see their answer here."
 msgstr "Staff review every request. Nothing is refunded until they approve it, and you will see their answer here."
 
+msgid "Staff review every request. With Member accounts on, borrowers sign in (with Membership, only active members); without it, accounts are staff-only and borrowers give name, phone and an email confirmed by a code. A superadmin changes these areas in Modules."
+msgstr "Staff review every request. With Member accounts on, borrowers sign in (with Membership, only active members); without it, accounts are staff-only and borrowers give name, phone and an email confirmed by a code. A superadmin changes these areas in Modules."
+
 msgid "Staff roles added"
 msgstr "Staff roles added"
+
+msgid "Staff roles are given to people's own accounts. Ask a Space Manager to add you, or accept the staff invitation they emailed you."
+msgstr "Staff roles are given to people's own accounts. Ask a Space Manager to add you, or accept the staff invitation they emailed you."
 
 msgid "Staff roles belong to people's own accounts. Grant one to a member of this space, or invite someone by email."
 msgstr "Staff roles belong to people's own accounts. Grant one to a member of this space, or invite someone by email."
@@ -32149,6 +32812,9 @@ msgstr "Staff roles stay revoked; restore them per space."
 
 msgid "Staff roles you gain"
 msgstr "Staff roles you gain"
+
+msgid "Staff screens need a second step at sign-in. Add a passkey here now, or set up an authenticator app; you'll come straight back. Your member area keeps working meanwhile."
+msgstr "Staff screens need a second step at sign-in. Add a passkey here now, or set up an authenticator app; you'll come straight back. Your member area keeps working meanwhile."
 
 msgid "Staff screens of this space only open from its approved networks. Your member area still works."
 msgstr "Staff screens of this space only open from its approved networks. Your member area still works."
@@ -32214,6 +32880,9 @@ msgstr "Stage forms"
 
 msgid "Stage forms cannot ask for date of birth or age."
 msgstr "Stage forms cannot ask for date of birth or age."
+
+msgid "Stage forms could not be loaded."
+msgstr "Stage forms could not be loaded."
 
 msgid "Stage name"
 msgstr "Stage name"
@@ -32610,6 +33279,9 @@ msgstr "Storage is metered by your host."
 msgid "Storage location"
 msgstr "Storage location"
 
+msgid "Storage locations stay private to staff."
+msgstr "Storage locations stay private to staff."
+
 #. placeholder {0}: res.status
 #. placeholder {0}: response.status
 #. placeholder {0}: upload.status
@@ -32927,6 +33599,9 @@ msgstr "Switch feature families on for this space. Turning one off keeps its dat
 
 msgid "Switch makerspace"
 msgstr "Switch makerspace"
+
+msgid "Switch modules on or off under Modules. Each feature below has its own switch; turning one off keeps its data."
+msgstr "Switch modules on or off under Modules. Each feature below has its own switch; turning one off keeps its data."
 
 msgid "Switch off"
 msgstr "Switch off"
@@ -33543,6 +34218,9 @@ msgstr "The 6-digit code from the other account's authenticator app."
 msgid "The action did not complete. Check the fields and try again. Your edits are still here."
 msgstr "The action did not complete. Check the fields and try again. Your edits are still here."
 
+msgid "The actions this member can take in this space."
+msgstr "The actions this member can take in this space."
+
 msgid "The airline, bus operator or agent the space paid."
 msgstr "The airline, bus operator or agent the space paid."
 
@@ -33618,12 +34296,18 @@ msgstr "The check couldn't load. Check your connection, then try again."
 msgid "The check QR opens the public page that says whether this card is valid."
 msgstr "The check QR opens the public page that says whether this card is valid."
 
+msgid "The claim could not be loaded."
+msgstr "The claim could not be loaded."
+
 #. placeholder {0}: when(prize.claim_deadline)
 msgid "The claim window closed on {0}."
 msgstr "The claim window closed on {0}."
 
 msgid "The clean-up didn't finish. Your photo is unchanged; try again later."
 msgstr "The clean-up didn't finish. Your photo is unchanged; try again later."
+
+msgid "The configured tenant could not be resolved."
+msgstr "The configured tenant could not be resolved."
 
 msgid "The configured upload destination is unavailable."
 msgstr "The configured upload destination is unavailable."
@@ -33638,6 +34322,12 @@ msgstr "The current secret keeps working for 24 hours. Copy the replacement afte
 #. placeholder {0}: previewLabel(person)
 msgid "The dashed line is the 3 mm safe area: keep text inside it. Showing {0}."
 msgstr "The dashed line is the 3 mm safe area: keep text inside it. Showing {0}."
+
+msgid "The database does not yet stop a cross-space read on this deployment."
+msgstr "The database does not yet stop a cross-space read on this deployment."
+
+msgid "The database owner cannot create logins here, so Metabase cannot connect directly. Dashboards you already list still embed."
+msgstr "The database owner cannot create logins here, so Metabase cannot connect directly. Dashboards you already list still embed."
 
 msgid "The deployment needs operator attention. Requests or scheduled work may be delayed; contact your operator."
 msgstr "The deployment needs operator attention. Requests or scheduled work may be delayed; contact your operator."
@@ -33712,6 +34402,9 @@ msgstr "The file will no longer be attached to this warranty."
 msgid "The file-retention period ended. The project record and its content hash remain."
 msgstr "The file-retention period ended. The project record and its content hash remain."
 
+msgid "The finance dashboard could not be loaded."
+msgstr "The finance dashboard could not be loaded."
+
 #. placeholder {0}: PAPER_LABEL[data.paper]
 #. placeholder {1}: cropMarks ? ", with crop marks" : ""
 msgid "The first {0} sheet of card fronts{1}."
@@ -33783,6 +34476,12 @@ msgstr "The limits and price each managed space runs under."
 
 msgid "The link may be old, or the article moved. "
 msgstr "The link may be old, or the article moved. "
+
+msgid "The link may be old, or the page moved."
+msgstr "The link may be old, or the page moved."
+
+msgid "The link may be wrong, or the programme has closed."
+msgstr "The link may be wrong, or the programme has closed."
 
 msgid "The link stops working for good. Create a new invitation if they still need to join."
 msgstr "The link stops working for good. Create a new invitation if they still need to join."
@@ -33856,6 +34555,9 @@ msgstr "The normalized photo exceeds the evidence limit. Retake a smaller photo.
 msgid "The official name of this makerspace. Used across the app and as the public wordmark when no logo or public display name is set."
 msgstr "The official name of this makerspace. Used across the app and as the public wordmark when no logo or public display name is set."
 
+msgid "The official name used across Space Works."
+msgstr "The official name used across Space Works."
+
 msgid "The offline roster expired. Download it again."
 msgstr "The offline roster expired. Download it again."
 
@@ -33867,6 +34569,9 @@ msgstr "The old link stops working straight away."
 
 msgid "The organisation's logo"
 msgstr "The organisation's logo"
+
+msgid "The organiser approves each request."
+msgstr "The organiser approves each request."
 
 msgid "The organiser didn't approve this request."
 msgstr "The organiser didn't approve this request."
@@ -33925,6 +34630,12 @@ msgstr "The person who reported it is told it is fixed."
 msgid "The photo could not be captured. Please try again."
 msgstr "The photo could not be captured. Please try again."
 
+msgid "The photo couldn't be saved."
+msgstr "The photo couldn't be saved."
+
+msgid "The photo couldn't be uploaded."
+msgstr "The photo couldn't be uploaded."
+
 msgid "The photo disappears from every booking and event page straight away."
 msgstr "The photo disappears from every booking and event page straight away."
 
@@ -33954,6 +34665,9 @@ msgstr "The platform's WhatsApp Business sender (Meta Cloud API)."
 
 msgid "The prepaid job cost less than its quote. The amount is the difference."
 msgstr "The prepaid job cost less than its quote. The amount is the difference."
+
+msgid "The preview may use a lot of memory on this device. You can download the original instead."
+msgstr "The preview may use a lot of memory on this device. You can download the original instead."
 
 msgid "The price changed — please check and confirm again."
 msgstr "The price changed — please check and confirm again."
@@ -34140,6 +34854,12 @@ msgstr "The speaker link is missing its token. Open the original link again."
 msgid "The speaker opens the link, signs in or creates an account, and is linked to this event."
 msgstr "The speaker opens the link, signs in or creates an account, and is linked to this event."
 
+msgid "The staff role is added to the account you're signed in to. We'll email a code to the invited address to confirm it's yours."
+msgstr "The staff role is added to the account you're signed in to. We'll email a code to the invited address to confirm it's yours."
+
+msgid "The stage definition could not be loaded."
+msgstr "The stage definition could not be loaded."
+
 msgid "The stage plan was refused: {reason}."
 msgstr "The stage plan was refused: {reason}."
 
@@ -34273,6 +34993,9 @@ msgstr "There is no filament available to choose right now. You can still submit
 msgid "These accounts are already linked."
 msgstr "These accounts are already linked."
 
+msgid "These answers are unavailable for your access."
+msgstr "These answers are unavailable for your access."
+
 msgid "These appear on both accounts; you keep one copy."
 msgstr "These appear on both accounts; you keep one copy."
 
@@ -34355,6 +35078,9 @@ msgstr "This account cannot be restored: "
 msgid "This account does not currently meet the event admission requirements."
 msgstr "This account does not currently meet the event admission requirements."
 
+msgid "This account does not currently meet the event's admission requirements."
+msgstr "This account does not currently meet the event's admission requirements."
+
 msgid "this account's value is kept"
 msgstr "this account's value is kept"
 
@@ -34366,6 +35092,9 @@ msgstr "This action is recorded in the event history. Review coverage before con
 
 msgid "This affects your whole account and all makerspace memberships."
 msgstr "This affects your whole account and all makerspace memberships."
+
+msgid "This app request could not be read. Go back to the app and try again."
+msgstr "This app request could not be read. Go back to the app and try again."
 
 #. placeholder {0}: admission.data.vouches_required
 msgid "This application needs {0} member vouch(es)."
@@ -34441,6 +35170,9 @@ msgstr "This card was genuine but is no longer in date."
 msgid "This card was revoked. Ask staff for a new one."
 msgstr "This card was revoked. Ask staff for a new one."
 
+msgid "This certificate is not available for public checking."
+msgstr "This certificate is not available for public checking."
+
 msgid "This changed in another session. Refresh, review the current state, and try again. Your text is still here."
 msgstr "This changed in another session. Refresh, review the current state, and try again. Your text is still here."
 
@@ -34452,6 +35184,9 @@ msgstr "This charge is already settled. Nothing more to pay."
 
 msgid "This charge was paid in person, so the money goes back the same way. Record how it was returned; the receipt is permanent."
 msgstr "This charge was paid in person, so the money goes back the same way. Record how it was returned; the receipt is permanent."
+
+msgid "This claim is unavailable for your access."
+msgstr "This claim is unavailable for your access."
 
 msgid "This clears {name}'s authenticator app, passkeys and recovery codes, and signs them out everywhere. They set up two-step sign-in again the next time they sign in."
 msgstr "This clears {name}'s authenticator app, passkeys and recovery codes, and signs them out everywhere. They set up two-step sign-in again the next time they sign in."
@@ -34470,6 +35205,9 @@ msgstr "This codec needs a player on your device. Download the original video to
 
 msgid "This collection is refreshed from eligible public records on every read. No names, counts or event lists are saved in this section."
 msgstr "This collection is refreshed from eligible public records on every read. No names, counts or event lists are saved in this section."
+
+msgid "This console is only for {space}'s team. Sign in with an account that's a member here."
+msgstr "This console is only for {space}'s team. Sign in with an account that's a member here."
 
 msgid "This container is empty."
 msgstr "This container is empty."
@@ -34541,6 +35279,9 @@ msgstr "This event has several submission stages. Each stage's window, grace and
 msgid "This event has several submission stages. Edit each stage's window in the stage editor."
 msgstr "This event has several submission stages. Edit each stage's window in the stage editor."
 
+msgid "This event is no longer available."
+msgstr "This event is no longer available."
+
 #. placeholder {0}: event.offline_checkin_enabled ? " and offline check-in" : ""
 msgid "This event is still a draft. When it is published, this tab gives you the attendance scanner, the checked-in list{0}."
 msgstr "This event is still a draft. When it is published, this tab gives you the attendance scanner, the checked-in list{0}."
@@ -34550,6 +35291,9 @@ msgstr "This event page is unavailable here."
 
 msgid "This event stays private after publishing."
 msgstr "This event stays private after publishing."
+
+msgid "This event uses ordinary registration."
+msgstr "This event uses ordinary registration."
 
 msgid "This event will appear on your public events page after publishing."
 msgstr "This event will appear on your public events page after publishing."
@@ -34593,8 +35337,17 @@ msgstr "This guest list is no longer available for your access."
 msgid "This immediately stops signed requests from this device. Re-enrollment is required to activate it again."
 msgstr "This immediately stops signed requests from this device. Re-enrollment is required to activate it again."
 
+msgid "This imported audience is blocked until staff review the local organizations and ownership."
+msgstr "This imported audience is blocked until staff review the local organizations and ownership."
+
+msgid "This invitation is private and can be used once. Your own application and eligibility still apply."
+msgstr "This invitation is private and can be used once. Your own application and eligibility still apply."
+
 msgid "This invitation was sent to a different email address. Sign out and sign in with that account."
 msgstr "This invitation was sent to a different email address. Sign out and sign in with that account."
+
+msgid "This invite link is incomplete. Open the link from your email again."
+msgstr "This invite link is incomplete. Open the link from your email again."
 
 msgid "This invoice is no longer open. Refresh to see its current state."
 msgstr "This invoice is no longer open. Refresh to see its current state."
@@ -34611,11 +35364,17 @@ msgstr "This is the latest recorded state of your application."
 msgid "This is the version you are editing."
 msgstr "This is the version you are editing."
 
+msgid "This item is not available."
+msgstr "This item is not available."
+
 msgid "This item is sold out."
 msgstr "This item is sold out."
 
 msgid "This item isn't available in this makerspace. Close this drawer to return to inventory."
 msgstr "This item isn't available in this makerspace. Close this drawer to return to inventory."
+
+msgid "This item isn't in the public catalogue."
+msgstr "This item isn't in the public catalogue."
 
 #. placeholder {0}: actions.filter((a) => ["checkout", "return", "direct_handout"].includes(a)).join(" / ")
 msgid "This item supports {0} - use the Direct handout tab (or the public self-checkout page) which collect the borrower identity."
@@ -34648,6 +35407,9 @@ msgstr "This label will stop resolving for future scans. Print a new label to re
 msgid "This link is incomplete"
 msgstr "This link is incomplete"
 
+msgid "This link is invalid or has expired. Ask the space for a new one."
+msgstr "This link is invalid or has expired. Ask the space for a new one."
+
 msgid "This link is not valid any more. Ask the sender for a new one."
 msgstr "This link is not valid any more. Ask the sender for a new one."
 
@@ -34659,6 +35421,12 @@ msgstr "This link request expired. Start again."
 
 msgid "This link was already used or has expired. If you still don't recognise the activity, reset your password."
 msgstr "This link was already used or has expired. If you still don't recognise the activity, reset your password."
+
+msgid "This link works once, in the same browser session that requested it."
+msgstr "This link works once, in the same browser session that requested it."
+
+msgid "This links the card to the account you're signed in with. Use the account whose email received the invite."
+msgstr "This links the card to the account you're signed in with. Use the account whose email received the invite."
 
 #. placeholder {0}: name.includes(".") ? name.slice(name.lastIndexOf(".")) : "this kind of"
 msgid "This machine doesn't take {0} files."
@@ -34694,6 +35462,9 @@ msgstr "This makerspace is closed. Outstanding charges can still be settled and 
 msgid "This makerspace is not accepting new members."
 msgstr "This makerspace is not accepting new members."
 
+msgid "This makerspace is not publishing inventory."
+msgstr "This makerspace is not publishing inventory."
+
 msgid "This makerspace is not taking invitation requests right now."
 msgstr "This makerspace is not taking invitation requests right now."
 
@@ -34721,6 +35492,9 @@ msgstr "This member's account has no number on file."
 msgid "This month"
 msgstr "This month"
 
+msgid "This obligation could not be loaded."
+msgstr "This obligation could not be loaded."
+
 msgid "This offer deadline has passed."
 msgstr "This offer deadline has passed."
 
@@ -34742,6 +35516,9 @@ msgstr "This order cannot be collected yet. Take the payment or mark it ready fi
 msgid "This order has nothing left to pay."
 msgstr "This order has nothing left to pay."
 
+msgid "This order link is not valid. Check the link in your email."
+msgstr "This order link is not valid. Check the link in your email."
+
 msgid "This organization doesn't own any spaces with reports yet."
 msgstr "This organization doesn't own any spaces with reports yet."
 
@@ -34756,6 +35533,9 @@ msgstr "This page has moved"
 
 msgid "This page is not available."
 msgstr "This page is not available."
+
+msgid "This page is unavailable on this deployment."
+msgstr "This page is unavailable on this deployment."
 
 msgid "This part of the programme is unavailable. Choose an available step above."
 msgstr "This part of the programme is unavailable. Choose an available step above."
@@ -34787,6 +35567,9 @@ msgstr "This print job is {0}. Refresh the desk before printing again."
 
 msgid "This private URL shows machines you can access. Keep it private; rotating invalidates the old URL. Usage-only schedules have no calendar date."
 msgstr "This private URL shows machines you can access. Keep it private; rotating invalidates the old URL. Usage-only schedules have no calendar date."
+
+msgid "This profile omits video validation and previews that require ffmpeg or ffprobe. Supported ordinary uploads remain available; unsupported types are refused before acceptance."
+msgstr "This profile omits video validation and previews that require ffmpeg or ffprobe. Supported ordinary uploads remain available; unsupported types are refused before acceptance."
 
 msgid "This programme isn't taking new people right now."
 msgstr "This programme isn't taking new people right now."
@@ -34946,11 +35729,20 @@ msgstr "This space's restore points"
 msgid "This speaker link is no longer valid. It may have expired, been used already, or been withdrawn. Ask the organizer for a new one."
 msgstr "This speaker link is no longer valid. It may have expired, been used already, or been withdrawn. Ask the organizer for a new one."
 
+msgid "This survey is closed, the event has not ended yet, or the link is invalid."
+msgstr "This survey is closed, the event has not ended yet, or the link is invalid."
+
 msgid "This team invitation is unavailable. Ask the team leader for a current link."
 msgstr "This team invitation is unavailable. Ask the team leader for a current link."
 
+msgid "This ticket is not available right now."
+msgstr "This ticket is not available right now."
+
 msgid "This ticket is not paid yet"
 msgstr "This ticket is not paid yet"
+
+msgid "This ticket link could not be opened."
+msgstr "This ticket link could not be opened."
 
 msgid "This tool is unavailable for direct handout."
 msgstr "This tool is unavailable for direct handout."
@@ -34977,6 +35769,9 @@ msgstr "This will {0} the series and its applicable occurrences."
 
 msgid "This will {action} a private calendar link. Anyone with the link can see your event schedule. Continue?"
 msgstr "This will {action} a private calendar link. Anyone with the link can see your event schedule. Continue?"
+
+msgid "This work order is not in your scope any more."
+msgstr "This work order is not in your scope any more."
 
 msgid "This year"
 msgstr "This year"
@@ -35017,6 +35812,9 @@ msgstr "Thursday"
 
 msgid "Tick the consent box before uploading your photo."
 msgstr "Tick the consent box before uploading your photo."
+
+msgid "Tick the sections to show and move them into the order you want. A section whose module is off stays hidden."
+msgstr "Tick the sections to show and move them into the order you want. A section whose module is off stays hidden."
 
 msgid "Ticket"
 msgstr "Ticket"
@@ -35437,6 +36235,9 @@ msgstr "Travel request audience"
 msgid "Travel support"
 msgstr "Travel support"
 
+msgid "Travel support could not be loaded."
+msgstr "Travel support could not be loaded."
+
 msgid "Travel support is unavailable for this event."
 msgstr "Travel support is unavailable for this event."
 
@@ -35515,6 +36316,9 @@ msgstr "Try a sample handover"
 msgid "Try again"
 msgstr "Try again"
 
+msgid "Try again in a moment."
+msgstr "Try again in a moment."
+
 msgid "Try again."
 msgstr "Try again."
 
@@ -35544,6 +36348,9 @@ msgstr "Turn off…"
 
 msgid "Turn on"
 msgstr "Turn on"
+
+msgid "Turn on “Tax on charges” under Features to charge VAT or India GST. Until then no tax is charged and documents stay exactly as they are."
+msgstr "Turn on “Tax on charges” under Features to charge VAT or India GST. Until then no tax is charged and documents stay exactly as they are."
 
 msgid "Turn on the features you use"
 msgstr "Turn on the features you use"
@@ -35717,8 +36524,18 @@ msgstr "Unable to load pass layout."
 msgid "Unable to load QR. Refresh the confirmation to retry."
 msgstr "Unable to load QR. Refresh the confirmation to retry."
 
+#. placeholder {0}: spaces.error.message
+msgid "Unable to load resources. {0}"
+msgstr "Unable to load resources. {0}"
+
+msgid "Unable to load the finance queue."
+msgstr "Unable to load the finance queue."
+
 msgid "Unable to load the identity provider."
 msgstr "Unable to load the identity provider."
+
+msgid "Unable to load this event website."
+msgstr "Unable to load this event website."
 
 msgid "Unable to load this makerspace."
 msgstr "Unable to load this makerspace."
@@ -35801,6 +36618,9 @@ msgstr "Uncategorized"
 #. placeholder {0}: formatUsage(sample.uncertain, sample.unit)
 msgid "Uncertain or reserved: {0}. Included when evaluating the cap."
 msgstr "Uncertain or reserved: {0}. Included when evaluating the cap."
+
+msgid "Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace."
+msgstr "Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace."
 
 msgid "Unclaimed"
 msgstr "Unclaimed"
@@ -35900,6 +36720,9 @@ msgstr "Unlink makerspace?"
 
 msgid "Unlisted"
 msgstr "Unlisted"
+
+msgid "Unlisted events are hidden from the events page, Discover and search engines; only people you send the link to can open them."
+msgstr "Unlisted events are hidden from the events page, Discover and search engines; only people you send the link to can open them."
 
 msgid "Unlisted: only people with the link"
 msgstr "Unlisted: only people with the link"
@@ -36251,6 +37074,12 @@ msgstr "Use {0}–{1} mm on each side, in 0.1 mm steps."
 msgid "Use {token}"
 msgstr "Use {token}"
 
+msgid "Use 0 for no charge."
+msgstr "Use 0 for no charge."
+
+msgid "Use 0 for Unlimited."
+msgstr "Use 0 for Unlimited."
+
 msgid "Use 0 when no capacity is published."
 msgstr "Use 0 when no capacity is published."
 
@@ -36292,6 +37121,9 @@ msgstr "Use a supplier company name. Keep personal contact details in the existi
 
 msgid "Use an authenticator code instead"
 msgstr "Use an authenticator code instead"
+
+msgid "Use an IANA name such as Asia/Kolkata. Review migrated events because their original zone was not recorded."
+msgstr "Use an IANA name such as Asia/Kolkata. Review migrated events because their original zone was not recorded."
 
 msgid "Use an uploaded image"
 msgstr "Use an uploaded image"
@@ -36343,6 +37175,9 @@ msgstr "Use JSON instead"
 
 msgid "Use letters, numbers, hyphens or underscores."
 msgstr "Use letters, numbers, hyphens or underscores."
+
+msgid "Use local time for opening hours, reminders and bookings."
+msgstr "Use local time for opening hours, reminders and bookings."
 
 msgid "Use makerspace policy"
 msgstr "Use makerspace policy"
@@ -36420,8 +37255,14 @@ msgstr "Use version 1 with a fields array. Each field has key, label, type (text
 msgid "Use your assigned resource permissions."
 msgstr "Use your assigned resource permissions."
 
+msgid "Use your makerspace logo on public pages. Without one, the makerspace name becomes the wordmark."
+msgstr "Use your makerspace logo on public pages. Without one, the makerspace name becomes the wordmark."
+
 msgid "Use your passkey"
 msgstr "Use your passkey"
+
+msgid "Used by payment settings. Existing charges keep their currency."
+msgstr "Used by payment settings. Existing charges keep their currency."
 
 msgid "used from stock"
 msgstr "used from stock"
@@ -36887,6 +37728,9 @@ msgstr "Visible only to you in this judging assignment. Never shown to the team.
 msgid "Visible to requesters"
 msgstr "Visible to requesters"
 
+msgid "Visible to staff only."
+msgstr "Visible to staff only."
+
 msgid "Visit"
 msgstr "Visit"
 
@@ -37254,8 +38098,14 @@ msgstr "We couldn't find that article"
 msgid "We couldn't find that job in your account."
 msgstr "We couldn't find that job in your account."
 
+msgid "We couldn't find that job, or it isn't trackable any more."
+msgstr "We couldn't find that job, or it isn't trackable any more."
+
 msgid "We couldn't find that page"
 msgstr "We couldn't find that page"
+
+msgid "We couldn't find this makerspace. Check the link."
+msgstr "We couldn't find this makerspace. Check the link."
 
 msgid "We couldn't load the makerspace list. "
 msgstr "We couldn't load the makerspace list. "
@@ -37284,6 +38134,9 @@ msgstr "We email the link there, and to their own chat channels if they already 
 
 msgid "We email the person a link. Your place becomes theirs only when they accept it while signed in with that address. The offer expires if they do not accept in time."
 msgstr "We email the person a link. Your place becomes theirs only when they accept it while signed in with that address. The offer expires if they do not accept in time."
+
+msgid "We emailed a 6-digit code to the invitation address. Enter it to accept."
+msgstr "We emailed a 6-digit code to the invitation address. Enter it to accept."
 
 msgid "We emailed you a code to choose a new password. Use it to sign in again."
 msgstr "We emailed you a code to choose a new password. Use it to sign in again."
@@ -37321,6 +38174,9 @@ msgstr "We'll email you when the organiser decides."
 
 msgid "We’ll notify your member account when stock rises. Sign in as an active member to subscribe."
 msgstr "We’ll notify your member account when stock rises. Sign in as an active member to subscribe."
+
+msgid "We'll update this page as it moves."
+msgstr "We'll update this page as it moves."
 
 msgid "Web address"
 msgstr "Web address"
@@ -37420,6 +38276,9 @@ msgstr "Welcome back."
 
 msgid "Welcome them in"
 msgstr "Welcome them in"
+
+msgid "Welcome visitors with a wide banner on your public site."
+msgstr "Welcome visitors with a wide banner on your public site."
 
 msgid "Went on"
 msgstr "Went on"
@@ -37608,8 +38467,14 @@ msgstr "When members can form teams"
 msgid "When off, the {0} default is sent (your text is kept). The email always sends."
 msgstr "When off, the {0} default is sent (your text is kept). The email always sends."
 
+msgid "When on, a member whose plan term has expired or was cancelled cannot submit borrow requests until a new term is started."
+msgstr "When on, a member whose plan term has expired or was cancelled cannot submit borrow requests until a new term is started."
+
 msgid "When on, staff cannot issue a loan until its deposit is paid; the handover is refused with a deposit-required message."
 msgstr "When on, staff cannot issue a loan until its deposit is paid; the handover is refused with a deposit-required message."
+
+msgid "When on, the “Out right now” list publishes the borrower’s name on the public stats page. When off, every borrower is shown as Member. Nothing else on the page ever carries a name."
+msgstr "When on, the “Out right now” list publishes the borrower’s name on the public stats page. When off, every borrower is shown as Member. Nothing else on the page ever carries a name."
 
 msgid "When one comes back we hold it for you and let you know."
 msgstr "When one comes back we hold it for you and let you know."
@@ -37698,6 +38563,9 @@ msgstr "Who gets the staff roles"
 
 msgid "Who is using which machine, and sessions that need a check."
 msgstr "Who is using which machine, and sessions that need a check."
+
+msgid "Who may register. Enable account registration, invitations or organization audiences in feature settings first."
+msgstr "Who may register. Enable account registration, invitations or organization audiences in feature settings first."
 
 msgid "Who owns the space"
 msgstr "Who owns the space"
@@ -38051,14 +38919,23 @@ msgstr "You are signed in with a different email address than the one this ticke
 msgid "You can add a photo after the first save."
 msgstr "You can add a photo after the first save."
 
+msgid "You can also paste a QR link."
+msgstr "You can also paste a QR link."
+
 msgid "You can change every setting. Give a module's manager control of that module's settings, one person at a time; without it they see the settings read-only. Inventory Managers always set loan length and renewals."
 msgstr "You can change every setting. Give a module's manager control of that module's settings, one person at a time; without it they see the settings read-only. Inventory Managers always set loan length and renewals."
 
 msgid "You can change your handle once every 30 days. Your old link keeps redirecting for 30 days."
 msgstr "You can change your handle once every 30 days. Your old link keeps redirecting for 30 days."
 
+msgid "You can come back before the archive deadline and before identity removal starts. Choose a new password. Previous memberships, sessions and device access remain revoked."
+msgstr "You can come back before the archive deadline and before identity removal starts. Choose a new password. Previous memberships, sessions and device access remain revoked."
+
 msgid "You can lock a setting so this space cannot loosen it: a switch is held at its stricter value, any other setting at its current value or stricter. Only a platform superadmin removes a lock."
 msgstr "You can lock a setting so this space cannot loosen it: a switch is held at its stricter value, any other setting at its current value or stricter. Only a platform superadmin removes a lock."
+
+msgid "You can prepare these settings, but nothing is sent until the platform administrator installs it."
+msgstr "You can prepare these settings, but nothing is sent until the platform administrator installs it."
 
 msgid "You can see these prices but not change them. "
 msgstr "You can see these prices but not change them. "
@@ -38263,6 +39140,9 @@ msgstr "You’re not registered for anything yet. See what’s on."
 msgid "You're number {0} in line for {1}. "
 msgstr "You're number {0} in line for {1}. "
 
+msgid "You're on the list. Your card appears in My cards once it's approved."
+msgstr "You're on the list. Your card appears in My cards once it's approved."
+
 msgid "You're on the team"
 msgstr "You're on the team"
 
@@ -38271,6 +39151,9 @@ msgstr "You’re on the waitlist"
 
 msgid "You're signed in, so this gift is recorded on your account."
 msgstr "You're signed in, so this gift is recorded on your account."
+
+msgid "You've been invited to join. Sign in to bind this single-use invitation to your account. This link works once."
+msgstr "You've been invited to join. Sign in to bind this single-use invitation to your account. This link works once."
 
 msgid "You've got it."
 msgstr "You've got it."
@@ -38328,6 +39211,9 @@ msgstr "Your application"
 msgid "Your application answers"
 msgstr "Your application answers"
 
+msgid "Your application belongs to your member account. A makerspace membership is not required for account events."
+msgstr "Your application belongs to your member account. A makerspace membership is not required for account events."
+
 msgid "Your application changed. Your draft is preserved. Review the current form before reapplying it."
 msgstr "Your application changed. Your draft is preserved. Review the current form before reapplying it."
 
@@ -38384,6 +39270,12 @@ msgstr "Your browser could not prepare the cover."
 
 msgid "Your card is in My cards."
 msgstr "Your card is in My cards."
+
+msgid "Your card is issued straight away."
+msgstr "Your card is issued straight away."
+
+msgid "Your card is ready in My cards."
+msgstr "Your card is ready in My cards."
 
 msgid "Your catalogue will appear here."
 msgstr "Your catalogue will appear here."
@@ -38611,6 +39503,9 @@ msgstr "Your member card QR"
 msgid "Your member card QR code"
 msgstr "Your member card QR code"
 
+msgid "Your member, programme and event cards in one place."
+msgstr "Your member, programme and event cards in one place."
+
 msgid "Your membership"
 msgstr "Your membership"
 
@@ -38647,6 +39542,9 @@ msgstr "Your note"
 msgid "Your one-person team appears after you confirm your place."
 msgstr "Your one-person team appears after you confirm your place."
 
+msgid "Your operator shift doesn't allow QR lookup."
+msgstr "Your operator shift doesn't allow QR lookup."
+
 msgid "Your order"
 msgstr "Your order"
 
@@ -38660,11 +39558,17 @@ msgstr "Your orders are listed in your member area."
 msgid "Your organization"
 msgstr "Your organization"
 
+msgid "Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces."
+msgstr "Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces."
+
 msgid "Your organization access will end immediately. A sole active owner must appoint another owner before leaving. A recent identity check may be required."
 msgstr "Your organization access will end immediately. A sole active owner must appoint another owner before leaving. A recent identity check may be required."
 
 msgid "Your organizations"
 msgstr "Your organizations"
+
+msgid "Your organizations co-manage the event with this space. Other organizations can be its audience instead."
+msgstr "Your organizations co-manage the event with this space. Other organizations can be its audience instead."
 
 msgid "Your own domain or frontend"
 msgstr "Your own domain or frontend"
@@ -38672,8 +39576,14 @@ msgstr "Your own domain or frontend"
 msgid "Your passkeys and authenticator app stay as they are."
 msgstr "Your passkeys and authenticator app stay as they are."
 
+msgid "Your password has been updated. You can now sign in."
+msgstr "Your password has been updated. You can now sign in."
+
 msgid "Your payment is being confirmed by a second person."
 msgstr "Your payment is being confirmed by a second person."
+
+msgid "Your payment is being confirmed by the provider. You can close this page."
+msgstr "Your payment is being confirmed by the provider. You can close this page."
 
 msgid "Your payment routing"
 msgstr "Your payment routing"
@@ -38732,6 +39642,9 @@ msgstr "Your projects will appear here when the organizer assigns this round."
 msgid "Your public address: …/m/"
 msgstr "Your public address: …/m/"
 
+msgid "Your public address. One per account."
+msgstr "Your public address. One per account."
+
 msgid "Your public introduction"
 msgstr "Your public introduction"
 
@@ -38767,6 +39680,9 @@ msgstr "Your registration consent has been updated."
 
 msgid "Your reimbursement"
 msgstr "Your reimbursement"
+
+msgid "Your reimbursement could not be loaded."
+msgstr "Your reimbursement could not be loaded."
 
 msgid "Your reimbursements"
 msgstr "Your reimbursements"

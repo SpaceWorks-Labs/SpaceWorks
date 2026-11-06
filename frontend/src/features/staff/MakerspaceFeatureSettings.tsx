@@ -60,7 +60,7 @@ export function MakerspaceFeatureSettings({ makerspace, settings, loading }: Pro
   };
 
   return (
-    <SettingsRow label={t`Feature settings`} helper="Switch modules on or off under Modules. Each feature below has its own switch; turning one off keeps its data."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Feature settings`} helper={t`Switch modules on or off under Modules. Each feature below has its own switch; turning one off keeps its data.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-2">
 
 

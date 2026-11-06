@@ -31,7 +31,7 @@ export function AuditLog({ makerspaceId }: { makerspaceId?: number }) {
 
   return <ListLayout width="wide"
     header={{ title: t`Audit log`, subtitle: t`Every state change in this makerspace, append-only.`, meta: <AuditVerificationStatus key={new URLSearchParams(filterParams).toString()} makerspaceId={filters.makerspace} params={filterParams} /> }}
-    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: `Couldn't load audit entries${logs.error?.message ? ` (${logs.error.message})` : ""}. Try again.`, onRetry: () => void logs.refetch() }}
+    state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: t`Couldn't load audit entries${logs.error?.message ? ` (${logs.error.message})` : ""}. Try again.`, onRetry: () => void logs.refetch() }}
     isEmpty={Boolean(logs.data && !logs.data.results.length)} filtered={chips.length > 0}
     empty={{ message: t`No audit entries yet. Complete a workflow to start the trail.` }}
     filteredEmpty={{ message: t`No entries match these filters. Clear filters to see the trail.`, action: { label: t`Clear filters`, onClick: clear } }}

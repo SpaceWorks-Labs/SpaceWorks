@@ -38,7 +38,7 @@ export function MemberEventHistoryPage() {
     onAuthenticated={() => { void identity.refetch(); }} />;
   return <CenteredCardLayout width="wide" eyebrow={spaceName} title={t`Your event history`}
     state={restoring || identity.isLoading || history.isLoading || bootstrap.isLoading ? { status: "loading" } : { status: "ready" }}
-    body="Events you registered for or spoke at in this space."
+    body={t`Events you registered for or spoke at in this space.`}
     content={<div className="grid gap-4">
       {/* 403: no registration or talk here yet, or this account can't see history in this space. */}
       {status === 403 ? <EmptyState message={t`No event history here yet. Events you register for or speak at will appear here.`} /> : null}

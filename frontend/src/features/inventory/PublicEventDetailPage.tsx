@@ -77,7 +77,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
   // A closed organization event keeps its admission form: an owned registration may still need its consent renewed.
   // That form says "Registration is closed." itself, so the card note only adds when it closed.
   const closedNote = organizationAudience ? cutoff || undefined : `Registration is closed.${cutoff ? ` ${cutoff}` : ""}`;
-  if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title={t`Event not found`} body="This event is no longer available." primary={{ label: t`All events`, href: tenantPath("events") }} />;
+  if (error?.status === 404) return <CenteredCardLayout state={{ status: "ready" }} title={t`Event not found`} body={t`This event is no longer available.`} primary={{ label: t`All events`, href: tenantPath("events") }} />;
   return <div style={brandStyle}>
     {event ? <PageMetadata title={event.title} description={event.description.slice(0, 300)} path={canonicalUrl ?? location.pathname} image={event.website && "cover" in event.website ? event.website.cover?.url : event.image_url} imageAlt={event.website?.cover?.alt} noindex={surfaceOf(event).indexable === false} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={state}

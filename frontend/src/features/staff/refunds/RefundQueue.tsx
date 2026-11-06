@@ -33,7 +33,7 @@ export function RefundQueue({ makerspaceId, makerspaceName, canDecide, canEditPo
     header={{ title: t`Refunds`, subtitle: t`What members may be owed by ${makerspaceName ?? "your makerspace"}. No money moves until someone approves it.`,
       secondary: { label: t`Refund policy`, onClick: () => setPolicyOpen(true) } }}
     state={cases.isLoading ? { status: "loading" } : cases.error && !cases.data
-      ? { status: "error", error: "Couldn't load refunds. Try again.", onRetry: () => { void cases.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load refunds. Try again.`, onRetry: () => { void cases.refetch(); } } : { status: "ready" }}
     isEmpty={cases.data?.count === 0}
     empty={{ message: status === "open" ? t`Nothing to decide. New refund requests and cancellations that owe money appear here.` : t`No refunds in this view yet.` }}
     tabs={tabs} activeTab={status || "all"} onTabChange={(key) => { setStatus(key === "all" ? "" : key); setPage(1); }}

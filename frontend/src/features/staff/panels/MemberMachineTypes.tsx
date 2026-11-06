@@ -49,7 +49,7 @@ function MachineTypeForm({ msId, scope, onAuthRefresh, onClose }: {
   });
   const conflict = save.error instanceof StructuredApiError && save.error.status === 409;
   const types = scope.available_machine_types;
-  if (!scope.scoping_applies) return <div className="grid gap-2"><Callout size="inline" tone="warn" lead="Machine type assignment does not apply." body="Save the Machine Manager role first. Space Managers already cover all types." />{save.error ? <ErrorText message={save.error.message} /> : null}</div>;
+  if (!scope.scoping_applies) return <div className="grid gap-2"><Callout size="inline" tone="warn" lead="Machine type assignment does not apply." body={t`Save the Machine Manager role first. Space Managers already cover all types.`} />{save.error ? <ErrorText message={save.error.message} /> : null}</div>;
   return <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
     <fieldset disabled={save.isPending || conflict} className="grid min-w-0 gap-2">
       <legend className="text-sm font-semibold text-ink">{t`Assigned machine types`}</legend>

@@ -32,7 +32,7 @@ function JobList({ context }: { context: MemberJobsContext }) {
   return <ListLayout header={{ eyebrow: t`Member area`, title: t`My machine jobs`, subtitle: t`Everything you've asked the space to make.`,
     primary: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}
     state={context.bootstrapError || jobs.isError
-      ? { status: "error", error: "Couldn't load your jobs. Try again.", onRetry: () => { void jobs.refetch(); } }
+      ? { status: "error", error: t`Couldn't load your jobs. Try again.`, onRetry: () => { void jobs.refetch(); } }
       : !context.ready || jobs.isPending ? { status: "loading" } : { status: "ready" }}
     isEmpty={jobs.isSuccess && !rows.length}
     empty={{ message: t`No machine jobs yet. Send the space a file and it will show up here.`, action: { label: t`Request a job`, href: context.path("machine-jobs/new") } }}

@@ -53,21 +53,21 @@ export function PublishingQuestions({ answers, onChange, published, idPrefix = "
   answers: PublishingAnswers; onChange: (patch: Partial<PublishingAnswers>) => void; published: boolean; idPrefix?: string;
 }) {
   return <div className="grid gap-5">
-    <RadioCards<"private" | "public"> name={`${idPrefix}-see`} legend="1. Who can see it?" value={answers.is_public ? "public" : "private"}
+    <RadioCards<"private" | "public"> name={`${idPrefix}-see`} legend={t`1. Who can see it?`} value={answers.is_public ? "public" : "private"}
       onChange={value => onChange({ is_public: value === "public" })} options={[
         { value: "private", label: t`Only your team`, detail: t`Staff working on the event.`, icon: <Lock aria-hidden="true" size={16} /> },
         { value: "public", label: t`Anyone with the link`, detail: t`The event page is public.`, icon: <Globe aria-hidden="true" size={16} /> },
       ]} />
-    <RadioCards<Listing> name={`${idPrefix}-find`} legend="2. Who can find it?" value={answers.listing} disabled={!answers.is_public}
+    <RadioCards<Listing> name={`${idPrefix}-find`} legend={t`2. Who can find it?`} value={answers.listing} disabled={!answers.is_public}
       hint={answers.is_public ? undefined : t`A private event is never listed. Make it visible first.`}
       onChange={listing => onChange({ listing })} options={[
         { value: "listed", label: t`Listed`, detail: t`Events page, Discover, organisation and space pages, calendars and search engines.`, icon: <Globe aria-hidden="true" size={16} /> },
         { value: "unlisted", label: t`Unlisted`, detail: t`Only people you send the link to. Hidden from listings and search engines.`, icon: <EyeOff aria-hidden="true" size={16} /> },
       ]} />
-    <RadioCards<string> name={`${idPrefix}-signup`} legend="3. Who can sign up?" value={answers.registration_audience}
+    <RadioCards<string> name={`${idPrefix}-signup`} legend={t`3. Who can sign up?`} value={answers.registration_audience}
       onChange={registration_audience => onChange({ registration_audience })}
       options={AUDIENCES.map(row => ({ ...row, icon: <Users aria-hidden="true" size={16} /> }))} />
-    {published ? <RadioCards<PageState> name={`${idPrefix}-page`} legend="Public page" value={answers.page_state}
+    {published ? <RadioCards<PageState> name={`${idPrefix}-page`} legend={t`Public page`} value={answers.page_state}
       onChange={page_state => onChange({ page_state })} options={[
         { value: "live", label: t`Up`, detail: t`The page and its links work.` },
         { value: "offline", label: t`Taken down`, detail: t`Hide the page without cancelling or unpublishing the event.` },

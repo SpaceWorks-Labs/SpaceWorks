@@ -56,12 +56,12 @@ export function DeviceIdentitySection({ device, onGrant }: { device: Device; onG
     <SettingsSection title={t`Device identity`} description={t`Fingerprint: ${device.key_fingerprint ? `${device.key_fingerprint.slice(0, 12)}…` : "Not enrolled"} · Key version ${device.key_version}`}>
       <form onSubmit={e => { e.preventDefault(); action.mutate("save"); }}>
         <SettingsRow label={t`Name`} htmlFor="device-name"><input id="device-name" className="desk-input w-full" required maxLength={120} value={name} onChange={e => setName(e.target.value)} /></SettingsRow>
-        <SettingsRow label={t`Offline threshold (seconds)`} htmlFor="device-threshold" helper="Space Works marks the device offline when a heartbeat is late by this amount.">
+        <SettingsRow label={t`Offline threshold (seconds)`} htmlFor="device-threshold" helper={t`Space Works marks the device offline when a heartbeat is late by this amount.`}>
           <input id="device-threshold" className="desk-input w-full" required type="number" min={1} max={604800} value={threshold} onChange={e => setThreshold(Number(e.target.value))} />
         </SettingsRow>
         {dirty || action.isPending ? <SettingsActions onDiscard={() => { setName(device.name); setThreshold(device.offline_threshold_seconds); }} pending={action.isPending} /> : null}
       </form>
-      <SettingsRow label={t`Enrollment`} helper="A new enrollment replaces the device key. Copy the one-time token before closing it.">
+      <SettingsRow label={t`Enrollment`} helper={t`A new enrollment replaces the device key. Copy the one-time token before closing it.`}>
         <button className="desk-button" disabled={action.isPending} onClick={() => action.mutate("enrollment")}>
           {device.status === "active" ? t`Rotate key` : device.status === "revoked" ? t`Reactivate device` : t`Issue enrollment`}
         </button>

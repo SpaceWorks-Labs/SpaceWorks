@@ -44,7 +44,7 @@ export function PublicMachineServiceStatusPage() {
   const state = bootstrapQuery.isLoading || statusQuery.isPending
     ? { status: "loading" as const }
     : statusQuery.isError
-      ? { status: "error" as const, error: "We couldn't find that job, or it isn't trackable any more.", onRetry: () => { void statusQuery.refetch(); } }
+      ? { status: "error" as const, error: t`We couldn't find that job, or it isn't trackable any more.`, onRetry: () => { void statusQuery.refetch(); } }
       : { status: "ready" as const };
   const status = job ? normalizeServiceStatus(job.status) : "";
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>

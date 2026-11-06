@@ -26,8 +26,8 @@ export function ScanCardBox({ makerspaceId }: { makerspaceId: number }) {
   };
   return <div aria-label={t`Scan card`}>
     <ScanWorkbench onFind={lookup} onScan={lookup} searchLabel="Card payload"
-      helper="Scan or paste a card payload to check whether it is still valid." findPending={resolve.isPending}
-      state={resolve.error ? { status: "error", error: resolve.error instanceof Error ? resolve.error.message : "Couldn't check that card. Try again.",
+      helper={t`Scan or paste a card payload to check whether it is still valid.`} findPending={resolve.isPending}
+      state={resolve.error ? { status: "error", error: resolve.error instanceof Error ? resolve.error.message : t`Couldn't check that card. Try again.`,
         onRetry: () => resolve.reset() } : { status: "ready" }}
       result={result ? { tone: result.outcome === "ok" ? "success" : "danger", title: OUTCOME_TEXT[result.outcome],
         next: { label: t`Next card`, onClick: () => resolve.reset() },

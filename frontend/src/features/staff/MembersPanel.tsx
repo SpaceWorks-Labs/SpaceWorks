@@ -123,7 +123,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       ...(canManageMakerspace ? [{ key: "waivers", label: t`Waivers`, href: "#waivers" }] : []),
       ...lifecycle,
     ];
-  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: `Couldn't load ${tab === "requests" ? "requests" : "members"}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
+  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: t`Couldn't load ${tab === "requests" ? "requests" : "members"}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
     tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
     header={{ title: t`Members`, subtitle: t`Membership, permissions and the people making things here.`, primary: { label: t`Invite member`, onClick: () => setInviteOpen(true) } }}
     stats={[{ label: t`Members`, value: roster.data?.count ?? 0 }, { label: membershipEnabled ? t`Membership requests` : t`Invitations`, value: requests.data?.count ?? 0 }, ...(presenceEnabled ? [{ label: t`Currently present`, value: presence.data?.count ?? 0 }] : [])]}

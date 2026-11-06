@@ -30,7 +30,7 @@ export function PublicShopProductPage() {
   const firstOpen = product?.variants.find(variant => !variant.sold_out);
   const variant = product?.variants.find(row => row.id === (chosen ?? firstOpen?.id)) ?? null;
   const error = !space.slug ? new Error(t`This shop is not available.`) : shop.error ?? query.error;
-  const state: QueryState = error ? { status: "error", error: shopErrorMessage(error) || "This item is not available.",
+  const state: QueryState = error ? { status: "error", error: shopErrorMessage(error) || t`This item is not available.`,
     onRetry: () => { void shop.refetch(); void query.refetch(); } }
     : shop.isLoading || query.isLoading ? { status: "loading" } : { status: "ready" };
   const stock = variant ? stockLabel(variant) : product?.sold_out ? { label: t`Sold out`, tone: "danger" as const } : null;

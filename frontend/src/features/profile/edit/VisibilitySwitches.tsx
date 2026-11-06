@@ -3,13 +3,13 @@ import type { FamilyFlags } from "../publicProfileApi";
 import { fieldError, usePatchPublication } from "./profileEditApi";
 
 const FAMILIES: { key: keyof FamilyFlags; label: string; helper: string }[] = [
-  { key: "show_activity_graph", label: t`Activity graph`, helper: "Daily counts only, plus your GitHub graph if you linked one." },
-  { key: "show_events", label: t`Events`, helper: "Public events you attended or hosted." },
-  { key: "show_speaking", label: t`Speaking`, helper: "Sessions you spoke at, on the activity graph." },
-  { key: "show_projects", label: t`Projects`, helper: "Projects you mark public below." },
-  { key: "show_machine_activity", label: t`Machine activity`, helper: "Completed machine jobs, on the activity graph." },
-  { key: "show_bookings", label: t`Bookings`, helper: "Completed bookings, on the activity graph." },
-  { key: "show_loans", label: t`Loans`, helper: "Hardware you borrowed and returned, on the activity graph." },
+  { key: "show_activity_graph", label: t`Activity graph`, helper: t`Daily counts only, plus your GitHub graph if you linked one.` },
+  { key: "show_events", label: t`Events`, helper: t`Public events you attended or hosted.` },
+  { key: "show_speaking", label: t`Speaking`, helper: t`Sessions you spoke at, on the activity graph.` },
+  { key: "show_projects", label: t`Projects`, helper: t`Projects you mark public below.` },
+  { key: "show_machine_activity", label: t`Machine activity`, helper: t`Completed machine jobs, on the activity graph.` },
+  { key: "show_bookings", label: t`Bookings`, helper: t`Completed bookings, on the activity graph.` },
+  { key: "show_loans", label: t`Loans`, helper: t`Hardware you borrowed and returned, on the activity graph.` },
 ];
 
 /** Each family is its own consent. All start off; a switch saves on its own, no form submit. */

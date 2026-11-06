@@ -28,7 +28,7 @@ export function TechnicianOptInPage() {
   const agreed = data ? (["whatsapp", "sms"] as const).filter(channel => data.consent[channel]) : [];
   return <CenteredCardLayout media={{ icon: "HardHat", tone: "accent" }} eyebrow={data?.makerspace_name}
     title={data ? t`Repair requests for ${data.technician_name}` : t`Repair requests`}
-    state={query.isLoading ? { status: "loading" } : query.isError ? { status: "error", error: "This link is invalid or has expired. Ask the space for a new one." } : { status: "ready" }}
+    state={query.isLoading ? { status: "loading" } : query.isError ? { status: "error", error: t`This link is invalid or has expired. Ask the space for a new one.` } : { status: "ready" }}
     body={data ? <>{t`${data.makerspace_name} would like to send you repair requests. Email always works. Choose the chat channels you agree to.`}</> : ""}
     content={data ? <div className="grid gap-3">
       {data.has_phone ? <fieldset className="grid gap-2"><legend className="eyebrow mb-1">{t`On the number the space has for you`}</legend>

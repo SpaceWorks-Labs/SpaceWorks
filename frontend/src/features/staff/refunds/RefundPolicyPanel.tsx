@@ -15,7 +15,7 @@ export function RefundPolicyPanel({ makerspaceId, canEdit }: { makerspaceId: num
   const policies = useQuery({ queryKey: refundPolicyKey(makerspaceId), queryFn: () => listRefundPolicies(makerspaceId) });
   if (policies.isLoading) return <p className="text-sm text-muted" role="status">{t`Loading refund policy…`}</p>;
   if (policies.error || !policies.data) return <Callout size="inline" tone="danger" lead="Couldn't load the refund policy."
-    body="Try again in a moment." />;
+    body={t`Try again in a moment.`} />;
   const defaults = policies.data.filter((row) => row.plan === null);
   const timed = defaults.filter((row) => row.area !== "membership");
   const membership = defaults.find((row) => row.area === "membership");

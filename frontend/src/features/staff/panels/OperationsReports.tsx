@@ -101,7 +101,7 @@ export function OperationsReports({
     <DetailLayout title={t`Reports`} width="wide" asideSide="start"
       meta={[`Operations reporting for ${scopeLabel}.`, selected?.title ?? "Choose a report"]}
       state={{ status: catalog.isLoading ? "loading" : catalog.isError ? "error" : "ready",
-        error: "Couldn't load reports. Try again.", onRetry: () => void catalog.refetch() }}
+        error: t`Couldn't load reports. Try again.`, onRetry: () => void catalog.refetch() }}
       isEmpty={reportsEnabled && catalog.isSuccess && !catalogEntries.length}
       empty={{ message: t`No reports available yet. Enable the reporting modules to get started.` }}
       actions={{ primary: { label: t`Export`, pending: exportReport.isPending, pendingLabel: "Exporting…",

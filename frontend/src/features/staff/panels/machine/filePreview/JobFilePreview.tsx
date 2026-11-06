@@ -72,7 +72,7 @@ export function JobFilePreview({ fileId, filename, bytes, load }: {
   return <section aria-label={t`Preview of ${filename}`} className="grid gap-3">
     <div className="flex flex-wrap items-center gap-2 text-sm text-muted"><Box aria-hidden="true" size={18} />{KIND_LABELS[kind]}</div>
     {state === "confirm" ? <Callout size="panel" tone="warn" lead="This is a large file."
-      body="The preview may use a lot of memory on this device. You can download the original instead." /> : null}
+      body={t`The preview may use a lot of memory on this device. You can download the original instead.`} /> : null}
     {state === "failed" ? <p role="status" className="text-sm text-muted">{t`Preview unavailable. You can still download the original file.`}</p> : null}
     {state === "loading" ? <div role="status" className="flex flex-wrap items-center gap-2"><Spinner />{t`Preparing preview…`}<ActionControl action={{ label: t`Cancel preview`, onClick: () => { stop.current(); setState("idle"); } }} /></div> : null}
     {state === "ready" && mesh?.kind === "mesh" ? <Suspense fallback={<Spinner />}><MeshCanvas meshes={mesh.meshes} label={t`3D preview of ${filename}`} /></Suspense> : null}

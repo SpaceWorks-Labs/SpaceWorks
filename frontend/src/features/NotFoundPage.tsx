@@ -17,7 +17,7 @@ export function NotFoundPage() {
   // Patch is the 404's one bold moment; kiosk, scanner and payment paths stay plain.
   const patch = enabled && eggsAllowed(pathname);
   return <><CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Compass", tone: "accent" }}
-    eyebrow="404" title={enabled ? t`Loan slip not found` : t`We couldn't find that page`} body="The link may be old, or the page moved."
+    eyebrow="404" title={enabled ? t`Loan slip not found` : t`We couldn't find that page`} body={t`The link may be old, or the page moved.`}
     content={enabled ? <div className="grid gap-4">
       {!torn ? <div className="rounded-2xl border border-dashed border-line bg-panel p-5"
         onPointerDown={event => { dragStart.current = event.clientY; }}

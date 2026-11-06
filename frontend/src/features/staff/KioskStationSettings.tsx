@@ -59,7 +59,7 @@ export function KioskStationSettings({ makerspace }: { makerspace: Makerspace })
     create.mutate();
   }
 
-  return <SettingsRow label={t`Kiosk stations`} helper="A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person."><div className="@container grid min-w-0 gap-4">
+  return <SettingsRow label={t`Kiosk stations`} helper={t`A Station PIN only unlocks the kiosk. Every handover still needs a signed-in staff operator, and is recorded against that person.`}><div className="@container grid min-w-0 gap-4">
     <div className="grid max-w-2xl gap-2">
 
 

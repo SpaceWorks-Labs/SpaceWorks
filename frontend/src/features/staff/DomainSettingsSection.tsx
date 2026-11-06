@@ -46,7 +46,7 @@ export function DomainSettingsSection({ makerspaceId, domain }: Props) {
   return <div className="grid min-w-0 gap-2">
     {!editable ? <p role="note" className="text-sm text-muted">{READ_ONLY_NOTE[domain]}</p> : null}
     {features.length ? <SettingsRow label={t`Features`}
-      helper="Optional features for this area. Each has its own switch; turning one off keeps its data.">
+      helper={t`Optional features for this area. Each has its own switch; turning one off keeps its data.`}>
       <fieldset className="grid min-w-0 gap-2">
         <legend className="sr-only">{DOMAIN_TITLES[domain]} features</legend>
         {features.map((feature) => <div key={feature.key} className="grid min-w-0 gap-1">

@@ -44,7 +44,7 @@ export function JobQuoteCard({ job, paymentsHref, onUpdated }: { job: MemberJob;
     <div><h2 id="job-quote-title" className="title-panel">{t`Your quote`}</h2>
       <p className="mt-1 text-sm text-muted">{t`Approve it and your job joins the queue`}{job.quote_expires_at ? <> · {expired ? "expired" : t`valid until`} <time dateTime={job.quote_expires_at}>
         {new Date(job.quote_expires_at).toLocaleString(formatLocale(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></> : null}.</p></div>
-    {priceChanged ? <div role="alert"><Callout size="inline" tone="warn" lead="The price changed since you opened this page." body="Check the new quote below and approve it again if it suits you." /></div> : null}
+    {priceChanged ? <div role="alert"><Callout size="inline" tone="warn" lead="The price changed since you opened this page." body={t`Check the new quote below and approve it again if it suits you.`} /></div> : null}
     <QuoteLines quote={quote} />
     {approve.isError && !priceChanged ? <p className="text-sm text-danger" role="alert">{jobErrorMessage(approve.error)}</p> : null}
     {decline.isError ? <p className="text-sm text-danger" role="alert">{jobErrorMessage(decline.error)}</p> : null}

@@ -75,8 +75,8 @@ export function MemberEventTicketPage() {
     { key: 'ticket', label: t`Tickets and certificates`, href: tenantPath('member/events/history'), icon: CalendarDays },
   ] }]} user={{ name: 'Your account', menu: [{ label: t`Account`, href: tenantPath('member/account') }] }}><CenteredCardLayout standalone={false} width={480} eyebrow={spaceName} title={t`Your event ticket`}
     state={restoring || identity.isLoading || ticket.isLoading || bootstrap.isLoading ? { status: "loading" } : { status: "ready" }}
-    body={!current ? "This ticket is not available right now."
-      : canDownload ? "Download your ticket and bring it to event check-in." : "A ticket download is available once your registration is confirmed."}
+    body={!current ? t`This ticket is not available right now.`
+      : canDownload ? t`Download your ticket and bring it to event check-in.` : t`A ticket download is available once your registration is confirmed.`}
     content={<div className="grid gap-4">
       {authError ? <ErrorText message={authError instanceof StructuredApiError && authError.status === 404 ? t`Ticket not found.` : authError.message} /> : null}
       {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} /> : null}

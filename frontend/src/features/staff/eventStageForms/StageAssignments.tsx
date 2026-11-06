@@ -14,7 +14,7 @@ export function StageAssignments({ scope, onResponse }: { scope: EventScope; onR
   const query = useManagedAssignments(scope, page);
   const now = useNow();
   return <ListLayout header={{ title: t`Stage completion`, subtitle: t`Review due states and manage individual assignments.` }}
-    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: "Assignments could not be loaded.", onRetry: () => void query.refetch() }}
+    state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`Assignments could not be loaded.`, onRetry: () => void query.refetch() }}
     isEmpty={query.data?.count === 0} empty={{ message: t`No assignments have been activated.` }} pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: "rows", rows: query.data?.results.map(row => <article key={row.id} className="grid gap-3 rounded-2xl border border-line bg-panel p-5">
       <h2 className="title-section">{row.title}</h2><p>{row.owner_label} · {stageDueState(row, now)} · {row.required ? t`Required` : t`Optional`}</p>

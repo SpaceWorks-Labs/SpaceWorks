@@ -57,7 +57,7 @@ export function PublicEventFeedbackPage() {
   });
   const apiErrors = submit.error instanceof StructuredApiError ? submit.error.body.answers : undefined;
 
-  if (form.error || (!form.isLoading && !form.data)) return <div style={brandStyle}><CenteredCardLayout state={{ status: "ready" }} title={t`Feedback unavailable`} body="This survey is closed, the event has not ended yet, or the link is invalid." primary={{ label: t`Back to events`, href: tenantPath("events") }} /></div>;
+  if (form.error || (!form.isLoading && !form.data)) return <div style={brandStyle}><CenteredCardLayout state={{ status: "ready" }} title={t`Feedback unavailable`} body={t`This survey is closed, the event has not ended yet, or the link is invalid.`} primary={{ label: t`Back to events`, href: tenantPath("events") }} /></div>;
   if (submit.data) return <div style={brandStyle}><CenteredCardLayout state={{ status: "ready" }} media={{ icon: "CheckCircle", tone: "success" }} title={t`Thank you`}
     body={<>{submit.data.thank_you_text || t`Your response was recorded.`}{submit.data.certificate ? <p className="mt-3">{t`Your certificate is being prepared. Download it from Member activity.`}</p> : null}</>}
     primary={{ label: t`Open member area`, href: tenantPath("member") }} /></div>;

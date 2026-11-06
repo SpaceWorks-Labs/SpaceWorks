@@ -21,7 +21,7 @@ export function AnalyticsLoginCard({ scope, connection }: { scope: AnalyticsScop
 
   if (!connection.available) {
     return <Callout size="inline" tone="warn" lead="Not available on this hosting."
-      body="The database owner cannot create logins here, so Metabase cannot connect directly. Dashboards you already list still embed." />;
+      body={t`The database owner cannot create logins here, so Metabase cannot connect directly. Dashboards you already list still embed.`} />;
   }
   return (
     <div className="grid gap-3">
@@ -36,7 +36,7 @@ export function AnalyticsLoginCard({ scope, connection }: { scope: AnalyticsScop
       ) : <p className="text-sm text-muted">{t`No login yet. Metabase connects to the curated views with a read-only login of its own.`}</p>}
       {shown ? (
         <div className="rounded-md border border-line bg-warn-soft p-3">
-          <Callout size="inline" tone="warn" lead="Copy the password now." body="It is shown once. Paste these into Metabase as a PostgreSQL database." />
+          <Callout size="inline" tone="warn" lead="Copy the password now." body={t`It is shown once. Paste these into Metabase as a PostgreSQL database.`} />
           <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 code-text text-xs text-ink">
             {t`user ${shown.role} · password ${shown.password} · schema ${shown.schema}`}
           </p>

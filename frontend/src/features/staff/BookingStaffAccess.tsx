@@ -48,7 +48,7 @@ export function BookingStaffAccess({ target }: { target: StaffGrantTarget }) {
         <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-ink">{t`Account #${grant.user}`}</p>{grant.revoked_at ? <StatusPill label={t`Revoked`} tone="neutral" /> : null}</div>
         {editing?.id === grant.id ? <form className="grid gap-3" onSubmit={(event) => {
           event.preventDefault(); update.mutate({ id: grant.id, permissions: editing.permissions }, { onSuccess: () => setEditing(null) });
-        }}><BookingPermissionFields legend={`Permissions for account #${grant.user}`} value={editing.permissions} disabled={pending} onChange={(next) => setEditing({ ...editing, permissions: next })} />
+        }}><BookingPermissionFields legend={t`Permissions for account #${grant.user}`} value={editing.permissions} disabled={pending} onChange={(next) => setEditing({ ...editing, permissions: next })} />
           <div className="flex flex-wrap gap-2"><button className="desk-button-primary" disabled={pending || !editing.permissions.length}>{t`Save permissions`}</button><button className="desk-button" type="button" onClick={() => setEditing(null)}>{t`Cancel`}</button></div>
         </form> : <p className="text-sm text-muted">{grant.permissions.map((entry) => entry.replace(/_/g, " ")).join(", ")}</p>}
         {!grant.revoked_at ? <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" disabled={pending} onClick={() => setEditing({ ...grant })}>{t`Edit account #${grant.user}`}</button><button className="desk-button-danger-outline" type="button" disabled={pending} onClick={() => revoke.mutate(grant.id)}>{t`Revoke account #${grant.user}`}</button></div> : null}

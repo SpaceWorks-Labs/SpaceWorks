@@ -72,7 +72,7 @@ export function LayoutGalleryExample({ example, state = { status: "ready" }, isE
       mode="work" work={{ capture: <Card>{t`Camera capture`}</Card>, panel: sample, recent: <Card>{t`Recent check-ins`}</Card> }} />;
     case "Kiosk PIN": return <KioskLayout {...base} context={{ identity, title: t`Door check-in`, subtitle: t`Station 1` }}
       connection={{ online: true }} headerActions={[{ label: t`Exit station`, onClick: noop }]} mode="lock"
-      lock={{ title: t`Enter the station PIN`, helper: "Ask an organiser for the PIN.", pinLength: 8, pending: false, onSubmit: noop }} />;
+      lock={{ title: t`Enter the station PIN`, helper: t`Ask an organiser for the PIN.`, pinLength: 8, pending: false, onSubmit: noop }} />;
     case "Scan workbench": return <ListLayout {...base} header={header} body={{ kind: "rows", rows: <ScanWorkbench onFind={noop}
       result={{ tone: "success", title: t`Ready to issue`, summary: t`Drill · BOX-0042`, next: { label: t`Next`, onClick: noop }, undo: { label: t`Undo`, onClick: noop } }}
       recent={[{ key: "drill", label: t`Drill found`, meta: "Just now · QR", tone: "success" }]} /> }} />;

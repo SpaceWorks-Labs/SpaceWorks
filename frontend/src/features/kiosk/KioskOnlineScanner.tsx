@@ -24,9 +24,9 @@ export function KioskOnlineScanner({ token, lease }: { token: string; lease: Kio
   }
 
 
-  return <ScanWorkbench searchLabel="Scan or type a QR code" helper="Only labels available to this operator shift can be resolved."
+  return <ScanWorkbench searchLabel="Scan or type a QR code" helper={t`Only labels available to this operator shift can be resolved.`}
     onFind={value => { void resolvePayload(value); }} onScan={value => { void resolvePayload(value); }} findPending={pending}
-    state={allowed ? { status: "ready" } : { status: "error", error: "Your operator shift doesn't allow QR lookup." }}
+    state={allowed ? { status: "ready" } : { status: "error", error: t`Your operator shift doesn't allow QR lookup.` }}
     result={error ? { tone: "danger", title: t`Couldn't resolve this label`, summary: error, next: { label: t`Try another code`, onClick: () => setError(null) } }
       : result ? { tone: "success", title: result, summary: t`This label belongs to your station's makerspace.`, next: { label: t`Next`, onClick: () => setResult(null) } } : undefined} />;
 }

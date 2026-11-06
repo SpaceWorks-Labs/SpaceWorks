@@ -90,7 +90,7 @@ export function KioskStationPage() {
     idleCountdown={idle.seconds !== null && !hasCommands ? { seconds: idle.seconds, onKeep: idle.onKeep } : undefined}
     state={activeSession && !activeLease && !recoveryId && error ? { status: "error", error, onRetry: () => { void signIn(); } } : { status: "ready" }}
     mode={!activeSession && offline.online ? "lock" : activeSession && !activeLease && !recoveryId ? "ready" : "work"}
-    lock={{ title: t`Enter the station PIN`, helper: "Ask a manager for the 8-digit PIN. It unlocks this device only.",
+    lock={{ title: t`Enter the station PIN`, helper: t`Ask a manager for the 8-digit PIN. It unlocks this device only.`,
       pending, error: error ?? undefined, submitLabel: t`Unlock station`, pendingLabel: "Unlocking…", onSubmit: pin => { void unlock(pin); } }}
     ready={{ primary: { label: t`Start operator shift`, pending: shiftPending, pendingLabel: "Starting…", onClick: () => { void signIn(); }, disabled: !offline.online || !contextReady,
       disabledReason: !offline.online ? "Reconnect before starting an operator shift." : !contextReady ? "Preparing the tenant staff workspace." : undefined } }}

@@ -19,7 +19,7 @@ export function AccountRestorePage() {
   ), onSuccess: () => setPassword("") });
   return <CenteredCardLayout state={{ status: "ready" }} title={t`Restore your account`}
     media={{ icon: "User", tone: "accent" }}
-    body={restore.isSuccess ? <p role="status">{restore.data.detail}</p> : "You can come back before the archive deadline and before identity removal starts. Choose a new password. Previous memberships, sessions and device access remain revoked."}
+    body={restore.isSuccess ? <p role="status">{restore.data.detail}</p> : t`You can come back before the archive deadline and before identity removal starts. Choose a new password. Previous memberships, sessions and device access remain revoked.`}
     primary={restore.isSuccess ? { label: t`Return to sign-in`, href: "/member" } : {
       label: t`Restore account`, pending: restore.isPending, disabled: !proof.email || !proof.token,
       disabledReason: "Open the complete restore link from your recovery email.",

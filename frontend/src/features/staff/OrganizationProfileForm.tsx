@@ -44,7 +44,7 @@ export function OrganizationProfileForm({ organization }: { organization: Organi
         <SettingsRow label={t`Name`} htmlFor="organization-name">
           <input id="organization-name" className="desk-input w-full" maxLength={200} disabled={!allowed} value={values.name} onChange={(event) => setValues({ ...values, name: event.target.value })} />
         </SettingsRow>
-        <SettingsRow label={t`Public slug`} htmlFor="organization-slug" helper={`Public page: /o/${values.slug}`}>
+        <SettingsRow label={t`Public slug`} htmlFor="organization-slug" helper={t`Public page: /o/${values.slug}`}>
           <input id="organization-slug" className="desk-input w-full" disabled={!allowed} value={values.slug} onChange={(event) => setValues({ ...values, slug: event.target.value })} />
         </SettingsRow>
         <SettingsRow label={t`Website`} htmlFor="organization-website">
@@ -53,10 +53,10 @@ export function OrganizationProfileForm({ organization }: { organization: Organi
         <SettingsRow label={t`Description`} htmlFor="organization-description">
           <textarea id="organization-description" className="desk-input min-h-28 w-full" disabled={!allowed} value={values.description} onChange={(event) => setValues({ ...values, description: event.target.value })} />
         </SettingsRow>
-        <SettingsRow label={t`Listed publicly`} helper="Show the organization profile and eligible event catalogue."><label className="flex min-h-11 items-center gap-3 text-sm text-ink">
+        <SettingsRow label={t`Listed publicly`} helper={t`Show the organization profile and eligible event catalogue.`}><label className="flex min-h-11 items-center gap-3 text-sm text-ink">
           <input type="checkbox" disabled={!allowed} checked={values.public_profile_enabled} onChange={(event) => setValues({ ...values, public_profile_enabled: event.target.checked })} />
           {t`Publish this organization profile and its eligible event catalogue`}</label></SettingsRow>
-        <SettingsRow label={t`Findable by event organizers`} helper="Off by default. When on, staff at other makerspaces can find this organization and invite its members to their events. It gives them no access to the organization."><label className="flex min-h-11 items-center gap-3 text-sm text-ink">
+        <SettingsRow label={t`Findable by event organizers`} helper={t`Off by default. When on, staff at other makerspaces can find this organization and invite its members to their events. It gives them no access to the organization.`}><label className="flex min-h-11 items-center gap-3 text-sm text-ink">
           <input type="checkbox" disabled={!allowed} checked={values.is_discoverable} onChange={(event) => setValues({ ...values, is_discoverable: event.target.checked })} />
           {t`List this organization in the event organizer directory`}</label></SettingsRow>
       {allowed && dirty ? <div className="sticky bottom-0 z-10 bg-panel pb-[env(safe-area-inset-bottom)]"><SettingsActions onDiscard={() => setValues(original)} onSave={() => (document.getElementById("organization-name")?.closest("form") as HTMLFormElement)?.requestSubmit()} pending={update.isPending} /></div> : !allowed ? <p className="mt-4 text-sm text-muted">{t`You have view-only access to this profile.`}</p> : null}

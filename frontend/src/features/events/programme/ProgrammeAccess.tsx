@@ -39,7 +39,7 @@ function AccountScreen({ slug, children, onAuthenticated }: { slug: string; chil
     <div className="mb-4 flex justify-end"><ProgrammeMakerToggle /></div>
     {denied ? <MemberAuthPanel makerspaceSlug={slug} onAuthenticated={onAuthenticated} /> : account.isPending
       ? <BrandLoader label={t`Opening your event programme`} />
-      : account.error || !account.data ? <CenteredCardLayout standalone={false} title={t`Account unavailable`} body={account.error?.message || 'Sign in to continue.'}
+      : account.error || !account.data ? <CenteredCardLayout standalone={false} title={t`Account unavailable`} body={account.error?.message || t`Sign in to continue.`}
         state={{ status: 'ready' }} primary={{ label: t`Try again`, onClick: () => void account.refetch() }} />
         : children(account.data)}
   </AppShell>

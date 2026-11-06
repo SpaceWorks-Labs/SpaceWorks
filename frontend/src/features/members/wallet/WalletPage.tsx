@@ -22,7 +22,7 @@ export function WalletPage() {
   const status = identity.error instanceof StructuredApiError ? identity.error.status : undefined;
   if (status === 401) return <MemberAuthPanel onAuthenticated={() => { void identity.refetch(); }} />;
   const rows = cards.data ?? [];
-  return <CenteredCardLayout width="wide" title={t`My cards`} body="Your member, programme and event cards in one place."
+  return <CenteredCardLayout width="wide" title={t`My cards`} body={t`Your member, programme and event cards in one place.`}
     state={restoring || identity.isLoading || cards.isLoading ? { status: "loading" } : { status: "ready" }}
     primary={{ label: t`Back to my account`, href: "/member/account" }}
     footer={<PageHelp article="member/member-card" topic="your cards" className="flex justify-center" />}

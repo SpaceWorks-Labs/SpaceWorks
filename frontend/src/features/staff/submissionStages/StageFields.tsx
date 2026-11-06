@@ -43,9 +43,9 @@ export function StageFields({ stage, index, last, plan, onChange }: Props) {
         value={stage.max_bytes_per_file ? Math.round(stage.max_bytes_per_file / MB) : ""} onChange={e => set({ max_bytes_per_file: e.target.value ? Number(e.target.value) * MB : null })} /></Field> : null}
       {allow.links ? <Field label={t`Most links (empty = up to 30)`}><input className="desk-input min-h-11" type="number" min={1} max={30} value={stage.max_links ?? ""} onChange={e => set({ max_links: number(e.target.value) })} /></Field> : null}
     </fieldset>
-    {allow.requiredKinds ? <Choices legend="Required link kinds" options={plan.link_kinds} value={stage.required_link_kinds} onChange={v => set({ required_link_kinds: v })} /> : null}
-    {allow.files ? <Choices legend="Accepted file types (none ticked = every type)" options={plan.families} value={stage.accepted_families} onChange={v => set({ accepted_families: v })} /> : null}
-    {allow.links ? <Choices legend="Allowed video hosts for video links (none ticked = any host)" options={plan.video_hosts} value={stage.video_hosts} onChange={v => set({ video_hosts: v })} /> : null}
+    {allow.requiredKinds ? <Choices legend={t`Required link kinds`} options={plan.link_kinds} value={stage.required_link_kinds} onChange={v => set({ required_link_kinds: v })} /> : null}
+    {allow.files ? <Choices legend={t`Accepted file types (none ticked = every type)`} options={plan.families} value={stage.accepted_families} onChange={v => set({ accepted_families: v })} /> : null}
+    {allow.links ? <Choices legend={t`Allowed video hosts for video links (none ticked = any host)`} options={plan.video_hosts} value={stage.video_hosts} onChange={v => set({ video_hosts: v })} /> : null}
     <CustomFieldsEditor label={label} value={stage.custom_fields} onChange={custom_fields => set({ custom_fields })} />
     {!last ? <div className="grid gap-3 md:grid-cols-2">
       <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={stage.shortlist_after} onChange={e => set({ shortlist_after: e.target.checked })} />{t`End with a shortlist: only chosen teams continue`}</label>

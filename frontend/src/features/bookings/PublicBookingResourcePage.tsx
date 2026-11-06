@@ -45,7 +45,7 @@ export function PublicBookingResourcePage() {
   const resource = !valid || query.error ? undefined : query.data;
   // An unavailable resource never says whether it is private or gone; Retry only where a refetch can help.
   const state: QueryState = valid && query.isLoading ? { status: "loading" }
-    : !valid || query.error ? { status: "error", error: "Resource unavailable. This resource may be private or no longer available.",
+    : !valid || query.error ? { status: "error", error: t`Resource unavailable. This resource may be private or no longer available.`,
       onRetry: valid ? () => { void query.refetch(); } : undefined }
     : { status: "ready" };
   const approval = resource?.approval_mode === "approve";

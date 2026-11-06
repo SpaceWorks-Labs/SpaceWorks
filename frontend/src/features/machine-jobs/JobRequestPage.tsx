@@ -61,7 +61,7 @@ export function JobRequestPage() {
   const busy = submit.isPending;
   const closed = types.error instanceof StructuredApiError && types.error.status === 404;
   const state = bootstrapQuery.isLoading || member.loading || types.isPending ? { status: "loading" as const }
-    : types.isError && !closed ? { status: "error" as const, error: "Couldn't load the machines taking jobs. Try again.", onRetry: () => { void types.refetch(); } }
+    : types.isError && !closed ? { status: "error" as const, error: t`Couldn't load the machines taking jobs. Try again.`, onRetry: () => { void types.refetch(); } }
       : { status: "ready" as const };
   const steps: FlowStep[] = JOB_STEPS.map((key, position) => ({ key, label: STEP_LABELS[key], required: true,
     state: position < index ? "done" : position === index ? "current" : "todo",

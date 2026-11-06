@@ -58,7 +58,7 @@ export function MemberTermsDialog({
       open
       onClose={onClose}
       title={t`Membership terms for ${memberName}`}
-      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: "Couldn't load terms. Try again.", onRetry: () => { void terms.refetch(); } }}
+      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: t`Couldn't load terms. Try again.`, onRetry: () => { void terms.refetch(); } }}
       footer={{ secondary: [{ label: t`Close`, onClick: onClose }] }} main={<>
       <form
         className="flex flex-wrap items-end gap-2"

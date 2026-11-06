@@ -73,7 +73,7 @@ export function MakerspaceGeneralSettings({ makerspace, settings, loading }: Pro
         {updateLocale.error ? <p role="alert" className="text-sm text-danger">{updateLocale.error.message}</p> : null}
       </div>
     </SettingsRow>
-    <SettingsRow label={t`Public inventory`} helper="Show the public catalogue. Turning this off keeps your inventory data.">
+    <SettingsRow label={t`Public inventory`} helper={t`Show the public catalogue. Turning this off keeps your inventory data.`}>
       <div className="@container grid gap-3"><Badge label="" tone={publicInventoryEnabled ? "success" : "neutral"}>{publicInventoryEnabled ? t`On` : t`Off`}</Badge>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={publicInventoryEnabled}
           disabled={loading || updatePublicInventory.isPending} onChange={event => updatePublicInventory.mutate(event.target.checked)} />{t`Show public inventory`}</label>

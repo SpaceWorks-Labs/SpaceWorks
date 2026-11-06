@@ -49,7 +49,7 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const failed = !allowed || (page && !visible) || query.error;
   const state = query.isLoading && allowed ? { status: "loading" as const } : failed ? { status: "error" as const,
-    error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? "Unable to load this event website." : "Page not found.",
+    error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? t`Unable to load this event website.` : t`Page not found.`,
     onRetry: query.error ? () => { void query.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}>
     {visible && page ? <PageMetadata title={title} description={markdownExcerpt(speaker?.body ?? session?.body ?? "Event programme", markdownMode(speaker?.body_rendering ?? session?.body_rendering))} path={location.pathname} noindex={noindex} /> : null}

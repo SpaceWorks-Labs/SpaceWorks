@@ -77,7 +77,7 @@ export function PlatformSocialAuthPanel({ embedded = false }: { embedded?: boole
   const anyProvider = Boolean(settings.data && (settings.data.google_enabled || settings.data.apple_enabled || settings.data.github_enabled));
   return (
     <PlatformConfigurationSection title={t`Social sign-in`} subtitle={t`Platform identities link to global accounts; memberships grant each space’s permissions.`} embedded={embedded}
-      state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready", error: "Couldn't load sign-in providers. Try again.", onRetry: () => { void settings.refetch(); } }}
+      state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready", error: t`Couldn't load sign-in providers. Try again.`, onRetry: () => { void settings.refetch(); } }}
       save={{ dirty: JSON.stringify(form) !== JSON.stringify(savedForm), pending: save.isPending, error: save.error?.message,
         onSave: () => save.mutate(), onDiscard: () => { setForm(savedForm); save.reset(); } }}>
       <p className="text-sm text-muted">

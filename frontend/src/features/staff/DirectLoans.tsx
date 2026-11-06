@@ -184,7 +184,7 @@ export function DirectLoans({ makerspace }: { makerspace: Makerspace }) {
   const tabHref = (key: string) => { const next = new URLSearchParams(params); next.set("handout", key); return `?${next}`; };
   return <ListLayout standalone={false}
     header={{ title: t`Direct handout`, subtitle: t`Lend tools straight from the shelf, without a request.`, primary: { label: t`New handout`, icon: "Plus", onClick: () => setGuided(true) } }}
-    state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: "Couldn't load direct handouts. Try again.", onRetry: () => void loans.refetch() }}
+    state={tab === "claim-codes" ? { status: "ready" } : { status: loans.isLoading || loans.isPlaceholderData ? "loading" : loans.isError ? "error" : "ready", error: t`Couldn't load direct handouts. Try again.`, onRetry: () => void loans.refetch() }}
     tabs={[{ key: "on-loan", label: t`On loan`, count: tab === "on-loan" ? loans.count : undefined, href: tabHref("on-loan") }, { key: "returned", label: t`Returned`, count: tab === "returned" ? loans.count : undefined, href: tabHref("returned") }, { key: "claim-codes", label: t`Claim codes`, href: tabHref("claim-codes") }]} activeTab={tab}
     isEmpty={tab !== "claim-codes" && !shown.length}
     empty={{ message: tab === "returned" ? t`No direct handouts returned yet.` : t`No tools are out on direct handout. Start one with New handout above.`, action: tab === "returned" ? undefined : { label: t`New handout`, onClick: () => setGuided(true) } }}

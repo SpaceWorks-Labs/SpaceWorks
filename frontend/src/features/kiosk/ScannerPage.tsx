@@ -22,7 +22,7 @@ export function ScannerPage() {
   const title = target ? String(target.name ?? target.label ?? target.product ?? "Label resolved") : "Scan a label";
   return <KioskLayout context={{ title: t`Scanner`, subtitle: t`Scan a label or paste its code.` }} connection={{ online }}
     mode="work" headerActions={[]} state={{ status: "ready" }}
-    work={{ capture: <ScanWorkbench searchLabel="QR payload" helper="Scan or paste QR payload. Only labels your staff role in this makerspace can see are resolved."
+    work={{ capture: <ScanWorkbench searchLabel="QR payload" helper={t`Scan or paste QR payload. Only labels your staff role in this makerspace can see are resolved.`}
       onFind={payload => resolve.mutate(payload)} onScan={payload => resolve.mutate(payload)} findPending={resolve.isPending}
       result={resolve.isError ? { tone: "danger", title: t`Couldn't resolve this label`, summary: resolve.error.message,
         next: { label: t`Try again`, onClick: () => { if (resolve.variables) resolve.mutate(resolve.variables); } } } : target ? {

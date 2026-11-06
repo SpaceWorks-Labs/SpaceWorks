@@ -55,7 +55,7 @@ export function MachinePublicSettings({ machine, makerspaceId }: {
 
   return (
     <SettingsSection title={t`Public listing`}>
-      <SettingsRow label={t`Visibility`} helper="Retired machines remain hidden even when this setting is on.">
+      <SettingsRow label={t`Visibility`} helper={t`Retired machines remain hidden even when this setting is on.`}>
       <label className={'mt-3 flex items-start gap-3 rounded-xl border border-line bg-bg p-3'}>
         <input
           type={'checkbox'}

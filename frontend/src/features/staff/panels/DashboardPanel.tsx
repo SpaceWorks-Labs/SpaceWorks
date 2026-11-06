@@ -66,7 +66,7 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
         header={{ title: t`Dashboard`, eyebrow: new Date().toLocaleDateString(formatLocale(), { weekday: "long", day: "numeric", month: "long" }),
           subtitle: t`What's happening at ${makerspace.name}.`, primary }}
         state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
-          error: "Couldn't load dashboard. Try again.", onRetry: () => { void dashboard.refetch(); } }}
+          error: t`Couldn't load dashboard. Try again.`, onRetry: () => { void dashboard.refetch(); } }}
         progress={<><LateShiftLine />{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}</>}
         stats={ranked.map(tile => ({ label: tile.label, value: dashboard.data?.[tile.key] ?? 0,
           // Overdue, problems, out of stock, failed email and overdue maintenance keep their danger signal.

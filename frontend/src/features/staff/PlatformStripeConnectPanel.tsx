@@ -72,7 +72,7 @@ export function PlatformStripeConnectPanel({ embedded = false }: { embedded?: bo
     { key: "stripe_webhook_secret", label: t`Clear webhook secret`, saved: Boolean(settings.data?.stripe_webhook_secret_set) },
   ];
   return <><PlatformConfigurationSection title={t`Platform Stripe Connect`} subtitle={t`Platform credentials authorize direct charges into each space’s connected account.`} embedded={embedded}
-    state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready", error: "Couldn't load Stripe Connect settings. Try again.", onRetry: () => { void settings.refetch(); } }}
+    state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready", error: t`Couldn't load Stripe Connect settings. Try again.`, onRetry: () => { void settings.refetch(); } }}
     save={{ dirty, pending: save.isPending, disabled: busy, error: (save.error ?? clearCredential.error)?.message,
       onSave: () => save.mutate(), onDiscard: () => { save.reset(); clearCredential.reset(); setPublishableKey(""); setSecretKey(""); setWebhookSecret(""); setClientId(settings.data?.stripe_connect_client_id ?? ""); setFeeBps(String(settings.data?.application_fee_bps ?? 0)); } }}
     danger={credentials.map(item => ({ title: item.label, consequence: "Removes the saved credential. Connected payment services may stop working.",

@@ -12,7 +12,7 @@ const message = (error: unknown) => error instanceof Error ? error.message : err
 /** Organizers are limited to the actor's own organizations: an organizer becomes a
  * co-manager of the event, so no organization is attached without one of its members. */
 export function OrganizerPicker({ selected, onChange, disabled, label = t`Organizing organizations`,
-  helper = "Your organizations co-manage the event with this space. Other organizations can be its audience instead." }: PickerProps) {
+  helper = t`Your organizations co-manage the event with this space. Other organizations can be its audience instead.` }: PickerProps) {
   const [search, setSearch] = useState("");
   const rows = useOrganizations({ search, active: true });
   const options = (rows.data?.results ?? []).map((row) => ({ id: row.id, label: row.name, detail: row.slug }));
@@ -23,7 +23,7 @@ export function OrganizerPicker({ selected, onChange, disabled, label = t`Organi
 
 /** Audience organizations come from the opt-in directory and grant no authority. */
 export function AudienceOrganizationPicker({ selected, onChange, disabled, label = t`Selected organizations`,
-  helper = "Members of these organizations may register. Choosing one gives it no say over the event." }: PickerProps) {
+  helper = t`Members of these organizations may register. Choosing one gives it no say over the event.` }: PickerProps) {
   const [search, setSearch] = useState("");
   const rows = useOrganizationDirectory(search);
   const options = (rows.data?.results ?? []).map((row) => ({ id: row.id, label: row.name, detail: row.slug }));
@@ -34,7 +34,7 @@ export function AudienceOrganizationPicker({ selected, onChange, disabled, label
 
 /** Partner makerspaces; `detail` carries the slug the invitation API takes. */
 export function PartnerMakerspacePicker({ selected, onChange, disabled, hostId, label = t`Partner makerspaces`,
-  helper = "Each partner must accept before its members can register." }: PickerProps & { hostId: number }) {
+  helper = t`Each partner must accept before its members can register.` }: PickerProps & { hostId: number }) {
   const [search, setSearch] = useState("");
   const rows = usePartnerMakerspaces(search, hostId);
   const options = (rows.data?.results ?? []).map((row) => ({ id: row.id, label: row.name, detail: row.slug }));

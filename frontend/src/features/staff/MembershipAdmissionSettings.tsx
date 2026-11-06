@@ -42,7 +42,7 @@ export function MembershipAdmissionSettings({ makerspaceId, features = [] }: { m
   if (settings.isError || !value) return <SettingsQueryState query={settings} resource="membership admission" />;
   const update = <K extends keyof AdmissionSettings>(key: K, next: AdmissionSettings[K]) => { setDraft({ ...value, [key]: next }); save.reset(); };
   const activePlans = plans.data?.filter((plan) => plan.is_active) ?? [];
-  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label={t`Membership admission`} helper="Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path."><form className="@container grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
+  return <SettingsQueryState query={settings} resource="membership admission"><SettingsRow label={t`Membership admission`} helper={t`Choose a recipe, then adjust its conditions. Saving updates current admission conditions. Submitted answers and raised charges keep their snapshots. Closed refuses every new joining path.`}><form className="@container grid min-w-0 gap-4 rounded-md border border-line bg-bg p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
     <div></div>
     <fieldset disabled={save.isPending} className="grid gap-4">
       <div className="grid gap-3 @md:grid-cols-2">
@@ -74,7 +74,7 @@ export function MembershipAdmissionSettings({ makerspaceId, features = [] }: { m
         <label className="min-h-11 flex gap-2 text-sm text-ink"><input type="checkbox" checked={value.vouch_replaces_approval} onChange={(event) => update("vouch_replaces_approval", event.target.checked)} />{t`Vouches replace staff approval`}</label>
       </fieldset>
       <MembershipAdmissionExtras value={value} features={features} onChange={(next) => { setDraft(next); save.reset(); }} />
-      <CustomFormBuilder value={value.application_schema} onChange={(schema) => update("application_schema", schema)} legend="Membership application questions" emptyMessage={t`No application questions. Applicants submit their verified account identity.`} />
+      <CustomFormBuilder value={value.application_schema} onChange={(schema) => update("application_schema", schema)} legend={t`Membership application questions`} emptyMessage={t`No application questions. Applicants submit their verified account identity.`} />
     </fieldset>
     <SettingsEditorActions dirty={Boolean(draft || recipe)} onDiscard={() => { setDraft(null); setRecipe(""); save.reset(); }} pending={save.isPending} disabled={save.isPending} />
     {save.isSuccess ? <p role="status" className="text-sm text-success-ink">{t`Admission settings saved.`}</p> : null}

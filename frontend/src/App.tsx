@@ -42,7 +42,7 @@ export default function App() {
   }
   if (!accountUtility && tenant.mode === "single" && tenant.error) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "TriangleAlert", tone: "danger" }}
-      title={t`Site unavailable`} body="The configured tenant could not be resolved."
+      title={t`Site unavailable`} body={t`The configured tenant could not be resolved.`}
       primary={{ label: t`Retry`, onClick: () => window.location.reload() }} />;
   }
   return <ProgrammeDelight><AppRoutes mode={tenant.mode} landing={<LandingPage />} /><ReauthenticationDialog /></ProgrammeDelight>;

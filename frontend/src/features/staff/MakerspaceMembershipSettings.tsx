@@ -77,7 +77,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
   });
 
   return <>
-    {admissionEnabled ? <MembershipAdmissionSettings makerspaceId={makerspace.id} features={makerspace.enabled_features ?? []} /> : <SettingsRow label={t`Membership joining`} helper="Choose whether people join immediately, request approval, or need an invitation. This only controls self-join; manager invitations remain available."><div className="@container grid min-w-0 gap-4">
+    {admissionEnabled ? <MembershipAdmissionSettings makerspaceId={makerspace.id} features={makerspace.enabled_features ?? []} /> : <SettingsRow label={t`Membership joining`} helper={t`Choose whether people join immediately, request approval, or need an invitation. This only controls self-join; manager invitations remain available.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-3  md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2"><Badge label="" tone={membershipPolicy === "invite_only" ? "neutral" : "success"}>{membershipPolicyLabel(membershipPolicy)}</Badge></div>
@@ -89,7 +89,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
         </select>
       </div>
     </div></SettingsRow>}
-    <SettingsRow label={t`Member referrals`} helper="Allow eligible active members to invite someone. Individual referral permission is managed in the member roster."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Member referrals`} helper={t`Allow eligible active members to invite someone. Individual referral permission is managed in the member roster.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-3  md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2"><Badge label="" tone={referralsEnabled ? "success" : "neutral"}>{referralsEnabled ? t`On` : t`Off`}</Badge></div>
@@ -99,7 +99,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
         <label className="min-h-11 flex min-w-0 items-start gap-3 text-sm text-ink sm:justify-self-start md:justify-self-end"><input className="mt-1 h-4 w-4" type="checkbox" checked={referralsEnabled} disabled={loading || updateReferrals.isPending} onChange={(event) => updateReferrals.mutate(event.target.checked)} /><span className="font-semibold">{t`Enable referrals`}</span></label>
       </div>
     </div></SettingsRow>
-    {lapsedCannotBorrow !== undefined ? <SettingsRow label={t`Lapsed members`} helper="When on, a member whose plan term has expired or was cancelled cannot submit borrow requests until a new term is started."><div className="@container grid min-w-0 gap-4">
+    {lapsedCannotBorrow !== undefined ? <SettingsRow label={t`Lapsed members`} helper={t`When on, a member whose plan term has expired or was cancelled cannot submit borrow requests until a new term is started.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-3  md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2"><Badge label="" tone={lapsedCannotBorrow ? "warn" : "neutral"}>{lapsedCannotBorrow ? t`Cannot borrow` : t`Can borrow`}</Badge></div>
@@ -109,7 +109,7 @@ export function MakerspaceMembershipSettings({ makerspace, settings, loading }: 
         <label className="min-h-11 flex min-w-0 items-start gap-3 text-sm text-ink sm:justify-self-start md:justify-self-end"><input className="mt-1 h-4 w-4" type="checkbox" checked={lapsedCannotBorrow} disabled={loading || updateLapsed.isPending} onChange={(event) => updateLapsed.mutate(event.target.checked)} /><span className="font-semibold">{t`Lapsed members cannot borrow`}</span></label>
       </div>
     </div></SettingsRow> : null}
-    <SettingsRow label={t`Membership dues`} helper="Set the amount charged when a membership is activated. Use 0 for no charge."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Membership dues`} helper={t`Set the amount charged when a membership is activated. Use 0 for no charge.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-3  md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
 

@@ -30,7 +30,7 @@ export function AnalyticsSettings({ scope }: { scope: AnalyticsScope }) {
   if (connection.isLoading) return <Skeleton className="h-40 w-full" />;
   if (connection.error || !connection.data) {
     return <Callout size="inline" tone="danger" lead="Connection settings could not load."
-      body={connection.error instanceof StructuredApiError ? connection.error.message : "Try again."} />;
+      body={connection.error instanceof StructuredApiError ? connection.error.message : t`Try again.`} />;
   }
   const data = connection.data;
   const submit = (event: FormEvent) => {
@@ -79,7 +79,7 @@ export function AnalyticsSettings({ scope }: { scope: AnalyticsScope }) {
           </label>
         ) : <p className="text-sm text-muted">{t`The platform views cover every space and never include member names or emails.`}</p>}
         {update.error ? <Callout size="inline" tone="danger" lead="Not saved."
-          body={update.error instanceof StructuredApiError ? update.error.message : "Try again."} /> : null}
+          body={update.error instanceof StructuredApiError ? update.error.message : t`Try again.`} /> : null}
         <div><button className="desk-button-primary" type="submit" disabled={update.isPending}>{t`Save connection`}</button></div>
       </form>
       <section className="grid gap-2" aria-label={t`Database login`}>

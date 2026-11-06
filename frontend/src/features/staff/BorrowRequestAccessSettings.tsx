@@ -18,7 +18,7 @@ export function BorrowRequestAccessSettings({ makerspaceId }: { makerspaceId: nu
     queryFn: () => staffRequest<Settings>(`/admin/makerspaces/${makerspaceId}`),
   });
   const label = query.data ? LABELS[query.data.request_access] : "";
-  return <SettingsRow label={t`Borrow request access`} helper="Staff review every request. With Member accounts on, borrowers sign in (with Membership, only active members); without it, accounts are staff-only and borrowers give name, phone and an email confirmed by a code. A superadmin changes these areas in Modules.">
+  return <SettingsRow label={t`Borrow request access`} helper={t`Staff review every request. With Member accounts on, borrowers sign in (with Membership, only active members); without it, accounts are staff-only and borrowers give name, phone and an email confirmed by a code. A superadmin changes these areas in Modules.`}>
     {query.error ? <p role="alert" className="text-sm text-danger">{query.error.message}</p> : <p className="text-sm text-ink">{query.data ? label : t`Loading...`}</p>}
   </SettingsRow>;
 }

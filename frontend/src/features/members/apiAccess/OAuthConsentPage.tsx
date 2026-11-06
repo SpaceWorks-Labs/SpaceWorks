@@ -24,8 +24,8 @@ export function OAuthConsentPage() {
   return <CenteredCardLayout media={{ icon: "KeyRound", tone: "accent" }} eyebrow={t`Connect an app`}
     title={app ? t`${app.app_name} wants to act as you` : t`Connect an app`}
     state={preview.isLoading ? { status: "loading" } : { status: "ready" }}
-    body={app ? `Registered by ${app.space_name}. It can do only what you could do yourself, and you can disconnect it any time under API access.`
-      : "This app request could not be read. Go back to the app and try again."}
+    body={app ? t`Registered by ${app.space_name}. It can do only what you could do yourself, and you can disconnect it any time under API access.`
+      : t`This app request could not be read. Go back to the app and try again.`}
     content={<>
       {app ? <ul className="grid gap-2">{app.scopes.map((scope) => <li key={scope.value} className="grid">
         <span className="font-semibold text-ink">{scope.label}</span>

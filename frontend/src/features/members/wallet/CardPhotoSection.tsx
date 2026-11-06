@@ -23,7 +23,7 @@ export function CardPhotoSection({ card }: { card: MyCard }) {
       await client.invalidateQueries({ queryKey: ["member", "card-image"] });
       await client.invalidateQueries({ queryKey: ["member", "card-face"] });
     } catch (error) {
-      setState({ busy: false, error: error instanceof Error ? error.message : "The photo couldn't be uploaded.", done: false });
+      setState({ busy: false, error: error instanceof Error ? error.message : t`The photo couldn't be uploaded.`, done: false });
     }
   }
 

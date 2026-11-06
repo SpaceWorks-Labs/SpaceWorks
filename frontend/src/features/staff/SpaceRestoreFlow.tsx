@@ -32,7 +32,7 @@ export function SpaceRestoreFlow({ restoreId, onClose }: { restoreId: string; on
     : { label: t`Close`, onClick: onClose, disabled: false };
   return <FlowLayout presentation="dialog" open title={op ? t`Restore ${op.makerspace_name}` : t`Restore a space`}
     subject="Nothing changes until you confirm. A safety backup of the space as it is now is taken first."
-    state={query.isError ? { status: "error", error: "Could not load this restore.", onRetry: () => { void query.refetch(); } } : { status: op ? "ready" : "loading" }}
+    state={query.isError ? { status: "error", error: t`Could not load this restore.`, onRetry: () => { void query.refetch(); } } : { status: op ? "ready" : "loading" }}
     current={step} steps={steps} onCancel={onClose}
     work={op ? <RestoreWork op={op} slug={slug} onSlug={setSlug} /> : null}
     error={confirm.error || abort.error ? { size: "inline", tone: "danger", lead: "That did not work.", body: (confirm.error ?? abort.error)!.message } : undefined}
@@ -48,14 +48,14 @@ function RestoreWork({ op, slug, onSlug }: { op: SpaceRestore; slug: string; onS
     <progress className="w-full" max={100} value={op.progress.percent ?? 0} aria-label={t`Restore progress`} />
     <p className="text-sm text-muted">{t`Step: ${(op.progress.step ?? "queued").replace(/_/g, " ")}. Members cannot change this space until it finishes.`}</p>
   </div>;
-  if (op.stage === "completed") return <Callout size="panel" tone="success" lead="Restored." body={`${op.makerspace_name} is back at its restore point. ${op.report.money_after_restore_point?.length ?? 0} payment record(s) made after it were kept for review; ${op.report.objects_restored ?? 0} file(s) were restored.`} />;
+  if (op.stage === "completed") return <Callout size="panel" tone="success" lead="Restored." body={t`${op.makerspace_name} is back at its restore point. ${op.report.money_after_restore_point?.length ?? 0} payment record(s) made after it were kept for review; ${op.report.objects_restored ?? 0} file(s) were restored.`} />;
   if (op.stage === "failed") return <ErrorText message={t`${op.error_detail} Nothing was changed.`} />;
   if (op.stage === "aborted") return <p className="text-sm text-muted">{t`This restore was cancelled.`}</p>;
   return <div className="grid gap-4 text-sm">
     <p>{t`Restore point taken ${preview.snapshot_at ? new Date(preview.snapshot_at).toLocaleString(formatLocale()) : "—"}. ${preview.totals?.removed_rows ?? 0} records created since then go; ${preview.totals?.added_rows ?? 0} deleted since then come back. Memberships: ${preview.memberships?.removed ?? 0} removed, ${preview.memberships?.restored ?? 0} restored.`}</p>
     <p>{t`Kept and flagged “after the restore point”: ${preview.money_after_restore_point?.length ?? 0} payment record(s). ${preview.evidence_after_restore_point ?? 0} newer evidence photo(s) stay as orphaned records. The live audit history is kept.`}</p>
     <p>{t`Accounts are never changed: ${preview.accounts?.reattributed ?? 0} reference(s) go to the space's anonymous principal and ${preview.accounts?.erased_since ?? 0} deleted account(s) stay erased. ${preview.inbound_relinked ?? 0} row(s) in other spaces re-link to restored records.`}</p>
-    {op.blocked ? <Callout size="inline" tone="danger" lead="This restore is blocked." body={`${preview.blocking_count ?? 0} row(s) outside this space would point at records the restore removes.`} /> : null}
+    {op.blocked ? <Callout size="inline" tone="danger" lead="This restore is blocked." body={t`${preview.blocking_count ?? 0} row(s) outside this space would point at records the restore removes.`} /> : null}
     <details><summary className="min-h-11 cursor-pointer py-2">{t`What changes, by record type`}</summary>
       <ul className="grid gap-1">{preview.models?.filter(row => row.removed || row.added).map(row =>
         <li key={row.label} className="tabular-nums">{t`${row.label}: ${row.live} now → ${row.archived}`}</li>)}</ul></details>

@@ -63,7 +63,7 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
     requests.isLoading || submitRequest.isPending || Boolean(pendingRequest) || !requestedLabel.trim();
 
   return (
-    <SettingsQueryState query={requests} resource="subdomain"><SettingsRow label={t`Request a subdomain`} helper="Ask the platform team to provision a dedicated subdomain for this makerspace."><div className="@container grid min-w-0 gap-4">
+    <SettingsQueryState query={requests} resource="subdomain"><SettingsRow label={t`Request a subdomain`} helper={t`Ask the platform team to provision a dedicated subdomain for this makerspace.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-4">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">

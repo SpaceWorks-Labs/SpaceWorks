@@ -65,21 +65,21 @@ export function MakerspaceProfileSettings({ makerspaceId }: { makerspaceId: numb
     }}>
       <fieldset className="grid gap-4" disabled={mutation.isPending}>
         <legend className="sr-only">{t`Profile fields`}</legend>
-        <SettingsRow label={t`Timezone`} htmlFor="profile-timezone" helper="Use local time for opening hours, reminders and bookings.">
+        <SettingsRow label={t`Timezone`} htmlFor="profile-timezone" helper={t`Use local time for opening hours, reminders and bookings.`}>
           <select id="profile-timezone" className="desk-input max-w-full" value={draft.timezone} onChange={event => { changed(); setDraft({ ...draft, timezone: event.target.value }); }}>
             {draft.timezone_choices.map(zone => <option key={zone}>{zone}</option>)}
           </select>
         </SettingsRow>
-        <SettingsRow label={t`Country`} htmlFor="profile-country" helper="Visible to staff only.">
+        <SettingsRow label={t`Country`} htmlFor="profile-country" helper={t`Visible to staff only.`}>
           <select id="profile-country" className="desk-input max-w-full" value={draft.country} onChange={event => { changed(); setDraft({ ...draft, country: event.target.value }); }}>
             <option value="">{t`Unspecified`}</option>
             {draft.country_choices.map(code => <option key={code} value={code}>{countryLabel(code)}</option>)}
           </select>
         </SettingsRow>
-        <SettingsRow label={t`Default currency`} htmlFor="profile-currency" helper="Used by payment settings. Existing charges keep their currency.">
+        <SettingsRow label={t`Default currency`} htmlFor="profile-currency" helper={t`Used by payment settings. Existing charges keep their currency.`}>
           <input id="profile-currency" className="desk-input" maxLength={3} value={draft.default_currency} onChange={event => { changed(); setDraft({ ...draft, default_currency: event.target.value.toLowerCase() }); }} />
         </SettingsRow>
-        <SettingsRow label={t`Opening hours`} helper="Set weekly hours and dated exceptions in the makerspace timezone.">
+        <SettingsRow label={t`Opening hours`} helper={t`Set weekly hours and dated exceptions in the makerspace timezone.`}>
           <MakerspaceHoursEditor value={hours} onChange={value => { changed(); setHours(value); }} />
         </SettingsRow>
       </fieldset>

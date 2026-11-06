@@ -25,10 +25,10 @@ export function PresencePrivacySettings({ makerspaceId, slug }: { makerspaceId: 
     {privacy.isLoading ? <p role="status" className="py-4 text-sm text-muted">{t`Loading presence settings…`}</p> : null}
     {privacy.isError ? <p role="alert" className="py-4 text-sm text-danger">{presenceErrorText(privacy.error).text}</p> : null}
     {value ? <>
-      <SettingsRow label={t`Show names`} helper="Off: everyone appears as “A member” or “A guest”, with no project or event titles.">{toggle("show_names", "Show names on the display")}</SettingsRow>
+      <SettingsRow label={t`Show names`} helper={t`Off: everyone appears as “A member” or “A guest”, with no project or event titles.`}>{toggle("show_names", "Show names on the display")}</SettingsRow>
       <SettingsRow label={t`Let people hide their name`} helper={value.show_names
-        ? "On: anyone can choose to appear anonymously. Off: names are always shown, and people are told so when they check in."
-        : "Only applies while names are shown."}>{toggle("allow_personal_opt_out", "Let people hide their name")}</SettingsRow>
+        ? t`On: anyone can choose to appear anonymously. Off: names are always shown, and people are told so when they check in.`
+        : t`Only applies while names are shown.`}>{toggle("allow_personal_opt_out", "Let people hide their name")}</SettingsRow>
     </> : null}
     {save.error ? <p role="alert" className="py-3 text-sm text-danger">{presenceErrorText(save.error).text}</p> : null}
   </SettingsSection>;

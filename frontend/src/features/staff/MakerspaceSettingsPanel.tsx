@@ -130,14 +130,14 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
 
   const notificationsDisabled = settings.isLoading || updateStaffNotifications.isPending;
   const shared = { makerspace, settings: settings.data, loading: settings.isLoading };
-  const staffEmail = <SettingsRow label={t`Staff email notifications`} helper="Email this makerspace’s managers when hardware and print request statuses change.">
+  const staffEmail = <SettingsRow label={t`Staff email notifications`} helper={t`Email this makerspace’s managers when hardware and print request statuses change.`}>
     <StatusPill label={staffNotificationsEnabled ? t`On` : t`Off`} tone={staffNotificationsEnabled ? "success" : "neutral"} />
     <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
       <input type="checkbox" checked={staffNotificationsEnabled} disabled={notificationsDisabled}
         onChange={event => updateStaffNotifications.mutate(event.target.checked)} />{t`Send staff emails`}</label>
     {updateStaffNotifications.error ? <p role="alert" className="text-sm text-danger">{updateStaffNotifications.error.message}</p> : null}
   </SettingsRow>;
-  const printRecovery = <SettingsRow label={t`Public print status recovery`} helper="Choose how people recover a public print request when they lose their status link.">
+  const printRecovery = <SettingsRow label={t`Public print status recovery`} helper={t`Choose how people recover a public print request when they lose their status link.`}>
     <div className="@container grid gap-3"><StatusPill label={statusLookupLabel(publicPrintStatusLookupPolicy)} tone={publicPrintStatusLookupPolicy === "token_only" ? "neutral" : "success"} />
       <Field label={t`Public print status lookup policy`}><select className="desk-input w-full" value={publicPrintStatusLookupPolicy}
         disabled={settings.isLoading || updatePrintStatusLookupPolicy.isPending}

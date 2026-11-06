@@ -59,7 +59,7 @@ function FamilyHome() {
   const memberHref = tenant.mode === "single" ? "/member" : `/m/${slug}/member`;
   const [params] = useSearchParams();
   if (!bootstrap) {
-    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: "Couldn't load this space. Try again.", onRetry: () => void bootstrapQuery.refetch() }}
+    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: t`Couldn't load this space. Try again.`, onRetry: () => void bootstrapQuery.refetch() }}
       makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]} header={{ title: t`We couldn't load this space` }}
       footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
     return <RouteFallback />;

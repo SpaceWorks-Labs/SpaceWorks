@@ -86,8 +86,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   // 5xx) is operational and must surface as a single-tenant error, not silently render
   // the wrong site.
   if (originBootstrap && !originQuery.isLoading && !originQuery.data) {
-    const status = (originQuery.error as { status?: number } | null)?.status;
-    if (status === 404) {
+    const { status, code } = (originQuery.error as { status?: number; code?: string } | null) ?? {};
+    // A paused space on its own domain stays "single" so the app shows the paused page (#185(1)).
+    if (status === 404 && code !== "space_paused") {
       return (
         <TenantContext.Provider value={CENTRAL_VALUE}>{children}</TenantContext.Provider>
       );

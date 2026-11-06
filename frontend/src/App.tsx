@@ -6,6 +6,7 @@ import { lazy, Suspense } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { CenteredCardLayout } from "./components/layouts";
 import { LandingPage } from "./features/LandingPage";
+import { PausedSpacePage } from "./features/platformNotices/PausedSpacePage";
 import { useTenant } from "./lib/tenant";
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 // Explicit test dev mode only: Vite removes this import and route from production builds.
@@ -38,6 +39,9 @@ export default function App() {
   if (!accountUtility && tenant.mode === "single" && tenant.loading) {
     return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Loading site…" body=""
       primary={{ label: "Loading…", disabled: true, disabledReason: "The site is opening." }} /></div>;
+  }
+  if (!accountUtility && tenant.mode === "single" && (tenant.error as { code?: string } | null)?.code === "space_paused") {
+    return <PausedSpacePage primary={{ label: "Retry", onClick: () => window.location.reload() }} />;
   }
   if (!accountUtility && tenant.mode === "single" && tenant.error) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "TriangleAlert", tone: "danger" }}

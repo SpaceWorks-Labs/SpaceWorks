@@ -97,21 +97,31 @@ def staff_payment_settings_url(makerspace=None, *, outcome):
     return f"{base}{path}?{urlencode({'stripe_connect': outcome})}"
 
 
-def resolve_frontend(*, tenant=None, slug=None, origin=None, host=None):
+def _frontend_rows(*, tenant=None, slug=None, origin=None, host=None):
     if tenant:
-        return servable_queryset(Makerspace.objects.filter(
-            public_code__iexact=tenant,
-        )).first()
+        return Makerspace.objects.filter(public_code__iexact=tenant)
     if slug:
-        return servable_queryset(Makerspace.objects.filter(
-            slug=slug,
-        )).first()
+        return Makerspace.objects.filter(slug=slug)
     hostname = origin_to_hostname(origin) or origin_to_hostname(host)
     if hostname:
-        return servable_queryset(Makerspace.objects.filter(
-            frontend_domain__iexact=hostname,
-        )).first()
+        return Makerspace.objects.filter(frontend_domain__iexact=hostname)
     return None
+
+
+def resolve_frontend(*, tenant=None, slug=None, origin=None, host=None):
+    rows = _frontend_rows(tenant=tenant, slug=slug, origin=origin, host=host)
+    return None if rows is None else servable_queryset(rows).first()
+
+
+def paused_frontend(**lookup):
+    """#185(1): whether the lookup names a space that is paused (not archived, not unknown).
+
+    Lets a space served on its own domain or tenant token show "This space is paused"
+    instead of falling back to the central site; it reveals no more than the public
+    availability endpoint does for a slug."""
+    rows = _frontend_rows(**lookup)
+    return rows is not None and rows.filter(lifecycle_state=Makerspace.LifecycleState.SUSPENDED,
+                                            archived_at__isnull=True).exists()
 
 
 def module_enabled(makerspace, module_key):

@@ -17,15 +17,15 @@ Some spaces sell kits, consumables and merchandise. You order online or at the f
 
 ![Screenshot: the shop with products and an order summary](screenshot:member-shop)
 
-Stock is held for you for 15 minutes while you pay online, and for 48 hours for a pay-at-desk order.
+Where the space holds stock for orders, your items are set aside while you pay: by default 15 minutes for online payment and 48 hours for a pay-at-desk order. The space can change these times.
 
 ## Collect
 
-1. Wait for your order to show **Ready for pickup**.
+1. Wait for your order to show **Ready to collect**.
 2. Collect it at the space, or at the event you chose.
 3. Show your pickup code at the desk.
 
-Uncollected orders are cancelled after a while; the space reminds you first.
+If you don't collect a paid order, the space reminds you (by default after 3 and 7 days). After the space's collection window (30 days by default) staff may cancel it, and a staff-approved refund case is opened for the money.
 
 ## Returns
 

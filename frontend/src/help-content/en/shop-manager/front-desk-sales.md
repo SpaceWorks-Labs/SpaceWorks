@@ -23,7 +23,7 @@ Space Works records the payment; it doesn't talk to the card terminal.
 
 ## Hand over online orders
 
-Open orders **Ready for pickup**, check the buyer's pickup code and mark it **Collected**.
+Find the order by its pickup code (orders show **Ready to collect** once marked ready), check the code with the buyer and press **Hand over**. The order then shows **Collected**.
 
 ## Cash up
 

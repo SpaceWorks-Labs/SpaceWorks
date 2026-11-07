@@ -26,9 +26,9 @@ Cancelling an unpaid order moves no money and puts the stock back.
 
 ## Returns
 
-1. Open the order and choose the items coming back.
+1. Open a collected order, press **Return items** and choose the items coming back.
 2. For each, choose **Back to stock** or **Written off**.
-3. A refund case opens for the money.
+3. Press **Record return**. A refund case opens for the money.
 
 Shop money is only ever refunded through a staff-approved refund case. A return records the goods and the value for review; actual refund progress and money paid back come from the payment ledger. Existing returned-item history remains visible if taking new returns is switched off. See [Refunds](help:finance/refunds).
 

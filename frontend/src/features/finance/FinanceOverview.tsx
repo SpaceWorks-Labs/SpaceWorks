@@ -49,7 +49,8 @@ export function FinanceOverview({ makerspaceId }: { makerspaceId: number }) {
       </article>)}
     </div>
     {summary.data && !rows.length ? <p className="text-sm text-muted">{t`No money moved in this range for the areas you see.`}</p> : null}
-    {rows.length ? <div className="overflow-x-auto rounded-xl border border-line">
+    {rows.length ? <div role="region" aria-label={t`Income and spending by month and area`} tabIndex={0}
+      className="overflow-x-auto rounded-xl border border-line focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <table className="w-full min-w-[44rem] text-sm">
         <caption className="sr-only">{t`Income and spending by month and area`}</caption>
         <thead><tr className="text-left text-muted">

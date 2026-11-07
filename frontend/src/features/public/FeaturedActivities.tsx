@@ -94,7 +94,7 @@ export function FeaturedActivities({ slug, path, timeZone }: Props) {
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).slice(0, FEATURED_LIMIT);
   if (!upcoming.length) return null;
   return <MakerspaceSection id="featured" title={t`Featured activities`} more={{ label: t`All events`, href: path("events") }}>
-    <ul aria-label={t`Upcoming events`} className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] md:overflow-visible md:pb-0">
+    <ul aria-label={t`Upcoming events`} className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] md:overflow-visible md:pb-0">
       {upcoming.map((event) => <FeaturedEventCard key={event.public_token} event={event} href={path(`events/${event.public_token}`)} timeZone={timeZone} showPrice={showPrice} />)}
     </ul>
   </MakerspaceSection>;

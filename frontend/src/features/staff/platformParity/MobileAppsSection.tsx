@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
+import { MobileReadinessPanel } from "./MobileReadinessPanel";
 import { NativeAppForm } from "./NativeAppForm";
 import { useNativeApps } from "./nativeAppsApi";
 import { PAGE_SIZE } from "./parityRequest";
@@ -33,5 +34,6 @@ export function MobileAppsSection() {
       </div>)}</div>}
     <Pagination page={page} totalPages={Math.max(1, Math.ceil((list.data?.count ?? 0) / PAGE_SIZE))} onChange={setPage}
       count={list.data?.count} pageSize={PAGE_SIZE} disabled={list.isFetching} />
+    <MobileReadinessPanel />
   </div>;
 }

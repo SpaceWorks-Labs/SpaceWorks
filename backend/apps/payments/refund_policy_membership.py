@@ -37,6 +37,9 @@ def term_for_payment(payment):
     term an admission opened for an admission charge; None for dues (X21)."""
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM:
         return covered_term(payment)
+    if payment.subject_type == Payment.SubjectType.MEMBERSHIP_TERM_START:  # #184: the term itself
+        from apps.makerspaces.models import MembershipTerm
+        return MembershipTerm.objects.select_related("plan").filter(pk=payment.subject_id).first()
     if payment.subject_type == Payment.SubjectType.MEMBERSHIP_REQUEST:
         from apps.makerspaces.models import MembershipTerm
         return (MembershipTerm.objects.select_related("plan").filter(admission_request_id=payment.subject_id)
@@ -56,9 +59,9 @@ def membership_policy(payment, term):
 
 def membership_band(payment, policy, cancelled_at):
     """`(band, gross, snapshot)` for a membership term charge; None when no term applies."""
-    if payment.subject_type != Payment.SubjectType.MEMBERSHIP_TERM:
+    if payment.subject_type not in (Payment.SubjectType.MEMBERSHIP_TERM, Payment.SubjectType.MEMBERSHIP_TERM_START):
         return None
-    term = covered_term(payment)
+    term = term_for_payment(payment)
     if term is None:
         return "never_started", payment.amount, {"term": None}
     starts, ends = term.starts_at, term.ends_at

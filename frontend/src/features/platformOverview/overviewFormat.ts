@@ -46,10 +46,11 @@ export const DRILL_TAB: Record<string, string> = {
   membership: "members", operations: "email-logs", money: "finance",
 };
 
-/** A space's console page, or null for a space the console cannot open (archived, importing). */
+/** A space's console page, or null for a space the console cannot open (archived, importing).
+ * `for_space` rather than `space`: some panels (bookings) read `space` as one of their own rows. */
 export function drillHref(space: OverviewSpace | undefined, tab: string) {
   if (!space || !isLiveSpace(space)) return null;
-  return consoleSessionHref(`/admin/${tab}?space=${space.id}`, "platform");
+  return consoleSessionHref(`/admin/${tab}?for_space=${space.id}`, "platform");
 }
 
 export function offText(offIn: number) {

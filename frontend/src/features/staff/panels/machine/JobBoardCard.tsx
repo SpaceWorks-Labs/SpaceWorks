@@ -10,6 +10,7 @@ import { machineStatusLabel } from "./machineStatusLabel";
 import type { CardDrag } from "./boardDrag";
 import type { BoardAction, StaffJob } from "./machineJobsApi";
 import { ServiceEtaLine } from "./ServiceEtaLine";
+import { useStaffChargesOn } from "../../useStaffChargesOn";
 
 export type CardHandlers = {
   onDialog: (job: StaffJob, action: DialogAction) => void;
@@ -37,7 +38,9 @@ export function JobBoardCard({ job, overdue, noShow, pending, move, select, drag
     job.own_material ? "Own material" : ""].filter(Boolean).join(" · ");
   const action = primaryAction(job, paid);
   const files = job.files?.length ? [{ label: t`Files (${job.files.length})`, onClick: () => onFiles(job) }] : [];
-  const overflow = [...files, ...overflowActions(job, overdue, { onDialog, onDirect, onUncollected, onFiles })];
+  // #184 G3: with machine charges off there is no quote to send (the server refuses one).
+  const chargesOn = useStaffChargesOn("machines");
+  const overflow = [...files, ...overflowActions(job, overdue, chargesOn, { onDialog, onDirect, onUncollected, onFiles })];
   const { dragging = false, over = false, ...dragHandlers } = drag ?? ({} as Partial<CardDrag>);
   const frame = over ? "border-accent outline-2 outline-dashed outline-focus" : "border-line";
   return <li className={`grid gap-2 rounded-2xl border bg-panel p-3 ${frame}${dragging ? " opacity-60" : ""}${drag ? " cursor-grab" : ""}`}
@@ -89,14 +92,14 @@ function primaryAction(job: StaffJob, paid: boolean): Primary | null {
   return null;
 }
 
-function overflowActions(job: StaffJob, overdue: boolean | undefined, { onDialog, onDirect, onUncollected }: CardHandlers) {
+function overflowActions(job: StaffJob, overdue: boolean | undefined, chargesOn: boolean, { onDialog, onDirect, onUncollected }: CardHandlers) {
   const dialog = (label: string, action: DialogAction, tone?: "danger") => ({ label, tone, onClick: () => onDialog(job, action) });
   const reject = dialog("Reject", "reject", "danger");
   const urgent = job.urgent ? { label: t`Remove urgent`, onClick: () => onDirect(job, "urgent", { urgent: false, reason: "" }) } : dialog("Mark urgent", "urgent");
   switch (job.status) {
-    case "pending": return [dialog("Send quote", "quote"), dialog("Ask for changes", "request-changes"), urgent, dialog("Assign to a machine", "assign"), reject];
+    case "pending": return [...(chargesOn ? [dialog(t`Send quote`, "quote")] : []), dialog("Ask for changes", "request-changes"), urgent, dialog("Assign to a machine", "assign"), reject];
     case "accepted": return [urgent, dialog("Assign to a machine", "assign")];
-    case "quoted": return job.quote_approved_at ? [] : [dialog("Send a new quote", "quote"), reject];
+    case "quoted": return job.quote_approved_at ? [] : [...(chargesOn ? [dialog(t`Send a new quote`, "quote")] : []), reject];
     case "changes_requested": return [reject];
     case "in_progress": return [dialog("Mark failed", "fail", "danger")];
     case "completed": return overdue ? [{ label: t`Mark not collected`, tone: "danger" as const, onClick: () => onUncollected(job) }] : [];

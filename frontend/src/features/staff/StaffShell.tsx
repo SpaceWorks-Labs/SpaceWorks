@@ -103,7 +103,9 @@ export function StaffShell(props: Props) {
       compactNav={props.handoutOnly ? "bottom-tabs" : "drawer"} footerLinks={publicPage}
       search={makerspaceTools ? { label: t`Search and commands`, shortcut: "mod+k", onOpen: () => setPaletteOpen(true) } : undefined}
       status={makerspaceTools ? <JobTrayPill makerspaceId={space.id} /> : null}
-      user={{ name: user.username, role: props.roleName, menu: [{ label: t`Account & two-step sign-in`, href: `/mfa?context=${encodeURIComponent(currentSessionContext())}` }, ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: t`Switch makerspace`, onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
+      user={{ name: user.username, role: props.roleName, menu: [{ label: t`Account & two-step sign-in`, href: `/mfa?context=${encodeURIComponent(currentSessionContext())}` },
+        // #196: platform accounts cannot hold personal tokens, so only people get the link.
+        ...(props.isSuperadmin ? [] : [{ label: t`API access & connected apps`, href: "/account/api-access" }]), ...(!singleTenantLocked && props.isSuperadmin && props.makerspaces.length === 1 ? [{ label: t`Switch makerspace`, onClick: () => props.setSelected(null) }] : [])], onSignOut: () => void props.signOut() }}>
       {/* Below lg the sidebar (and its job pill) lives in the drawer, so running jobs surface here.
           Both pills share the job-status query keys, so this adds no polling. */}
       {makerspaceTools ? <div className="mb-4 empty:hidden lg:hidden"><JobTrayPill makerspaceId={space.id} /></div> : null}

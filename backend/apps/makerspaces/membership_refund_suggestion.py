@@ -9,7 +9,8 @@ from django.utils import timezone
 
 from apps.payments.models import Payment, RefundCase
 
-MEMBERSHIP_SUBJECTS = (Payment.SubjectType.MEMBERSHIP_TERM, Payment.SubjectType.MEMBERSHIP_REQUEST,
+MEMBERSHIP_SUBJECTS = (Payment.SubjectType.MEMBERSHIP_TERM, Payment.SubjectType.MEMBERSHIP_TERM_START,
+                       Payment.SubjectType.MEMBERSHIP_REQUEST,
                        Payment.SubjectType.MAKERSPACE_MEMBERSHIP)
 
 

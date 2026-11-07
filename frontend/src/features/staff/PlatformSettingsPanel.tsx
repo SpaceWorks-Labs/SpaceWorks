@@ -5,6 +5,7 @@ import { PlatformDeploymentSection } from "./PlatformDeploymentSection";
 import { PlatformEmailPanel } from "./PlatformEmailPanel";
 import { PlatformSocialAuthPanel } from "./PlatformSocialAuthPanel";
 import { PlatformStripeConnectPanel } from "./PlatformStripeConnectPanel";
+import { AuditLog } from "./panels/AuditLog";
 import { AccountsSection } from "./platformParity/AccountsSection";
 import { ChatTemplatesSection } from "./platformParity/ChatTemplatesSection";
 import { IpAccessSection } from "./platformParity/IpAccessSection";
@@ -33,6 +34,7 @@ export function PlatformSettingsPanel({ platformHosting, unavailableApps = [] }:
     { key: "sso", label: t`Single sign-on`, rows: <SsoSection /> },
     { key: "chat-templates", label: t`Chat templates`, rows: <ChatTemplatesSection /> },
     { key: "restore-drills", label: t`Restore drills`, rows: <RestoreDrillsSection /> },
+    { key: "audit", label: t`Audit log`, rows: <AuditLog platform /> },
     // A deployment that does not ship tenant migration has no self-host move routes at all.
     ...(unavailableApps.includes("tenant_migration") ? [] : [{ key: "selfhost-moves", label: t`Self-host moves`, rows: <SelfhostMovesSection /> }])];
   const active = available.find(section => section.key === search.get("section")) ?? available.find(section => section.key === "email")!;

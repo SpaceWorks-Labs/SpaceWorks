@@ -22,6 +22,8 @@ SUBJECT_ACTIONS = {
     # a space collecting renewals in cash had no way to mark one paid.
     Payment.SubjectType.MEMBERSHIP_TERM: rbac.Action.MANAGE_MAKERSPACE,
     Payment.SubjectType.MEMBERSHIP_REQUEST: rbac.Action.MANAGE_MEMBERS,
+    # #184: whoever may open a term (manage_members) settles the charge it raised.
+    Payment.SubjectType.MEMBERSHIP_TERM_START: rbac.Action.MANAGE_MEMBERS,
     # Loan charges follow the handover job: whoever may issue settles the deposit,
     # whoever may take a return settles the late fee.
     Payment.SubjectType.LOAN_DEPOSIT: rbac.Action.ISSUE_REQUEST,

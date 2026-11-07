@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Card, ErrorText, Field } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
+import { useChargesOn } from "../../../lib/charges";
 import { useTenantPath } from "../../../lib/tenant";
 import { fetchShop, money, ticketingKeys } from "./ticketingApi";
 import { changeTicketType, safeCheckoutUrl, transferTicket } from "./ticketingMemberApi";
@@ -55,6 +56,7 @@ function ChangeTypeCard({ makerspaceId, makerspaceSlug, registrationId, publicTo
   const shop = useQuery({ queryKey: ticketingKeys.shop(makerspaceSlug, publicToken), retry: false,
     enabled: Boolean(makerspaceSlug && publicToken), queryFn: () => fetchShop(makerspaceSlug, publicToken) });
   const [choice, setChoice] = useState(0);
+  const chargesOn = useChargesOn("events", makerspaceSlug); // #184: no prices while events are free
   const change = useMutation({ mutationFn: () => changeTicketType(makerspaceId, registrationId, choice),
     onSuccess: result => { if (result.status === "changed") void client.invalidateQueries({ queryKey: ["event-ticket"] }); } });
   const options = (shop.data?.ticket_types ?? []).filter(row => !row.sold_out && row.id !== currentTicketTypeId);
@@ -64,10 +66,10 @@ function ChangeTypeCard({ makerspaceId, makerspaceSlug, registrationId, publicTo
   const checkout = safeCheckoutUrl(result?.checkout_url);
   return <Card><form className="grid gap-3" onSubmit={e => { e.preventDefault(); change.mutate(); }}>
     <h2 className="title-section">{t`Change ticket type`}</h2>
-    <p className="text-sm text-muted">{t`A dearer ticket asks you to pay the difference; a cheaper one gives the difference back under the event's refund policy.`}</p>
+    {chargesOn ? <p className="text-sm text-muted">{t`A dearer ticket asks you to pay the difference; a cheaper one gives the difference back under the event's refund policy.`}</p> : <p className="text-sm text-muted">{t`Events are free here, so changing type costs nothing.`}</p>}
     <Field label={t`New ticket type`}><select className="desk-input" value={choice} required onChange={e => setChoice(Number(e.target.value))}>
       <option value={0} disabled>{t`Choose a ticket type`}</option>
-      {options.map(row => <option key={row.id} value={row.id}>{row.name} · {money(row.amount, shop.data!.currency)}</option>)}
+      {options.map(row => <option key={row.id} value={row.id}>{chargesOn ? `${row.name} · ${money(row.amount, shop.data!.currency)}` : row.name}</option>)}
     </select></Field>
     {change.error ? <ErrorText message={errorMessage(change.error)} /> : null}
     {result?.status === "changed" ? <p role="status" className="text-sm text-ink">{t`Your ticket type is changed.`}</p> : null}

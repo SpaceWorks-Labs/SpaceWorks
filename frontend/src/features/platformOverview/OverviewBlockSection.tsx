@@ -1,10 +1,10 @@
 import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { Badge, DataTable, type DataTableColumn } from "../../components/ui";
-import { DRILL_TAB, EXCLUDED_LABEL, drillHref, formatValue, isLiveSpace, offText } from "./overviewFormat";
-import type { OverviewBlock, OverviewMetric, OverviewSpace } from "./platformOverviewApi";
+import { DRILL_TAB, EXCLUDED_LABEL, drillHref, formatValue, isLiveSpace, offText, type OverviewDrillSpace } from "./overviewFormat";
+import type { OverviewBlock, OverviewMetric } from "./platformOverviewApi";
 
-type Row = { id: string; space?: OverviewSpace; total?: boolean; values: Record<string, number | null> | null };
+type Row = { id: string; space?: OverviewDrillSpace; total?: boolean; values: Record<string, number | null> | null };
 
 /** A figure tile: the label, the number, and whether it is "now" or "in the period". */
 export function Figure({ label, value, timing }: { label: string; value: ReactNode; timing?: string }) {
@@ -14,12 +14,15 @@ export function Figure({ label, value, timing }: { label: string; value: ReactNo
   </div>;
 }
 
-export function SpaceCell({ space, tab }: { space?: OverviewSpace; tab: string }) {
+export function SpaceCell({ space, tab }: { space?: OverviewDrillSpace; tab: string }) {
   if (!space) return <strong>{t`All spaces`}</strong>;
   const href = drillHref(space, tab);
+  const reports = space.reportsEnabled ? drillHref(space, "reports") : null;
   return <span className="inline-flex flex-wrap items-center gap-2">
     {href ? <a className="font-semibold text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       href={href} aria-label={t`Open ${space.name} in the console`}>{space.name}</a> : <span>{space.name}</span>}
+    {reports ? <a className="text-sm text-muted underline underline-offset-2 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      href={reports} aria-label={t`Open ${space.name}'s reports`}>{t`Reports`}</a> : null}
     {!isLiveSpace(space) && space.excluded_reason ? <Badge tone="warn">{EXCLUDED_LABEL[space.excluded_reason] ?? space.excluded_reason}</Badge> : null}
     {space.directory_hidden ? <Badge tone="neutral">{t`Not in directory`}</Badge> : null}
   </span>;
@@ -31,7 +34,7 @@ function cell(metric: OverviewMetric, row: Row) {
   return row.total ? <strong>{value}</strong> : value;
 }
 
-export function OverviewBlockSection({ block, spaces }: { block: OverviewBlock; spaces: Map<number, OverviewSpace> }) {
+export function OverviewBlockSection({ block, spaces }: { block: OverviewBlock; spaces: ReadonlyMap<number, OverviewDrillSpace> }) {
   const tab = DRILL_TAB[block.key] ?? "dashboard";
   const rows: Row[] = [
     ...block.rows.map(row => ({ id: String(row.makerspace_id), space: spaces.get(row.makerspace_id), values: row.values })),

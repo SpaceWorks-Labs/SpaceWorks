@@ -18,12 +18,12 @@ export function useManagedPlans() {
 }
 
 export const LIMIT_KEYS = ["members", "staff", "storage", "email_monthly", "sms_monthly", "whatsapp_monthly", "events_monthly",
-  "products", "assets", "machines", "bookings", "api_clients"] as const;
+  "products", "assets", "machines", "bookings", "api_clients", "events"] as const;
 export type LimitKey = typeof LIMIT_KEYS[number];
 export const LIMIT_LABELS: Record<LimitKey, string> = {
   members: t`Members`, staff: t`Staff`, storage: t`Storage (bytes)`, email_monthly: t`Emails per month`, sms_monthly: t`SMS per month`,
   whatsapp_monthly: t`WhatsApp per month`, events_monthly: t`Events per month`, products: t`Products`, assets: t`Assets`,
-  machines: t`Machines`, bookings: t`Bookings`, api_clients: t`API clients`,
+  machines: t`Machines`, bookings: t`Bookings`, api_clients: t`API clients`, events: t`Events (total)`,
 };
 export type HostingPlan = {
   id: number; key: string; name: string; description: string; is_active: boolean; trial_days: number;

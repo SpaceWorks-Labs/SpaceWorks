@@ -162,6 +162,13 @@ class PlatformHostingBillingSettings(models.Model):
         row, _ = cls.objects.get_or_create(pk=1)
         return row
 
+    def save(self, *args, **kwargs):
+        # #187A: the platform's provider keys are encrypted at rest whatever path writes them
+        # (a shell or admin write that skipped set_secret is encrypted here, never stored raw).
+        for field in self.SECRET_FIELDS:
+            setattr(self, field, encrypt_value(getattr(self, field)))
+        super().save(*args, **kwargs)
+
     def set_secret(self, field, raw):
         setattr(self, field, encrypt_value(raw) if raw else "")
 

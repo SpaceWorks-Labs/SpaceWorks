@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from "react";
 
 import { FILE_GROUPS } from "./jobLabels";
 import { errorCode, useJobSettings, useSaveJobSettings, type JobSettings } from "./machineJobsApi";
+import { useStaffChargesOn } from "../../useStaffChargesOn";
 
 const READ_ONLY: Record<string, string> = {
   setting_not_delegated: "Only the Space Manager, or a manager they have handed these settings to, can change them.",
@@ -16,6 +17,7 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
   const query = useJobSettings(makerspaceId, machineTypeId, visible);
   const save = useSaveJobSettings(makerspaceId, machineTypeId);
   const [draft, setDraft] = useState<JobSettings | null>(null);
+  const chargesOn = useStaffChargesOn("machines", makerspaceId); // #184: free machine jobs have no money settings
   useEffect(() => { if (query.data) setDraft(query.data); }, [query.data]);
   if (!visible) return null;
   const lockCode = [errorCode(save.error), errorCode(query.error)].find(code => code && READ_ONLY[code]);
@@ -36,7 +38,8 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
       <fieldset className="grid gap-3 sm:grid-cols-2" disabled={readOnly || save.isPending}>
         <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={draft.accepts_job_requests}
           onChange={event => set({ accepts_job_requests: event.target.checked })} />{t`Members can send job requests for this type`}</label>
-        {field("Quotes", <select className="desk-input" value={draft.quote_mode} onChange={event => set({ quote_mode: event.target.value as JobSettings["quote_mode"] })}>
+        {!chargesOn ? <p className="text-sm text-muted sm:col-span-2">{t`Machine charges are off in this space, so jobs are free: no quote, no payment and no failure charge. The stored money settings come back when charges are turned on.`}</p> : null}
+        {chargesOn ? <>{field("Quotes", <select className="desk-input" value={draft.quote_mode} onChange={event => set({ quote_mode: event.target.value as JobSettings["quote_mode"] })}>
           <option value="auto">{t`When the job has a price`}</option><option value="always">{t`Always`}</option><option value="above">{t`Above an amount`}</option><option value="off">{t`Never`}</option>
         </select>, "A quote is a price the member approves before the job joins the queue.")}
         {draft.quote_mode === "above" ? field("Quote above this amount", <input className="desk-input" inputMode="decimal" value={draft.quote_above_amount ?? ""}
@@ -46,7 +49,7 @@ export function JobSettingsEditor({ makerspaceId, machineTypeId, visible = true 
         {field("If a job fails through the member’s fault", <select className="desk-input" value={draft.member_fault_charge}
           onChange={event => set({ member_fault_charge: event.target.value as JobSettings["member_fault_charge"] })}>
           <option value="none">{t`Charge nothing`}</option><option value="material_only">{t`Charge the material used`}</option><option value="full">{t`Charge the full job`}</option>
-        </select>, "A failure the space or machine caused is always free and goes back to the front of the queue.")}
+        </select>, "A failure the space or machine caused is always free and goes back to the front of the queue.")}</> : null}
         {field("Open jobs per member", <input className="desk-input" type="number" min={1} value={draft.max_open_jobs ?? ""}
           onChange={event => set({ max_open_jobs: numberOrNull(event.target.value) })} />, "Blank for no limit.")}
         {field("Longest job (minutes)", <input className="desk-input" type="number" min={1} value={draft.max_job_minutes ?? ""}

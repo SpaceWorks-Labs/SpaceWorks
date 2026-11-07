@@ -10,7 +10,7 @@ import { MemberPaymentOffline, type OfflineCollection } from "./MemberPaymentOff
 
 // Additive API field until the coordinator regenerates the OpenAPI client.
 export type MemberPayment = Omit<GeneratedMemberPayment, "refunded_amount" | "refunds" | "subject_type" | "refund_case" | "refund_requestable"> & {
-  subject_type: GeneratedMemberPayment["subject_type"] | "membership_request";
+  subject_type: GeneratedMemberPayment["subject_type"] | "membership_request" | "membership_term_start";
   // Optional so older fixtures and the archived read-only list need not carry them.
   refund_case?: GeneratedMemberPayment["refund_case"]; refund_requestable?: boolean;
   refunded_amount?: string | number; due_at?: string | null; due_date?: string | null; due_state?: string;

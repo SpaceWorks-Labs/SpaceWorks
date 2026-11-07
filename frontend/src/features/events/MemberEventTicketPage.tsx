@@ -11,8 +11,8 @@ import { CenteredCardLayout } from "../../components/layouts";
 import { ErrorText, Icon, StatusBadge, TicketCard } from "../../components/ui";
 import { RouteLink } from "../../components/ui/RouteLink";
 import { getAccessToken, memberRequest, memberRequestBlob, refreshAccessToken, StructuredApiError } from "../../lib/api";
-import { useTenant, useTenantPath } from "../../lib/tenant";
 import { chargesOn } from "../../lib/charges";
+import { useTenant, useTenantPath } from "../../lib/tenant";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { googleCalendarUrl, saveTicketBlob, type CalendarFields } from "./eventConfirmation";
@@ -103,8 +103,8 @@ export function MemberEventTicketPage() {
         {makerspaceId ? <TicketManageActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={current.registration_id} status={current.status} event={current.event} /> : null}
         <RouteLink className="desk-button" href={tenantPath("member/events/history")}>{t`Your event history`}</RouteLink>
         {/* Hack-money G9: a confirmed place on an approval event may buy add-ons alone. */}
-        {confirmed(current.status) && makerspaceId && chargesOn(space, "events") && space?.features?.includes("events.accepted_addons") && space.features.includes("events.addons")
-          ? <AddonOnlyShop makerspaceSlug={makerspaceSlug} makerspaceId={makerspaceId} publicToken={current.event.public_token}
+        {confirmed(current.status) && makerspaceId && space?.features?.includes("events.accepted_addons") && space.features.includes("events.addons")
+          ? <AddonOnlyShop makerspaceSlug={makerspaceSlug} makerspaceId={makerspaceId} publicToken={current.event.public_token} free={!chargesOn(space, "events")}
             ordersHref={orderId => tenantPath(`member/orders/${orderId}`)} /> : null}
         {current.event.id && makerspaceId ? <PhotoChoice actorId={identity.data?.id} makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
         {calendar.error ? <ErrorText message={t`Could not download this calendar.`} /> : null}

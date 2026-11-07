@@ -145,10 +145,10 @@ def _timed_band(payment, policy, starts_at, cancelled_at):
 
 def _membership(payment, cancelled_at):
     """`(policy, band, gross, facts)` for a term charge; None for dues/admission (request-only)."""
-    from apps.payments.refund_policy_membership import covered_term, membership_band, membership_policy
-    if payment.subject_type != Payment.SubjectType.MEMBERSHIP_TERM:
+    from apps.payments.refund_policy_membership import membership_band, membership_policy, term_for_payment
+    if payment.subject_type not in (Payment.SubjectType.MEMBERSHIP_TERM, Payment.SubjectType.MEMBERSHIP_TERM_START):
         return None
-    policy = membership_policy(payment, covered_term(payment))
+    policy = membership_policy(payment, term_for_payment(payment))
     if policy is None:
         return None, None, None, None
     band, gross, facts = membership_band(payment, policy, cancelled_at)

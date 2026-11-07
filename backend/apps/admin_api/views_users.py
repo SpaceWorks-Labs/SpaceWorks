@@ -110,7 +110,8 @@ class AuditLogPagination(PageNumberPagination):
         "a start/end range may span at most 366 days. A valid but out-of-scope makerspace "
         "yields an empty page."
     ),
-    parameters=[AuditLogFilterSerializer, OpenApiParameter("ordering", str, enum=["created_at", "-created_at", "action", "-action", "target_type", "-target_type"])],
+    parameters=[AuditLogFilterSerializer, OpenApiParameter("ordering", str, enum=["created_at", "-created_at", "action", "-action", "target_type", "-target_type"]),
+                OpenApiParameter("platform_only", bool, description="Only platform-level rows (no makerspace). Superadmin scope only.")],
     responses={200: AuditLogSerializer(many=True), **{code: ErrorSerializer for code in (400, 401, 403, 404)}},
 )
 class AuditLogListView(generics.ListAPIView):
@@ -130,4 +131,8 @@ class AuditLogListView(generics.ListAPIView):
         archived = rbac.archived_makerspace_ids()
         if archived:
             queryset = queryset.exclude(makerspace_id__in=archived)
+        if self.request.query_params.get("platform_only") in ("1", "true"):
+            # #190: the platform's own rows (announcements, plans, platform settings) carry
+            # no makerspace; only the superadmin's scope contains any.
+            queryset = queryset.filter(makerspace__isnull=True)
         return apply_audit_filters(queryset, filters.validated_data)

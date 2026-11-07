@@ -72,6 +72,8 @@ ENTRIES = (
     P("membership.revoked", gettext_noop("Membership revoked")),
     P("membership.role_changed", gettext_noop("Membership role changed"), ("role_id",)),
     P("membership.term_cancelled", gettext_noop("Membership term cancelled"), ("membership_id", "term_id")),
+    P("membership.term_charge_raised", gettext_noop("Membership term charge raised"),
+      ("membership_id", "payment_id", "term_id")),
     P("membership.term_created", gettext_noop("Membership term created"),
       ("membership_id", "plan_id", "term_id")),
     P("membership.term_expired", gettext_noop("Membership term expired"), ("membership_id", "term_id")),

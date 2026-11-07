@@ -27,10 +27,11 @@ function ticketMax(ticket: ShopTicket, orderMax: number) {
   return Math.max(Math.min(...limits), 0);
 }
 
-/** Ticket types and add-ons with quantity steppers. Prices are the server's; nothing is priced here. */
-export function TicketShopPicker({ tickets, addons, currency, orderMax, basket, onChange }: {
+/** Ticket types and add-ons with quantity steppers. Prices are the server's; nothing is priced here.
+ * `free` (#184: event charges off in this space) shows no price at all; everything is free. */
+export function TicketShopPicker({ tickets, addons, currency, orderMax, basket, onChange, free = false }: {
   tickets: ShopTicket[]; addons: ShopAddon[]; currency: string; orderMax: number;
-  basket: Basket; onChange: (next: Basket) => void;
+  basket: Basket; onChange: (next: Basket) => void; free?: boolean;
 }) {
   const setTicket = (id: number, quantity: number) => onChange({ ...basket, tickets: { ...basket.tickets, [id]: quantity } });
   const setAddon = (id: number, patch: Partial<{ quantity: number; variantId: number | null }>) => onChange({
@@ -42,18 +43,18 @@ export function TicketShopPicker({ tickets, addons, currency, orderMax, basket, 
           <div className="grid gap-0.5">
             <span className="flex items-center gap-2 font-semibold text-ink"><Ticket aria-hidden="true" size={18} />{ticket.name}</span>
             <span className="text-sm text-muted">
-              {ticket.pricing_mode === "pwyw" ? t`Pay what you want, from ${money(ticket.min_amount, currency)}` : money(ticket.amount, currency)}
+              {free ? t`Free` : ticket.pricing_mode === "pwyw" ? t`Pay what you want, from ${money(ticket.min_amount, currency)}` : money(ticket.amount, currency)}
               {ticket.seats_per_ticket > 1 ? t` · admits ${ticket.seats_per_ticket}` : ""}
               {ticket.min_quantity > 1 ? t` · at least ${ticket.min_quantity}` : ""}
               {ticket.spots_left != null && !ticket.sold_out ? t` · ${ticket.spots_left} left` : ""}
             </span>
-            {ticket.next_tier ? <span className="text-xs text-muted">{t`Next: ${ticket.next_tier.name} at ${money(ticket.next_tier.amount, currency)}`}</span> : null}
+            {ticket.next_tier && !free ? <span className="text-xs text-muted">{t`Next: ${ticket.next_tier.name} at ${money(ticket.next_tier.amount, currency)}`}</span> : null}
           </div>
           {ticket.sold_out ? <span className="text-sm font-semibold text-muted">{t`Sold out`}</span>
             : <Stepper label={ticket.name} value={basket.tickets[ticket.id] ?? 0} max={ticketMax(ticket, orderMax)}
               onChange={next => setTicket(ticket.id, next)} />}
         </div>
-        {ticket.pricing_mode === "pwyw" && (basket.tickets[ticket.id] ?? 0) > 0 ? <label className="grid gap-1 text-sm font-semibold">
+        {!free && ticket.pricing_mode === "pwyw" && (basket.tickets[ticket.id] ?? 0) > 0 ? <label className="grid gap-1 text-sm font-semibold">
           {t`Amount per ticket (${currency.toUpperCase()})`}<input className="desk-input" inputMode="decimal" value={basket.amounts[ticket.id] ?? ticket.amount}
             onChange={event => onChange({ ...basket, amounts: { ...basket.amounts, [ticket.id]: event.target.value } })} />
         </label> : null}
@@ -65,7 +66,7 @@ export function TicketShopPicker({ tickets, addons, currency, orderMax, basket, 
         const current = basket.addons[addon.id] ?? { quantity: 0, variantId: null };
         return <div key={addon.id} className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line p-3">
           <span className="grid gap-0.5"><span className="font-semibold text-ink">{addon.name}</span>
-            <span className="text-sm text-muted">{money(addon.amount, currency)}{addon.description ? ` · ${addon.description}` : ""}</span></span>
+            <span className="text-sm text-muted">{free ? t`Free` : money(addon.amount, currency)}{addon.description ? ` · ${addon.description}` : ""}</span></span>
           {addon.sold_out ? <span className="text-sm font-semibold text-muted">{t`Sold out`}</span> : <div className="flex items-center gap-2">
             {addon.variants.length ? <label className="text-sm">{t`Option`}<select className="desk-input ml-2" value={current.variantId ?? ""} onChange={event => setAddon(addon.id, { variantId: event.target.value ? Number(event.target.value) : null })}>
                 <option value="">{t`Choose`}</option>

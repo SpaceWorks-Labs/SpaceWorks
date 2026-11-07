@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.schemas_auth import SupportedLocaleSerializer
 from apps.makerspaces.models import Makerspace
-from apps.makerspaces.platform import bootstrap_payload, resolve_frontend
+from apps.makerspaces.platform import bootstrap_payload, paused_frontend, resolve_frontend
 from apps.makerspaces.opening_hours_schema import OpeningHoursField
 
 TenantBootstrapSerializer = inline_serializer(
@@ -108,21 +108,18 @@ class BootstrapView(APIView):
                 response=TenantBootstrapSerializer,
                 description="Frontend-safe tenant bootstrap payload.",
             ),
-            404: OpenApiResponse(description="No active tenant frontend matched."),
+            404: OpenApiResponse(description="No active tenant frontend matched; `code` is `space_paused` when the matched space is paused."),
         },
     )
     def get(self, request, *args, **kwargs):
-        makerspace = resolve_frontend(
-            tenant=request.query_params.get("tenant"),
-            slug=request.query_params.get("slug"),
-            origin=request.headers.get("Origin"),
-            host=request.get_host(),
-        )
+        lookup = dict(tenant=request.query_params.get("tenant"), slug=request.query_params.get("slug"),
+                      origin=request.headers.get("Origin"), host=request.get_host())
+        makerspace = resolve_frontend(**lookup)
         if makerspace is None:
-            return Response(
-                {"detail": gettext("No active tenant frontend matched.")},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            body = {"detail": gettext("No active tenant frontend matched.")}
+            if paused_frontend(**lookup):
+                body = {"detail": gettext("This space is paused."), "code": "space_paused"}
+            return Response(body, status=status.HTTP_404_NOT_FOUND)
         # The space is authoritative now: its default replaces only an ambient/system locale.
         from config.locale_resolution import activate_resolved_makerspace_locale
 

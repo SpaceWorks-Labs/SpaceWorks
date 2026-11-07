@@ -19,8 +19,11 @@ export function CustomDomainGuide({ domain, record, status }: {
         everyone; you can check again at any time.</li> : null}
     </ol>
     <p className="text-sm text-muted">
-      {t`Building something else on top of the space? Use `}<a className="underline underline-offset-4" href="/admin/api">{t`API clients`}</a> {t` for server access, the webhooks under `}<a className="underline underline-offset-4"
-      href="/admin/settings">{t`Settings › Email & integrations`}</a> {t` for alerts, and the event and booking embeds for other websites. The guide is docs/own-domain-and-frontend.md.`}</p>
+      {t`Building something else on top of the space? Use `}<a className="underline underline-offset-4" href="/admin/api">{t`API clients`}</a>{t` for server access, the webhooks under `}<a className="underline underline-offset-4"
+      href="/admin/settings#integrations">{t`Settings › Email & integrations`}</a>{t` for alerts, and the `}<a className="underline underline-offset-4"
+      href="/admin/settings#features">{t`event and booking embeds`}</a>{t` for other websites. Full guide: `}<a className="underline underline-offset-4" target="_blank" rel="noreferrer"
+      href="https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/docs/own-domain-and-frontend.md">{t`Run your space on your own domain or frontend ↗`}</a>.
+    </p>
   </div>;
 }
 

@@ -75,7 +75,7 @@ ENTRIES = (
     ("accounts.nativeappregistration", web(f"{PS} → Mobile apps", "admin-platform-native-apps", "admin-platform-native-app")),
     ("accounts.platformloginmethods", web(f"{PS} → Sign-in providers → Sign-in methods", "admin-platform-login-methods")),
     ("accounts.platformsocialauthsettings", web(f"{PS} → Sign-in providers", "admin-platform-social-auth-settings")),
-    ("view:accounts_nativeappregistration_mobile_readiness", web(f"{PS} → Deployment (mobile readiness)", "admin-platform-mobile-readiness")),
+    ("view:accounts_nativeappregistration_mobile_readiness", web(f"{PS} → Mobile apps (readiness)", "admin-platform-mobile-readiness")),
     # Kept host-only [#165 auto]: lockout counters are axes' own plumbing; its recovery commands are the reviewed path.
     ("axes.accessattempt", host("Recovery command: manage.py axes_reset_username <name> (or the lockout lifts by itself)")),
     ("axes.accessattempt.cleanup_expired_attempts", host("Recovery command: manage.py axes_reset (expired lockouts also clear by themselves)")),

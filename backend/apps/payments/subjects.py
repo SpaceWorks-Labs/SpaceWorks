@@ -61,6 +61,7 @@ def resolve_subject_labels(payments):
         Payment.SubjectType.MAKERSPACE_MEMBERSHIP: "Membership dues",
         Payment.SubjectType.MEMBERSHIP_TERM: "Membership renewal",
         Payment.SubjectType.MEMBERSHIP_REQUEST: "Membership admission",
+        Payment.SubjectType.MEMBERSHIP_TERM_START: "Membership term",
         Payment.SubjectType.LOAN_DEPOSIT: "Loan deposit",
         Payment.SubjectType.LOAN_LATE_FEE: "Late return fee",
         Payment.SubjectType.LOAN_RENTAL: "Loan rental",

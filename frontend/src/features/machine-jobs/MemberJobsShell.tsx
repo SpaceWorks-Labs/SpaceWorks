@@ -42,7 +42,7 @@ export function MemberJobsShell({ children }: { children: (context: MemberJobsCo
       space={{ id: bootstrap?.makerspace.id, slug: makerspaceSlug || undefined }}
       workspace={bootstrap ? { name: bootstrap.makerspace.name, subtitle: t`Member area`,
         avatar: logo ? { kind: "image", src: logo } : { kind: "avatar", name: bootstrap.makerspace.name, seed: makerspaceSlug }, locked: true } : undefined}
-      user={{ name: member.identity.data?.username || "Your account", menu: [{ label: t`Account & two-step sign-in`, href: "/mfa" }],
+      user={{ name: member.identity.data?.username || "Your account", menu: [{ label: t`Account & two-step sign-in`, href: "/mfa" }, { label: t`API access & connected apps`, href: "/account/api-access" }],
         onSignOut: () => { void logout("person").catch(() => undefined).finally(() => { forgetOfflineMemberData(); client.clear(); window.location.assign(memberHome); }); } }}>
       {children({ slug: makerspaceSlug, makerspaceId: bootstrap?.makerspace.id, path, ready: !member.loading && Boolean(bootstrap),
         bootstrapError: bootstrapQuery.isError, features: bootstrap?.features ?? [] })}

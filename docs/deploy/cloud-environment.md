@@ -75,6 +75,7 @@ an override for each in the answers file; the Render blueprints list the same ke
 | CARD_FONT_DOWNLOADS_ENABLED | `True` | Answers file; `False` keeps cards to the bundled faces. |
 | CARD_PHOTO_MODEL_PATH | empty (temp directory) | Not rendered. Photo clean-up needs the model in BOTH the web and worker containers on durable storage, which managed roles do not share; the button stays hidden until it is there. Use the full VPS for this feature. |
 | MANAGED_PLANS_ENABLED / MANAGED_BILLING_ONLINE_ENABLED | `False` / `False` | The managed-hosting limiter. Off unless you run a hosting platform for other spaces; nothing is visible or enforced while it is off. Never set it on a self-host. |
+| OAUTH_OIDC_RSA_PRIVATE_KEY | empty | Secrets file only. Signs OpenID Connect ID tokens for app connections; empty = OAuth 2.0 without ID tokens. The token lifetimes and rates (`OAUTH_*_SECONDS`, `PERSON_CREDENTIAL_RATE_PER_MINUTE`, `THROTTLE_PERSON_TOKEN_MANAGE`, `THROTTLE_OAUTH_CONSENT`, `THROTTLE_API_CLIENT_MANAGE`) keep their defaults; see the environment reference. |
 
 Analytics (Metabase) logins and the control plane need no environment key on a managed recipe:
 `CONTROL_PLANE_PROXY` is pinned `false`, and day-to-day superadmin work runs in the web console. Every

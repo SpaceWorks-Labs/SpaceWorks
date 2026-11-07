@@ -40,6 +40,7 @@ PAYMENT_DOMAINS = {
     "event_registration": "events",
     "makerspace_membership": "membership",
     "membership_term": "membership",
+    "membership_term_start": "membership",  # #184: a term staff opened
     "membership_request": "membership",
     "loan_deposit": "loans",
     "loan_late_fee": "loans",

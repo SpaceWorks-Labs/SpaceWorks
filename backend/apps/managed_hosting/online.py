@@ -37,7 +37,8 @@ def start_checkout(makerspace_id, invoice_id):
         invoice = HostingInvoice.objects.select_for_update().get(pk=invoice_id, makerspace_id=makerspace_id)
         if invoice.status != HostingInvoice.Status.OPEN:
             raise SpaceControlConflict("invoice_not_open", "This invoice is not open.")
-    back = f"{public_base_url()}/m/{invoice.makerspace.slug}/admin/settings?section=hosting-plan"
+    # The plan and its invoices live on the "Usage & limits" tab (TenantUsagePanel).
+    back = f"{public_base_url()}/m/{invoice.makerspace.slug}/admin/usage?invoice={invoice.pk}"
     if settings_row.provider == "stripe" and settings_row.stripe_secret_key:
         session_id, url = _stripe_session(settings_row, invoice, back)
     elif settings_row.provider == "razorpay" and settings_row.razorpay_key_id and settings_row.razorpay_key_secret:

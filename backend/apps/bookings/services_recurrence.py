@@ -22,7 +22,9 @@ def create_recurring_bookings(space, *, actor, starts_at, ends_at, count, interv
     from .booking_authority import require
     require(actor, locked, "manage_reservations")
     if not feature_enabled(locked.makerspace, 'bookings.recurring'):
-        raise ValidationError({'feature': gettext('Recurring bookings are disabled.')})
+        # #183B: the route exists only for this switch, so off leaves no surface (404).
+        from apps.makerspaces.guards import feature_off
+        raise feature_off('bookings.recurring', gettext('Recurring bookings are disabled.'))
     if type(count) is not int or not 2 <= count <= 52 or type(interval_weeks) is not int or not 1 <= interval_weeks <= 12:
         raise ValidationError({'count': gettext('Use 2–52 occurrences, spaced 1–12 weeks apart.')})
     if (count - 1) * interval_weeks > 52:

@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { CenteredCardLayout } from "../../../components/layouts";
 import { ErrorText } from "../../../components/ui";
 import { getAccessToken, refreshAccessToken, StructuredApiError } from "../../../lib/api";
+import { useChargesOn } from "../../../lib/charges";
 import { useTenantPath } from "../../../lib/tenant";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
 import { useMemberSpace } from "./MemberOrdersPage";
@@ -26,6 +27,7 @@ export function MemberSeriesPassPage() {
   const { seriesId = "" } = useParams();
   const space = useMemberSpace();
   const tenantPath = useTenantPath(space.makerspaceSlug);
+  const chargesOn = useChargesOn("events", space.makerspaceSlug); // #184: a free events domain shows no pass price
   const navigate = useNavigate();
   const [restoring, setRestoring] = useState(!getAccessToken());
   useEffect(() => { if (restoring) refreshAccessToken().finally(() => setRestoring(false)); }, []);
@@ -56,7 +58,7 @@ export function MemberSeriesPassPage() {
         {rows.map(row => <label key={row.id} className="flex min-h-11 items-start gap-3 rounded-card border border-line p-3 text-sm text-ink">
           <input type="radio" name="pass" value={row.id} checked={selected === row.id} onChange={() => setChoice(row.id)} />
           <span className="grid gap-0.5"><span className="font-semibold">{row.name}</span>
-            <span className="text-muted">{price(row.amount)}{row.sales_end_at ? t` · on sale until ${new Date(row.sales_end_at).toLocaleString(formatLocale())}` : ""}</span></span>
+            <span className="text-muted">{chargesOn ? price(row.amount) : t`Free`}{row.sales_end_at ? t` · on sale until ${new Date(row.sales_end_at).toLocaleString(formatLocale())}` : ""}</span></span>
         </label>)}
       </fieldset> : null}
       {buy.error ? <ErrorText message={errorMessage(buy.error)} /> : null}

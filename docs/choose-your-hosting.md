@@ -114,8 +114,10 @@ on for a self-host.
 ## Release 2 settings in every shape
 
 Each release-2 setting (Turnstile, login IP blocking, breached-password check, passkey name, browser alerts,
-messaging webhook base URL, native app minimums, card fonts and the photo model) has a safe default in every
-compose file, blueprint and template: leaving it unset behaves exactly as before. They are listed in
+messaging webhook base URL, native app minimums, card fonts and the photo model) has a safe default: leaving it
+unset behaves exactly as before. The full VPS, cloud and managed compose files pass them through explicitly; the
+free and brokerless compose files, `render.yaml` and the Fly, Railway, Koyeb, DigitalOcean and Cloud Run recipes
+rely on the backend defaults, so set a key there only when you want to change it. They are listed in
 [the environment reference](environment-reference.md) and, for managed recipes, in
 [the release-2 settings](deploy/cloud-environment.md#release-2-0110-settings). Turnstile needs its site key on
 the website too: the bundled nginx derives its CSP from `TURNSTILE_SITE_KEY`; a static host needs

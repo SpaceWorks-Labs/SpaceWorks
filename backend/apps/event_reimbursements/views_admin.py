@@ -118,7 +118,7 @@ class CorrectDecisionView(PrivateView):
 
 class CrewPoolView(PrivateView):
     """Hack-money G14: finance adds the one crew pool, funded in the same transaction."""
-    @extend_schema(tags=TAGS, description=FINANCE + " 409 crew_pool_exists; 403 crew_claims_disabled.",
+    @extend_schema(tags=TAGS, description=FINANCE + " 409 crew_pool_exists; 404 feature_disabled when events.crew_claims is off.",
                    parameters=IDEMPOTENCY, request=hm.CrewPoolCommand, responses={201: s.CommandResult, **ERRORS})
     def post(self, request, pk):
         admin_event(request, pk, finance_only=True)

@@ -77,9 +77,12 @@ carries the design rule each change introduced.
   hosted elsewhere.
 - **Upload limits fixed** — the built-in web server no longer rejects bulk inventory imports over 1 MB
   or tenant-migration archive uploads; API bodies allow 10 MB and the archive import route 20 GB.
-- **Tests run locally only** — run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` before pushing.
-  Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
-  and optionally deploys through the self-hosted runner; `pip-audit` still runs on PRs.
+- **Tests run locally only** — run `./scripts/dev.sh test` and `./scripts/dev.sh e2e` (or
+  `./scripts/dev.sh affected`) before pushing. GitHub Actions runs basic checks only: frontend
+  type-check, lint and build; backend error lint, system checks and missing migrations; the OpenAPI,
+  generated-client and tenant-dump contracts; and the repository rules. `pip-audit` runs when
+  backend requirements change and weekly. Actions also builds/publishes backend/frontend images,
+  creates the GitHub Release, promotes rolling tags and optionally deploys through the self-hosted runner.
 
 - Seven fixed roles replace editable roles. Staff role sets combine except Space Manager and Member,
   which stand alone; Machine Manager reach is assigned per person by machine type. The console now

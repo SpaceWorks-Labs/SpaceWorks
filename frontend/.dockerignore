@@ -7,3 +7,9 @@ dist
 vite.config.js
 vite.config.d.ts
 **/*.tsbuildinfo
+# Local verification code (gitignored) is not part of the serving image; `tsc -b`
+# would otherwise type-check it against fixtures outside this build context.
+e2e
+src/**/*.test.ts
+src/**/*.test.tsx
+*.vitest.config.mjs

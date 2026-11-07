@@ -1,7 +1,9 @@
 import type { StaffAuthUser } from "../../lib/api";
 import type { Makerspace } from "./panels/shared";
 import { AnalyticsPanel, TenantUsagePanel } from "./StaffTabLoaders";
-import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, PlatformSettingsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel, SecuritySettingsPanel, PiiAccessBanner } from "./StaffTabLoaders";
+import { Users, EmailTemplatesPanel, EmailLogPanel, ApiClientsPanel, PlatformSettingsPanel, MakerspaceSettingsPanel, ModulesPanel, DataExportsPanel, BackupRestorePanel, TenantMigrationPanel, SecuritySettingsPanel } from "./StaffTabLoaders";
+// Static: StaffWorkspace already ships the banner in the main staff chunk, so a lazy split buys nothing.
+import { PiiAccessBanner } from "./PiiAccessBanner";
 
 export function StaffPlatformTabContent({ activeTab, activeMakerspace, makerspaces, isSuperadmin, canManageMakerspace, currentUser, onAuthRefresh, allowedTabs, singleTenantLocked }: { activeTab: string; activeMakerspace: Makerspace; makerspaces: Makerspace[]; isSuperadmin: boolean; canManageMakerspace: boolean; currentUser: StaffAuthUser; onAuthRefresh: () => void; allowedTabs?: readonly string[]; singleTenantLocked?: boolean }) {
   const makerspaceKey = activeMakerspace.id;

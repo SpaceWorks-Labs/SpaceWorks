@@ -41,7 +41,6 @@ export const NeedsFixShelf = lazy(() => import("./panels/NeedsFixShelf").then((m
 export const ApiClientsPanel = lazy(() => import("./ApiClientsPanel").then((m) => ({ default: m.ApiClientsPanel })));
 export const PlatformSettingsPanel = lazy(() => import("./PlatformSettingsPanel").then((m) => ({ default: m.PlatformSettingsPanel })));
 export const SecuritySettingsPanel = lazy(() => import("./SecuritySettingsPanel").then((m) => ({ default: m.SecuritySettingsPanel })));
-export const PiiAccessBanner = lazy(() => import("./PiiAccessBanner").then((m) => ({ default: m.PiiAccessBanner })));
 export const MakerspaceSettingsPanel = lazy(() => import("./MakerspaceSettingsPanel").then((m) => ({ default: m.MakerspaceSettingsPanel })));
 export const ModulesPanel = lazy(() => import("./ModulesPanel").then((m) => ({ default: m.ModulesPanel })));
 export const PaymentsPanel = lazy(() => import("./PaymentsPanel").then((m) => ({ default: m.PaymentsPanel })));

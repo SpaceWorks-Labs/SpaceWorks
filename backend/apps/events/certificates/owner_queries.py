@@ -1,4 +1,4 @@
-"""Owner certificate lookup covers registration and role subjects without identity guessing."""
+"""Member certificate admission and holder lookup for registration and role subjects."""
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 
@@ -8,6 +8,17 @@ from apps.makerspaces.models import MakerspaceMembership
 from apps.presence.guard import MemberPresenceRequired, require_active_account
 
 from .subjects import require_read
+
+
+def require_member_space(actor, makerspace_id):
+    from apps.events.judging.boundary import active_member
+    from apps.makerspaces.models import Makerspace
+    from apps.makerspaces.platform import module_enabled
+    active_member(actor)
+    space = Makerspace.objects.filter(pk=makerspace_id).first()
+    if space is None or not module_enabled(space, "events"):
+        raise NotFound()
+    return space
 
 
 def owner_certificate(actor, makerspace_id, certificate_id):

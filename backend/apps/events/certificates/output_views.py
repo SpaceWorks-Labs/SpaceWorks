@@ -11,6 +11,7 @@ from apps.events.credentials.views import ERRORS
 from apps.events.profile_photos.views import private
 from apps.events.throttles import CredentialRenderThrottle
 from . import holder
+from .owner_queries import require_member_space
 from .output_serializers import HolderCertificateSerializer, CertificateHolderNameSerializer
 from .verification import VerifyThrottle, verified_row
 
@@ -18,20 +19,9 @@ TAGS = ["Event certificates"]
 PNG = OpenApiResponse(OpenApiTypes.BINARY, description="PNG image.")
 
 
-def _space(request, makerspace_id):
-    from apps.events.judging.boundary import active_member
-    from apps.makerspaces.models import Makerspace
-    from apps.makerspaces.platform import module_enabled
-    active_member(request.user)
-    space = Makerspace.objects.filter(pk=makerspace_id).first()
-    if space is None or not module_enabled(space, "events"):
-        raise NotFound()
-    return space
-
-
 def _own(request, makerspace_id, pk, *, active=True):
     from .owner_queries import owner_certificate
-    _space(request, makerspace_id)
+    require_member_space(request.user, makerspace_id)
     row = owner_certificate(request.user, makerspace_id, pk)
     if active and row.status != "active":
         raise NotFound()
@@ -50,7 +40,7 @@ class MyCertificatesView(APIView):
     @extend_schema(tags=TAGS, responses={200: HolderCertificateSerializer(many=True), **ERRORS},
                    description="Your certificates issued through this space, every kind, newest first.")
     def get(self, request, makerspace_id):
-        _space(request, makerspace_id)
+        require_member_space(request.user, makerspace_id)
         rows = [holder.project(row) for row in holder.owned(request.user, makerspace_id)[:200]]
         return private(Response(HolderCertificateSerializer(rows, many=True).data))
 

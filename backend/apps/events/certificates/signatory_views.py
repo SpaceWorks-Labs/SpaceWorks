@@ -3,7 +3,6 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +12,7 @@ from apps.events.credentials.views import ERRORS
 from apps.events.profile_photos.views import private
 from apps.events.throttles import CredentialRenderThrottle
 from . import signatory_commands as commands
+from .owner_queries import require_member_space
 from .signatories import approval_required, current_designs, design_status, released
 from .signatory_serializers import (CertificateApprovalResultSerializer, CertificateApproveSerializer, CertificatePendingApprovalSerializer,
                                     CertificateSignatoryCandidateSerializer, CertificateSignatoryPolicySerializer,
@@ -111,24 +111,13 @@ class SignatoryCandidatesView(APIView):
         return private(Response(CertificateSignatoryCandidateSerializer(data, many=True, context=context).data))
 
 
-def _member_space(request, makerspace_id):
-    from apps.events.judging.boundary import active_member
-    from apps.makerspaces.models import Makerspace
-    from apps.makerspaces.platform import module_enabled
-    active_member(request.user)
-    space = Makerspace.objects.filter(pk=makerspace_id).first()
-    if space is None or not module_enabled(space, "events"):
-        raise NotFound()
-    return space
-
-
 class MemberApprovalListView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, responses={200: CertificatePendingApprovalSerializer(many=True), **ERRORS},
                    description="Certificate designs that print your signature in this space, approved or waiting.")
     def get(self, request, makerspace_id):
-        _member_space(request, makerspace_id)
+        require_member_space(request.user, makerspace_id)
         return private(Response(CertificatePendingApprovalSerializer(commands.pending_for(request.user, makerspace_id), many=True).data))
 
 
@@ -146,7 +135,7 @@ class MemberApprovalPreviewView(APIView):
         from .merge import sample_merge
         from .signatories import preview_signatures
         from .signatory_models import EventCertificateSignatory
-        _member_space(request, makerspace_id)
+        require_member_space(request.user, makerspace_id)
         signatory = get_object_or_404(EventCertificateSignatory.objects.select_related("event__makerspace"),
                                       pk=signatory_id, member=request.user, event__makerspace_id=makerspace_id)
         event = signatory.event
@@ -169,7 +158,7 @@ class MemberApproveView(APIView):
                    description="Approve a design that prints your signature, with your current name, title and image.")
     def post(self, request, makerspace_id, signatory_id):
         from .signatory_models import EventCertificateSignatory
-        _member_space(request, makerspace_id)
+        require_member_space(request.user, makerspace_id)
         serializer = CertificateApproveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         signatory = get_object_or_404(EventCertificateSignatory, pk=signatory_id, member=request.user,

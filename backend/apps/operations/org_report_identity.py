@@ -8,6 +8,7 @@ from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem
 from apps.makerspaces.anonymous_requesters import anonymous_requester_ids
 from apps.makerspaces.models import MakerspaceMembership, MembershipRequest
 from apps.operations.report_scope import ReportScope, scope_queryset
+from apps.operations.reports_common import apply_range
 
 
 def globally_ranked_borrowers(scope: ReportScope, *, date_range, limit):
@@ -19,7 +20,7 @@ def globally_ranked_borrowers(scope: ReportScope, *, date_range, limit):
         scope,
         makerspace_field="request__makerspace_id",
     )
-    items = _range(items, "request__issued_at", date_range)
+    items = apply_range(items, "request__issued_at", date_range)
     # Same reason as the per-space ranking: the shared account-less principal is not a
     # person and must not occupy a rank. Excluded before the slice so it cannot displace
     # a real borrower from the top `limit`.
@@ -55,9 +56,9 @@ def distinct_member_activity(scope: ReportScope, *, date_range):
         MembershipRequest.objects.all(), scope, makerspace_field="makerspace_id"
     )
     return [{
-        "new_members": _distinct_users(_range(memberships, "activated_at", date_range)),
+        "new_members": _distinct_users(apply_range(memberships, "activated_at", date_range)),
         "active_members": _distinct_users(memberships.filter(status="active")),
-        "revoked_members": _distinct_users(_range(memberships, "revoked_at", date_range)),
+        "revoked_members": _distinct_users(apply_range(memberships, "revoked_at", date_range)),
         "pending_requests": _distinct_people(requests.filter(
             kind=MembershipRequest.Kind.REQUEST,
             state=MembershipRequest.State.REQUESTED,
@@ -66,7 +67,7 @@ def distinct_member_activity(scope: ReportScope, *, date_range):
             kind=MembershipRequest.Kind.INVITE,
             state=MembershipRequest.State.INVITED,
         )),
-        "referred_joins": _distinct_people(_range(requests.filter(
+        "referred_joins": _distinct_people(apply_range(requests.filter(
             auto_activate_on_claim=True,
             state=MembershipRequest.State.ACTIVE,
         ), "decided_at", date_range)),
@@ -86,7 +87,7 @@ def _requester_labels(scope, requester_ids, date_range):
         scope,
         makerspace_field="makerspace_id",
     )
-    requests = _range(requests, "issued_at", date_range).order_by(
+    requests = apply_range(requests, "issued_at", date_range).order_by(
         "requester_id", "-issued_at", "-id"
     )
     labels = {}
@@ -149,14 +150,3 @@ def _distinct_people(queryset):
         else:
             people.add(("email", normalized))
     return len(people)
-
-
-def _range(queryset, field, date_range):
-    if not date_range:
-        return queryset
-    start, end = date_range
-    if start is not None:
-        queryset = queryset.filter(**{f"{field}__gte": start})
-    if end is not None:
-        queryset = queryset.filter(**{f"{field}__lt": end})
-    return queryset

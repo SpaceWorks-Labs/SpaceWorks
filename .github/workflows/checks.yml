@@ -87,6 +87,10 @@ jobs:
 
       - uses: ./.github/actions/backend-python
 
+      # Syntax errors, undefined names, redefinitions, repeated dict keys (~2 s).
+      - name: Error lint (ruff)
+        run: bash ../scripts/ci/lint_backend.sh
+
       - name: Generate throwaway keys
         run: python ../scripts/ci/throwaway_keys.py >> "$GITHUB_ENV"
 

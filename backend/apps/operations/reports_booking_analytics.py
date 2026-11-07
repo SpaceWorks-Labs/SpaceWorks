@@ -21,7 +21,7 @@ LEAD_LABELS = ("After start", "Under 1 hour", "1–24 hours", "1–3 days", "3�
 
 
 def _merged(intervals):
-    end = None
+    start = end = None
     for left, right in sorted(intervals):
         if end is None or left > end:
             if end is not None:

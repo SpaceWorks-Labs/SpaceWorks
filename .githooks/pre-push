@@ -48,6 +48,8 @@ if grep -q '^frontend/' <<<"$changed"; then
 fi
 
 if grep -q '^backend/' <<<"$changed"; then
+  echo "pre-push: backend error lint" >&2
+  bash scripts/ci/lint_backend.sh
   echo "pre-push: affected backend tests" >&2
   AFFECTED_BASE="$base" scripts/dev.sh affected backend
 fi

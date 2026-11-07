@@ -153,7 +153,7 @@ class AssetJob:
                 raise
             logger.warning("event_asset_attempt_failed", extra={"event_id": self.event_id,
                 "asset_id": self.asset_id, "participant_asset": self.participant, "failure_code": exc.code})
-            def failed(a, w, ctx):
+            def failed(a, w, ctx, exc=exc):
                 a.failure_code = exc.code
                 if exc.status < 500:
                     a.state = "quarantined" if exc.code == "asset_infected" else "rejected"

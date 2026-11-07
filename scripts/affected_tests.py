@@ -2,7 +2,7 @@
 """Print the tests affected by the changes since AFFECTED_BASE, one per line.
 
 Used by ``scripts/dev.sh affected`` and ``.githooks/pre-push``. The base defaults to the
-merge-base with origin/dev; uncommitted and untracked changes count too.
+upstream branch (else the previous commit); uncommitted and untracked changes count too.
 
   affected_tests.py backend   pytest paths relative to backend/, or the single word ALL
                               when shared code changed (settings, requirements, conftest)
@@ -38,10 +38,13 @@ def git(*args: str) -> str:
 
 
 def changed_files() -> list[str]:
+    # Default base: the upstream branch if there is one (what is not pushed yet), else the
+    # previous commit. Never a long-lived branch like origin/dev, which can be hundreds of
+    # commits behind a release branch and would select everything.
     base = os.environ.get("AFFECTED_BASE")
     if not base:
         try:
-            base = git("merge-base", "HEAD", "origin/dev").strip()
+            base = git("rev-parse", "--verify", "--quiet", "@{upstream}").strip()
         except subprocess.CalledProcessError:
             base = "HEAD~1"
     files = set(git("diff", "--name-only", base, "--").split())

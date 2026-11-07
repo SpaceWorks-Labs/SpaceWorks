@@ -50,10 +50,6 @@ from apps.audit.views_verification import (
     AuditVerificationDetailView,
     AuditVerificationListCreateView,
 )
-from apps.audit.views_verification import (
-    AuditVerificationDetailView,
-    AuditVerificationListCreateView,
-)
 from apps.admin_api.views_users import (
     AuditLogListView,
     AuditLogPagination,

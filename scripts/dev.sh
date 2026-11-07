@@ -63,7 +63,7 @@ ensure_test_image() {
   docker build --label "spaceworks.test-deps=$hash" --tag spaceworks-backend "$HOST_ROOT/backend"
 }
 
-# Tests for what changed since a base (AFFECTED_BASE, default: merge-base with origin/dev):
+# Tests for what changed since a base (AFFECTED_BASE; default: the upstream, else HEAD~1):
 # scripts/affected_tests.py picks the pytest files and the frontend sources for
 # `vitest related`. Small changes use this; the full suite stays the release gate.
 affected() {

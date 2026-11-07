@@ -75,7 +75,9 @@ affected() {
       test_suite -q
     elif ((${#sel[@]})); then
       echo "Affected backend tests: ${#sel[@]} file(s)." >&2
-      test_suite -q "${sel[@]}"
+      # Hundreds of paths overflow the Windows command-line limit; pytest reads @file arguments.
+      printf '%s\n' "${sel[@]}" > "$ROOT/backend/.affected-tests.txt"
+      test_suite -q @.affected-tests.txt
     else
       echo "No affected backend tests." >&2
     fi
@@ -83,7 +85,11 @@ affected() {
   if [[ "$scope" == all || "$scope" == frontend ]]; then
     mapfile -t sel < <(python "$HOST_ROOT/scripts/affected_tests.py" frontend)
     if ((${#sel[@]})); then
-      (cd "$ROOT/frontend" && npx vitest related --run "${sel[@]}")
+      # Batches keep each command line under the Windows limit.
+      local i
+      for ((i = 0; i < ${#sel[@]}; i += 200)); do
+        (cd "$ROOT/frontend" && npx vitest related --run "${sel[@]:i:200}") || return
+      done
     else
       echo "No affected frontend sources." >&2
     fi

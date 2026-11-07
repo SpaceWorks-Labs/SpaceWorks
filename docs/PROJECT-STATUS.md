@@ -11,10 +11,29 @@ GitHub member sign-in is available through browser OAuth with PKCE, verified pri
 > integrations and overall implementation status. The rules these areas impose live in
 > `docs/INVARIANTS.md`; when a feature landed is in `docs/PROJECT-HISTORY.md`.
 
+## 0.11.0 release candidate (2026-11-08)
+
+`VERSION` is `0.11.0` on the release integration branch. It is a candidate, not a published release: the
+full backend and frontend regressions, the live flow audit and publication are release gates recorded
+outside this file. Counted from the code on 2026-11-08:
+
+- **Modules and features.** 37 module keys in 12 console areas (6 core); 209 feature keys, of which the
+  staff console shows 208 (`machines.integrations` is control-plane only).
+- **Roles.** Nine built-in roles: Space Manager, Inventory Manager, Machine Manager, Event Manager,
+  Booking Manager, Handover, Technician, Shop Manager and Member.
+- **API.** 1,790 OpenAPI paths in `frontend/openapi-schema.json`, schema version `0.11.0`.
+- **Audit.** 1,311 reviewed audit actions plus 59 shared-service prefixes
+  ([audit action reference](audit-action-reference.md)).
+- **Help.** 122 English in-app help articles in 13 role sections ([user manuals](USER-MANUALS.md)).
+
+The owner decisions closing the candidate (#203–#210) add the separate **Inventory** page, light mode by
+default, per-area public-stat settings, the shared listing banner, Shop pickup fulfilment, listing photos
+across areas, own-history links and the uploaded tenant logo in the public header.
+
 ## Release 2 (combined tree, 2026-11-05)
 
-Every release-2 lane is merged into one combined tree; the full regression, the flow audit and the
-version bump run in the release phase, so treat this as built, not yet released. What it adds, in short:
+Every release-2 lane is merged into one combined tree that became the 0.11.0 candidate above. What it
+adds, in short:
 
 - **Accounts.** One account per person; nine built-in roles (Technician and Shop Manager are new); staff
   roles granted to people or by emailed invitation; mandatory staff two-step sign-in with a 3-day grace;

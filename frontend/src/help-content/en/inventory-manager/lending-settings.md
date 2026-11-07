@@ -9,11 +9,11 @@ modules: request_workflow
 
 ## What you can set
 
-- **Loan length and renewals**: how long a loan lasts, how many renewals are allowed and for how long. Inventory Managers can always change these, unless the Space Manager locks them.
+- **Loan policy**: how long a loan lasts, how many renewals are allowed and for how long. Inventory Managers can always change these, unless the Space Manager locks them. **Loan renewals** switches renewing on or off.
 - **Borrow limits**: how many loans or items one person may hold at once.
-- **Pickup times and windows**: let members choose when they'll collect, and release an accepted request that isn't collected in time.
-- **Waitlist**: queue people for an item that's out and hold the next unit for the first in line.
-- **Withdrawals**: let members withdraw their own request.
+- **Loan reservations** and **Pickup windows**: let members choose when they'll collect, and release an accepted request that isn't collected in time.
+- **Loan waitlist**: queue people for an item that's out and hold the next unit for the first in line.
+- **Withdraw requests**: let members withdraw their own request.
 
 ![Screenshot: the Lending settings dialog](screenshot:im-lending-settings)
 

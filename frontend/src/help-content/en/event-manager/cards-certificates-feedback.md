@@ -16,7 +16,9 @@ Questions that already have answers can't be edited.
 
 ## Certificates
 
-Under **More**, open the section whose name includes **Certificates**. Its label reflects the enabled tools: **Certificates** on its own, or a combined label such as **Certificates, cards and tickets**. Design the certificate, **Preview certificate PDF**, and **Save new certificate revision**. **Bulk attendance certificates**, then **Confirm bulk issue**, issues them to everyone who attended. Each certificate can be downloaded or revoked.
+Under **More**, open the section whose name includes **Certificates**. Its label reflects the enabled tools: **Certificates** on its own, or a combined label such as **Certificates, cards and tickets**. Design the certificate, press **Preview exact PDF**, then save it with **Save this kind's design** (or **Save the default design**). Each save creates a new revision; certificates already issued keep the design they were issued with.
+
+To issue in bulk, open **Issue certificates** and tick **Who should receive one?**: **Attendance**, **Participants**, **Winners and finalists** or **Thank-yous**. Press **Preview recipients**, check the list and any skipped people, tick the confirmation box and press **Issue certificates**. Issued certificates can be downloaded or withdrawn.
 
 ## Signatories and verification
 

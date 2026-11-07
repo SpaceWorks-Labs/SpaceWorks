@@ -33,7 +33,7 @@ The QR appears once your place is confirmed. To cancel, press **Cancel registrat
 ## After the event
 
 - **Leave feedback** from your past events.
-- **Download certificate** where the organisers issue them.
+- Find your certificates under **Certificates** in your **Events** tab, where the organisers issue them. Press **Download PDF** (or **Prepare PDF** first), or **Download image (PNG)**.
 - Invited to speak? Open the speaker link, sign in and press **Claim speaker invitation**.
 
 > **Who can do this:** anyone with an account. Members-only events need an active membership and the space's waiver.

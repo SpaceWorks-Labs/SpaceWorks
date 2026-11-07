@@ -13,7 +13,7 @@ Open the space's **Modules** and switch it on. A module with a usage limit says 
 ## Purge maintenance, To-Buy or warranty data
 
 1. Make sure the feature is switched off in the space.
-2. In `/control/`, open the space and choose **Preview and purge…**.
+2. In `/control/`, open the space and choose **Preview and purge switched-off maintenance, To-Buy or warranty data**.
 3. Confirm your identity again, and read the preview of what will be deleted.
 4. Type the feature's key to confirm, and purge.
 

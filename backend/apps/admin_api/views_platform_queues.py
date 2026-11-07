@@ -139,8 +139,10 @@ class ApiKeyRequestApproveView(_Decision):
             row, client, secret = key_request_decisions.approve(request.user, _gated(ApiKeyRequest, pk))
         except DjangoValidationError as exc:
             raise _refused(exc) from None
-        return Response({"request": ApiKeyRequestRowSerializer(row).data, "client_id": client.client_id,
-                         "client_secret": secret})
+        response = Response({"request": ApiKeyRequestRowSerializer(row).data, "client_id": client.client_id,
+                             "client_secret": secret})
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response
 
 
 class ApiKeyRequestRejectView(_Decision):

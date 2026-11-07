@@ -6,9 +6,9 @@ The authorization endpoint a third-party app sends the browser to is
 answer. django-oauth-toolkit validates the request (client, redirect URI, PKCE) and mints
 the code; this view only adds the signed-in person and records the consent.
 """
-from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from oauth2_provider.models import get_access_token_model, get_application_model, get_grant_model, \
     get_refresh_token_model
@@ -72,6 +72,10 @@ def _validated(request):
         raise ValidationError({"detail": exc.description or exc.error}) from exc
     except Exception as exc:  # DOT wraps invalid client/redirect as its own fatal error type
         raise ValidationError({"detail": gettext("This app request is not valid.")}) from exc
+    # oauthlib also accepts the "plain" method (and assumes it when none is named), where the
+    # challenge IS the verifier; only S256 is offered, so refuse anything else.
+    if info.get("code_challenge_method") != "S256":
+        raise ValidationError({"detail": gettext("Use PKCE with code_challenge_method=S256.")})
     application = get_application_model().objects.select_related("spaceworks_registration__makerspace").get(
         client_id=info["client_id"])
     return scopes, {key: info[key] for key in CREDENTIAL_KEYS if info.get(key)}, application

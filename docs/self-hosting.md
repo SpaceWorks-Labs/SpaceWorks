@@ -515,6 +515,13 @@ says, for each item, where the web console handles it.
 - on the server itself (a loopback request with no proxy in between), or
 - through the **SSH tunnel** listener below.
 
+In the Docker install, "the server itself" means inside the backend container: the backend publishes no
+port, and a browser on the host reaches it through the website proxy or Docker's port forwarding, which
+Django does not count as loopback. So with the installer's defaults (website route off, no tunnel port)
+`/control/` is off altogether, and the web superadmin console covers day-to-day platform work. To keep a
+way in, set `CONTROL_PLANE_TUNNEL_PORT` (automatic HTTPS only) or, on plain HTTP or your own proxy, opt in
+to the website route below.
+
 Everywhere else, including the website's own address, `/control/` answers **404**: no login page, no hint
 that a console exists. Django enforces this itself as well as the proxies, so a misrouted proxy or an
 exposed backend port does not open it either. Superadmin-only access, MFA, re-authentication and the

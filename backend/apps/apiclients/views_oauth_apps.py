@@ -3,9 +3,11 @@
 The client secret of a confidential app is shown once and stored hashed by
 django-oauth-toolkit. Deleting an app (or switching it off) ends every connection to it.
 """
-from django.utils.translation import gettext
+from urllib.parse import urlsplit
+
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext, gettext_noop
 from drf_spectacular.utils import extend_schema
 from oauth2_provider.generators import generate_client_secret
 from oauth2_provider.models import get_application_model
@@ -27,20 +29,23 @@ from .models_tokens import OAuthAppRegistration
 TAGS = ["App connections"]
 
 
+class _RedirectUrisField(serializers.ListField):
+    """Written as a list; stored space-separated on the DOT application, read back as a list."""
+
+    def get_attribute(self, instance):
+        return instance.application.redirect_uris.split()
+
+
 class OAuthAppSerializer(serializers.Serializer):
     id = serializers.IntegerField(source="application.pk", read_only=True)
     name = serializers.CharField(source="application.name", max_length=255)
     client_id = serializers.CharField(source="application.client_id", read_only=True)
     client_type = serializers.ChoiceField(source="application.client_type", choices=("confidential", "public"))
-    redirect_uris = serializers.ListField(child=serializers.CharField(), allow_empty=False)
+    # The registration row has no redirect_uris of its own: DRF 3.18 raised on the lookup (a 500).
+    redirect_uris = _RedirectUrisField(child=serializers.CharField(trim_whitespace=False), allow_empty=False)
     allowed_scopes = serializers.ListField(child=serializers.CharField(), allow_empty=False)
     is_active = serializers.BooleanField(default=True)
     created_at = serializers.DateTimeField(read_only=True)
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["redirect_uris"] = instance.application.redirect_uris.split()
-        return data
 
 
 class OAuthAppCreatedSerializer(OAuthAppSerializer):
@@ -48,16 +53,40 @@ class OAuthAppCreatedSerializer(OAuthAppSerializer):
                                           help_text="Confidential apps only; shown once.")
 
 
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+BAD_REDIRECT = gettext_noop("Use https:// redirect URIs (http:// only for localhost, 127.0.0.1 or [::1]).")
+
+
+def _redirect_uri(uri):
+    # DOT stores a whitespace-separated list, and urlsplit may discard control characters.
+    if "#" in uri or any(character.isspace() or ord(character) < 32 or ord(character) == 127 for character in uri):
+        raise ValidationError({
+            "redirect_uris": gettext("Redirect URIs cannot contain whitespace, control characters or fragments."),
+        })
+    # Parsed, not prefix-matched: http://localhost.evil.example/ is not loopback (RFC 8252 s7.3).
+    try:
+        parts = urlsplit(uri)
+        host = parts.hostname
+    except ValueError:
+        raise ValidationError({"redirect_uris": gettext(BAD_REDIRECT)}) from None
+    loopback = parts.scheme == "http" and host in LOOPBACK_HOSTS
+    if not host or (parts.scheme != "https" and not loopback) or parts.username is not None:
+        raise ValidationError({"redirect_uris": gettext(BAD_REDIRECT)})
+    return uri
+
+
 def _clean(data):
-    uris = []
-    for uri in data["redirect_uris"]:
-        if not uri.startswith("https://") and not uri.startswith("http://localhost"):
-            raise ValidationError({"redirect_uris": gettext("Use https:// redirect URIs (http://localhost for development).")})
-        uris.append(uri.strip())
+    uris = [_redirect_uri(uri) for uri in data["redirect_uris"]]
     unknown = set(data["allowed_scopes"]) - person_scopes.person_scope_vocabulary() - {"openid"}
     if unknown:
-        raise ValidationError({"allowed_scopes": gettext('Unknown scope(s): {value}.').format(value=', '.join(sorted(unknown)))})
-    validate_exact_origins([uri.split("/", 3)[0] + "//" + uri.split("/", 3)[2] for uri in uris])
+        raise ValidationError({
+            "allowed_scopes": gettext("Unknown scope(s): {value}.").format(value=", ".join(sorted(unknown))),
+        })
+    if uris:  # a scopes-only update passes no URIs; the origin check needs at least one
+        try:
+            validate_exact_origins([uri.split("/", 3)[0] + "//" + uri.split("/", 3)[2] for uri in uris])
+        except ValueError as exc:
+            raise ValidationError({"redirect_uris": str(exc)}) from None
     return uris
 
 
@@ -94,7 +123,9 @@ class OAuthAppListCreateView(RecentReauthenticationMixin, APIView):
                                                       is_active=values["is_active"], created_by=request.user)
             audit.record(request.user, "oauth_app.created", makerspace=space, target=application,
                          meta={"scopes": values["allowed_scopes"], "client_type": application.client_type})
-        return Response({**OAuthAppSerializer(row).data, "client_secret": secret}, status=status.HTTP_201_CREATED)
+        response = Response({**OAuthAppSerializer(row).data, "client_secret": secret}, status=status.HTTP_201_CREATED)
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response
 
 
 def _oidc():

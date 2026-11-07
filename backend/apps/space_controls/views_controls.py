@@ -5,9 +5,10 @@ the services. /control/ offers the same services as its fallback."""
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -38,11 +39,11 @@ class SpaceHealthListView(GenericAPIView):
         wanted = request.query_params.get("state")
         if wanted in s.STATES:
             # State is derived, so filter after building cards (bounded by the page anyway).
-            cards = [card for card in (health.card(space) for space in rows[:500]) if health.has_state(card, wanted)]
-            page = self.paginate_queryset(cards)
+            cards = (health.card(space, viewer=request.user) for space in rows[:500])
+            page = self.paginate_queryset([card for card in cards if health.has_state(card, wanted)])
             return self.get_paginated_response(s.HealthCardSerializer(page, many=True).data)
         page = self.paginate_queryset(rows)
-        return self.get_paginated_response(s.HealthCardSerializer([health.card(space) for space in page], many=True).data)
+        return self.get_paginated_response(s.HealthCardSerializer([health.card(space, viewer=request.user) for space in page], many=True).data)
 
 
 class SpaceHealthDetailView(APIView):
@@ -52,7 +53,7 @@ class SpaceHealthDetailView(APIView):
                    responses={200: s.HealthCardDetailSerializer, **errors(401, 403, 404)})
     def get(self, request, makerspace_id):
         space = get_object_or_404(Makerspace, pk=makerspace_id)
-        return Response(s.HealthCardDetailSerializer(health.card(space, detail=True)).data)
+        return Response(s.HealthCardDetailSerializer(health.card(space, detail=True, viewer=request.user)).data)
 
 
 class _ControlView(RecentReauthenticationMixin, APIView):
@@ -73,7 +74,7 @@ class _ControlView(RecentReauthenticationMixin, APIView):
             self.run(request.user, makerspace_id, body.validated_data)
         except DjangoValidationError as exc:
             raise PermissionDenied(" ".join(exc.messages)) from exc
-        return Response(s.HealthCardSerializer(health.card(Makerspace.objects.get(pk=makerspace_id))).data)
+        return Response(s.HealthCardSerializer(health.card(Makerspace.objects.get(pk=makerspace_id), viewer=request.user)).data)
 
 
 CONTROL_ERRORS = errors(400, 401, 403, 404, 409)
@@ -127,6 +128,13 @@ class ScheduleView(_ControlView):
     request_serializer = s.SpaceScheduleRequestSerializer
 
     def run(self, actor, pk, data):
+        # Every schedule ends in a purge, so it takes the same typed-slug confirmation.
+        data = dict(data)
+        if data.pop("confirm_slug") != Makerspace.objects.get(pk=pk).slug:
+            raise ValidationError({
+                "confirm_slug": gettext("Type the space's slug exactly to confirm."),
+                "code": "slug_mismatch",
+            })
         services_schedule.schedule(actor, pk, **data)
 
     @extend_schema(tags=TAGS, summary="Schedule a space's archive and its purge after a grace period",
@@ -159,7 +167,7 @@ class TransferOwnershipView(RecentReauthenticationMixin, APIView):
             outcome, delivery = services_ownership.transfer_ownership(request.user, makerspace_id, **body.validated_data)
         except DjangoValidationError as exc:
             raise PermissionDenied(" ".join(exc.messages)) from exc
-        card = health.card(Makerspace.objects.get(pk=makerspace_id))
+        card = health.card(Makerspace.objects.get(pk=makerspace_id), viewer=request.user)
         return Response(s.SpaceTransferResultSerializer(
             {"status": outcome, "card": card, "invitation_email_status": delivery}).data, status=status.HTTP_200_OK)
 

@@ -67,7 +67,8 @@ def share_image(row, *, status=None):
     if merge.get("award"):
         lines.append((merge["award"], (12, top, 150, 9), 15, COLOURS["citron"], 600, "Gilroy"))
         top += 11
-    if getattr(row, "holder_name_public", False):
+    # A revoked certificate no longer vouches for anyone, so it never names its holder (as verify).
+    if getattr(row, "holder_name_public", False) and (status or row.status) == "active":
         lines.append((row.recipient_name, (12, top, 150, 14), 26, COLOURS["cream"], 700, "Gilroy"))
         top += 16
     lines.append((row.event_title, (12, top, 150, 10), 15, COLOURS["cream"], 500, "Gilroy"))

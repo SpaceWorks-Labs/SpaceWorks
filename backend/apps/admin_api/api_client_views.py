@@ -127,7 +127,9 @@ class ApiClientListCreateView(RecentReauthenticationMixin, generics.ListCreateAP
                 "scopes": client.scopes,
             },
         )
-        return Response(data, status=status.HTTP_201_CREATED)
+        response = Response(data, status=status.HTTP_201_CREATED)
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response
 
 
 @extend_schema_view(
@@ -287,4 +289,6 @@ class ApiClientRotateSecretView(RecentReauthenticationMixin, generics.GenericAPI
             )
         data = ApiClientSerializer(client, context=self.get_serializer_context()).data
         data["client_secret"] = raw_secret
-        return Response(data)
+        response = Response(data)
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response

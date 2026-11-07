@@ -32,4 +32,11 @@ RELEASE2_FUNCTIONS = frozenset({
     "shop_stockmovement_l22_guard",
     "shop_orderreturn_l22_guard",
     "shop_cashsession_l22_guard",
+    # Lane L21b: finalists and prize payouts stay in their programme, history rows append-only
+    # (events 0069); submission stages stay in their event (0073); People's choice (0079).
+    "events_l21b_history_guard",
+    "events_finalistadvance_scope_guard",
+    "events_hackathonprizepayout_scope_guard",
+    "events_stage_scope_guard",
+    "events_peopleschoice_scope_guard",
 })

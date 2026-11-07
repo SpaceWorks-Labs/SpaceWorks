@@ -9,6 +9,7 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.evidence.responses import storage_unavailable_response
@@ -40,6 +41,10 @@ class JobRefSerializer(serializers.Serializer):
 
 class MyCardPhotoView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = "id_join_upload"  # attaching decodes and re-encodes the image: 12/hour
+
+    def get_throttles(self):
+        return [ScopedRateThrottle()] if self.request.method == "PUT" else []
 
     def _card(self, request, kind, card_id):
         if kind not in PHOTO_ACTIONS:

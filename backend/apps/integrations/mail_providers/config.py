@@ -11,7 +11,7 @@ from django.core.validators import validate_email
 
 PROVIDERS = ("smtp", "resend", "postmark", "ses", "brevo", "mailgun", "sendgrid")
 BACKENDS = {name: f"anymail.backends.{name}.EmailBackend" for name in PROVIDERS}
-BACKENDS.update(smtp="django.core.mail.backends.smtp.EmailBackend",
+BACKENDS.update(smtp="apps.integrations.mail_providers.smtp_guarded.EmailBackend",
                 ses="apps.integrations.mail_providers.ses.EmailBackend",
                 resend="apps.integrations.mail_providers.resend.EmailBackend",
                 sendgrid="apps.integrations.mail_providers.sendgrid.EmailBackend")

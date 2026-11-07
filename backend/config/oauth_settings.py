@@ -23,6 +23,18 @@ def provider_settings(env):
         "ALLOWED_REDIRECT_URI_SCHEMES": ["https", "http"] if env.bool("DEBUG", default=False) else ["https"],
         "OIDC_ENABLED": bool(key),
         "OIDC_RSA_PRIVATE_KEY": key,
+        # RFC 9700 (OAuth 2.0 Security BCP), DOT 4.0's coming defaults: no implicit or password
+        # grant, S256-only PKCE, bearer tokens never read from the query string (R4). Token
+        # storage stays plaintext + checksum (#196); the RFC 9207 iss parameter is not needed.
+        "COMPLIANT_BCP_RFC9700_IMPLICIT_GRANT": True,
+        "COMPLIANT_BCP_RFC9700_PASSWORD_GRANT": True,
+        "COMPLIANT_BCP_RFC9700_PKCE_METHOD": True,
+        "COMPLIANT_BCP_RFC9700_ACCESS_TOKEN_TRANSPORT": True,
+        # /control/ shows credential rows read-only; revoking is the one write (R4).
+        "ACCESS_TOKEN_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyAccessTokenAdmin",
+        "REFRESH_TOKEN_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyRefreshTokenAdmin",
+        "GRANT_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyGrantAdmin",
+        "ID_TOKEN_ADMIN_CLASS": "apps.apiclients.admin_oauth.ViewOnlyIDTokenAdmin",
     }
 
 

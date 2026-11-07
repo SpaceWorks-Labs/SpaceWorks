@@ -124,13 +124,16 @@ def _is_dev_address(address) -> bool:
 
 
 def _address_is_blocked(address) -> bool:
-    return (
-        address.is_loopback
-        or address.is_private
-        or address.is_link_local
-        or address.is_reserved
-        or address.is_multicast
-        or address.is_unspecified
-    )
+    # Not "is_private or ...": carrier-grade NAT (100.64/10, cloud metadata and tailnets) and
+    # NAT64 are neither private nor global, so only a global unicast address is allowed.
+    address = getattr(address, "ipv4_mapped", None) or address
+    return not address.is_global or address.is_multicast
+
+
+def peer_address_allowed(address) -> bool:
+    """The connected socket's peer, re-checked after smtplib's own DNS lookup."""
+    if not _address_is_blocked(address):
+        return True
+    return _private_smtp_allowed() and _is_dev_address(getattr(address, "ipv4_mapped", None) or address)
 
 

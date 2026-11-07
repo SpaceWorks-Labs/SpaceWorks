@@ -125,7 +125,9 @@ class AccessTokenListCreateView(RecentReauthenticationMixin, APIView):
                                                  mfa_claims=claims)
             audit.record(request.user, "access_token.created", makerspace=makerspace, target=row,
                          meta={"scopes": scopes, "expires_at": row.expires_at.isoformat()})
-        return Response({**AccessTokenSerializer(row).data, "token": raw}, status=status.HTTP_201_CREATED)
+        response = Response({**AccessTokenSerializer(row).data, "token": raw}, status=status.HTTP_201_CREATED)
+        response["Cache-Control"] = "private, no-store"  # a one-time secret: never cached
+        return response
 
 
 class AccessTokenRevokeView(APIView):

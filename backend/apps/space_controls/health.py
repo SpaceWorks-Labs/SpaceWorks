@@ -1,7 +1,7 @@
 """The per-space health card (#185 item 7): lifecycle state, usage against the existing
 fair-use limits, last activity, backups and drills, security blocks, open issues and
 modules. Counts only, no member names and no billing; the managers list carries account
-names/emails, which the superadmin PII masking presents like every other staff list.
+names/emails, masked for a superadmin without a PII window on the space (#114: staff too).
 
 Every space is listed, archived and paused included: this is the superadmin's recovery
 surface. Each field reads the same source its own screen does (``usage_snapshot``, the
@@ -96,7 +96,18 @@ def problems(space):
     return [{key: row.get(key) for key in ("key", "status", "message", "fix_url")} for row in results]
 
 
-def card(space, *, detail=False):
+def _managers(space, viewer):
+    from apps.accounts.pii_presentation import MASK, pii_visible
+
+    rows = []
+    for row in manager_rows(space.pk):
+        shown = viewer is None or pii_visible(viewer, space.pk, subject=row.user)
+        rows.append({"membership_id": row.pk, "user_id": row.user_id,
+                     "name": _who(row.user) if shown else MASK, "email": row.user.email if shown else MASK})
+    return rows
+
+
+def card(space, *, detail=False, viewer=None):
     from apps.audit.models import AuditLog
 
     control = SpaceControlState.objects.select_related(
@@ -113,8 +124,7 @@ def card(space, *, detail=False):
         "backups": _backups(space), "security": _security(space),
         "open_issues": sum(1 for row in issues if row["status"] != "ok"),
         "modules": sorted(space.enabled_modules or []),
-        "managers": [{"membership_id": row.pk, "user_id": row.user_id, "name": _who(row.user),
-                      "email": row.user.email} for row in manager_rows(space.pk)],
+        "managers": _managers(space, viewer),
     }
     if control is not None:
         if control.suspended_at:

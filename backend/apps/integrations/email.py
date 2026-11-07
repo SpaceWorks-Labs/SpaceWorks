@@ -26,6 +26,7 @@ def makerspace_mail_connection(makerspace):
     use_ssl = makerspace.smtp_use_ssl
     use_tls = makerspace.smtp_use_tls and not use_ssl
     connection = get_connection(
+        _guarded_smtp_backend(),
         host=smtp_host,
         port=makerspace.smtp_port,
         username=makerspace.smtp_username or None,
@@ -65,6 +66,7 @@ def platform_mail_connection():
     use_ssl = cfg.smtp_use_ssl
     use_tls = cfg.smtp_use_tls and not use_ssl
     connection = get_connection(
+        _guarded_smtp_backend(),
         host=smtp_host,
         port=cfg.smtp_port,
         username=cfg.smtp_username or None,
@@ -104,6 +106,12 @@ def platform_email_configured() -> bool:
 
 def _is_smtp_backend() -> bool:
     return settings.EMAIL_BACKEND.endswith("smtp.EmailBackend")
+
+
+def _guarded_smtp_backend():
+    """The peer-checking SMTP backend when real SMTP is configured, else the default."""
+    from .mail_providers.config import BACKENDS
+    return BACKENDS["smtp"] if _is_smtp_backend() else None
 
 
 def email_enabled() -> bool:

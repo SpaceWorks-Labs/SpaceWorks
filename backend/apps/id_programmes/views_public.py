@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from apps.apiclients.throttling import ClientTierRateThrottle
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
@@ -39,6 +40,8 @@ def _state(user, programme):
 class PublicProgrammeListView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ClientTierRateThrottle]
+    throttle_scope = "public_read"
 
     @extend_schema(tags=TAGS, summary="Open ID programmes of an organisation", parameters=PUBLIC_API_AUTH_PARAMETERS,
                    request=None, responses={200: PublicProgrammeSerializer(many=True), **errors(404)})
@@ -49,6 +52,8 @@ class PublicProgrammeListView(APIView):
 
 class PublicProgrammeDetailView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ClientTierRateThrottle]
+    throttle_scope = "public_read"
 
     @extend_schema(tags=TAGS, summary="One programme's join page, with my request state when signed in",
                    parameters=PUBLIC_API_AUTH_PARAMETERS, request=None,

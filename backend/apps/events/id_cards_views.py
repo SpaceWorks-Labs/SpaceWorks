@@ -189,7 +189,9 @@ class EventCardScanView(APIView):
         confirmable = [row for row in rows if row.status == "registered"]
         checked = None
         if request.data.get("check_in") is True and len(confirmable) == 1:
-            checked = check_in(event, confirmable[0], request.user)[0].pk
+            updated = check_in(event, confirmable[0], request.user)[0]
+            checked = updated.pk
+            rows = [updated if row.pk == checked else row for row in rows]
             audit.record(request.user, "card.scanned_for_checkin", makerspace=event.makerspace, target=confirmable[0],
                          meta={"place": "event_door", "event_id": event.pk, "registration_id": checked})
         response = Response({"checked_in": checked, "registrations": [

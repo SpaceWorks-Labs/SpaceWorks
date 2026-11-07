@@ -24,6 +24,18 @@ Use the web superadmin console for day-to-day platform operations. The Django co
 - When rotating an archive key, retain the previous identity until archives that still depend on it have been re-encrypted, retained under documented custody, or deliberately purged. [Rotate a backup key](self-hosting.md#rotate-a-backup-key)
 - Use the approved tenant transfer workflow for a move from another deployment. Verify the encrypted artifact digest and use the destination's import identity. Complete identity conflict decisions before activation. [Move a space to this server](self-hosting.md#move-a-space-to-this-server-self-host-move)
 
+## Modules and data
+
+- A Space Manager switches modules and features on or off for their own space. Switching off hides the surfaces and keeps the data; see the [switch-off reference](MODULES-OFF.md) for what each of the 37 modules and 209 features keeps.
+- Two things stay with the platform: installing a module that carries a usage limit on a managed platform (self-hosted installs have no such limit), and every purge. [Module lifecycle](MODULES-LIFECYCLE.md) · [Choosing modules](choosing-modules.md)
+- Purge a switched-off feature's maintenance, To-Buy or warranty data from the space's control-plane page with **Preview and purge switched-off maintenance, To-Buy or warranty data**. Purge a whole module's data from the server with `python manage.py purge_module_data`; list modules first with `list_modules`. A purge cannot be undone. Payment records are always kept and each purge is audited. [Deleting a module's data](MODULES.md#deleting-a-modules-data)
+- `machines.integrations` is the one feature with no staff-console switch; turn it on in the control plane only.
+
+## Monitor and investigate
+
+- Check `GET /api/v1/health/` (alive) and `GET /api/v1/health/readiness/` (ready) after every update or restore. The superadmin **Platform dashboard** runs the deeper checks every 15 minutes: backups, off-site copies, scheduler, updates, email, storage and domain. [Platform monitoring](platform-monitoring.md) · [Monitoring and analytics](monitoring-and-analytics.md)
+- Trace a failed request with its `X-Request-ID` through the API and worker logs, and read recorded actions in the audit log. [Logging and audit](logging-and-audit.md) · [Audit action reference](audit-action-reference.md)
+
 ## Operate a space
 
 In the web superadmin console, open **Platform → Spaces** and choose the space.

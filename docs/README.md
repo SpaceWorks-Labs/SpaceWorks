@@ -9,6 +9,7 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Choose your hosting](choose-your-hosting.md) — every way to run Space Works compared, self-host first: full VPS, API on your server with the website elsewhere, static website, managed cloud, free profile and hosting platform.
 - [Install and update](install-and-update.md) — the one-line installer, every setup question, forks, automatic deploys and Windows support.
 - [Features](FEATURES.md) — everything Space Works runs today, area by area.
+- [0.11.0 release notes](release-0.11.0.md), [upgrade guide](upgrade-to-0.11.0.md) and [security verification](security-summary-0.11.0.md) — changes, update steps and the candidate's completed versus pending checks.
 - [Hosting and roles](README-HOSTING.md) — roles and staff accounts, first-run access, split deployments and moving a space to its own server.
 - [Roadmap and further work](future-work.md) — current focus and further work.
 - [Landing-page feature inventory](LANDING-PAGE-FEATURES.md) — the full product description used for the public site.

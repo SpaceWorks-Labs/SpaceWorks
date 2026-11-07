@@ -3287,10 +3287,6 @@ msgstr "Add {0}"
 msgid "Add {0} people"
 msgstr "Add {0} people"
 
-#. placeholder {0}: product.name
-msgid "Add {0} to basket"
-msgstr "Add {0} to basket"
-
 msgid "Add {label} interval"
 msgstr "Add {label} interval"
 
@@ -11045,9 +11041,6 @@ msgstr "Delete the {0} template"
 msgid "Delete the export file"
 msgstr "Delete the export file"
 
-msgid "Delete the export file of {space}"
-msgstr "Delete the export file of {space}"
-
 #. placeholder {0}: rule.cidr
 msgid "Delete the rule for {0}"
 msgstr "Delete the rule for {0}"
@@ -11805,9 +11798,6 @@ msgstr "Download sample PDF"
 
 msgid "Download the design file"
 msgstr "Download the design file"
-
-msgid "Download the export of {space}"
-msgstr "Download the export of {space}"
 
 msgid "Download the file"
 msgstr "Download the file"
@@ -13466,9 +13456,6 @@ msgstr "Export"
 #. placeholder {0}: job.id
 msgid "Export {0}"
 msgstr "Export {0}"
-
-msgid "Export {space}"
-msgstr "Export {space}"
 
 msgid "Export again…"
 msgstr "Export again…"
@@ -17267,10 +17254,6 @@ msgstr "Lift quarantine"
 
 msgid "Lift read-only"
 msgstr "Lift read-only"
-
-#. placeholder {0}: block.network
-msgid "Lift the block on {0}"
-msgstr "Lift the block on {0}"
 
 msgid "Lift this block"
 msgstr "Lift this block"
@@ -24034,10 +24017,6 @@ msgstr "Pay {0} {1}"
 #. placeholder {0}: shopMoney(order.amount_due, order.currency)
 msgid "Pay {0} at the desk when you collect."
 msgstr "Pay {0} at the desk when you collect."
-
-#. placeholder {0}: invoice.number
-msgid "Pay {0} online"
-msgstr "Pay {0} online"
 
 msgid "Pay at the space"
 msgstr "Pay at the space"

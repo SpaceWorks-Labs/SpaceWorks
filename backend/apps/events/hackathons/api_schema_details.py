@@ -92,7 +92,7 @@ class ContextMakerspaceSerializer(serializers.Serializer):
 
 
 class ContextProgrammeSerializer(serializers.Serializer):
-    kind = serializers.ChoiceField(choices=["ordinary", "hackathon"])
+    kind = serializers.ChoiceField(choices=["ordinary", "hackathon", "applications"])
     capabilities = serializers.DictField(child=serializers.BooleanField())
     team_mode = serializers.CharField(allow_null=True)
     finder_enabled = serializers.BooleanField()

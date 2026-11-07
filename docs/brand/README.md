@@ -10,7 +10,7 @@ a clear structure gives every part a place, teal grounds it and orange brings en
 
 ## Logo masters
 
-These are verbatim outlined vectors extracted from the PDF. The lowercase wordmark is artwork,
+These supplied outlined vectors are the approved logo masters. The lowercase wordmark is artwork,
 not live type. Scale each complete master as one object; never rebuild the lockup with text or CSS.
 
 | File | Use |
@@ -20,16 +20,18 @@ not live type. Scale each complete master as one object; never rebuild the locku
 | [lockup-stacked.svg](lockup-stacked.svg) | Primary symbol and two-line wordmark on a light ground |
 | [lockup-stacked-reversed.svg](lockup-stacked-reversed.svg) | Reversed primary lockup on a dark ground |
 | [lockup-horizontal.svg](lockup-horizontal.svg) | Full-colour horizontal lockup for wide headers |
+| [lockup-horizontal-reversed.svg](lockup-horizontal-reversed.svg) | Official reversed horizontal lockup on a dark ground |
+| [lockup-horizontal-one-colour-ink.svg](lockup-horizontal-one-colour-ink.svg) | One-colour ink horizontal lockup on a light ground |
 | [symbol-one-colour-ink.svg](symbol-one-colour-ink.svg) | One-colour ink symbol on a light ground |
 | [lockup-stacked-one-colour-ink.svg](lockup-stacked-one-colour-ink.svg) | One-colour ink primary lockup on a light ground |
 | [app-icon.svg](app-icon.svg) | Symbol on a Warm Cream tile, nominally 62% of tile height |
 
-There is no reversed horizontal master. Dark horizontal requests use the reversed stacked lockup;
-the dark public header uses the reversed symbol. One-colour horizontal requests use the ink stacked
-master. The reversed and ink drawings have their own notches and knocked-out interior: recolouring
-the full-colour symbol cannot reproduce them.
+Horizontal layouts have their own supplied reversed and one-colour ink masters. Use the reversed
+horizontal master on dark grounds, retaining its complete outlined wordmark and symbol; do not
+substitute a stacked lockup solely because the ground is dark. The reversed and ink drawings have
+their own notches and knocked-out interior: recolouring the full-colour symbol cannot reproduce them.
 
-The repository [banner](../banner.svg) uses the stacked master on Warm Cream.
+The vector brand [banner](../banner.svg) uses the stacked master on Warm Cream.
 The [social card](../spaceworks-logo.png) is 1200 by 630 with a centred 600 px stacked lockup.
 The [favicon](../../frontend/public/brand/favicon.svg) is the app-icon artwork. Prepared raster
 exports in `frontend/public/brand/` serve 16/32 px favicons, apple-touch 180 and PWA 192/512 icons.

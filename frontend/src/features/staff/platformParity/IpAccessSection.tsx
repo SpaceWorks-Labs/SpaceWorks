@@ -65,8 +65,8 @@ function BlocksList() {
           {t` · started `}<RelativeTime date={block.created_at} exact /></>}
         right={<div className="flex flex-wrap items-center gap-2">
           <StatusPill label={block.active ? t`Blocked` : t`Ended`} tone={block.active ? "warn" : "neutral"} />
-          {block.active ? <button type="button" className="desk-button" aria-label={t`Lift the block on ${block.network}`}
-            onClick={() => setLifting(block)}>{t`Lift now…`}</button> : null}
+          {block.active ? <button type="button" className="desk-button"
+            onClick={() => setLifting(block)}>{t`Lift now…`}{" "}<span className="sr-only">{block.network}</span></button> : null}
         </div>} />)}</div>}
     <Pagination page={page} totalPages={pages(list.data?.count)} onChange={setPage} count={list.data?.count} pageSize={PAGE_SIZE} disabled={list.isFetching} />
     {lifting ? <UnblockDialog block={lifting} onClose={() => setLifting(null)} /> : null}

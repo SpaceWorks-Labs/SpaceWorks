@@ -6,6 +6,7 @@ import { ApplicationStatus } from './ApplicationStatus'
 import { AdmissionArtwork } from './AdmissionArtwork'
 import { useAdmission } from './useAdmission'
 import type { FormFields } from './types'
+import type { RsvpInput } from '../../../generated/api'
 
 /** G mounts inside AppShell and supplies F's versioned form renderer. */
 export function HackathonApplicationPage({ publicToken, accountId, Fields, onSignIn, onOrdinaryRegister }: {
@@ -35,7 +36,10 @@ export function HackathonApplicationPage({ publicToken, accountId, Fields, onSig
       event_date_revision: current.event.event_date_revision, answers: {}, derivations: {}, save_choices: {}, saved_detail_versions: {},
       ...(current.application_form && !Array.isArray(current.application_form) ? { form: { schema_version: 2,
         form_id: current.application_form.form_id, revision: current.application_form.revision } } : {}) } }) }}
-    onAction={action => mutation.mutate({
-    route: action === 'withdraw' ? 'application_withdraw' : 'application_rsvp', body: { expected_version: row.version,
-      ...(action === 'withdraw' ? { reason_code: 'participant_withdrew' } : { decision: action, event_date_revision: current.event.event_date_revision }) } })} />
+    onAction={action => {
+      // CommandSession supplies operation_id; RSVP has its own closed payload.
+      const body = action === 'withdraw' ? { expected_version: row.version, reason_code: 'participant_withdrew' }
+        : ({ expected_version: row.version, decision: action } satisfies Pick<RsvpInput, 'expected_version' | 'decision'>)
+      mutation.mutate({ route: action === 'withdraw' ? 'application_withdraw' : 'application_rsvp', body })
+    }} />
 }

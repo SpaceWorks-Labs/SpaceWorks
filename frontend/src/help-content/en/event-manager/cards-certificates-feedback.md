@@ -16,7 +16,7 @@ Questions that already have answers can't be edited.
 
 ## Certificates
 
-Under **More**, **Certificates and ID cards**: design the certificate, **Preview certificate PDF**, and **Save new certificate revision**. **Bulk attendance certificates**, then **Confirm bulk issue**, issues them to everyone who attended. Each certificate can be downloaded or revoked.
+Under **More**, open the section whose name includes **Certificates**. Its label reflects the enabled tools: **Certificates** on its own, or a combined label such as **Certificates, cards and tickets**. Design the certificate, **Preview certificate PDF**, and **Save new certificate revision**. **Bulk attendance certificates**, then **Confirm bulk issue**, issues them to everyone who attended. Each certificate can be downloaded or revoked.
 
 ## Signatories and verification
 
@@ -28,7 +28,9 @@ The public verification page shows **File fingerprint**. Under **Check a certifi
 
 ## Event cards and tickets
 
-Where event ID cards or ticket designs are on, **Cards and tickets** has **ID cards**, **Card design** and **Ticket design**.
+Under **More**, the section is **Cards and tickets** when both tools are on without certificates, **ID cards** for cards only, or **Ticket design** for tickets only. If certificates are also on, the label combines the available tools.
+
+Event ID cards enable **ID cards** and **Card design**. Ticket designs independently enable **Ticket design**. A disabled tool is hidden without hiding the other enabled tools; each still needs the existing permission to edit the event.
 
 1. Design the card and publish it.
 2. In **ID cards**, press **Issue cards now**, and set each person's role: attendee, speaker, mentor, judge, volunteer or crew.

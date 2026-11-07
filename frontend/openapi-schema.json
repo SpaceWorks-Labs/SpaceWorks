@@ -259713,10 +259713,11 @@
             "ContextProgrammeKindEnum": {
                 "enum": [
                     "ordinary",
-                    "hackathon"
+                    "hackathon",
+                    "applications"
                 ],
                 "type": "string",
-                "description": "* `ordinary` - ordinary\n* `hackathon` - hackathon"
+                "description": "* `ordinary` - ordinary\n* `hackathon` - hackathon\n* `applications` - applications"
             },
             "ContextRoutes": {
                 "type": "object",

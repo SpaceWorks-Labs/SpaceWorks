@@ -9414,6 +9414,9 @@ msgstr ""
 msgid "QR code is already revoked."
 msgstr ""
 
+msgid "QR code is no longer available. Refresh and try again."
+msgstr ""
+
 msgid "QR code is not active."
 msgstr ""
 

@@ -34,7 +34,8 @@ export function parseProgrammeContext(value: unknown): ProgrammeContext {
   const space = record(data.makerspace)
   const programme = record(data.programme)
   const routes = record(data.routes)
-  if (data.context_version !== 1 || !['ordinary', 'hackathon'].includes(String(programme.kind))) {
+  if (data.context_version !== 1 || typeof programme.kind !== 'string'
+      || !['ordinary', 'hackathon', 'applications'].includes(programme.kind)) {
     throw new Error(t`Unsupported programme context.`)
   }
   positiveInteger(event.id)

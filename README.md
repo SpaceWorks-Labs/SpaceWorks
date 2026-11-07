@@ -291,6 +291,7 @@ moment per layout.
 - **Type.** Gilroy for text and headings; Unbounded for one short accent per layout. GitHub controls
   Markdown body fonts here; the app loads the approved fonts.
 - **Logo.** Use the supplied logo masters in [docs/brand](docs/brand/) as they are; never rebuild them.
+  Dark horizontal layouts use the supplied [reversed horizontal master](docs/brand/lockup-horizontal-reversed.svg), including its outlined wordmark.
 - **Voice.** Clear, warm and specific.
 
 ## Documentation
@@ -301,7 +302,8 @@ moment per layout.
 | [Features](docs/FEATURES.md) | See everything Space Works does today |
 | [Modules](docs/MODULES.md) and [choosing modules](docs/choosing-modules.md) | Decide what to turn on |
 | [Self-hosting](docs/self-hosting.md) and [advanced configuration](.github/ADVANCED.md) | Run it in production |
-| [Events programme guide](docs/events/README.md) | Run hackathons, mentoring and volunteering (pre-release, off by default) |
+| [Events programme guide](docs/events/README.md) | Run hackathons, mentoring and volunteering with optional programme features |
+| [0.11.0 notes](docs/release-0.11.0.md), [upgrade](docs/upgrade-to-0.11.0.md) and [security verification](docs/security-summary-0.11.0.md) | Review changes, update steps and candidate verification status |
 | [Environment reference](docs/environment-reference.md) | Look up an environment variable |
 | [Development](.github/DEVELOPMENT.md) | Run from source and run the tests |
 

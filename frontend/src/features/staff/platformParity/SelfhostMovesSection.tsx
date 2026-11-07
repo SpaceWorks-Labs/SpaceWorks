@@ -31,12 +31,12 @@ function Buttons({ move, onAction }: { move: SelfhostMove; onAction: (action: Mo
       <button type="button" className="desk-button-danger-outline" aria-label={t`Decline the move of ${space}`} onClick={() => onAction("reject")}>{t`Decline…`}</button>
     </> : null}
     {move.status === "approved" || move.status === "failed" ? <button type="button" className="desk-button"
-      aria-label={t`Export ${space}`} onClick={() => onAction("export")}>{move.status === "failed" ? t`Export again…` : t`Export…`}</button> : null}
+      onClick={() => onAction("export")}>{move.status === "failed" ? t`Export again…` : t`Export…`}{" "}<span className="sr-only">{space}</span></button> : null}
     {move.status === "exported" && move.has_file ? <button type="button" className="desk-button-primary" disabled={download.isPending}
-      aria-label={t`Download the export of ${space}`} onClick={() => download.mutate(move.id, {
-        onError: error => toast(actionErrorText(error), { tone: "error" }) })}>{download.isPending ? t`Preparing…` : t`Download`}</button> : null}
-    {move.has_file ? <button type="button" className="desk-button-danger-outline" aria-label={t`Delete the export file of ${space}`}
-      onClick={() => onAction("discard")}>{t`Delete file…`}</button> : null}
+      onClick={() => download.mutate(move.id, {
+        onError: error => toast(actionErrorText(error), { tone: "error" }) })}>{download.isPending ? t`Preparing…` : t`Download`}{" "}<span className="sr-only">{space}</span></button> : null}
+    {move.has_file ? <button type="button" className="desk-button-danger-outline"
+      onClick={() => onAction("discard")}>{t`Delete file…`}{" "}<span className="sr-only">{space}</span></button> : null}
   </div>;
 }
 

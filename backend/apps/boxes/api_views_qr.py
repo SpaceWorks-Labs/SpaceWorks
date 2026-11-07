@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -244,10 +245,11 @@ class QrRevokeView(QrPermissionMixin, APIView):
         request=None,
         responses={200: QrCodeSerializer},
     )
+    @transaction.atomic
     def post(self, request, pk, *args, **kwargs):
         qr = locked_qr_for_action(request.user, rbac.Action.MANAGE_QR, pk=pk)
         self._require_qr(request.user, qr.makerspace_id)
-        revoke_qr_code(request.user, qr)
+        qr = revoke_qr_code(request.user, qr)
         return Response(QrCodeSerializer(qr).data)
 
 

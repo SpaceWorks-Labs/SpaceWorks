@@ -35,9 +35,8 @@ export function ShopProductCard({ product, currency, href, onAdd, selling = true
     {product.category ? <p className="text-sm text-muted">{product.category}</p> : null}
     {selling && product.price_from !== null ? <p className="font-semibold tabular-nums text-ink">{priceRange(product, currency)}{product.unit ? <span className="ml-1 text-sm font-normal text-muted">per {product.unit}</span> : null}</p> : null}
     {selling && only && price != null && !product.sold_out && !only.sold_out ? <button type="button" className="desk-button min-h-11 justify-self-start"
-      aria-label={t`Add ${product.name} to basket`}
       onClick={() => onAdd({ variantId: only.id, label: product.name, price: String(price), productSlug: product.slug, max: product.max_per_order })}>
-      {t`Add to basket`}</button>
+      {t`Add to basket`}{" "}<span className="sr-only">{product.name}</span></button>
       : <RouteLink href={href} className="desk-button min-h-11 justify-self-start">{product.sold_out || !selling ? t`View item` : t`Choose options`}</RouteLink>}
   </li>;
 }

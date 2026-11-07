@@ -96,9 +96,12 @@ thirteen modules under it are optional.
   of four drills".
 - **What it adds** — per-unit QR generation and asset-level status tracking; asset units become
   selectable at issue time.
-- **Without it** — products are tracked by **quantity only**. Availability maths, requests and handovers
-  all still work; you simply cannot say *which* physical unit went out, and per-unit QR labels are
-  unavailable.
+- **Without it** — new tracking uses **quantity only**: generation of new individual units and
+  per-unit QR labels is unavailable. Availability maths, requests and handovers still work. Existing
+  unit records, custody history and authorized servicing stay readable and actionable so disabling
+  the add-on never strands an issued tool or prevents its return. These retained operations cannot
+  create units or QR identities, or change the product tracking mode; stock changes still go through
+  the core availability owner with the existing role, scope, state and audit checks.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
 
 ### containers

@@ -76,7 +76,7 @@ def seed_hackathon(space, manager, members):
     now = timezone.now()
     event = create_event(makerspace=space, actor=manager, title=data.HACKATHON["title"],
         description=data.HACKATHON["description"], starts_at=now - timedelta(hours=20),
-        ends_at=now + timedelta(hours=4), location=data.LOCATION, capacity=40, is_public=True)
+        ends_at=now + timedelta(days=7), location=data.LOCATION, capacity=40, is_public=True)
     # Judge authority comes from role sources, which are live only while the event is published.
     publish(event, actor=manager)
     event.refresh_from_db()

@@ -6924,7 +6924,7 @@ export type ContextProgramme = {
   "finder_enabled": boolean;
 };
 
-export type ContextProgrammeKindEnum = "ordinary" | "hackathon";
+export type ContextProgrammeKindEnum = "ordinary" | "hackathon" | "applications";
 
 export type ContextRoutes = {
   "member_base": string;

@@ -60,7 +60,7 @@ export interface ProgrammeContext extends Omit<Context, 'application_form' | 're
   }
   makerspace: { id: number; slug: string }
   programme: {
-    kind: 'ordinary' | 'hackathon'
+    kind: 'ordinary' | 'hackathon' | 'applications'
     capabilities: Record<ProgrammeCapability, boolean>
     team_mode: string | null
     finder_enabled: boolean

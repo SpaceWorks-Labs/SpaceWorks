@@ -236,7 +236,9 @@ Checks run is not a test run. Its four jobs are the required status checks on `m
   hooks; `exhaustive-deps` only warns, and the gitignored test suites are not linted), then
   `npm run build:bundle` (Vite + the PWA verify script; `npm run build` would type-check again).
 - **`backend`** — Python 3.12 from `.github/actions/backend-python` (a virtualenv cached by the
-  `requirements.txt` hash), `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
+  `requirements.txt` hash), `scripts/ci/lint_backend.sh` (ruff, errors only: syntax, undefined names,
+  redefinitions, repeated dict keys; style rules stay in the gitignored local `ruff.toml`),
+  `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
   get dummy values plus keys from `scripts/ci/throwaway_keys.py` (`SECRET_KEY` and the
   Fernet keys, including the mandatory `PII_MASTER_KEY`); no database or service is started.
 - **`contracts`** — regenerates the OpenAPI snapshot (`spectacular --format openapi-json`) and fails on

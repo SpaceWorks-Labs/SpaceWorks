@@ -60,14 +60,14 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 
 | Switch | When it is off | Retained data and re-enable |
 | --- | --- | --- |
-| `billing.capture_flags` | Release-1 behaviour: receipt on capture, audit-only late notices | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `billing.capture_flags` | Late, duplicate or wrong-amount online payments are not flagged for staff: the receipt is issued when the payment is captured, and late payments are only noted in the audit log | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.disputes` | Disputes are still recorded, never shown | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.documents` | New collections have no document; existing documents stay readable and documented charges still receive refund/correction documents | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.maker_checker` | One person records a cash/UPI/bank receipt and the charge is paid at once; an awaiting queue still drains | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.offline_claims` | No QR and no claim form; existing claims stay readable | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.pay_links` | No links; old links answer 404, the charges stay | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `billing.reminders` | No automatic payment reminders; debt and receipts stay visible | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
-| `billing.tax` | Every charge and document is exactly release 1: no tax, the single receipt series; settings and issued tax documents are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `billing.tax` | New charges carry no tax and documents use the single receipt series, with no tax invoices or GST returns; tax settings and issued tax documents are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 ### bookings
 
 | Switch | When it is off | Retained data and re-enable |
@@ -109,7 +109,7 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | `charges.machines` | Machine use is free: no quote is sent, no job waits on a payment, sessions do not bill, and no machine price shows | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `charges.membership` | Joining activates free whatever the payment timing, dues are not recorded, no plan price shows | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `charges.price_drop_refunds` | No preview and no cases; a sold ticket's price stays frozen; cases already opened stay in the refund queue. The prepaid-job cases (cancelled before it starts, cheaper than its quote) do not depend on this switch | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
-| `charges.pricing` | Only the release-1 price fields apply (deposit, late fee, room/event/plan prices, the machine-type price); the pricing screens and APIs are gone; rate cards and item prices are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `charges.pricing` | Only the basic price fields apply (deposit, late fee, room/event/plan prices, the machine-type price); the pricing screens and APIs are gone; rate cards and item prices are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `charges.shop` | New online orders and till sales refuse with 409 charges_off. Public product, variant and Pages-card prices are null and the storefront hides prices and the basket. Price quote routes return 404 charges_off. Browsing, existing order handling and the authorized staff catalogue and ledger remain available. | Stored prices and orders stay. With Track charges also on, new sales and public pricing resume. No separate capability purge. |
 ### events
 
@@ -175,7 +175,7 @@ The Settings feature list groups these switches by area. Turning off a parent ma
 | Switch | When it is off | Retained data and re-enable |
 | --- | --- | --- |
 | `finance.donations` | Page, giving and staff screens answer 404; gifts and their charges are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
-| `finance.ledger` | Screens and reports hidden; spending and receipts are still recorded (#128 C-15) | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
+| `finance.ledger` | Screens and reports hidden; spending and receipts are still recorded | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `finance.recurring_donations` | No new pledges and no period charges; pledges are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `finance.sponsors` | Sponsor screens, wall and perk reminders are gone; rows are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |
 | `finance.tax_exempt_receipts` | No 80G option; frozen receipts are kept | Settings and history stay. Re-enable restores eligible use under the current prerequisites. No separate capability purge. |

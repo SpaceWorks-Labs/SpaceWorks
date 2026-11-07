@@ -1,11 +1,10 @@
 # Event reimbursements
 
-Implementation status: **partial R2 implementation; not enabled or ready for integration**.
-Request preparation/submission, finite-budget commands, award responses, claim draft/
-submission/appeal, and core record/amend/cancel/payee services now exist. Finance
-approval evidence, uploads, retention/purge adapters and full acceptance remain
-unfinished. The G1 fixture test is present but its frozen JSON is missing in rb-r.
-The RB-R2 handoff enumerates the exact remaining files and integration gates.
+Travel support is available through the optional `event_reimbursements` module.
+Its member and staff routes cover requests, finite budgets, awards, claims and appeals;
+core Payments owns permanent obligations, payee revisions and append-only payout
+records. This guide describes the integrated contract, while final browser, storage,
+finance-authority and recovery acceptance require their own exact-source evidence.
 
 Travel support applies to ordinary events and hackathons. A participant explicitly
 requests support at registration/application or after acceptance, according to the

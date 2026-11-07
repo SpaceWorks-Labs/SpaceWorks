@@ -30,10 +30,10 @@ class Builder:
                          font_size_pt=size, align=align, valign="top", colour=colour, uppercase=False,
                          tracking_pt=0, line_height=1.15, shrink_to_fit=True)
 
-    def label_value(self, label, field, x, y, w, *, label_colour=TEAL, value_colour=INK, size=8):
+    def label_value(self, label, field, x, y, w, *, label_colour=TEAL, value_colour=INK, size=8, value_height=4.2):
         self.text(f"{label} label", label, x, y, w, 3, size=6, weight=600, colour=label_colour, upper=True,
                   tracking=0.4)
-        return self.field(label.title(), field, x, y + 3, w, 4.2, size=size, colour=value_colour)
+        return self.field(label.title(), field, x, y + 3, w, value_height, size=size, colour=value_colour)
 
     def band(self, name, x, y, w, h, fill, radius=0):
         return self._add("band", name, x, y, w, h, fill=fill, radius_mm=radius)

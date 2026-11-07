@@ -36,4 +36,3 @@ export function RouteFallback() {
   return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Opening Space Works…`} body=""
     primary={{ label: t`Loading…`, disabled: true, disabledReason: "The page is opening." }} /></div>;
 }
-

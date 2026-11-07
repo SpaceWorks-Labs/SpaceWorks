@@ -1,10 +1,10 @@
 # Staged event forms
 
-Implementation status: **partial R2 implementation, unmounted**. Definition,
-assignment, response, milestone, coverage-guard and reconciliation commands now
-exist, together with owner UI and revision-specific detail routes. The Saved-details
-dispatcher, canonical admission/check-in bridges, file transport/retention and
-complete acceptance still require integration. New cursor models need G migrations.
+Staged forms are mounted in the Events staff and member APIs and the event drawer's
+**Stage forms** section. Definitions, assignments, revision-specific responses, milestones,
+coverage guards and reconciliation use the same admission and check-in owners. This
+guide describes the current contract; source integration alone does not establish
+final browser, storage or migration acceptance.
 
 Staged forms are an Events feature for ordinary events and hackathons, independent
 of reimbursements. Forms reuse the shared forms engine and immutable form revisions.
@@ -39,13 +39,13 @@ optional or sensitive questions. DOB and computed age remain supported only on t
 base registration/application form under the existing contract. Stage uploads accept
 `stage_form_file` only; receipt and payment-routing files use separate finance contexts.
 
-Saved details must use F's mappings and P's authorized owner context. Normal personal
+Saved details use the authorized owner-context mappings. Normal personal
 fields default to saving; sensitive supported fields require explicit opt-in.
 Staff receive only submitted answers that their live disclosure authority permits,
 never vault values. Organizer detail needs registration-management plus host audit
 authority; finance detail returns the separate sensitive-only projection.
 
-Reminder delivery must use the real `ReminderSource` registry and shared sweep.
-Stage and RSVP ReminderSource adapters are supplied for G registration. Their
-frozen identity vectors, live delivery and browser evidence remain unverified;
-AO20 is open. The RSVP source does not require staged forms or reimbursement.
+Stage and RSVP reminders use the `ReminderSource` registry and shared sweep.
+Deadline enforcement still uses the server clock when delivery is delayed or disabled.
+The RSVP source does not require staged forms or reimbursement. Live delivery and
+browser acceptance remain separate from source registration.

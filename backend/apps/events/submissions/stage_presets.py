@@ -15,7 +15,8 @@ def _stage(name, description="", **rules):
     return {"name": name, "description": description, "content_mode": "files_and_links", "required_link_kinds": [],
             "min_files": 0, "max_files": None, "max_links": None, "accepted_families": [], "max_bytes_per_file": None,
             "video_hosts": [], "custom_fields": [], "requires_previous": False, "shortlist_after": False,
-            "shortlist_label": "", "late_policy": "reject", "resubmission": "until_deadline", "grace_minutes": 0,
+            "shortlist_label": "", "public_after_publish": False,
+            "late_policy": "reject", "resubmission": "until_deadline", "grace_minutes": 0,
             **rules}
 
 

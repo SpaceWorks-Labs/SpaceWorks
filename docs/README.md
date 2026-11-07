@@ -16,6 +16,10 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 
 ## Running a space
 
+- [Task manuals](USER-MANUALS.md) — normal workflows grouped by role and screen.
+- [Module and feature switch-off reference](MODULES-OFF.md) — navigation, new actions, retained history and existing obligations when an area is disabled.
+- [Logging and audit](logging-and-audit.md) — correlation, safe metadata and the [audit action reference](audit-action-reference.md).
+
 - [Sign-in, identity and borrowing](sign-in-and-borrowing.md) — sign-in methods, running without member accounts, who may borrow, login-method switches.
 - [Notification channels, rooms and recipients](notification-routing.md) — chat rooms, who hears about what, and editing message wording.
 - [Loan policy, renewal and reminders](loan-policy.md) — loan limits, renewals and reminder settings.
@@ -35,10 +39,10 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Account deletion privacy note](privacy-account-deletion.md) — member account deletion, archive, restore and purge.
 - [Google Sheets import privacy note](privacy-sheet-import.md) — what SpaceWorks reads when staff import from a public sheet.
 
-### Events programme (pre-release, off by default)
+### Events programmes
 
-- [Events programme guide](events/README.md) — the integration checkpoint and where each runbook fits.
-- [Integration status](events/integration-status.md) — what remains before hackathons, Mentor Desk, volunteering or the project gallery can be enabled.
+- [Events programme guide](events/README.md) — enabled-area setup and where each runbook fits.
+- [Integration status](events/integration-status.md) — current feature gates and the dated integration evidence ledger.
 - [Organizer runbook](events/organizer.md) — review, RSVP, results and certificates.
 - [Participant runbook](events/participant.md) — apply, form a team and submit files or links.
 - [Mentor runbook](events/mentor.md) — Mentor Desk, office hours and rounds.
@@ -46,8 +50,8 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Judge and sponsor runbook](events/judge.md) — judge frozen projects or review sponsor-track submissions.
 - [Events operator setup](events/operations.md) — migrations, credential/account keys, online scanner, optional ClamAV and ffprobe.
 - [Uploads and retention](events/media.md) — managed 25 GB and self-host budgets, media limits and file expiry.
-- [Event reimbursements](events/reimbursement.md) and [reimbursement operations](events/reimbursement-operations.md) — partial, not yet operational.
-- [Staged event forms](events/staged-forms.md) — partial, unmounted.
+- [Event reimbursements](events/reimbursement.md) and [reimbursement operations](events/reimbursement-operations.md) — optional travel-support budgets, awards, claims and recorded payouts.
+- [Staged event forms](events/staged-forms.md) — revision-pinned participant forms, deadlines and completion requirements.
 - [Owner add-on traceability](events/acceptance.md) — code, test and route evidence for each add-on.
 - [Events artwork inventory](events-programme-artwork-inventory.md) — the themed certificate, badge and illustration artwork.
 

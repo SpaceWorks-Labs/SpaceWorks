@@ -1,13 +1,14 @@
 # Events integration closure ledger
 
-GF4, `lane/events-g2`, 2026-10-18. The six EV2/EV3 handoffs are reconciled in this
-worktree. This is authored integration, without PostgreSQL, storage or browser
-acceptance. It is the 2026-10-18 snapshot. Since then the five programme capabilities
+The table below preserves the GF4 source-integration snapshot (`lane/events-g2`,
+2026-10-18); its test selectors describe acceptance scope, not a final-runtime pass claim.
+The integrated source now mounts programme, reimbursement and staged-form routes.
+Use the current [task manuals](../USER-MANUALS.md) for normal UI workflows. The five programme capabilities
 (`events.hackathons`, `events.mentoring`, `events.mentor_rounds`, `events.volunteering`,
 `events.project_gallery`) ship as ordinary per-space switches, off for a new space, that a Space
 Manager may turn on; `events.mentoring` no longer needs hackathons. Account Saved details and UI
-delight controls also default off. Release 2's final flow audit records the runtime evidence. Generated
-OpenAPI/client files and the catalogue digest remain unchanged.
+delight controls also default off. Final runtime evidence must identify its exact source
+and artifact. The deployment schema and generated client describe the current mounted routes.
 
 Paths below are relative to `backend/apps/`; test paths are relative to `backend/`.
 The local GF4 handoff supplies exact changed-file and combined rerun manifests.
@@ -31,10 +32,11 @@ The local GF4 handoff supplies exact changed-file and combined rerun manifests.
 
 ## Separate programmes and external prerequisites
 
-Decisions 34/35 are the separately approved reimbursement/staged-forms programme.
-Its finance/core-encryption/migration changes are absent from this Events merge;
-six existing editor keys do not implement staged forms. Its integration must land
-before claiming the complete combined owner programme. The separate Pages programme
+Reimbursements and staged forms were separate integration programmes at the GF4
+checkpoint. They are now mounted: optional `event_reimbursements` owns travel support,
+Events owns staged forms, and core Payments retains permanent financial obligations.
+See [travel support](reimbursement.md), [finance operations](reimbursement-operations.md)
+and [staged forms](staged-forms.md). The Pages programme
 owns shared handles and full maker/org builders; event short links (`/e/<code>`) shipped in release 2 L1
 (`events.short_links`, see MODULES.md "Public event surface"). Events sections do not
 substitute for those domains.

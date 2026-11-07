@@ -115,4 +115,3 @@ class PublicStatsSettingsResponseSerializer(serializers.Serializer):
     can_edit = serializers.BooleanField(help_text="Legacy page-wide edit flag; use capabilities for individual settings.")
     choices = _ChoicesSerializer()
     capabilities = _CapabilitiesSerializer()
-

@@ -421,7 +421,7 @@ a build.** These are the rules you must not violate without having read it:
 ./scripts/dev.sh e2e              # Playwright against the running dev stack
 ```
 
-Public inventory page: `http://localhost:5000/m/makerspace`. API: `http://localhost:8000/api` — Swagger UI
+Public Inventory page: `http://localhost:5000/m/makerspace/inventory` (makerspace overview: `http://localhost:5000/m/makerspace`). API: `http://localhost:8000/api` — Swagger UI
 at `/docs/`, ReDoc at `/redoc/`, schema at `/schema/`.
 
 ## Project Status — in `docs/PROJECT-STATUS.md`

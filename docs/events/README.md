@@ -1,9 +1,10 @@
 # Events programme guide
 
-**Integration checkpoint: `f1ef7736`, 2026-10-18.** The programme features are ordinary
-per-space switches, off for a new space, that a Space Manager may turn on. These guides describe
-the workflows; release 2's final flow audit records the runtime and browser evidence for each
-journey in the [integration status](integration-status.md) and [acceptance](acceptance.md) pages.
+Programme features are ordinary per-space switches that a Space Manager may turn on.
+These guides describe the integrated workflows; use the [task manuals](../USER-MANUALS.md)
+for screen-by-screen steps and the [switch-off reference](../MODULES-OFF.md) for retained
+history and existing-obligation exceptions. The [integration status](integration-status.md)
+and [acceptance](acceptance.md) pages retain their dated integration evidence and acceptance scope.
 
 | Reader | Guide |
 | --- | --- |
@@ -20,11 +21,10 @@ Hackathons are features of the existing [Events module](../MODULES.md#events), w
 separate hackathons module. `events.hackathons`, `events.mentoring`, `events.mentor_rounds`,
 `events.volunteering` and `events.project_gallery` default off. An event additionally has
 `HackathonConfig.enabled=False` by default. Volunteering can serve ordinary events;
-mentoring requires hackathons and rounds additionally require mentoring.
+mentoring can serve ordinary events; rounds require both mentoring and hackathons.
 
-Current setup caveat: choosing the Events area selects all child features in
-`setup_areas.features_for()`. The integration owner must keep these unaccepted programme
-features out of that blanket selection; registry defaults alone are insufficient.
+The Events setup area excludes the five explicit programme opt-ins above. Choosing
+Events does not silently enable hackathons, mentoring, rounds, volunteering or the gallery.
 
 Admission uses the event's existing audience: member, authenticated account or invitation.
 An account audience need not have a host membership. Volunteer, mentor, judge, sponsor and

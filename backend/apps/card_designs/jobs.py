@@ -18,6 +18,7 @@ from apps.audit import services as audit
 
 from .models import CardJob
 from .models_jobs import BULK_KINDS
+from .default_templates import REVISION as TEMPLATE_REVISION
 
 RESULT_TTL = timedelta(days=7)
 CAPS = {"bulk_sheet": 1000, "bulk_per_person": 1000, "zip": 300, "email": 2000, "wallet_update": 5000}
@@ -30,6 +31,8 @@ def holder_kind(job):
 
 
 def _key(kind, scope, scope_id, targets, params, revision):
+    if kind in BULK_KINDS:
+        revision = {"designs": revision, "templates": TEMPLATE_REVISION}
     raw = json.dumps([kind, scope, scope_id, sorted(targets), params, revision], sort_keys=True, default=str)
     return hashlib.sha256(raw.encode()).hexdigest()
 

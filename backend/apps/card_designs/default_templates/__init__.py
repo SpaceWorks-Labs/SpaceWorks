@@ -11,6 +11,9 @@ from . import backs, fronts
 from .builders import CREAM, INK, WHITE, document
 from .themes import THEMES, apply
 
+# Bump when a shipped fallback layout changes; completed outputs remain immutable.
+REVISION = 2
+
 W, H = fronts.W, fronts.H
 _FRONT_BACKGROUND = {"classic": CREAM, "minimal": WHITE, "community": CREAM, "student": WHITE, "event_pass": WHITE}
 

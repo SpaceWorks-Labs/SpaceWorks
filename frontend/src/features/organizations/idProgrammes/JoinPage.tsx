@@ -9,7 +9,7 @@ import { useParams } from "react-router-dom";
 import { CenteredCardLayout } from "../../../components/layouts";
 import { PhotoPicker } from "../../../components/photo-crop/PhotoPicker";
 import { ErrorText } from "../../../components/ui";
-import { memberRequest, publicV1Request } from "../../../lib/api";
+import { getAccessToken, memberRequest, publicV1Request, refreshAccessToken } from "../../../lib/api";
 import { MemberAuthPanel } from "../../members/MemberAuthPanel";
 
 type JoinQuestion = { key: string; label: string; type: "text" | "choice" | "email" | "phone"; required: boolean; options?: string[];
@@ -38,8 +38,15 @@ function useNoIndex() {
 export function JoinPage() {
   const { organizationSlug = "", programmeSlug = "" } = useParams();
   useNoIndex();
+  const [restoring, setRestoring] = useState(!getAccessToken("person"));
+  useEffect(() => {
+    let active = true;
+    if (restoring) void refreshAccessToken("person").catch(() => false)
+      .finally(() => { if (active) setRestoring(false); });
+    return () => { active = false; };
+  }, [restoring]);
   const base = `/public/organizations/${organizationSlug}/id-programmes/${programmeSlug}`;
-  const programme = useQuery({ queryKey: ["id-programme-join", organizationSlug, programmeSlug], retry: false,
+  const programme = useQuery({ queryKey: ["id-programme-join", organizationSlug, programmeSlug], enabled: !restoring, retry: false,
     queryFn: () => publicV1Request<PublicProgramme>(base) });
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [photo, setPhoto] = useState<Blob | null>(null);
@@ -68,8 +75,8 @@ export function JoinPage() {
   }, onSuccess: () => void programme.refetch() });
 
   const data = programme.data;
-  if (data?.state === "signed_out") return <MemberAuthPanel onAuthenticated={() => { void programme.refetch(); }} />;
-  if (!data) return <CenteredCardLayout state={programme.isLoading ? { status: "loading" } : { status: "ready" }}
+  if (!restoring && data?.state === "signed_out") return <MemberAuthPanel onAuthenticated={() => { void programme.refetch(); }} />;
+  if (restoring || !data) return <CenteredCardLayout state={restoring || programme.isLoading ? { status: "loading" } : { status: "ready" }}
     title={t`We can't find this programme`} body={t`The link may be wrong, or the programme has closed.`} primary={{ label: t`Home`, href: "/" }} />;
   const done = STATE_COPY[data.state];
   if (done) return <CenteredCardLayout state={{ status: "ready" }} eyebrow={data.organization_name} title={done.title} body={done.body}

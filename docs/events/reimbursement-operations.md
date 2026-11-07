@@ -1,10 +1,10 @@
 # Reimbursement operations
 
-Implementation status: **not operational**. R2 adds unmounted commands, stage/core
-route modules and partial owner/finance UI. Do not enable these surfaces until the
-missing frozen G1 JSON, G-authored model migrations, complete decision/upload/
-retention/purge workflows and PostgreSQL/browser acceptance are resolved. The
-RB-R2 report separates implemented code from verified behavior and unfinished work.
+The travel-support member/staff routes and core finance routes are mounted.
+Operators enable the optional module and configure the programme through its normal
+authorized commands. The current [task manuals](../USER-MANUALS.md) describe the UI;
+strict finance-authority, storage, migration, retention and browser checks remain
+separate acceptance evidence, tied to the exact deployed candidate.
 
 Finance first initializes an event programme and its currency pool in one
 reauthenticated command. Replaying initialization must not fund again. Later policy
@@ -15,7 +15,7 @@ FX rates are entered manually with source and date. A rate means target major un
 per source major unit. Convert each line using the supported source/target exponents
 and HALF_UP rounding once, then sum integer target units. Do not sum mixed currencies
 or infer currency support from the legacy two-decimal fallback. Currency normalization
-and exponent lookup belong to G's shared `payments/currencies.py` helper.
+and exponent lookup belong to the shared `payments/currencies.py` helper.
 
 Receipt bytes are finance-only. The approved default is 2555 days after terminal
 financial closure, with a snapshotted policy revision and duration. Payee payloads
@@ -25,8 +25,9 @@ remain active without Events or reimbursement runtime.
 
 Storage cleanup must retain both staging/final locators, enumerate all object
 versions and delete markers, retry failures and release quota only after confirmed
-deletion. No expired read may fall back to object storage. The pure retention helper
-does not implement storage deletion, leases or retries; those workers are unfinished.
+deletion. No expired read may fall back to object storage. The retention policy helper
+chooses eligibility; the cleanup owners perform storage deletion with leases and retries.
+A policy calculation by itself is not evidence that object bytes were deleted.
 
 Archive preserves money records and pauses reimbursement finance access and actions.
 Actual unarchive restores normal checks; no recovery authentication exception exists.

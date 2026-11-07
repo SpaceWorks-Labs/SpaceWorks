@@ -172,7 +172,7 @@ orchestration-ready and createbuckets, and removes those four containers only af
 A failure keeps the containers and prints a `dev.sh logs <svc>` hint. A later `up` recreates them;
 `restart` affects long-running services only. `down` keeps volumes unless you pass `-v`.
 
-- Public inventory page: `http://localhost:5000/m/makerspace`
+- Public Inventory page: `http://localhost:5000/m/makerspace/inventory` (makerspace overview: `http://localhost:5000/m/makerspace`)
 - API: `http://localhost:8000/api` — Swagger UI at `/docs/`, ReDoc at `/redoc/`, schema at `/schema/`.
 
 ## The `live` service (SSE)

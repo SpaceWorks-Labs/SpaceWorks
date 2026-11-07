@@ -41,8 +41,8 @@ function RecoveryPanel({ makerspaceId, revealKey }: { makerspaceId: number; reve
             meta={<RelativeTime date={row.created_at} />} right={<div className="flex flex-wrap items-center gap-3">
               <StatusPill tone={row.resolution_code ? "success" : "warn"} label={row.resolution_code ? t`Resolved` : t`Unresolved`} />
               <button type="button" className="desk-button" aria-expanded={selected === row.id}
-                aria-label={`${row.operation_kind.replace(/_/g, " ")} · ${row.station_name} · ${row.failure_code}`}
-                onClick={() => setSelected(selected === row.id ? null : row.id)}>{selected === row.id ? t`Close details` : t`Review`}</button>
+                onClick={() => setSelected(selected === row.id ? null : row.id)}>{selected === row.id ? t`Close details` : t`Review`}{" "}
+                <span className="sr-only">{`${row.operation_kind.replace(/_/g, " ")} · ${row.station_name} · ${row.failure_code}`}</span></button>
             </div>} />
           {selected === row.id ? detail.isPending ? <p role="status">{t`Loading failure details…`}</p> : detail.isError ? <p role="alert">{t`This failure is unavailable under your current permissions.`}</p> : detail.data ? <div className="mt-3">
             <KioskReplayDetail key={row.id} row={detail.data} />

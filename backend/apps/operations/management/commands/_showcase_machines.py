@@ -92,7 +92,7 @@ def _job(target, member, title, material="PLA", colour="Black", grams="40", acto
     if isinstance(target, ServiceQueue):
         payload = {"requested_material": material, "requested_color": colour,
                    "quantity": 1, "estimated_grams": grams}
-    return submit(target, member, actor=actor or member, requester_name=member.display_name,
+    return submit(target, member, actor=actor or member, member=member, requester_name=member.display_name,
                   contact_email=member.email, contact_phone="", title=title,
                   description=f"{title}. Files shared at the desk.", capability_payload=payload)
 

@@ -27,9 +27,11 @@ stored credential**, so re-enabling needs no re-entry.
 
 - **What it is** — outbound email **for this makerspace**.
 - **What it adds** — tenant email delivery using the space's own SMTP credentials.
-- **Without it** — the space sends no tenant email. **Account recovery and email verification still
-  send**: those are platform mail (`makerspace=None`) and are deliberately exempt, or switching a module
-  off could lock people out of their own accounts.
+- **Without it** — the space sends no ordinary tenant email. **Some mail always sends**: password
+  reset and email verification (platform mail), sign-in security alerts and the unusual-sign-in code,
+  and overdue-loan return reminders (a duty-of-care message tied to accountability). The exempt list is
+  `EMAIL_MODULE_EXEMPT` in `backend/apps/integrations/dispatch_policy.py`; switching a module off must
+  not lock people out of their accounts or hide an overdue loan.
 - **Data** — `purge_module_data` reports it stores no data of its own to purge separately.
 
 ### telegram

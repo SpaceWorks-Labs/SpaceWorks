@@ -4,6 +4,11 @@ The English labels below come from the audit presentation catalogue and reviewed
 The platform and makerspace audit screens apply the same metadata policy.
 Entries with withheld metadata show the action label and omit the stored metadata.
 
+The table lists 1,311 actions: 1,272 presentation-catalogue entries, 20 reviewed wrapper actions that
+show a label built from the key, and 19 dynamic actions under the deny policy. A further 59 shared-service
+prefixes are listed at the end. The sources are `backend/apps/audit/presentation_catalog.py`,
+`presentation_fallback_labels.py` and `presentation_catalog_dynamic.py`.
+
 | Action key | English label | Metadata displayed |
 | --- | --- | --- |
 | `access_token.created` | Personal access token created | Reviewed fields only |

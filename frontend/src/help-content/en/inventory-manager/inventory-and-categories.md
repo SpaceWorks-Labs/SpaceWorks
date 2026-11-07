@@ -13,6 +13,8 @@ keywords: inventory, items, add item, quantity, adjust, categories, archive, pub
 
 ![Screenshot: the Add item form](screenshot:im-add-item)
 
+After the item is created, open it to add, replace or remove its **Item photo**. A listed item shows that photo on the space's public Inventory page and item details. Evidence photos taken at handover and return are separate and never public.
+
 Storage locations, box codes and QR codes are never shown publicly.
 
 ## Change counts

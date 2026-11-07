@@ -14,6 +14,8 @@ modules: events
 
 ![Screenshot: the New event form with its preview](screenshot:em-new-event)
 
+To give the listing and event page a picture, open **More**, then **Settings**, and under **Event photo** upload a **Public event image** (a wide image works best). Upload again to replace it, or use **Remove**. A series has its own image in its drawer.
+
 Later, use **Complete event** after it's over, or **Cancel event**: cancelling tells everyone registered and closes registration.
 
 ## The roster

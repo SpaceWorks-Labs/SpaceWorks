@@ -14,7 +14,7 @@ modules: bookings
 
 ![Screenshot: the New space form](screenshot:bm-new-space)
 
-Each space has **Requests**, **Calendar**, **Issues**, **Photos** and **Settings**. In Settings, **Clone resource** copies it and **Deactivate space** hides it and stops new bookings.
+Each space has **Requests**, **Calendar**, **Issues**, **Photos** and **Settings**. In Settings, the **Booking listing photo** is the picture shown on the public booking page; upload again to replace it or use **Remove**. In Settings, **Clone resource** copies it and **Deactivate space** hides it and stops new bookings.
 
 ## Book for a member
 

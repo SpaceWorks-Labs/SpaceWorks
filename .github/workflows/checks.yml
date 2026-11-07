@@ -57,15 +57,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check
-        run: npx tsc -b
-
+      # Type-check and lint share no state, so they run side by side; both must pass.
       # frontend/eslint.config.js; warnings (react-hooks/exhaustive-deps) do not fail the job.
-      - name: Lint
-        run: npm run lint
+      - name: Type-check and lint
+        shell: bash
+        run: |
+          set -uo pipefail
+          npx tsc -b > "$RUNNER_TEMP/tsc.log" 2>&1 & tsc=$!
+          npm run lint > "$RUNNER_TEMP/lint.log" 2>&1 & lint=$!
+          wait "$tsc"; tsc_status=$?
+          wait "$lint"; lint_status=$?
+          echo "::group::tsc -b (exit $tsc_status)"; cat "$RUNNER_TEMP/tsc.log"; echo "::endgroup::"
+          echo "::group::eslint (exit $lint_status)"; cat "$RUNNER_TEMP/lint.log"; echo "::endgroup::"
+          ((tsc_status == 0 && lint_status == 0))
 
+      # `npm run build` is `tsc -b` + this; the types were checked in the step above.
       - name: Build (includes the PWA verify script)
-        run: npm run build
+        run: npm run build:bundle
 
   backend:
     name: backend

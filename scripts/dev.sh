@@ -3,6 +3,8 @@
 #   up [args]       Compose up -d; retire live and remove successful one-shots.
 #   down [args]     Compose down; volumes persist unless you pass -v.
 #   test [args]     Pytest in disposable Postgres/Redis/MinIO; default args: -q.
+#   affected [backend|frontend]  Only the tests for what changed (AFFECTED_BASE).
+#   hooks           Enable the repo's git hooks (.githooks/pre-push).
 #   e2e [args]      Seed the running dev stack; Playwright against a production preview.
 #   <other> [args]  Forward verbatim to Compose: logs, exec, run, ps, restart, etc.
 # Restart affects long-running services only; up recreates the four one-shots.
@@ -43,6 +45,51 @@ up() {
   compose rm -f "${one_shots[@]}"
 }
 
+# The test runner bind-mounts the source, so the image only has to carry what the
+# Dockerfile installs: system packages, Python dependencies, fonts and Postgres clients.
+# Rebuild only when those inputs change (or with SPACEWORKS_TEST_REBUILD=1). An
+# unchanged image skips the ~27 MB context upload and the source-layer rebuild (CJK font
+# download, compilemessages, collectstatic) that every source edit used to trigger.
+ensure_test_image() {
+  local inputs=(Dockerfile requirements.txt scripts/bundle_cjk_fonts.py scripts/verify_printable_runtime.py)
+  local hash current
+  hash="$(cd "$ROOT/backend" && cat "${inputs[@]}" | sha256sum | cut -c1-16)"
+  current="$(docker image inspect -f '{{index .Config.Labels "spaceworks.test-deps"}}' \
+    spaceworks-backend 2>/dev/null || true)"
+  if [[ "$current" == "$hash" && "${SPACEWORKS_TEST_REBUILD:-0}" != 1 ]]; then
+    echo "Test image is current (dependencies $hash); not rebuilding." >&2
+    return
+  fi
+  docker build --label "spaceworks.test-deps=$hash" --tag spaceworks-backend "$HOST_ROOT/backend"
+}
+
+# Tests for what changed since a base (AFFECTED_BASE, default: merge-base with origin/dev):
+# scripts/affected_tests.py picks the pytest files and the frontend sources for
+# `vitest related`. Small changes use this; the full suite stays the release gate.
+affected() {
+  local scope="${1:-all}" sel=()
+  if [[ "$scope" == all || "$scope" == backend ]]; then
+    mapfile -t sel < <(python "$HOST_ROOT/scripts/affected_tests.py" backend)
+    if [[ "${sel[0]:-}" == ALL ]]; then
+      echo "Shared backend code changed; running the full backend suite." >&2
+      test_suite -q
+    elif ((${#sel[@]})); then
+      echo "Affected backend tests: ${#sel[@]} file(s)." >&2
+      test_suite -q "${sel[@]}"
+    else
+      echo "No affected backend tests." >&2
+    fi
+  fi
+  if [[ "$scope" == all || "$scope" == frontend ]]; then
+    mapfile -t sel < <(python "$HOST_ROOT/scripts/affected_tests.py" frontend)
+    if ((${#sel[@]})); then
+      (cd "$ROOT/frontend" && npx vitest related --run "${sel[@]}")
+    else
+      echo "No affected frontend sources." >&2
+    fi
+  fi
+}
+
 test_suite() {
   RUN="spaceworks-test-$$-$(date +%s)"
   cleanup() {
@@ -57,9 +104,7 @@ test_suite() {
   trap 'exit 130' INT
   trap 'exit 143' TERM
   # Source is bind-mounted below; dependencies and fonts come from the image.
-  # Always use Docker's layer cache to reconcile both before allocating test infra.
-  # Otherwise an old image can run current tests with missing shaping/fonts.
-  docker build --tag spaceworks-backend "$HOST_ROOT/backend"
+  ensure_test_image
   docker network create "$RUN" >/dev/null
   docker run -d --name "$RUN-db" --network "$RUN" --network-alias db \
     --label "spaceworks.test=$RUN" --tmpfs /var/lib/postgresql/data \
@@ -151,6 +196,8 @@ case "${1:-}" in
   up) shift; up "$@" ;;
   down) shift; compose down "$@" ;;
   test) shift; test_suite "$@" ;;
+  affected) shift; affected "$@" ;;
+  hooks) git config core.hooksPath .githooks && echo "Git hooks enabled (.githooks/pre-push)." ;;
   e2e) shift; e2e "$@" ;;
   *) compose "$@" ;;
 esac

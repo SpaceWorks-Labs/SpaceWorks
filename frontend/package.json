@@ -10,7 +10,8 @@
     "i18n:compile": "lingui compile --strict",
     "i18n:check": "node scripts/check-i18n-literals.mjs",
     "test": "vitest run",
-    "build": "tsc -b && vite build && node scripts/verify-pwa-build.mjs",
+    "build": "tsc -b && npm run build:bundle",
+    "build:bundle": "vite build && node scripts/verify-pwa-build.mjs",
     "preview": "vite preview",
     "lint": "eslint ."
   },

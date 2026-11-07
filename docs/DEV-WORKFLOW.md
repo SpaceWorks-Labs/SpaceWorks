@@ -88,7 +88,9 @@ plus their prior verdict returned both approvals in minutes.
   network and disposable Postgres 16 (tmpfs), Redis and MinIO, with no host ports or shared ops mounts.
   The current repository is mounted at `/workspace`, with pytest in `/workspace/backend`; explicit
   test environment values override any mounted `backend/.env`, and two Fernet keys are generated
-  inside `spaceworks-backend`. Build that image with `./scripts/dev.sh up --build` first.
+  inside `spaceworks-backend`. The runner rebuilds that image only when `backend/Dockerfile`,
+  `requirements.txt` or the font/runtime build scripts change (label `spaceworks.test-deps`;
+  force with `SPACEWORKS_TEST_REBUILD=1`), because the source itself is bind-mounted.
   Cleanup removes all run-labelled containers and the network, including on interruption.
   **Never run two `pytest` procs against one DB** (TRUNCATE-FK teardown races + false concurrency
   failures) and **never run the full suite concurrently with `codex review`** (it runs its own pytest).
@@ -99,6 +101,17 @@ plus their prior verdict returned both approvals in minutes.
   noise. This bullet once exempted `test_machine_image_presign_finalize_delete_and_audit` as a permitted
   MinIO-host-port failure; that test no longer exists in the tree and the exemption went with it. Do not
   reintroduce a "known failures" allowance without naming the test and the date it was granted.
+- **Affected tests for small changes; the full suite is the release gate.** `./scripts/dev.sh
+  affected [backend|frontend]` runs only what the change since `AFFECTED_BASE` (default: merge-base
+  with `origin/dev`) can reach: `scripts/affected_tests.py` selects the pytest files that import a
+  changed module or one of its direct importers (model/migration/view/URL/serializer changes widen
+  to the whole app; settings, requirements or conftest changes run everything), and the frontend
+  uses `vitest related`. Edited test files are gitignored, so pass them explicitly. Run the full
+  backend and frontend suites once before a release.
+- **Pre-push hook.** `./scripts/dev.sh hooks` enables `.githooks/pre-push`: repository rules on
+  every push, `tsc -b` + ESLint on changed files + related vitest for frontend changes, affected
+  pytest for backend changes. A push to `main` is refused unless `SPACEWORKS_FULL_SUITE_PASSED=1`
+  says the full regression passed on that commit. `SKIP_PREPUSH=1` skips it once.
 - **Local dev topology — everything in Docker with live reload.** `./scripts/dev.sh up --build`.
   The gitignored, machine-specific `docker-compose.override.yml` supplies local port remaps; the
   committed dev layer bind-mounts `./backend` and `./frontend`, runs Django with autoreload and
@@ -111,7 +124,7 @@ plus their prior verdict returned both approvals in minutes.
   **`scripts/dev.sh` exists because passing any `-f` to `docker compose` disables the automatic merge
   of `docker-compose.override.yml`.** It spells the chain out as base → override → dev, in that order: the
   override supplies the infrastructure port remaps, and the dev layer must come last so its app-service
-  commands, ports and bind mounts win. Other than `up`, `down`, `test` and `e2e`, every argument is
+  commands, ports and bind mounts win. Other than `up`, `down`, `test`, `affected`, `hooks` and `e2e`, every argument is
   forwarded verbatim to Compose. Three traps this topology already hit:
   - **The base file hands `backend`'s environment to `migrate`/`worker`/`beat` through a YAML anchor**, so a
     patch to `backend` alone never reaches them — the override applies the MinIO host-port rewrite to all
@@ -205,9 +218,12 @@ wipes that database when wanted. Seed identifiers are loaded by
 Unit-level accessibility checks use `frontend/src/test/axe.ts` (jsdom cannot compute
 colour contrast; `e2e/a11y.spec.ts` covers that in Chromium).
 
-Tests run locally only, before pushing: `./scripts/dev.sh test` and `./scripts/dev.sh e2e`.
-Actions builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling tags
-and optionally deploys through the self-hosted runner; `security-audit.yml` runs `pip-audit` on PRs.
+Tests run locally only, before pushing (`.githooks/pre-push`; `./scripts/dev.sh hooks` enables it):
+`./scripts/dev.sh affected` for everyday changes, and `./scripts/dev.sh test`, `npm test` and
+`./scripts/dev.sh e2e` as the full regression before a release. GitHub Actions only runs basic
+checks: it builds/publishes backend/frontend images, creates the GitHub Release, promotes rolling
+tags and optionally deploys through the self-hosted runner; `security-audit.yml` runs `pip-audit`
+when the requirements change and weekly.
 
 ## CI checks (`.github/workflows/checks.yml`)
 
@@ -215,10 +231,12 @@ The **Checks** workflow runs on every PR into `main` or `dev`, on pushes to `dev
 **checks only** (owner decision #108): the pytest and vitest suites stay local and gitignored, so a green
 Checks run is not a test run. Its four jobs are the required status checks on `main`; keep their names:
 
-- **`frontend`** — `npm ci`, `npx tsc -b`, `npm run lint` (ESLint, `frontend/eslint.config.js`: the
-  recommended JS and typescript-eslint rules plus the rules of hooks; `exhaustive-deps` only warns, and
-  the gitignored test suites are not linted), `npm run build` (which runs the PWA verify script).
-- **`backend`** — Python 3.12, `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
+- **`frontend`** — `npm ci`, then `npx tsc -b` and `npm run lint` side by side (ESLint,
+  `frontend/eslint.config.js`: the recommended JS and typescript-eslint rules plus the rules of
+  hooks; `exhaustive-deps` only warns, and the gitignored test suites are not linted), then
+  `npm run build:bundle` (Vite + the PWA verify script; `npm run build` would type-check again).
+- **`backend`** — Python 3.12 from `.github/actions/backend-python` (a virtualenv cached by the
+  `requirements.txt` hash), `manage.py check`, `manage.py makemigrations --check --dry-run`. Settings
   get dummy values plus keys from `scripts/ci/throwaway_keys.py` (`SECRET_KEY` and the
   Fernet keys, including the mandatory `PII_MASTER_KEY`); no database or service is started.
 - **`contracts`** — regenerates the OpenAPI snapshot (`spectacular --format openapi-json`) and fails on

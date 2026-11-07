@@ -2,7 +2,7 @@ import { browserSessionIdentity, requestReauthentication } from "./reauthenticat
 import { configuredApiUrl } from "../runtimeConfig";
 import { currentSessionContext, type SessionContext } from "./sessionContext";
 import { notifyMfaEnrollmentRequired, requiresMfaEnrollment } from "./mfaEnrollment";
-import { authHeaders, getAccessToken, getSessionGeneration, refreshAccessToken, expireStaffAuthSession } from "./sessionTokens";
+import { authHeaders, getAccessToken, getSessionGeneration, hasSessionIdentity, refreshAccessToken, expireStaffAuthSession } from "./sessionTokens";
 export { authHeaders, getAccessToken, setAccessToken, clearAccessToken, cleanupLegacyAccessToken,
   refreshAccessToken, logout, addAuthExpiredListener, expireStaffAuthSession } from "./sessionTokens";
 
@@ -92,10 +92,10 @@ export async function staffFetch(
     if (refreshed) {
       response = await makeRequest();
       if (response.status === 401 && await canRefreshAfterUnauthorized(path, response)) {
-        if (generation === getSessionGeneration(context)) expireStaffAuthSession(context);
+        if (generation === getSessionGeneration(context) && hasSessionIdentity(context)) expireStaffAuthSession(context);
       }
     } else {
-      if (generation === getSessionGeneration(context)) expireStaffAuthSession(context);
+      if (generation === getSessionGeneration(context) && hasSessionIdentity(context)) expireStaffAuthSession(context);
     }
   }
   if (await requiresMfaEnrollment(response)) notifyMfaEnrollmentRequired();

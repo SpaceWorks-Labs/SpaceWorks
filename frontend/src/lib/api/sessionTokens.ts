@@ -16,6 +16,8 @@ const session = (context: SessionContext) => {
 };
 export const getSessionGeneration = (context: SessionContext) => session(context).generation;
 export const getAccessToken = (context = currentSessionContext()) => session(context).token;
+/** Cache ownership, not authorization: cookie refresh may establish the identity later. */
+export const hasSessionIdentity = (context = currentSessionContext()) => Boolean(session(context).token || session(context).owner);
 export function offlineAccountScope(resource: string, context = currentSessionContext()) {
   const identity = browserSessionIdentity(getAccessToken(context)) || session(context).owner || "anonymous";
   return `${offlineSessionPrefix(context)}${encodeURIComponent(identity)}:${resource}`;

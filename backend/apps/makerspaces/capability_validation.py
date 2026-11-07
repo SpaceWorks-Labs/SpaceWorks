@@ -45,7 +45,20 @@ def prune_features(enabled_features, enabled_modules):
             module in modules for module in feature_required_modules(definition.key)
         )
         (kept if supported else dropped).append(definition.key)
-    return kept, dropped
+    # A feature built on a feature that is off is off too (the runtime rule in
+    # `capability_eligibility`). Without this, a default-on child of a default-off parent
+    # (`events.gallery_search` under `events.project_gallery`) left every new row unable
+    # to install or uninstall any module.
+    changed = True
+    while changed:
+        changed = False
+        for key in list(kept):
+            if not set(FEATURES[key].requires_features) <= set(kept):
+                kept.remove(key)
+                dropped.append(key)
+                changed = True
+    order = {definition.key: index for index, definition in enumerate(FEATURE_DEFINITIONS)}
+    return kept, sorted(dropped, key=order.__getitem__)
 
 
 def validate_capabilities(enabled_modules, enabled_features):

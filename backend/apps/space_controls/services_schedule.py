@@ -109,7 +109,7 @@ def _runner(state):
             state.reminders_sent = [*state.reminders_sent, "blocked"]
             state.save(update_fields=["reminders_sent", "updated_at"])
             audit.record(None, "space_control.schedule_blocked", makerspace=state.makerspace,
-                         target=state.makerspace, meta={"reason": "scheduler_not_active_superadmin"})
+                         target=state.makerspace, meta={"reason_code": "scheduler_not_active_superadmin"})
         return None
 
 
@@ -163,7 +163,7 @@ def run_purge(state_id, now=None):
             # Unarchived (or paused) since: the purge no longer applies.
             _clear(state)
             audit.record(None, "space_control.schedule_cleared", makerspace=space, target=space,
-                         meta={"reason": "space_not_archived"})
+                         meta={"reason_code": "space_not_archived"})
             return False
         actor = _runner(state)
         if actor is None:

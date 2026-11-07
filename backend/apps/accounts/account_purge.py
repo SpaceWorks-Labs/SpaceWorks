@@ -144,7 +144,7 @@ def _global_rows(user):
     SocialIdentity.objects.filter(user=user).delete()
     for label in ("accounts.WebAuthnCredential", "accounts.WebAuthnCeremony", "accounts.StaffMfaGrace",
                   "accounts.KnownDevice", "accounts.KnownNetwork", "accounts.SecurityAlert"):  # S-B
-        _model(label).objects.filter(user=user).delete()
+        every_row(_model(label)).filter(user=user).delete()
     # Includes unselected (NULL-makerspace) activity. Wait for every tenant gate
     # before removing this grant-owned history; the revoked grants themselves stay.
     DeviceActivityDay.objects.filter(grant__user=user).delete()

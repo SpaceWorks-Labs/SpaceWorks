@@ -26,6 +26,12 @@ from django.http import HttpResponseNotFound
 TUNNEL_HEADER = "HTTP_X_SPACEWORKS_CONTROL_TUNNEL"
 # A loopback peer is "the server itself" only when no proxy hop says otherwise.
 FORWARDING_HEADERS = ("HTTP_X_FORWARDED_FOR", "HTTP_X_REAL_IP", "HTTP_FORWARDED")
+# The Compose network the tunnel's Caddy site sits on: RFC 1918 and IPv6 unique-local only.
+# ``ipaddress.is_private`` is wider -- it also covers the documentation, benchmarking and
+# reserved ranges -- and carrier-grade NAT (RFC 6598) is shared with other ISP customers, so
+# neither may vouch for the tunnel stamp.
+TUNNEL_PEER_NETWORKS = tuple(ipaddress.ip_network(cidr) for cidr in (
+    "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"))
 CONTROL_PREFIXES = ("/control/", "/mfa/control/", "/mfa/reauth/")
 
 
@@ -40,6 +46,11 @@ def _peer(request):
         return None
 
 
+def _on_tunnel_network(peer):
+    peer = getattr(peer, "ipv4_mapped", None) or peer
+    return any(peer.version == net.version and peer in net for net in TUNNEL_PEER_NETWORKS)
+
+
 def from_server(request):
     """True for a request that reached the backend from the server or its tunnel listener."""
     peer = _peer(request)
@@ -50,7 +61,7 @@ def from_server(request):
     return bool(
         getattr(settings, "CONTROL_PLANE_TUNNEL", False)
         and request.META.get(TUNNEL_HEADER) == "1"
-        and (peer.is_private or peer.is_loopback)
+        and (peer.is_loopback or _on_tunnel_network(peer))
     )
 
 

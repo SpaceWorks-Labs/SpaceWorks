@@ -43,6 +43,14 @@ EVENTS = {
         "requeued", "uncollected", "no_show_flagged")},
     # Lane L23: an auto-stopped machine session (owner and staff legs; no room broadcast).
     ("printing", "session_auto_stopped"): (),
+    # Release 2 L11: a self-host move's status, a staff leg to Space Managers (rooms=False).
+    ("api_access", "selfhost_move_status"): (),
+    # Release 2 L18: a sponsor perk coming due fans out to staff and rooms (no giver details).
+    ("payments", "perk_due"): (),
+    # Release 2 L22: the shop staff's alerts to `manage_shop` holders (ids only; never the buyer).
+    **{("payments", event): () for event in ("shop_order_new", "shop_order_unfulfilled", "shop_low_stock")},
+    # Release 2 L21a: a member's attendance reply is organiser-facing (catalogued; no producer yet).
+    ("events", "attendance_replied"): (),
 }
 
 # These producers explicitly disable staff/room fan-out. Their personal content
@@ -63,6 +71,34 @@ PERSONAL_ONLY_EVENTS = frozenset({
 # subject; none has a staff room body.
 from .notification_catalog_events_programme import PROGRAMME_EVENTS as _PROGRAMME_EVENTS
 PERSONAL_ONLY_EVENTS = PERSONAL_ONLY_EVENTS | frozenset(("events", event) for event in _PROGRAMME_EVENTS)
+# Release 2 lanes: notices addressed to one person (an envelope with its own rendered body, or
+# a direct email carrying only that person's link). None has a staff leg or a room post.
+RELEASE_2_PERSONAL_EVENTS = frozenset({
+    # L2 (X37): event and room staff-grant invitations, on the invitee's own channels only.
+    ("events", "invitation"), ("bookings", "invitation"),
+    # L6: the buyer's order notices, a seat-claim invite, a transfer offer, a pay link and an
+    # updated calendar invite (notices_r2_l6, orders_attendees, transfers, orders_pay_link,
+    # registration_invites).
+    *(("events", event) for event in (
+        "order_confirmed", "order_payment_reminder", "order_abandoned", "ticket_type_changed",
+        "pass_occurrence_cancelled", "ticket_claim_invite", "ticket_transfer_received", "ticket_pay_link",
+        "registration_updated")),
+    # L21a: stage advanced, "are you still coming?" and crew notices (notices_r2_l21a).
+    *(("events", event) for event in (
+        "application_stage_advanced", "attendance_confirmation", "attendance_reminder", "crew_invited",
+        "crew_decided")),
+    # L21b, #178-#181: judging-source member notices and the winner's payout notice.
+    *(("events", event) for event in (
+        "finalists_announced", "prize_payout_recorded", "peoples_choice_open", "stage_deadline_reminder",
+        "stage_shortlisted", "stage_not_shortlisted", "stage_promoted", "judge_reminder")),
+    # L18: the giver's receipt and pledge reminder (fanout staff=False, or a guest's direct email).
+    ("payments", "donation_received"), ("payments", "pledge_due"),
+    # L22: the shop buyer's order notices (staff=False); the staff alerts are in EVENTS above.
+    *(("payments", event) for event in (
+        "shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
+        "shop_order_cancelled", "shop_order_reminder", "shop_order_receipt")),
+})
+PERSONAL_ONLY_EVENTS = PERSONAL_ONLY_EVENTS | RELEASE_2_PERSONAL_EVENTS
 
 
 def chat_only_entry(feature, event):

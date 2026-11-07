@@ -8,6 +8,7 @@ import logging
 from uuid import UUID
 
 from django.apps import apps
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import connection, transaction
 from django.http import Http404
 
@@ -94,7 +95,9 @@ def command(event, actor, data, *, path, run):
         if prior.request_sha256 != hashed:
             raise ProgrammeError("idempotency_conflict", "This operation was used for different input.")
         return prior.response_reference
-    response = run()
+    # A receipt is a plain JSONField: money (Decimal) and dates (L21b payouts) are stored and
+    # answered in their JSON form, so the first answer and every replay are byte-identical.
+    response = json.loads(json.dumps(run(), cls=DjangoJSONEncoder))
     model.objects.create(event_id=event.pk, actor_id=actor.pk, operation_uuid=operation,
                          request_sha256=hashed, response_reference=response)
     return response

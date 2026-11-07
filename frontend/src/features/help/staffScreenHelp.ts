@@ -2,6 +2,7 @@
 // link opens. A lane that adds a screen adds its line here; a screen without a line shows no link.
 export const STAFF_SCREEN_HELP: Readonly<Record<string, string>> = {
   "platform-dashboard": "superadmin/platform-dashboard",
+  "platform-spaces": "superadmin/platform-dashboard",
   usage: "superadmin/platform-dashboard",
   dashboard: "space-manager/first-steps",
   notifications: "space-manager/notifications-and-channels",

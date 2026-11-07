@@ -174,3 +174,8 @@ OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
     FRESH, ("payments.Donation", "access_secret"), ("payments.DonationPledge", "manage_secret")))
 # Release 2 L22: a guest's status-link secret is bearer material; the target mints a fresh one.
 OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(FRESH, ("shop.ShopOrder", "status_secret")))
+# Release 2 L16: a technician's opt-in link digest and bot-proven chat id are not carried; the
+# target stores them empty and the technician opts in again there.
+OMITTED_FIELD_RECONSTRUCTIONS.update(_rules(
+    EMPTY_STRING, ("maintenance.TechnicianContact", "opt_in_digest"),
+    ("maintenance.TechnicianContact", "telegram_chat_id")))

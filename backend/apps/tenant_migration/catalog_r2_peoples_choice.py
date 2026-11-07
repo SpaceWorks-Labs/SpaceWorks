@@ -26,6 +26,9 @@ DATASETS = {
     'events.PeoplesChoiceResult': ('events/programme/PeoplesChoiceResult.csv', 'event__makerspace'),
     'events.PeoplesChoiceStanding': ('events/programme/PeoplesChoiceStanding.csv', 'result__event__makerspace'),
 }
+#: Account edges exported as personal references; the portable closure carries each named person.
+USER_FIELDS = frozenset({('events.PeoplesChoiceVote', 'voter'), ('events.PeoplesChoiceVote', 'voided_by'),
+                         ('events.PeoplesChoiceResult', 'published_by')})
 
 _DEF = 'Authored event configuration; it travels as data and grants no target authority.'
 _BALLOT = 'A member ballot is evidence of a vote; it travels as data and grants no target authority.'

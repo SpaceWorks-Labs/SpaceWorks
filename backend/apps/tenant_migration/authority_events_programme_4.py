@@ -144,6 +144,9 @@ FIELDS = {
     ('events.SubmissionIntegrityFlag', 'state'): 'Programme authority/disclosure input; imported live grants, selections and publication are reset and runtime policy rechecks the target.',
     ('events.Event', 'version'): 'Programme version/subject/credential-mode input; target remaps history and requires fresh operational authority.',
     ('events.Event', 'event_date_revision'): 'Programme version/subject/credential-mode input; target remaps history and requires fresh operational authority.',
+    # #178 (62963fb8): stage requirements read the event's timezone and a decision's review stage.
+    ('events.Event', 'timezone_name'): 'Display timezone for stage deadlines read by submission requirements; it travels as data and grants no target authority.',
+    ('events.ApplicationDecision', 'stage'): 'Authored definition or historical workflow evidence; preserved behind reset operational gates and live target authority.',
     ('events.EventRegistration', 'version'): 'Programme version/subject/credential-mode input; target remaps history and requires fresh operational authority.',
     ('events.EventRegistration', 'answer_locked_at'): 'Programme version/subject/credential-mode input; target remaps history and requires fresh operational authority.',
     ('events.EventRegistration', 'date_review_required'): 'Programme version/subject/credential-mode input; target remaps history and requires fresh operational authority.',

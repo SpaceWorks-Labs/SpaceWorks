@@ -35,4 +35,4 @@ def revoke(user, now):
     # unusual-login state are account credentials or telemetry; none outlives a departure.
     for label in ("accounts.WebAuthnCredential", "accounts.WebAuthnCeremony", "accounts.StaffMfaGrace",
                   "accounts.KnownDevice", "accounts.KnownNetwork", "accounts.SecurityAlert"):
-        apps.get_model(label).objects.filter(user=user).delete()
+        every_row(apps.get_model(label)).filter(user=user).delete()

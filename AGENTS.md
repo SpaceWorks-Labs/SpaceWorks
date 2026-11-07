@@ -313,11 +313,9 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   still import the admin submodules so the `@admin.register` side effects fire. **The ceiling is enforced on what you touch.**
   **CI enforces it too:** the `rules` job of the Checks workflow runs `scripts/ci/check_rules.py`
   (`python scripts/ci/check_rules.py` locally) over tracked, non-migration, non-test, non-generated files in
-  `backend/apps`, `backend/config` and `frontend/src`; its `ALLOWLIST` is the only exception list, and
-  today it holds just `config/settings.py`. Measured 2026-11-05 on the combined release-2 tree: **no
-  `backend/apps/` or `frontend/src/` file is over 300 lines**; the only file over the ceiling is
-  `backend/config/settings.py` (1834 lines), and it is split in the release phase (P16), after which the
-  allowlist entry goes. `backend/tests/` is not held to the ceiling.
+  `backend/apps`, `backend/config` and `frontend/src`. Django loads `config.settings`, which assembles
+  the domain settings sections in order. The line-ceiling allowlist is empty.
+  `backend/tests/` is exempt from the ceiling.
   **Split an over-ceiling file in its own commit before adding to it**, and when splitting one that other
   modules import from, check for guards pinned to its path: `tests/makerspaces/test_tenant_servability_guard.py`
   pins two function *bodies* to `accounts/rbac.py` by `(path, function)`, and

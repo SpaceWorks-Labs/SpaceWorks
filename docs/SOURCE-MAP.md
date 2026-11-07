@@ -8,6 +8,10 @@
 
 ## Current source map (real paths)
 
+Django loads `backend/config/settings.py`. The adjacent `settings_*.py` sections hold runtime,
+database and middleware, storage, delivery, recovery, scheduling, credentials, DRF, security,
+schema and logging settings. The entry point applies cloud and API overlays in order.
+
 Canonical personal delivery is the envelope/configuration/provider pipeline indexed in
 [SOURCE-MAP-NOTIFICATIONS.md](SOURCE-MAP-NOTIFICATIONS.md). SMS, Twilio/Meta WhatsApp,
 physical sender/STOP protection, device children and canonical reports are reconciled there.

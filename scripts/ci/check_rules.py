@@ -28,9 +28,7 @@ SOURCE_SUFFIXES = {".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".css"}
 
 # Files allowed over the ceiling, each with its reason. Keep this list short: an
 # entry that drops back under the ceiling fails the check so it gets removed.
-ALLOWLIST = {
-    "backend/config/settings.py": "Django settings are one file until the P2 split lane lands",
-}
+ALLOWLIST: dict[str, str] = {}
 
 
 def repo_root() -> str:

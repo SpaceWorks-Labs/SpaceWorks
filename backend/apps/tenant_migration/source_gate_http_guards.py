@@ -26,7 +26,7 @@ def validate_authenticated_http_boundary(apps_dir, error_class):
     if _uses_device_authenticator(apps_dir):
         _validate_device_authenticator(apps_dir, error_class)
     if Path(apps_dir).resolve() == APPS_DIR:
-        settings_path = APPS_DIR.parent / "config" / "settings.py"
+        settings_path = APPS_DIR.parent / "config" / "settings_drf.py"
         expected = "apps.accounts.authentication.SpaceWorksJWTAuthentication"
         if expected not in settings_path.read_text(encoding="utf-8-sig"):
             raise error_class(

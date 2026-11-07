@@ -22,9 +22,9 @@ The operational posture is self-host first:
 - Managed/SaaS behavior is env-gated and dormant by default: managed Postgres purge handling,
   PUT presigning for Supabase-compatible storage, connection-pool settings, hosted-domain
   verification, and fair-use limits. `MANAGED_POSTGRES` defaults to false and
-  `STORAGE_PRESIGN_METHOD` to `post` (`backend/config/settings.py:53-75`).
-- Per-makerspace PII encryption is also dormant unless explicitly enabled; disabled installs do
-  not require key material (`backend/config/settings.py:373-385`).
+  `STORAGE_PRESIGN_METHOD` to `post` (`backend/config/settings_runtime.py`).
+- Optional per-makerspace PII encryption is off by default. Mandatory finance fields always need
+  a wrapping key or broker (`backend/config/settings_credentials.py`).
 
 ## 2. Topology and tenancy
 
@@ -72,7 +72,7 @@ module flags, branding, public API key, domain/origin setup, archive state, and 
 `accounts.User` is global, not tenant-local. It extends Django's user with display/contact
 fields, a global role used principally for superadmin, active/restricted status, and retained
 legacy Check-In identity fields (`backend/apps/accounts/models.py:10-78`). DRF defaults to JWT
-authentication and deny-by-default permissions (`backend/config/settings.py:389-399`). Login
+authentication and deny-by-default permissions (`backend/config/settings_drf.py`). Login
 returns a short-lived access JWT while refresh is held in an HTTP-only cookie; refresh/logout
 implement rotation/blacklisting and CSRF/origin checks (`backend/apps/accounts/views.py:94-251`,
 `backend/apps/accounts/auth_cookies.py:9-52`). The React client stores the access token only in
@@ -150,7 +150,7 @@ flowchart TD
 ```
 
 Check-In is retired as a runtime integration: `apps.checkin` is not installed
-(`backend/config/settings.py:78-116`), and no Check-In routes are present in the URL configuration.
+(`backend/config/settings_django.py`), and no Check-In routes are present in the URL configuration.
 The last leftover, `User.external_checkin_user_id`, was dropped (`accounts/0043`, owner decision #80);
 nothing reads or writes a Check-In identity any more.
 
@@ -304,7 +304,7 @@ and per-makerspace write fences fail protected writes closed during sensitive op
   bucket; sensitive evidence remains signed/private.
 - **Deployment:** managed fair-use quotas cover products, assets, machines, members, storage,
   print, email/notification channels, API clients, and custom roles; `None` means unlimited in
-  self-host mode (`backend/config/settings.py:54-73`, `backend/apps/makerspaces/limits.py:62-356`).
+  self-host mode (`backend/config/settings_runtime.py`, `backend/apps/makerspaces/limits.py`).
 - **Parity:** staff actions are exposed through both the React operational console and the
   superadmin `/control/` control plane where appropriate, but neither is allowed to bypass the
   same RBAC/workflow/services layer.

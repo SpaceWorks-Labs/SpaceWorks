@@ -44,9 +44,9 @@ export function EventDrawerMore({ event, makerspaceId, access, surfaces, section
   const websiteTarget = { kind: "events" as const, id: eventId, makerspaceId };
   return <>
     {section ? <Tabs tabs={sectionTabs} activeKey={section} label={t`More sections`} /> : null}
-    {surfaces.invites ? <EventInvitesPanel key={eventId} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
-    {surfaces.ticketTypes ? <EventTicketsPanel key={eventId} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
-    {surfaces.promos ? <EventPromosPanel key={eventId} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+    {surfaces.invites ? <EventInvitesPanel key={`invites:${eventId}`} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+    {surfaces.ticketTypes ? <EventTicketsPanel key={`ticket-types:${eventId}`} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
+    {surfaces.promos ? <EventPromosPanel key={`promos:${eventId}`} visible={section === "tickets"} eventId={eventId} disabled={readOnly} /> : null}
     {section === "tickets" && access.manager ? <EventOrderTools eventId={eventId} features={ticketing} manager={access.manager} disabled={readOnly} /> : null}
     {sections.speakers && section === "speakers" ? <EventSpeakersPanel eventId={eventId} makerspaceId={makerspaceId} websiteEnabled={sections.website} disabled={readOnly} /> : null}
     {section === "feedback" ? access.edit ? <>

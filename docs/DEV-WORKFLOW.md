@@ -102,8 +102,9 @@ plus their prior verdict returned both approvals in minutes.
   MinIO-host-port failure; that test no longer exists in the tree and the exemption went with it. Do not
   reintroduce a "known failures" allowance without naming the test and the date it was granted.
 - **Affected tests for small changes; the full suite is the release gate.** `./scripts/dev.sh
-  affected [backend|frontend]` runs only what the change since `AFFECTED_BASE` (default: merge-base
-  with `origin/dev`) can reach: `scripts/affected_tests.py` selects the pytest files that import a
+  affected [backend|frontend]` runs only what the change since `AFFECTED_BASE` can reach (default:
+  the branch upstream, else the previous commit; never `origin/dev`, which can sit hundreds of
+  commits behind a release branch). `scripts/affected_tests.py` selects the pytest files that import a
   changed module or one of its direct importers (model/migration/view/URL/serializer changes widen
   to the whole app; settings, requirements or conftest changes run everything), and the frontend
   uses `vitest related`. Edited test files are gitignored, so pass them explicitly. Run the full

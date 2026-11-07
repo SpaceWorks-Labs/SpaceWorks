@@ -2308,6 +2308,9 @@ msgstr "{name} always prints"
 msgid "{name} has just sold out."
 msgstr "{name} has just sold out."
 
+msgid "{name} in numbers"
+msgstr "{name} in numbers"
+
 msgid "{name} is checked in. Print the current event credential and separately consented profile photo."
 msgstr "{name} is checked in. Print the current event credential and separately consented profile photo."
 
@@ -17449,6 +17452,12 @@ msgstr "Live presence"
 msgid "Live preview"
 msgstr "Live preview"
 
+msgid "Live public stats for {displayName}."
+msgstr "Live public stats for {displayName}."
+
+msgid "Live public stats for {name}."
+msgstr "Live public stats for {name}."
+
 msgid "Live stats"
 msgstr "Live stats"
 
@@ -18509,6 +18518,9 @@ msgstr "Machine-specific"
 
 msgid "Machines"
 msgstr "Machines"
+
+msgid "Machines · {displayName}"
+msgstr "Machines · {displayName}"
 
 msgid "Machines & materials"
 msgstr "Machines & materials"

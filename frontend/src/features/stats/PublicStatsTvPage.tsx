@@ -2,6 +2,7 @@ import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { PageMetadata } from "../../components/PageMetadata";
 import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
 import { LayoutFrame, QueryContent } from "../../components/layouts/LayoutFrame";
 import { useTenantBranding } from "../../lib/useTenantBranding";
@@ -37,11 +38,12 @@ export function PublicStatsTvPage() {
   useEffect(() => { setRefresh(stats?.tv.enabled ? stats.tv.refresh_seconds : undefined); }, [stats]);
 
   return <div style={brandStyle} className="min-h-dvh bg-bg text-ink">
+    <PageMetadata title={t`${name} in numbers`} description={t`Live public stats for ${name}.`} path={window.location.pathname} siteName={name} noindex />
     <LayoutFrame standalone width="wide" className="py-10">
       <header className="mb-10 flex flex-wrap items-center gap-6">
         {logo ? <img src={logo} alt={name} className="h-16 w-auto max-w-[min(60vw,20rem)] object-contain" />
           : <SpaceWorksLogo variant="symbol" size={64} />}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-[1_1_14rem]">
           <h1 className={logo ? "sr-only" : "break-words font-accent text-4xl font-semibold xl:text-5xl"}>{name}</h1>
           {stats ? <p className="mt-2 text-2xl text-muted">{stats.period.label}</p> : null}
         </div>

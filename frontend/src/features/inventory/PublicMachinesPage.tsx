@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { PublicLayout } from "../../components/layouts";
+import { PageMetadata } from "../../components/PageMetadata";
 import { publicPageChrome } from "./PublicPageChrome";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useEffect, useMemo, useState } from "react";
@@ -97,6 +98,8 @@ export function PublicMachinesPage() {
   const visibleGroups = groups.filter(group => !kind || group.name === kind).map(group => ({ ...group, machines: group.machines.filter(machine => !trainingOnly || machine.training_required === true) })).filter(group => group.machines.length);
   const displayName = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   return <div style={brandStyle}>
+    <PageMetadata title={t`Machines · ${displayName}`} description={t`What you can use at ${displayName}`} path={tenantPath("machines")}
+      image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
       header={{ title: t`Machines`, subtitle: t`What you can use at ${displayName}`, ...(jobTypeIds.size
         ? { primary: { label: t`Request a job`, href: tenantPath("machine-jobs/new") }, secondary: { label: t`Member area`, href: tenantPath("member") } }

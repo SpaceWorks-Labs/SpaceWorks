@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
+import { PageMetadata } from "../../components/PageMetadata";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "../inventory/PublicInventoryParts";
@@ -29,7 +30,10 @@ export function PublicStatsPage() {
     "Makerspace";
   const stats = statsQuery.data;
 
-  return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
+  return <div style={brandStyle}>
+    <PageMetadata title={t`${displayName} in numbers`} description={t`Live public stats for ${displayName}.`} path={tenantPath("stats")}
+      image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
+    <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
     header={{ eyebrow: stats ? t`Live stats · ${stats.period.label}` : t`Live stats`, title: t`${displayName} in numbers`,
       subtitle: t`Event and community counts below 3 show as “fewer than 3”.`,
       primary: { label: t`Browse inventory`, href: tenantPath("inventory") },

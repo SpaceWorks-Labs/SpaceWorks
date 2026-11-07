@@ -7,14 +7,14 @@ keywords: public site, branding, logo, colours, theme, opening hours, holidays, 
 ## Name, logo and colours
 
 1. Open **Settings**, then **Branding & public site**.
-2. Fill in the **Public display name**, and upload a **Logo** and **Cover image**. Without a logo, your name is used as a wordmark.
+2. Fill in the **Public display name**, and upload a **Logo** and **Banner (wide image)**. The banner appears at the top of your makerspace home and on its public listing card. Without a banner, the existing brand tile or published cover is used; without a logo, the public header shows the Space Works mark and your name. An uploaded logo replaces both in that header; it does not remove the name from your listing card.
 3. Under **Public and member colours**, choose your colours. Space Works checks they're readable and adjusts them if needed.
 
 ![Screenshot: the Branding & public site settings](screenshot:sm-branding)
 
 ## What's public
 
-Under **General**, choose **Publish public site** and **Show public inventory**. Hiding the inventory keeps all your items; it only takes the catalogue off the public page. Each item also has its own visibility and count settings.
+Under **General**, choose **Publish public site** and **Show public inventory**. Hiding the inventory keeps all your items; it removes the Inventory page and its public entry points. The home remains an overview of enabled areas. Each item also has its own visibility and count settings. **Primary homepage shortcut** puts an available area first among the home shortcuts; it never replaces the overview or exposes a disabled area.
 
 ## Opening hours
 
@@ -38,3 +38,12 @@ The banner informs; it doesn't stop anything working. Empty text hides it.
 On a hosted platform you can also **Request a subdomain**; the platform team approves it.
 
 > **Who can do this:** the Space Manager.
+
+
+## Public stats and responsible managers
+
+In **Settings → Public stats**, choose whether to publish the page, its section order, fixed reporting period, headline figures and TV refresh. Under **What appears in public stats**, choose individual figures and lists across the installed areas. Save with **Save public stats**. There are separate controls for legacy lists and their headline or period figures, so hiding an event card list does not automatically hide its count.
+
+Use settings grants to let Inventory, Event, Machine and Booking Managers change their own area's choices in their normal settings screen. Individual **Lock for managers** controls keep a choice with you. You can override a delegated lock; managers see it as read-only. Community member and check-in figures and the overall page remain under Space Manager control. Module-off areas stay hidden and retain their choices.
+
+Hiding a widget hides it from both the public page and TV board, including duplicate headline values. It does not erase source history. Existing public-item visibility, borrower-name opt-in and small-number suppression still apply. SpaceWorks opens in light mode by default; a visitor's explicit saved theme is retained.

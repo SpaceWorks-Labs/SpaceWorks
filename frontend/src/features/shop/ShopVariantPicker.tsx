@@ -23,7 +23,7 @@ export function ShopVariantPicker({ product, currency, variantId, quantity, onVa
             <span className="font-semibold text-ink">{variant.name || product.name}</span>
             {detail && detail !== variant.name ? <span className="text-sm text-muted">{detail}</span> : null}
           </span>
-          <span className="tabular-nums">{shopMoney(variant.price, currency)}</span>
+          {variant.price !== null ? <span className="tabular-nums">{shopMoney(variant.price, currency)}</span> : null}
           {stock ? <StatusPill label={stock.label} tone={stock.tone} /> : null}
         </label>;
       })}

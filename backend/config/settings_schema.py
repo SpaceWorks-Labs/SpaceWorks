@@ -22,7 +22,7 @@ SPECTACULAR_SETTINGS = {
     # `tests/test_version_consistency.py`. It cannot simply READ that file: the backend
     # image is built with `context: ./backend`, so the repo root is outside the build
     # context and the file does not exist inside the container.
-    "VERSION": "0.9.2",
+    "VERSION": "0.11.0",
     "ENUM_NAME_OVERRIDES": {
         "DevicePlatformEnum": "apps.accounts.models_devices.DevicePlatform.choices",
         # Each anyOf proof branch has a `type` discriminator. Without unique names

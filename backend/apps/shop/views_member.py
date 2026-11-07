@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from apps.accounts.staff_identity import actor_ids_for
 
 from .models import ShopOrder
+from .buyer_history import buyer_returns_prefetch
 from .serializers_public import ShopBuyerOrderSerializer, ShopErrorSerializer
 
 TAGS = ["Member shop"]
@@ -27,7 +28,7 @@ def my_orders(user):
 
     spaces = servable_queryset(Makerspace.objects.filter(enabled_modules__contains=["shop"])).values("pk")
     return (ShopOrder.objects.filter(buyer_id__in=actor_ids_for(user), makerspace_id__in=spaces)
-            .select_related("makerspace", "pickup_event").prefetch_related("lines"))
+            .select_related("makerspace", "pickup_event").prefetch_related("lines", buyer_returns_prefetch()))
 
 
 class MemberShopOrderListView(APIView):

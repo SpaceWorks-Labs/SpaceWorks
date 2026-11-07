@@ -12,8 +12,8 @@ is correct off-box, shown below. Installer/Compose-only rows are classified sepa
 in `apps/backup/settings_policy.HOST_ONLY_POLICIES`: they are excluded from backend
 restore compatibility and checked through the host topology record instead.
 
-Defaults are the expressions in `backend/config/settings.py`; "read outside `settings.py`"
-means a command, script or app module reads it directly (setup, build, host orchestration).
+Defaults come from the sections composed by `backend/config/settings.py`. The table uses
+"read outside `settings.py`" for values read directly by setup, build or host orchestration code.
 
 WP3 quiet hours, digest times and bounce signing credentials are tenant settings,
 not environment variables. Booking ICS uses the existing

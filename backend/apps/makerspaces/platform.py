@@ -6,7 +6,7 @@ from apps.inventory import public_image_storage
 from apps.integrations.email import email_enabled
 from apps.makerspaces.models import Makerspace, default_branding_config
 from apps.makerspaces.theme_validation import public_theme_config
-from apps.makerspaces.servability import is_servable, servable_queryset
+from apps.makerspaces.servability import is_servable, public_availability_queryset, servable_queryset
 from apps.makerspaces.capabilities import FEATURES
 from apps.makerspaces.capability_eligibility import configuration_feature_enabled
 from apps.makerspaces.module_registry import is_frontend_exposed, module_available, module_workflows
@@ -120,8 +120,9 @@ def paused_frontend(**lookup):
     instead of falling back to the central site; it reveals no more than the public
     availability endpoint does for a slug."""
     rows = _frontend_rows(**lookup)
-    return rows is not None and rows.filter(lifecycle_state=Makerspace.LifecycleState.SUSPENDED,
-                                            archived_at__isnull=True).exists()
+    return rows is not None and public_availability_queryset(rows).filter(
+        lifecycle_state=Makerspace.LifecycleState.SUSPENDED,
+    ).exists()
 
 
 def module_enabled(makerspace, module_key):

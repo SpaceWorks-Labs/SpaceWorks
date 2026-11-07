@@ -24,6 +24,8 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
       client.invalidateQueries({ queryKey: ["staff", "makerspaces"] }),
       client.invalidateQueries({ queryKey: ["report-catalog"] }),
       client.invalidateQueries({ queryKey: ["operations-report"] }),
+      client.invalidateQueries({ queryKey: ["platform-overview"] }),
+      client.invalidateQueries({ queryKey: ["platform-dashboard"] }),
     ]);
   };
   const changeModule = ({ key, action }: { key: string; action: "install" | "uninstall" }) =>

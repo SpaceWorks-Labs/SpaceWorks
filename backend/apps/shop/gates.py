@@ -33,6 +33,15 @@ def require_feature(space, key):
     return space
 
 
+def stock_source_enabled(space, variant, *, bundles=False):
+    """New baskets respect the link switch without changing retained stock ownership."""
+    if feature_enabled(space, "shop.consumable_link"):
+        return True
+    from apps.inventory.availability import shop_stock_units
+
+    return not any(source.linked_product_id for source, _quantity in shop_stock_units(variant, 1, bundles=bundles))
+
+
 def public_space(slug):
     """The space behind a public shop URL, when its online shop is open."""
     from apps.makerspaces.editions import require_public_surface

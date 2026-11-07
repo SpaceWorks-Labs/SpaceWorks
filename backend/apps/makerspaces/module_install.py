@@ -173,7 +173,7 @@ def _apply(locked, modules, actor, add_features=()):
     kept_features, dropped_features = prune_features(
         sorted({*(locked.enabled_features or []), *add_features}), modules)
     canonical_modules, canonical_features = validate_capabilities(
-        sorted(modules), kept_features
+        sorted(modules), kept_features, dormant_defaults=kept_features
     )
     locked.enabled_modules = canonical_modules
     locked.enabled_features = canonical_features

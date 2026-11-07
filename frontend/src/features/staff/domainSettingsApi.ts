@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 
 /** Mirrors `apps/makerspaces/domain_settings.py::DOMAINS`; the path decides the action checked. */
-export type SettingsDomain = "events" | "bookings" | "machines" | "inventory";
+export type SettingsDomain = "events" | "bookings" | "machines" | "inventory" | "shop";
 
 export type DomainFeature = {
   key: string;
@@ -45,6 +45,7 @@ export const DOMAIN_TITLES: Record<SettingsDomain, string> = {
   bookings: t`Booking settings`,
   machines: t`Machine settings`,
   inventory: t`Lending settings`,
+  shop: t`Shop settings`,
 };
 
 export const domainSettingsKey = (makerspaceId: number, domain: SettingsDomain) =>

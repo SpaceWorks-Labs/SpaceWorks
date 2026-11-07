@@ -9,7 +9,7 @@ Space Works runs community workshops. Each space chooses what it offers: a tool 
 ## Your first visit
 
 1. Open the space's page. On a shared site it is `/m/<space>`; a space with its own address opens straight on its home page.
-2. Browse without signing in: the catalogue, the events list and the bookings page are public.
+2. The home page introduces the space and its enabled activities. Choose **Inventory** to browse tools; events and bookings have their own pages. You can browse these without signing in.
 3. Choose **Sign in** in the header, then **Create account** if you are new.
 4. If the space has memberships, go to **Home** in your member area and join. See [Join a makerspace](help:member/join-the-space).
 5. Accept the space's waiver when it asks. Borrowing, booking and machine work need it.
@@ -19,7 +19,7 @@ Space Works runs community workshops. Each space chooses what it offers: a tool 
 ## Where things live
 
 - **Your member area** (`/member`): loans, bookings, events, payments, your inbox and your account. See [Your member area](help:member/member-area).
-- **The catalogue**: everything you can borrow, with live availability.
+- **Inventory** (`/inventory`, or `/m/<space>/inventory` on a shared site): everything you can borrow, with live availability. Requests and the scan-a-tool flow stay here.
 - **Help**: this guide. Search it from the front page.
 
 > **Who can do this:** anyone can browse. Borrowing, booking and machine jobs need an account, and usually an active membership.

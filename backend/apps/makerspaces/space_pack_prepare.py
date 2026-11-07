@@ -19,7 +19,8 @@ from .space_pack_validation import (
 
 def settings_serializer(actor, makerspace, settings):
     serializer = MakerspaceSerializer(makerspace, data=settings, partial=True,
-                                     context={"request": SimpleNamespace(user=actor)})
+                                     context={"request": SimpleNamespace(user=actor),
+                                              "restore_feature_configuration": True})
     serializer.is_valid(raise_exception=True)
     provided = {key: value for key, value in settings.items() if key in SETTINGS_FIELDS}
     validated = {key: serializer.validated_data[key] for key in provided}

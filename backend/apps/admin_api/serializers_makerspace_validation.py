@@ -159,14 +159,18 @@ class MakerspaceValidationMixin:
         effective_features = attrs.get(
             "enabled_features", self.instance.enabled_features if self.instance else []
         )
+        dormant_defaults = (self.instance.enabled_features or []) if self.instance else []
         if "enabled_features" not in attrs:
             effective_features, _dropped = prune_features(
                 effective_features, effective_modules
             )
+        if self.context.get("restore_feature_configuration"):
+            dormant_defaults = effective_features
         try:
             _, enabled_features = validate_capabilities(
                 effective_modules,
                 effective_features,
+                dormant_defaults=dormant_defaults,
             )
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.message_dict) from exc

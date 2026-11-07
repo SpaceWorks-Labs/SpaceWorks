@@ -18,4 +18,5 @@ STAFF_ACCOUNT_EXCLUSIONS |= frozenset(_REIMBURSEMENT_ROUTES)
 
 # Owner self-service on the member surface acts on the caller's own job; an API client
 # (public scopes or legacy:v1) never acquires it, even if a deployment widens prefixes.
-OWNER_SESSION_EXCLUSIONS = frozenset({"member-machine-service-cancel", "member-machine-service-owner"})
+OWNER_SESSION_EXCLUSIONS = frozenset({"member-machine-service-cancel", "member-machine-service-owner",
+                                       "hardware_requests:member-borrowing-history"})

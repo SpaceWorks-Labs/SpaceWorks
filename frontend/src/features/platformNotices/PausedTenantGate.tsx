@@ -1,12 +1,14 @@
 import { t } from "@lingui/core/macro";
 import { useQuery, useQueryClient, type Query } from "@tanstack/react-query";
 import { useCallback, useSyncExternalStore, type ReactNode } from "react";
+import { isAccountUtilityPath } from "../../lib/accountUtilityPaths";
 import { publicV1Request } from "../../lib/api";
 import { StructuredApiError } from "../../lib/api/errors";
 import { PausedSpacePage } from "./PausedSpacePage";
 
 /** The space a public /m/<slug> page belongs to; the staff console handles paused spaces itself. */
 export function publicTenantSlug(pathname: string) {
+  if (isAccountUtilityPath(pathname)) return "";
   const match = /^\/m\/([^/]+)(\/[^/]*)?/.exec(pathname);
   if (!match || match[2] === "/admin") return "";
   try { return decodeURIComponent(match[1]); } catch { return ""; }

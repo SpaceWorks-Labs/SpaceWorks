@@ -73,10 +73,13 @@ export function PublicHeader({ makerspace, nav, account, liveStatus, chrome = "b
   return <header className={chrome === "canvas" ? "bg-bg" : "border-b border-line bg-panel"}>
     <div className="sw-layout sw-layout-wide sw-public-chrome flex min-w-0 items-center gap-3 md:gap-4">
       <RouteLink href={makerspace.homeHref ?? `/m/${makerspace.slug}`}
+        aria-label={centralIdentity ? undefined : t`${makerspace.name} home`}
         className="min-w-0 shrink rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
         {centralIdentity ? <><span className="inline-flex sm:hidden"><SpaceWorksLogo variant="symbol" size={48} /></span>
           <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span></>
-          : <MakerspaceBrand name={makerspace.name} logoUrl={makerspace.logo} fallback="logo" wrap />}
+          : makerspace.logo ? <img src={makerspace.logo} alt={makerspace.name}
+            className="h-12 w-auto max-w-[min(40vw,12rem)] object-contain" />
+            : <MakerspaceBrand name={makerspace.name} fallback="logo" wrap />}
       </RouteLink>
       <div ref={slot} className="flex min-w-0 flex-1 justify-end overflow-hidden">{inlineNav ? links(false) : null}</div>
       <div ref={menuRoot} className="relative flex shrink-0 items-center gap-2" onKeyDown={event => {

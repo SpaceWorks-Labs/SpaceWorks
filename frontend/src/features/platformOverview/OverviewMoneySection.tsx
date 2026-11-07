@@ -2,18 +2,18 @@ import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { DataTable, type DataTableColumn } from "../../components/ui";
 import { Figure, SpaceCell } from "./OverviewBlockSection";
-import { formatMoney, offText } from "./overviewFormat";
-import type { OverviewCurrency, OverviewMoney, OverviewSpace } from "./platformOverviewApi";
+import { formatMoney, offText, type OverviewDrillSpace } from "./overviewFormat";
+import type { OverviewCurrency, OverviewMoney } from "./platformOverviewApi";
 
 type Figures = { charges: number; amounts: Record<string, string> };
-type Row = { id: string; space?: OverviewSpace; total?: boolean; figures: Figures };
+type Row = { id: string; space?: OverviewDrillSpace; total?: boolean; figures: Figures };
 
 function value(currency: string, key: string, figures: Figures) {
   return key === "charges" ? figures.charges.toLocaleString(formatLocale()) : formatMoney(currency, figures.amounts[key] ?? "0");
 }
 
 /** One currency's table. Totals only ever add rows of this same currency. */
-function CurrencyTable({ money, entry, spaces }: { money: OverviewMoney; entry: OverviewCurrency; spaces: Map<number, OverviewSpace> }) {
+function CurrencyTable({ money, entry, spaces }: { money: OverviewMoney; entry: OverviewCurrency; spaces: ReadonlyMap<number, OverviewDrillSpace> }) {
   const rows: Row[] = [
     ...entry.rows.map(row => ({ id: String(row.makerspace_id), space: spaces.get(row.makerspace_id), figures: row })),
     { id: "total", total: true, figures: entry.totals },
@@ -34,7 +34,7 @@ function CurrencyTable({ money, entry, spaces }: { money: OverviewMoney; entry: 
   </section>;
 }
 
-export function OverviewMoneySection({ money, spaces }: { money: OverviewMoney; spaces: Map<number, OverviewSpace> }) {
+export function OverviewMoneySection({ money, spaces }: { money: OverviewMoney; spaces: ReadonlyMap<number, OverviewDrillSpace> }) {
   return <div className="grid min-w-0 gap-4">
     <p className="text-sm text-muted">{offText(money.off_in)}. Each currency is shown on its own and never added to another. Outstanding is what is still owed on the charges raised in this period.</p>
     {money.currencies.length ? money.currencies.map(entry => <CurrencyTable key={entry.currency} money={money} entry={entry} spaces={spaces} />)

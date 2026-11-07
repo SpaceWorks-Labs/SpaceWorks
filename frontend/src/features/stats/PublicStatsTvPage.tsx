@@ -9,7 +9,7 @@ import { useTenant } from "../../lib/tenant";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { publicErrorState } from "../inventory/publicErrorState";
-import { usePublicStats, type PublicStatsResponse, type StatsSectionKey } from "./api";
+import { publicWidgetVisible, usePublicStats, type PublicStatsResponse, type StatsSectionKey } from "./api";
 import { HeadlineRow, formatMetric, metricsFor } from "./StatsMetrics";
 import { formatDate } from "./StatsParts";
 
@@ -32,15 +32,17 @@ export function PublicStatsTvPage() {
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const brandStyle = useTenantBranding(bootstrap);
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
+  const logo = bootstrap?.branding.logo_url || bootstrap?.makerspace.logo_url;
   const stats = query.data;
   useEffect(() => { setRefresh(stats?.tv.enabled ? stats.tv.refresh_seconds : undefined); }, [stats]);
 
   return <div style={brandStyle} className="min-h-dvh bg-bg text-ink">
     <LayoutFrame standalone width="wide" className="py-10">
       <header className="mb-10 flex flex-wrap items-center gap-6">
-        <SpaceWorksLogo variant="symbol" size={64} />
+        {logo ? <img src={logo} alt={name} className="h-16 w-auto max-w-[min(60vw,20rem)] object-contain" />
+          : <SpaceWorksLogo variant="symbol" size={64} />}
         <div className="min-w-0 flex-1">
-          <h1 className="break-words font-accent text-4xl font-semibold xl:text-5xl">{name}</h1>
+          <h1 className={logo ? "sr-only" : "break-words font-accent text-4xl font-semibold xl:text-5xl"}>{name}</h1>
           {stats ? <p className="mt-2 text-2xl text-muted">{stats.period.label}</p> : null}
         </div>
         {query.dataUpdatedAt ? <p className="text-xl tabular-nums text-muted">
@@ -58,14 +60,16 @@ export function PublicStatsTvPage() {
 }
 
 function TvBoard({ stats }: { stats: PublicStatsResponse }) {
-  const headline = stats.headline.length ? stats.headline : stats.metrics.slice(0, 4);
-  const rest = stats.metrics.filter(metric => !headline.some(row => row.key === metric.key));
+  const metrics = stats.metrics.filter(metric => publicWidgetVisible(stats.visibility, metric.key));
+  const selected = stats.headline.filter(metric => publicWidgetVisible(stats.visibility, metric.key));
+  const headline = selected.length ? selected : metrics.slice(0, 4);
+  const rest = metrics.filter(metric => !headline.some(row => row.key === metric.key));
   return <div className="grid gap-10">
     <HeadlineRow metrics={headline} period={stats.period.label} size="tv" />
     <div className="grid gap-8 xl:grid-cols-2">
       {stats.sections.map(key => {
         const metrics = metricsFor(rest, key);
-        const events = key === "events" ? stats.events?.upcoming.slice(0, 4) ?? [] : [];
+        const events = key === "events" && publicWidgetVisible(stats.visibility, "events.upcoming_list") ? stats.events?.upcoming.slice(0, 4) ?? [] : [];
         if (!metrics.length && !events.length) return null;
         return <section key={key} aria-labelledby={`tv-${key}`} className="rounded-2xl border border-line bg-panel p-8">
           <h2 id={`tv-${key}`} className="text-3xl font-semibold">{SECTION_TITLES[key]}</h2>

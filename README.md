@@ -209,6 +209,11 @@ Keep a scheduler: production uses Celery beat, while the cloud profile uses cron
 all-in-one image is unsupported. [Recovery](docs/update-recovery.md) is separate from updates. The
 [hosting guide](docs/README-HOSTING.md#hosting) covers first-run generated credentials and the details.
 
+User guides are in the in-app **Help** centre and the [role manual index](docs/USER-MANUALS.md).
+For deployment work, use the [operator manual](docs/operator-manual.md), [logging and audit guide](docs/logging-and-audit.md)
+and [audit action reference](docs/audit-action-reference.md). The [switch-off reference](docs/MODULES-OFF.md)
+explains every module and capability, retained data and re-enabling.
+
 ## Architecture
 
 ```mermaid

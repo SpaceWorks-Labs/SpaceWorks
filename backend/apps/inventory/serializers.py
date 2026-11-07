@@ -119,7 +119,7 @@ class PublicStatsStatusCountsSerializer(serializers.Serializer):
     pending = serializers.IntegerField(read_only=True)
     accepted = serializers.IntegerField(read_only=True)
     printing = serializers.IntegerField(read_only=True)
-    completed = serializers.IntegerField(read_only=True)
+    completed = serializers.IntegerField(read_only=True, allow_null=True)
     collected = serializers.IntegerField(read_only=True)
     failed = serializers.IntegerField(read_only=True)
     rejected = serializers.IntegerField(read_only=True)
@@ -133,9 +133,9 @@ class PublicStatsQueueSerializer(serializers.Serializer):
 
 
 class PublicStatsJobsSerializer(serializers.Serializer):
-    completed = serializers.IntegerField(read_only=True)
-    status_counts = PublicStatsStatusCountsSerializer(read_only=True)
-    queue = PublicStatsQueueSerializer(read_only=True)
+    completed = serializers.IntegerField(read_only=True, allow_null=True)
+    status_counts = PublicStatsStatusCountsSerializer(read_only=True, allow_null=True)
+    queue = PublicStatsQueueSerializer(read_only=True, allow_null=True)
 
 
 class PublicStatsFilamentTrendSerializer(serializers.Serializer):
@@ -144,15 +144,15 @@ class PublicStatsFilamentTrendSerializer(serializers.Serializer):
 
 
 class PublicStatsPrintingSerializer(serializers.Serializer):
-    hours_all_time = serializers.FloatField(read_only=True)
-    hours_this_month = serializers.FloatField(read_only=True)
+    hours_all_time = serializers.FloatField(read_only=True, allow_null=True)
+    hours_this_month = serializers.FloatField(read_only=True, allow_null=True)
     busiest_printer = PublicStatsBusiestPrinterSerializer(
         read_only=True,
         required=False,
         allow_null=True,
     )
     per_printer = PublicStatsPrinterSerializer(many=True, read_only=True)
-    grams_all_time = serializers.FloatField(read_only=True)
+    grams_all_time = serializers.FloatField(read_only=True, allow_null=True)
     by_brand = PublicStatsBrandSerializer(many=True, read_only=True)
     jobs = PublicStatsJobsSerializer(read_only=True)
     filament_trend = PublicStatsFilamentTrendSerializer(many=True, read_only=True)
@@ -170,9 +170,9 @@ class PublicStatsToolsOutSerializer(serializers.Serializer):
 
 
 class PublicStatsLibrarySerializer(serializers.Serializer):
-    currently_out_count = serializers.IntegerField(read_only=True)
-    library_size = serializers.IntegerField(read_only=True)
-    available_count = serializers.IntegerField(read_only=True)
+    currently_out_count = serializers.IntegerField(read_only=True, allow_null=True)
+    library_size = serializers.IntegerField(read_only=True, allow_null=True)
+    available_count = serializers.IntegerField(read_only=True, allow_null=True)
 
 
 class PublicStatsRecentlyAddedSerializer(serializers.Serializer):
@@ -195,7 +195,7 @@ class PublicStatsCurrentLoanSerializer(serializers.Serializer):
 
 
 class PublicStatsMachinesSerializer(serializers.Serializer):
-    usage_hours = serializers.FloatField(read_only=True)
+    usage_hours = serializers.FloatField(read_only=True, allow_null=True)
 
 
 class PublicStatsSerializer(serializers.Serializer):

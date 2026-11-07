@@ -10,6 +10,7 @@ can never disagree about which module owns a key.
 from dataclasses import dataclass
 
 from apps.accounts.rbac_actions import Action
+from .public_stats_catalogue import SETTING_KEYS as PUBLIC_STATS_SETTING_KEYS
 
 # Settings module -> the manager action that makes someone that module's manager. The
 # Event Manager holds `manage_events`, so C-11c needs no row of its own.
@@ -67,6 +68,7 @@ FIXED_EXCEPTIONS = (
 
 # (module, key) rows appended by later lanes for settings outside `domain_settings`.
 EXTRA_SETTING_KEYS = (
+    *PUBLIC_STATS_SETTING_KEYS,
     *(("inventory", key) for key in LOAN_POLICY_KEYS),
     ("inventory", "rental_timing"),
     # L1: DY-61 puts the two event report switches under the Event Manager's grant

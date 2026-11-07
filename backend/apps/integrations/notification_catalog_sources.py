@@ -93,7 +93,8 @@ EVENT_SOURCES = {
     # Platform family: only these two have a space switch.
     (_API, "scheduled_report"): "reports",
     (_API, "email.failed"): "email",
-    **_many(_CERT, ("granted", "revoked", "expiring", "expired"), "machines.certifications"),
+    **_many(_CERT, ("granted", "revoked"), "machines.certifications"),
+    **_many(_CERT, ("expiring", "expired"), "machines.certification_reminders"),
 }
 
 # Staff alerts (`emit_notification`), by the dotted prefix of their event key. Reminder
@@ -147,6 +148,9 @@ def event_live(makerspace, feature, event):
     if source is None or makerspace is None:
         return True
     try:
+        # Expiry notices still require the certifications feature they report on.
+        if source == "machines.certification_reminders" and not source_live(makerspace, "machines.certifications"):
+            return False
         return source_live(makerspace, source)
     except Exception:
         logger.warning("notification_source_check_failed",

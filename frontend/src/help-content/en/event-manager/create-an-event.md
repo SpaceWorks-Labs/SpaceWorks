@@ -29,3 +29,8 @@ Contact details and answers are for staff only.
 3. **Edit future occurrences** changes the dates still to come. **Extend now**, **Complete series** or **Cancel series** as needed.
 
 > **Who can do this:** Event Managers and the Space Manager; helpers only for the parts they were granted.
+
+
+## Event figures on the public stats page
+
+Open **Events → Event settings → What appears in public stats** to choose upcoming-event cards, upcoming counts, events held and checked-in attendance. Save the changed choices with **Save public stats**. Your event-settings grant and the Space Manager's locks decide which switches you can change. Counts below three remain suppressed; hiding a figure keeps its source records and also hides it on the TV board. Overall page settings remain with the Space Manager.

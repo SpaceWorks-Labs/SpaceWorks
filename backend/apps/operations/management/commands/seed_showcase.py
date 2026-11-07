@@ -34,6 +34,7 @@ from ._showcase_l12 import seed_l12
 from ._showcase_l23 import seed_l23
 from ._showcase_l16 import seed_l16
 from ._showcase_l6 import seed_ticketing
+from ._showcase_l3 import seed_member_cards
 from ._showcase_l18 import seed_donations
 from ._showcase_l21a import seed_participation
 from ._showcase_l21b import seed_l21b
@@ -89,6 +90,7 @@ class Command(BaseCommand):
         plan = membership_plan(space, staff.manager)
         members = create_members(space, root, staff.manager, plan, password)
         seed_membership_lifecycle(space, staff.manager, members)
+        seed_member_cards(space, staff.manager, members)
         stock = seed_inventory(space, staff.manager, staff.inventory)
         RequestSeeder(space, staff, members, stock).run()
         seed_machines(space, staff.manager, staff.machines, members)

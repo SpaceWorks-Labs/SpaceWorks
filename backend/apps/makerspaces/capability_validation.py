@@ -20,6 +20,18 @@ def feature_required_modules(key):
     )
 
 
+def required_feature_closure(keys):
+    """Features plus their transitive prerequisites."""
+    resolved, queue = set(), list(keys)
+    while queue:
+        key = queue.pop()
+        if key in resolved or key not in FEATURES:
+            continue
+        resolved.add(key)
+        queue.extend(FEATURES[key].requires_features)
+    return resolved
+
+
 def prune_features(enabled_features, enabled_modules):
     """Split features into those the module set supports and those it no longer does.
 
@@ -37,35 +49,28 @@ def prune_features(enabled_features, enabled_modules):
     what it removed rather than dropping it silently.
     """
     modules = set(enabled_modules)
+    requested = set(enabled_features) & FEATURES.keys()
+    supported = {key for key in requested if set(feature_required_modules(key)) <= modules}
+    # A default-on child stays selected but dormant until its required features
+    # are on. Keeping the key distinguishes that default from an explicit opt-out.
     kept, dropped = [], []
-    for definition in FEATURE_DEFINITIONS:
-        if definition.key not in set(enabled_features):
+    for key in FEATURES:
+        if key not in requested:
             continue
-        supported = all(
-            module in modules for module in feature_required_modules(definition.key)
+        keep = key in supported and (
+            FEATURES[key].default_enabled or required_feature_closure({key}) <= supported
         )
-        (kept if supported else dropped).append(definition.key)
-    # A feature built on a feature that is off is off too (the runtime rule in
-    # `capability_eligibility`). Without this, a default-on child of a default-off parent
-    # (`events.gallery_search` under `events.project_gallery`) left every new row unable
-    # to install or uninstall any module.
-    changed = True
-    while changed:
-        changed = False
-        for key in list(kept):
-            if not set(FEATURES[key].requires_features) <= set(kept):
-                kept.remove(key)
-                dropped.append(key)
-                changed = True
-    order = {definition.key: index for index, definition in enumerate(FEATURE_DEFINITIONS)}
-    return kept, sorted(dropped, key=order.__getitem__)
+        (kept if keep else dropped).append(key)
+    return kept, dropped
 
 
-def validate_capabilities(enabled_modules, enabled_features):
-    """Return canonical lists while preserving unknown legacy module keys."""
+def validate_capabilities(enabled_modules, enabled_features, *, dormant_defaults=()):
+    """Return canonical lists, allowing designated default-on keys to stay dormant."""
     modules = _canonical_modules(enabled_modules)
     features = _canonical_features(enabled_features)
     module_set = set(modules)
+    feature_set = set(features)
+    dormant_defaults = set(dormant_defaults)
     errors = {}
     for key, required in module_dependencies().items():
         if key not in module_set:
@@ -90,8 +95,11 @@ def validate_capabilities(enabled_modules, enabled_features):
             if module not in module_set or module not in FEATURE_MODULES
         ]
         missing_features = [
-            feature for feature in definition.requires_features if feature not in features
+            feature for feature in definition.requires_features
+            if feature not in feature_set or required_feature_closure({feature}) - feature_set
         ]
+        if definition.default_enabled and key in dormant_defaults:
+            missing_features = []
         if missing_modules or missing_features:
             errors.setdefault("enabled_features", []).append(
                 f"{key} requires {', '.join(missing_modules + missing_features)} to be enabled."

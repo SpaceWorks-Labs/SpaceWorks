@@ -5,11 +5,12 @@ import { MfaReadinessBanner } from "../../components/shell/MfaReadinessBanner";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { EnrolPasskeyInPlace } from "../auth/passkeys/EnrolPasskeyInPlace";
 import { passkeysSupported } from "../auth/passkeys/webauthn";
+import { consoleSessionHref } from "../../lib/api/sessionContext";
 
 /** Where the console sends someone to set up two-step sign-in, and back again afterwards. */
 export function enrolmentHref() {
   const back = window.location.pathname + window.location.search;
-  return `/mfa?${new URLSearchParams({ return: back })}`;
+  return consoleSessionHref(`/mfa?${new URLSearchParams({ return: back })}`);
 }
 
 /** Signed in, but this account holds no staff role or delegated grant anywhere. */

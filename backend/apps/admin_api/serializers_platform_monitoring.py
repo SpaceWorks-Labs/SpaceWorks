@@ -19,6 +19,7 @@ class PlatformTenantUsageSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     slug = serializers.CharField()
+    reports_enabled = serializers.BooleanField()
     usage = MakerspaceUsageSerializer()
 
 

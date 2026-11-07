@@ -1,7 +1,8 @@
 import { Fragment } from "react";
-import { ImageIcon, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { RouteLink } from "../../components/ui/RouteLink";
 import { parseHelpBlocks, parseHelpInline } from "./helpMarkdown";
+import { HELP_SCREENSHOTS } from "./helpScreenshots";
 
 const LINK = "rounded-control font-semibold text-accent-ink underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
@@ -17,7 +18,7 @@ function Inline({ text, hrefFor }: { text: string; hrefFor: (target: string) => 
 
 /**
  * Renders an article from the guide's small Markdown vocabulary (see `helpMarkdown.ts`).
- * Screenshots are placeholders until the release phase captures them from the showcase space.
+ * Only reviewed captures are shown; uncaptured editorial slots remain in the source.
  */
 export function HelpArticleBody({ body, hrefFor }: { body: string; hrefFor: (target: string) => string }) {
   return <div className="grid gap-5 text-base leading-7 text-ink">
@@ -43,8 +44,10 @@ export function HelpArticleBody({ body, hrefFor }: { body: string; hrefFor: (tar
         </aside>;
       }
       if (block.kind === "screenshot") {
-        return <figure key={index} data-screenshot={block.key} className="grid min-h-40 place-items-center gap-2 rounded-2xl border border-dashed border-line bg-surface p-6 text-center">
-          <ImageIcon aria-hidden="true" className="size-6 text-muted" />
+        const image = HELP_SCREENSHOTS[block.key];
+        if (!image) return null;
+        return <figure key={index} data-screenshot={block.key} className="grid gap-2">
+          <img src={image.src} width={image.width} height={image.height} alt={block.alt} loading="lazy" decoding="async" className="h-auto w-full rounded-2xl border border-line" />
           <figcaption className="text-sm text-muted">{block.alt}</figcaption>
         </figure>;
       }

@@ -28,3 +28,10 @@ Other lending switches need the Space Manager to give you control of lending set
 Deposits are never waived. A fee that was already paid isn't reversed here; it opens a refund for staff to approve.
 
 > **Who can do this:** Inventory Managers and the Space Manager.
+
+
+## Choose what visitors see in public stats
+
+Open **Inventory → Lending settings** and find **What appears in public stats**. Each figure or list has its own switch, including library size, availability, loans, popular tools and the optional current-loans list. Change the switches you are allowed to edit, then press **Save public stats**. The public page and TV board use the same choices.
+
+The Space Manager grants control of these lending settings and can lock individual choices. Hidden or unavailable areas do not erase records. Borrower names still require their separate privacy opt-in; showing a widget cannot override that setting. The Space Manager controls the overall stats page, section order and period.

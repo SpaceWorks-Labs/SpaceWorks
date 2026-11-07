@@ -123,7 +123,9 @@ class MakerspaceAdminForm(ImageMakerspaceAdminForm):
         self.capability_dependencies_added = result.added
         self.capability_turned_off = result.turned_off_modules + result.turned_off_features
         try:
-            modules, features = validate_capabilities(result.modules, result.features)
+            modules, features = validate_capabilities(
+                result.modules, result.features, dormant_defaults=self.capability_before["features"],
+            )
         except Exception as exc:
             raise forms.ValidationError(exc.messages) from exc
         self.instance.enabled_modules = modules

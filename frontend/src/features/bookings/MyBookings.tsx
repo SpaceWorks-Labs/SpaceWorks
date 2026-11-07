@@ -34,13 +34,13 @@ function dateLabel(value: string, timezone: string) {
   return new Intl.DateTimeFormat(formatLocale(), { timeZone: timezone, dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
-export function MyBookings({ slug, canReport = false }: { slug: string; canReport?: boolean }) {
+export function MyBookings({ slug, canReport = false, initialPeriod = "upcoming" }: { slug: string; canReport?: boolean; initialPeriod?: "upcoming" | "past" }) {
   const recipient = personalRecipientKey();
-  return <OwnBookings key={`${slug}:${recipient}`} slug={slug} recipient={recipient} canReport={canReport} />;
+  return <OwnBookings key={`${slug}:${recipient}:${initialPeriod}`} slug={slug} recipient={recipient} canReport={canReport} initialPeriod={initialPeriod} />;
 }
 
-function OwnBookings({ slug, recipient, canReport }: { slug: string; recipient: number | "signed-out"; canReport: boolean }) {
-  const [period, setPeriod] = useState<"upcoming" | "past">("upcoming");
+function OwnBookings({ slug, recipient, canReport, initialPeriod }: { slug: string; recipient: number | "signed-out"; canReport: boolean; initialPeriod: "upcoming" | "past" }) {
+  const [period, setPeriod] = useState<"upcoming" | "past">(initialPeriod);
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<MemberBooking | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);

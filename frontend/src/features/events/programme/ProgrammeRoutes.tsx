@@ -10,7 +10,7 @@ import { useTenant } from '../../../lib/tenant'
 
 function ProgrammeAccountPage() {
   const { slug } = useParams(), tenant = useTenant(), location = useLocation()
-  return <ProgrammeAccess slug={slug ?? tenant.slug}>{user => location.pathname.endsWith('/security-activity')
+  return <ProgrammeAccess slug={slug ?? tenant.slug}>{user => /\/security-activity\/?$/.test(location.pathname)
     ? <SecurityActivityPage /> : <SavedDetailsPage actorId={user.id} />}</ProgrammeAccess>
 }
 export function ProgrammeRoutes() {

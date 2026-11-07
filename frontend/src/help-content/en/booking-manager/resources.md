@@ -28,3 +28,8 @@ The member needs an active membership and a current waiver. Each repeat is check
 Booking rules for the whole space (cut-offs, limits) belong to the Space Manager.
 
 > **Who can do this:** Booking Managers and the Space Manager.
+
+
+## Booking count on public stats
+
+Open **Bookings → Booking settings → What appears in public stats** to choose whether the booking count appears publicly. Press **Save public stats** after changing it. The Space Manager must grant booking-settings control and may lock this choice. The setting also applies to the TV board; counts below three remain suppressed. It does not publish booking identities or delete bookings. Overall stats-page settings remain with the Space Manager.

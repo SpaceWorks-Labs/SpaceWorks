@@ -17,7 +17,7 @@ TTL_SECONDS = 60
 _FIELDS = (
     "public_site_enabled", "public_inventory_enabled", "public_stats_enabled", "public_stats_show_holder_names",
     "public_stats_sections", "public_stats_period", "public_stats_headline", "public_stats_tv_mode_enabled",
-    "public_stats_tv_refresh_seconds", "timezone", "financial_year_start_month",
+    "public_stats_tv_refresh_seconds", "public_stats_config", "timezone", "financial_year_start_month",
 )
 
 

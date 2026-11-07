@@ -9,7 +9,7 @@ export function PageSectionForm({ section, assets, kind, onChange }: {
   section: PageSection; assets: PageAsset[]; kind: PageOwner["kind"] | "event"; onChange: (section: PageSection) => void;
 }) {
   const helpId = useId();
-  if (section.type === "functional_content") return <p className="text-sm text-muted">{t`The existing catalogue and enabled activities stay available here. Their visibility comes from the public APIs.`}</p>;
+  if (section.type === "functional_content") return <p className="text-sm text-muted">{t`The overview links to Inventory and shows enabled activities. Their visibility comes from the public APIs.`}</p>;
   return <div className="grid gap-4">
     <label className={pageLabel}>{t`Section title`}<input className={pageInput} maxLength={200} value={section.payload.title} onChange={e => onChange({ ...section, payload: { ...section.payload, title: e.target.value } } as PageSection)} /></label>
     {section.type === "about" ? <div className="grid gap-1"><label className={pageLabel}>{t`Story`}<textarea className={pageInput} aria-describedby={helpId} rows={7} maxLength={10000} value={section.payload.markdown} onChange={e => onChange({ ...section, payload: { ...section.payload, markdown: e.target.value } })} /></label><p id={helpId} className="text-sm text-muted">{t`Paragraphs, - lists, **bold**, and [links](https://example.com). No HTML, embedded images or video.`}</p></div> : null}

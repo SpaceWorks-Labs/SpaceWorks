@@ -8,6 +8,7 @@ from apps.integrations.models import EmailLog, NotificationDeliveryLog
 from apps.integrations.delivery_content import content, recipient_address
 from apps.integrations.notify import NotificationResult
 from apps.integrations.timing_dispatch import RELEASING
+from apps.makerspaces.capability_eligibility import feature_enabled_servable_ids
 from apps.operations.reminder_types import ReminderMessage, ReminderSource
 
 
@@ -25,6 +26,9 @@ def build(space, row, now, tz):
 
 
 def _allowed(log, space):
+    if (isinstance(log, EmailLog) and log.stream == 'notifications' and log.event == 'daily_digest'
+            and not feature_enabled_servable_ids([log.makerspace_id], 'notifications.digests')):
+        return False
     if (isinstance(log, EmailLog) and log.source_kind == 'event_invitation'
             and log.stream == 'events' and log.event == 'invitation'):
         # Explicit invitations use the same policy as immediate mail. _deliver
@@ -91,13 +95,17 @@ def dispatch(space, row, message, now, tz):
 
 def _digest(space, row, now):
     from apps.integrations.dispatch import dispatch_email
+    from apps.integrations.dispatch_policy import never_deferred
     from apps.integrations.quiet_hours import quiet_until
     from apps.integrations.timing_dispatch import defer_log
     _, user_id, due = row.subject.split(':', 2)
     queryset = _logs(space, EmailLog).filter(
         recipient_id=int(user_id), status='pending', error=f'deferred:digest:{due}',
     ).order_by('pk')
-    if quiet_until(space, 'email', now):
+    digests_enabled = space.pk in feature_enabled_servable_ids([space.pk], 'notifications.digests')
+    quiet = quiet_until(space, 'email', now)
+    # A disabled digest must not be converted to ordinary quiet-hours email.
+    if digests_enabled and quiet:
         for log in queryset.iterator():
             defer_log(log, kind='email', now=now)
         return NotificationResult(True)
@@ -106,8 +114,10 @@ def _digest(space, row, now):
     with transaction.atomic():
         for log in queryset.select_for_update()[:200]:
             from .delivery_sources import digestible, prepare
-            if not digestible(log):
-                # Also defend legacy/manual digest markers on campaign rows.
+            if not digestible(log) or never_deferred(log.stream, log.event):
+                # Campaign and safety mail keep their ordinary delivery policy.
+                if quiet and defer_log(log, kind='email', now=now):
+                    continue
                 token = RELEASING.set(True)
                 try:
                     from .dispatch_delivery import _deliver
@@ -115,7 +125,7 @@ def _digest(space, row, now):
                 finally:
                     RELEASING.reset(token)
                 continue
-            allowed = prepare(log) and _allowed(log, space)
+            allowed = digests_enabled and prepare(log) and _allowed(log, space)
             if allowed:
                 # Preserve family and address boundaries so a queued summary can
                 # still honour opt-outs and matrix changes at SMTP delivery time.

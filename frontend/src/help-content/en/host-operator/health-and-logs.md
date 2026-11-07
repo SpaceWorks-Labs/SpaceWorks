@@ -19,6 +19,8 @@ Readiness fails closed when an encryption key is missing or doesn't match, so a 
 3. After a failed update, also read the migrate and readiness containers' logs; failed one-off containers are kept for you.
 4. Match lines across services by their request ID. Production logs are JSON.
 
+Copy the response's **X-Request-ID**, the time, route and status when investigating a failure. Search backend and worker logs for the same request ID. Keep incident evidence before container log rotation removes it. Record IDs and failure categories are suitable diagnostic details. Credentials, contact details and free-text member notes belong outside application logs.
+
 ![Screenshot: backend logs through the compose wrapper](screenshot:op-logs)
 
 Always use the wrapper rather than plain `docker compose`, and read the logs before restarting anything.

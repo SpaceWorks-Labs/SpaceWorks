@@ -78,6 +78,11 @@ def servable_q(relation: str = "") -> Q:
     )
 
 
+def public_availability_queryset(queryset: QuerySet) -> QuerySet:
+    """Expose minimal status for active or paused spaces without granting tenant access."""
+    return queryset.filter(archived_at__isnull=True, lifecycle_state__in=(ACTIVE, SUSPENDED))
+
+
 def unservable_makerspace_ids() -> set[int]:
     """Return IDs that every normal authorization scope must exclude."""
     return archived_or_inactive_makerspace_ids()

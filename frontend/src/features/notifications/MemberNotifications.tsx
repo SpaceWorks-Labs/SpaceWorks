@@ -12,12 +12,15 @@ export function MemberNotifications({ makerspaceId, features }: { makerspaceId: 
   useLiveUpdates(inbox);
   const [search, setSearch] = useSearchParams();
   // Providers return the signed state; the settings screen retrieves its server-issued challenge.
-  const section = search.has("state") ? "channels" : search.get("section") || "notices";
+  const section = search.has("state") ? "channels" : search.get("section");
   const setSection = (value: string) => { const next = new URLSearchParams(search); next.set("section", value); setSearch(next); };
-  const tabs = [{ key: "notices", label: t`Notices`, href: "#notices" }, ...(inbox && features.includes("membership.broadcasts") ? [{ key: "announcements", label: t`Announcements`, href: "#announcements" }] : []),
+  const tabs = [
+    ...(inbox ? [{ key: "notices", label: t`Notices`, href: "#notices" }] : []),
+    ...(inbox && features.includes("membership.broadcasts") ? [{ key: "announcements", label: t`Announcements`, href: "#announcements" }] : []),
     { key: "channels", label: t`Channels`, href: "#channels" },
-    ...(features.includes("notifications.member_preferences") ? [{ key: "preferences", label: t`Preferences`, href: "#preferences" }] : [])];
-  const active = tabs.some(tab => tab.key === section) ? section : "notices";
+    ...(features.includes("notifications.member_preferences") ? [{ key: "preferences", label: t`Preferences`, href: "#preferences" }] : []),
+  ];
+  const active = tabs.find(tab => tab.key === section)?.key ?? tabs[0].key;
   return <div className="grid gap-6"><Tabs tabs={tabs} activeKey={active} onChange={setSection} label={t`Inbox sections`}>
     {active === "announcements" && inbox && features.includes("membership.broadcasts") ? <AnnouncementFeed key={makerspaceId} makerspaceId={makerspaceId} /> : null}
     {active === "notices" && inbox ? <PersonalInbox makerspaceId={makerspaceId} member /> : null}

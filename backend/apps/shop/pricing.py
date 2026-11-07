@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 from apps.makerspaces.platform import feature_enabled
 
-from .errors import ShopRefused
+from .errors import ShopQuoteChargesOff, ShopRefused
 from .models import ShopVariant
 
 MAX_LINES = 50
@@ -98,15 +98,23 @@ def check_rules(space, items, member):
 def priced_basket(space, raw_lines, *, person=None, public=True, lock=False):
     """Validate and quote a basket. `person` is the signed-in buyer (or the member at the desk)."""
     from apps.payments import pricing
+    from apps.payments.availability import charge_tracking_enabled
     from apps.payments.pricing.build_shop import label_for
+    from .gates import require_feature, stock_source_enabled
+
+    if not charge_tracking_enabled(space, "shop"):
+        raise ShopQuoteChargesOff("shop")
 
     items = resolve_items(space, raw_lines, public=public, lock=lock)
+    bundles = feature_enabled(space, "shop.bundles")
+    if any(not stock_source_enabled(space, variant, bundles=bundles) for variant, _quantity in items):
+        require_feature(space, "shop.consumable_link")
     member = member_here(space, person)
     check_rules(space, items, member)
     discounts = feature_enabled(space, "shop.member_prices")
     quote = pricing.quote(space, "shop", None, member=member if discounts else None, params={"lines": items},
                           discounts=discounts)
-    basket = Basket(items=items, quote=quote, bundles=feature_enabled(space, "shop.bundles"), member=member,
+    basket = Basket(items=items, quote=quote, bundles=bundles, member=member,
                     labels={variant.pk: label_for(variant) for variant, _ in items})
     from .tax_lines import line_taxes
     basket.tax = line_taxes(space, items, quote)

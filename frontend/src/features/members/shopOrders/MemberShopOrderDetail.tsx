@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DetailLayout } from "../../../components/layouts";
+import { RouteLink } from "../../../components/ui/RouteLink";
 import { cancelMemberShopOrder, fetchMemberShopOrder, isUnpaid, shopErrorMessage, shopKeys } from "../../shop/shopApi";
 import { ShopBuyerOrderView } from "../../shop/ShopBuyerOrderView";
 
@@ -25,5 +26,8 @@ export function MemberShopOrderDetail({ orderId, backHref }: { orderId: number; 
       pendingLabel: "Cancelling…", onClick: () => cancel.mutate(),
       confirm: { title: t`Cancel this order?`, message: t`The items go back on sale. You have not paid anything for this order.`, confirmLabel: t`Cancel order` } } } : undefined}
     banner={cancel.error ? { size: "inline", tone: "danger", lead: shopErrorMessage(cancel.error) } : undefined}
-    main={order ? <ShopBuyerOrderView order={order} /> : null} />;
+    main={order ? <div className="grid gap-5"><ShopBuyerOrderView order={order} />
+      <RouteLink className="desk-button justify-self-start" href={backHref.replace(/\/shop-orders$/, "/payments")}>
+        {t`Payments, refunds and receipts`}</RouteLink>
+    </div> : null} />;
 }

@@ -144,6 +144,7 @@ export function StaffTabContent({
           key={makerspaceKey}
           makerspaceId={activeMakerspace.id}
           canManage={canManageMachines}
+          publicSiteEnabled={activeMakerspace.enabled_modules?.includes("public_site") ?? false}
           enabledFeatures={activeMakerspace.enabled_features ?? []}
           canConfigureMachineTypes={canConfigureMachineTypes}
           maintenanceEnabled={capabilityOn(activeMakerspace, "machines.maintenance")}
@@ -168,7 +169,7 @@ export function StaffTabContent({
       {activeTab === "organization-analytics" && !isSuperadmin && !singleTenantLocked ? (
         <OrganizationAnalyticsPanel makerspaces={makerspaces} />
       ) : null}
-      {activeTab === "bookings" && canManageBookings ? <BookingsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} recurringEnabled={activeMakerspace.enabled_features?.includes("bookings.recurring")} /> : null}
+      {activeTab === "bookings" && canManageBookings ? <BookingsPanel key={makerspaceKey} makerspaceId={activeMakerspace.id} recurringEnabled={activeMakerspace.enabled_features?.includes("bookings.recurring")} publicSiteEnabled={activeMakerspace.enabled_modules?.includes("public_site")} /> : null}
       {activeTab === "members" && has("manage_members") ? (
         <MembersPanel
           key={makerspaceKey}

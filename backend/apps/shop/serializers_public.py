@@ -1,6 +1,7 @@
 """Public and member shop shapes (release 2 L22). No storage, cost, linked item or buyer data."""
 
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 MONEY = {"max_digits": 12, "decimal_places": 2}
 
@@ -14,7 +15,7 @@ class ShopPublicVariantSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     options = serializers.DictField(child=serializers.CharField())
-    price = serializers.DecimalField(**MONEY)
+    price = serializers.DecimalField(**MONEY, allow_null=True, coerce_to_string=False)
     sold_out = serializers.BooleanField()
     stock_label = serializers.ChoiceField(choices=("in_stock", "low", "sold_out"), allow_null=True)
     stock_count = serializers.IntegerField(allow_null=True)
@@ -28,8 +29,8 @@ class ShopPublicProductSerializer(serializers.Serializer):
     category = serializers.CharField(allow_blank=True)
     unit = serializers.CharField(allow_blank=True)
     image_url = serializers.CharField(allow_blank=True)
-    price_from = serializers.DecimalField(**MONEY, allow_null=True)
-    price_to = serializers.DecimalField(**MONEY, allow_null=True)
+    price_from = serializers.DecimalField(**MONEY, allow_null=True, coerce_to_string=False)
+    price_to = serializers.DecimalField(**MONEY, allow_null=True, coerce_to_string=False)
     members_only = serializers.BooleanField()
     max_per_order = serializers.IntegerField(allow_null=True)
     sold_out = serializers.BooleanField()
@@ -115,6 +116,15 @@ class ShopOrderLineSerializer(serializers.Serializer):
     tax_amount = serializers.DecimalField(**MONEY)
 
 
+class ShopBuyerReturnSerializer(serializers.Serializer):
+    """Goods taken back, not a claim that money has been refunded."""
+
+    line_id = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+    amount = serializers.DecimalField(**MONEY)
+    created_at = serializers.DateTimeField()
+
+
 class ShopBuyerOrderSerializer(serializers.Serializer):
     """An order as its own buyer sees it (member area, guest status link)."""
 
@@ -135,11 +145,19 @@ class ShopBuyerOrderSerializer(serializers.Serializer):
     paid_at = serializers.DateTimeField(allow_null=True)
     ready_at = serializers.DateTimeField(allow_null=True)
     collected_at = serializers.DateTimeField(allow_null=True)
+    closed_at = serializers.DateTimeField(allow_null=True)
+    returns = serializers.SerializerMethodField()
     lines = ShopOrderLineSerializer(many=True)
     space_name = serializers.CharField(source="makerspace.name")
 
     def get_pickup_event_title(self, order) -> str:
         return order.pickup_event.title if order.pickup_event_id and order.pickup_event else ""
+
+    @extend_schema_field(ShopBuyerReturnSerializer(many=True))
+    def get_returns(self, order):
+        from .buyer_history import returns_for_buyer
+
+        return ShopBuyerReturnSerializer(returns_for_buyer(order), many=True).data
 
 
 class ShopOrderPlacedSerializer(serializers.Serializer):

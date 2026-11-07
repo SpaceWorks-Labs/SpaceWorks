@@ -1376,8 +1376,9 @@ The **minimal profile turns both off** until the operator opts in.
 Turning it off hides loan tabs, bootstrap loan modules/workflows and loan dashboard counters,
 and refuses the public catalogue and new borrowing with 400. It never uninstalls core or changes
 loan rows. Retained-loan policies, charge tracking and payment rails remain independent.
-`public_landing_page` selects an available family; auto chooses the first available
-catalogue/events/bookings/machines/membership surface. Bookings has no membership dependency:
+`public_landing_page` retains the preferred available homepage shortcut. Every published tenant
+root is a makerspace overview; Inventory is separate at `/inventory` (single tenant) or
+`/m/<slug>/inventory` (central). A saved unavailable family is never offered. Bookings has no membership dependency:
 active accounts may book, while existing memberships retain waiver and active-status obligations.
 Advance booking does not require presence. Events also has no membership dependency: members
 remain the default audience, with account/invite admission behind the opt-in event features.
@@ -2065,6 +2066,11 @@ if the caller sent features they expressed the combination; if they did not, it 
 This reverses a phase-3 rule; `tests/makerspaces/test_module_install.py` carries the reversal and the
 reasoning.
 
+A selected default-on feature such as gallery search can be dormant while a required feature is off.
+Module and settings changes retain that selection so enabling the prerequisite activates the default.
+The `/control/` matrix completes dependencies for new selections and leaves prerequisites of unchanged
+dormant defaults alone. An explicitly unchecked default stays unchecked.
+
 **Account-less identity: `accounts` removes the ECOSYSTEM, never identity (module program phase 9).**
 `apps/accounts/member_identity.py` is the one seam every member-facing login surface asks, and it has
 two exemptions that are load-bearing:
@@ -2417,7 +2423,7 @@ a completion or cancellation. Never re-reserve a suppressed milestone; reads nev
   challenge IDs are forbidden; signed state carries the challenge. Blank refuses.
   Mattermost private hosts default refused unless
   `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS is True`; Meta defaults
-  `WHATSAPP_META_GRAPH_VERSION` to `v25.0`. All five are environment-backed in `config/settings.py`
+  `WHATSAPP_META_GRAPH_VERSION` to `v25.0`. All five are environment-backed in `config/settings_delivery.py`
   and forwarded through deployment manifests; backup treats them as nonblocking value comparisons.
   Authorization and token exchange use identical redirects. Slack installation uses PKCE and its
   callback requires an authenticated matching actor; personal completion uses only challenge verify.
@@ -2784,7 +2790,7 @@ row MAC covers `meta`, and correlation is done from the `audit_recorded` log lin
 with the row's `event_uuid`. `GET /api/v1/metrics/` (Prometheus text) fails closed: 404 when
 `METRICS_TOKEN` is unset, 401 on a wrong bearer, and it exposes counts and ids only, never tenant
 content. It is outside `HMAC_PROTECTED_PATH_PREFIXES`, so it must NOT be added to the API-client scope
-registry (an entry there would be stale). Any new `env(...)` read in `settings.py` must be listed in
+registry (an entry there would be stale). Every new `env(...)` read in the Django settings sections must be listed in
 `apps/backup/settings_policy.py::ENV_SURFACE`, or the env-surface drift guard fails.
 
 **Search and live updates (forward plan phase 1, 2026-09-03).** `?q=` is one contract, implemented once in
@@ -3528,11 +3534,30 @@ RBAC action `view_analytics`. The view list and its version are in [analytics-vi
 - **The period is fixed by the space** (no visitor parameter): month, year, all or fy, on the
   space's own wall clock; `fy` uses `makerspaces.financial_year.fy_bounds`. Counts of things that
   happened (events held, bookings, check-ins, loans, hours) stop at now.
-- **Settings authority.** Module `public_site` has no module manager, so every key
-  (`public_stats.enabled|sections|period|headline|tv_mode_enabled|tv_refresh_seconds`) is
-  Space-Manager-only (superadmin parity, #115); other staff read the group with `can_edit=false`
-  and a write is refused `setting_not_delegated` even when nothing would change. Each changed key
-  is audited `settings.changed`.
+- **Settings authority and granular visibility.** Page-wide controls
+  (`public_stats.enabled|sections|period|headline|tv_mode_enabled|tv_refresh_seconds`) remain
+  Space-Manager/superadmin-only `public_site` settings. The canonical 29-widget catalogue in
+  `makerspaces/public_stats_catalogue.py` owns every existing metric, tile, list and detail.
+  `public_stats.visibility.<id>` keys use inventory/events/machines/bookings ownership;
+  other community/person counts remain SM-only. All edits go through L17: actual manager
+  action, per-person grant and lock, including combined roles. Machine settings still require
+  type coverage of every machine. Locks never bind the Space Manager/superadmin.
+- **Retained JSON and server projection.** `Makerspace.public_stats_config` stores visibility
+  overrides; omitted keys default visible. Widget/source off removes all its public data,
+  metric and headline representations without deleting records, resetting intent or enabling
+  another source. Scalars/details become null and lists empty; public `visibility` tells the
+  client to hide their widgets. All-hidden sections disappear, and no visible sections is 404.
+  Existing suppression and the independent borrower-name opt-in remain unchanged.
+- **Atomic field contract.** GET returns `capabilities.settings|visibility` decisions including
+  editable/locked/can_lock/code/via and source availability. Legacy `can_edit` remains page-wide.
+  PATCH sends changed fields; compatible PUT retains omitted visibility. Every submitted key,
+  even a no-op, is checked before mutation; one unauthorized/locked key refuses all changes.
+  Writes merge under the makerspace row lock and audit `settings.changed` per key/owner/grant.
+  Only L17-registered delegated keys have `can_lock=true`. Cache fingerprints include the JSON.
+- **Deep lending gates.** Lending follows canonical public-catalogue publication, edition,
+  module and `loans.enabled` checks. Workflow-backed current loans, popularity and loan period
+  figures also require `request_workflow`; when only it is off, eligible product counts/lists
+  remain available and request history is neither built nor published.
 
 ## Pricing: paid and free everywhere (release 2, lane L15; #84, #85)
 
@@ -4866,6 +4891,26 @@ Load-bearing details that carried over unchanged:
     one transaction re-runs its FK checks at COMMIT, taking KEY SHARE on its queue/machine. After a row lock that may have waited, re-read (`refresh_from_db`) before
     trusting joined relations: Postgres re-checks only the locked row, not its joined rows.
 
+## Account-owned activity history (owner #209, 2026-11-07)
+
+The membership dashboard and its activity endpoint keep their existing Membership gate.
+A separate `hardware_requests` own-read route lists the caller's reviewed requests, direct
+handouts and self-checkout loans through their single backing HardwareRequest, with standard
+pagination rather than a20row dashboard cap. Auth owns requester/makerspace scope, including
+merged account IDs for this read only; workflow mutation ownership stays unchanged. A live,
+unrestricted personal account with no membership qualifies, while a revoked personal membership,
+claim session, platform/shell/stub/walk-in principal or API client does not. Lending/module off
+hides the surface with typed404; unservable tenants stay closed. Only own public-status fields,
+raw item outcomes and dates are added: no QR, assets, locations, boxes, contact/staff fields,
+evidence/remark data or reusable public tokens. Return-event reads explicitly bind the same tenant.
+
+Member Home and Account offer links to enabled borrowing/event/booking/Shop histories. Account's
+membership lifecycle tab is labelled Membership history so it cannot be mistaken for all activity.
+The booking shortcut opens the real Past list. Core Payments & receipts always remains reachable
+when membership or online rail is off, through its existing own-ledger authority; this history work
+adds no new gate to money, refund, receipt or archived-payment recovery. Guest Shop tracking tokens
+never enter shared account navigation, and pickup fulfilment remains the existing default.
+
 ## Community workflow additions (2026-10-17)
 
 - **Loan policy belongs to lending authority.** `ReturnPolicyView` and
@@ -4877,12 +4922,22 @@ Load-bearing details that carried over unchanged:
   Inventory & loans, Machines, Events, Bookings, Money and Space settings; Platform for superadmins.
   Staff & roles leads People; less-used destinations live under More. The settings hub searches
   sections/consoles and shows the setup checklist. Other roles retain their scoped sidebar.
-- **The public makerspace page composes existing gates.** Featured activities → inventory →
-  machines/bookable spaces/membership/contact; no new permission or projection. `publicHome`
-  chooses the composed page for Inventory or multi-family automatic landing, even with no catalogue.
-  Explicit non-inventory and single non-inventory-family landing stay on their family pages.
-  Old `?space=`/`?confirmation=` booking links retain routing. Featured events cap at six and use
-  the existing public events query; no room/QR/evidence/private inventory fields enter the page.
+- **The public makerspace overview composes existing gates.** The owner's 2026-11-07 UX update
+  makes every published tenant root an overview: featured activities, enabled-area links, then
+  machines/bookable spaces/membership/contact. It never mounts inventory/category queries or a
+  loan request panel. Inventory alone lives at `/inventory` or `/m/<slug>/inventory`; item and
+  self-checkout deep links remain valid and return there. Shared public navigation owns Home,
+  Inventory and the enabled destinations. `public_landing_page` retains a valid preferred shortcut
+  rather than replacing the overview. Released custom hero/sections, handles and canonical URLs
+  survive; their required functional section renders the same overview. Old `?space=`/`?confirmation=`
+  booking links retain routing. Featured events cap at six and use the existing public events query;
+  no room/QR/evidence/private inventory fields enter the page. A configured makerspace banner uses
+  the existing cover-image pipeline on the home and listing card, preceding the home heading;
+  without one the established brand/custom-cover fallback remains. Upload authority stays scoped
+  MANAGE_MAKERSPACE, and public image URLs never come from private evidence storage. A supplied
+  makerspace logo replaces the shared public tenant header name/default Space Works mark; without
+  one the header shows the Space Works mark and makerspace name. Header home links keep the tenant
+  route and an accessible name; directory cards keep their separately useful makerspace names.
 
 ### Event speakers, edits and envelopes
 

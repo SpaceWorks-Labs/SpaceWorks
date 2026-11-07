@@ -8,7 +8,9 @@ RUN groupadd --system --gid 10001 app \
     && useradd --system --create-home --uid 10001 --gid app app
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# The base image can ship an installer affected by CVE-2026-13346.
+RUN python -m pip install --no-cache-dir --upgrade pip==26.2 \
+    && python -m pip install --no-cache-dir -r requirements.txt
 COPY --chown=app:app . .
 RUN python -m scripts.bundle_cjk_fonts \
     && python -m scripts.verify_printable_runtime --bundle

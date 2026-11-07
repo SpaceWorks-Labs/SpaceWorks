@@ -41,8 +41,13 @@ REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS if d.key != "module-ope
 # Runtime entries disappear on a deployment tombstone; retention stays registered.
 from apps.separability.tombstones import tombstoned_app_labels
 from apps.operations.report_sources import source_app_labels
-REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS
-                           if not source_app_labels(d.required_modules) & tombstoned_app_labels())
+# Keep the exact declared omissions so coverage can distinguish a removed source
+# from an accidentally missing report. The live catalogue remains the one registry.
+TOMBSTONED_REPORT_KEYS = frozenset(
+    d.key for d in REPORT_DEFINITIONS
+    if source_app_labels(d.required_modules) & tombstoned_app_labels()
+)
+REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS if d.key not in TOMBSTONED_REPORT_KEYS)
 # Declare infrastructure scope alongside data fields, without changing tenant
 # builders' column order or propagating scope into subject-only definitions.
 REPORT_DEFINITIONS = tuple(
@@ -79,6 +84,6 @@ def report_definition(report_key, *, for_export=False, deployment_aggregate=Fals
 
 __all__ = [
     "DEPLOYMENT_AGGREGATE_REPORT_DEFINITIONS", "DEPLOYMENT_AGGREGATE_REPORT_KEYS",
-    "REPORT_DEFINITIONS", "REPORT_KEYS", "REPORT_REGISTRY", "ReportDefinition",
+    "REPORT_DEFINITIONS", "REPORT_KEYS", "REPORT_REGISTRY", "TOMBSTONED_REPORT_KEYS", "ReportDefinition",
     "ReportNotExportable", "ReportNotFound", "ReportResult", "report_definition",
 ]

@@ -40,9 +40,9 @@ class PublicStatsEventCardSerializer(serializers.Serializer):
 
 class PublicStatsEventsSerializer(serializers.Serializer):
     upcoming = PublicStatsEventCardSerializer(many=True)
-    upcoming_count = PublicCountSerializer()
-    held = PublicCountSerializer(help_text="Listed public events that started in the period.")
-    attendees = PublicCountSerializer(help_text="Checked-in attendees of those events.")
+    upcoming_count = PublicCountSerializer(allow_null=True)
+    held = PublicCountSerializer(allow_null=True, help_text="Listed public events that started in the period.")
+    attendees = PublicCountSerializer(allow_null=True, help_text="Checked-in attendees of those events.")
 
 
 class PublicStatsCommunitySerializer(serializers.Serializer):
@@ -67,4 +67,5 @@ class PublicStatsPageSerializer(PublicStatsSerializer):
     period = PublicStatsPeriodSerializer(read_only=True)
     headline = PublicStatsMetricSerializer(many=True, read_only=True)
     metrics = PublicStatsMetricSerializer(many=True, read_only=True)
+    visibility = serializers.DictField(child=serializers.BooleanField(), read_only=True)
     tv = PublicStatsTvSerializer(read_only=True)

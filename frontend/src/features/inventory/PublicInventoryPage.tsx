@@ -27,7 +27,7 @@ import { usePublicCategories, usePublicInventory, useTenantBootstrap } from "./u
 
 const PAGE_SIZE = 24;
 
-/** A host that supplies its own chrome (the public desk, the makerspace page) places the catalogue body and
+/** A host that supplies its own chrome (the public desk) places the inventory body and
  * request panel itself; `aside` is the same request card the standalone catalogue docks beside its body. */
 export type EmbeddedCatalogue = (parts: { body: ReactNode; request: ReactNode; aside: PublicActionCardProps }) => ReactNode;
 
@@ -110,10 +110,10 @@ export function PublicInventoryPage({ embedded, resolvedSlug, inheritBranding = 
     secondary: requestEnabled ? { label: t`Scan a tool`, onOpen: () => setRequestTab("scan") } : undefined } };
   // A composed public page owns its palette; the standalone catalogue and desk still apply tenant branding.
   return <div style={inheritBranding ? undefined : brandStyle}>
-    {!embedded ? <PageMetadata title={displayName} description={bootstrap?.branding.welcome_body || t`Browse public tools and equipment at ${displayName}.`} path={tenantPath()} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
+    {!embedded ? <PageMetadata title={t`Inventory · ${displayName}`} description={t`Browse public tools and equipment at ${displayName}.`} path={tenantPath("inventory")} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} /> : null}
     {embedded ? embedded({ body, request, aside })
       : <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} width="wide" state={{ status: "ready" }}
-        header={{ title: t`Borrow tools from ${displayName}`, subtitle: t`${plural(inventoryQuery.data?.count ?? 0, "tool")} and kits`, primary: { label: t`Member area`, href: tenantPath("member") } }}
+        header={{ title: t`Inventory`, subtitle: t`Borrow tools and kits from ${displayName}.`, primary: { label: t`Member area`, href: tenantPath("member") } }}
         isEmpty={false} aside={aside}>
         {body}
       </PublicLayout>}

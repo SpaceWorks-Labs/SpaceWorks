@@ -9,7 +9,7 @@ The catalogue lists everything the space lends, with live availability.
 
 ## Ask to borrow
 
-1. Open the space's catalogue. Search, or pick a category.
+1. Choose **Inventory** from the space's home page. Search, or pick a category.
 2. Press **+** on each item you need. It goes into **Your request** (on a phone, **Review request**).
 3. Describe what it's for under **Request purpose**.
 4. If the space asks, choose **When will you collect?**
@@ -18,6 +18,19 @@ The catalogue lists everything the space lends, with live availability.
 ![Screenshot: the catalogue with the Your request card](screenshot:member-borrow-request)
 
 Staff review each request. When it's accepted, collect it at the desk: staff scan the box and take a photo as they hand it over. Some spaces let an uncollected request expire after its pickup window.
+
+## Your borrowing history
+
+Open **Your history** from your member Home or **Account**, then choose **Borrowing history**.
+It lists your requests, staff handouts, self-checkout loans and returns in this space, with their
+actual dates, states and item outcomes. Use **All borrowing**, **Requests and current loans** or
+**Closed requests and returns**, then **Next** and **Previous** to reach older records.
+
+This read also works for an account without membership while lending is enabled. It never shows
+another borrower's records, private evidence or stock locations. **Payments & receipts** opens
+your separate money history, including charges recorded without online payments.
+
+![Screenshot: the account-owned borrowing history with a returned request](screenshot:member-borrow-history)
 
 ## When an item is out
 

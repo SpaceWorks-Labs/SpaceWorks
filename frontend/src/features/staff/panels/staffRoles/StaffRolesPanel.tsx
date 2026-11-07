@@ -32,14 +32,15 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
   const [resetting, setResetting] = useState<StaffRoleRow>();
   const [reason, setReason] = useState("");
   const [notice, setNotice] = useState("");
-  const tabs = [{ key: "staff", label: t`Staff` }, { key: "invitations", label: t`Invitations` },
+  const list = useQuery({ queryKey: [...staffRolesKey(space), page, includeRevoked], queryFn: () => listStaffRoles(space, page, includeRevoked), enabled: space > 0 });
+  const policy = list.data?.policy;
+  const tabs = [{ key: "staff", label: t`Staff` },
+    ...(policy?.email_invites_available ? [{ key: "invitations", label: t`Invitations` }] : []),
     ...(canManageRoles ? [{ key: "roles", label: t`Roles` }] : [])];
   // Authority can change after a refresh or a makerspace switch; always render a valid tab.
   const activeTab = tabs.some(item => item.key === tab) ? tab : "staff";
-  const list = useQuery({ queryKey: [...staffRolesKey(space), page, includeRevoked], queryFn: () => listStaffRoles(space, page, includeRevoked), enabled: space > 0 });
   const invites = useQuery({ queryKey: [...invitationsKey(space), invitePage], queryFn: () => listStaffInvitations(space, invitePage), enabled: activeTab === "invitations" });
   const roles = useQuery({ queryKey: spaceRolesKey(space), queryFn: () => listSpaceRoles(space), enabled: activeTab === "roles" });
-  const policy = list.data?.policy;
   const refresh = () => {
     void client.invalidateQueries({ queryKey: staffRolesKey(space) });
     void client.invalidateQueries({ queryKey: invitationsKey(space) });
@@ -50,7 +51,7 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
     onSuccess: row => { setRevoking(undefined); setReason(""); done(`${row.display_name || row.username}'s staff roles were revoked. Their account is unchanged.`); } });
   const restore = useMutation({ mutationFn: (row: StaffRoleRow) => restoreStaffRole(space, row.id),
     onSuccess: row => done(`${row.display_name || row.username}'s staff roles were restored.`) });
-  // The invitations feature can be off for a space; the API answers 400 and that is an info state, not a failure.
+  // An invitation request can see the switch turn off before the roles policy refreshes.
   const invitesOff = isSurfaceOff(invites.error);
   const active = activeTab === "staff" ? list : activeTab === "invitations" ? invites : roles;
   const state: QueryState = active.isPending ? { status: "loading" }

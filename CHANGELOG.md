@@ -13,6 +13,30 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
+## 0.11.0
+
+- **Makerspace home and Inventory** — a separate overview and Inventory page, shared uploaded logo,
+  and the existing banner on both the home and directory card. Light mode is the default;
+  saved theme choices remain respected.
+- **Public stats controls** — area managers can configure their permitted figures and lists,
+  with server-enforced grants and locks, public privacy rules and matching TV output.
+- **Your history** — account-owned borrowing and returns, event and booking history, Shop pickup
+  progress, and permanent payment/receipt links without requiring the membership dashboard.
+- **Release 2 roles and operations** — Technician and Shop Manager extend the fixed role
+  catalogue to nine roles. Repair jobs, maintenance, lending, stocktake and reports follow
+  their tenant, role and capability scope, including when a feature is switched off.
+- **Free, offline and online workflows** — chargeable domains can run free, record balances
+  for offline settlement or use an optional payment rail. Receipts, refunds and retained
+  obligations remain in the core ledger. Shop sales require charge tracking.
+- **Events and hackathons** — configurable submission stages, frozen submissions, judging,
+  pairwise results, people's choice, ticketing, applications, reimbursements and prize records.
+- **Member cards, certificates and the shop** — card and certificate design, verification
+  and revocation, desk sales, pickup, returns and cash-up use their own scoped workflows.
+- **Language and platform administration** — a language switcher, role-specific help,
+  platform overview and audit views, reversible space controls and hosting setup guides.
+- **API and deployment contracts** — personal API access and OAuth app connections, validated
+  API schemas, standard backend/frontend images and modular settings with compatible exports.
+
 - **Staff roles on people (one account per person, U-B)** — `admin/makerspaces/<id>/staff-roles/`
   (list, grant to a community member, invite by email, change roles and machine scopes, revoke,
   restore) replaces the staff-account routes. **Removed:** `admin/makerspaces/<id>/staff-accounts/`

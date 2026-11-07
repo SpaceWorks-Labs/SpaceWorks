@@ -2,8 +2,8 @@
     "openapi": "3.0.3",
     "info": {
         "title": "Space Works API",
-        "version": "0.9.2",
-        "description": "The SpaceWorks API: one deployment, many makerspaces. Full guide: `docs/api-guide.md`\nin the repository (getting a client, scopes, signing in Python/JS/curl, pagination,\nerrors, webhooks, rate limits and versioning).\n\n## Authorise\n\n* **People (staff and members)** send `Authorization: Bearer <access>`. Get an access\n  token from `POST /api/v1/auth/login` (or a social/passkey/phone sign-in), refresh it\n  with `POST /api/v1/auth/refresh`. Staff routes also need staff MFA. In this page, press\n  **Authorize** and paste the access token under `jwtAuth`.\n* **API clients** (another system: a university ERP, a script, another space's backend)\n  are created by a Space Manager under *Settings -> API access*, with chosen scopes. A\n  server client signs every request: `X-Client-Id`, `X-Timestamp`, `X-Nonce` and\n  `X-Signature = hex(HMAC-SHA256(secret, METHOD\\nFULL_PATH\\nTIMESTAMP\\nNONCE\\nBODY))`.\n  Swagger UI cannot compute a signature, so use the guide's snippets for signed calls.\n  A browser client sends `X-Client-Id` from a registered `Origin`; a public site can\n  send `X-Publishable-Key`.\n* Public routes under `/api/v1/public/` answer anonymously until the operator turns on\n  `API_CLIENT_AUTH_REQUIRED`.\n\n## Conventions\n\n* **Versioning:** everything lives under `/api/v1/`; `/api/public/` is the frozen\n  pre-v1 alias of the public catalogue. Breaking changes get a new version prefix.\n* **Pagination:** lists answer `{count, next, previous, results}` (page size 24, `?page=`);\n  signed integration reads use `{next_cursor, results}` with `?cursor=`.\n* **Errors:** `{\"detail\": \"...\", \"code\": \"...\"}` with the HTTP status; validation errors\n  map each field to its messages.\n* **Rate limits:** `429` with `Retry-After`. API clients are limited per client by tier.\n* **Language:** send `X-SpaceWorks-Locale: <code>` only for a deliberate in-app choice; it\n  outranks the account preference, the makerspace default and `Accept-Language`, in that\n  order. `Accept-Language` is the ambient fallback. Unsupported values are ignored. Responses\n  carry `Content-Language` and vary on both headers. Codes, keys and enum values are never\n  translated; only human-readable text is.\n"
+        "version": "0.11.0",
+        "description": "The SpaceWorks API: one deployment, many makerspaces. Full guide: `docs/api-guide.md`\nin the repository (getting a client, scopes, signing in Python/JS/curl, pagination,\nerrors, webhooks, rate limits and versioning).\n\n## Authorise\n\n* **People (staff and members)** send `Authorization: Bearer <access>`. Get an access\n  token from `POST /api/v1/auth/login` (or a social/passkey/phone sign-in), refresh it\n  with `POST /api/v1/auth/refresh`. Staff routes also need staff MFA. In this page, press\n  **Authorize** and paste the access token under `jwtAuth`.\n* **API clients** (another system: a university ERP, a script, another space's backend)\n  are created by a Space Manager under *Settings -> API access*, with chosen scopes. A\n  server client signs every request: `X-Client-Id`, `X-Timestamp`, `X-Nonce` and\n  `X-Signature = hex(HMAC-SHA256(secret, METHOD\\nFULL_PATH\\nTIMESTAMP\\nNONCE\\nBODY))`.\n  Swagger UI cannot compute a signature, so use the guide's snippets for signed calls.\n  A browser client sends `X-Client-Id` from a registered `Origin`; a public site can\n  send `X-Publishable-Key`.\n* **Personal access tokens** (#196): a person creates one at `/account/api-access` (MFA\n  re-auth, scopes no wider than their own permissions, 90-day default expiry) and sends\n  `Authorization: Bearer swpat_...`. Never accepted on sign-in, credential or platform routes.\n* **App connections** (OAuth 2.0 authorization code + PKCE, under `/api/v1/oauth/`): an app a\n  Space Manager registered under *API access* asks the person to consent, then sends its\n  access token as `Authorization: Bearer <token>`; refresh tokens rotate on every use.\n* Public routes under `/api/v1/public/` answer anonymously until the operator turns on\n  `API_CLIENT_AUTH_REQUIRED`.\n\n## Conventions\n\n* **Versioning:** everything lives under `/api/v1/`; `/api/public/` is the frozen\n  pre-v1 alias of the public catalogue. Breaking changes get a new version prefix.\n* **Pagination:** lists answer `{count, next, previous, results}` (page size 24, `?page=`);\n  signed integration reads use `{next_cursor, results}` with `?cursor=`.\n* **Errors:** `{\"detail\": \"...\", \"code\": \"...\"}` with the HTTP status; validation errors\n  map each field to its messages.\n* **Rate limits:** `429` with `Retry-After`. API clients are limited per client by tier.\n* **Language:** send `X-SpaceWorks-Locale: <code>` only for a deliberate in-app choice; it\n  outranks the account preference, the makerspace default and `Accept-Language`, in that\n  order. `Accept-Language` is the ambient fallback. Unsupported values are ignored. Responses\n  carry `Content-Language` and vary on both headers. Codes, keys and enum values are never\n  translated; only human-readable text is.\n"
     },
     "paths": {
         "/.well-known/apple-app-site-association": {
@@ -1372,6 +1372,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -2496,6 +2497,14 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "in": "query",
+                        "name": "platform_only",
+                        "schema": {
+                            "type": "boolean"
+                        },
+                        "description": "Only platform-level rows (no makerspace). Superadmin scope only."
                     },
                     {
                         "in": "query",
@@ -52826,7 +52835,7 @@
         "/api/v1/admin/events/{id}/reimbursements/crew-pool/": {
             "post": {
                 "operationId": "api_v1_admin_events_reimbursements_crew_pool_create",
-                "description": "Host VIEW_FINANCE and a full browser session; mutations require recent session reauthentication. 409 crew_pool_exists; 403 crew_claims_disabled.",
+                "description": "Host VIEW_FINANCE and a full browser session; mutations require recent session reauthentication. 409 crew_pool_exists; 404 feature_disabled when events.crew_claims is off.",
                 "parameters": [
                     {
                         "in": "header",
@@ -81574,6 +81583,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -81758,6 +81768,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -81942,6 +81953,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -82126,6 +82138,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -82310,6 +82323,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -82494,6 +82508,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -82678,6 +82693,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -82862,6 +82878,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -83046,6 +83063,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -83230,6 +83248,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -83414,6 +83433,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -83598,6 +83618,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -83782,6 +83803,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -83966,6 +83988,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -84150,6 +84173,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -84334,6 +84358,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -84518,6 +84543,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -84702,6 +84728,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -98403,6 +98430,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -102060,7 +102088,7 @@
         "/api/v1/admin/makerspace/{makerspace_id}/public-stats-settings": {
             "get": {
                 "operationId": "api_v1_admin_makerspace_public_stats_settings_retrieve",
-                "description": "Staff of the space read the group; only the Space Manager (or the superadmin) may change it, which `can_edit` reports.",
+                "description": "Staff read the configuration. capabilities reports the same per-field L17 grant/lock decisions enforced on writes; available reports source module state.",
                 "summary": "Read the public stats settings",
                 "parameters": [
                     {
@@ -102126,12 +102154,22 @@
                             }
                         },
                         "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             },
             "put": {
                 "operationId": "api_v1_admin_makerspace_public_stats_settings_update",
-                "description": "Each changed key is written through the settings authority (module `public_site`, Space Manager only) and audited as `settings.changed`. 403 `setting_not_delegated` for anyone else.",
+                "description": "Compatible full-group replacement. Every submitted page field and visibility key is authorized through L17, including unchanged values. One refused key refuses the whole request before any setting or audit entry is written.",
                 "summary": "Save the public stats settings",
                 "parameters": [
                     {
@@ -102192,7 +102230,117 @@
                         "content": {
                             "application/json": {
                                 "schema": {
+                                    "$ref": "#/components/schemas/PublicStatsSettingsError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
                                     "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "423": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "api_v1_admin_makerspace_public_stats_settings_partial_update",
+                "description": "Partial update for delegated area managers. Send only changed allowed fields. Page-wide settings remain Space-Manager-only; per-widget grants and locks use the widget's owner_module. Module-off data remains hidden.",
+                "summary": "Update selected public stats settings",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Admin makerspaces"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPublicStatsSettings"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPublicStatsSettings"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPublicStatsSettings"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicStatsSettingsResponse"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicStatsSettingsError"
                                 }
                             }
                         },
@@ -103603,6 +103751,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -138046,6 +138195,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -141414,6 +141564,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -141798,6 +141949,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -147973,7 +148125,8 @@
                                 "$ref": "#/components/schemas/SpaceScheduleRequest"
                             }
                         }
-                    }
+                    },
+                    "required": true
                 },
                 "security": [
                     {
@@ -152310,6 +152463,7 @@
                                 "makerspace_membership",
                                 "membership_request",
                                 "membership_term",
+                                "membership_term_start",
                                 "shop_order",
                                 "sponsorship",
                                 "submission_fee",
@@ -168869,7 +169023,7 @@
         "/api/v1/auth/staff-invitations/accept": {
             "post": {
                 "operationId": "api_v1_auth_staff_invitations_accept_create",
-                "description": "Signed in to your own account. First call without `code`: your account email must equal the invitation address (`invite_email_mismatch`, 403); a 6-digit code is emailed to it and the answer is `challenge_required: true`. Second call with `code`: the staff role is granted in that makerspace (`proof_failed`, 400, for a wrong code; `already_staff`, 409). Never creates an account and never marks the email verified.",
+                "description": "Signed in to your own account. First call without `code`: your account email must equal the invitation address (`invite_email_mismatch`, 403); a 6-digit code is emailed to it and the answer is `challenge_required: true`. Second call with `code`: the staff role is granted in that makerspace (`proof_failed`, 400, for a wrong code; `already_staff`, 409). Never creates an account and never marks the email verified. Both steps require staff invitations and the email module (`feature_disabled` or `module_disabled`, 404).",
                 "summary": "Accept a staff-role invitation (two steps)",
                 "tags": [
                     "Staff invitations"
@@ -168918,6 +169072,9 @@
                     },
                     "403": {
                         "description": "Signed in, but this action or makerspace is not permitted (or the secret is wrong)."
+                    },
+                    "404": {
+                        "description": "Not found, not visible to this actor, or the module/feature this route belongs to is turned off here (typed `module_disabled` / `feature_disabled`)."
                     },
                     "409": {
                         "description": "Conflicts with the current state."
@@ -169813,7 +169970,7 @@
                         "description": "Frontend-safe tenant bootstrap payload."
                     },
                     "404": {
-                        "description": "No active tenant frontend matched."
+                        "description": "No active tenant frontend matched; `code` is `space_paused` when the matched space is paused."
                     }
                 }
             }
@@ -185787,7 +185944,7 @@
                                 }
                             }
                         },
-                        "description": "Machine service is disabled for this makerspace, or invalid input."
+                        "description": "Invalid input."
                     },
                     "401": {
                         "description": "Authentication required."
@@ -185803,7 +185960,7 @@
                         "description": "A live member account is required; claim, staff and platform sessions are refused."
                     },
                     "404": {
-                        "description": "No job owned by the caller matches."
+                        "description": "No job owned by the caller matches, or machine service is off for this makerspace."
                     },
                     "409": {
                         "content": {
@@ -185877,7 +186034,7 @@
                                 }
                             }
                         },
-                        "description": "Machine service is disabled for this makerspace, or invalid input."
+                        "description": "Invalid input."
                     },
                     "401": {
                         "description": "Authentication required."
@@ -185893,7 +186050,7 @@
                         "description": "A live member account is required; claim, staff and platform sessions are refused."
                     },
                     "404": {
-                        "description": "No job owned by the caller matches."
+                        "description": "No job owned by the caller matches, or machine service is off for this makerspace."
                     },
                     "409": {
                         "content": {
@@ -188243,6 +188400,110 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/member/makerspaces/{makerspace_id}/borrowing-history": {
+            "get": {
+                "operationId": "api_v1_member_makerspaces_borrowing_history_list",
+                "description": "Requires a live, unrestricted personal account. No membership or online-payment rail is required. Only the caller's own requests in this servable makerspace are returned, including their merged-account history. Disabled lending is unavailable; private evidence, QR, storage, contact and staff fields are never included.",
+                "summary": "List my own borrowing requests, handovers and returns",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "makerspace_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "period",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "all",
+                                "current",
+                                "history"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Member borrowing"
+                ],
+                "security": [
+                    {
+                        "personalAccessToken": []
+                    },
+                    {
+                        "oauth2": []
+                    },
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedOwnBorrowingHistoryList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Invalid request."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Authentication required."
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Permission denied."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HardwareRequestError"
+                                }
+                            }
+                        },
+                        "description": "Not found."
                     }
                 }
             }
@@ -232850,15 +233111,6 @@
                 ],
                 "security": [
                     {
-                        "personalAccessToken": []
-                    },
-                    {
-                        "oauth2": []
-                    },
-                    {
-                        "jwtAuth": []
-                    },
-                    {
                         "ServerHMAC": []
                     },
                     {
@@ -233845,15 +234097,6 @@
                     "Event presentation"
                 ],
                 "security": [
-                    {
-                        "personalAccessToken": []
-                    },
-                    {
-                        "oauth2": []
-                    },
-                    {
-                        "jwtAuth": []
-                    },
                     {
                         "ServerHMAC": []
                     },
@@ -241444,8 +241687,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -248073,8 +248315,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -267306,8 +267547,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -269922,8 +270162,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -273342,8 +273581,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -274311,8 +274549,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -275227,8 +275464,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -294404,7 +294640,7 @@
                         "readOnly": true
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectTypeC45Enum"
+                        "$ref": "#/components/schemas/SubjectType5c9Enum"
                     },
                     "subject_label": {
                         "type": "string",
@@ -296221,8 +296457,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -304479,6 +304714,132 @@
                     "starts_at"
                 ]
             },
+            "OwnBorrowingHistory": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OwnBorrowingItem"
+                        },
+                        "readOnly": true
+                    },
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "issued_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "return_due_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "closed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "returns": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OwnReturnDate"
+                        },
+                        "readOnly": true
+                    },
+                    "source": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "checked_out_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "returned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "checked_out_at",
+                    "closed_at",
+                    "created_at",
+                    "id",
+                    "issued_at",
+                    "items",
+                    "return_due_at",
+                    "returned_at",
+                    "returns",
+                    "source",
+                    "status"
+                ]
+            },
+            "OwnBorrowingItem": {
+                "type": "object",
+                "properties": {
+                    "product_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "requested_quantity": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "accepted_quantity": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "issued_quantity": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "returned_quantity": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "damaged_quantity": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "missing_quantity": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "needs_fix_quantity": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "accepted_quantity",
+                    "damaged_quantity",
+                    "issued_quantity",
+                    "missing_quantity",
+                    "needs_fix_quantity",
+                    "product_name",
+                    "requested_quantity",
+                    "returned_quantity"
+                ]
+            },
             "OwnClaim": {
                 "type": "object",
                 "properties": {
@@ -304701,6 +305062,19 @@
                     "next",
                     "previous",
                     "results"
+                ]
+            },
+            "OwnReturnDate": {
+                "type": "object",
+                "properties": {
+                    "returned_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "returned_at"
                 ]
             },
             "OwnerPayeeCommand": {
@@ -306793,6 +307167,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/OverdueSchedule"
+                        }
+                    }
+                }
+            },
+            "PaginatedOwnBorrowingHistoryList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OwnBorrowingHistory"
                         }
                     }
                 }
@@ -308918,8 +309323,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -310456,8 +310860,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -312071,8 +312474,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -313113,8 +313515,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -316077,8 +316478,7 @@
                                                         "max": {
                                                             "type": "number"
                                                         }
-                                                    },
-                                                    "required": []
+                                                    }
                                                 },
                                                 "show_if": {
                                                     "oneOf": [
@@ -318321,6 +318721,51 @@
                         "items": {
                             "$ref": "#/components/schemas/Link"
                         }
+                    }
+                }
+            },
+            "PatchedPublicStatsSettings": {
+                "type": "object",
+                "properties": {
+                    "visibility": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        },
+                        "description": "Partial visibility overrides, keyed by choices.widgets. Missing keys keep their stored values."
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "The public stats page is published."
+                    },
+                    "sections": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SectionsEnum"
+                        },
+                        "description": "Shown sections in page order; a section left out is off.",
+                        "maxItems": 5
+                    },
+                    "period": {
+                        "type": "string",
+                        "description": "month, year, all or fy: the one period every period count uses; visitors cannot change it."
+                    },
+                    "headline": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HeadlineEnum"
+                        },
+                        "description": "Up to four metric keys shown first; a hidden section's metric is skipped.",
+                        "maxItems": 4
+                    },
+                    "tv_mode_enabled": {
+                        "type": "boolean",
+                        "description": "Serve the full-screen TV page at /stats/tv."
+                    },
+                    "tv_refresh_seconds": {
+                        "type": "integer",
+                        "maximum": 3600,
+                        "minimum": 30
                     }
                 }
             },
@@ -320884,7 +321329,7 @@
                     "subject_type": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/SubjectTypeC45Enum"
+                                "$ref": "#/components/schemas/SubjectType5c9Enum"
                             }
                         ],
                         "readOnly": true
@@ -323942,6 +324387,13 @@
                             "$ref": "#/components/schemas/OverviewSpace"
                         }
                     },
+                    "reports_space_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "Space IDs where Reports is currently available."
+                    },
                     "blocks": {
                         "type": "array",
                         "items": {
@@ -323978,6 +324430,7 @@
                     "include_excluded",
                     "modules",
                     "money",
+                    "reports_space_ids",
                     "spaces",
                     "status",
                     "window"
@@ -324413,6 +324866,9 @@
                     "slug": {
                         "type": "string"
                     },
+                    "reports_enabled": {
+                        "type": "boolean"
+                    },
                     "usage": {
                         "$ref": "#/components/schemas/MakerspaceUsage"
                     }
@@ -324420,6 +324876,7 @@
                 "required": [
                     "id",
                     "name",
+                    "reports_enabled",
                     "slug",
                     "usage"
                 ]
@@ -334266,7 +334723,12 @@
                         }
                     },
                     "upcoming_count": {
-                        "$ref": "#/components/schemas/PublicCount"
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PublicCount"
+                            }
+                        ],
+                        "nullable": true
                     },
                     "held": {
                         "allOf": [
@@ -334274,6 +334736,7 @@
                                 "$ref": "#/components/schemas/PublicCount"
                             }
                         ],
+                        "nullable": true,
                         "description": "Listed public events that started in the period."
                     },
                     "attendees": {
@@ -334282,6 +334745,7 @@
                                 "$ref": "#/components/schemas/PublicCount"
                             }
                         ],
+                        "nullable": true,
                         "description": "Checked-in attendees of those events."
                     }
                 },
@@ -334355,7 +334819,8 @@
                 "properties": {
                     "completed": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "status_counts": {
                         "allOf": [
@@ -334363,7 +334828,8 @@
                                 "$ref": "#/components/schemas/PublicStatsStatusCounts"
                             }
                         ],
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "queue": {
                         "allOf": [
@@ -334371,7 +334837,8 @@
                                 "$ref": "#/components/schemas/PublicStatsQueue"
                             }
                         ],
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -334385,15 +334852,18 @@
                 "properties": {
                     "currently_out_count": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "library_size": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "available_count": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -334408,7 +334878,8 @@
                     "usage_hours": {
                         "type": "number",
                         "format": "double",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     }
                 },
                 "required": [
@@ -334542,6 +335013,13 @@
                         },
                         "readOnly": true
                     },
+                    "visibility": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        },
+                        "readOnly": true
+                    },
                     "tv": {
                         "allOf": [
                             {
@@ -334562,7 +335040,8 @@
                     "period",
                     "printing",
                     "sections",
-                    "tv"
+                    "tv",
+                    "visibility"
                 ]
             },
             "PublicStatsPeriod": {
@@ -334662,12 +335141,14 @@
                     "hours_all_time": {
                         "type": "number",
                         "format": "double",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "hours_this_month": {
                         "type": "number",
                         "format": "double",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "busiest_printer": {
                         "allOf": [
@@ -334688,7 +335169,8 @@
                     "grams_all_time": {
                         "type": "number",
                         "format": "double",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "by_brand": {
                         "type": "array",
@@ -334791,6 +335273,13 @@
             "PublicStatsSettings": {
                 "type": "object",
                 "properties": {
+                    "visibility": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        },
+                        "description": "Partial visibility overrides, keyed by choices.widgets. Missing keys keep their stored values."
+                    },
                     "enabled": {
                         "type": "boolean",
                         "description": "The public stats page is published."
@@ -334834,6 +335323,22 @@
                     "tv_refresh_seconds"
                 ]
             },
+            "PublicStatsSettingsError": {
+                "type": "object",
+                "properties": {
+                    "detail": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "errors": {}
+                },
+                "required": [
+                    "code",
+                    "detail"
+                ]
+            },
             "PublicStatsSettingsResponse": {
                 "type": "object",
                 "properties": {
@@ -334842,14 +335347,18 @@
                     },
                     "can_edit": {
                         "type": "boolean",
-                        "description": "False: read-only for this actor (Space Manager only)."
+                        "description": "Legacy page-wide edit flag; use capabilities for individual settings."
                     },
                     "choices": {
                         "$ref": "#/components/schemas/_Choices"
+                    },
+                    "capabilities": {
+                        "$ref": "#/components/schemas/_Capabilities"
                     }
                 },
                 "required": [
                     "can_edit",
+                    "capabilities",
                     "choices",
                     "settings"
                 ]
@@ -334871,7 +335380,8 @@
                     },
                     "completed": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "collected": {
                         "type": "integer",
@@ -340587,7 +341097,7 @@
                         "$ref": "#/components/schemas/Status66aEnum"
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectTypeC45Enum"
+                        "$ref": "#/components/schemas/SubjectType5c9Enum"
                     },
                     "months": {
                         "type": "integer",
@@ -346634,6 +347144,18 @@
                         "format": "date-time",
                         "nullable": true
                     },
+                    "closed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "returns": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ShopBuyerReturn"
+                        },
+                        "readOnly": true
+                    },
                     "lines": {
                         "type": "array",
                         "items": {
@@ -346647,6 +347169,7 @@
                 "required": [
                     "amount_due",
                     "channel",
+                    "closed_at",
                     "collected_at",
                     "created_at",
                     "currency",
@@ -346659,11 +347182,39 @@
                     "pickup_code",
                     "pickup_event_title",
                     "ready_at",
+                    "returns",
                     "space_name",
                     "status",
                     "subtotal",
                     "tax_total",
                     "total"
+                ]
+            },
+            "ShopBuyerReturn": {
+                "type": "object",
+                "description": "Goods taken back, not a claim that money has been refunded.",
+                "properties": {
+                    "line_id": {
+                        "type": "integer"
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "created_at",
+                    "line_id",
+                    "quantity"
                 ]
             },
             "ShopCancel": {
@@ -347369,15 +347920,21 @@
                         "type": "string"
                     },
                     "price_from": {
-                        "type": "string",
-                        "format": "decimal",
-                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 10000000000,
+                        "minimum": -10000000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true,
                         "nullable": true
                     },
                     "price_to": {
-                        "type": "string",
-                        "format": "decimal",
-                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 10000000000,
+                        "minimum": -10000000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true,
                         "nullable": true
                     },
                     "members_only": {
@@ -347432,9 +347989,13 @@
                         }
                     },
                     "price": {
-                        "type": "string",
-                        "format": "decimal",
-                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 10000000000,
+                        "minimum": -10000000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true,
+                        "nullable": true
                     },
                     "sold_out": {
                         "type": "boolean"
@@ -350388,8 +350949,15 @@
                         "type": "string",
                         "default": "",
                         "maxLength": 500
+                    },
+                    "confirm_slug": {
+                        "type": "string",
+                        "maxLength": 50
                     }
-                }
+                },
+                "required": [
+                    "confirm_slug"
+                ]
             },
             "SpaceScheduleState": {
                 "type": "object",
@@ -352196,7 +352764,7 @@
                         "readOnly": true
                     },
                     "subject_type": {
-                        "$ref": "#/components/schemas/SubjectTypeC45Enum"
+                        "$ref": "#/components/schemas/SubjectType5c9Enum"
                     },
                     "subject_label": {
                         "type": "string",
@@ -356454,7 +357022,7 @@
                 "type": "string",
                 "description": "* `machine` - Machine\n* `inventory_product` - Inventory item\n* `inventory_asset` - Inventory unit\n* `bookable_space` - Bookable space"
             },
-            "SubjectTypeC45Enum": {
+            "SubjectType5c9Enum": {
                 "enum": [
                     "machine_service_request",
                     "booking",
@@ -356475,10 +357043,11 @@
                     "submission_fee",
                     "team_registration",
                     "event_deposit",
-                    "shop_order"
+                    "shop_order",
+                    "membership_term_start"
                 ],
                 "type": "string",
-                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee\n* `loan_rental` - Loan rental\n* `loan_damage` - Loan damage charge\n* `loan_lost` - Lost item charge\n* `machine_session` - Machine session\n* `event_order` - Event ticket order\n* `event_venue_fee` - Event venue fee\n* `donation` - Donation\n* `sponsorship` - Sponsorship\n* `submission_fee` - Project entry fee\n* `team_registration` - Team registration\n* `event_deposit` - Event deposit\n* `shop_order` - Shop order"
+                "description": "* `machine_service_request` - Machine service request\n* `booking` - Booking\n* `event_registration` - Event registration\n* `makerspace_membership` - Makerspace membership\n* `membership_term` - Membership renewal\n* `membership_request` - Membership admission\n* `loan_deposit` - Loan deposit\n* `loan_late_fee` - Loan late fee\n* `loan_rental` - Loan rental\n* `loan_damage` - Loan damage charge\n* `loan_lost` - Lost item charge\n* `machine_session` - Machine session\n* `event_order` - Event ticket order\n* `event_venue_fee` - Event venue fee\n* `donation` - Donation\n* `sponsorship` - Sponsorship\n* `submission_fee` - Project entry fee\n* `team_registration` - Team registration\n* `event_deposit` - Event deposit\n* `shop_order` - Shop order\n* `membership_term_start` - Membership term"
             },
             "SubjectTypeE13Enum": {
                 "enum": [
@@ -363633,6 +364202,27 @@
                     }
                 }
             },
+            "_Capabilities": {
+                "type": "object",
+                "properties": {
+                    "settings": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/_Decision"
+                        }
+                    },
+                    "visibility": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/_Decision"
+                        }
+                    }
+                },
+                "required": [
+                    "settings",
+                    "visibility"
+                ]
+            },
             "_Choice": {
                 "type": "object",
                 "properties": {
@@ -363669,6 +364259,12 @@
                             "$ref": "#/components/schemas/_MetricChoice"
                         }
                     },
+                    "widgets": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/_WidgetChoice"
+                        }
+                    },
                     "max_headline": {
                         "type": "integer"
                     },
@@ -363685,7 +364281,8 @@
                     "periods",
                     "sections",
                     "tv_refresh_max",
-                    "tv_refresh_min"
+                    "tv_refresh_min",
+                    "widgets"
                 ]
             },
             "_Conflict": {
@@ -363732,6 +364329,41 @@
                     "revoked",
                     "unique_kept",
                     "unique_moved"
+                ]
+            },
+            "_Decision": {
+                "type": "object",
+                "properties": {
+                    "editable": {
+                        "type": "boolean"
+                    },
+                    "locked": {
+                        "type": "boolean"
+                    },
+                    "can_lock": {
+                        "type": "boolean",
+                        "description": "The caller may use the L17 lock API for this exact key."
+                    },
+                    "available": {
+                        "type": "boolean",
+                        "description": "The source module/public surface is currently available; never enables it."
+                    },
+                    "code": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "via": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "available",
+                    "can_lock",
+                    "code",
+                    "editable",
+                    "locked",
+                    "via"
                 ]
             },
             "_Makerspace": {
@@ -363981,6 +364613,44 @@
                     "status",
                     "version"
                 ]
+            },
+            "_WidgetChoice": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "section": {
+                        "type": "string"
+                    },
+                    "owner_module": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/_WidgetChoiceKindEnum"
+                    }
+                },
+                "required": [
+                    "key",
+                    "kind",
+                    "label",
+                    "owner_module",
+                    "section"
+                ]
+            },
+            "_WidgetChoiceKindEnum": {
+                "enum": [
+                    "count",
+                    "hours",
+                    "weight",
+                    "list",
+                    "detail"
+                ],
+                "type": "string",
+                "description": "* `count` - count\n* `hours` - hours\n* `weight` - weight\n* `list` - list\n* `detail` - detail"
             },
             "LoginGuardError": {
                 "type": "object",
@@ -364261,6 +364931,7 @@
                 "Loans",
                 "Member activity",
                 "Member bookings",
+                "Member borrowing",
                 "Member certifications",
                 "Member communication",
                 "Member events",

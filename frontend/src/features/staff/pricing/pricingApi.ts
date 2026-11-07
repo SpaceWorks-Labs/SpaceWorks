@@ -21,19 +21,19 @@ export function installedDomains(enabledModules: readonly string[]) {
 }
 
 // The shop prices each product itself, so it has no tab above, but a discount can still name it.
-const EXTRA_LABELS: Record<string, string> = { shop: "Shop" };
+const EXTRA_LABELS: Record<string, string> = { shop: t`Shop` };
 export const domainLabel = (domain: string) => PRICING_DOMAINS.find(entry => entry.domain === domain)?.label ?? EXTRA_LABELS[domain] ?? domain;
 
 /** Mirrors `apps/payments/pricing/components.py` (labels for discount scoping and the impact list). */
 export const COMPONENT_LABELS: Record<PricingDomain, [string, string][]> = {
-  loans: [["rental_per_loan", "Rental per loan"], ["rental_per_day", "Rental per day"], ["deposit", "Refundable deposit"],
-    ["late_per_day", "Late fee per day"], ["damage", "Damage"], ["lost", "Lost item"]],
-  machines: [["time", "Machine time per hour"], ["material", "Material per unit"], ["per_job", "Per job"]],
-  bookings: [["per_booking", "Per booking"], ["per_hour", "Per hour"]],
-  events: [["per_registration", "Per registration"]],
-  membership: [["dues", "Membership dues"], ["joining_fee", "Joining fee"]],
+  loans: [["rental_per_loan", t`Rental per loan`], ["rental_per_day", t`Rental per day`], ["deposit", t`Refundable deposit`],
+    ["late_per_day", t`Late fee per day`], ["damage", t`Damage`], ["lost", t`Lost item`]],
+  machines: [["time", t`Machine time per hour`], ["material", t`Material per unit`], ["per_job", t`Per job`]],
+  bookings: [["per_booking", t`Per booking`], ["per_hour", t`Per hour`]],
+  events: [["per_registration", t`Per registration`]],
+  membership: [["dues", t`Membership dues`], ["joining_fee", t`Joining fee`]],
   // L22: a shop item is priced on its own variant; only member discounts scope to it.
-  shop: [["item", "Item price"]],
+  shop: [["item", t`Item price`]],
 };
 
 export function componentLabel(key: string) {

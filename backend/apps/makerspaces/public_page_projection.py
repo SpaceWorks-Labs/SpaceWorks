@@ -18,7 +18,7 @@ def functional_links(space):
                  for key in ("events", "bookings", "machines", "membership")}
     available["inventory"] = bool(module_enabled(space, "public_inventory") and public_surface_available("public_inventory") and space.public_inventory_enabled
                                   and feature_enabled(space, "loans.enabled"))
-    routes = {"inventory": "", "events": "/events", "bookings": "/bookings",
+    routes = {"inventory": "/inventory", "events": "/events", "bookings": "/bookings",
               "machines": "/machines", "membership": "/member"}
     return {"links": [{"family": key, "url": f"{origin}{home}{path}"}
                       for key, path in routes.items() if available[key]]}

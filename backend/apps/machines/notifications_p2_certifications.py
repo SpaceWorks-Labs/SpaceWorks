@@ -7,6 +7,7 @@ from apps.hardware_requests.notifications_p2 import content, fanout, revision
 from apps.integrations.destinations import NotificationScope
 from apps.integrations.email_templates import render
 from apps.integrations.email_templates_registry_helpers import bag
+from apps.integrations.notification_catalog_sources import event_live
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.hardware_requests.notifications_p2 import safe_adapter
 from apps.makerspaces.local_time import to_local
@@ -32,6 +33,9 @@ def staff_allowed(envelope, type_id):
 
 
 def eligible(envelope):
+    reminder = envelope.event in {"expiring", "expired"}
+    if reminder and not event_live(envelope.makerspace, "certifications", envelope.event):
+        return False
     rows = rbac.scope_notification_policy(CertificationGrant.objects.all(),
         makerspace_id=envelope.makerspace_id, field="certification_type__makerspace_id")
     grant = rows.select_related("membership", "certification_type__machine_type", "granted_by", "revoked_by").filter(
@@ -40,7 +44,7 @@ def eligible(envelope):
         certification_type__is_active=True).first()
     if grant is None or version(grant) != envelope.revision:
         return False
-    if envelope.event in {"expiring", "expired"}:
+    if reminder:
         from .reminders_certifications import eligible_grants, reminder_time
         if not eligible_grants(envelope.makerspace).filter(pk=grant.pk).exists():
             return False
@@ -78,6 +82,8 @@ def notify(grant, event, *, include_staff=True):
 
 
 def eligible_digest(envelope):
+    if not event_live(envelope.makerspace, "certifications", "expiring"):
+        return False
     from .reminders_certification_digest import counts
     source = rbac.scope_notification_policy(CertificationType.objects.all(),
         makerspace_id=envelope.makerspace_id).filter(pk=envelope.source_id, is_active=True).first()

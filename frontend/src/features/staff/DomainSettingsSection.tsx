@@ -15,6 +15,7 @@ import {
 type Props = { makerspaceId: number; domain: SettingsDomain };
 
 const READ_ONLY_NOTE: Record<SettingsDomain, string> = {
+  shop: t`Shop Managers can change shop settings unless the Space Manager locks them.`,
   events: "You can see these settings. The Space Manager decides who can change them.",
   bookings: "You can see these settings. The Space Manager decides who can change them.",
   machines: "You can see these settings. Changing them needs the Space Manager's go-ahead, and your "

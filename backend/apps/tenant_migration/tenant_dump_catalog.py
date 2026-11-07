@@ -97,8 +97,9 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-gap-api: apiclients/0009-0010 personal tokens, app connections and the peer client type; re-pinned.
 # lane/r2-idcards-best: events/0081-0084 certificate thanks, kind designs, signatories and holder name; re-pinned.
 # lane/r2-l9: accounts/0057 User.preferred_locale, makerspaces/0132 Makerspace.default_locale (phase 8 i18n); re-pinned.
-# Orchestrator re-pins the live catalog after final schema/migration verification.
-CATALOG_SCHEMA_SHA256 = "f886a7a92b693f52d4a905ae259ce5b49b3d75c1ca88dcd5e683220ccddf1ca3"
+# Public-stat visibility: makerspaces/0133 adds public_stats_config JSON; class-metadata pin derived read-only.
+# Orchestrator verifies this against actual post-migration schema before release.
+CATALOG_SCHEMA_SHA256 = "cfee5d44737f36eb21e49421c79e18a1b5e6e226960e435c9060b9d8d1e7d576"
 
 
 def catalog_models(apps_registry=apps):

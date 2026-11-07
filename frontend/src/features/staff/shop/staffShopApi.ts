@@ -8,9 +8,9 @@ import { StructuredApiError, staffRequest } from "../../../lib/api";
 export type { ShopMovement, ShopProduct, ShopSettings, ShopStaffVariant };
 export type Paged<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 export type VariantDraft = { id?: number; name: string; options: Record<string, string>; sku: string; price: string;
-  reorder_point: number; linked_product_id?: number | null; is_active: boolean };
+  reorder_point: number; sort_order?: number; linked_product_id?: number | null; is_active: boolean };
 export type ProductDraft = Pick<ShopProduct, "name"> & {
-  kind: NonNullable<ShopProduct["kind"]>; description: string; category: string; unit: string; is_public: boolean; is_active: boolean;
+  kind: NonNullable<ShopProduct["kind"]>; sort_order?: number; description: string; category: string; unit: string; is_public: boolean; is_active: boolean;
   max_per_order: number | null; members_only: boolean; show_exact_stock: boolean; tax_rate_bps: number | null; hsn_code: string;
   bundle_mode: boolean; variants: VariantDraft[]; component_input: { variant_id: number; quantity: number }[];
 };

@@ -35,7 +35,7 @@ export function AuditLog({ makerspaceId, platform = false }: { makerspaceId?: nu
   const clear = () => list.update({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "", platform_only: "" });
   const chips = Object.entries(filters).filter(([key, value]) => key in emptyAuditFilters && value && !(key === "makerspace" && value === String(makerspaceId)))
     .map(([key, value]) => ({ key, label: `${key.replace(/_/g, " ")}: ${value}`, onRemove: () => list.update({ [key]: "" }) }))
-    .concat(platform && list.values.platform_only ? [{ key: "platform_only", label: "Platform-level only", onRemove: () => list.update({ platform_only: "" }) }] : []);
+    .concat(platform && list.values.platform_only ? [{ key: "platform_only", label: t`Platform-level only`, onRemove: () => list.update({ platform_only: "" }) }] : []);
 
   return <ListLayout width="wide"
     header={{ title: platform ? t`Platform audit log` : t`Audit log`, subtitle: platform ? t`Every space's trail and the platform's own actions, append-only. Filter by makerspace ID, or show platform-level rows only.` : t`Every state change in this makerspace, append-only.`, meta: platform ? undefined : <AuditVerificationStatus key={new URLSearchParams(filterParams).toString()} makerspaceId={filters.makerspace} params={filterParams} /> }}
@@ -43,18 +43,18 @@ export function AuditLog({ makerspaceId, platform = false }: { makerspaceId?: nu
     isEmpty={Boolean(logs.data && !logs.data.results.length)} filtered={chips.length > 0}
     empty={{ message: t`No audit entries yet. Complete a workflow to start the trail.` }}
     filteredEmpty={{ message: t`No entries match these filters. Clear filters to see the trail.`, action: { label: t`Clear filters`, onClick: clear } }}
-    filters={{ sort: makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["action", "Action"]]} /> : undefined,
+    filters={{ sort: makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", t`Newest`], ["created_at", t`Oldest`], ["action", t`Action`]]} /> : undefined,
       // Active filters stay visible (and removable) outside the closed popover.
       activeCount: chips.length, chips, controls: <>{platform ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(list.values.platform_only)}
-        onChange={event => list.update({ platform_only: event.target.checked ? "1" : "" })} />Platform-level rows only</label> : null}
+        onChange={event => list.update({ platform_only: event.target.checked ? "1" : "" })} />{t`Platform-level rows only`}</label> : null}
         <AuditLogFilters filters={filters} onChange={next => list.update(next)} /></>, onClear: clear }}
     body={{ kind: "table", table: <DataTable data={logs.data?.results ?? []} listState={list}
       ordering={list.values.ordering} onOrderingChange={ordering => list.update({ ordering })}
       columns={[
-        { key: "action", header: "Activity", sortable: true, render: log => <div><span className="font-semibold">{log.actor_display ?? t`System`}</span><p>{log.action_label}</p></div> },
-        { key: "target_type", header: "Target", render: log => <span className="break-all">{log.target_type}:{log.target_id}</span> },
-        { key: "created_at", header: "When", sortable: true, render: log => <div><p className="tabular-nums">{new Date(log.created_at).toLocaleString(formatLocale())}</p><p className="text-muted"><RelativeTime date={log.created_at} /></p></div> },
-        { key: "details", header: "Details", render: log => <AuditLogDetails action={log.action} meta={log.meta} redacted={log.meta_redacted} /> },
+        { key: "action", header: t`Activity`, sortable: true, render: log => <div><span className="font-semibold">{log.actor_display ?? t`System`}</span><p>{log.action_label}</p></div> },
+        { key: "target_type", header: t`Target`, render: log => <span className="break-all">{log.target_type}:{log.target_id}</span> },
+        { key: "created_at", header: t`When`, sortable: true, render: log => <div><p className="tabular-nums">{new Date(log.created_at).toLocaleString(formatLocale())}</p><p className="text-muted"><RelativeTime date={log.created_at} /></p></div> },
+        { key: "details", header: t`Details`, render: log => <AuditLogDetails action={log.action} meta={log.meta} redacted={log.meta_redacted} /> },
       ]} /> }}
     pagination={{ page: list.page, pageSize: 24, count: logs.data?.count ?? 0, onChange: page => list.setPage(page) }} />;
 }

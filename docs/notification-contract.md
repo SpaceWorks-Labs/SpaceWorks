@@ -230,7 +230,7 @@ Provider setting lookups are deployment-wide, never derived from the request hos
 | `NOTIFICATION_MATTERMOST_ALLOW_PRIVATE_HOSTS` | Defaults false; only boolean true allows private self-host addresses |
 | `WHATSAPP_META_GRAPH_VERSION` | Defaults `v25.0` in the Meta HTTP adapter |
 
-All five are environment-backed in `config/settings.py`, included in deployment examples/manifests
+All five are environment-backed in `config/settings_delivery.py`, included in deployment examples/manifests
 and classified as nonblocking value-comparison settings for backup. Redirect defaults are blank;
 private Mattermost hosts default false. Authorization and token exchange use the setting value
 byte for byte, including its fixed query; dynamic challenge IDs belong only in signed state.

@@ -48,7 +48,11 @@ The public stats page (#170, L26): `inventory/public_stats.py` assembles it from
 `public_stats_period.py` (fixed period, small-number suppression), `public_stats_events.py`,
 `public_stats_community.py`, `public_stats_activity.py` (period figures) and the legacy
 `public_stats_hardware.py`; `public_stats_cache.py` fronts it and `public_stats_serializers.py` is its
-schema. The Settings › Public stats group is `makerspaces/public_stats_settings.py` (+ `_views.py`).
+schema. The Settings › Public stats group is `makerspaces/public_stats_settings.py`:
+`public_stats_catalogue.py` owns widget keys, `public_stats_capabilities.py` exposes L17 decisions,
+`public_stats_settings_writes.py` merges authorized updates, and the settings view/serializers
+own GET/PUT/PATCH. `inventory/public_stats_projection.py` masks the existing public payload;
+original builders keep their privacy and quantity ownership.
 Frontend: `features/stats/` (`PublicStatsPage`, `PublicStatsTvPage` at `/stats/tv`, `StatsBody`,
 `StatsMetrics`, `StatsSectionsMore`) and `features/stats/settings/` (the settings panel).
 
@@ -1371,7 +1375,34 @@ and excludes current consent snapshots from totals. Platform services/module hea
 mobile devices/auth v2. Held ingress, original abandoned receipts, current proof-bound consent
 and billed-zero segments keep distinct measurements. See [measurement notes](SOURCE-MAP-REPORTS.md#communications-and-messaging).
 
+## Own borrowing and account histories
+
+`hardware_requests/member_history_views.py` serves the paginated personal-session
+`member/makerspaces/<id>/borrowing-history` list; `member_history_serializers.py` extends the
+retained public-status allowlist with own outcomes/dates. `accounts/rbac_borrowers.py` owns
+personal requester/tenant scope and merged actor read ownership, while the original workflow
+borrower filter is unchanged. Claim and API-client exclusions are explicit in their registries.
+No model or migration is added.
+
+Frontend `members/MemberBorrowingHistoryPage.tsx`, `borrowingHistoryApi.ts` and
+`BorrowingHistoryList.tsx` own the independent account-only read with recipient-partitioned
+query keys, states, filters and pagination. `MemberHistoryLinks.tsx` is the shared normal-navigation
+map from Member Home/Account to each enabled domain's own history and the permanent Payments
+ledger. `bookings/MyBookings.tsx` accepts the history entry's initial Past period, preserving its
+existing cancellation/reschedule/confirmation and account-switch behavior.
+
 ## Public pages and shared handles
+
+Frontend `features/public/FamilyHome.tsx` owns tenant-root bootstrap and legacy booking query
+routing. `MakerspacePage.tsx` is the overview, `MakerspaceAreas.tsx` reuses the shared public
+navigation's enabled destinations, and `features/inventory/PublicInventoryRoute.tsx` gates the
+separate `/inventory` route before inventory queries mount. `PublicInventoryPage.tsx` retains
+inventory/request ownership and its kiosk embedding seam. `PublicPageChrome.tsx` is the shared
+Home/Inventory/navigation source. The Space Manager's existing `/cover` uploader is labelled
+Banner; its `cover_image_url` serves both overview and directory cards, with the same public-image
+serializer/storage and scoped authority. Shared `components/layouts/PublicHeader.tsx` applies
+the uploaded-logo-only tenant header rule across every public domain, with the original
+Space Works mark plus tenant name as its no-logo fallback.
 
 `makerspaces/public_page_*` owns the typed makerspace/organization page contract, authority,
 revision projections, handles, private uploads and cleanup. `public_page_urls.py`,

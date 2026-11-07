@@ -35,7 +35,7 @@ export function PricingSettings({ makerspace, canManageMakerspace }: { makerspac
         : <p className="text-sm text-muted">{domains.find(entry => entry.domain === active)?.label ?? t`This area`} {t` charges are off in this space, so it is free.`}</p>}
     </Tabs>
     {discountsOn ? <DiscountsPanel makerspaceId={makerspace.id}
-      currency={code} domains={domains.map(entry => entry.domain)}
+      currency={code} domains={[...domains.map(entry => entry.domain), ...(modules.includes("shop") ? ["shop" as PricingDomain] : [])]}
       membershipOn={modules.includes("membership")} canEdit={canManageMakerspace} /> : null}
   </div>;
 }

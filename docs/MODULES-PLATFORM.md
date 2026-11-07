@@ -210,8 +210,9 @@ Opt-in, no dependencies; installed only by the `full`/`everything` profiles.
   current machine pricing, and failed jobs create no charge. Telemetry affects staff display only.
   Every mutation leaves typed device provenance and an audit row. The server wire contract is in
   [Printer protocol](device-printer-protocol.md).
-- **Without it** — device routes answer 400 and cannot enroll, authenticate or mutate. Printer routes
-  additionally require both machine modules and answer 400 when either is off. Tombstoning the devices
+- **Without it** — device module routes answer 404 module_disabled and cannot enroll, authenticate or mutate. Printer routes
+  additionally require both machine modules and answer 404 when either is off. The offline monitor
+  skips the space, including offline alerts and routine authentication-artifact cleanup. Tombstoning the devices
   app removes its routes with 404.
 - **Data** — `purge_module_data devices` deletes printer consumption claims, jobs, commands and
   bindings, then replay nonces, enrollments, device events and identities. Machine workflows and the

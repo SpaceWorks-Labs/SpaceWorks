@@ -2,7 +2,7 @@
 //   ## Heading / ### Subheading
 //   1. numbered step          - bullet
 //   > A note. Lines starting with ">" form one note; "> **Who can do this:** ..." leads with a label.
-//   ![Screenshot: what it shows](screenshot:key)   on its own line: a placeholder until P16
+//   ![Screenshot: what it shows](screenshot:key)   on its own line: an editorial slot, displayed only when its reviewed capture is registered
 //   **bold**, `a label or command`, [another article](help:section/slug), [a site](https://...)
 
 export type HelpInline =

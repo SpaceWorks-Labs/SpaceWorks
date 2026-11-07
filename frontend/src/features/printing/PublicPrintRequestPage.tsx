@@ -71,7 +71,7 @@ export function PublicPrintRequestPage() {
             submitPending={submitMutation.isPending} submitError={submitMutation.error} uploadProgress={uploadProgress} website={website} onWebsiteChange={setWebsite}
             onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (form.title.trim()) submitMutation.mutate(); }} />
             <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: queuesQuery.data?.[0]?.machine_type_id, pool_id: form.consumablePoolId ? Number(form.consumablePoolId) : undefined, quantity: Number(form.estimatedFilamentGrams) > 0 ? form.estimatedFilamentGrams.trim() : undefined }} /></>
-          : <EmptyState message={t`3D printing isn't open for requests right now.`} action={{ label: t`Back to catalogue`, href: tenantPath() }} /> } ]}
+          : <EmptyState message={t`3D printing isn't open for requests right now.`} action={{ label: t`Back to home`, href: tenantPath() }} /> } ]}
       actionCard={{ title: t`Track your job`, state: "open", summary: !activeStatusToken ? t`After you send it, you'll get a private link to follow progress here.` : undefined,
         form: <div ref={trackerRef} id="print-tracker"><PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={() => { void statusQuery.refetch(); }} publicToken={activeStatusToken || undefined} makerspaceSlug={makerspaceSlug} /></div>,
         mobileBar: { summary: submitted ? t`Request sent` : t`Follow your print`, label: t`Track your job` } }} />

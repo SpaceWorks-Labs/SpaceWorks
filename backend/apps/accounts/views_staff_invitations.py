@@ -93,9 +93,10 @@ class StaffInvitationAcceptView(GenericAPIView):
             "invitation address (`invite_email_mismatch`, 403); a 6-digit code is emailed to it and the answer "
             "is `challenge_required: true`. Second call with `code`: the staff role is granted in that "
             "makerspace (`proof_failed`, 400, for a wrong code; `already_staff`, 409). Never creates an account "
-            "and never marks the email verified."),
+            "and never marks the email verified. Both steps require staff invitations and the email module "
+            "(`feature_disabled` or `module_disabled`, 404)."),
         request=StaffInvitationAcceptSerializer,
-        responses={200: StaffInvitationAcceptedSerializer, **errors(400, 401, 403, 409, 429), **GATE_WRITE_ERRORS},
+        responses={200: StaffInvitationAcceptedSerializer, **errors(400, 401, 403, 404, 409, 429), **GATE_WRITE_ERRORS},
     )
     def post(self, request):
         serializer = self.get_serializer(data=request.data)

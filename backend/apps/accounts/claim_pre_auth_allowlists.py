@@ -93,6 +93,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.events.contributions.api_common.ProgrammeThrottle": set(),
     "apps.events.certificates.verification.VerifyThrottle": set(),
     "apps.events.profile_photos.views_public.PublicPhotoThrottle": set(),
+    # Card photo attachment spends the existing scoped budget only on PUT.
+    "apps.card_designs.views_holder_photo.HolderPhotoAttachThrottle": {"allow_request"},
     # Keys the member command budget on the principal (or IP before login); grants nothing.
     "apps.events.hackathons.api_base.ProgrammeCommandThrottle": {"get_cache_key"},
 }

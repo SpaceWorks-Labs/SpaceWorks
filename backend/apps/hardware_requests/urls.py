@@ -4,6 +4,7 @@ from apps.hardware_requests import cron_views, timeline_views, views
 from apps.hardware_requests import replay_recovery_views as recovery
 
 from apps.hardware_requests.public_contact_views import RequestContactCodeView
+from apps.hardware_requests.member_history_views import MemberBorrowingHistoryView
 
 app_name = "hardware_requests"
 
@@ -12,6 +13,7 @@ from apps.hardware_requests.kit_views import StaffKitPreviewView, MemberKitPrevi
 from apps.hardware_requests import loan_depth_views as depth
 
 urlpatterns = [
+    path("member/makerspaces/<int:makerspace_id>/borrowing-history", MemberBorrowingHistoryView.as_view(), name="member-borrowing-history"),
     path("admin/makerspace/<int:makerspace_id>/kit-checklist-preview", StaffKitPreviewView.as_view(), name="staff-kit-preview"),
     path("public/<slug:makerspace_slug>/tools/checklist", MemberKitPreviewView.as_view(), name="public-tool-checklist"),
     path("member/makerspaces/<int:makerspace_id>/loans/<int:pk>/renew", MemberLoanRenewView.as_view(), name="member-loan-renew"),

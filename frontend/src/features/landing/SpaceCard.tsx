@@ -21,24 +21,24 @@ export function spaceTileTone(slug: string) {
   return tone in TILES ? tone as keyof typeof TILES : "accent";
 }
 
-/** Name first, details second (brand p.17); the whole card is one link to the catalogue. */
+/** Name first, details second (brand p.17); the whole card is one link to the makerspace overview. */
 export function SpaceCard({ space }: { space: Makerspace }) {
   const tone = spaceTileTone(space.slug);
   return <article className="group relative flex min-w-0 flex-col rounded-2xl border border-line bg-panel transition-colors duration-120 hover:border-outline">
     <div className={`relative aspect-[1.8] overflow-hidden rounded-t-2xl ${space.cover_image_url ? "bg-surface" : TILES[tone]}`} data-tile={space.cover_image_url ? undefined : tone}>
-      {space.cover_image_url ? <img src={space.cover_image_url} alt={`${space.name} cover`} loading="lazy" className="h-full w-full object-cover" />
+      {space.cover_image_url ? <img src={space.cover_image_url} alt={`${space.name} banner`} loading="lazy" className="h-full w-full object-cover" />
         : <>
           <div className="grid h-full place-items-center text-5xl font-bold leading-none sm:text-[64px]" aria-hidden="true">{space.name.charAt(0)}</div>
           <BrandFacets size="sm" tone={tone === "accent" ? "orange" : "teal"} className="absolute -right-6 -top-8 h-auto w-[128px]" />
         </>}
-      <div className="absolute left-4 top-4"><StatusPill label={t`Public catalogue`} tone="neutral" /></div>
+      <div className="absolute left-4 top-4"><StatusPill label={t`Public makerspace`} tone="neutral" /></div>
     </div>
     <div className="flex flex-1 flex-col gap-3 p-5 sm:p-6">
       <MakerspaceBrand name={space.name} logoUrl={space.logo_url} size="md" />
       <MakerspaceMapLink makerspace={space} className="relative z-10" locationClassName="break-words text-sm text-muted" />
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
         <span className="code-text text-sm text-muted">{space.public_code}</span>
-        <Link className="desk-button-ghost after:absolute after:inset-0 after:rounded-2xl after:content-['']" to={`/m/${space.slug}`} aria-label={t`Open catalogue for ${space.name}`}>{t`Open catalogue →`}</Link>
+        <Link className="desk-button-ghost after:absolute after:inset-0 after:rounded-2xl after:content-['']" to={`/m/${space.slug}`} aria-label={t`Open makerspace ${space.name}`}>{t`Open makerspace`}<span aria-hidden="true"> →</span></Link>
       </div>
     </div>
   </article>;

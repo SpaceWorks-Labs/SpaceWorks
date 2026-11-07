@@ -12,6 +12,7 @@ const nginx = read("../nginx.conf");
 const caddy = read("../../deploy/Caddyfile");
 const saas = read("../../deploy/Caddyfile.saas");
 const installer = read("../../deploy/Caddyfile.saas-install");
+const apiOnly = read("../../deploy/nginx.api-only.conf");
 const runtimeHeaders = read("../docker-entrypoint.d/40-web-analytics.sh");
 
 function block(source, label) {
@@ -56,7 +57,23 @@ describe("frontend website routing", () => {
     assert.ok(config.includes("rewrite ^ /share/events/$event_share_token/ last;"));
     assert.ok(config.includes("rewrite ^ /share/bookings/$booking_share_token/ last;"));
     assert.ok(config.includes("share/|sitemap\\.xml$|robots\\.txt$"));
-    assert.ok(config.includes("(events|event-series|spaces)/[0-9]+/website/assets/$"));
+    for (const source of [config, apiOnly]) {
+      const line = source.split(/\r?\n/).map(line => line.trim()).find(line => line.startsWith("location ~ ") && line.includes("/assets/$"));
+      assert.ok(line, "shared website/public-page asset upload location exists");
+      const pattern = line.slice("location ~ ".length, -2);
+      const route = new RegExp(pattern);
+      for (const [parent, segment] of [["events", "website"], ["event-series", "website"], ["spaces", "website"],
+        ["makerspaces", "public-page"], ["organizations", "public-page"]]) {
+        assert.match(`/api/v1/admin/${parent}/42/${segment}/assets/`, route);
+      }
+      for (const path of ["/api/v1/admin/events/nope/website/assets/", "/api/v1/admin/makerspaces/42/website/assets/",
+        "/api/v1/admin/other/42/public-page/assets/", "/api/v1/admin/events/42/website/assets/7/"]) assert.doesNotMatch(path, route);
+      const upload = block(source, `location ~ ${pattern}`);
+      assert.ok(upload.includes("client_max_body_size 6m;"));
+      assert.ok(upload.includes("proxy_pass http://backend:8000;"));
+      assert.ok(upload.includes("proxy_set_header Host $host;"));
+      assert.ok(upload.includes("proxy_set_header X-Forwarded-Proto $external_scheme;"));
+    }
     assert.ok(config.includes("client_max_body_size 6m;"));
     assert.ok(config.includes("(event-calendar|bookings/calendar)"));
     assert.ok(config.includes("proxy_buffering off;"));

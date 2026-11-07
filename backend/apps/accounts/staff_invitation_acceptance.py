@@ -32,6 +32,8 @@ from apps.accounts.staff_account_policy import (
 )
 from apps.accounts.staff_identity import is_person
 from apps.audit.services import record
+from apps.makerspaces.guards import require_feature, require_module
+from apps.makerspaces.models import Makerspace
 
 logger = logging.getLogger(__name__)
 GENERIC_ERROR = "Unable to accept this invitation. Check the link or ask for a new one."
@@ -64,6 +66,18 @@ def _require_redeemer(user, row):
                                "This invitation was sent to a different email address. Sign in to that account.")
 
 
+def _lock_redeemable(user, token, makerspace_slug, space_id):
+    # Match the lock order used by resend/revoke and serialize against switch changes.
+    space = Makerspace.objects.select_for_update(no_key=True).filter(pk=space_id).first()
+    if space is None:
+        raise ValidationError({"detail": GENERIC_ERROR})
+    row = _open(token, makerspace_slug, lock=True)
+    _require_redeemer(user, row)
+    require_feature(space, "staff.invitations")
+    require_module(space, "email")
+    return row
+
+
 def accept(request, *, token, makerspace_slug, code=""):
     user = User.objects.get(pk=request.user.pk)
     if not code:
@@ -73,9 +87,9 @@ def accept(request, *, token, makerspace_slug, code=""):
 
 def _challenge(user, token, makerspace_slug):
     now = timezone.now()
-    with transaction.atomic():
-        row = _open(token, makerspace_slug, lock=True)
-        _require_redeemer(user, row)
+    original = _open(token, makerspace_slug)
+    with staff_write(original.makerspace_id):
+        row = _lock_redeemable(user, token, makerspace_slug, original.makerspace_id)
         challenges = EmailVerificationChallenge.objects.filter(user=user, email=_key(row))
         if challenges.filter(last_sent_at__gte=now - COOLDOWN).exists():
             raise ValidationError({"detail": gettext("A code was sent a moment ago. Wait a minute before asking again.")})
@@ -101,14 +115,9 @@ def _send_code(address, code, space_name):
 
 
 def _complete(user, token, makerspace_slug, code):
-    from apps.makerspaces.models import Makerspace
-
     row, failed = _open(token, makerspace_slug), False
     with staff_write(row.makerspace_id):
-        # Lock order shared with resend/revoke: makerspace, then the invitation.
-        Makerspace.objects.select_for_update(no_key=True).get(pk=row.makerspace_id)
-        row = _open(token, makerspace_slug, lock=True)
-        _require_redeemer(user, row)
+        row = _lock_redeemable(user, token, makerspace_slug, row.makerspace_id)
         challenge = (EmailVerificationChallenge.objects.select_for_update()
                      .filter(user=user, email=_key(row), consumed_at__isnull=True,
                              failed_attempts__lt=MAX_FAILURES, expires_at__gt=timezone.now())

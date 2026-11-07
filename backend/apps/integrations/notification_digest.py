@@ -4,10 +4,15 @@ import hashlib
 from django.db import transaction
 from django.utils import timezone
 
+from apps.makerspaces.capability_eligibility import feature_enabled_servable_ids
+from apps.makerspaces.platform import feature_enabled
+
 from .models_contract import NotificationEnvelope
 
 
 def constituents(summary):
+    if not feature_enabled_servable_ids([summary.makerspace_id], "notifications.digests"):
+        return []
     from .notification_resolution import eligible, target_eligible, selected_policy
     rows = NotificationEnvelope.objects.filter(pk__in=summary.context.get("envelope_ids", []),
         makerspace_id=summary.makerspace_id, recipient_id=summary.recipient_id,
@@ -37,7 +42,7 @@ def collect_digest(envelope):
     from apps.encryption.write_fence import assert_mapped_write_allowed
     with transaction.atomic():
         assert_mapped_write_allowed(envelope.makerspace_id)
-        type(envelope.makerspace).objects.select_for_update().get(pk=envelope.makerspace_id)
+        space = type(envelope.makerspace).objects.select_for_update().get(pk=envelope.makerspace_id)
         rows = list(NotificationEnvelope.objects.select_for_update().filter(
             makerspace_id=envelope.makerspace_id, recipient_id=envelope.recipient_id,
             feature=envelope.feature, timing_policy="digest", processed_at=None,
@@ -45,9 +50,11 @@ def collect_digest(envelope):
         if not rows:
             return
         ids = [row.pk for row in rows]
-        key = hashlib.sha256(",".join(str(pk) for pk in ids).encode()).hexdigest()
-        emit(makerspace=envelope.makerspace, recipient=envelope.recipient,
-             feature=envelope.feature, stream=envelope.stream, event="daily_digest",
-             audience=envelope.audience, source_kind="notification.digest", source_id=key,
-             dedup_key=f"digest:{envelope.makerspace_id}:{key}", context={"envelope_ids": ids})
+        if feature_enabled(space, "notifications.digests"):
+            key = hashlib.sha256(",".join(str(pk) for pk in ids).encode()).hexdigest()
+            emit(makerspace=space, recipient=envelope.recipient,
+                 feature=envelope.feature, stream=envelope.stream, event="daily_digest",
+                 audience=envelope.audience, source_kind="notification.digest", source_id=key,
+                 dedup_key=f"digest:{envelope.makerspace_id}:{key}", context={"envelope_ids": ids})
+        # Keep disabled inputs for history and remove them from the due sweep.
         NotificationEnvelope.objects.filter(pk__in=ids).update(processed_at=timezone.now())

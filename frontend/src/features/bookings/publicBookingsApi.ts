@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { ApiPath } from "../../generated/api";
-import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { StructuredApiError, tenantMemberRequest, tenantPublicRequest } from "../../lib/api";
 import type { CustomAnswers, CustomFormSchema } from "../forms/customFormTypes";
 import type { GalleryPhoto } from "../../components/ui/Gallery";
 
@@ -82,7 +82,7 @@ export function usePublicAvailability(slug: string, token: string, startsAt: str
 export function useSubmitPublicBooking(slug: string, token: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: PublicBookingInput) => tenantPublicRequest<PublicBookingResult>(
+    mutationFn: (payload: PublicBookingInput) => tenantMemberRequest<PublicBookingResult>(
       slug,
       pathFor(BOOK_PATH, slug, token),
       { method: "POST", body: JSON.stringify(payload) },

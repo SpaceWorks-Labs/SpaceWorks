@@ -13,7 +13,7 @@ export type PlatformDashboard = {
   checked_at: string;
   tenants_by_state: Record<string, number>;
   usage_totals: Record<string, number>;
-  tenants: { id: number; name: string; slug: string; usage: TenantUsage }[];
+  tenants: { id: number; name: string; slug: string; reports_enabled: boolean; usage: TenantUsage }[];
   backup: { status: string; automatic_enabled: boolean; last_success_at: string | null };
   offsite: { name: string; state: string; verified_at: string | null; has_error: boolean }[];
   scheduler: { name: string; cadence_minutes: number; last_run_at: string | null; status: CheckStatus }[];

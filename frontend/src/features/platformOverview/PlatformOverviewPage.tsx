@@ -12,7 +12,7 @@ import { PlatformOverviewControls } from "./PlatformOverviewControls";
 import { formatValue } from "./overviewFormat";
 import {
   isComputing, overviewReady, readyOverview, refreshOverview, usePlatformOverview,
-  type OverviewQuery, type OverviewSpace, type PlatformOverview,
+  type OverviewQuery, type PlatformOverview,
 } from "./platformOverviewApi";
 
 const HEADLINE: [block: string, metric: string, label: string][] = [
@@ -47,7 +47,10 @@ export function PlatformOverviewPage() {
   const result = usePlatformOverview(query);
   const response = result.data;
   const data = readyOverview(response);
-  const spaces = useMemo(() => new Map<number, OverviewSpace>((data?.spaces ?? []).map(space => [space.id, space])), [data]);
+  const spaces = useMemo(() => {
+    const reportsSpaceIds = new Set(data?.reports_space_ids);
+    return new Map((data?.spaces ?? []).map(space => [space.id, { ...space, reportsEnabled: reportsSpaceIds.has(space.id) }]));
+  }, [data]);
   const refresh = async () => {
     setRefreshing(true);
     try { await refreshOverview(query); } finally {

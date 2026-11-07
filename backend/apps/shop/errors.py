@@ -5,7 +5,10 @@ The codes the brief names: `out_of_stock`, `hold_expired`, `price_changed`, `per
 errors (`feature_off`, `guest_identity_required`, `order_not_cancellable`, ...).
 """
 
+from django.utils.translation import gettext_lazy
 from rest_framework.exceptions import APIException
+
+from apps.payments.pricing.errors import ChargesOff
 
 STATUS = {
     "out_of_stock": 409, "hold_expired": 409, "price_changed": 409, "per_order_limit": 400,
@@ -27,6 +30,10 @@ class ShopRefused(APIException):
         super().__init__({"detail": detail, "code": code, **extra})
         self.detail = {"detail": detail, "code": code, **extra}
         self.code = code
+
+
+class ShopQuoteChargesOff(ChargesOff):
+    message = gettext_lazy("This shop is not taking orders right now.")
 
 
 def out_of_stock(error, labels=None):

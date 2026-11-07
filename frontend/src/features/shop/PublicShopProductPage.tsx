@@ -29,6 +29,7 @@ export function PublicShopProductPage() {
   const currency = shop.data?.currency ?? "inr";
   const firstOpen = product?.variants.find(variant => !variant.sold_out);
   const variant = product?.variants.find(row => row.id === (chosen ?? firstOpen?.id)) ?? null;
+  const price = variant?.price;
   const error = !space.slug ? new Error(t`This shop is not available.`) : shop.error ?? query.error;
   const state: QueryState = error ? { status: "error", error: shopErrorMessage(error) || t`This item is not available.`,
     onRetry: () => { void shop.refetch(); void query.refetch(); } }
@@ -36,8 +37,8 @@ export function PublicShopProductPage() {
   const stock = variant ? stockLabel(variant) : product?.sold_out ? { label: t`Sold out`, tone: "danger" as const } : null;
   const chips: StatusPillProps[] = [...(stock ? [stock] : []), ...(product?.members_only ? [{ label: t`Members only`, tone: "info" as const }] : [])];
   const add = () => {
-    if (!product || !variant) return;
-    cart.add({ variantId: variant.id, label: variantLabel(product, variant), price: variant.price, productSlug: product.slug,
+    if (!selling || !product || !variant || price == null) return;
+    cart.add({ variantId: variant.id, label: variantLabel(product, variant), price: String(price), productSlug: product.slug,
       max: product.max_per_order }, quantity);
     setOpen(true);
   };
@@ -55,12 +56,12 @@ export function PublicShopProductPage() {
         ] : []}
         actionCard={{ title: t`Buy`, state: product?.sold_out || !selling ? "closed" : "open",
           note: !selling ? t`This shop is not taking orders right now.` : product?.sold_out ? t`This item is sold out.` : undefined,
-          summary: variant && selling ? <p className="text-2xl font-semibold tabular-nums">{shopMoney(variant.price, currency)}
+          summary: price != null && selling ? <p className="text-2xl font-semibold tabular-nums">{shopMoney(price, currency)}
             {product?.unit ? <span className="ml-1 text-sm font-normal text-muted">per {product.unit}</span> : null}</p> : null,
           form: product ? <ShopVariantPicker product={product} currency={currency} variantId={variant?.id ?? null} quantity={quantity}
             onVariant={setChosen} onQuantity={setQuantity} /> : null,
-          primary: { label: t`Add to basket`, onClick: add, disabled: !variant || variant.sold_out,
-            disabledReason: !variant || variant.sold_out ? "Choose an option that is in stock." : undefined },
+          primary: { label: t`Add to basket`, onClick: add, disabled: !variant || variant.sold_out || price == null,
+            disabledReason: !variant || variant.sold_out || price == null ? "Choose an option that is in stock." : undefined },
           secondary: cart.count && selling ? [{ label: t`View basket (${cart.count})`, onClick: () => setOpen(true) }] : undefined,
           mobileBar: { summary: product?.name ?? t`Item`, label: t`Buy` } }} />
     </PublicLayout>

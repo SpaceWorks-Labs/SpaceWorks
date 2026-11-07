@@ -3,6 +3,8 @@ import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import type { OverviewSpace } from "./platformOverviewApi";
 
+export type OverviewDrillSpace = OverviewSpace & { reportsEnabled: boolean };
+
 const NUMBER = new Intl.NumberFormat(formatLocale(), { maximumFractionDigits: 1 });
 
 export function formatBytes(value: number) {

@@ -12,7 +12,7 @@ from .module_install import install_module, uninstall_module, ModuleInstallError
 from .module_registry import BY_KEY, core_module_keys, dependents_of, module_available
 from .request_access import effective_policy
 from .setup_areas import AREAS, modules_for, features_for, INVENTORY_FEATURES
-from .capabilities import FEATURES, validate_capabilities, feature_required_modules
+from .capabilities import FEATURES, validate_capabilities, feature_required_modules, prune_features
 from .setup_settings import apply_settings, save_space
 from .setup_defaults import initial_settings
 from .security_settings_registry import is_security_feature
@@ -163,18 +163,13 @@ def apply_areas(actor, space, answers):
         else:
             features.discard("payments.loans")
         features.discard("loans.enabled")
-    while True:
-        supported = {key for key in features if set(feature_required_modules(key)) <= wanted
-                     and set(FEATURES[key].requires_features) <= features}
-        if supported == features:
-            break
-        features = supported
-    _, canonical = validate_capabilities(sorted(wanted), sorted(features))
-    space = save_space(actor, space, {"enabled_features": canonical})
+    supported, _ = prune_features(features, wanted)
+    _, canonical = validate_capabilities(sorted(wanted), supported, dormant_defaults=supported)
+    space = save_space(actor, space, {"enabled_features": canonical}, restore_feature_configuration=True)
     space = apply_settings(actor, space, {key: value for key, value in settings.items() if key != "features"})
     # Admission stores the chosen mode/schema, but area features remain enabled even
     # when their settings make them inert (e.g. vouching with approval admission).
-    space = save_space(actor, space, {"enabled_features": canonical})
+    space = save_space(actor, space, {"enabled_features": canonical}, restore_feature_configuration=True)
     if not enable_area_features:
         from . import security_settings
         for key, enabled in security.items():

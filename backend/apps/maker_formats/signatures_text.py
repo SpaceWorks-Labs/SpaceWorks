@@ -86,7 +86,7 @@ def check_text(reader, spec):
         clean = re.sub(r"(?m)^;[^\n]*", "", prefix).lstrip()
         valid = clean.startswith("M48") and bool(re.search(r"(?m)^M30\s*$", prefix))
     elif subtype in {"kicad_pcb", "kicad_sch", "kicad_symbol_lib", "footprint", "module"}:
-        valid = prefix.lstrip().startswith("(" + subtype + " ")
+        valid = bool(re.match(rf"\({subtype}[ \t\r\n]", prefix.lstrip()))
     elif subtype == "kicad5":
         expected = {"sch": "EESchema Schematic File Version", "lib": "EESchema-LIBRARY Version",
                     "pro": "["}[spec.extension]

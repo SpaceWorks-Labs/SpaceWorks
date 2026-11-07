@@ -28,7 +28,7 @@ def options_for(event_id):
 
 def option(event, key):
     row = options_for(getattr(event, "pk", event))
-    return getattr(row, key) if row is not None else HackathonProgrammeOptions._meta.get_field(key).default
+    return getattr(row, key) if row is not None else HackathonProgrammeOptions._meta.get_field(key).get_default()
 
 
 def currency(makerspace):
@@ -49,7 +49,7 @@ def results_email_sent(event):
 
 def projection(event):
     row = options_for(event.pk)
-    values = {key: getattr(row, key) if row else HackathonProgrammeOptions._meta.get_field(key).default for key in FIELDS}
+    values = {key: getattr(row, key) if row else HackathonProgrammeOptions._meta.get_field(key).get_default() for key in FIELDS}
     return {"id": row.pk if row else 0, "event_id": event.pk, "version": row.version if row else 0,
             "allowed_actions": ["edit", "send_results_email"], "currency": currency(event.makerspace),
             "results_email_sent": results_email_sent(event),

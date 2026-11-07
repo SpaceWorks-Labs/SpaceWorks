@@ -86,7 +86,7 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
   }
   // #183B: the front-desk console is the `guest_handover` surface; off means it is not there.
   if (guestOnly && activeMakerspace && !(activeMakerspace.enabled_modules ?? []).includes("guest_handover")) {
-    return <StaffLoading message="The front desk is turned off for this makerspace." />;
+    return <StaffLoading message={t`The front desk is turned off for this makerspace.`} />;
   }
   const activeMembership = user.makerspaces.find((item) => item.id === selected);
   // A superadmin holds every action in the space they chose (#115), and none before choosing one.

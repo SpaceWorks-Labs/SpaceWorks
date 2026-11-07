@@ -3,9 +3,9 @@ import { PageImage } from "./PageImage";
 import type { PublicPageProjection } from "./pageTypes";
 import { ActionControl, type Action } from "../../components/ui";
 
-export function PublicPageHero({ page, slug, actions = [] }: { page: PublicPageProjection; slug?: string; actions?: Action[] }) {
+export function PublicPageHero({ page, slug, actions = [], bannerUrl }: { page: PublicPageProjection; slug?: string; actions?: Action[]; bannerUrl?: string | null }) {
   return <header className="mb-8 grid min-w-0 gap-5">
-    {page.cover ? <PageImage url={page.cover.url} alt={page.cover.alt} slug={slug} token={page.publication_token} /> : null}
+    {bannerUrl ? <img src={bannerUrl} alt="" className="h-40 w-full rounded-2xl border border-line object-cover sm:h-56" /> : page.cover ? <PageImage url={page.cover.url} alt={page.cover.alt} slug={slug} token={page.publication_token} /> : null}
     <div className="rounded-xl border border-line bg-panel p-5 md:p-8">
       <p className="eyebrow mb-3">{page.kind === "makerspace" ? t`Makerspace` : t`Organization`}</p>
       <h1 className="title-page break-words">{page.title}</h1>

@@ -88,7 +88,7 @@ export const ORDER_STATUS: Record<string, { label: string; tone: Tone }> = {
   held: { label: t`Held for you`, tone: "warn" }, awaiting_payment: { label: t`Awaiting payment`, tone: "warn" },
   paid: { label: t`Paid`, tone: "info" }, ready: { label: t`Ready to collect`, tone: "success" },
   collected: { label: t`Collected`, tone: "success" }, cancelled: { label: t`Cancelled`, tone: "neutral" },
-  unfulfilled: { label: t`Could not be filled`, tone: "danger" }, refunded: { label: t`Refunded`, tone: "neutral" },
+  unfulfilled: { label: t`Could not be filled`, tone: "danger" }, refunded: { label: t`Returned`, tone: "neutral" },
 };
 export const orderStatus = (status: string) => ORDER_STATUS[status] ?? { label: status, tone: "neutral" as Tone };
 export const isUnpaid = (status: string) => status === "held" || status === "awaiting_payment";

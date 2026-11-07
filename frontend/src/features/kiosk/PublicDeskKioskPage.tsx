@@ -25,12 +25,12 @@ export function PublicDeskKioskPage() {
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const logo = bootstrap?.branding.logo_url || bootstrap?.makerspace.logo_url;
-  // Catalogue is this page; every other programme link is one tap away, as the old catalogue header had.
-  const programme = publicPageChrome(makerspaceSlug, name, path, bootstrap).nav.slice(1);
+  // Inventory is embedded here; Home and the other enabled destinations remain one tap away.
+  const programme = publicPageChrome(makerspaceSlug, name, path, bootstrap).nav.filter(link => link.href !== path("inventory"));
   return <PublicInventoryPage embedded={({ body, request }) => <KioskLayout
-    context={{ identity: logo ? { kind: "image", src: logo } : undefined, title: name, subtitle: t`Public desk · Browse the catalogue and request what you need.` }}
+    context={{ identity: logo ? { kind: "image", src: logo } : undefined, title: name, subtitle: t`Public desk · Browse inventory and request what you need.` }}
     connection={{ online }} mode="work" state={{ status: "ready" }}
-    headerActions={[...programme, { label: t`Open full catalogue`, href: path() }]}
+    headerActions={[...programme, { label: t`Open inventory`, href: path("inventory") }]}
     work={{ capture: <div className="text-lg [&_button]:min-h-12 [&_a]:min-h-12">{body}</div>,
       panel: <div className="grid gap-6"><Card>{request}</Card>
         <Card className="grid gap-4">

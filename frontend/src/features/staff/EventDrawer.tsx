@@ -86,7 +86,7 @@ export function EventDrawer({ eventId, makerspaceId, onClose, onOpenSeries, enab
     { key: "overview", label: t`Overview` },
     ...(access.registrations ? [{ key: "registrations", label: t`Registrations`, count: event ? Object.values(event.registration_counts).reduce((sum, count) => sum + count, 0) : undefined }] : []),
     ...(surfaces.checkInTab ? [{ key: "checkin", label: t`Check-in` }] : []),
-  ], sections);
+  ], sections, surfaces.credentials.label);
   const canSaveEssentials = (access.edit || access.publish) && !readOnly;
   return <ProgrammeSessionBoundary error={eventQuery.error}>
     <div onClickCapture={tabs.onClickCapture}>

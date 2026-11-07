@@ -28,7 +28,7 @@ export function MemberScreenLayout({ tab, state, children, member, name, slug, a
     const joinable = !awaiting && !paused;
     return <DashboardLayout state={state}
       header={{ ...header, subtitle: awaiting ? t`Your request to join ${name} is awaiting review.` : paused ? t`Your access to ${name} is paused. Contact the front desk to restore it.` : t`Join ${name} and make something together.`,
-        primary: primary ?? { label: t`Browse catalogue`, href: publicBase || "/" } }}
+        primary: primary ?? { label: t`Back to home`, href: publicBase || "/" } }}
       stats={[]} main={[{ title: joinable ? t`Join this makerspace` : t`Your membership`, content: <div className="grid gap-6">{children}</div>, empty: { message: joinable ? t`Joining options will appear here.` : t`Your membership details will appear here.` } }]} />;
   }
   if (tab === "overview") return <DashboardLayout state={state} header={{ ...header, subtitle: name }}
@@ -48,7 +48,7 @@ export function MemberScreenLayout({ tab, state, children, member, name, slug, a
   const tabs: Tab[] | undefined = tab === "loans" ? [["current", "Out now"], ["history", "History"]].map(([key, label]) => ({ key, label, href: link(key) }))
     : tab === "events" ? [["going", "Going"], ["past", "Past"], ...(hasPartnerEvents ? [["partners", "Partner events"]] : [])].map(([key, label]) => ({ key, label, href: link(key) })) : undefined;
   const browse = tab === "bookings" ? { label: t`Book a space`, href: `${publicBase}/bookings` }
-    : tab === "loans" ? { label: t`Browse catalogue`, href: publicBase || "/" }
+    : tab === "loans" ? { label: t`Browse inventory`, href: `${publicBase}/inventory` }
       : tab === "events" ? { label: t`See events`, href: `${publicBase}/events` } : undefined;
   return <ListLayout state={state} header={{ ...header, primary: browse }} tabs={tabs} activeTab={section}
     body={{ kind: "rows", rows: children }} empty={{ message: t`Nothing here yet.` }} />;

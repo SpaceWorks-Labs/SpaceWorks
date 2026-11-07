@@ -26,3 +26,10 @@ A **machine type** groups machines that work the same way (3D printers, laser cu
 Click a machine to open its drawer: **Overview**, **Operators**, **Consumables**, **Usage**, **Maintenance**, **Documents**, **Errors**, **Warranty** and **Sessions**. Use **Mark running** or **Mark idle** to show its state.
 
 > **Who can do this:** Machine Managers, for the machine types the Space Manager assigned them, and the Space Manager. Creating and editing types needs type-configuration rights; others see types read-only.
+
+
+## Machine and printing figures on public stats
+
+On the Machines console, open **Public stats visibility**. Choose the permitted machine-hour and printing figures or lists, then press **Save public stats**. This includes print totals, queue, busiest printer and per-printer or filament breakdowns. The same choices apply to the public page and TV board.
+
+The Space Manager grants settings control and may lock individual choices. Tenant-wide figures remain read-only when your machine-type assignment covers only part of the makerspace. An unavailable module hides its controls and data without deleting the stored choices or operational history.

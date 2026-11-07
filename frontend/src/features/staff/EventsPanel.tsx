@@ -67,7 +67,7 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules
   useQuickCreate("event", () => { setCreationMode("single"); setCreating(true); });
   // The Event Manager owns the events.* switches and event defaults (domain-settings API).
   // L1: the event report switches (DY-61) and the embed allow-list sit below the switches.
-  const eventSettings = useDomainSettingsDialog(makerspaceId, "events", true, <EventSurfaceSettings makerspaceId={makerspaceId} />);
+  const eventSettings = useDomainSettingsDialog(makerspaceId, "events", true, <EventSurfaceSettings makerspaceId={makerspaceId} />, enabledModules.includes("public_site"));
 
   function submit() {
     // Unknown default and untouched field: let the server apply the space's default audience.

@@ -1,5 +1,5 @@
 """Installer areas are bundles over the module and feature registries, not new gates."""
-from .capabilities import FEATURES, feature_required_modules
+from .capabilities import FEATURES, prune_features
 from .module_registry import core_module_keys, with_dependencies
 from .capability_definitions_r2_l17 import RESERVED_KEYS
 
@@ -50,13 +50,8 @@ def features_for(areas, modules=None):
         # Core is installed even when lending is hidden. It must not enable loans.
         features -= {key for key in features if key.startswith(("loans.", "inventory."))}
         features -= {"charges.loans", "payments.loans"}
-    while True:
-        supported = {key for key in features
-                     if set(feature_required_modules(key)) <= modules
-                     and set(FEATURES[key].requires_features) <= features}
-        if supported == features:
-            return sorted(features)
-        features = supported
+    supported, _ = prune_features(features, modules)
+    return sorted(supported)
 
 
 def edition_for(areas, organization=False):

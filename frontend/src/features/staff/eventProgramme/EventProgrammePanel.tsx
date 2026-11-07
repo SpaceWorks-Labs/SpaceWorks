@@ -5,7 +5,7 @@ import { staffRequest } from '../../../lib/api'
 import type { AuthUserPayload } from '../../../generated/api'
 import { currentSessionContext } from '../../../lib/api/sessionContext'
 import type { StaffEvent } from '../eventsApi'
-import type { MoreSection } from '../eventDrawerTabs'
+import { eventCredentialTools, type MoreSection } from '../eventDrawerTabs'
 import type { eventAccess } from '../eventStaffPermissions'
 import { ErrorBlock } from '../../../components/ui'
 import { HackathonConfigPanel } from '../hackathonAdmission/HackathonConfigPanel'
@@ -36,6 +36,7 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   if (account.error) return <ErrorBlock error={account.error} />
   if (!account.data) return <p role="status">{t`Loading your programme access…`}</p>
   const scope = { makerspaceId, eventId: event.id, accountId: account.data.id }
+  const credentials = eventCredentialTools(event, access, features)
   if (section === 'programme-setup') return <div className="grid gap-8"><HackathonConfigPanel eventId={event.id} FormEditor={ProgrammeDraftForm} mlhPresets={[]} />
     {access.hackathon ? <StageEditorPanel eventId={event.id} /> : null}
     <ProgrammeFormEditor eventId={event.id} formKey="application" /></div>
@@ -50,9 +51,11 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   if (section === 'programme-teams') return <div className="grid gap-8"><ProgrammeTeamsPanel eventId={event.id} canTriage={access.hackathon} />
     {features.includes('events.saved_views') && access.hackathon ? <EventStaffLists eventId={event.id} makerspaceId={makerspaceId} canSaveViews={access.manager} /> : null}</div>
   if (section === 'certificates') return <div className="grid gap-6">
-    {access.edit ? <EventCertificateDesigner makerspaceId={makerspaceId} eventId={event.id} /> : access.manager ? <BulkCertificates eventId={event.id} /> : null}
-    <DeskBadgePanel eventId={event.id} registrationIds={[]} canEdit={access.edit} canPrint={access.checkIn} />
-    {access.edit && (features.includes('events.id_cards') || features.includes('events.ticket_designs')) ? <EventCardsPanel eventId={event.id} features={features} /> : null}
+    {credentials.certificates ? <>
+      {access.edit ? <EventCertificateDesigner makerspaceId={makerspaceId} eventId={event.id} /> : access.manager ? <BulkCertificates eventId={event.id} /> : null}
+      <DeskBadgePanel eventId={event.id} registrationIds={[]} canEdit={access.edit} canPrint={access.checkIn} />
+    </> : null}
+    {credentials.cards || credentials.tickets ? <EventCardsPanel eventId={event.id} features={features} /> : null}
   </div>
   if (section === 'settings') return <div className="grid gap-6">
     {access.edit ? <ProgrammeFormEditor eventId={event.id} formKey="registration" /> : null}

@@ -8,20 +8,19 @@ export function preferredTheme(): Theme {
   if (sessionChoice) return sessionChoice;
   const stored = readStorage(THEME_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "light";
 }
 
-function applyTheme() {
-  document.documentElement.classList.toggle("dark", preferredTheme() === "dark");
+function applyTheme(theme = preferredTheme()) {
+  document.documentElement.classList.toggle("dark", theme === "dark");
+  const chrome = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (chrome) chrome.content = theme === "dark" ? "#142C2A" : "#FFF4E8";
 }
 
-// Called before React mounts, including pages without a toggle. An OS change is
-// followed only while there is no explicit choice; it never writes to storage.
+// Called before React mounts, including pages without a toggle.
 export function initializeTheme() {
   sessionChoice = undefined;
   applyTheme();
-  const media = window.matchMedia?.("(prefers-color-scheme: dark)");
-  media?.addEventListener("change", applyTheme);
   const onStorage = (event: StorageEvent) => {
     if (event.key === THEME_KEY || event.key === null) {
       sessionChoice = undefined;
@@ -30,7 +29,6 @@ export function initializeTheme() {
   };
   window.addEventListener("storage", onStorage);
   return () => {
-    media?.removeEventListener("change", applyTheme);
     window.removeEventListener("storage", onStorage);
   };
 }
@@ -39,7 +37,7 @@ export function chooseTheme(theme: Theme) {
   sessionChoice = theme;
   writeStorage(THEME_KEY, theme);
   // Still works when localStorage is unavailable.
-  document.documentElement.classList.toggle("dark", theme === "dark");
+  applyTheme(theme);
 }
 
 export function subscribeTheme(onChange: () => void) {

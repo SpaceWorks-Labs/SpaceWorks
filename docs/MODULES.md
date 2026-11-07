@@ -62,6 +62,8 @@ the existing services and audited model paths, and never calls purge.
 
 ## What "without it" actually means
 
+See the [complete switch-off reference](MODULES-OFF.md) for every module and feature, including retained data, historical workflows and re-enabling.
+
 Uninstalling a module (or switching a capability off) removes it everywhere and keeps its data (#95, #183B):
 
 - **The API answers 404.** Every gated view calls `require_module(makerspace, "<key>")` or
@@ -99,7 +101,7 @@ docker compose run --rm --no-deps backend --role management python manage.py uni
 A module another installed module depends on cannot be uninstalled until the dependant goes first, and
 core modules cannot be uninstalled at all.
 
-The registry contains 37 keys (35 in the main catalogue, with L22's `shop`, plus presence and analytics):
+The registry contains 37 keys:
 six core, member accounts enabled by default, and 30 opt-in. `maintenance` and `procurement`
 were retired in release 2 and are capabilities now (see below); `backup` was retired in P1b.
 SMS/WhatsApp are separate opt-in modules.
@@ -1047,15 +1049,14 @@ its parent module is off.
 | `bookings.utilization_pdf` | `bookings` (needs `reports`, `bookings.analytics`) | | Audited resource PDF for a complete tenant-local period, requiring full tenant booking management AND audit | Resource PDF refuses; stored booking history stays |
 | `bookings.exports` | `bookings` (needs `reports`) | | Tenant-local reservation contacts and custom-answer previews/CSV/XLSX, requiring resource management AND audit | New detail exports refuse; booking history stays |
 | `events.organization_audience` | `events` | | Live organizer/venue-owner membership audience; no membership or account-registration prerequisite | Configuration and new admission refuse; existing owned tickets remain |
-| `events.hackathons` | `events` | | Off-default programme applications, RSVP, teams and submissions; event config also required; integration pending | Programme actions refuse; history retained |
+| `events.hackathons` | `events` | | Off-default programme applications, RSVP, teams and submissions; event config also required | Programme actions refuse; history retained |
 | `events.mentoring` | `events` | | Off-default Mentor Desk: mentor assignments, the help queue and office hours. A hackathon's teams ask as teams; on any other event a confirmed attendee drops in on their own (release 2, #128 C-36) | Mentor surfaces refuse; retained work/history remain |
 | `events.mentor_rounds` | `events` | `events.mentoring` and `events.hackathons` features | Off-default leased mentor check-in rounds (they visit teams) | Round actions refuse; history retained |
-| `events.volunteering` | `events` | | Off-default ordinary-event/hackathon postings/shifts/verified hours; integration pending | Volunteer actions refuse; retained hours/history remain |
-| `events.project_gallery` | `events` | `events.hackathons` feature | Off-default frozen public project selections with live consent; integration pending | Public gallery/bytes refuse; private snapshots retained |
+| `events.volunteering` | `events` | | Off-default ordinary-event/hackathon postings/shifts/verified hours | Volunteer actions refuse; retained hours/history remain |
+| `events.project_gallery` | `events` | `events.hackathons` feature | Off-default frozen public project selections with live consent | Public gallery/bytes refuse; private snapshots retained |
 | `events.pairwise_judging` | `events` | `events.hackathons` feature | Off-default third judging mode: judges say which of two projects was better (CrowdBT ranking, at least three comparisons per project) | Pairwise routes 404, new pairwise rounds and their open/close/finalize refuse with 403; rounds, comparisons and cursors are kept and resume when switched back on |
 | `events.certificate_designer` | `events` | | Immutable private certificate designs and server previews | Editing/previews refuse; existing issuance snapshots retained |
 | `bookings.broadcasts` | `bookings` | `notifications`, `email` | Email upcoming resource bookers with live consent and booking checks | Compose, queue and delivery refuse; history retained |
-
 | `events.website` | `events` | | Curated released pages with private assets and programmes | Enhanced routes and images disappear; core event details remain |
 | `events.embed` | `events` | `events.website` feature | Exact-origin backend HTML cards | Embed route refuses |
 | `events.broadcasts` | `events` | `notifications`, `email` | Email campaigns plus selected personal-channel notices, with live sender/recipient checks | Compose, queue and delivery refuse; history retained |
@@ -1193,26 +1194,70 @@ origin); every staff console screen carries a "Help" link that opens the matchin
 
 ## The public stats page (not a module)
 
-`/m/<slug>/stats` (and the full-screen `/m/<slug>/stats/tv`) is a public-site setting, not a
-module or capability (#97, #170): the Space Manager sets it up in **Settings › Public stats** —
-page on/off, which sections and in what order, one fixed period (this month, this year, all time
-or this financial year), up to four headline numbers, and TV mode with its refresh (default 60
-seconds, at least 30). Only the Space Manager and the superadmin change it, through the settings
-authority (module `public_site`, audited as `settings.changed`).
+`/m/<slug>/stats` and `/m/<slug>/stats/tv` are configured in **Settings › Public stats**,
+not installed as a module. The Space Manager/superadmin owns publishing, section order,
+period, headline selection, community/person controls and TV refresh. Inventory, Event,
+Machine and Booking Managers edit their own statistics only with that person's existing
+area settings grant. Combining roles does not bypass a missing grant. Machine-wide figures
+still need type scope covering every machine; partial type coverage cannot change aggregates.
 
-Each section also follows its module; a module that is off hides its section and keeps its data:
+The **29 controls** cover every existing metric, number, list, table and detail. All start
+visible, preserving the existing display. These stable IDs also identify the controls in
+the API; the lock key is `public_stats.visibility.<id>`.
 
-| Section | Needs | Shows |
+| ID | Label | Settings owner |
 |---|---|---|
-| Events | `events` | upcoming listed public events (cards only), events held and checked-in attendees in the period |
-| Machines | `machines` | machine hours all time and in the period (public, active machines) |
-| Printing | `machine_service` + `printing` | the printer kernel figures, print hours and prints completed in the period |
-| Lending & inventory | `public_inventory` and the catalogue switch | the public library, current loans, loans in the period |
-| Community | `membership`, `bookings`, `presence` (each count on its own) | active and new members, bookings, check-ins |
+| `events.upcoming` | Upcoming events | `events` |
+| `events.held` | Events held | `events` |
+| `events.attendees` | Event attendees | `events` |
+| `machines.hours` | Machine hours | `machines` |
+| `printing.hours` | Print hours | `machines` |
+| `printing.jobs` | Prints completed | `machines` |
+| `lending.loans` | Loans | `inventory` |
+| `lending.library` | Tools in the library | `inventory` |
+| `community.active_members` | Active members | `public_site` |
+| `community.new_members` | New members | `public_site` |
+| `community.bookings` | Bookings | `bookings` |
+| `community.checkins` | Check-ins | `public_site` |
+| `events.upcoming_list` | Upcoming event cards | `events` |
+| `machines.hours_all_time` | Machine hours all time | `machines` |
+| `printing.hours_all_time` | Print hours all time | `machines` |
+| `printing.hours_this_month` | Print hours this month | `machines` |
+| `printing.grams_all_time` | Filament used | `machines` |
+| `printing.completed_jobs` | Completed print jobs all time | `machines` |
+| `printing.busiest_printer` | Busiest printer | `machines` |
+| `printing.queue` | Print queue and status summary | `machines` |
+| `printing.by_brand` | Filament by brand | `machines` |
+| `printing.filament_trend` | Filament trend | `machines` |
+| `printing.per_printer` | Per-printer activity | `machines` |
+| `lending.available` | Available tools now | `inventory` |
+| `lending.currently_out` | Tools currently out | `inventory` |
+| `lending.most_popular` | Most popular tools | `inventory` |
+| `lending.tools_out` | Tools out | `inventory` |
+| `lending.recently_added` | Recently added tools | `inventory` |
+| `lending.current_loans` | Current public loans | `inventory` |
 
-Counts never carry a name and any count below 3 shows as "fewer than 3". New spaces start with
-machines, printing and lending on, events and community off, and the page itself off. The page
-builder's own "Public stats" section (Settings › Public page) is separate and unchanged.
+`public_site` means Space Manager/superadmin only. The other owners use the existing L17
+per-person grants and locks: a Space Manager can lock a delegated widget, while their own
+edits and superadmin edits still override that lock. Grant revocation restores read-only
+access on the server. Page-wide and other SM-only controls are not delegable lock targets.
+Each changed key is audited as `settings.changed` with its actual area and grant.
+
+A hidden widget is removed from the **server's public response**, metrics and headline,
+not merely hidden in the browser. Module, edition, public-item and capability gates still
+apply; a visibility switch never enables another source. Lending follows the canonical
+public catalogue gate, including `loans.enabled`. Current loans, popularity and loan period
+figures additionally require `request_workflow`; product counts/lists remain available when
+only that workflow is off and the public catalogue is still readable. Events remain listed
+public events only; community counts each follow membership, bookings or presence.
+
+Disabling a widget/source keeps records and stored choices for re-enabling. Empty sections
+are omitted; a page with no visible section returns 404. Existing below-three suppression,
+public availability/count settings and the independent borrower-name opt-in stay intact.
+Event/community/period counts below three still say “fewer than 3”, zero included; legacy
+figures keep their established projection. Current-loan names still require the separate
+Space Manager opt-in. New spaces keep the page off, machines/printing/lending selected,
+and events/community unselected. The public page builder's stats section remains separate.
 
 ## The platform overview (superadmin, not a module)
 

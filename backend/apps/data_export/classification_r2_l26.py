@@ -7,7 +7,7 @@ lists, never references) and the TV mode switch and refresh. They export with th
 
 EXTRA_FIELDS = {
     "makerspaces.Makerspace": "public_stats_sections public_stats_period public_stats_headline "
-                              "public_stats_tv_mode_enabled public_stats_tv_refresh_seconds",
+                              "public_stats_tv_mode_enabled public_stats_tv_refresh_seconds public_stats_config",
 }
 
 

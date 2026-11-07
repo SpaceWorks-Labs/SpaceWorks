@@ -122,3 +122,11 @@ AUTHORIZATION_SOURCES += tuple(APPS_DIR / app / name for app, name in (
 ))
 AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in _PROGRAMME_SOURCES)
 AUTHORIZATION_SOURCES += tuple(APPS_DIR / path for path in _REIMBURSEMENT_SOURCES)
+
+# Public-stat field ownership and disclosure projection use the same L17 authority.
+AUTHORIZATION_SOURCES += tuple(APPS_DIR / app / name for app, name in (
+    ("makerspaces", "public_stats_catalogue.py"),
+    ("makerspaces", "public_stats_capabilities.py"),
+    ("makerspaces", "public_stats_settings_writes.py"),
+    ("inventory", "public_stats_projection.py"),
+))

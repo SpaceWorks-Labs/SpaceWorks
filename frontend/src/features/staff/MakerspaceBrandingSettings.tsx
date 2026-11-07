@@ -34,6 +34,8 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
     queryClient.invalidateQueries({ queryKey: ["makerspace-settings", makerspace.id] });
     queryClient.invalidateQueries({ queryKey: ["makerspaces"] });
     queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
+    for (const key of ["public-makerspaces", "tenant-bootstrap", "runtime-tenant", "runtime-tenant-origin", "member"])
+      void queryClient.invalidateQueries({ queryKey: [key] });
   };
 
   const updateRegisteredName = useMutation({
@@ -70,10 +72,10 @@ export function MakerspaceBrandingSettings({ makerspace, settings, loading }: Pr
           fit="contain"
           onChanged={refreshBranding}
         /></SettingsRow>
-    <SettingsRow label={t`Cover image`} helper={t`Welcome visitors with a wide banner on your public site.`}><ImageUploader
+    <SettingsRow label={t`Banner`} helper={t`Show a wide banner above your makerspace home and on its public listing card.`}><ImageUploader
           endpoint={`/admin/makerspace/${makerspace.id}/cover`}
           currentUrl={settings?.cover_image_url}
-          label={t`Cover image (wide banner)`}
+          label={t`Banner (wide image)`}
           shape="wide"
           onChanged={refreshBranding}
         /></SettingsRow>

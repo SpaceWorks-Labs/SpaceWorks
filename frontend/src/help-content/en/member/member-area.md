@@ -20,8 +20,18 @@ Your member area lives at `/member` (on a shared site, `/m/<space>/member`). Its
 
 ## Find something you did
 
-1. Open **Loans** and choose **History** to see every request and returned item.
-2. Open **Events** and choose **Past**, or **View event history** for the full list.
-3. Open **Payments** for every charge and receipt.
+1. Sign in to this space and open **Account**, or stay on **Home**.
+2. Find **Your history** and choose the enabled area you want.
+3. In that list, open a record or use its date/status filters and pagination where offered.
 
-> **Who can do this:** anyone with an account. Loans, Events and Inbox need an active membership where the space runs memberships; Payments always shows, so you can settle anything you owe.
+The links follow the areas this space runs:
+
+- **Borrowing history** lists your requests, staff handouts, self-checkout loans and returns, with filters and pagination. It works without membership while lending is on.
+- **Event history** lists events you registered for or spoke at, including past and cancelled registrations. It works for an attendee with an account and no membership.
+- **Booking history** opens **Past** in your own bookings, with recorded dates and states. Upcoming reservations still offer the actions the server permits.
+- **Shop orders** opens your own purchases and pickup progress when Shop is on.
+- **Payments & receipts** opens your charges, payments, refunds and receipts. It remains available when memberships or online payments are off.
+
+The separate **Membership history** account tab records membership lifecycle changes; it is not the list of all your activity. The older Loans/Events dashboard tabs retain their membership rules. Each domain enforces its own account, tenant, standing and off-switch policy; you never gain another person's history through these links.
+
+> **Who can do this:** sign in with your own account; each area checks its own history-access rules. Borrowing history needs lending and a live, unrestricted personal account, and refuses a revoked membership; it does not require membership. Payments & receipts follows its separate own-charge eligibility and needs neither membership nor an online payment rail. Shop retains its independent owner-scoped purchase-history policy. The Loans/Events dashboard tabs and Inbox keep their membership rules; Bookings keeps its own account and booking gates.

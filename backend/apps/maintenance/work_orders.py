@@ -12,6 +12,7 @@ machine work order writes the immutable `MaintenanceLog`. Every step is audited.
 
 from django.utils.translation import gettext
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -43,8 +44,20 @@ def may_manage(actor, order):
 
 def _check(actor, order):
     require_capability(order.makerspace_id, FEATURES[order.subject_type])
+    issue = getattr(order, "issue", None) if order.pk else None
+    if issue is not None:
+        from .repairs import areas
+        require_capability(order.makerspace_id, areas.REPAIRS[issue.area])
     if not may_manage(actor, order):
         raise PermissionDenied()
+
+
+def scope_enabled_repairs(rows, space):
+    """Retained repair orders follow their repair switch, including in maintenance lists."""
+    from .repairs import areas
+
+    live = [area for area in areas.AREAS if areas.on(space, areas.REPAIRS[area])]
+    return rows.filter(Q(issue__isnull=True) | Q(issue__area__in=live))
 
 
 def _audit_move(actor, order, status):

@@ -10,8 +10,9 @@ export const LICENSE_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks/blob/m
 /** Shared public navigation derives only from the bootstrap already loaded by its caller. */
 export function publicPageChrome(slug: string, name: string, path: (part?: string) => string, bootstrap?: TenantBootstrap | null) {
   const modules = new Set(bootstrap?.modules ?? []);
-  // #183B: no "Catalogue" link while public lending is off (fails open before the bootstrap loads).
-  const nav: { label: string; href: string }[] = !bootstrap || publicFamilies(bootstrap).includes("inventory") ? [{ label: t`Catalogue`, href: path() }] : [];
+  // #183B: the inventory entry follows its live publication and lending gates.
+  const nav: { label: string; href: string }[] = [{ label: t`Home`, href: path() }];
+  if (!bootstrap || publicFamilies(bootstrap).includes("inventory")) nav.push({ label: t`Inventory`, href: path("inventory") });
   if (modules.has("events")) nav.push({ label: t`Events`, href: path("events") });
   if (modules.has("machines")) nav.push({ label: t`Machines`, href: path("machines") });
   if (modules.has("bookings")) nav.push({ label: t`Book a space`, href: path("bookings") });

@@ -11,7 +11,7 @@ export function ShopPolicyNotes({ shop }: { shop: ShopSummary }) {
       {shop.pay_online ? t` You can pay online now or at the desk.` : t` You pay at the desk when you collect.`}</p>
     {shop.pickup_note ? <p className="whitespace-pre-wrap">{shop.pickup_note}</p> : null}
     {hold ? <p>{t`We keep your items aside for ${hold} while you pay.`}</p> : null}
-    {shop.returns_days > 0 ? <p>{t`Returns are accepted at the desk within ${shop.returns_days} days of collection.`}</p> : null}
+    {shop.returns_days > 0 ? <p>{t`Returns are accepted at the desk within ${shop.returns_days} days of payment.`}</p> : null}
     {shop.policy_text ? <p className="whitespace-pre-wrap text-muted">{shop.policy_text}</p> : null}
   </section>;
 }

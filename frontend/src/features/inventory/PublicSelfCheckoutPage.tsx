@@ -119,13 +119,13 @@ export function PublicSelfCheckoutPage() {
     ? { status: "error" as const, error: t`Couldn't load checkout access. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); } } : { status: "ready" as const };
   return <div style={brandStyle}>
     <FlowLayout title={t`Borrow or return a tool`} subject={displayName} state={state} compact
-      isEmpty={!enabled} empty={{ message: t`Self-checkout isn't on at ${displayName}.`, action: { label: t`Back to catalogue`, href: tenantPath() } }}
+      isEmpty={!enabled} empty={{ message: t`Self-checkout isn't on at ${displayName}.`, action: { label: t`Back to inventory`, href: tenantPath("inventory") } }}
       current={phase} steps={[
         { key: "photo", label: mode === "return" ? t`Photo and condition notes` : t`Photo`, state: phase === "photo" ? "current" : "done", required: true },
         { key: "scan", label: t`Scan the tool`, state: phase === "scan" ? "current" : phase === "kit" ? "done" : "todo", required: true },
         ...(kits.components.length ? [{ key: "kit", label: t`Check the kit`, state: phase === "kit" ? "current" as const : "todo" as const, required: true }] : []),
       ]}
-      onCancel={() => navigate(tenantPath())}
+      onCancel={() => navigate(tenantPath("inventory"))}
       footer={{ next: { label: scannedPayload && kits.components.length ? t`Confirm ${mode === "checkout" ? "checkout" : "return"}` : t`Scan QR`,
         pending: loanMutation.isPending, disabled: !canScan || (Boolean(scannedPayload) && !kits.ready),
         disabledReason: mode === "return" ? "Upload a return photo and add condition notes before scanning." : "Upload a photo of the tool before scanning.",

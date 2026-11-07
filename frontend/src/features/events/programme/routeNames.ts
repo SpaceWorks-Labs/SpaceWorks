@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { isAccountUtilityPath } from "../../../lib/accountUtilityPaths";
 /** Stable SPA destinations. API URLs always come from the token-resolved context. */
 export const programmeRoutes = {
   application: { name: 'event-programme-application', suffix: 'application', label: t`Application and RSVP` },
@@ -22,6 +23,6 @@ export const programmeAccountPaths = ['/member/account/saved-details', '/m/:slug
 
 export function isProgrammePath(path: string) {
   return /^\/(?:m\/[^/]+\/)?events\/[^/]+\/(?:programme(?:\/|$)|gallery(?:\/|$)|results\/?$)/.test(path)
-    || /^\/(?:m\/[^/]+\/)?member\/account\/(?:saved-details|security-activity)\/?$/.test(path)
+    || isAccountUtilityPath(path)
     || /^\/certificates\/verify\/[^/]+\/?$/.test(path)
 }

@@ -33,7 +33,7 @@ export function LandingPage() {
   const hostLink = hosting ? [{ label: t`Host your makerspace`, href: "/hosting" }] : [];
 
   const clear = () => setSearchInput("");
-  const emptyMessage = searchQuery ? `No spaces match '${searchQuery}'. Try another name or place.` : "No public spaces yet. They appear here once a space turns on its catalogue.";
+  const emptyMessage = searchQuery ? `No spaces match '${searchQuery}'. Try another name or place.` : t`No public spaces yet. They appear here once a space publishes its public site.`;
   const loading = makerspacesQuery.isLoading;
   return <div className="sw-landing"><PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
     nav={[{ label: t`About`, href: "/about" }, ...hostLink]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle variant="icon" />}

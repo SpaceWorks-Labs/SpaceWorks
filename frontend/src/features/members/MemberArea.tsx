@@ -1,3 +1,4 @@
+import { MemberHistoryLinks } from "./MemberHistoryLinks";
 import { t } from "@lingui/core/macro";
 import { MemberUsagePanel } from "./MemberUsagePanel";
 import { MemberSectionNavigation } from "./MemberSectionNavigation";
@@ -162,7 +163,7 @@ export function MemberArea() {
   // The card panel exists only where the `membership` module is installed -- the card is
   // hung off a membership, so every one of its endpoints refuses with 400 without it.
 
-  if (restoring) return <CenteredCardLayout title={t`Your makerspace access`} body={t`Restoring session...`} primary={{ label: t`Browse catalogue`, href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
+  if (restoring) return <CenteredCardLayout title={t`Your makerspace access`} body={t`Restoring session...`} primary={{ label: t`Back to home`, href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} name={spaceName} logoUrl={spaceLogo} /></div>;
   if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
@@ -244,9 +245,10 @@ export function MemberArea() {
     {unauthenticated && !showSignIn && policy?.startsWith("invite") ? <p className="text-sm text-muted">{t`Sign in to view memberships or claim an invitation.`}</p> : null}
     {error ? <p className="text-sm text-danger" role="alert">{message(error)}</p> : null}
     {memberships.isError && !unauthenticated ? <Link className="desk-button-brand inline-flex" to="/admin">{t`Sign in`}</Link> : null}
-    {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} canReport={(bootstrap.data?.features ?? []).includes("bookings.issue_reporting")} /> : null}
+    {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} initialPeriod={search.get("period") === "past" ? "past" : "upcoming"} canReport={(bootstrap.data?.features ?? []).includes("bookings.issue_reporting")} /> : null}
     {/* L22: a buyer reaches their shop orders from Payments; ordering needs an account, not a membership. */}
     {activeTab === "payments" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("shop") ? <MemberShopOrdersLink slug={slug} /> : null}
+    {!unauthenticated && memberships.isSuccess && bootstrap.data && !claimSession && activeTab === "overview" ? <MemberHistoryLinks slug={slug} modules={bootstrap.data.modules} features={bootstrap.data.features} /> : null}
     {/* Event history needs only an account: an attendee without a membership reaches it from Home. */}
     {!unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("events") && (activeTab === "events" || activeTab === "overview" && membership?.membership_status !== "active") ? <MemberEventHistoryLink slug={slug} /> : null}
     {unauthenticated ? <button type="button" className="desk-button-brand" onClick={() => setShowSignIn(true)}>{t`Sign in to your account`}</button> : null}

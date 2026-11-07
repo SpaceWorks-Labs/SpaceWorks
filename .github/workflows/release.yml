@@ -57,7 +57,13 @@ jobs:
             before="${{ github.event.before }}"
             previous=""
             if [[ ! "$before" =~ ^0+$ ]]; then
-              previous="$(gh api "repos/${GITHUB_REPOSITORY}/contents/VERSION?ref=${before}" --jq .content 2>/dev/null | base64 -d | tr -d '[:space:]' || true)"
+              if ! previous="$(
+                gh api "repos/${GITHUB_REPOSITORY}/contents/VERSION?ref=${before}" \
+                  --jq '.content // empty' 2>/dev/null | base64 -d | tr -d '[:space:]'
+              )" || [[ -z "$previous" ]]; then
+                echo "::error file=VERSION::Could not read VERSION at ${before}. Retry the workflow once the previous revision is available."
+                exit 1
+              fi
             fi
             [[ "$previous" != "$base" ]] && release=true
           fi

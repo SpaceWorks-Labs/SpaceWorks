@@ -7,6 +7,7 @@ an internal note, a linked inventory item, a cost or another buyer's anything.
 """
 
 from apps.makerspaces.platform import feature_enabled
+from apps.payments.availability import charge_tracking_enabled
 
 from .models import ShopProduct, ShopVariant
 
@@ -20,7 +21,10 @@ def public_products(space):
 
 def stock_view(space, product, variant, *, labels, bundles):
     from apps.inventory.availability import shop_sellable
+    from .gates import stock_source_enabled
 
+    if not stock_source_enabled(space, variant, bundles=bundles):
+        return "sold_out", None, True
     left = shop_sellable(variant, bundles=bundles)
     if left <= 0:
         return "sold_out", None, True
@@ -30,13 +34,14 @@ def stock_view(space, product, variant, *, labels, bundles):
     return ("low" if low else "in_stock"), (left if product.show_exact_stock else None), False
 
 
-def _variants(space, product, *, labels, bundles):
+def _variants(space, product, *, labels, bundles, selling):
     rows = []
     for variant in product.variants.all():
         if not variant.is_active or variant.archived_at is not None:
             continue
         label, count, sold_out = stock_view(space, product, variant, labels=labels, bundles=bundles)
-        rows.append({"id": variant.pk, "name": variant.name, "options": variant.options or {}, "price": variant.price,
+        rows.append({"id": variant.pk, "name": variant.name, "options": variant.options or {},
+                     "price": variant.price if selling else None,
                      "sold_out": sold_out, "stock_label": label, "stock_count": count})
     return rows
 
@@ -46,8 +51,9 @@ def product_payload(space, product, *, detail=False):
 
     labels = feature_enabled(space, "shop.public_stock")
     bundles = feature_enabled(space, "shop.bundles")
-    variants = _variants(space, product, labels=labels, bundles=bundles)
-    prices = [row["price"] for row in variants]
+    selling = charge_tracking_enabled(space, "shop")
+    variants = _variants(space, product, labels=labels, bundles=bundles, selling=selling)
+    prices = [row["price"] for row in variants] if selling else []
     payload = {
         "id": product.pk, "slug": product.slug, "name": product.name, "kind": product.kind,
         "category": product.category, "unit": product.unit,
@@ -73,7 +79,8 @@ def shop_summary(space):
     row = ShopSettings.for_makerspace(space)
     return {
         "name": space.name, "currency": MakerspacePaymentSettings.for_makerspace(space).default_currency,
-        "pay_online": online_rail(space), "guest_checkout": feature_enabled(space, "shop.guest_checkout"),
+        "pay_online": charge_tracking_enabled(space, "shop") and online_rail(space),
+        "guest_checkout": feature_enabled(space, "shop.guest_checkout"),
         "member_prices": feature_enabled(space, "shop.member_prices"), "policy_text": row.policy_text,
         "pickup_note": row.pickup_note, "returns_days": row.returns_window_days if feature_enabled(
             space, "shop.returns") else 0, "pickup_events": pickup_events(space),

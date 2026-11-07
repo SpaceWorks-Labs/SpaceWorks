@@ -19,10 +19,10 @@ export function SettingLock({ makerspaceId, settingKey, label, locked, canLock }
   return <span className="grid min-w-0 gap-1">
     <button type="button" className="desk-button-ghost flex min-h-11 w-fit items-center gap-1.5"
       aria-pressed={locked} disabled={toggle.isPending}
-      aria-label={t`${locked ? "Unlock" : "Lock"} ${label} for managers`}
       onClick={() => toggle.mutate({ setting_key: settingKey, locked: !locked })}>
       <Icon aria-hidden="true" size={16} className="shrink-0" />
       {locked ? t`Locked for managers` : t`Lock for managers`}
+      {" "}<span className="sr-only">{label}</span>
     </button>
     {toggle.error ? <span role="alert" className="text-sm text-danger">{toggle.error.message}</span> : null}
   </span>;

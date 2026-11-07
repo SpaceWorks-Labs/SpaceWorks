@@ -11,12 +11,12 @@ thirteen modules under it are optional.
 
 **Core — cannot be uninstalled.**
 
-- **What it is** — the public browse catalogue and item detail pages at `/m/<slug>`.
+- **What it is** — the public Inventory list at `/m/<slug>/inventory` (or `/inventory` on a single-space site), and item detail pages at `/m/<slug>/items/<id>` (or `/items/<id>`). The makerspace root is its overview, with links to enabled areas.
 - **What it adds** — the `catalog` workflow: the public product list and detail view.
 - **Without it** — not an option. It is the surface the whole system exists to publish. What you *can*
   control is per item: `is_public` removes a product from the public list entirely, and
   `public_availability_mode` (`exact_count` / `status_only` / `hidden`) decides how much of its stock
-  level a visitor sees. A space that wants no public catalogue publishes nothing.
+  level a visitor sees. **Show public inventory** can hide Inventory independently of **Publish public site**, keeping the published overview and other enabled areas. These publication controls do not uninstall the core module or remove its records.
 - **Data** — core; not separately purgeable.
 
 ### request_workflow

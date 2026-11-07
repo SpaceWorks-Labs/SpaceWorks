@@ -48,11 +48,11 @@ export function PublicItemPage() {
     : { status: "ready" as const };
   if (missing || disabled) return <div style={brandStyle}><PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${id ?? itemId}`)} image={bootstrap?.makerspace.logo_url} siteName={name} /><CenteredCardLayout state={{ status: "ready" }} title={title}
     body={missing ? t`This item isn't in the public catalogue.` : t`This makerspace is not publishing inventory.`}
-    primary={{ label: t`Back to the catalogue`, href: tenantPath() }} /></div>;
+    primary={{ label: t`Back to inventory`, href: tenantPath("inventory") }} /></div>;
   return <div style={brandStyle}>
     <PageMetadata title={`${title} · ${name}`} description={description} path={tenantPath(`items/${product?.id ?? id ?? itemId}`)} image={product?.image_url || bootstrap?.makerspace.logo_url} siteName={name} />
     <PublicLayout {...publicPageChrome(spaceSlug, name, tenantPath, bootstrap)} state={state}
-      breadcrumb={[{ label: t`Catalogue`, href: tenantPath() }, { label: title }]}>
+      breadcrumb={[{ label: t`Inventory`, href: tenantPath("inventory") }, { label: title }]}>
       <PublicDetailLayout title={title} state={state} cover={product?.image_url ? { src: product.image_url, alt: product.name } : undefined}
         chips={product?.category_name ? [{ label: product.category_name }] : []}
         sections={product ? [{ id: "description", label: t`Description`, content: <p className="whitespace-pre-wrap leading-7">{product.description || t`No description provided.`}</p> },
@@ -60,7 +60,7 @@ export function PublicItemPage() {
         actionCard={{ title: t`Borrow this item`, state: "open", summary: product ? <><AvailabilityBadge availability={product.availability} /><ExpectedBack product={product} className="mt-2" /></> : null,
           form: product ? <>{bootstrap?.features.includes("inventory.notify_when_back") ? <NotifyWhenBack slug={spaceSlug} productId={product.id} /> : null}
             <WaitlistJoin makerspaceId={bootstrap?.makerspace.id} product={product} features={bootstrap?.features} /></> : null,
-          primary: modules.has("request_workflow") ? { label: t`Request from the catalogue`, href: tenantPath() } : undefined,
+          primary: modules.has("request_workflow") ? { label: t`Request from inventory`, href: tenantPath("inventory") } : undefined,
           mobileBar: { summary: product?.name ?? t`Item details`, label: t`Borrow this item` } }} />
     </PublicLayout>
   </div>;

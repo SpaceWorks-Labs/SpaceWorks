@@ -15,9 +15,11 @@ from apps.inventory.public_stats_hardware import (
     hardware_stats as _hardware_stats,
 )
 from apps.inventory.public_stats_period import period_window, suppressed
+from apps.inventory.public_stats_projection import apply_visibility
 from apps.makerspaces.editions import public_surface_available
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.public_stats_settings import METRICS, read_config
+from apps.makerspaces.public_stats_catalogue import source_available
 from apps.machines.public_printer_stats import build_public_printer_stats
 from apps.machines.public_stats import build_public_machine_stats
 
@@ -42,13 +44,13 @@ def _printing(makerspace, window):
 
 
 def _lending(makerspace, window):
-    if not (public_surface_available("public_inventory") and makerspace.public_inventory_enabled
-            and module_enabled(makerspace, "public_inventory")):
+    if not source_available(makerspace, "lending.library"):
         return None
-    hardware = _hardware_stats(makerspace)
-    metrics = {"lending.loans": lending_loans(makerspace, window),
-               "lending.library": suppressed(hardware["library"]["library_size"])}
-    return {"hardware": hardware, "current_loans": _current_loans(makerspace)}, metrics
+    loans = source_available(makerspace, "lending.loans")
+    hardware = _hardware_stats(makerspace, include_loan_history=loans)
+    metrics = {"lending.loans": lending_loans(makerspace, window)} if loans else {}
+    metrics["lending.library"] = suppressed(hardware["library"]["library_size"])
+    return {"hardware": hardware, "current_loans": _current_loans(makerspace) if loans else []}, metrics
 
 
 def _events(makerspace, window):
@@ -88,14 +90,14 @@ def build_public_stats(makerspace, *, now=None) -> dict:
         shown.append(key)
     rows = [_metric(key, value) for key, value in metrics.items()]
     by_key = {row["key"]: row for row in rows}
-    return {
+    return apply_visibility(makerspace, {
         **payload,
         "sections": shown,
         "period": window.payload(),
         "headline": [by_key[key] for key in config["headline"] if key in by_key],
         "metrics": rows,
         "tv": {"enabled": config["tv_mode_enabled"], "refresh_seconds": config["tv_refresh_seconds"]},
-    }
+    }, config)
 
 
 def _printing_stats(makerspace):

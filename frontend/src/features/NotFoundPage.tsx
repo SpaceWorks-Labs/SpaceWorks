@@ -13,7 +13,7 @@ export function NotFoundPage() {
   const [torn, setTorn] = useState(false);
   const dragStart = useRef<number | null>(null);
   const match = pathname.match(/^\/m\/([^/]+)/);
-  const inventory = match ? `/m/${encodeURIComponent(match[1])}` : "/";
+  const home = match ? `/m/${encodeURIComponent(match[1])}` : "/";
   // Patch is the 404's one bold moment; kiosk, scanner and payment paths stay plain.
   const patch = enabled && eggsAllowed(pathname);
   return <><CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Compass", tone: "accent" }}
@@ -27,9 +27,9 @@ export function NotFoundPage() {
           <div><dt className="font-medium">{t`Status`}</dt><dd>{t`Not on the shelf`}</dd></div></dl>
       </div> : <div aria-hidden="true" className={`h-4 rounded-control border-t border-dashed border-line ${reduced ? "" : "sw-delight-pass"}`} />}
       <button type="button" className="desk-button" onClick={() => setTorn(true)} disabled={torn}>{t`Tear off the tag`}</button>
-      <p role="status">{torn ? t`Tag removed. Browse the inventory to find your next tool.` : t`Drag the tag or use the button to tear it off.`}</p>
+      <p role="status">{torn ? t`Tag removed. Return to the space to explore what’s available.` : t`Drag the tag or use the button to tear it off.`}</p>
     </div> : undefined}
-    primary={{ label: t`Browse the inventory`, href: inventory }}
+    primary={{ label: t`Back to home`, href: home }}
     escape={pathname.startsWith("/admin") ? { label: t`Staff sign-in`, href: "/admin" } : undefined} />
     {/* The spacer lets the card scroll clear of Patch's fixed strip on short screens. */}
     {patch ? <><div aria-hidden="true" className="h-28" /><NotFoundPatch /></> : null}</>;

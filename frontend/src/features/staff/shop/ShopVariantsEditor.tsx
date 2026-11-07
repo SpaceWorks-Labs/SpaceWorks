@@ -4,10 +4,10 @@ import { Plus } from "lucide-react";
 import { ShopOptionsEditor } from "./ShopOptionsEditor";
 
 export type VariantRow = { key: string; id?: number; name: string; sku: string; price: string; reorder_point: number;
-  linked_product_id: string; is_active: boolean; options: [string, string][]; on_hand?: number; available?: number };
+  sort_order?: number; linked_product_id: string; is_active: boolean; options: [string, string][]; on_hand?: number; available?: number };
 
 export const blankVariant = (): VariantRow => ({ key: crypto.randomUUID(), name: "", sku: "", price: "", reorder_point: 0,
-  linked_product_id: "", is_active: true, options: [] });
+  linked_product_id: "", is_active: true, sort_order: 0, options: [] });
 
 /** The product's sellable variants. Stock is changed in the Stock view, never here, so every move is recorded. */
 export function ShopVariantsEditor({ rows, onChange, onArchive, linkConsumables, showReorder }: {
@@ -27,6 +27,8 @@ export function ShopVariantsEditor({ rows, onChange, onArchive, linkConsumables,
             onChange={event => set(row.key, { sku: event.target.value })} /></label>
           <label className="grid gap-1 text-sm font-semibold">{t`Price`}<input className="desk-input min-h-11 font-normal tabular-nums" inputMode="decimal"
             required value={row.price} onChange={event => set(row.key, { price: event.target.value })} /></label>
+          <label className="grid gap-1 text-sm font-semibold">{t`Display order for ${name}`}<input className="desk-input min-h-11 font-normal" type="number" step={1}
+            value={row.sort_order ?? 0} onChange={event => set(row.key, { sort_order: Number(event.target.value) })} /></label>
           {showReorder ? <label className="grid gap-1 text-sm font-semibold">{t`Reorder at`}<input className="desk-input min-h-11 font-normal" type="number" min={0}
             value={row.reorder_point} onChange={event => set(row.key, { reorder_point: Math.max(0, Number(event.target.value) || 0) })} /></label> : null}
           {linkConsumables ? <label className="grid gap-1 text-sm font-semibold">{t`Inventory consumable ID`}<input className="desk-input min-h-11 font-normal" inputMode="numeric" value={row.linked_product_id}

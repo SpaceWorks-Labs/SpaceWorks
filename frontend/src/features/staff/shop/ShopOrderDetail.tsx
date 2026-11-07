@@ -64,7 +64,7 @@ export function ShopOrderDetail({ makerspaceId, orderId, access, onBack }: {
         <ShopBuyerOrderView order={{ ...order, status, channel: order.channel ?? "", pickup_at: order.pickup_at ?? "space", space_name: "",
           subtotal: order.subtotal ?? "0", discount_total: order.discount_total ?? "0", total: order.total ?? "0", tax_total: order.tax_total ?? "0",
           amount_due: order.amount_due ?? "0", expires_at: order.expires_at ?? null, paid_at: order.paid_at ?? null,
-          ready_at: order.ready_at ?? null, collected_at: order.collected_at ?? null }} />
+          ready_at: order.ready_at ?? null, collected_at: order.collected_at ?? null, closed_at: order.closed_at ?? null }} />
         {order.returns.length ? <section aria-label={t`Returns`} className="grid gap-2">
           <h2 className="title-section">{t`Returns`}</h2>
           <ul className="grid gap-2">{order.returns.map(row => <li key={row.id} className="rounded-xl border border-line p-3 text-sm">

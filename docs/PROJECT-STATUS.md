@@ -28,8 +28,9 @@ version bump run in the release phase, so treat this as built, not yet released.
   imports and per-space Metabase analytics.
 - **Platform.** The superadmin is always on; one backup and restore flow with per-space restore points;
   the Postgres RLS backstop; per-space key rotation and emergency re-key.
-- **Still open at the release phase:** the `backend/config/settings.py` split (the only file over 300
-  lines), the full regression with RLS forced on, the end-to-end flow audit and the README screenshots.
+- **Django settings.** `config.settings` assembles the domain settings sections and applies deployment
+  overrides in order. The release regression with RLS forced on, the end-to-end flow audit and
+  README screenshots are separate release gates.
 
 ## Events programme status
 

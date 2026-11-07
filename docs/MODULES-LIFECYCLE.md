@@ -15,10 +15,12 @@ separate switch.
 
 | Edition | Hidden module keys | Public home |
 |---|---|---|
-| `makerspace` (default) | none | the catalogue |
-| `events` | `public_inventory request_workflow scanner asset_units containers bulk_import stock_transfers qr_print_batches guest_handover stocktake machines machine_service printing bookings` | the events page |
-| `bookings` | the same set with `bookings` visible and `events` hidden | the bookings page |
-| `organization` | none — a labelling edition: one makerspace row is presented as "the organization" (`branding.display_name`) | the catalogue |
+| `makerspace` (default) | none | makerspace overview, with separate Inventory and other enabled-area links |
+| `events` | `public_inventory request_workflow scanner asset_units containers bulk_import stock_transfers qr_print_batches guest_handover stocktake machines machine_service printing bookings` | makerspace overview with enabled event links |
+| `bookings` | the same set with `bookings` visible and `events` hidden | makerspace overview with enabled booking links |
+| `organization` | none — a labelling edition: one makerspace row is presented as "the organization" (`branding.display_name`) | organization-labelled overview, with separate Inventory and other enabled-area links |
+
+An edition changes which areas are available; it never puts an inventory list on the makerspace home. Published custom-home content is preserved. Inventory has its own `/inventory` route (prefixed `/m/<slug>` on a shared site), and a saved **Primary homepage shortcut** only orders available area links.
 
 `Event.makerspace` stays the tenancy anchor in every edition (locked 2026-08-19); an organization-first
 install is one `Makerspace` row with an organization label, never a re-anchoring. Turning an edition into a
@@ -80,7 +82,9 @@ typed back. The switch must already be off. Each purge is audited in the space's
 
 Uninstalling switches a module off for one makerspace; the code still ships. A deployment that will never
 use an area can drop the app itself with `TOMBSTONED_APPS`, and `suggest_tombstones` reads the installed
-modules and names the apps that are safe to remove. The separable apps are `warranty`, `presence`,
-`payments`, `events`, `bookings`, `maintenance`, `procurement`, `notifications`,
+modules and names the apps that are safe to remove. Separable apps include `warranty`, `presence`,
+`payments_rail`, `events`, `bookings`, `maintenance`, `procurement`, `notifications`,
 `tenant_migration` and `devices`. That is a different axis
 from modules — see **Separability and tombstoning** in `docs/INVARIANTS.md`.
+
+The core payment ledger stays installed. The legacy tombstone label payments maps to payments_rail, which removes online checkout and webhooks.

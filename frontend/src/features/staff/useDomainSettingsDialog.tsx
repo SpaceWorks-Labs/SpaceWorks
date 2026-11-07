@@ -4,6 +4,7 @@ import { Modal } from "../../components/ui";
 import type { Action } from "../../components/ui/types";
 import { DomainSettingsSection } from "./DomainSettingsSection";
 import { DOMAIN_TITLES, type SettingsDomain } from "./domainSettingsApi";
+import { PublicStatsSettingsPanel } from "../stats/settings/PublicStatsSettingsPanel";
 
 /**
  * An overflow-menu entry plus its dialog, so a domain console mounts its settings with one
@@ -16,13 +17,15 @@ export function useDomainSettingsDialog(
   domain: SettingsDomain,
   allowed = true,
   extra?: ReactNode,
+  publicStats = false,
 ): { actions: Action[]; dialog: ReactNode } {
   const [open, setOpen] = useState(false);
   const title = DOMAIN_TITLES[domain];
   return {
     actions: allowed ? [{ label: title, icon: "Settings", onClick: () => setOpen(true) }] : [],
     dialog: <Modal open={open && allowed} title={title} size="xl" onClose={() => setOpen(false)}>
-      {open && allowed ? <><DomainSettingsSection makerspaceId={makerspaceId} domain={domain} />{extra}</> : null}
+      {open && allowed ? <><DomainSettingsSection makerspaceId={makerspaceId} domain={domain} />{extra}
+        {publicStats ? <PublicStatsSettingsPanel makerspaceId={makerspaceId} slug="" area={domain} /> : null}</> : null}
     </Modal>,
   };
 }

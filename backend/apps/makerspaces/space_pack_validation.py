@@ -156,7 +156,7 @@ def validate_configuration(config):
     if set(modules) - MODULE_KEYS or any(not module_available(key) for key in modules):
         raise PackError("unavailable_pack_module", "A module is unknown or unavailable on this deployment.")
     try:
-        canonical_modules, _ = validate_capabilities(modules, features)
+        canonical_modules, _ = validate_capabilities(modules, features, dormant_defaults=features)
         if set(canonical_modules) != set(modules):
             raise PackError("invalid_pack_configuration", "A pack must include all core modules.")
     except DjangoValidationError as exc:

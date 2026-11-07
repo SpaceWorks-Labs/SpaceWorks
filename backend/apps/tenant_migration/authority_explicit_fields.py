@@ -79,3 +79,8 @@ EXPLICIT_AUTHORITY_FIELDS.update({
     ("machines.MakerspaceMachineTypePolicy", name): "Portable per-type job setting; grants no staff authority."
     for name in _L12_POLICY_FIELDS.split()
 })
+
+EXPLICIT_AUTHORITY_FIELDS[("makerspaces.Makerspace", "public_stats_config")] = (
+    "Portable public-stat presentation preferences, bounded by target publication, module, "
+    "public-item projection and borrower-name consent gates; grants no staff authority."
+)

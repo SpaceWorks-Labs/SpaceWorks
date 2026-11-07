@@ -18,6 +18,8 @@ export function ShopProductFields({ form, onChange, access }: { form: ProductFor
         onChange={event => onChange({ category: event.target.value })} /></Field>
       <Field label={t`Unit`} hint={t`For example: piece, metre, pack.`}><input className="desk-input min-h-11" value={form.unit}
         onChange={event => onChange({ unit: event.target.value })} /></Field>
+      <Field label={t`Product display order`} hint={t`Lower numbers appear first.`}><input className="desk-input min-h-11" type="number" step={1}
+        value={form.sort_order} onChange={event => onChange({ sort_order: Number(event.target.value) })} /></Field>
     </div>
     <Field label={t`Description`}><textarea className="desk-input" rows={4} value={form.description} onChange={event => onChange({ description: event.target.value })} /></Field>
     <div className="grid gap-1">

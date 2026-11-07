@@ -174,7 +174,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     // #183B: lending settings follow the `loans.enabled` master, like the lending tabs.
     ...(capabilityOn(settings.data ?? makerspace, "loans.enabled") ? [{ id: "lending", title: t`Lending`, rows: <>
       {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("loans.enabled") ? <BorrowRequestAccessSettings makerspaceId={makerspace.id} /> : null}
-      {enabledModules.includes("request_workflow") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : null}
+      {enabledModules.includes("request_workflow") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} enabledFeatures={settings.data?.enabled_features ?? makerspace.enabled_features ?? []} /> : null}
       {enabledModules.includes("request_workflow") && ["loans.pickup_windows", "loans.reservations", "loans.waitlist"].some(key => (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes(key)) ? <LoanReservationPolicySettings makerspaceId={makerspace.id} /> : null}
       <MakerspaceReminderSettings {...shared} />
       {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? <KioskStationSettings makerspace={makerspace} /> : null}

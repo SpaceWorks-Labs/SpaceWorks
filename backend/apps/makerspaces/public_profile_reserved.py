@@ -25,6 +25,7 @@ RESERVED_SEGMENTS = frozenset({
     'hosting',
     'index.html',
     'install',
+    'inventory',
     'items',
     'kiosk',
     'm',

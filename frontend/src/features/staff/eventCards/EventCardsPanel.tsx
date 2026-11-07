@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CardDesigner } from "../../../components/card-designer/CardDesigner";
 import type { CardDesign } from "../../../components/card-designer/cardTypes";
+import { useCardDesignQuery } from "../../../components/card-designer/designerApi";
 import { Badge, ErrorBlock, OverflowMenu, SegmentedControl, Skeleton } from "../../../components/ui";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
 import { CardJobList, JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
@@ -32,7 +33,7 @@ export function EventCardsPanel({ eventId, features }: { eventId: number; featur
   return <section className="grid gap-4" aria-label={t`Event cards and tickets`}>
     <h3 className="text-lg font-semibold text-ink">{t`Cards and tickets`}</h3>
     <SegmentedControl label={t`Cards and tickets`} value={view} options={options} onChange={(value) => setView(value as typeof view)} />
-    {view === "cards" && card ? <EventCardList eventId={eventId} published={Boolean(card.published_at)} /> : null}
+    {view === "cards" && card ? <EventCardList eventId={eventId} designId={card.id} /> : null}
     {view === "design" && card ? <>
       <EventCardApproval eventId={eventId} />
       <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title={t`Event card design`} />
@@ -45,7 +46,9 @@ export function EventCardsPanel({ eventId, features }: { eventId: number; featur
   </section>;
 }
 
-function EventCardList({ eventId, published }: { eventId: number; published: boolean }) {
+function EventCardList({ eventId, designId }: { eventId: number; designId: number }) {
+  const design = useCardDesignQuery(designId);
+  const published = Boolean(design.data?.published_at);
   const client = useQueryClient();
   const key = ["event-id-cards", eventId];
   const cards = useQuery({ queryKey: key, queryFn: () => staffRequest<EventCard[]>(`/admin/events/${eventId}/id-cards`) });

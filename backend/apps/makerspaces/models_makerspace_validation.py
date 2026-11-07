@@ -35,7 +35,7 @@ def clean_makerspace(self):
         self.enabled_features or [], self.enabled_modules or []
     )
     self.enabled_modules, self.enabled_features = validate_capabilities(
-        self.enabled_modules or [], kept
+        self.enabled_modules or [], kept, dormant_defaults=kept
     )
     if self.geofence_enabled and not self.geofence_effective:
         raise ValidationError({"geofence_enabled": gettext("Set both latitude and longitude before enabling the geofence.")})

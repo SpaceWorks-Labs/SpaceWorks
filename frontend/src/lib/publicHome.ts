@@ -1,8 +1,8 @@
 import type { TenantBootstrap } from "./api";
 
 export type PublicFamily = "inventory" | "events" | "bookings" | "machines" | "membership";
-/** "makerspace" is the composed makerspace page (header, featured events, inventory, other sections). */
-export type PublicHome = "makerspace" | Exclude<PublicFamily, "inventory"> | "none";
+/** Every published tenant root is an overview; inventory owns its separate route. */
+export type PublicHome = "makerspace" | "none";
 
 const ORDER = ["inventory", "events", "bookings", "machines", "membership"] as const;
 
@@ -21,17 +21,14 @@ export function publicFamilies(bootstrap: TenantBootstrap): PublicFamily[] {
   return ORDER.filter((family) => available[family]);
 }
 
-/**
- * A staff-chosen non-inventory family keeps its own full page, and so does a single-family tenant
- * (an events-only space still lands on its events list). Everything else gets the composed
- * makerspace page, which is where the catalogue now lives.
- */
+/** Published tenant roots share one overview, independent of the chosen shortcut or edition. */
 export function publicHome(bootstrap: TenantBootstrap): PublicHome {
+  return bootstrap.makerspace.public_site_enabled === false ? "none" : "makerspace";
+}
+
+/** Preserve a saved family's intent as the overview's primary shortcut, only while available. */
+export function preferredPublicFamily(bootstrap: TenantBootstrap): PublicFamily | undefined {
   const families = publicFamilies(bootstrap);
-  if (!families.length) return "none";
   const selected = bootstrap.makerspace.public_landing_page;
-  if (selected && selected !== "auto" && selected !== "inventory" && families.includes(selected)) return selected;
-  const [only] = families;
-  if (families.length === 1 && only !== "inventory") return only;
-  return "makerspace";
+  return selected && selected !== "auto" && families.includes(selected) ? selected : undefined;
 }

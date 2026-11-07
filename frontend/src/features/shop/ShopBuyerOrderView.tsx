@@ -2,6 +2,7 @@ import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { StatusPill } from "../../components/ui";
 import { orderStatus, shopMoney, type ShopBuyerOrder } from "./shopApi";
+import { ShopOrderHistory } from "./ShopOrderHistory";
 
 const when = (value: string | null) => value ? new Date(value).toLocaleString(formatLocale(), { dateStyle: "medium", timeStyle: "short" }) : "";
 
@@ -34,5 +35,6 @@ export function ShopBuyerOrderView({ order }: { order: ShopBuyerOrder }) {
       <div className="flex justify-between text-base font-semibold text-ink"><dt>{t`Total`}</dt><dd className="tabular-nums">{money(order.total)}</dd></div>
       {Number(order.amount_due) > 0 && live ? <div className="flex justify-between font-semibold text-ink"><dt>{t`To pay at the desk`}</dt><dd className="tabular-nums">{money(order.amount_due)}</dd></div> : null}
     </dl>
+    <ShopOrderHistory order={order} />
   </div>;
 }

@@ -18,7 +18,7 @@ def changed(serializer, instance):
     return any(getattr(instance, key, object()) != value for key, value in serializer.validated_data.items())
 
 
-def save_space(actor, space, values):
+def save_space(actor, space, values, *, restore_feature_configuration=False):
     # Location settings have their own boundary validator. The general editor
     # deliberately does not expose them, so setup must use the profile contract.
     values = dict(values)
@@ -29,7 +29,8 @@ def save_space(actor, space, values):
         validate(check)
         profile = check.validated_data
     serializer = MakerspaceSerializer(space, data=values, partial=True,
-                                     context={"request": SimpleNamespace(user=actor)})
+                                     context={"request": SimpleNamespace(user=actor),
+                                              "restore_feature_configuration": restore_feature_configuration})
     validate(serializer)
     if changed(serializer, space):
         before = list(space.enabled_features)

@@ -1,22 +1,17 @@
-import { t } from "@lingui/core/macro";
 import { isProgrammePath } from "./features/events/programme/routeNames";
 import { isEventAddonPath } from "./features/events/eventAddons/routeNames";
 import { isCardPath } from "./features/cards/routeNames";
 import { isDonationPath } from "./features/donations/routeNames";
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
-import { MakerspacePage } from "./features/public/MakerspacePage";
-import { useTenantBootstrap } from "./features/inventory/usePublicInventory";
+import { FamilyHome, RouteFallback } from "./features/public/FamilyHome";
 import { PublicDeskKioskPage } from "./features/kiosk/PublicDeskKioskPage";
 import { ScannerPage } from "./features/kiosk/ScannerPage";
 import { SuperadminPage } from "./features/staff/PlatformApps";
 import { StaffApp } from "./features/staff/StaffApp";
-import { CenteredCardLayout, PublicLayout } from "./components/layouts";
 import { useTenant } from "./lib/tenant";
-import { publicFamilies, publicHome } from "./lib/publicHome";
 import { NotFoundPage } from "./features/NotFoundPage";
 import { PausedTenantGate, publicTenantSlug } from "./features/platformNotices/PausedTenantGate";
-import { FamilyProfileLink } from "./features/publicPages/FamilyProfileLink";
 import {
   PublicOrganizationPage, OrganizationInvitationRedeemPage, ResetPasswordPage, ConsolePasswordResetPage,
   AccountRestorePage, EventCheckInStationPage, KioskStationPage, PublicStatsPage, PublicStatsTvPage,
@@ -28,10 +23,12 @@ import {
   MachineJobPage, UseMachinePage, MySessionsPage, OAuthConsentPage, PersonalApiAccessPage,
   SpeakerClaimPage, EventDiscoverPage, PublicSelfCheckoutPage, ArchivedPayments, MemberAccountPage, PublicPrintRequestPage, PublicMachineServiceStatusPage, JobRequestPage,
 } from "./AppRoutesLazyPages";
-// Every public surface below is its own chunk. The makerspace page (which holds the catalogue) and the staff shell stay eager
+// Every public surface below is its own chunk. The makerspace overview and staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
 // route is first visited, so a lending-only install never downloads events, bookings or
 // machines code. The staff panels inside StaffApp are already lazy (StaffTabContent.tsx).
+const MemberBorrowingHistoryPage = lazy(() => import("./features/members/MemberBorrowingHistoryPage").then(m => ({ default: m.MemberBorrowingHistoryPage })));
+const PublicInventoryRoute = lazy(() => import("./features/inventory/PublicInventoryRoute").then(m => ({ default: m.PublicInventoryRoute })));
 const AboutPage = lazy(() => import("./features/AboutPage").then((m) => ({ default: m.AboutPage })));
 const PublicBookingResourcePage = lazy(() => import("./features/bookings/PublicBookingResourcePage").then((m) => ({ default: m.PublicBookingResourcePage })));
 const BookingDiscoverPage = lazy(() => import("./features/bookings/BookingDiscoverPage").then((m) => ({ default: m.BookingDiscoverPage })));
@@ -47,41 +44,6 @@ const MemberEventHistoryPage = lazy(() => import("./features/events/MemberEventH
 const PublicEventsPage = lazy(() => import("./features/inventory/PublicEventsPage").then((m) => ({ default: m.PublicEventsPage })));
 const PublicMachinesPage = lazy(() => import("./features/inventory/PublicMachinesPage").then((m) => ({ default: m.PublicMachinesPage })));
 const MemberArea = lazy(() => import("./features/members/MemberArea").then((m) => ({ default: m.MemberArea })));
-
-// Tenant capabilities choose the home independently of the deployment edition.
-
-function FamilyHome() {
-  const tenant = useTenant();
-  const { slug = "" } = useParams();
-  const bootstrapQuery = useTenantBootstrap(slug, tenant.mode === "central" && Boolean(slug));
-  const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
-  const homeHref = tenant.mode === "single" ? "/" : `/m/${slug}`;
-  const memberHref = tenant.mode === "single" ? "/member" : `/m/${slug}/member`;
-  const [params] = useSearchParams();
-  if (!bootstrap) {
-    if (bootstrapQuery.error) return <PublicLayout state={{ status: "error", error: t`Couldn't load this space. Try again.`, onRetry: () => void bootstrapQuery.refetch() }}
-      makerspace={{ name: "Space Works", slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]} header={{ title: t`We couldn't load this space` }}
-      footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
-    return <RouteFallback />;
-  }
-  // Old home links that opened a space (?space=, ?confirmation=) still land on the bookings page.
-  if ((params.has("space") || params.has("confirmation")) && publicFamilies(bootstrap).includes("bookings")) return <PublicBookingsPage />;
-  switch (publicHome(bootstrap)) {
-    case "makerspace": return <MakerspacePage />;
-    case "events": return <><PublicEventsPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
-    case "bookings": return <><PublicBookingsPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
-    case "machines": return <><PublicMachinesPage /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
-    case "membership": return <><MemberArea /><FamilyProfileLink slug={bootstrap.makerspace.slug} /></>;
-    default: return <PublicLayout state={{ status: "ready" }} isEmpty empty={{ message: t`${bootstrap.branding.display_name || bootstrap.makerspace.name} hasn't published anything yet. Check back soon.` }}
-      makerspace={{ name: bootstrap.branding.display_name || bootstrap.makerspace.name, slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]}
-      header={{ title: bootstrap.branding.display_name || bootstrap.makerspace.name }} footer={{ credit: "Powered by Space Works", links: [] }}><span /></PublicLayout>;
-  }
-}
-
-function RouteFallback() {
-  return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Opening Space Works…`} body=""
-    primary={{ label: t`Loading…`, disabled: true, disabledReason: "The page is opening." }} /></div>;
-}
 
 // Canonical links also use the tenant prefix on token-configured frontends.
 function SingleTenantEvent() {
@@ -146,6 +108,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
   } else if (mode === "single") {
     routes = <Routes>
       <Route path="/" element={<FamilyHome />} />
+      <Route path="/inventory" element={<PublicInventoryRoute />} />
       <Route path="/items/:itemId" element={<PublicItemPage />} />
       <Route path="/checkout" element={<PublicSelfCheckoutPage />} />
       <Route path="/events" element={<PublicEventsPage />} />
@@ -174,6 +137,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/machines/:machineId/use" element={<UseMachinePage />} />
       <Route path="/member/machine-sessions" element={<MySessionsPage />} />
       <Route path="/member" element={<MemberArea />} />
+      <Route path="/member/loans/history" element={<MemberBorrowingHistoryPage />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
       <Route path="/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/member/events/history" element={<MemberEventHistoryPage />} />
@@ -218,6 +182,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/o/:organizationSlug" element={<PublicOrganizationPage />} />
       <Route path="/e/:publicToken" element={<PublicEventCodePage />} />
       <Route path="/m/:slug" element={<FamilyHome />} />
+      <Route path="/m/:slug/inventory" element={<PublicInventoryRoute />} />
       <Route path="/m/:slug/items/:itemId" element={<PublicItemPage />} />
       <Route path="/m/:slug/checkout" element={<PublicSelfCheckoutPage />} />
       <Route path="/m/:slug/events" element={<PublicEventsPage />} />
@@ -240,6 +205,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/machines/:machineId/use" element={<UseMachinePage />} />
       <Route path="/m/:slug/member/machine-sessions" element={<MySessionsPage />} />
       <Route path="/m/:slug/member" element={<MemberArea />} />
+      <Route path="/m/:slug/member/loans/history" element={<MemberBorrowingHistoryPage />} />
       <Route path="/m/:slug/member/account" element={<MemberAccountPage />} />
       <Route path="/m/:slug/member/events/:registrationId/ticket" element={<MemberEventTicketPage />} />
       <Route path="/m/:slug/member/events/history" element={<MemberEventHistoryPage />} />
@@ -295,6 +261,6 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="*" element={<NotFoundPage />} />
     </Routes>;
   }
-  return <Suspense fallback={<RouteFallback />}><PausedTenantGate slug={mode === "central" ? publicTenantSlug(location.pathname) : ""}>{routes}</PausedTenantGate></Suspense>;
+  const publicSlug = mode === "central" ? publicTenantSlug(location.pathname) : "";
+  return <Suspense fallback={<RouteFallback />}>{publicSlug ? <PausedTenantGate slug={publicSlug}>{routes}</PausedTenantGate> : routes}</Suspense>;
 }
-

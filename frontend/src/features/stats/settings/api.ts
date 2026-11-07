@@ -9,16 +9,28 @@ export type PublicStatsSettings = {
   headline: string[];
   tv_mode_enabled: boolean;
   tv_refresh_seconds: number;
+  visibility?: Record<string, boolean>;
 };
+
+export type PublicStatsDecision = { editable: boolean; locked: boolean; can_lock?: boolean; code?: string | null;
+  via?: string | null; available?: boolean };
+export type PublicStatsWidget = { key: string; label: string; section: StatsSectionKey;
+  owner_module: string; kind: string };
+export type PublicStatsSettingsPatch = Partial<PublicStatsSettings>;
 
 export type PublicStatsSettingsResponse = {
   settings: PublicStatsSettings;
-  /** False for everyone but the Space Manager (and the superadmin): the panel is read-only. */
+  /** Legacy page-wide authority; individual controls use capabilities when available. */
   can_edit: boolean;
+  capabilities?: {
+    settings: Record<string, PublicStatsDecision>;
+    visibility: Record<string, PublicStatsDecision>;
+  };
   choices: {
     sections: { key: StatsSectionKey; label: string }[];
     periods: { key: PublicStatsSettings["period"]; label: string }[];
     metrics: { key: string; section: StatsSectionKey; label: string }[];
+    widgets?: PublicStatsWidget[];
     max_headline: number;
     tv_refresh_min: number;
     tv_refresh_max: number;
@@ -40,8 +52,8 @@ export function usePublicStatsSettings(makerspaceId: number) {
 export function useSavePublicStatsSettings(makerspaceId: number) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (body: PublicStatsSettings) =>
-      staffRequest<PublicStatsSettingsResponse>(path(makerspaceId), { method: "PUT", body: JSON.stringify(body) }),
+    mutationFn: (body: PublicStatsSettingsPatch) =>
+      staffRequest<PublicStatsSettingsResponse>(path(makerspaceId), { method: "PATCH", body: JSON.stringify(body) }),
     onSuccess: data => {
       client.setQueryData(publicStatsSettingsKey(makerspaceId), data);
       for (const key of [["makerspace-settings", makerspaceId], ["makerspaces"], ["staff", "makerspaces"], ["public-stats"],

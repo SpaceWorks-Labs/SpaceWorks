@@ -96,6 +96,9 @@ class PlatformOverviewSerializer(serializers.Serializer):
     include_excluded = serializers.BooleanField()
     excluded_count = serializers.IntegerField(min_value=0)
     spaces = OverviewSpaceSerializer(many=True)
+    reports_space_ids = serializers.ListField(
+        child=serializers.IntegerField(), help_text="Space IDs where Reports is currently available.",
+    )
     blocks = OverviewBlockSerializer(many=True)
     money = OverviewMoneySerializer(allow_null=True)
     hidden_blocks = OverviewHiddenBlockSerializer(many=True, help_text="Blocks whose module is off in every space.")

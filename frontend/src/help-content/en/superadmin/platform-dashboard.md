@@ -15,4 +15,10 @@ keywords: platform dashboard, problems, checks, usage, limits, scheduler, analyt
 
 **Usage & limits** shows each space's usage against its plan on a hosted platform. Look into any error before your next deployment change.
 
+## Platform overview and Spaces
+
+The platform dashboard also has **Platform overview** and **Platform insights** views. In **Platform overview**, choose the period and open a space from a domain table. The Reports link is available where that space has Reports enabled.
+
+Open **Spaces** for **Health**, **Onboarding** and **Announcements**. The Health cards have **Details**, **Open console** and **Manage** controls. See [Space health, service pauses and closure](help:superadmin/space-lifecycle) for suspension, read-only mode, ownership and archive schedules.
+
 > **Who can do this:** the platform superadmin. Hidden on a single-space installation's own domain.

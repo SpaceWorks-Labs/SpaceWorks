@@ -88,7 +88,7 @@ def visible(actor, space):
         allowed |= Q(subject_type__in=("inventory_product", "inventory_asset"))
     if feature_enabled(space, "bookings.room_maintenance") and rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, space.pk):
         allowed |= Q(subject_type="bookable_space")
-    return rows.filter(allowed)
+    return service.scope_enabled_repairs(rows.filter(allowed), space)
 
 
 def _space(actor, makerspace_id):

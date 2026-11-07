@@ -18,6 +18,14 @@ Questions that already have answers can't be edited.
 
 Under **More**, **Certificates and ID cards**: design the certificate, **Preview certificate PDF**, and **Save new certificate revision**. **Bulk attendance certificates**, then **Confirm bulk issue**, issues them to everyone who attended. Each certificate can be downloaded or revoked.
 
+## Signatories and verification
+
+In the certificate designer, open **Signatories**. Save each signatory's name, title, account and signature as appropriate. If **Signatories must approve the design** is enabled, ask each person to open **Certificate designs to approve** in their member area, choose **Review design**, and press **Approve** after checking the PDF.
+
+Issuance and delivery wait for the required design approvals. Existing approvals apply to the design revision they name.
+
+The public verification page shows **File fingerprint**. Under **Check a certificate file**, choose or drop the issued PDF to compare it on your device. Holder privacy controls determine which personal details that page displays.
+
 ## Event cards and tickets
 
 Where event ID cards or ticket designs are on, **Cards and tickets** has **ID cards**, **Card design** and **Ticket design**.

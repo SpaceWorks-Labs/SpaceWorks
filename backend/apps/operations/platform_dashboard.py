@@ -8,6 +8,7 @@ from apps.integrations.models import EmailLog, NotificationDeliveryLog, Notifica
 from apps.integrations.models_tracking import PushDeliveryAttempt
 from apps.makerspaces import limits
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import servable_queryset
 from apps.makerspaces.usage_snapshot import usage_snapshot
 from apps.operations.platform_signals import (
@@ -36,6 +37,7 @@ def build_platform_dashboard():
         totals.update({row["key"]: row["used"] for row in usage["resources"]
                        if row["used"] is not None})
         tenants.append({"id": space.pk, "name": space.name, "slug": space.slug,
+                        "reports_enabled": module_enabled(space, "reports"),
                         "usage": usage})
     # Scoping is resolved once at the tenant boundary; all related summaries use
     # exactly those IDs. No raw errors or recipient/subject text enters the API.

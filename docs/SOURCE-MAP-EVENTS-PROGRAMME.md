@@ -90,7 +90,7 @@ only while Events is active. `contracts/registration.py` composes A/B/C/D/E/F/P 
 without locking User/key rows after Event. It does not prove legacy callers migrated.
 `tasks_programme.py`, `tasks_contributions.py`, `reminders_programme.py`,
 `programme/broadcast_schedule.py`, `accounts/saved_details/tasks.py` participate in
-`backend/config/settings.py` beat schedule and
+`backend/config/settings_beat*.py` and the final settings overlay, plus
 `operations/management/commands/run_scheduled_tasks.py`. Asset/certificate/print/judging recovery is scheduled; `tasks_retention.py` grants only retained byte cleanup, never workflow authority.
 
 ## Frontend and verification

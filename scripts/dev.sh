@@ -85,11 +85,10 @@ test_suite() {
       mc version enable local/public-images;
       mc anonymous set download local/public-images;
     '
-  local keys api_key audit_key
-  keys="$(docker run --rm --label "spaceworks.test=$RUN" --entrypoint python spaceworks-backend -c \
-    'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode()); print(Fernet.generate_key().decode())')"
-  api_key="${keys%%$'\n'*}"
-  audit_key="${keys##*$'\n'}"
+  local key_output keys
+  key_output="$(docker run --rm --label "spaceworks.test=$RUN" --entrypoint python spaceworks-backend -c \
+    'from cryptography.fernet import Fernet; print(*(Fernet.generate_key().decode() for _ in range(3)), sep="\n")')"
+  mapfile -t keys <<< "$key_output"
   local TEST_ENV=(
     -e DATABASE_URL=postgres://makerspace:makerspace@db:5432/makerspace_manager
     -e SECRET_KEY=test-only -e DEBUG=True -e TRUSTED_PROXY_COUNT=0 -e PYTHONDONTWRITEBYTECODE=1
@@ -99,14 +98,13 @@ test_suite() {
     -e AWS_ACCESS_KEY_ID=minioadmin -e AWS_SECRET_ACCESS_KEY=minioadmin
     -e AWS_STORAGE_BUCKET_NAME=evidence -e PUBLIC_IMAGE_BUCKET=public-images
     -e STORAGE_PRESIGN_METHOD=post -e EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-    -e "API_CLIENT_ENC_KEY=$api_key" -e "AUDIT_MAC_MASTER_KEY=$audit_key"
+    -e "API_CLIENT_ENC_KEY=${keys[0]}" -e "AUDIT_MAC_MASTER_KEY=${keys[1]}"
+    -e "PII_MASTER_KEY=${PII_MASTER_KEY:-${keys[2]}}"
   )
   # tests/tombstone only runs under an exported TOMBSTONED_APPS profile, so pass it through.
   [[ -z "${TOMBSTONED_APPS:-}" ]] || TEST_ENV+=(-e "TOMBSTONED_APPS=$TOMBSTONED_APPS")
-  # The forced-on RLS regression (X-8) and the scoped-PII checks: pass these only when the caller
-  # exported them, never a default, so an unset variable stays unset in the container.
+  # A nonempty probe role forces RLS for the X-8 regression.
   [[ -z "${TENANT_RLS_PROBE_ROLE:-}" ]] || TEST_ENV+=(-e "TENANT_RLS_PROBE_ROLE=$TENANT_RLS_PROBE_ROLE")
-  [[ -z "${PII_MASTER_KEY:-}" ]] || TEST_ENV+=(-e "PII_MASTER_KEY=$PII_MASTER_KEY")
   (($#)) || set -- -q
   docker run --rm --network "$RUN" --label "spaceworks.test=$RUN" --entrypoint pytest \
     -v "$HOST_ROOT:/workspace" -w /workspace/backend \

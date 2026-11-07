@@ -10,6 +10,9 @@ types list ignores a presented claim token.
 from apps.accounts.claim_route_types import AnonymousRead, Refused
 
 _REFUSED = (
+    ("claim sessions cannot read account borrowing history", (
+        ("hardware_requests:member-borrowing-history", ("GET", "HEAD")),
+    )),
     ("claim sessions cannot merge accounts", (
         ("auth-account-merge-start", ("POST",)), ("auth-account-merge-prove", ("POST",)),
         ("auth-account-merge-resend", ("POST",)), ("auth-account-merge-preview", ("GET", "HEAD")),

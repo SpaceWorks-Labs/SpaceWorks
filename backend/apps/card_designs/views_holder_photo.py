@@ -39,12 +39,15 @@ class JobRefSerializer(serializers.Serializer):
     job_id = serializers.IntegerField()
 
 
+class HolderPhotoAttachThrottle(ScopedRateThrottle):
+    def allow_request(self, request, view):
+        return request.method != "PUT" or super().allow_request(request, view)
+
+
 class MyCardPhotoView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [HolderPhotoAttachThrottle]
     throttle_scope = "id_join_upload"  # attaching decodes and re-encodes the image: 12/hour
-
-    def get_throttles(self):
-        return [ScopedRateThrottle()] if self.request.method == "PUT" else []
 
     def _card(self, request, kind, card_id):
         if kind not in PHOTO_ACTIONS:

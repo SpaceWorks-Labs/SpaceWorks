@@ -66,6 +66,7 @@ function ProductEditor({ makerspaceId, product, access, onDone, onSaved }: {
         <ShopProductFields form={form} onChange={patch} access={access} />
         {product ? <ImageUploader endpoint={productImageEndpoint(product.id)} currentUrl={product.image_url || null} label={t`Product photo`}
           onChanged={() => { void fetchProductAgain(); }} /> : null}
+        <p className="text-sm text-muted">{t`Variants share the product photo. Stock is changed in the Stock section.`}</p>
         <ShopVariantsEditor rows={form.variants} onChange={variants => patch({ variants })} linkConsumables={access.features.consumableLink}
           showReorder={access.features.reorder} onArchive={row => row.id !== undefined ? setArchiving(row) : patch({ variants: form.variants.filter(v => v.key !== row.key) })} />
         {access.features.bundles ? <ShopBundleParts parts={form.parts} choices={choices} bundleMode={form.bundle_mode}

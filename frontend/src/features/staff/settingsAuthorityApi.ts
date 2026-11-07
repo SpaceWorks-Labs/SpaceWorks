@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
 
-/** Mirrors `apps/makerspaces/settings_authority_registry.py::MODULE_MANAGER_ACTIONS`. */
+/** Per-person grant controls; Shop Managers use their fixed exception in Shop settings. */
 export const AUTHORITY_MODULES = ["events", "bookings", "machines", "inventory"] as const;
 export type AuthorityModule = typeof AUTHORITY_MODULES[number];
 
@@ -21,7 +21,7 @@ export type GrantsResponse = { grants: SettingsGrant[]; candidates: Record<Autho
 
 export type EffectiveKey = { key: string; editable: boolean; via: string | null; locked: boolean;
   code: "setting_not_delegated" | "setting_locked" | null; lock_note: string };
-export type EffectiveResponse = { modules: { module: AuthorityModule; space_manager: boolean;
+export type EffectiveResponse = { modules: { module: AuthorityModule | "shop"; space_manager: boolean;
   grant_id: number | null; keys: EffectiveKey[] }[] };
 
 const base = (makerspaceId: number) => `/admin/makerspace/${makerspaceId}/settings-authority`;
@@ -43,6 +43,7 @@ export function useUpdateGrants(makerspaceId: number) {
       client.setQueryData(grantsKey(makerspaceId), data);
       await client.invalidateQueries({ queryKey: ["settings-authority", makerspaceId] });
       await client.invalidateQueries({ queryKey: ["domain-settings", makerspaceId] });
+      await client.invalidateQueries({ queryKey: ["public-stats-settings", makerspaceId] });
     },
   });
 }
@@ -55,6 +56,7 @@ export function useSetLock(makerspaceId: number) {
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["settings-authority", makerspaceId] });
       await client.invalidateQueries({ queryKey: ["domain-settings", makerspaceId] });
+      await client.invalidateQueries({ queryKey: ["public-stats-settings", makerspaceId] });
     },
   });
 }

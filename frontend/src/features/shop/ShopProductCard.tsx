@@ -21,6 +21,7 @@ export function ShopProductCard({ product, currency, href, onAdd, selling = true
 }) {
   const stock = productStock(product);
   const only = product.variants.length === 1 ? product.variants[0] : null;
+  const price = only?.price;
   return <li className="grid min-w-0 content-start gap-3 rounded-xl border border-line bg-panel p-4">
     {product.image_url ? <img src={product.image_url} alt="" loading="lazy" className="aspect-[4/3] w-full rounded-lg object-cover" />
       : <div aria-hidden="true" className="grid aspect-[4/3] w-full place-items-center rounded-lg bg-surface text-muted"><ShoppingBag size={32} /></div>}
@@ -32,10 +33,10 @@ export function ShopProductCard({ product, currency, href, onAdd, selling = true
       <RouteLink href={href} className="rounded-control text-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{product.name}</RouteLink>
     </h2>
     {product.category ? <p className="text-sm text-muted">{product.category}</p> : null}
-    {selling ? <p className="font-semibold tabular-nums text-ink">{priceRange(product, currency)}{product.unit ? <span className="ml-1 text-sm font-normal text-muted">per {product.unit}</span> : null}</p> : null}
-    {selling && only && !product.sold_out && !only.sold_out ? <button type="button" className="desk-button min-h-11 justify-self-start"
+    {selling && product.price_from !== null ? <p className="font-semibold tabular-nums text-ink">{priceRange(product, currency)}{product.unit ? <span className="ml-1 text-sm font-normal text-muted">per {product.unit}</span> : null}</p> : null}
+    {selling && only && price != null && !product.sold_out && !only.sold_out ? <button type="button" className="desk-button min-h-11 justify-self-start"
       aria-label={t`Add ${product.name} to basket`}
-      onClick={() => onAdd({ variantId: only.id, label: product.name, price: only.price, productSlug: product.slug, max: product.max_per_order })}>
+      onClick={() => onAdd({ variantId: only.id, label: product.name, price: String(price), productSlug: product.slug, max: product.max_per_order })}>
       {t`Add to basket`}</button>
       : <RouteLink href={href} className="desk-button min-h-11 justify-self-start">{product.sold_out || !selling ? t`View item` : t`Choose options`}</RouteLink>}
   </li>;

@@ -13,11 +13,11 @@ from rest_framework.views import APIView
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.servability import public_availability_queryset
 from apps.openapi_errors import errors
 
 from . import announcements, notices
 from .models import PlatformAnnouncement
-from .services_schedule import is_archived
 
 TAGS = ["Platform announcements"]
 
@@ -153,9 +153,9 @@ class PublicAvailabilityView(APIView):
     @extend_schema(tags=TAGS, summary="Whether a public space is paused", responses={200: SpacePausedStateSerializer,
                                                                                     **errors(404)})
     def get(self, request, makerspace_slug):
-        space = Makerspace.objects.filter(slug=str(makerspace_slug or "").strip()).first()
-        if space is None or is_archived(space) or space.lifecycle_state not in (
-                Makerspace.LifecycleState.ACTIVE, Makerspace.LifecycleState.SUSPENDED):
+        spaces = Makerspace.objects.filter(slug=str(makerspace_slug or "").strip())
+        space = public_availability_queryset(spaces).first()
+        if space is None:
             raise Http404()
         paused = space.lifecycle_state == Makerspace.LifecycleState.SUSPENDED
         return Response(SpacePausedStateSerializer({"state": "paused" if paused else "active"}).data)

@@ -89,7 +89,8 @@ def visible_issues(actor, space):
     repairs_live = [area for area in live if areas.on(space, areas.REPAIRS[area])]
     if repairs_live and rbac.can(actor, Action.WORK_REPAIRS, space.pk):
         allowed |= Q(area__in=repairs_live) & assigned_q(actor)
-    return IssueReport.objects.filter(makerspace=space).filter(allowed).distinct()
+    active_repairs = Q(area__in=repairs_live) | Q(work_order__isnull=True)
+    return IssueReport.objects.filter(makerspace=space).filter(allowed & active_repairs).distinct()
 
 
 def technician_on_machine(actor, machine):

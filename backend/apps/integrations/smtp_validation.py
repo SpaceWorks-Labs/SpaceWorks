@@ -124,10 +124,10 @@ def _is_dev_address(address) -> bool:
 
 
 def _address_is_blocked(address) -> bool:
-    # Not "is_private or ...": carrier-grade NAT (100.64/10, cloud metadata and tailnets) and
-    # NAT64 are neither private nor global, so only a global unicast address is allowed.
+    # is_global excludes carrier-grade NAT; reserved ranges such as the well-known NAT64
+    # prefix and multicast still need explicit checks.
     address = getattr(address, "ipv4_mapped", None) or address
-    return not address.is_global or address.is_multicast
+    return not address.is_global or address.is_reserved or address.is_multicast
 
 
 def peer_address_allowed(address) -> bool:

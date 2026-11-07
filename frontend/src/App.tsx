@@ -8,6 +8,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { CenteredCardLayout } from "./components/layouts";
 import { LandingPage } from "./features/LandingPage";
 import { PausedSpacePage } from "./features/platformNotices/PausedSpacePage";
+import { isAccountUtilityPath } from "./lib/accountUtilityPaths";
 import { useTenant } from "./lib/tenant";
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 // Explicit test dev mode only: Vite removes this import and route from production builds.
@@ -26,7 +27,7 @@ export default function App() {
   // config.js / tenant bootstrap cannot load. Central /kiosk/:slug stays distinct.
   if (/^\/m\/[^/]+\/kiosk\/[^/]+\/?$/.test(pathname)
       || /^\/kiosk\/[0-9a-f-]{36}\/?$/i.test(pathname)) {
-    return <Suspense fallback={<div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Loading kiosk…`} body="" primary={{ label: t`Loading…`, disabled: true, disabledReason: "The kiosk is opening." }} /></div>}><Routes>
+    return <Suspense fallback={<div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Loading kiosk…`} body="" primary={{ label: t`Loading…`, disabled: true, disabledReason: t`The kiosk is opening.` }} /></div>}><Routes>
       <Route path="/kiosk/:stationToken" element={<KioskStationPage />} />
       <Route path="/m/:slug/kiosk/:stationToken" element={<KioskStationPage />} />
     </Routes></Suspense>;
@@ -36,13 +37,13 @@ export default function App() {
   // must get past. Read the ROUTER's location, not `window.location` -- a client-side `Link`
   // updates router context without touching `window.location`, so a non-reactive read left
   // this branch stale and sent every click on the recovery CTA to the not-found page.
-  const accountUtility = /^\/(?:m\/[^/]+\/)?member\/account\/(?:saved-details|security-activity)\/?$/.test(pathname);
+  const accountUtility = isAccountUtilityPath(pathname);
   if (!accountUtility && tenant.mode === "single" && tenant.loading) {
     return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Loading site…`} body=""
-      primary={{ label: t`Loading…`, disabled: true, disabledReason: "The site is opening." }} /></div>;
+      primary={{ label: t`Loading…`, disabled: true, disabledReason: t`The site is opening.` }} /></div>;
   }
   if (!accountUtility && tenant.mode === "single" && (tenant.error as { code?: string } | null)?.code === "space_paused") {
-    return <PausedSpacePage primary={{ label: "Retry", onClick: () => window.location.reload() }} />;
+    return <PausedSpacePage primary={{ label: t`Retry`, onClick: () => window.location.reload() }} />;
   }
   if (!accountUtility && tenant.mode === "single" && tenant.error) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "TriangleAlert", tone: "danger" }}

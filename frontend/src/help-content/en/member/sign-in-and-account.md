@@ -36,6 +36,8 @@ Open **Account** in your member area. Depending on what the space offers you wil
 
 ## Delete your account, or bring it back
 
+For tools that act as you, use [Personal API tokens and connected apps](help:member/api-access-and-apps).
+
 1. Open **Account** and choose **Delete account**.
 2. Settle anything listed as blocking, such as money you owe.
 3. Type `DELETE` and press **Delete account permanently**.

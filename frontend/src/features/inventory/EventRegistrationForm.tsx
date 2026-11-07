@@ -7,7 +7,7 @@ import type { ApiPath } from "../../generated/api";
 import { EventContactFallback } from "../events/EventContactFallback";
 import { EventTicketPicker } from "../events/EventTicketPicker";
 import type { EventTicket } from "../events/eventTicketTypes";
-import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
+import { StructuredApiError, tenantMemberRequest } from "../../lib/api";
 import { useChargesOn } from "../../lib/charges";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import { PricePreview } from "../payments/PricePreview";
@@ -71,7 +71,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   const registration = useMutation({
     mutationFn: async () => {
       const rawTransportBody = { ...(hostWaiver ? { host_waiver_id: hostWaiver.id, host_waiver_version: hostWaiver.version, host_waiver_accepted: waiverAccepted } : {}), ...(phone.trim() ? { phone: phone.trim() } : {}), ...(email.trim() ? { email: email.trim() } : {}), website, custom_answers: answers, ...(inviteCode ? { invite_code: inviteCode } : {}), ...(promoCode ? { promo_code: promoCode } : {}), ...(ticketId !== null ? { ticket_type_id: ticketId } : {}), ...(quoteDigest ? { quote_digest: quoteDigest } : {}) };
-      return tenantPublicRequest<RegistrationResult>(makerspaceSlug, registerPath(makerspaceSlug, publicToken), {
+      return tenantMemberRequest<RegistrationResult>(makerspaceSlug, registerPath(makerspaceSlug, publicToken), {
         method: "POST", body: JSON.stringify(rawTransportBody),
       });
     },

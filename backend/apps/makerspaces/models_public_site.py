@@ -17,6 +17,7 @@ class PublicSiteSettings(models.Model):
                  ("auto", "inventory", "events", "machines", "bookings", "membership")],
     )
     public_stats_enabled = models.BooleanField(default=False)
+    public_stats_config = models.JSONField(default=dict, blank=True)
     public_stats_show_holder_names = models.BooleanField(default=False)
     # Settings › Public stats (#170, `public_stats_settings.py`): ordered section keys and
     # headline metric keys as comma-separated lists, the fixed period and the TV mode.

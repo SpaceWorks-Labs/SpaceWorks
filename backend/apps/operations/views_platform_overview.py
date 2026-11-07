@@ -15,10 +15,13 @@ from rest_framework.views import APIView
 
 from apps.admin_api.permissions import IsActiveSuperAdmin
 from apps.audit import services as audit
+from apps.makerspaces.module_registry import module_available
+from apps.makerspaces.servability import servable_queryset
 from apps.operations.platform_overview_cache import read_or_schedule
 from apps.operations.platform_overview_export import overview_csv
 from apps.operations.platform_overview_window import PRESETS, resolve_window
 from apps.operations.platform_scope import _platform_context_for_view
+from apps.operations.report_sources import filter_sources
 from apps.operations.serializers_platform_overview import (
     PlatformOverviewComputingSerializer, PlatformOverviewErrorSerializer, PlatformOverviewSerializer,
 )
@@ -65,6 +68,14 @@ def _pending(data):
                      "code": "overview_failed"}, status=503, headers=NO_STORE)
 
 
+def _reports_space_ids(spaces):
+    """Resolve navigation from current module state while the figures stay cached."""
+    if not module_available("reports"):
+        return []
+    queryset = servable_queryset().filter(pk__in=[space["id"] for space in spaces])
+    return list(filter_sources(queryset, ("reports",)).order_by("pk").values_list("pk", flat=True))
+
+
 class PlatformOverviewView(APIView):
     permission_classes = [IsActiveSuperAdmin]
 
@@ -83,7 +94,8 @@ class PlatformOverviewView(APIView):
                                 refresh=_flag(request.query_params.get("refresh"), "refresh"))
         if data["status"] != "ready":
             return _pending(data)
-        return Response(PlatformOverviewSerializer(data).data, headers=NO_STORE)
+        payload = {**data, "reports_space_ids": _reports_space_ids(data["spaces"])}
+        return Response(PlatformOverviewSerializer(payload).data, headers=NO_STORE)
 
 
 class PlatformOverviewExportView(APIView):

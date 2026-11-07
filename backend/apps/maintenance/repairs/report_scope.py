@@ -51,6 +51,7 @@ def visible_work_orders(actor, space):
     from apps.machines.access import scope_machines_for_actor
     from apps.machines.models import Machine
     from apps.maintenance.models import WorkOrder
+    from apps.maintenance.work_orders import scope_enabled_repairs
     live = work_order_areas(space)
     allowed = Q(pk__in=[])
     if areas.MACHINES in live and rbac.can(actor, Action.MANAGE_MACHINES, space.pk):
@@ -66,7 +67,8 @@ def visible_work_orders(actor, space):
         contact = authority.contact_for(actor, space.pk)
         if contact is not None:
             allowed |= Q(schedule__isnull=False) & _coverage_q(contact)
-    return WorkOrder.objects.filter(makerspace=space).filter(allowed & _area_q(live)).distinct()
+    rows = WorkOrder.objects.filter(makerspace=space).filter(allowed & _area_q(live))
+    return scope_enabled_repairs(rows, space).distinct()
 
 
 def visible_issues(actor, space):

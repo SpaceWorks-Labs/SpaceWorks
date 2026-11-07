@@ -28,6 +28,19 @@ export const MORE_SECTIONS = [
 ] as const;
 export type MoreSection = typeof MORE_SECTIONS[number]["key"];
 
+/** Credential tools keep their independent switches and the existing event grants. */
+export function eventCredentialTools(event: StaffEvent | undefined, access: ReturnType<typeof eventAccess>, features: readonly string[]) {
+  const certificates = Boolean(event?.ticketing_features?.includes("events.certificate_designer"))
+    && (access.edit || access.manager || access.checkIn);
+  const cards = access.edit && features.includes("events.id_cards");
+  const tickets = access.edit && features.includes("events.ticket_designs");
+  const label = certificates
+    ? cards && tickets ? t`Certificates, cards and tickets` : cards ? t`Certificates and ID cards`
+      : tickets ? t`Certificates and tickets` : t`Certificates`
+    : cards && tickets ? t`Cards and tickets` : cards ? t`ID cards` : t`Ticket design`;
+  return { certificates, cards, tickets, label };
+}
+
 /**
  * Which drawer surfaces this viewer may open. Every gate mirrors the event staff grant the API
  * enforces, so a grant-only staffer sees exactly the sections whose actions they hold.
@@ -35,6 +48,7 @@ export type MoreSection = typeof MORE_SECTIONS[number]["key"];
 export function eventDrawerSurfaces(event: StaffEvent | undefined, access: ReturnType<typeof eventAccess>, enabledFeatures: readonly string[] = [],
   enabledModules: readonly string[] = []) {
   const ticketing = event?.ticketing_features ?? [];
+  const credentials = eventCredentialTools(event, access, enabledFeatures);
   const checkable = event?.status === "published" || event?.status === "completed";
   const invites = access.invitations && ticketing.includes("events.invites");
   const ticketTypes = access.manager && ticketing.includes("events.ticket_types");
@@ -56,7 +70,7 @@ export function eventDrawerSurfaces(event: StaffEvent | undefined, access: Retur
     judging: enabledFeatures.includes("events.hackathons") && (access.hackathon || access.judge || access.sponsor),
     "mentor-desk": enabledFeatures.includes("events.mentoring") && access.mentors,
     volunteers: enabledFeatures.includes("events.volunteering") && access.volunteers,
-    certificates: ticketing.includes("events.certificate_designer") && (access.edit || access.manager || access.checkIn),
+    certificates: credentials.certificates || credentials.cards || credentials.tickets,
     "programme-setup": admission && access.hackathon,
     // Stage forms are Events core; travel support needs its own module and the screening grant.
     "stage-forms": access.edit || access.registrations,
@@ -65,7 +79,7 @@ export function eventDrawerSurfaces(event: StaffEvent | undefined, access: Retur
     "checkin-lists": enabledFeatures.includes("events.checkin_lists") && access.checkIn,
   };
   return {
-    ticketing, checkable, invites, ticketTypes, promos, sections,
+    ticketing, checkable, invites, ticketTypes, promos, sections, credentials,
     // Drafts keep the tab so check-in staff learn when it opens; cancelled events have no door.
     checkInTab: access.checkIn && (checkable || event?.status === "draft"),
   };
@@ -78,8 +92,9 @@ type Choice = { key: string; label: string; count?: number };
  * `eventTab` value, so links written before the More tab existed (`?eventTab=tickets`,
  * `?eventTab=settings`, …) still open the right section, and `?eventTab=more` opens the first.
  */
-export function useEventDrawerTabs(top: Choice[], sections: Record<MoreSection, boolean>) {
-  const available = MORE_SECTIONS.filter((section) => sections[section.key]);
+export function useEventDrawerTabs(top: Choice[], sections: Record<MoreSection, boolean>, credentialsLabel?: string) {
+  const available = MORE_SECTIONS.filter((section) => sections[section.key]).map((section) =>
+    section.key === "certificates" && credentialsLabel ? { ...section, label: credentialsLabel } : section);
   const more = available.length ? [{ key: "more", label: t`More` }] : [];
   const ops = useOpsTabs("eventTab", [...top, ...more, ...available], "overview");
   const section = ops.active === "more" ? available[0]?.key

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from django.core import checks
 
 from apps.makerspaces.module_registry import MODULE_KEYS
-from apps.operations.report_registry import REPORT_REGISTRY
+from apps.operations.report_registry import REPORT_REGISTRY, TOMBSTONED_REPORT_KEYS
 from apps.operations.report_coverage_contract import REPORT_COVERAGE_AREAS
 from apps.separability.tombstones import tombstoned_app_labels
 
@@ -128,6 +128,8 @@ def check_report_module_coverage(app_configs=None, **kwargs):
         for report_key in coverage.reports:
             definition = REPORT_REGISTRY.get(report_key)
             if definition is None:
+                if report_key in TOMBSTONED_REPORT_KEYS:
+                    continue  # Declared source unavailable; keep the coverage association.
                 errors.append(checks.Error(
                     f"Module {module_key!r} references unknown report {report_key!r}.",
                     id="operations.E002",

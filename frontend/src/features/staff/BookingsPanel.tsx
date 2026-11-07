@@ -22,7 +22,7 @@ import { useBookingIssues, type QueueStatus } from "./bookingQueueApi";
 type PanelView = "requests" | "spaces" | "issues";
 const QUEUE_STATUSES: QueueStatus[] = ["pending", "confirmed", "rejected", "cancelled", "completed", "no_show", "all"];
 
-export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { makerspaceId: number; recurringEnabled?: boolean }) {
+export function BookingsPanel({ makerspaceId, recurringEnabled = false, publicSiteEnabled = false }: { makerspaceId: number; recurringEnabled?: boolean; publicSiteEnabled?: boolean }) {
   const queryClient = useQueryClient();
   const list = useUrlListState({ q: "", ordering: "name", page: "1" });
   const { page, setPage } = list;
@@ -31,7 +31,7 @@ export function BookingsPanel({ makerspaceId, recurringEnabled = false }: { make
   const [choosingBooking, setChoosingBooking] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   useQuickCreate("booking", () => setChoosingBooking(true));
-  const domainSettings = useDomainSettingsDialog(makerspaceId, "bookings");
+  const domainSettings = useDomainSettingsDialog(makerspaceId, "bookings", true, undefined, publicSiteEnabled);
   const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("space")) || null);
   // "New booking" picks a space, then opens that space with its booking form already up.
   const [bookingSpaceId, setBookingSpaceId] = useState<number | null>(null);

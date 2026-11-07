@@ -15,15 +15,17 @@ export type LoanPolicy = {
   loan_max_items: number; loan_reminder_offsets_hours: number[]; loan_escalate_overdue_days: number;
 };
 const NUMBERS = [
-  ["default_loan_days", "Loan period in days", 1, 365],
-  ["loan_max_renewals", "Maximum renewals", 0, 100],
-  ["loan_renewal_days", "Renewal length in days", 1, 365],
-  ["loan_max_active", "Maximum active loans (0 = unlimited)", 0, undefined],
-  ["loan_max_items", "Maximum outstanding items (0 = unlimited)", 0, undefined],
-  ["loan_escalate_overdue_days", "Escalate to staff after days overdue (0 = off)", 0, 365],
+  ["default_loan_days", t`Loan period in days`, 1, 365, null],
+  ["loan_max_renewals", t`Maximum renewals`, 0, 100, "loans.renewals"],
+  ["loan_renewal_days", t`Renewal length in days`, 1, 365, "loans.renewals"],
+  ["loan_max_active", t`Maximum active loans (0 = unlimited)`, 0, undefined, "loans.limits"],
+  ["loan_max_items", t`Maximum outstanding items (0 = unlimited)`, 0, undefined, "loans.limits"],
+  ["loan_escalate_overdue_days", t`Escalate to staff after days overdue (0 = off)`, 0, 365, null],
 ] as const;
 
-export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: number }) {
+export function MakerspaceLoanPolicySettings({ makerspaceId, enabledFeatures }: {
+  makerspaceId: number; enabledFeatures: readonly string[];
+}) {
   const client = useQueryClient();
   const key = ["staff", "loan-policy", makerspaceId];
   const path = `/admin/makerspace/${makerspaceId}/return-policy`;
@@ -47,7 +49,7 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
   });
   if (query.error) return <SettingsQueryState query={query} resource="loan policy" />;
   if (!form) return <SettingsQueryState query={query} resource="loan policy" />;
-  return <SettingsQueryState query={query} resource="loan policy"><SettingsRow label={t`Loan policy`} helper={t`Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting.`}><form className="@container mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
+  return <SettingsQueryState query={query} resource="loan policy"><SettingsRow label={t`Loan policy`} helper={t`Set loan periods and borrower reminders.`}><form className="@container mt-5 grid gap-3 rounded-md border border-line p-4" onSubmit={(event) => {
     event.preventDefault();
     const parts = offsets.trim() ? offsets.split(",").map((part) => part.trim()) : [];
     const numbers = parts.map(Number);
@@ -61,12 +63,12 @@ export function MakerspaceLoanPolicySettings({ makerspaceId }: { makerspaceId: n
 
 
     <div className="grid gap-3 @md:grid-cols-2">
-      {NUMBERS.map(([field, label, min, max]) => <Field key={field} label={label}>
+      {NUMBERS.filter(([, , , , feature]) => !feature || enabledFeatures.includes(feature)).map(([field, label, min, max]) => <Field key={field} label={label}>
         <input className="desk-input" type="number" required min={min} max={max} step="1" value={form[field]} disabled={save.isPending} onChange={(event) => setForm({ ...form, [field]: Number(event.target.value) })} />
       </Field>)}
-      <Field label={t`Renewal mode`}><select className="desk-input max-w-full" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
+      {enabledFeatures.includes("loans.renewals") ? <Field label={t`Renewal mode`}><select className="desk-input max-w-full" value={form.loan_renewal_mode} disabled={save.isPending} onChange={(event) => setForm({ ...form, loan_renewal_mode: event.target.value as LoanPolicy["loan_renewal_mode"] })}>
         <option value="off">{t`Off`}</option><option value="auto">{t`Automatic within policy`}</option>
-      </select></Field>
+      </select></Field> : null}
       <Field label={t`Reminder offsets in hours`} hint={t`Negative = before due; 0 = due; positive = overdue. Leave empty to disable borrower reminders.`}>
         <input className="desk-input" value={offsets} disabled={save.isPending} onChange={(event) => setOffsets(event.target.value)} />
       </Field>

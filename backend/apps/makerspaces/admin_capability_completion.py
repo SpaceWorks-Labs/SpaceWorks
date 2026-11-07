@@ -16,10 +16,9 @@ Core modules are always on, so unticking one removes nothing.
 
 from dataclasses import dataclass
 
-from apps.makerspaces.capabilities import FEATURE_DEFINITIONS
+from apps.makerspaces.capabilities import FEATURES
+from apps.makerspaces.capability_validation import required_feature_closure
 from apps.makerspaces.module_registry import MODULES, core_module_keys, with_dependencies
-
-FEATURES = {item.key: item for item in FEATURE_DEFINITIONS}
 
 
 def feature_needs(key):
@@ -35,18 +34,6 @@ class Completion:
     added: list
     turned_off_modules: list
     turned_off_features: list
-
-
-def required_feature_closure(keys):
-    """Features plus every feature they transitively `requires_features`."""
-    resolved, queue = set(), list(keys)
-    while queue:
-        key = queue.pop()
-        if key in resolved or key not in FEATURES:
-            continue
-        resolved.add(key)
-        queue.extend(FEATURES[key].requires_features)
-    return resolved
 
 
 def complete_selection(before_modules, modules, features, before_features=()):
@@ -75,10 +62,19 @@ def complete_selection(before_modules, modules, features, before_features=()):
                 dropped.add(key)
                 changed = True
     requested = set(kept_features)
-    closure = required_feature_closure(requested)
-    kept_features = [key for key in FEATURES if key in closure]
+    previously_selected = set(before_features)
+    # An unchanged default can be dormant. Only an explicit selection may fill
+    # in its prerequisites. Keep the choice so enabling a prerequisite wakes it.
+    dormant = {
+        key for key in requested & previously_selected
+        if key in FEATURES and FEATURES[key].default_enabled
+        and required_feature_closure({key}) - previously_selected
+    }
+    closure = required_feature_closure(requested - dormant)
+    dormant = {key for key in dormant if feature_needs(key) <= ticked | core}
+    kept_features = [key for key in FEATURES if key in closure or key in dormant]
     needed = set()
-    for key in kept_features:
+    for key in closure:
         needed |= feature_needs(key)
     completed = with_dependencies((ticked - cascaded) | needed)
     return Completion(

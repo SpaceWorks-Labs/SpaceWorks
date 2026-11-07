@@ -7,8 +7,11 @@ _ID = {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$"}
 
 
 def obj(properties, required=()):
-    return {"type": "object", "additionalProperties": False,
-            "properties": properties, "required": list(required)}
+    schema = {"type": "object", "additionalProperties": False, "properties": properties}
+    required = list(required)
+    if required:
+        schema["required"] = required
+    return schema
 
 
 def condition(depth=1):

@@ -4,8 +4,8 @@
 
 ## Inventory
 
-The permanent heading. It absorbs all six core keys, so this area has no master switch — but nine of the
-thirteen modules under it are optional.
+The permanent heading. It absorbs all six core keys, so this area has no master switch — but six of the
+twelve modules under it are optional. The retired `procurement` key is kept below for reference only.
 
 ### public_inventory
 
@@ -141,7 +141,8 @@ thirteen modules under it are optional.
 - **What it adds** — the `qr_print_batch` workflow: select items or asset units, generate a sheet, keep
   the batch as a record.
 - **Without it** — QR codes still exist and still print one at a time from `qr_management`; what you
-  lose is generating and re-downloading a whole sheet at once.
+  lose is generating and re-downloading a whole sheet at once, and sending batches to an enrolled label
+  printer (the label adapter needs both `devices` and `qr_print_batches`).
 - **Data** — purgeable: print batches and their items.
 
 ### guest_handover

@@ -14,12 +14,12 @@ uninstall, purge or remove a module. Per-module detail — what each key is, wha
 
 ## Areas
 
-You do not have to think in 35 switches. They are grouped into **areas**, which is what the console
+You do not have to think in 37 module switches. They are grouped into **areas**, which is what the console
 shows you:
 
 | Area | Covers |
 |---|---|
-| **Inventory** *(always on)* | The catalogue, request workflow, QR/evidence spine, asset units, containers, transfers, QR print batches, front-desk handover and purchasing |
+| **Inventory** *(always on)* | The catalogue, request workflow, QR/evidence spine, asset units, containers, transfers, QR print batches and front-desk handover. To-Buy and warranty are feature switches here, not modules |
 | **Stocktake** | Scan-first stock counts and variance reporting |
 | **Machines** | Machine registry, the service/print queue, maintenance and warranty |
 | **Events** | Event scheduling and registrations — recurring series, approval and waitlists, QR check-in at the door, post-event feedback and attendance certificates, member calendar feeds, printable attendee badges, and cross-makerspace collaborative events |
@@ -30,6 +30,7 @@ shows you:
 | **Payments** | Taking money online, through Stripe or Razorpay |
 | **Mobile apps** | Attested device sessions, native push and the in-app payment sheet |
 | **Connected devices** | Printers and label printers enrolled with their own signing key |
+| **Shop** | Front-desk and online sales of consumables, kits and merch for pickup, with stock, receipts and the finance ledger |
 
 ### Choosing areas during setup
 

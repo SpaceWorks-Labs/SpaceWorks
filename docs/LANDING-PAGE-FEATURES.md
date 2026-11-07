@@ -29,7 +29,7 @@ These counts were checked against the current sources rather than copied as mark
 
 | What was counted | Result | Source |
 | --- | --- | --- |
-| Module keys and customer-facing areas | **37 modules in 13 areas** | `backend/apps/makerspaces/module_registry.py` |
+| Module keys and customer-facing areas | **37 modules in 12 areas** | `backend/apps/makerspaces/module_registry_catalog.py`, `module_registry_definitions.py` (`GROUPS`) |
 | Module modes | **6 core, 1 on by default (member accounts), 30 opt-in; 31 non-core total** | `docs/MODULES.md` |
 | User-facing module entries | **37**, one per registry key | `docs/MODULES.md` |
 | Seeded default roles | **9**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member | `backend/apps/makerspaces/role_catalog.py` |

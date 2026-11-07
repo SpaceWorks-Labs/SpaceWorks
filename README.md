@@ -140,18 +140,21 @@ them into areas:
 
 | Area | Modules |
 | --- | --- |
-| **Inventory** *(always on)* | [`public_inventory`](docs/MODULES.md#public_inventory), [`request_workflow`](docs/MODULES.md#request_workflow), [`staff_admin`](docs/MODULES.md#staff_admin), [`evidence_uploads`](docs/MODULES.md#evidence_uploads), [`qr_management`](docs/MODULES.md#qr_management), [`scanner`](docs/MODULES.md#scanner), [`asset_units`](docs/MODULES.md#asset_units), [`containers`](docs/MODULES.md#containers), [`bulk_import`](docs/MODULES.md#bulk_import), [`stock_transfers`](docs/MODULES.md#stock_transfers), [`qr_print_batches`](docs/MODULES.md#qr_print_batches), [`guest_handover`](docs/MODULES.md#guest_handover), [`procurement`](docs/MODULES.md#to-buy-was-procurement) |
+| **Inventory** *(always on)* | [`public_inventory`](docs/MODULES.md#public_inventory), [`request_workflow`](docs/MODULES.md#request_workflow), [`staff_admin`](docs/MODULES.md#staff_admin), [`evidence_uploads`](docs/MODULES.md#evidence_uploads), [`qr_management`](docs/MODULES.md#qr_management), [`scanner`](docs/MODULES.md#scanner), [`asset_units`](docs/MODULES.md#asset_units), [`containers`](docs/MODULES.md#containers), [`bulk_import`](docs/MODULES.md#bulk_import), [`stock_transfers`](docs/MODULES.md#stock_transfers), [`qr_print_batches`](docs/MODULES.md#qr_print_batches), [`guest_handover`](docs/MODULES.md#guest_handover) |
 | **Stocktake** | [`stocktake`](docs/MODULES.md#stocktake) |
-| **Machines** | [`machines`](docs/MODULES.md#machines), [`machine_service`](docs/MODULES.md#machine_service), [`printing`](docs/MODULES.md#printing), [`maintenance`](docs/MODULES.md#maintenance-was-maintenance) |
-| **Events** | [`events`](docs/MODULES.md#events) |
+| **Machines** | [`machines`](docs/MODULES.md#machines), [`machine_service`](docs/MODULES.md#machine_service), [`printing`](docs/MODULES.md#printing) |
+| **Events** | [`events`](docs/MODULES.md#events), [`event_reimbursements`](docs/MODULES.md#event_reimbursements) |
 | **Bookings** | [`bookings`](docs/MODULES.md#bookings) |
 | **Membership** | [`membership`](docs/MODULES.md#membership), [`member_accounts`](docs/MODULES.md#member_accounts), [`presence`](docs/MODULES.md#presence) |
-| **Notifications** | [`notifications`](docs/MODULES.md#notifications), [`email`](docs/MODULES.md#email), [`telegram`](docs/MODULES.md#telegram), [`slack`](docs/MODULES.md#slack), [`mattermost`](docs/MODULES.md#mattermost), [`discord`](docs/MODULES.md#discord), [`webhook`](docs/MODULES.md#webhook) |
-| **Reports** | [`reports`](docs/MODULES.md#reports) |
+| **Notifications** | [`notifications`](docs/MODULES.md#notifications), [`email`](docs/MODULES.md#email), [`sms`](docs/MODULES.md#sms), [`whatsapp`](docs/MODULES.md#whatsapp), [`telegram`](docs/MODULES.md#telegram), [`slack`](docs/MODULES.md#slack), [`mattermost`](docs/MODULES.md#mattermost), [`discord`](docs/MODULES.md#discord), [`webhook`](docs/MODULES.md#webhook) |
+| **Reports** | [`reports`](docs/MODULES.md#reports), [`analytics`](docs/MODULES.md#analytics) |
 | **Payments** | [`payments`](docs/MODULES.md#payments) (online checkout only; the ledger is always present) |
 | **Mobile apps** | [`mobile`](docs/MODULES.md#mobile) |
 | **Connected devices** | [`devices`](docs/MODULES.md#devices) |
+| **Shop** | [`shop`](docs/MODULES.md#shop) |
 
+Maintenance, To-Buy and warranty were modules once; they are now feature switches under Machines and
+Inventory (see [the per-parent switches](docs/MODULES.md#maintenance-to-buy-warranty-and-repairs-switches-under-each-parent)).
 Uninstalling a module hides its surfaces and **keeps its data**; deleting a module's rows is a separate,
 superadmin-only step. [Choosing modules](docs/choosing-modules.md) covers setup areas, features,
 defaults and the commands; [MODULES.md](docs/MODULES.md) explains each module and what happens without it.

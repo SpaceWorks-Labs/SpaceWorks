@@ -14,7 +14,7 @@ export function PageHeader({ eyebrow, title, subtitle, meta, primary, secondary,
     {back ? <div className="mb-8"><ActionControl action={{ ...back, icon: "ArrowLeft" }} className="border-transparent bg-transparent px-0 text-sm text-accent-ink hover:bg-transparent hover:underline" /></div> : null}
     {eyebrow ? <p className="mb-2 text-sm text-muted">{eyebrow}</p> : null}
     <div className="flex flex-wrap items-start justify-between gap-4">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-0">
         {identity ? <IdentityChip identity={identity} label={title} /> : null}
         <div className="min-w-0">
           <Heading className={`title-page break-words${accentTitle ? " font-accent" : ""}`}>{title}</Heading>

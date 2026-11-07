@@ -107,7 +107,7 @@ export function EvidenceUpload({
           className="desk-input min-h-11 min-w-0 flex-1 basis-full @sm:basis-0 file:mr-3 file:min-h-11 file:rounded-control file:border-0 file:bg-accent file:px-3 file:text-sm file:font-semibold file:text-on-accent"
         />
         {cameraSupported ? (
-          <button className="desk-button min-h-11 w-full @sm:w-auto" type="button" aria-label={t`Take ${label ?? `${evidenceType} photo`}`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
+          <button className="desk-button min-h-11 w-full @sm:w-auto" type="button" aria-label={t`Camera for ${label ?? `${evidenceType} photo`}`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
             {t`Camera`}</button>
         ) : null}
       </div>

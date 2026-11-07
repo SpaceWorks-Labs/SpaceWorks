@@ -25,13 +25,13 @@ function CompactStat({ label, value, tone, href }: Stat) {
   const attention = tone === "attention" || tone === "danger";
   const zero = value === 0 || value === "0";
   const body = <>
-    <span className="min-w-0 truncate text-sm text-ink">{label}</span>
+    <span className="min-w-0 truncate text-sm text-ink">{label}</span>{" "}
     {attention ? <span className="rounded-full bg-emphasis px-2.5 py-0.5 text-sm font-semibold tabular-nums text-on-emphasis">{value}</span>
       : <span className={`text-base font-semibold tabular-nums ${zero ? "text-muted" : "text-ink"}`}>{value}</span>}
   </>;
   const classes = "flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-2";
-  return href ? <RouteLink href={href} className={`${classes} hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
-    aria-label={`${label}: ${value}`}>{body}</RouteLink> : <div className={classes}>{body}</div>;
+  return href ? <RouteLink href={href} className={`${classes} hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>{body}</RouteLink>
+    : <div className={classes}>{body}</div>;
 }
 
 export function DashboardLayout({ header, callout, progress, stats, overflowStats, main, rail, railContent,

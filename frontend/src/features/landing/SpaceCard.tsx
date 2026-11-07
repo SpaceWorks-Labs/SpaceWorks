@@ -38,7 +38,7 @@ export function SpaceCard({ space }: { space: Makerspace }) {
       <MakerspaceMapLink makerspace={space} className="relative z-10" locationClassName="break-words text-sm text-muted" />
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
         <span className="code-text text-sm text-muted">{space.public_code}</span>
-        <Link className="desk-button-ghost after:absolute after:inset-0 after:rounded-2xl after:content-['']" to={`/m/${space.slug}`} aria-label={t`Open ${space.name} catalog`}>{t`Open catalogue →`}</Link>
+        <Link className="desk-button-ghost after:absolute after:inset-0 after:rounded-2xl after:content-['']" to={`/m/${space.slug}`} aria-label={t`Open catalogue for ${space.name}`}>{t`Open catalogue →`}</Link>
       </div>
     </div>
   </article>;

@@ -28,7 +28,7 @@ export function SetupChecklist({ makerspace, owner, allowedTabs, guestOnly, sing
         <h2 id="setup-heading" className="text-sm font-semibold">{t`Finish setting up ${makerspace.name}`}{steps.length ? t` — ${done} of ${steps.length} done` : ""}</h2>
         <p className="mt-1 text-sm">{t`Progress comes from your makerspace records.`}</p>
       </div>
-      <button className="desk-button-ghost" type="button" aria-label={t`Dismiss setup checklist`} onClick={() => { writeStorage(key, "true"); setDismissed(true); }}>{t`Hide`}</button>
+      <button className="desk-button-ghost" type="button" aria-label={t`Hide setup checklist`} onClick={() => { writeStorage(key, "true"); setDismissed(true); }}>{t`Hide`}</button>
     </div>
     {query.isLoading ? <p role="status" className="mt-3 text-sm">{t`Checking setup…`}</p> : null}
     {query.error ? <p role="alert" className="mt-3 text-sm text-danger">{t`Could not check setup: ${query.error.message}`}</p> : null}

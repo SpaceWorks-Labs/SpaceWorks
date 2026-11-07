@@ -80,7 +80,7 @@ function flapClass(flap: number) {
 export function SpaceWorksHomeLink({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <Link
-      aria-label={t`Open makerspace listing`}
+      aria-label={t`Space Works — Open makerspace listing`}
       className={[
         "inline-flex text-left transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
         className,

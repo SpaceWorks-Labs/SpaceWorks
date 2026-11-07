@@ -75,7 +75,7 @@ export function PublicEvidenceUpload({
       <p className="text-sm font-semibold text-ink">{label}</p>
       {needsEmail ? <p className="text-sm text-muted">{t`Enter your email above before adding the photo.`}</p> : null}
       {cameraSupported ? (
-        <button className="desk-button w-full" type="button" aria-label={t`Take ${label}`} disabled={busy} onClick={() => setCameraOpen(true)}>
+        <button className="desk-button w-full" type="button" aria-label={status === "done" ? t`Retake with camera for ${label}` : t`Take photo with camera for ${label}`} disabled={busy} onClick={() => setCameraOpen(true)}>
           <Camera aria-hidden="true" size={18} />
           {status === "done" ? t`Retake with camera` : t`Take photo with camera`}
         </button>

@@ -731,8 +731,11 @@ msgstr " Enter the code we sent to your WhatsApp."
 msgid " events attended here."
 msgstr " events attended here."
 
-msgid " for alerts, and the event and booking embeds for other websites. The guide is docs/own-domain-and-frontend.md."
-msgstr " for alerts, and the event and booking embeds for other websites. The guide is docs/own-domain-and-frontend.md."
+msgid " for alerts, and the "
+msgstr " for alerts, and the "
+
+msgid " for other websites. Full guide: "
+msgstr " for other websites. Full guide: "
 
 msgid " for server access, the webhooks under "
 msgstr " for server access, the webhooks under "
@@ -2280,6 +2283,12 @@ msgstr "{label}, {flagged} to look at"
 msgid "{label}, zoomed in. Scroll to see all of it."
 msgstr "{label}, zoomed in. Scroll to see all of it."
 
+msgid "{label}: not ready"
+msgstr "{label}: not ready"
+
+msgid "{label}: ready"
+msgstr "{label}: ready"
+
 msgid "{left} can be returned"
 msgstr "{left} can be returned"
 
@@ -3216,6 +3225,9 @@ msgstr "Active: apply this discount to new charges"
 
 msgid "Activities"
 msgstr "Activities"
+
+msgid "Activity"
+msgstr "Activity"
 
 msgid "Activity from your Space Works community."
 msgstr "Activity from your Space Works community."
@@ -4504,6 +4516,9 @@ msgstr "Anything using it stops working at once."
 msgid "API access"
 msgstr "API access"
 
+msgid "API access & connected apps"
+msgstr "API access & connected apps"
+
 msgid "API client scopes"
 msgstr "API client scopes"
 
@@ -4524,6 +4539,9 @@ msgstr "App attestation"
 
 msgid "App connections (OAuth)"
 msgstr "App connections (OAuth)"
+
+msgid "App links"
+msgstr "App links"
 
 msgid "App name"
 msgstr "App name"
@@ -4576,6 +4594,9 @@ msgstr "Apple private key (.p8)"
 
 msgid "Apple push key (.p8)"
 msgstr "Apple push key (.p8)"
+
+msgid "Apple revocation"
+msgstr "Apple revocation"
 
 msgid "Apple Sign in"
 msgstr "Apple Sign in"
@@ -6570,6 +6591,13 @@ msgstr "Camera access was denied."
 msgid "Camera capture"
 msgstr "Camera capture"
 
+#. placeholder {0}: label ?? `${evidenceType} photo`
+msgid "Camera for {0}"
+msgstr "Camera for {0}"
+
+msgid "Camera for {label}"
+msgstr "Camera for {label}"
+
 msgid "Camera is off"
 msgstr "Camera is off"
 
@@ -8552,6 +8580,9 @@ msgstr "Communication preferences"
 msgid "Community"
 msgstr "Community"
 
+msgid "Community counts below 3 show as “fewer than 3”."
+msgstr "Community counts below 3 show as “fewer than 3”."
+
 msgid "Community workshop"
 msgstr "Community workshop"
 
@@ -9897,6 +9928,9 @@ msgstr "Count what's on the shelves and fix the numbers."
 msgid "Counted"
 msgstr "Counted"
 
+msgid "Counted activity per space for the chosen period, with the total across every live space."
+msgstr "Counted activity per space for the chosen period, with the total across every live space."
+
 msgid "Counted activity per space for the chosen period, with the total across every live space. Open a space's reports to see exactly what its Space Manager sees."
 msgstr "Counted activity per space for the chosen period, with the total across every live space. Open a space's reports to see exactly what its Space Manager sees."
 
@@ -9929,12 +9963,6 @@ msgstr "Country code"
 
 msgid "Counts across the platform over the last 30 days."
 msgstr "Counts across the platform over the last 30 days."
-
-msgid "Counts only, never names. Any count below 3 shows as “fewer than 3”."
-msgstr "Counts only, never names. Any count below 3 shows as “fewer than 3”."
-
-msgid "Counts only, never names. Small numbers show as “fewer than 3”."
-msgstr "Counts only, never names. Small numbers show as “fewer than 3”."
 
 msgid "Cover"
 msgstr "Cover"
@@ -10510,6 +10538,9 @@ msgstr "Daily full backup"
 msgid "Daily notification digests"
 msgstr "Daily notification digests"
 
+msgid "Damage"
+msgstr "Damage"
+
 #. placeholder {0}: money(policy.damage_default, currency)
 msgid "Damage charge: {0}."
 msgstr "Damage charge: {0}."
@@ -10602,8 +10633,8 @@ msgstr "Day"
 msgid "Days after an order is ready."
 msgstr "Days after an order is ready."
 
-msgid "Days after collection that items can come back."
-msgstr "Days after collection that items can come back."
+msgid "Days after payment that items can come back."
+msgstr "Days after payment that items can come back."
 
 msgid "Days away that count as a lapse"
 msgstr "Days away that count as a lapse"
@@ -11270,6 +11301,10 @@ msgstr "Devanagari"
 msgid "Developer reference"
 msgstr "Developer reference"
 
+#. placeholder {0}: index + 1
+msgid "Development registration {0}"
+msgstr "Development registration {0}"
+
 msgid "Development room"
 msgstr "Development room"
 
@@ -11489,9 +11524,6 @@ msgstr "Dismiss link"
 
 msgid "Dismiss maker mode"
 msgstr "Dismiss maker mode"
-
-msgid "Dismiss setup checklist"
-msgstr "Dismiss setup checklist"
 
 msgid "Display hex: "
 msgstr "Display hex: "
@@ -12397,9 +12429,6 @@ msgstr "Enable certification or maintenance reminders in makerspace features and
 msgid "Enable hackathon applications"
 msgstr "Enable hackathon applications"
 
-msgid "Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."
-msgstr "Enable Loan renewals and Borrow limits in Features to apply those rules. Renewals are refused for lapsed or restricted borrowers and when another borrower is waiting."
-
 msgid "Enable public event, date and certificate status verification"
 msgstr "Enable public event, date and certificate status verification"
 
@@ -12703,6 +12732,9 @@ msgstr "Error"
 msgid "Error logs"
 msgstr "Error logs"
 
+msgid "Escalate to staff after days overdue (0 = off)"
+msgstr "Escalate to staff after days overdue (0 = off)"
+
 msgid "Escalation re-ping"
 msgstr "Escalation re-ping"
 
@@ -12772,6 +12804,12 @@ msgstr "Event accent"
 
 msgid "Event analytics"
 msgstr "Event analytics"
+
+msgid "event and booking embeds"
+msgstr "event and booking embeds"
+
+msgid "Event and community counts below 3 show as “fewer than 3”."
+msgstr "Event and community counts below 3 show as “fewer than 3”."
 
 msgid "Event application"
 msgstr "Event application"
@@ -12984,11 +13022,20 @@ msgstr "Event websites"
 msgid "Event-day mode · refresh every 15 seconds"
 msgstr "Event-day mode · refresh every 15 seconds"
 
+msgid "Event, community and headline counts below 3 show as “fewer than 3”. Borrower names follow the lending privacy setting."
+msgstr "Event, community and headline counts below 3 show as “fewer than 3”. Borrower names follow the lending privacy setting."
+
 msgid "Events"
 msgstr "Events"
 
 msgid "Events · {displayName}"
 msgstr "Events · {displayName}"
+
+msgid "Events (total)"
+msgstr "Events (total)"
+
+msgid "Events are free here, so changing type costs nothing."
+msgstr "Events are free here, so changing type costs nothing."
 
 msgid "Events at partner makerspaces"
 msgstr "Events at partner makerspaces"
@@ -13119,6 +13166,9 @@ msgstr "Every space has the same built-in roles. Space Manager and Member are he
 
 msgid "Every space's totals combined, with each space's own numbers beside them. Counts and money only; no member names."
 msgstr "Every space's totals combined, with each space's own numbers beside them. Counts and money only; no member names."
+
+msgid "Every space's trail and the platform's own actions, append-only. Filter by makerspace ID, or show platform-level rows only."
+msgstr "Every space's trail and the platform's own actions, append-only. Filter by makerspace ID, or show platform-level rows only."
 
 msgid "Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it."
 msgstr "Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it."
@@ -14915,6 +14965,9 @@ msgstr "Hide report data"
 msgid "Hide revision history"
 msgstr "Hide revision history"
 
+msgid "Hide setup checklist"
+msgstr "Hide setup checklist"
+
 msgid "Hide table"
 msgstr "Hide table"
 
@@ -16109,6 +16162,9 @@ msgstr "iOS client ID"
 msgid "IP access"
 msgstr "IP access"
 
+msgid "iPhone and iPad"
+msgstr "iPhone and iPad"
+
 #. placeholder {0}: data.label.toLowerCase()
 msgid "Is {0} free or paid?"
 msgstr "Is {0} free or paid?"
@@ -16297,6 +16353,9 @@ msgstr "Item name"
 
 msgid "Item photo"
 msgstr "Item photo"
+
+msgid "Item price"
+msgstr "Item price"
 
 msgid "Item schedule"
 msgstr "Item schedule"
@@ -18028,6 +18087,9 @@ msgstr "Loan deposits and late fees"
 msgid "Loan fee waived"
 msgstr "Loan fee waived"
 
+msgid "Loan period in days"
+msgstr "Loan period in days"
+
 msgid "Loan policy"
 msgstr "Loan policy"
 
@@ -18221,6 +18283,9 @@ msgstr "Looking for a team?"
 msgid "Lost"
 msgstr "Lost"
 
+msgid "Lost item"
+msgstr "Lost item"
+
 #. placeholder {0}: money(policy.lost_default, currency)
 msgid "Lost item charge: {0}."
 msgstr "Lost item charge: {0}."
@@ -18276,6 +18341,9 @@ msgstr "Machine #{0}"
 
 msgid "Machine activity"
 msgstr "Machine activity"
+
+msgid "Machine charges are off in this space, so jobs are free: no quote, no payment and no failure charge. The stored money settings come back when charges are turned on."
+msgstr "Machine charges are off in this space, so jobs are free: no quote, no payment and no failure charge. The stored money settings come back when charges are turned on."
 
 msgid "Machine charges are off in this space, so machine use is free."
 msgstr "Machine charges are off in this space, so machine use is free."
@@ -18342,6 +18410,9 @@ msgstr "Machine time booking"
 
 msgid "Machine time bookings are not available. The requires booking flag does not block service requests or job starts."
 msgstr "Machine time bookings are not available. The requires booking flag does not block service requests or job starts."
+
+msgid "Machine time per hour"
+msgstr "Machine time per hour"
 
 msgid "Machine To-Buy"
 msgstr "Machine To-Buy"
@@ -18447,8 +18518,8 @@ msgstr "Make a new short link?"
 msgid "Make a short link to put on posters and chats. It always opens this event."
 msgstr "Make a short link to put on posters and chats. It always opens this event."
 
-msgid "Make a space read-only when its trial ends or an invoice is overdue"
-msgstr "Make a space read-only when its trial ends or an invoice is overdue"
+msgid "Make a space read-only when an invoice is overdue past its grace period (trials always end read-only)"
+msgstr "Make a space read-only when an invoice is overdue past its grace period (trials always end read-only)"
 
 msgid "Make and model"
 msgstr "Make and model"
@@ -18768,6 +18839,9 @@ msgstr "Material catalogue and job intake"
 msgid "Material name"
 msgstr "Material name"
 
+msgid "Material per unit"
+msgstr "Material per unit"
+
 msgid "Material pool"
 msgstr "Material pool"
 
@@ -18788,6 +18862,9 @@ msgstr "Mattermost bot"
 
 msgid "Maximum"
 msgstr "Maximum"
+
+msgid "Maximum active loans (0 = unlimited)"
+msgstr "Maximum active loans (0 = unlimited)"
 
 msgid "Maximum active teams (1–100)"
 msgstr "Maximum active teams (1–100)"
@@ -18811,11 +18888,17 @@ msgstr "Maximum for this record: {0}"
 msgid "Maximum items"
 msgstr "Maximum items"
 
+msgid "Maximum outstanding items (0 = unlimited)"
+msgstr "Maximum outstanding items (0 = unlimited)"
+
 msgid "Maximum projects per judge"
 msgstr "Maximum projects per judge"
 
 msgid "Maximum redemptions"
 msgstr "Maximum redemptions"
+
+msgid "Maximum renewals"
+msgstr "Maximum renewals"
 
 msgid "Maximum team size"
 msgstr "Maximum team size"
@@ -19397,6 +19480,12 @@ msgstr "Mobile"
 msgid "Mobile apps"
 msgstr "Mobile apps"
 
+msgid "mobile readiness"
+msgstr "mobile readiness"
+
+msgid "Mobile readiness"
+msgstr "Mobile readiness"
+
 msgid "Model"
 msgstr "Model"
 
@@ -19836,6 +19925,9 @@ msgstr "Needs a module that is not installed here."
 
 msgid "Needs a retry"
 msgstr "Needs a retry"
+
+msgid "needs action"
+msgstr "needs action"
 
 msgid "Needs approval"
 msgstr "Needs approval"
@@ -20346,6 +20438,9 @@ msgstr "No applications yet"
 
 msgid "No applications yet."
 msgstr "No applications yet."
+
+msgid "No approved registration for this platform yet."
+msgstr "No approved registration for this platform yet."
 
 msgid "No apps are connected to your account."
 msgstr "No apps are connected to your account."
@@ -22768,16 +22863,16 @@ msgid "Open {0} ↗"
 msgstr "Open {0} ↗"
 
 #. placeholder {0}: space.name
-msgid "Open {0} catalog"
-msgstr "Open {0} catalog"
-
-#. placeholder {0}: space.name
 msgid "Open {0} dashboard"
 msgstr "Open {0} dashboard"
 
 #. placeholder {0}: space.name
 msgid "Open {0} in the console"
 msgstr "Open {0} in the console"
+
+#. placeholder {0}: space.name
+msgid "Open {0}'s reports"
+msgstr "Open {0}'s reports"
 
 msgid "Open {label} to connect ↗"
 msgstr "Open {label} to connect ↗"
@@ -22826,6 +22921,10 @@ msgstr "Open budget"
 
 msgid "Open catalogue →"
 msgstr "Open catalogue →"
+
+#. placeholder {0}: space.name
+msgid "Open catalogue for {0}"
+msgstr "Open catalogue for {0}"
 
 msgid "Open check-in"
 msgstr "Open check-in"
@@ -22912,9 +23011,6 @@ msgstr "Open loan"
 
 msgid "Open Machines to manage machine-service queues."
 msgstr "Open Machines to manage machine-service queues."
-
-msgid "Open makerspace listing"
-msgstr "Open makerspace listing"
 
 msgid "Open map"
 msgstr "Open map"
@@ -24134,11 +24230,23 @@ msgstr "People’s choice voting is not running."
 msgid "People’s choice winner"
 msgstr "People’s choice winner"
 
+msgid "Per booking"
+msgstr "Per booking"
+
+msgid "Per hour"
+msgstr "Per hour"
+
 msgid "Per hour of the event"
 msgstr "Per hour of the event"
 
+msgid "Per job"
+msgstr "Per job"
+
 msgid "Per printer"
 msgstr "Per printer"
+
+msgid "Per registration"
+msgstr "Per registration"
 
 msgid "Per-event refund policy"
 msgstr "Per-event refund policy"
@@ -24617,6 +24725,9 @@ msgstr "Platform age {0} days. "
 msgid "Platform analytics"
 msgstr "Platform analytics"
 
+msgid "Platform audit log"
+msgstr "Platform audit log"
+
 msgid "Platform console"
 msgstr "Platform console"
 
@@ -24688,6 +24799,12 @@ msgstr "Platform webhook secret"
 
 msgid "Platform webhook secret set"
 msgstr "Platform webhook secret set"
+
+msgid "Platform-level only"
+msgstr "Platform-level only"
+
+msgid "Platform-level rows only"
+msgstr "Platform-level rows only"
 
 msgid "Platform-wide identities link to global accounts; makerspace permissions still come from each membership."
 msgstr "Platform-wide identities link to global accounts; makerspace permissions still come from each membership."
@@ -25609,6 +25726,10 @@ msgstr "Product: {0}"
 
 msgid "Production"
 msgstr "Production"
+
+#. placeholder {0}: index + 1
+msgid "Production registration {0}"
+msgstr "Production registration {0}"
 
 msgid "Products"
 msgstr "Products"
@@ -26592,6 +26713,9 @@ msgstr "Read-only lifted."
 msgid "Read-only{0}: {1}"
 msgstr "Read-only{0}: {1}"
 
+msgid "Readiness"
+msgstr "Readiness"
+
 msgid "Readiness and waiting for you"
 msgstr "Readiness and waiting for you"
 
@@ -27262,6 +27386,9 @@ msgstr "Refund reference (optional)"
 msgid "Refund the unused part of the term"
 msgstr "Refund the unused part of the term"
 
+msgid "Refundable deposit"
+msgstr "Refundable deposit"
+
 #. placeholder {0}: options.currency.toUpperCase()
 msgid "Refundable deposit ({0})"
 msgstr "Refundable deposit ({0})"
@@ -27896,6 +28023,9 @@ msgstr "Renewal desk"
 msgid "Renewal is cancelled. Your current term remains available until it ends."
 msgstr "Renewal is cancelled. Your current term remains available until it ends."
 
+msgid "Renewal length in days"
+msgstr "Renewal length in days"
+
 msgid "Renewal mode"
 msgstr "Renewal mode"
 
@@ -27913,6 +28043,12 @@ msgstr "Renewing..."
 
 msgid "Renewing…"
 msgstr "Renewing…"
+
+msgid "Rental per day"
+msgstr "Rental per day"
+
+msgid "Rental per loan"
+msgstr "Rental per loan"
 
 msgid "Rental timing"
 msgstr "Rental timing"
@@ -28778,6 +28914,9 @@ msgstr "Retake"
 msgid "Retake with camera"
 msgstr "Retake with camera"
 
+msgid "Retake with camera for {label}"
+msgstr "Retake with camera for {label}"
+
 msgid "Retention days"
 msgstr "Retention days"
 
@@ -28982,8 +29121,8 @@ msgid "Returns and refunds"
 msgstr "Returns and refunds"
 
 #. placeholder {0}: shop.returns_days
-msgid "Returns are accepted at the desk within {0} days of collection."
-msgstr "Returns are accepted at the desk within {0} days of collection."
+msgid "Returns are accepted at the desk within {0} days of payment."
+msgstr "Returns are accepted at the desk within {0} days of payment."
 
 msgid "Returns window (days)"
 msgstr "Returns window (days)"
@@ -29668,6 +29807,9 @@ msgstr "Run reviewed import"
 
 msgid "Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend."
 msgstr "Run this space's public site and staff console on a domain you control, served by this deployment or by your own SpaceWorks frontend."
+
+msgid "Run your space on your own domain or frontend ↗"
+msgstr "Run your space on your own domain or frontend ↗"
 
 msgid "Running"
 msgstr "Running"
@@ -30637,9 +30779,6 @@ msgstr "Search members"
 msgid "Search members, staff and people registered for this event. Type at least two characters."
 msgstr "Search members, staff and people registered for this event. Type at least two characters."
 
-msgid "Search or jump to…"
-msgstr "Search or jump to…"
-
 msgid "Search organizations"
 msgstr "Search organizations"
 
@@ -30982,6 +31121,9 @@ msgstr "Send a new code"
 msgid "Send a new phone verification code"
 msgstr "Send a new phone verification code"
 
+msgid "Send a new quote"
+msgstr "Send a new quote"
+
 msgid "Send a print job to {displayName}"
 msgstr "Send a print job to {displayName}"
 
@@ -31318,6 +31460,9 @@ msgstr "Set due for request #{0}"
 
 msgid "Set it up now"
 msgstr "Set it up now"
+
+msgid "Set loan periods and borrower reminders."
+msgstr "Set loan periods and borrower reminders."
 
 msgid "Set machine status to idle"
 msgstr "Set machine status to idle"
@@ -32047,6 +32192,12 @@ msgstr "Sign up"
 msgid "sign you out on every device and app;"
 msgstr "sign you out on every device and app;"
 
+msgid "Sign-in"
+msgstr "Sign-in"
+
+msgid "Sign-in checks pass."
+msgstr "Sign-in checks pass."
+
 msgid "Sign-in codes by text (Twilio). Phone sign-in stays hidden until this is on and complete."
 msgstr "Sign-in codes by text (Twilio). Phone sign-in stays hidden until this is on and complete."
 
@@ -32518,6 +32669,9 @@ msgstr "Space website (optional)"
 
 msgid "Space Works"
 msgstr "Space Works"
+
+msgid "Space Works — Open makerspace listing"
+msgstr "Space Works — Open makerspace listing"
 
 msgid "Space Works {version}"
 msgstr "Space Works {version}"
@@ -33640,6 +33794,9 @@ msgstr "T-shirt size"
 msgid "Table {0}"
 msgstr "Table {0}"
 
+msgid "Table data"
+msgstr "Table data"
+
 msgid "Table or bench"
 msgstr "Table or bench"
 
@@ -33667,16 +33824,9 @@ msgstr "Tags (comma separated)"
 msgid "Tags, comma separated"
 msgstr "Tags, comma separated"
 
-#. placeholder {0}: label ?? `${evidenceType} photo`
 #. placeholder {0}: shopMoney(order.amount_due, order.currency)
 msgid "Take {0}"
 msgstr "Take {0}"
-
-msgid "Take {label}"
-msgstr "Take {label}"
-
-msgid "Take {label} photo"
-msgstr "Take {label} photo"
 
 msgid "Take a photo"
 msgstr "Take a photo"
@@ -33705,6 +33855,9 @@ msgstr "Take photo"
 msgid "Take photo with camera"
 msgstr "Take photo with camera"
 
+msgid "Take photo with camera for {label}"
+msgstr "Take photo with camera for {label}"
+
 msgid "Take the photo at the desk or choose one they sent you. It replaces any photo on the card and answers an open photo request."
 msgstr "Take the photo at the desk or choose one they sent you. It replaces any photo on the card and answers an open photo request."
 
@@ -33728,6 +33881,9 @@ msgstr "Tamil"
 
 msgid "TAR.GZ, TGZ · gzip · 200 MiB"
 msgstr "TAR.GZ, TGZ · gzip · 200 MiB"
+
+msgid "Target"
+msgstr "Target"
 
 msgid "Target · resolve every identity"
 msgstr "Target · resolve every identity"
@@ -34422,6 +34578,9 @@ msgstr "The font list couldn't load."
 msgid "The frame matches the photo spot on the card. Only the cropped part is uploaded."
 msgstr "The frame matches the photo spot on the card. Only the cropped part is uploaded."
 
+msgid "The front desk is turned off for this makerspace."
+msgstr "The front desk is turned off for this makerspace."
+
 msgid "The front has no name on it. Add a Name data field or {{name}} in a text layer."
 msgstr "The front has no name on it. Add a Name data field or {{name}} in a text layer."
 
@@ -34467,6 +34626,9 @@ msgstr "The items held for you go to the next person in line."
 
 msgid "The job stopped. Try again."
 msgstr "The job stopped. Try again."
+
+msgid "The kiosk is opening."
+msgstr "The kiosk is opening."
 
 msgid "The last stage"
 msgstr "The last stage"
@@ -34809,6 +34971,9 @@ msgstr "The shortcut selects all currently available types. Add newly created ty
 
 msgid "The signature upload failed. Choose the image to try again."
 msgstr "The signature upload failed. Choose the image to try again."
+
+msgid "The site is opening."
+msgstr "The site is opening."
 
 #. placeholder {0}: money(page.currency, page.minimum_amount)
 msgid "The smallest gift here is {0}."

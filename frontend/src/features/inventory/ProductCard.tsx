@@ -35,12 +35,12 @@ export function ProductCard({
         className={`relative w-full overflow-hidden rounded-t-xl border-b border-line bg-surface text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${product.image_url ? "aspect-[4/3]" : "h-24"}`}
         type="button"
         onClick={onOpenDetails}
-        aria-label={t`Open details for ${product.name}`}
       >
+        <span className="sr-only">{t`Open details for ${product.name}`}</span>{" "}
         {product.image_url ? (
           <img
             src={product.image_url}
-            alt={product.name}
+            alt=""
             loading="lazy"
             className="h-full w-full object-cover"
           />

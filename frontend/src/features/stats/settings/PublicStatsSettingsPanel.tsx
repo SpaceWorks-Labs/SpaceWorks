@@ -26,7 +26,7 @@ export function PublicStatsSettingsPanel({ makerspaceId, slug }: { makerspaceId:
 
   return <div className="grid">
     {!canEdit ? <div className="py-4"><Callout size="inline" tone="warn" lead="Only the Space Manager can change the public stats page." /></div> : null}
-    <SettingsRow label={t`Public stats page`} helper={t`Counts only, never names. Any count below 3 shows as “fewer than 3”.`}>
+    <SettingsRow label={t`Public stats page`} helper={t`Event, community and headline counts below 3 show as “fewer than 3”. Borrower names follow the lending privacy setting.`}>
       <div className="grid gap-3">
         <StatusPill label={value.enabled ? t`On` : t`Off`} tone={value.enabled ? "success" : "neutral"} />
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.enabled}

@@ -48,7 +48,7 @@ export function CommunitySection({ community, period }: { community: PublicStats
       {shown.map(([key, label, periodic]) => <StatCard key={key} label={periodic ? `${label}, ${period}` : label}
         value={formatCount(community[key])} />)}
     </div>
-    <p className="text-sm text-muted">{t`Counts only, never names. Any count below 3 shows as “fewer than 3”.`}</p>
+    <p className="text-sm text-muted">{t`Community counts below 3 show as “fewer than 3”.`}</p>
   </Section>;
 }
 

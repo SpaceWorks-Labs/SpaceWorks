@@ -7,7 +7,7 @@ import { focusClass, seriesColor, seriesDash } from "./chartStyle";
 export type ChartProps = { title: string; data: ChartData };
 export const valueText = (value: number, series: ChartSeries) => `${new Intl.NumberFormat(formatLocale(), { maximumFractionDigits: 3 }).format(value)} ${series.currency ?? ""} ${series.unit}`.trim();
 
-/** A single keyboard entry opens the full data, avoiding hundreds of SVG tab stops. */
+/** Keyboard users can scroll the chart or open its data without individual SVG tab stops. */
 export function ChartFrame({ title, data, children }: ChartProps & { children: ReactNode }) {
   const id = useId();
   const [table, setTable] = useState(false);
@@ -15,7 +15,7 @@ export function ChartFrame({ title, data, children }: ChartProps & { children: R
     <figcaption id={`${id}-caption`} className="text-sm font-semibold">{title}</figcaption>
     <p className="text-sm text-muted">{data.summary}</p>
     {!data.series.length ? <p>{t`No chart data.`}</p> : <>
-      <div className="overflow-x-auto">{children}</div>
+      <div role="region" aria-labelledby={`${id}-caption`} tabIndex={0} className={`overflow-x-auto ${focusClass}`}>{children}</div>
       <button type="button" className={`desk-button ${focusClass}`} aria-expanded={table} aria-controls={`${id}-table`} onClick={() => setTable(!table)}>
         {table ? t`Hide table` : t`Show as table`}
       </button>

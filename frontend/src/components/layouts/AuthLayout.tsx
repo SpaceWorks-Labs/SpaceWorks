@@ -29,7 +29,7 @@ export function AuthLayout({ brand, eyebrow, title, modeSwitch, social, dividerL
   return <LayoutFrame standalone={standalone} width={width}>
     <div className="sw-auth">
       <div className="flex min-w-0 flex-col">
-        <a href="/" aria-label={t`Open makerspace listing`} className="mb-6 inline-flex self-start rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+        <a href="/" aria-label={t`Space Works — Open makerspace listing`} className="mb-6 inline-flex self-start rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
           <span className="inline-flex sm:hidden"><SpaceWorksLogo variant="stacked" size={180} /></span>
           <span className="hidden sm:inline-flex"><SpaceWorksLogo variant="horizontal" size={288} /></span>
         </a>

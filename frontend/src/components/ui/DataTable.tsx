@@ -107,7 +107,7 @@ export function DataTable<T>({
     <div className="min-w-0 rounded-xl border border-line bg-panel">
       {listState ? <ListColumns columns={columns} value={{ columns: listState.values.columns ?? "", density: listState.values.density ?? "comfortable" }} onChange={value => listState.restore({ ...listState.values, ...value })} /> : null}
       {/* Tablet+: wide tables scroll inside this box, never the page. */}
-      <div className="overflow-x-auto overscroll-x-contain rounded-xl">
+      <div role="region" aria-label={caption || t`Table data`} tabIndex={0} className="overflow-x-auto overscroll-x-contain rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <table role="table" className="block w-full text-left text-sm md:table md:min-w-[640px]" aria-busy={loading}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
         <thead role="rowgroup" className={`${phoneHeader ? "block" : "max-md:sr-only"} bg-surface dark:bg-hover text-xs text-muted md:table-header-group`}>

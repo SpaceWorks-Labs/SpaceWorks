@@ -218,7 +218,7 @@ export function ImageUploader({
               className="block min-h-11 w-full max-w-full min-w-0 flex-1 basis-56 text-sm text-muted file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-accent"
             />
             {cameraSupported ? (
-              <button className="desk-button min-h-11" type="button" aria-label={t`Take ${label} photo`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
+              <button className="desk-button min-h-11" type="button" aria-label={t`Camera for ${label}`} disabled={disabled || status === "uploading"} onClick={() => setCameraOpen(true)}>
                 {t`Camera`}</button>
             ) : null}
           </div>

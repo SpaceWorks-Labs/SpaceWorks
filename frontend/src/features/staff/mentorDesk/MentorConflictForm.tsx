@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { Card, Field } from '../../../components/ui'
 import type { EventScope } from '../../events/contributions/types'
@@ -9,15 +10,15 @@ export function MentorConflictForm({ scope, assignmentId, initial }: { scope: Ev
   const [team, setTeam] = useState(String(initial?.team_id ?? ''))
   const [reason, setReason] = useState(initial?.reason ?? '')
   const [active, setActive] = useState(true)
-  return <Card><h2 className="title-section">Declare a team conflict</h2><form className="mt-4 grid gap-4" onSubmit={event => {
+  return <Card><h2 className="title-section">{t`Declare a team conflict`}</h2><form className="mt-4 grid gap-4" onSubmit={event => {
     event.preventDefault(); command.mutate({ path: '/mentor-conflicts/', version: initial?.version ?? 0,
       fields: { mentor_assignment_id: assignmentId, team_id: Number(team), kind: initial?.kind ?? 'declared', active, reason } })
   }}>
-    <SetupText label="Conflicting team ID" type="number" value={team} onChange={setTeam} required />
-    <Field label="Private conflict reason"><textarea className="desk-input" maxLength={2000} required value={reason} onChange={event => setReason(event.target.value)} /></Field>
-    {initial ? <Field label="Conflict state"><select className="desk-input min-h-11" value={String(active)} onChange={event => setActive(event.target.value === 'true')}><option value="true">Active conflict</option><option value="false">End declared conflict</option></select></Field> : null}
+    <SetupText label={t`Conflicting team ID`} type="number" value={team} onChange={setTeam} required />
+    <Field label={t`Private conflict reason`}><textarea className="desk-input" maxLength={2000} required value={reason} onChange={event => setReason(event.target.value)} /></Field>
+    {initial ? <Field label={t`Conflict state`}><select className="desk-input min-h-11" value={String(active)} onChange={event => setActive(event.target.value === 'true')}><option value="true">{t`Active conflict`}</option><option value="false">{t`End declared conflict`}</option></select></Field> : null}
     {command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
-    {command.isSuccess ? <p role="status">Conflict declaration saved.</p> : null}
-    <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending}>Save conflict declaration</button>
+    {command.isSuccess ? <p role="status">{t`Conflict declaration saved.`}</p> : null}
+    <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending}>{t`Save conflict declaration`}</button>
   </form></Card>
 }

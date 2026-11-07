@@ -1,25 +1,26 @@
+import { t } from "@lingui/core/macro";
 import { Card, StatusPill } from "../../components/ui";
 import { useUpiQr } from "../members/MemberPaymentOffline";
 import { money, type GiftStatus } from "./donationsApi";
 
 const STATUS: Record<GiftStatus["status"], { label: string; tone: "success" | "warn" | "neutral" }> = {
-  paid: { label: "Received", tone: "success" }, pending: { label: "Waiting for payment", tone: "warn" },
-  cancelled: { label: "Cancelled", tone: "neutral" },
+  paid: { label: t`Received`, tone: "success" }, pending: { label: t`Waiting for payment`, tone: "warn" },
+  cancelled: { label: t`Cancelled`, tone: "neutral" },
 };
 
 /** How to pay a gift offline: the space's own instructions and, with UPI, a QR for the exact amount. */
 export function OfflineGiftInstructions({ gift }: { gift: GiftStatus }) {
   const qr = useUpiQr(gift.offline?.upi?.uri ?? null);
   if (!gift.offline || (!gift.offline.instructions && !gift.offline.upi)) {
-    return <p className="text-sm text-muted">The space will tell you how to pay. Keep this page to check on your gift.</p>;
+    return <p className="text-sm text-muted">{t`The space will tell you how to pay. Keep this page to check on your gift.`}</p>;
   }
   return <div className="grid gap-3">
-    <h3 className="title-section">Pay offline</h3>
+    <h3 className="title-section">{t`Pay offline`}</h3>
     {gift.offline.instructions ? <p className="whitespace-pre-wrap text-sm">{gift.offline.instructions}</p> : null}
     {gift.offline.upi ? <div className="grid gap-2">
-      {qr ? <img src={qr} alt={`UPI QR code to pay ${money(gift.currency, gift.amount)}`} width={180} height={180}
+      {qr ? <img src={qr} alt={t`UPI QR code to pay ${money(gift.currency, gift.amount)}`} width={180} height={180}
         className="rounded-md border border-line bg-white p-2" /> : null}
-      {gift.offline.upi.vpa ? <p className="text-sm">UPI ID <span className="code-text">{gift.offline.upi.vpa}</span></p> : null}
+      {gift.offline.upi.vpa ? <p className="text-sm">{t`UPI ID `}<span className="code-text">{gift.offline.upi.vpa}</span></p> : null}
     </div> : null}
   </div>;
 }
@@ -35,16 +36,16 @@ export function GiftStatusView({ gift, taxReceiptHref, onPayOnline, paying = fal
       <StatusPill label={status.label} tone={status.tone} />
     </div>
     <dl className="grid gap-2 text-sm sm:grid-cols-2">
-      <div><dt className="text-muted">To</dt><dd>{gift.makerspace}{gift.campaign ? ` · ${gift.campaign}` : ""}</dd></div>
-      {gift.receipt_number ? <div><dt className="text-muted">Receipt</dt><dd className="tabular-nums">{gift.receipt_number}</dd></div> : null}
+      <div><dt className="text-muted">{t`To`}</dt><dd>{gift.makerspace}{gift.campaign ? ` · ${gift.campaign}` : ""}</dd></div>
+      {gift.receipt_number ? <div><dt className="text-muted">{t`Receipt`}</dt><dd className="tabular-nums">{gift.receipt_number}</dd></div> : null}
       {gift.donor_pan_masked ? <div><dt className="text-muted">PAN</dt><dd className="tabular-nums">{gift.donor_pan_masked}</dd></div> : null}
-      {gift.tax_receipt_number ? <div><dt className="text-muted">80G receipt</dt><dd className="tabular-nums">{gift.tax_receipt_number}</dd></div> : null}
+      {gift.tax_receipt_number ? <div><dt className="text-muted">{t`80G receipt`}</dt><dd className="tabular-nums">{gift.tax_receipt_number}</dd></div> : null}
     </dl>
-    {gift.status === "paid" ? <p className="text-sm">Thank you. Your gift has been received.</p> : null}
+    {gift.status === "paid" ? <p className="text-sm">{t`Thank you. Your gift has been received.`}</p> : null}
     {gift.tax_receipt_number && taxReceiptHref ? <a className="desk-button justify-self-start" href={taxReceiptHref}
-      rel="noopener" download>Download 80G receipt (PDF)</a> : null}
+      rel="noopener" download>{t`Download 80G receipt (PDF)`}</a> : null}
     {gift.status === "pending" && gift.online_available && onPayOnline ? <button type="button" className="desk-button-primary justify-self-start"
-      disabled={paying} onClick={onPayOnline}>{paying ? "Opening checkout…" : "Pay online"}</button> : null}
+      disabled={paying} onClick={onPayOnline}>{paying ? t`Opening checkout…` : t`Pay online`}</button> : null}
     {gift.status === "pending" ? <OfflineGiftInstructions gift={gift} /> : null}
   </div></Card>;
 }

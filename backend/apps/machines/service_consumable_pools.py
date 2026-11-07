@@ -1,5 +1,6 @@
 """Row-locked accounting authority for pooled machine consumables."""
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -22,9 +23,9 @@ def _grams(value, field):
     try:
         parsed = Decimal(str(value)).quantize(Decimal("0.01"))
     except (InvalidOperation, TypeError, ValueError) as exc:
-        raise ValidationError({field: "Enter a valid gram amount."}) from exc
+        raise ValidationError({field: gettext("Enter a valid gram amount.")}) from exc
     if not parsed.is_finite() or parsed < 0:
-        raise ValidationError({field: "Enter a non-negative gram amount."})
+        raise ValidationError({field: gettext("Enter a non-negative gram amount.")})
     return parsed
 
 
@@ -43,23 +44,23 @@ def _validate_pool(machine, pool, payload=None):
 def create_pool(makerspace, actor, *, material, initial_grams, machine=None, machine_type=None, color="", color_hex="", brand="", lot_code="", low_threshold_grams=None, is_public=True):
     initial = _grams(initial_grams, "initial_grams")
     if not str(material).strip():
-        raise ValidationError({"material": "Material is required."})
+        raise ValidationError({"material": gettext("Material is required.")})
     color_hex = str(color_hex).strip().lower()
     if color_hex and (len(color_hex) != 7 or color_hex[0] != "#" or any(char not in "0123456789abcdef" for char in color_hex[1:])):
-        raise ValidationError({"color_hex": "Enter a colour in #RRGGBB format."})
+        raise ValidationError({"color_hex": gettext("Enter a colour in #RRGGBB format.")})
     if machine is not None and machine_type is not None:
-        raise ValidationError({"machine_type": "Choose either machine or machine_type, not both."})
+        raise ValidationError({"machine_type": gettext("Choose either machine or machine_type, not both.")})
     if machine is not None:
         machine = Machine.objects.select_for_update().get(pk=machine.pk)
         if machine.makerspace_id != makerspace.pk:
-            raise ValidationError({"machine": "Machine must belong to this makerspace."})
+            raise ValidationError({"machine": gettext("Machine must belong to this makerspace.")})
     if machine_type is not None:
         machine_type = MachineType.objects.select_for_update().get(pk=machine_type.pk)
         local_type = machine_type.makerspace_id == makerspace.pk
         global_builtin = machine_type.makerspace_id is None and machine_type.is_builtin
         if not (local_type or global_builtin):
             raise ValidationError({
-                "machine_type": "Machine type must be global or belong to this makerspace."
+                "machine_type": gettext("Machine type must be global or belong to this makerspace.")
             })
     threshold = None if low_threshold_grams is None else _grams(low_threshold_grams, "low_threshold_grams")
     pool = MachineConsumablePool.objects.create(
@@ -94,9 +95,9 @@ def _apply(pool, actor, *, kind, delta, service_request=None, usage_entry=None, 
     delta = Decimal(delta).quantize(Decimal("0.01"))
     after = pool.remaining_grams + delta
     if after < 0:
-        raise ValidationError({"grams": f"Only {pool.remaining_grams} grams remain."})
+        raise ValidationError({"grams": gettext('Only {remaining_grams} grams remain.').format(remaining_grams=pool.remaining_grams)})
     if after > pool.initial_grams:
-        raise ValidationError({"grams": "Adjustment would exceed initial grams."})
+        raise ValidationError({"grams": gettext("Adjustment would exceed initial grams.")})
     row = MachineConsumableAdjustment.objects.create(
         consumable_pool=pool, makerspace=pool.makerspace, kind=kind, quantity_delta=delta,
         service_request=service_request, usage_entry=usage_entry, reason=str(reason).strip(), created_by=actor,
@@ -118,17 +119,17 @@ def reserve_for_request(service_request, actor, *, pool, planned_grams, machine)
     locked = _locked_pool(pool)
     planned = _grams(planned_grams, "planned_grams")
     if not planned:
-        raise ValidationError({"planned_grams": "Planned grams must be greater than zero."})
+        raise ValidationError({"planned_grams": gettext("Planned grams must be greater than zero.")})
     if not locked.is_active:
-        raise ValidationError({"consumable_pool": "Consumable pool is retired."})
+        raise ValidationError({"consumable_pool": gettext("Consumable pool is retired.")})
     # `pool_serves_machine` ties the pool to the MACHINE's tenant; the check it replaced tied it to
     # the REQUEST's. Neither implies the other here -- nothing in this function validates the
     # machine against the request -- so both are asserted rather than trading one for the other.
     if locked.makerspace_id != request.makerspace_id or not pool_serves_machine(locked, machine):
-        raise ValidationError({"consumable_pool": "Consumable pool is incompatible with this machine service request."})
+        raise ValidationError({"consumable_pool": gettext("Consumable pool is incompatible with this machine service request.")})
     _validate_pool(machine, locked, request.capability_payload if is_printer_type(machine.machine_type) else None)
     if request.reserved_grams:
-        raise ValidationError({"planned_grams": "Consumable grams are already reserved."})
+        raise ValidationError({"planned_grams": gettext("Consumable grams are already reserved.")})
     _apply(locked, actor, kind=MachineConsumableAdjustment.Kind.RESERVE, delta=-planned, service_request=request)
     request.run_consumable_pool = locked
     request.planned_grams = planned
@@ -156,14 +157,14 @@ def reconcile_request(service_request, actor, *, actual_grams, reason=""):
 @transaction.atomic
 def correct_pool(pool, actor, *, quantity_delta, reason):
     if not str(reason).strip():
-        raise ValidationError({"reason": "A correction reason is required."})
+        raise ValidationError({"reason": gettext("A correction reason is required.")})
     locked = _locked_pool(pool)
     signed = _signed_grams(quantity_delta, "quantity_delta")
     delta = abs(signed)
     if signed < 0:
         delta = -delta
     if not delta:
-        raise ValidationError({"quantity_delta": "Adjustment cannot be zero."})
+        raise ValidationError({"quantity_delta": gettext("Adjustment cannot be zero.")})
     _apply(locked, actor, kind=MachineConsumableAdjustment.Kind.CORRECTION, delta=delta, reason=reason)
     return locked
 
@@ -187,16 +188,16 @@ def _signed_grams(value, field):
     try:
         parsed = Decimal(str(value)).quantize(Decimal("0.01"))
     except (InvalidOperation, TypeError, ValueError) as exc:
-        raise ValidationError({field: "Enter a valid gram amount."}) from exc
+        raise ValidationError({field: gettext("Enter a valid gram amount.")}) from exc
     if not parsed.is_finite():
-        raise ValidationError({field: "Enter a finite gram amount."})
+        raise ValidationError({field: gettext("Enter a finite gram amount.")})
     return parsed
 
 
 @transaction.atomic
 def retire_pool(pool, actor, *, reason):
     if not str(reason).strip():
-        raise ValidationError({"reason": "A retirement reason is required."})
+        raise ValidationError({"reason": gettext("A retirement reason is required.")})
     locked = _locked_pool(pool)
     if not locked.is_active:
         return locked
@@ -235,16 +236,16 @@ _legacy_create_pool = create_pool
 def create_pool(makerspace, actor, *, material, initial_grams=None, quantity=None, machine=None, machine_type=None, color="", color_hex="", brand="", lot_code="", low_threshold_grams=None, unit="grams", is_public=True, unit_cost=None, cost_currency="", cost_unit=""):
     from apps.machines.metering import ConsumablePoolUnit
     if unit not in ConsumablePoolUnit.values:
-        raise ValidationError({"unit": "Unsupported consumable pool unit."})
+        raise ValidationError({"unit": gettext("Unsupported consumable pool unit.")})
     if initial_grams is None:
         initial_grams = quantity
     elif quantity is not None:
-        raise ValidationError({"quantity": "Provide quantity or initial_grams, not both."})
+        raise ValidationError({"quantity": gettext("Provide quantity or initial_grams, not both.")})
     if initial_grams is None:
-        raise ValidationError({"quantity": "A starting quantity is required."})
+        raise ValidationError({"quantity": gettext("A starting quantity is required.")})
     scoped_type = machine.machine_type if machine is not None else machine_type
     if is_printer_type(scoped_type) and unit != ConsumablePoolUnit.GRAMS:
-        raise ValidationError({"unit": "Printer consumable pools use grams."})
+        raise ValidationError({"unit": gettext("Printer consumable pools use grams.")})
     from .consumable_costs import validate_price
     validate_price(unit_cost, cost_currency, cost_unit, unit)
     pool = _legacy_create_pool(makerspace, actor, material=material, initial_grams=initial_grams,

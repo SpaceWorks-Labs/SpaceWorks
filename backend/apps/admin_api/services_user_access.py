@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from django.contrib.auth.password_validation import validate_password
@@ -25,15 +26,15 @@ def reset_user_password(actor, target_pk, password=None, data=None):
     is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
     target = _target_for_reset(actor, target_pk, is_superadmin)
     if not is_person(target):
-        raise PermissionDenied("Only a personal account's password is reset here.")
+        raise PermissionDenied(gettext("Only a personal account's password is reset here."))
     # One account per person (#66): Space Managers no longer set staff passwords. A person
     # holding staff roles or other elevated authority resets their own password; only the
     # superadmin may reset it for them.
     if not is_superadmin and has_elevated_authority(target):
-        raise PermissionDenied("This person holds staff authority. They reset their own password "
-                               "(Forgot password), or the platform administrator resets it.")
+        raise PermissionDenied(gettext("This person holds staff authority. They reset their own password "
+                               "(Forgot password), or the platform administrator resets it."))
     if target.is_superuser or target.role == User.Role.SUPERADMIN:
-        raise PermissionDenied("Cannot reset a superadmin's password here.")
+        raise PermissionDenied(gettext("Cannot reset a superadmin's password here."))
     refuse_anonymous_requester_credential(target)
     # A walk-in is a person record staff typed at the counter, not an account, and this
     # service HANDS BACK a usable temporary password -- so without this it is a one-click
@@ -45,7 +46,7 @@ def reset_user_password(actor, target_pk, password=None, data=None):
     # password operation; the person should sign up and be invited.
     if target.is_walk_in:
         raise PermissionDenied(
-            "This is a walk-in record, not an account. It has no password to reset."
+            gettext("This is a walk-in record, not an account. It has no password to reset.")
         )
 
     _require_non_superadmin_reset_scope(actor, target, is_superadmin)
@@ -65,7 +66,7 @@ def reset_user_password(actor, target_pk, password=None, data=None):
         refuse_anonymous_requester_credential(target)
         if target.is_walk_in:
             raise PermissionDenied(
-                "This is a walk-in record, not an account. It has no password to reset."
+                gettext("This is a walk-in record, not an account. It has no password to reset.")
             )
         target.set_password(temporary_password)
         target.must_change_password = True
@@ -100,19 +101,19 @@ def _require_non_superadmin_reset_scope(actor, target, is_superadmin):
         return
     memberships = MakerspaceMembership.objects.filter(user=target)
     if not memberships.exists():
-        raise PermissionDenied("You can only reset staff in your makerspaces.")
+        raise PermissionDenied(gettext("You can only reset staff in your makerspaces."))
     scope = rbac.makerspaces_for_action(actor, rbac.Action.MANAGE_MAKERSPACE)
     if scope is not rbac.ALL:
         target_ms = set(memberships.values_list("makerspace_id", flat=True))
         if not target_ms.issubset(scope):
             raise PermissionDenied(
-                "This user also belongs to a makerspace outside your authority."
+                gettext("This user also belongs to a makerspace outside your authority.")
             )
     for membership in memberships:
         if rbac.can(
             target, rbac.Action.MANAGE_MAKERSPACE, membership.makerspace_id
         ):
-            raise PermissionDenied("Cannot reset another Space Manager's password.")
+            raise PermissionDenied(gettext("Cannot reset another Space Manager's password."))
 
 
 def _validated_or_generated_password(password, target):

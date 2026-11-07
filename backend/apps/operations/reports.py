@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from apps.tenant_migration.gate_runtime import tenant_write
@@ -127,7 +128,7 @@ def _authorize_subject(actor, makerspace_id, definition, filters):
             and not {"subject_kind", "subject_id"}.intersection(filters)):
         return
     if makerspace_id is None:
-        raise PermissionDenied("Subject reports are tenant-local.")
+        raise PermissionDenied(gettext("Subject reports are tenant-local."))
     space = Makerspace.objects.get(pk=makerspace_id)
     return authorize(actor, space, definition, filters)
 

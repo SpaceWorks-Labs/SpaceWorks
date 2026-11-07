@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -31,7 +32,7 @@ export function useOrganizationAnalytics(
   return useQuery({
     queryKey: [...organizationAnalyticsKeys.report(organizationId, reportKey), period],
     queryFn: () => {
-      if (organizationId === null) throw new Error("Select an organization first.");
+      if (organizationId === null) throw new Error(t`Select an organization first.`);
       return staffRequest<OrganizationReportResponse>(
         `${organizationAnalyticsPath(organizationId, reportKey)}?${periodParams(period, organizationReportGrains(reportKey))}`,
       );

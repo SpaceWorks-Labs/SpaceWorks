@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { DetailLayout } from "../../../components/layouts";
@@ -16,13 +17,13 @@ export function MemberShopOrderDetail({ orderId, backHref }: { orderId: number; 
     },
   });
   const order = query.data;
-  return <DetailLayout back={{ label: "My shop orders", href: backHref }} title={order ? `Order #${order.id}` : "Order"}
+  return <DetailLayout back={{ label: t`My shop orders`, href: backHref }} title={order ? t`Order #${order.id}` : t`Order`}
     meta={order ? [order.space_name] : undefined}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: shopErrorMessage(query.error),
       onRetry: () => { void query.refetch(); } } : { status: "ready" }}
-    actions={order && isUnpaid(order.status) ? { primary: { label: "Cancel order", tone: "danger", pending: cancel.isPending,
+    actions={order && isUnpaid(order.status) ? { primary: { label: t`Cancel order`, tone: "danger", pending: cancel.isPending,
       pendingLabel: "Cancelling…", onClick: () => cancel.mutate(),
-      confirm: { title: "Cancel this order?", message: "The items go back on sale. You have not paid anything for this order.", confirmLabel: "Cancel order" } } } : undefined}
+      confirm: { title: t`Cancel this order?`, message: t`The items go back on sale. You have not paid anything for this order.`, confirmLabel: t`Cancel order` } } } : undefined}
     banner={cancel.error ? { size: "inline", tone: "danger", lead: shopErrorMessage(cancel.error) } : undefined}
     main={order ? <ShopBuyerOrderView order={order} /> : null} />;
 }

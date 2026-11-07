@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
@@ -40,8 +41,8 @@ export function useDraftAutosave(tenant: number, event: number, saved: Broadcast
 
 export const AUTOSAVE_TEXT: Record<AutosaveState, string> = {
   idle: "",
-  saving: "Saving draft…",
-  saved: "Draft saved",
-  conflict: "This draft changed in another tab. Reopen it to keep editing.",
-  error: "Autosave failed. Your changes are still here; try Save draft.",
+  saving: t`Saving draft…`,
+  saved: t`Draft saved`,
+  conflict: t`This draft changed in another tab. Reopen it to keep editing.`,
+  error: t`Autosave failed. Your changes are still here; try Save draft.`,
 };

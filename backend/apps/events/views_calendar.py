@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 
 from django.http import HttpResponse
@@ -73,7 +74,7 @@ def _calendar_response(payload, filename, request, *, private=False):
 def _member_membership(request, makerspace_id):
     membership = active_membership(request.user, makerspace_id)
     if membership is None:
-        raise PermissionDenied("Active membership is required.")
+        raise PermissionDenied(gettext("Active membership is required."))
     require_module(membership.makerspace, "events")
     return membership
 
@@ -81,7 +82,7 @@ def _member_membership(request, makerspace_id):
 def _require_feed_switch(makerspace):
     """Release 2 L18: `events.calendar_feed` (on by default) switches the private feed off."""
     if not feature_enabled(makerspace, "events.calendar_feed"):
-        raise NotFound({"detail": "The event calendar feed is turned off here.", "code": "feature_disabled"})
+        raise NotFound({"detail": gettext("The event calendar feed is turned off here."), "code": "feature_disabled"})
 
 
 class PublicEventCalendarView(APIView):

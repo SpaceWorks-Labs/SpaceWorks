@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Key } from "react";
 
 import { Badge, DataTable, OverflowMenu, RelativeTime, type DataTableColumn } from "../../../../components/ui";
@@ -45,10 +46,10 @@ export function CardsTable({
       header: "Status",
       render: (card) =>
         card.is_active ? (
-          <Badge tone="success">Active</Badge>
+          <Badge tone="success">{t`Active`}</Badge>
         ) : (
           <span className="flex flex-wrap items-center gap-2">
-            <Badge tone="danger">Revoked</Badge>
+            <Badge tone="danger">{t`Revoked`}</Badge>
             {card.revoked_reason ? (
               <span className="text-xs text-muted">{card.revoked_reason}</span>
             ) : null}
@@ -61,7 +62,7 @@ export function CardsTable({
       sortable: true,
       render: (card) => (
         <span className="text-xs text-muted">
-          <span className="tabular-nums text-ink">{card.print_count}</span> · last{" "}
+          <span className="tabular-nums text-ink">{card.print_count}</span> {t` · last${" "}`}
           {card.last_printed_at ? <RelativeTime date={card.last_printed_at} /> : "never"}
         </span>
       ),
@@ -70,8 +71,8 @@ export function CardsTable({
       key: "photo_set",
       header: "Photo",
       render: (card) =>
-        card.photo_request_open ? <Badge tone="warn">update asked</Badge>
-          : card.photo_set ? <Badge tone="neutral">on file</Badge> : <span className="text-xs text-muted">none</span>,
+        card.photo_request_open ? <Badge tone="warn">{t`update asked`}</Badge>
+          : card.photo_set ? <Badge tone="neutral">{t`on file`}</Badge> : <span className="text-xs text-muted">none</span>,
     },
     {
       key: "actions",
@@ -84,14 +85,14 @@ export function CardsTable({
             disabled={printingCardId === card.id}
             onClick={() => onPrint(card)}
           >
-            {printingCardId === card.id ? "Preparing…" : "Print"}
+            {printingCardId === card.id ? t`Preparing…` : t`Print`}
           </button>
           {card.is_active ? (
             <>
               <OverflowMenu label={"Actions for " + card.printed_name} actions={[
                 ...(rowActions ? rowActions(card) : []),
-                { label: "Reissue", confirms: true, onClick: () => onReissue(card) },
-                { label: "Revoke", confirms: true, tone: "danger", onClick: () => onRevoke(card) },
+                { label: t`Reissue`, confirms: true, onClick: () => onReissue(card) },
+                { label: t`Revoke`, confirms: true, tone: "danger", onClick: () => onRevoke(card) },
               ]} />
             </>
           ) : null}
@@ -113,11 +114,11 @@ export function CardsTable({
       data={cards}
       loading={loading}
       skeletonCols={7}
-      emptyTitle={status === "active" ? "No active cards" : "No revoked cards"}
+      emptyTitle={status === "active" ? t`No active cards` : t`No revoked cards`}
       emptyDescription={
         status === "active"
-          ? "Issue a card from the Issue tab."
-          : "Revoked cards stay listed here for the audit trail."
+          ? t`Issue a card from the Issue tab.`
+          : t`Revoked cards stay listed here for the audit trail.`
       }
       {...selection}
     />

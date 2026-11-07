@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.conf import settings
@@ -100,5 +101,5 @@ class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields)
             self.public_token = original.public_token
             self.space_id = original.space_id
             if original.pricing_snapshot != self.pricing_snapshot:
-                raise ValidationError("A booking's requested price is frozen.")
+                raise ValidationError(gettext("A booking's requested price is frozen."))
         super().save(*args, **kwargs)

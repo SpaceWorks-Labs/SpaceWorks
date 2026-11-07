@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -109,7 +110,7 @@ export function useStaffScanner({ makerspace, isSuperadmin, makerspaces }: {
   });
   const moveAsset = useMutation({
     mutationFn: () => {
-      if (!resolved) throw new Error("No QR resolved.");
+      if (!resolved) throw new Error(t`No QR resolved.`);
       return staffRequest<Rebound>(`/admin/qr/${resolved.qr.id}/rebind-target`, {
         method: "POST",
         body: JSON.stringify({

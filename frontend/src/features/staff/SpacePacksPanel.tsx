@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsRow } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,16 +17,16 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
   const setPack = (text: string) => { setSource(text); setPreview(null); setMessage(""); setInputError(""); };
   const parse = (): SpacePack => {
     try { return JSON.parse(source) as SpacePack; }
-    catch { throw new Error("Enter valid JSON or export a pack first."); }
+    catch { throw new Error(t`Enter valid JSON or export a pack first.`); }
   };
   const exportPack = useMutation({ mutationFn: () => exportSpacePack(makerspaceId),
     onSuccess: (pack) => setPack(JSON.stringify(pack, null, 2)) });
   const previewPack = useMutation({ mutationFn: () => importSpacePack(makerspaceId, parse()),
-    onSuccess: (result) => { setPreview(result); setMessage("Preview ready. No configuration changed."); } });
+    onSuccess: (result) => { setPreview(result); setMessage(t`Preview ready. No configuration changed.`); } });
   const applyPack = useMutation({
     mutationFn: () => importSpacePack(makerspaceId, parse(), preview?.base_checksum),
     onSuccess: () => {
-      setPreview(null); setMessage("Pack applied.");
+      setPreview(null); setMessage(t`Pack applied.`);
       // A pack can affect multiple domain caches. Refresh all active server-state
       // queries once rather than maintaining a second list of every settings key.
       void queries.invalidateQueries();
@@ -33,34 +34,34 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
     onError: () => setPreview(null),
   });
   const saveProfile = useMutation({ mutationFn: () => savePackProfile(profileName.trim(), parse()),
-    onSuccess: () => { setMessage("Install profile saved."); void queries.invalidateQueries({ queryKey: ["space-pack-profiles"] }); } });
+    onSuccess: () => { setMessage(t`Install profile saved.`); void queries.invalidateQueries({ queryKey: ["space-pack-profiles"] }); } });
   const pending = exportPack.isPending || previewPack.isPending || applyPack.isPending || saveProfile.isPending;
   const error = inputError || exportPack.error?.message || previewPack.error?.message || applyPack.error?.message || saveProfile.error?.message;
-  return <SettingsRow label="Space packs" helper="Copy configuration between spaces. Packs contain policies, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack."><div className="@container grid min-w-0 gap-4">
-    <button type="button" className="desk-button justify-self-start" disabled={pending} onClick={() => exportPack.mutate()}>Export configuration</button>
-    <Field label="Space pack JSON">
+  return <SettingsRow label={t`Space packs`} helper={t`Copy configuration between spaces. Packs contain policies, templates and catalogue definitions. Item templates start with zero stock. Review template text before sharing a pack.`}><div className="@container grid min-w-0 gap-4">
+    <button type="button" className="desk-button justify-self-start" disabled={pending} onClick={() => exportPack.mutate()}>{t`Export configuration`}</button>
+    <Field label={t`Space pack JSON`}>
       <textarea className="desk-input min-h-48 w-full code-text text-base md:text-xs" value={source} disabled={pending}
         onChange={(event) => setPack(event.target.value)} />
     </Field>
     <div className="flex flex-wrap gap-2">
-      <button type="button" className="desk-button" disabled={pending || !source.trim()} onClick={() => { setPreview(null); previewPack.mutate(); }}>Preview import</button>
-      <button type="button" className="desk-button-primary" disabled={pending || !preview || !preview.changes.length} onClick={() => applyPack.mutate()}>Apply reviewed pack</button>
+      <button type="button" className="desk-button" disabled={pending || !source.trim()} onClick={() => { setPreview(null); previewPack.mutate(); }}>{t`Preview import`}</button>
+      <button type="button" className="desk-button-primary" disabled={pending || !preview || !preview.changes.length} onClick={() => applyPack.mutate()}>{t`Apply reviewed pack`}</button>
       <button type="button" className="desk-button" disabled={pending || !source.trim()} onClick={() => {
         try {
           const url = URL.createObjectURL(new Blob([JSON.stringify(parse(), null, 2)], { type: "application/json" }));
           const anchor = document.createElement("a"); anchor.href = url; anchor.download = "space-pack.json"; anchor.click(); URL.revokeObjectURL(url);
         } catch (failure) { setInputError((failure as Error).message); }
-      }}>Download JSON</button>
+      }}>{t`Download JSON`}</button>
     </div>
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
     {message ? <p role="status" className="text-sm text-ink">{message}</p> : null}
     {preview ? <div className="grid gap-2">
-      <p className="text-sm">{preview.changes.length} changes. Entries absent from the pack are retained.</p>
+      <p className="text-sm">{t`${preview.changes.length} changes. Entries absent from the pack are retained.`}</p>
       {preview.changes.map((change) => <details key={`${change.section}/${change.key}`} className="min-w-0 text-sm">
         <summary>{change.section}: {change.key}</summary>
         <div className="grid gap-2 @md:grid-cols-2">
-          <pre className="overflow-auto whitespace-pre-wrap break-all rounded border border-line p-2">Before: {JSON.stringify(change.before, null, 2)}</pre>
-          <pre className="overflow-auto whitespace-pre-wrap break-all rounded border border-line p-2">After: {JSON.stringify(change.after, null, 2)}</pre>
+          <pre className="overflow-auto whitespace-pre-wrap break-all rounded border border-line p-2">{t`Before: ${JSON.stringify(change.before, null, 2)}`}</pre>
+          <pre className="overflow-auto whitespace-pre-wrap break-all rounded border border-line p-2">{t`After: ${JSON.stringify(change.after, null, 2)}`}</pre>
         </div>
       </details>)}
     </div> : null}
@@ -68,10 +69,10 @@ export function SpacePacksPanel({ makerspaceId, isSuperadmin }: { makerspaceId: 
       <SpacePackProfilePicker value={profileId} disabled={pending} onChange={(profile) => {
         setProfileId(profile?.id ?? ""); if (profile) setPack(JSON.stringify(profile.pack, null, 2));
       }} />
-      <Field label="New install profile name"><input className="desk-input w-full" value={profileName} maxLength={120}
+      <Field label={t`New install profile name`}><input className="desk-input w-full" value={profileName} maxLength={120}
         disabled={pending} onChange={(event) => setProfileName(event.target.value)} /></Field>
       <button type="button" className="desk-button justify-self-start" disabled={pending || !profileName.trim() || !source.trim()}
-        onClick={() => saveProfile.mutate()}>Save platform profile</button>
+        onClick={() => saveProfile.mutate()}>{t`Save platform profile`}</button>
     </div> : null}
   </div></SettingsRow>;
 }

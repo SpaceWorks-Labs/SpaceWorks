@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -7,6 +8,8 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils.crypto import get_random_string
+
+from config.locale_registry import validate_supported_locale
 
 from apps.makerspaces.capabilities import default_enabled_features
 from apps.makerspaces.module_registry import default_enabled_module_keys
@@ -50,7 +53,7 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     class MembershipPolicy(models.TextChoices):
         REQUEST = "request", "Request"
         OPEN = "open", "Open"
-        INVITE_ONLY = "invite_only", "Invite only"
+        INVITE_ONLY = "invite_only", gettext_noop("Invite only")
 
     class DomainStatus(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -58,8 +61,8 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         FAILED = "failed", "Failed"
 
     class PublicPrintStatusLookupPolicy(models.TextChoices):
-        TOKEN_ONLY = "token_only", "Token only"
-        EMAIL_UNVERIFIED = "email_unverified", "Email unverified"
+        TOKEN_ONLY = "token_only", gettext_noop("Token only")
+        EMAIL_UNVERIFIED = "email_unverified", gettext_noop("Email unverified")
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, db_index=True)
@@ -77,6 +80,9 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     )
     location = models.CharField(max_length=200, blank=True)
     timezone = models.CharField(max_length=100, default=default_timezone, validators=[validate_timezone])
+    # Phase 8 i18n: the language shared output (chat, the makerspace feed, batch PDFs) and
+    # members without a preference of their own see. Codes come from the locale registry.
+    default_locale = models.CharField(max_length=16, default="en", validators=[validate_supported_locale])
     country = models.CharField(max_length=2, blank=True, default="", validators=[validate_country])
     opening_hours = models.JSONField(default=dict, blank=True, validators=[validate_opening_hours])
     map_url = models.URLField(blank=True, default="", validators=[validate_google_maps_url])

@@ -7,6 +7,7 @@ shown once, when it is made). Who changed what lives in the audit log, not in ac
 columns, so these rows carry no user foreign key.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -15,18 +16,18 @@ from apps.makerspaces.secrets import decrypt_value, encrypt_value
 
 def validate_dashboards(value):
     if not isinstance(value, list) or len(value) > 50:
-        raise ValidationError("Dashboards must be a list of at most 50 entries.")
+        raise ValidationError(gettext("Dashboards must be a list of at most 50 entries."))
     seen = set()
     for entry in value:
         if not (isinstance(entry, dict) and set(entry) == {"id", "title"}):
-            raise ValidationError("Each dashboard is {id, title}.")
+            raise ValidationError(gettext("Each dashboard is {id, title}."))
         number, title = entry["id"], entry["title"]
         if not (isinstance(number, int) and not isinstance(number, bool) and 0 < number < 2**31):
-            raise ValidationError("A dashboard id is a positive Metabase dashboard number.")
+            raise ValidationError(gettext("A dashboard id is a positive Metabase dashboard number."))
         if not (isinstance(title, str) and 0 < len(title.strip()) <= 120):
-            raise ValidationError("A dashboard title is 1 to 120 characters.")
+            raise ValidationError(gettext("A dashboard title is 1 to 120 characters."))
         if number in seen:
-            raise ValidationError("A dashboard is listed once.")
+            raise ValidationError(gettext("A dashboard is listed once."))
         seen.add(number)
 
 

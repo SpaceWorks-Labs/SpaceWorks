@@ -1,5 +1,6 @@
 '''Audited mutation boundary for bookable spaces.'''
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q
@@ -41,7 +42,7 @@ def _machine_type(makerspace, value):
         Q(makerspace__isnull=True) | Q(makerspace=makerspace), pk=value
     ).first()
     if machine_type is None:
-        raise serializers.ValidationError({'machine_type': 'Unknown machine type.'})
+        raise serializers.ValidationError({'machine_type': gettext('Unknown machine type.')})
     return machine_type
 
 
@@ -60,10 +61,10 @@ def _machine(makerspace, value, current_space_id=None):
     machine = Machine.objects.filter(makerspace=makerspace, is_active=True, pk=value).select_related(
         'machine_type').first()
     if machine is None:
-        raise serializers.ValidationError({'machine': 'Unknown machine.'})
+        raise serializers.ValidationError({'machine': gettext('Unknown machine.')})
     taken = BookableSpace.objects.filter(machine=machine, is_active=True).exclude(pk=current_space_id)
     if taken.exists():
-        raise serializers.ValidationError({'machine': 'This machine already has a bookable resource.'})
+        raise serializers.ValidationError({'machine': gettext('This machine already has a bookable resource.')})
     return machine
 
 
@@ -153,7 +154,7 @@ def update_space(space, *, actor, audit_service, **changes):
     from .booking_authority import can_manage_grants
     if not can_manage_grants(actor, locked) and set(changes) - DESCRIPTIVE_FIELDS:
         from rest_framework.exceptions import PermissionDenied
-        raise PermissionDenied("Resource grants allow descriptive fields only.")
+        raise PermissionDenied(gettext("Resource grants allow descriptive fields only."))
     if not locked.is_active:
         raise BookingInvalidTransition('Inactive spaces cannot be updated.')
     unknown = set(changes) - SPACE_FIELDS

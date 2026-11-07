@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useAnalyticsCatalog } from "./analyticsApi";
 import { ReportChartResult } from "./ReportAreaSections";
@@ -30,15 +31,15 @@ export function ModuleAnalytics({ makerspace, tab, singleTenantLocked = false, g
   const reports = catalog.data?.results.filter(report => config.keys.includes(report.key) && report.available !== false && report.previewable !== false) ?? [];
   const report = reports.find(entry => entry.key === selected) ?? reports[0];
   if (catalog.isSuccess && !report) return null;
-  return <section aria-label="Module analytics" className="mt-6 min-w-0 rounded-xl border border-line bg-panel p-4">
-    <h2 className="title-panel">At a glance</h2>
-    {catalog.isLoading ? <p role="status">Loading analytics…</p> : catalog.isError ? <div role="alert"><p>Couldn't load analytics.</p><button type="button" className="desk-button" onClick={() => void catalog.refetch()}>Retry</button></div> : report ? <>
-      <label className="my-3 grid gap-2 text-sm">Analytics report<select className="desk-input max-w-full" value={report.key} onChange={event => setSelected(event.target.value)}>
+  return <section aria-label={t`Module analytics`} className="mt-6 min-w-0 rounded-xl border border-line bg-panel p-4">
+    <h2 className="title-panel">{t`At a glance`}</h2>
+    {catalog.isLoading ? <p role="status">{t`Loading analytics…`}</p> : catalog.isError ? <div role="alert"><p>{t`Couldn't load analytics.`}</p><button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button></div> : report ? <>
+      <label className="my-3 grid gap-2 text-sm">{t`Analytics report`}<select className="desk-input max-w-full" value={report.key} onChange={event => setSelected(event.target.value)}>
         {reports.map(entry => <option key={entry.key} value={entry.key}>{entry.title}</option>)}
       </select></label>
       <ReportChartResult report={report} base={`/admin/makerspace/${makerspace.id}/analytics`} makerspaceId={makerspace.id}
         period={{ start: "", end: "", grain: report.grains[0] ?? "day" }} />
-      <a className="desk-button mt-3" href={consoleSessionHref(`${staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked)}?report=${encodeURIComponent(report.key)}`)}>Open in reports</a>
+      <a className="desk-button mt-3" href={consoleSessionHref(`${staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked)}?report=${encodeURIComponent(report.key)}`)}>{t`Open in reports`}</a>
     </> : null}
   </section>;
 }

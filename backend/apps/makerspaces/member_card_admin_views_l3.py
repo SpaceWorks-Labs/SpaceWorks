@@ -2,6 +2,7 @@
 email, "photo needs update". Authority by ACTION and every query scoped through rbac;
 settings are written through the L17 settings authority (Space Manager or a grant).
 """
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -119,7 +120,7 @@ class MemberCardDownloadView(APIView):
         from apps.card_designs.downloads import record_download
         card = _card(request.user, pk)
         if not card.is_active:
-            raise PermissionDenied("A revoked card cannot be downloaded.")
+            raise PermissionDenied(gettext("A revoked card cannot be downloaded."))
         fmt, side = request.query_params.get("format", "pdf"), request.query_params.get("side", "front")
         data, content_type, filename = render("member_card", card, fmt=fmt, side=side)
         record_download(request.user, "member_card", card, fmt, side)
@@ -140,8 +141,8 @@ class MemberCardEmailView(APIView):
             from apps.makerspaces.guards import module_off
             raise module_off("email", "Email is turned off for this space.")
         if not send_card_email("member_card", card, actor=request.user, explicit=True):
-            raise ValidationError({"detail": "This card was emailed in the last 10 minutes, the daily limit was "
-                                             "reached, or the holder has no email address."})
+            raise ValidationError({"detail": gettext("This card was emailed in the last 10 minutes, the daily limit was "
+                                             "reached, or the holder has no email address.")})
         return Response({"queued": True}, status=202)
 
 

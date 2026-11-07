@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useMemo, useState } from "react";
 import { DetailLayout } from "../../components/layouts";
 import { QueryContent } from "../../components/layouts/LayoutFrame";
@@ -65,28 +66,28 @@ export function ApiClientListCard({
   const errors = [scopesError, scopeUpdateError, deleteError, rotateError, activeError].filter(Boolean);
   return <div className="grid gap-3">
     {canManageMakerspace ? <>
-      <QueryContent state={{ status: clientsLoading ? "loading" : clientsError ? "error" : "ready", error: "Couldn't load API clients. Try again.", onRetry }}>
+      <QueryContent state={{ status: clientsLoading ? "loading" : clientsError ? "error" : "ready", error: t`Couldn't load API clients. Try again.`, onRetry }}>
       {clients?.map(client => <ApiClientRow key={client.id} client={client} scopeOptions={scopeOptions}
         scopesLoading={scopesLoading} updatePending={scopeUpdatePending} deletePending={deletePending}
         rotatePending={rotatePending} activePending={activePending} onSetActive={onSetActive} updateError={scopeUpdateError} scopesError={scopesError} onRetryScopes={onRetryScopes} onDelete={onDelete} onRotate={onRotate} onScopesUpdate={onScopesUpdate} />)}
-      {!clientsLoading && clients?.length === 0 ? <EmptyState message="No clients yet. The secret appears once, right after you create one." /> : null}
+      {!clientsLoading && clients?.length === 0 ? <EmptyState message={t`No clients yet. The secret appears once, right after you create one.`} /> : null}
       </QueryContent>
       {errors.map((error, index) => <ErrorBlock key={index} error={error!} />)}
     </> : <>
-      <QueryContent state={{ status: requestsLoading ? "loading" : requestsError ? "error" : "ready", error: "Couldn't load API access requests. Try again.", onRetry }}>
+      <QueryContent state={{ status: requestsLoading ? "loading" : requestsError ? "error" : "ready", error: t`Couldn't load API access requests. Try again.`, onRetry }}>
       {requests?.map(request => <ListRow key={request.id} title={request.label}
         meta={<><RelativeTime date={request.created_at} />{request.resolution_note ? ` · ${request.resolution_note}` : ""}</>}
         right={<StatusPill label={request.status} />} />)}
-      {requests?.length === 0 ? <EmptyState message="No API access requests yet. Send a request to connect your tools." /> : null}
+      {requests?.length === 0 ? <EmptyState message={t`No API access requests yet. Send a request to connect your tools.`} /> : null}
       </QueryContent>
     </>}
   </div>;
 }
 
 const CONFIRM = {
-  rotate: { title: "Rotate client secret?", message: "The current secret keeps working for 24 hours. Copy the replacement after rotating.", label: "Rotate secret" },
-  revoke: { title: "Revoke API client?", message: "Tools using this client stop working at once. You can reactivate it later.", label: "Revoke" },
-  delete: { title: "Delete API client?", message: "Tools using this client lose access, and the client is gone for good.", label: "Delete" },
+  rotate: { title: t`Rotate client secret?`, message: t`The current secret keeps working for 24 hours. Copy the replacement after rotating.`, label: t`Rotate secret` },
+  revoke: { title: t`Revoke API client?`, message: t`Tools using this client stop working at once. You can reactivate it later.`, label: t`Revoke` },
+  delete: { title: t`Delete API client?`, message: t`Tools using this client lose access, and the client is gone for good.`, label: t`Delete` },
 } as const;
 
 function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, updateError, scopesError, onRetryScopes, deletePending, rotatePending, activePending, onSetActive, onDelete, onRotate, onScopesUpdate }: {
@@ -124,26 +125,26 @@ function ApiClientRow({ client, scopeOptions, scopesLoading, updatePending, upda
   return <>
     <ListRow title={client.label} identity={{ kind: "icon", icon: "Settings", tone: "accent" }}
       meta={<span className="grid gap-1"><span className="break-all tabular-nums">{client.client_id}</span>
-        <span>{client.allowed_origins.length ? client.allowed_origins.join(", ") : "No browser origins configured."}</span>
-        <span>Created <RelativeTime date={client.created_at} /> · {client.last_seen_at ? <>Last used <RelativeTime date={client.last_seen_at} /></> : "Never used"}</span></span>}
-      right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={client.is_active ? "Active" : "Inactive"} tone={client.is_active ? "success" : "neutral"} />
-        {client.client_type === "peer" ? <StatusPill label="Another space" /> : null}
+        <span>{client.allowed_origins.length ? client.allowed_origins.join(", ") : t`No browser origins configured.`}</span>
+        <span>{t`Created `}<RelativeTime date={client.created_at} /> · {client.last_seen_at ? <>{t`Last used `}<RelativeTime date={client.last_seen_at} /></> : t`Never used`}</span></span>}
+      right={<div className="flex flex-wrap items-center gap-2"><StatusPill label={client.is_active ? t`Active` : t`Inactive`} tone={client.is_active ? "success" : "neutral"} />
+        {client.client_type === "peer" ? <StatusPill label={t`Another space`} /> : null}
         <StatusPill label={`${client.scopes.length} scopes`} />
-        {hasLegacy ? <StatusPill label="Legacy v1" tone="warn" /> : null}
-        <button className="desk-button" onClick={() => setEditing(true)}>Edit scopes</button>
-        <OverflowMenu label={`Actions for ${client.label}`} actions={[
-          { label: "Rotate secret", onClick: () => setConfirm("rotate"), disabled: rotatePending, confirms: true },
+        {hasLegacy ? <StatusPill label={t`Legacy v1`} tone="warn" /> : null}
+        <button className="desk-button" onClick={() => setEditing(true)}>{t`Edit scopes`}</button>
+        <OverflowMenu label={t`Actions for ${client.label}`} actions={[
+          { label: t`Rotate secret`, onClick: () => setConfirm("rotate"), disabled: rotatePending, confirms: true },
           ...(onSetActive ? [client.is_active
-            ? { label: "Revoke", onClick: () => setConfirm("revoke"), disabled: activePending, tone: "danger" as const, confirms: true }
-            : { label: "Reactivate", onClick: () => onSetActive(client.id, true), disabled: activePending }] : []),
-          { label: "Delete", onClick: () => setConfirm("delete"), disabled: deletePending, tone: "danger", confirms: true },
+            ? { label: t`Revoke`, onClick: () => setConfirm("revoke"), disabled: activePending, tone: "danger" as const, confirms: true }
+            : { label: t`Reactivate`, onClick: () => onSetActive(client.id, true), disabled: activePending }] : []),
+          { label: t`Delete`, onClick: () => setConfirm("delete"), disabled: deletePending, tone: "danger", confirms: true },
         ]} /></div>} />
-    {editing ? <DetailLayout presentation="drawer" open onClose={() => { setSelected(client.scopes); setEditing(false); }} title={`Scopes for ${client.label}`}
-      state={{ status: scopesLoading ? "loading" : scopesError ? "error" : "ready", error: "Couldn't load API scopes. Try again.", onRetry: onRetryScopes }}
-      footer={{ secondary: [{ label: "Discard", onClick: () => { setSelected(client.scopes); setEditing(false); } }],
-        primary: { label: "Save scopes", pending: updatePending, disabled: !grantable.length || !changed,
+    {editing ? <DetailLayout presentation="drawer" open onClose={() => { setSelected(client.scopes); setEditing(false); }} title={t`Scopes for ${client.label}`}
+      state={{ status: scopesLoading ? "loading" : scopesError ? "error" : "ready", error: t`Couldn't load API scopes. Try again.`, onRetry: onRetryScopes }}
+      footer={{ secondary: [{ label: t`Discard`, onClick: () => { setSelected(client.scopes); setEditing(false); } }],
+        primary: { label: t`Save scopes`, pending: updatePending, disabled: !grantable.length || !changed,
           onClick: () => onScopesUpdate(client.id, grantable) } }}
-      main={<div className="grid gap-4">{hasLegacy ? <Callout size="card" tone="warn" lead="Legacy v1 access" body="Select explicit replacement scopes and save. Viewing this client never changes its access." /> : null}
+      main={<div className="grid gap-4">{hasLegacy ? <Callout size="card" tone="warn" lead="Legacy v1 access" body={t`Select explicit replacement scopes and save. Viewing this client never changes its access.`} /> : null}
         <ApiClientScopePicker options={clientScopeOptions} selected={selected} onChange={setSelected} disabled={updatePending} />
         {updateError || scopesError ? <ErrorBlock error={(updateError ?? scopesError)!} /> : null}</div>} /> : null}
     <ConfirmDialog open={confirm !== null} title={CONFIRM[confirm ?? "rotate"].title}

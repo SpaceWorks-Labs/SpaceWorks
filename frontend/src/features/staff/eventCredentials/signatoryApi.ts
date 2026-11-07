@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest, staffRequest, staffRequestBlob } from "../../../lib/api";
 
@@ -33,13 +34,13 @@ export function useSignatoryCandidates(eventId: number, term: string) {
 export function useUploadSignature(eventId: number) {
   return useMutation({ mutationFn: async (file: File) => {
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size < 1 || file.size > 2 * 1024 * 1024) {
-      throw new Error("Choose a PNG, JPEG or WebP signature up to 2 MB.");
+      throw new Error(t`Choose a PNG, JPEG or WebP signature up to 2 MB.`);
     }
     const upload = await staffRequest<{ id: number; upload_url: string; headers: Record<string, string> }>(
       `/admin/events/${eventId}/certificate-artwork/`, { method: "POST",
         body: JSON.stringify({ content_type: file.type, content_length: file.size, purpose: "signature" }) });
     const response = await fetch(upload.upload_url, { method: "PUT", headers: upload.headers, body: file });
-    if (!response.ok) throw new Error("The signature upload failed. Choose the image to try again.");
+    if (!response.ok) throw new Error(t`The signature upload failed. Choose the image to try again.`);
     return staffRequest<{ id: number }>(`/admin/events/${eventId}/certificate-artwork/${upload.id}/finalize/`, { method: "POST", body: JSON.stringify({}) });
   } });
 }

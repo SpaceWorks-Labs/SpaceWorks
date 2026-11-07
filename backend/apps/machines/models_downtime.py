@@ -5,6 +5,7 @@ Append-only otherwise: the reason and expected-back date may be updated while th
 period is open (staff learn more), never after it closes, and a row is never deleted.
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -41,8 +42,8 @@ class MachineDowntime(models.Model):
         if self.pk:
             closed = type(self).objects.filter(pk=self.pk, ended_at__isnull=False).exists()
             if closed:
-                raise ValidationError("A closed downtime period is final.")
+                raise ValidationError(gettext("A closed downtime period is final."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Downtime periods are never deleted.")
+        raise ValidationError(gettext("Downtime periods are never deleted."))

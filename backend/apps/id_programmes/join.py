@@ -6,6 +6,7 @@ form contexts today, so programme answers are typed; the name comes from the acc
 With approval off the card is approved straight away. A holder needs no membership of the
 host space (Q-I7).
 """
+from django.utils.translation import gettext
 import uuid
 
 from django.db import transaction
@@ -33,7 +34,7 @@ def programme_by_slug(organization_slug, slug):
 
 def require_joiner(user):
     if not user.is_authenticated or not user.is_active or getattr(user, "access_status", "active") != "active":
-        raise PermissionDenied("Sign in with an active account to join.")
+        raise PermissionDenied(gettext("Sign in with an active account to join."))
 
 
 def photo_key(programme):
@@ -43,9 +44,9 @@ def photo_key(programme):
 def presign_photo(programme, content_type):
     from apps.card_designs.storage import presign_staging
     if programme.photo_mode == "none":
-        raise ValidationError({"detail": "This programme does not take photos."})
+        raise ValidationError({"detail": gettext("This programme does not take photos.")})
     if content_type not in ALLOWED:
-        raise ValidationError({"content_type": "Upload a PNG, JPEG or WebP photo."})
+        raise ValidationError({"content_type": gettext("Upload a PNG, JPEG or WebP photo.")})
     key = photo_key(programme)
     return {"object_key": key, "content_type": content_type, **presign_staging(key, content_type, MAX_UPLOAD_BYTES)}
 
@@ -55,11 +56,11 @@ def join(user, programme, *, answers, photo_object_key="", photo_consent=False):
     from apps.card_designs.photos import finalize
     require_joiner(user)
     if not programme.registration_open:
-        raise ValidationError({"detail": "This programme is not taking requests right now."})
+        raise ValidationError({"detail": gettext("This programme is not taking requests right now.")})
     if IdProgrammeCard.objects.filter(programme=programme, user=user).exists():
-        raise ValidationError({"detail": "You already asked to join this programme."})
+        raise ValidationError({"detail": gettext("You already asked to join this programme.")})
     if programme.photo_mode == "required" and not photo_object_key:
-        raise ValidationError({"photo": "This programme needs a photo."})
+        raise ValidationError({"photo": gettext("This programme needs a photo.")})
     name = user.display_name or user.get_full_name() or user.username
     card = add(user, programme, name=name, email=user.email, answers=answers, source=IdProgrammeCard.Source.FORM,
                user=user)

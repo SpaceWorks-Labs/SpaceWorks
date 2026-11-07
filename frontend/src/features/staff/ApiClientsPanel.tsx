@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ApiClientCreateCard } from "./ApiClientCreateCard";
@@ -141,11 +142,11 @@ export function ApiClientsPanel({
     if (!canManageMakerspace) setSubmitted(false);
   };
   return (<>
-    <Modal open={Boolean(rotatedSecret)} onClose={() => setRotatedSecret(null)} title="New client secret">
+    <Modal open={Boolean(rotatedSecret)} onClose={() => setRotatedSecret(null)} title={t`New client secret`}>
       {rotatedSecret ? <ApiClientSecretReveal secret={rotatedSecret.client_secret} onDismiss={() => setRotatedSecret(null)} /> : null}
     </Modal>
-    <SettingsLayout header={{ title: "API access", subtitle: `Let your own tools work with ${makerspace.name}, without sharing anyone’s login.` }}
-      state={{ status: "ready" }} sections={[{ id: "new-client", title: canManageMakerspace ? "New API client" : "Request API access", rows: (<>
+    <SettingsLayout header={{ title: t`API access`, subtitle: t`Let your own tools work with ${makerspace.name}, without sharing anyone’s login.` }}
+      state={{ status: "ready" }} sections={[{ id: "new-client", title: canManageMakerspace ? t`New API client` : t`Request API access`, rows: (<>
           <ApiClientCreateCard
             canManageMakerspace={canManageMakerspace}
             label={label}
@@ -169,7 +170,7 @@ export function ApiClientsPanel({
             onSubmit={() => canManageMakerspace ? createClient.mutate() : requestKey.mutate()}
             onDismissSecret={() => setOneTimeSecret(null)}
           />
-          </>) }, { id: "clients", title: canManageMakerspace ? "Clients" : "Your requests", rows: (<>
+          </>) }, { id: "clients", title: canManageMakerspace ? t`Clients` : t`Your requests`, rows: (<>
           <ApiClientListCard
             canManageMakerspace={canManageMakerspace}
             clients={apiClients.data?.results}
@@ -196,7 +197,7 @@ export function ApiClientsPanel({
             onRotate={(clientId) => rotateClient.mutate(clientId)}
             onScopesUpdate={(clientId, nextScopes) => updateScopes.mutate({ clientId, nextScopes })}
           />
-          </>) }, ...(canManageMakerspace ? [{ id: "oauth-apps", title: "App connections (OAuth)",
-            rows: <OAuthAppsSection makerspaceId={makerspace.id} /> }] : []), { id: "developer-reference", title: "Developer reference", rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={() => { void settings.refetch(); }} /> }]} />
+          </>) }, ...(canManageMakerspace ? [{ id: "oauth-apps", title: t`App connections (OAuth)`,
+            rows: <OAuthAppsSection makerspaceId={makerspace.id} /> }] : []), { id: "developer-reference", title: t`Developer reference`, rows: <ApiClientsAccessSummary makerspace={makerspace} isSuperadmin={isSuperadmin} settings={settings.data} loading={isSuperadmin && settings.isLoading} error={isSuperadmin ? settings.error : null} onRetry={() => { void settings.refetch(); }} /> }]} />
   </>);
 }

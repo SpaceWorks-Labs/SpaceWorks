@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ContributorDesk, ContributorShifts } from './ContributorDesk'
 import { OrdinaryProgrammeRegistration } from './OrdinaryProgrammeRegistration'
 import { Route, Routes, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -29,17 +30,17 @@ function MemberContent({ publicToken, accountId }: { publicToken: string; accoun
   const location = useLocation(), navigate = useNavigate()
   const { context, application } = useAdmission(publicToken, accountId)
   if (context.error) return <ErrorBlock error={context.error} onRetry={() => void context.refetch()} />
-  if (!context.data) return <p role="status">Loading the current event requirements…</p>
+  if (!context.data) return <p role="status">{t`Loading the current event requirements…`}</p>
   const current = context.data
   const base = programmeHref(publicToken, '', current.makerspace.slug).replace(/\/$/, '')
   const scope = { accountId, eventId: current.event.id, makerspaceId: current.makerspace.id }
   const choices = availableJourneys(current)
   const active = location.pathname.split('/programme/')[1]?.split('/')[0] || 'application'
-  if (!current.eligibility.eligible) return <p role="status">This account does not currently meet the event admission requirements.</p>
+  if (!current.eligibility.eligible) return <p role="status">{t`This account does not currently meet the event admission requirements.`}</p>
   return <div className="grid gap-6">
-    <Tabs label="Event programme" tabs={choices.map(row => ({ key: row.suffix, label: row.label, href: `${base}/${row.suffix}` })).concat([
-        { key: 'history', label: 'Tickets and certificates', href: `/m/${current.makerspace.slug}/member/events/history` },
-        ...(application?.data?.registration_id ? [{ key: 'ticket', label: 'Event ticket', href: `/m/${current.makerspace.slug}/member/events/${application.data.registration_id}/ticket` }] : []),
+    <Tabs label={t`Event programme`} tabs={choices.map(row => ({ key: row.suffix, label: row.label, href: `${base}/${row.suffix}` })).concat([
+        { key: 'history', label: t`Tickets and certificates`, href: `/m/${current.makerspace.slug}/member/events/history` },
+        ...(application?.data?.registration_id ? [{ key: 'ticket', label: t`Event ticket`, href: `/m/${current.makerspace.slug}/member/events/${application.data.registration_id}/ticket` }] : []),
       ])}
       activeKey={active} />
     <Routes>
@@ -72,7 +73,7 @@ function MemberContent({ publicToken, accountId }: { publicToken: string; accoun
       {current.programme.capabilities['events.volunteering'] ? <Route path="shifts" element={<ContributorShifts scope={scope} />} /> : null}
       <Route path="presentation" element={<PhotoChoice makerspaceId={scope.makerspaceId} eventId={scope.eventId} eventName="this event" actorId={accountId} />} />
       <Route path="resume" element={<EventResumePanel scope={scope} />} />
-      <Route path="*" element={<p role="status">This part of the programme is unavailable. Choose an available step above.</p>} />
+      <Route path="*" element={<p role="status">{t`This part of the programme is unavailable. Choose an available step above.`}</p>} />
     </Routes>
   </div>
 }
@@ -84,11 +85,11 @@ export function availableJourneys(context: ProgrammeContext) {
     ...(programme.capabilities['events.mentoring'] ? [programmeRoutes.help, programmeRoutes.officeHours] : []), programmeRoutes.sharing]
     // Mentor Desk on any event (#128 C-36, E2-f): attendees drop in without a team.
     : programme.capabilities['events.mentoring'] ? [programmeRoutes.help, programmeRoutes.officeHours] : []),
-    ...(routes.role_postings ? [programmeRoutes.contribute] : []), programmeRoutes.presentation, ...(programme.capabilities['events.volunteering'] ? [{ suffix: 'shifts', label: 'Available shifts', name: 'event-programme-shifts' }] : [])]
+    ...(routes.role_postings ? [programmeRoutes.contribute] : []), programmeRoutes.presentation, ...(programme.capabilities['events.volunteering'] ? [{ suffix: 'shifts', label: t`Available shifts`, name: 'event-programme-shifts' }] : [])]
 }
 function RoleRoute({ scope, context, base }: { scope: EventScope; context: ProgrammeContext; base: string }) {
   const { postingId, applicationId } = useParams()
   const id = Number(postingId ?? applicationId)
-  if (!Number.isSafeInteger(id) || id < 1) return <p role="alert">This role application is unavailable.</p>
+  if (!Number.isSafeInteger(id) || id < 1) return <p role="alert">{t`This role application is unavailable.`}</p>
   return <ProgrammeRolePage scope={scope} context={context} base={base} postingId={postingId ? id : undefined} applicationId={applicationId ? id : undefined} />
 }

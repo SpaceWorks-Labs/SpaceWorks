@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -71,9 +72,9 @@ class InventoryAssetDetailView(APIView):
         require_module(asset.makerspace_id, "staff_admin")
         require_action(request.user, rbac.Action.EDIT_INVENTORY, asset.makerspace_id)
         if asset.product.tracking_mode != TrackingMode.INDIVIDUAL:
-            raise ValidationError("Asset edits are only for individual-tracked products.")
+            raise ValidationError(gettext("Asset edits are only for individual-tracked products."))
         if asset.status in {InventoryAsset.Status.ISSUED, InventoryAsset.Status.RESERVED}:
-            raise ValidationError("Cannot edit an asset that is currently issued or reserved.")
+            raise ValidationError(gettext("Cannot edit an asset that is currently issued or reserved."))
 
         serializer = InventoryAssetAdminUpdateSerializer(
             asset,
@@ -90,12 +91,12 @@ class InventoryAssetDetailView(APIView):
             # Re-check under the row lock: the asset may have been issued/reserved
             # (or otherwise changed) between the initial read and acquiring the lock.
             if locked_asset.product.tracking_mode != TrackingMode.INDIVIDUAL:
-                raise ValidationError("Asset edits are only for individual-tracked products.")
+                raise ValidationError(gettext("Asset edits are only for individual-tracked products."))
             if locked_asset.status in {
                 InventoryAsset.Status.ISSUED,
                 InventoryAsset.Status.RESERVED,
             }:
-                raise ValidationError("Cannot edit an asset that is currently issued or reserved.")
+                raise ValidationError(gettext("Cannot edit an asset that is currently issued or reserved."))
             serializer.instance = locked_asset
             asset = serializer.save()
             audit.record(
@@ -132,7 +133,7 @@ class InventoryAssetStatusActionView(APIView):
         require_module(asset.makerspace_id, "staff_admin")
         require_action(request.user, rbac.Action.EDIT_INVENTORY, asset.makerspace_id)
         if asset.product.tracking_mode != TrackingMode.INDIVIDUAL:
-            raise ValidationError("Asset fix actions are only for individual-tracked products.")
+            raise ValidationError(gettext("Asset fix actions are only for individual-tracked products."))
 
         serializer = InventoryAssetStatusActionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -146,9 +147,9 @@ class InventoryAssetStatusActionView(APIView):
             InventoryAsset.Status.AVAILABLE,
             InventoryAsset.Status.DAMAGED,
         }:
-            raise ValidationError("Only available or damaged assets can be moved to the fix shelf.")
+            raise ValidationError(gettext("Only available or damaged assets can be moved to the fix shelf."))
         if action == "repair" and asset.status != InventoryAsset.Status.MAINTENANCE:
-            raise ValidationError("Only assets on the fix shelf can be moved back to inventory.")
+            raise ValidationError(gettext("Only assets on the fix shelf can be moved back to inventory."))
 
         try:
             with transaction.atomic():

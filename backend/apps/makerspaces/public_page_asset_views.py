@@ -1,5 +1,6 @@
 """Gated image streams; a retained reference alone never authorizes public bytes."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.parsers import MultiPartParser
@@ -50,7 +51,7 @@ class PageAssetsView(PageEditorBase):
         try:
             result = assets.upload(kind, pk, actor=request.user, **data(AssetUploadInput, request))
         except StorageUnavailable:
-            return Response({"detail": "Image storage is unavailable."}, status=503)
+            return Response({"detail": gettext("Image storage is unavailable.")}, status=503)
         return Response(AssetUploadResult(result).data, status=201)
 
 

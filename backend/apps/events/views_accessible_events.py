@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,7 +31,7 @@ class AccessibleEventListView(APIView):
         if selected:
             from rest_framework.exceptions import ValidationError
             if not selected.isdecimal() or int(selected) < 1:
-                raise ValidationError({"makerspace_id": "Choose a valid makerspace."})
+                raise ValidationError({"makerspace_id": gettext("Choose a valid makerspace.")})
             rows = rows.filter(makerspace_id=int(selected))
         rows = rows.filter(makerspace__enabled_modules__contains=["events"])
         rows = _annotate_registration_counts(rows).select_related("makerspace", "series").prefetch_related("organizers__organization", "audience_organizations__organization").order_by("starts_at", "id")

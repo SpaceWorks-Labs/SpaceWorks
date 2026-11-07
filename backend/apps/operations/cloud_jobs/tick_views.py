@@ -1,4 +1,5 @@
 """Internal cron transport. Never mount this URLconf under the full profile."""
+from django.utils.translation import gettext
 import json
 
 from django.conf import settings
@@ -51,7 +52,7 @@ def require_tick_secret(request):
             or request.headers.get("Authorization") or request.query_params
             or not constant_time_compare(provided, settings.FREE_TICK_SECRET)
             or not empty_tick_body(request)):
-        raise PermissionDenied("Invalid cron request.")
+        raise PermissionDenied(gettext("Invalid cron request."))
     consume_rate(authenticated=True)
 
 

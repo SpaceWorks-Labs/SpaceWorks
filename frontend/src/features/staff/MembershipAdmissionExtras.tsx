@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { AdmissionSettings } from "../members/membershipAdmissionApi";
 
 // `fresh` marks a purpose added in this edit: its key follows its name until saved; a
@@ -15,29 +16,26 @@ export function MembershipAdmissionExtras({ value, features, onChange }: {
   const purposes = value.consent_purposes ?? [];
   const setPurposes = (next: Purpose[]) => onChange({ ...value, consent_purposes: next });
   return <>
-    {value.rejoin_dues_rule === "after_lapse" ? <label className="grid gap-1 text-sm text-ink">Days away that count as a lapse
-      <input className="desk-input" type="number" min={1} max={3650} value={value.rejoin_after_days ?? 365}
+    {value.rejoin_dues_rule === "after_lapse" ? <label className="grid gap-1 text-sm text-ink">{t`Days away that count as a lapse`}<input className="desk-input" type="number" min={1} max={3650} value={value.rejoin_after_days ?? 365}
         onChange={(event) => onChange({ ...value, rejoin_after_days: Number(event.target.value) })} /></label> : null}
-    {on("member_numbers") ? <label className="grid gap-1 text-sm text-ink">Member number pattern
-      <input className="desk-input" maxLength={40} placeholder="{number:4}" value={value.member_number_pattern ?? ""}
+    {on("member_numbers") ? <label className="grid gap-1 text-sm text-ink">{t`Member number pattern`}<input className="desk-input" maxLength={40} placeholder="{number:4}" value={value.member_number_pattern ?? ""}
         onChange={(event) => onChange({ ...value, member_number_pattern: event.target.value })} />
-      <span className="text-muted">Use {"{number}"} or {"{number:4}"} once, and optionally {"{year}"}, e.g. TNK-{"{number:4}"}. Numbers never change.</span>
+      <span className="text-muted">{t`Use ${"{number}"} or ${"{number:4}"} once, and optionally ${"{year}"}, e.g. TNK-${"{number:4}"}. Numbers never change.`}</span>
     </label> : null}
     {on("consent") ? <fieldset className="grid gap-3 rounded border border-line p-3">
-      <legend className="text-sm font-semibold text-ink">Consents members can give</legend>
-      <label className="grid gap-1 text-sm text-ink">Privacy notice version
-        <input className="desk-input" maxLength={64} value={value.privacy_notice_version ?? ""}
+      <legend className="text-sm font-semibold text-ink">{t`Consents members can give`}</legend>
+      <label className="grid gap-1 text-sm text-ink">{t`Privacy notice version`}<input className="desk-input" maxLength={64} value={value.privacy_notice_version ?? ""}
           onChange={(event) => onChange({ ...value, privacy_notice_version: event.target.value })} /></label>
       {purposes.map((purpose, index) => <div key={index} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
-        <input className="desk-input" aria-label={`Purpose ${index + 1} name`} maxLength={120} value={purpose.label}
+        <input className="desk-input" aria-label={t`Purpose ${index + 1} name`} maxLength={120} value={purpose.label}
           onChange={(event) => setPurposes(purposes.map((row, at) => at === index ? { ...row, label: event.target.value, key: (row as Purpose).fresh ? slugify(event.target.value) : row.key } : row))} />
-        <input className="desk-input" aria-label={`Purpose ${index + 1} description`} maxLength={500} value={purpose.description}
+        <input className="desk-input" aria-label={t`Purpose ${index + 1} description`} maxLength={500} value={purpose.description}
           onChange={(event) => setPurposes(purposes.map((row, at) => at === index ? { ...row, description: event.target.value } : row))} />
-        <button className="desk-button" type="button" onClick={() => setPurposes(purposes.filter((_, at) => at !== index))}>Remove</button>
+        <button className="desk-button" type="button" onClick={() => setPurposes(purposes.filter((_, at) => at !== index))}>{t`Remove`}</button>
       </div>)}
       {purposes.length < 20 ? <div><button className="desk-button" type="button"
-        onClick={() => setPurposes([...purposes, { key: "", label: "", description: "", fresh: true }])}>Add a purpose</button></div> : null}
-      <p className="text-sm text-muted">Members agree to each purpose themselves and can withdraw at any time. There are no guardian or age fields.</p>
+        onClick={() => setPurposes([...purposes, { key: "", label: "", description: "", fresh: true }])}>{t`Add a purpose`}</button></div> : null}
+      <p className="text-sm text-muted">{t`Members agree to each purpose themselves and can withdraw at any time. There are no guardian or age fields.`}</p>
     </fieldset> : null}
   </>;
 }

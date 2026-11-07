@@ -4,6 +4,7 @@ Every write is audited in the space (``devices.integration_bound`` / ``_updated`
 ``_unbound``). A binding is created disabled unless staff say otherwise, and only the
 reserved ``printer_agent`` kind exists; it needs the built-in printer type.
 """
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound, ValidationError
@@ -37,7 +38,7 @@ def scoped_integration(actor, pk):
 
 def create_integration(actor, makerspace_id, machine_type, *, kind, enabled, config_schema_version):
     if kind == MachineTypeIntegration.Kind.PRINTER_AGENT and not is_printer_type(machine_type):
-        raise ValidationError({"kind": "A printer agent binds only the built-in 3D printer type."},
+        raise ValidationError({"kind": gettext("A printer agent binds only the built-in 3D printer type.")},
                               code="integration_kind_unsupported")
     try:
         with transaction.atomic():

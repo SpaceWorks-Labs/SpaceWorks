@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { Coins } from "lucide-react";
 
@@ -43,8 +44,7 @@ function StepBody({ makerspaceId, requestId, step }: {
   makerspaceId: number; requestId: number; step: ReturnType<typeof useStepRows>;
 }) {
   return <div className="grid gap-3">
-    <p className="text-sm text-muted">The return is recorded. Set a charge for each damaged or lost item now, or decide
-      later from the Charges section on request #{requestId}.</p>
+    <p className="text-sm text-muted">{t`The return is recorded. Set a charge for each damaged or lost item now, or decide later from the Charges section on request #${requestId}.`}</p>
     {step.rows.map(row => step.outcomes[row.id]
       ? <p key={row.id} className="rounded-xl border border-line p-3 text-sm text-ink" role="status">
         {rowTitle(row)}: {step.outcomes[row.id]}</p>
@@ -58,14 +58,14 @@ export function DamageChargeStep({ makerspaceId, requestId }: { makerspaceId: nu
   const step = useStepRows(makerspaceId, requestId);
   const [later, setLater] = useState(false);
   if (step.query.error) return null;
-  if (!step.ready) return <p className="text-sm text-muted" role="status">Checking damaged and lost items…</p>;
+  if (!step.ready) return <p className="text-sm text-muted" role="status">{t`Checking damaged and lost items…`}</p>;
   if (!step.rows.length) return null;
-  if (later) return <p className="text-sm text-muted">Charges left for later. Set them from the Charges section on request #{requestId}.</p>;
+  if (later) return <p className="text-sm text-muted">{t`Charges left for later. Set them from the Charges section on request #${requestId}.`}</p>;
   const allDone = step.rows.every(row => step.outcomes[row.id]);
-  return <section aria-label="Charge for damaged or lost items" className="grid gap-3 rounded-xl border border-line bg-panel p-4 text-ink">
-    <h3 className="flex items-center gap-2 text-base font-semibold"><Coins aria-hidden="true" size={18} />Charge for damaged or lost items</h3>
+  return <section aria-label={t`Charge for damaged or lost items`} className="grid gap-3 rounded-xl border border-line bg-panel p-4 text-ink">
+    <h3 className="flex items-center gap-2 text-base font-semibold"><Coins aria-hidden="true" size={18} />{t`Charge for damaged or lost items`}</h3>
     <StepBody makerspaceId={makerspaceId} requestId={requestId} step={step} />
-    {allDone ? null : <button className="desk-button w-full sm:w-fit" type="button" onClick={() => setLater(true)}>Decide later</button>}
+    {allDone ? null : <button className="desk-button w-full sm:w-fit" type="button" onClick={() => setLater(true)}>{t`Decide later`}</button>}
   </section>;
 }
 
@@ -78,10 +78,10 @@ export function DamageChargeDialog({ makerspaceId, requestId, onClose }: {
   useEffect(() => { if (empty) onClose(); }, [empty, onClose]);
   if (!step.ready || !step.rows.length) return null;
   const allDone = step.rows.every(row => step.outcomes[row.id]);
-  return <Modal open onClose={onClose} title="Charge for damaged or lost items"
+  return <Modal open onClose={onClose} title={t`Charge for damaged or lost items`}
     footer={<div className="flex justify-end">
       <button className={`${allDone ? "desk-button-primary" : "desk-button"} w-full sm:w-auto`} type="button" onClick={onClose}>
-        {allDone ? "Done" : "Decide later"}</button>
+        {allDone ? t`Done` : t`Decide later`}</button>
     </div>}>
     <StepBody makerspaceId={makerspaceId} requestId={requestId} step={step} />
   </Modal>;

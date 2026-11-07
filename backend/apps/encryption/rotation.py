@@ -16,6 +16,7 @@ The platform key always works (#120): archives keep their own wrapped copies of 
 DEK version, so an old archive still restores after the version is retired here.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
@@ -33,7 +34,7 @@ def running_job(makerspace):
 
 def _refuse_if_busy(makerspace):
     if running_job(makerspace) is not None:
-        raise ValidationError("A key job is already running for this makerspace; wait for it to finish.")
+        raise ValidationError(gettext("A key job is already running for this makerspace; wait for it to finish."))
 
 
 def _create_job(makerspace, **fields):
@@ -41,7 +42,7 @@ def _create_job(makerspace, **fields):
         with transaction.atomic():
             return KeyRotationJob.objects.create(makerspace=makerspace, **fields)
     except IntegrityError as exc:  # the one-running-job constraint lost a race
-        raise ValidationError("A key job is already running for this makerspace.") from exc
+        raise ValidationError(gettext("A key job is already running for this makerspace.")) from exc
 
 
 def _enqueue():
@@ -63,13 +64,13 @@ def start_dek_rotation(actor, makerspace, *, emergency=False):
     _refuse_if_busy(makerspace)
     current = MakerspaceEncryptionKey.objects.filter(makerspace=makerspace, status="active").first()
     if current is None:
-        raise ValidationError("This makerspace has no encryption key yet; nothing to rotate.")
+        raise ValidationError(gettext("This makerspace has no encryption key yet; nothing to rotate."))
     kind = Kind.EMERGENCY_REKEY if emergency else Kind.ROTATION
     with transaction.atomic():
         try:
             new = rotate_dek(makerspace.pk).key
         except PiiUnavailable as exc:
-            raise ValidationError("Encryption is not available on this deployment; nothing to rotate.") from exc
+            raise ValidationError(gettext("Encryption is not available on this deployment; nothing to rotate.")) from exc
         job = _create_job(makerspace, kind=kind, from_version=current.version, to_version=new.version)
         if emergency:
             audit.record(actor, "encryption.emergency_rekey_started", makerspace=makerspace, target=job,
@@ -90,7 +91,7 @@ def start_search_key_rotation(actor, makerspace):
     from .search_keys import start_building
 
     if not settings.PII_ENCRYPTION_ENABLED:
-        raise ValidationError("Scoped PII encryption is off on this deployment; there is no search index to rotate.")
+        raise ValidationError(gettext("Scoped PII encryption is off on this deployment; there is no search index to rotate."))
     _refuse_if_busy(makerspace)
     with transaction.atomic():
         key = start_building(makerspace.pk)

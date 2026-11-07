@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -23,7 +24,7 @@ class WatchResponseSerializer(serializers.Serializer):
 class WatchInputSerializer(serializers.Serializer):
     def validate(self, attrs):
         if self.initial_data:
-            raise serializers.ValidationError("No contact details or other fields are accepted.")
+            raise serializers.ValidationError(gettext("No contact details or other fields are accepted."))
         return attrs
 
 
@@ -40,7 +41,7 @@ class PublicInventoryWatchView(APIView):
         space = get_public_makerspace(slug)
         require_module_for_servable(space, "public_inventory")
         if not space.public_inventory_enabled:
-            raise ValidationError({"detail": "Public inventory is disabled."})
+            raise ValidationError({"detail": gettext("Public inventory is disabled.")})
         return get_object_or_404(rbac.scope_public_catalogue(
             InventoryProduct.objects.all(), space,
         ).filter(is_public=True, is_archived=False), pk=pk)

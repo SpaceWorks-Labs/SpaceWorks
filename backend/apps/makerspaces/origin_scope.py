@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -60,19 +61,19 @@ def validate_native_makerspace_scope(request, user, grant):
         return None
     if not _active_attested_grant(user, grant):
         raise PermissionDenied(
-            'Native makerspace selection requires an active device grant.'
+            gettext('Native makerspace selection requires an active device grant.')
         )
     try:
         makerspace_id = int(raw)
     except (TypeError, ValueError) as exc:
-        raise PermissionDenied('Invalid native makerspace selection.') from exc
+        raise PermissionDenied(gettext('Invalid native makerspace selection.')) from exc
     if makerspace_id <= 0 or str(makerspace_id) != str(raw).strip():
-        raise PermissionDenied('Invalid native makerspace selection.')
+        raise PermissionDenied(gettext('Invalid native makerspace selection.'))
     # A staff device grant is a step-up fixed to one tenant and reads the STAFF row
     # there; every other grant is membership-only and reads the community row.
     staff_grant = getattr(grant, 'authority', None) == 'staff'
     if staff_grant and makerspace_id != grant.staff_makerspace_id:
-        raise PermissionDenied('Staff makerspace selection is fixed to the grant tenant.')
+        raise PermissionDenied(gettext('Staff makerspace selection is fixed to the grant tenant.'))
 
     origin = _origin_candidate(request)
     origin_scope = staff_origin_scope(request)
@@ -82,11 +83,11 @@ def validate_native_makerspace_scope(request, user, grant):
             AMBIGUOUS_STAFF_ORIGIN_SCOPE,
         ):
             raise PermissionDenied(
-                'Browser origin cannot use native makerspace selection.'
+                gettext('Browser origin cannot use native makerspace selection.')
             )
         if origin_scope != makerspace_id:
             raise PermissionDenied(
-                'Makerspace selection conflicts with browser origin.'
+                gettext('Makerspace selection conflicts with browser origin.')
             )
 
     track = MakerspaceMembership.Track.STAFF if staff_grant else MakerspaceMembership.Track.COMMUNITY
@@ -97,25 +98,25 @@ def validate_native_makerspace_scope(request, user, grant):
     ), relation="makerspace").select_related('makerspace', 'assigned_role')
     membership = memberships.first()
     if membership is None:
-        raise PermissionDenied('Makerspace selection is not available.')
+        raise PermissionDenied(gettext('Makerspace selection is not available.'))
 
     url_name, targets, invalid, native_route_allowed = request_route_targets(
         request
     )
     from .origin_scope_routes_public_pages import GLOBAL_ROUTES
     if url_name in GLOBAL_ROUTES:
-        raise PermissionDenied("Global organization pages cannot select a makerspace.")
+        raise PermissionDenied(gettext("Global organization pages cannot select a makerspace."))
     if invalid or not native_route_allowed:
-        raise PermissionDenied('Makerspace target could not be resolved.')
+        raise PermissionDenied(gettext('Makerspace target could not be resolved.'))
     if targets and targets != {makerspace_id}:
         raise PermissionDenied(
-            'Makerspace target does not match the selected makerspace.'
+            gettext('Makerspace target does not match the selected makerspace.')
         )
     if url_name in QUERY_SCOPED_ROUTES and targets != {makerspace_id}:
         # These listings narrow by their query parameter, not by the native selection,
         # so a native request must name the selected makerspace explicitly.
         raise PermissionDenied(
-            'This listing requires its makerspace query parameter to match the selection.'
+            gettext('This listing requires its makerspace query parameter to match the selection.')
         )
     request.selected_makerspace_id = makerspace_id
     request.selected_makerspace_membership = membership
@@ -142,7 +143,7 @@ def require_native_selected_makerspace(request, makerspace_id=None):
         or (makerspace_id is not None and selected != makerspace_id)
     ):
         raise PermissionDenied(
-            'A matching native makerspace selection is required.'
+            gettext('A matching native makerspace selection is required.')
         )
     return membership
 

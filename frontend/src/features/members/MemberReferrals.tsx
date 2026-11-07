@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useState } from "react";
 import { CustomFormFields } from "../forms/CustomFormFields";
@@ -55,14 +56,14 @@ export function MemberReferrals({
 
   return <div className="space-y-5">
     {canSubmitReferral ? <section className="desk-panel p-5">
-      <h2 className="title-panel">Refer someone</h2>
-      <p className="mt-1 text-sm text-muted">Invite someone by email to join as a member.</p>
+      <h2 className="title-panel">{t`Refer someone`}</h2>
+      <p className="mt-1 text-sm text-muted">{t`Invite someone by email to join as a member.`}</p>
       <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={submit}>
-        <label className="sr-only" htmlFor="member-referral-email">Invite email</label>
+        <label className="sr-only" htmlFor="member-referral-email">{t`Invite email`}</label>
         <input id="member-referral-email" className="desk-input flex-1" type="email" required value={email}
           onChange={(event) => setEmail(event.target.value)} placeholder="friend@example.com" />
         <button className="desk-button-brand" disabled={isReferring} type="submit">
-          {isReferring ? "Sending…" : "Send referral"}
+          {isReferring ? t`Sending…` : t`Send referral`}
         </button>
       </form>
       {referralSuccess ? <p className="mt-3 text-sm text-success-ink" role="status">{referralSuccess}</p> : null}
@@ -70,11 +71,11 @@ export function MemberReferrals({
     </section> : null}
 
     <section className="desk-panel p-5">
-      <h2 className="title-panel">Pending invitations</h2>
-      {emailVerified === false ? <p className="mt-2 text-sm text-muted">Verify your email to discover and claim invitations.</p> : null}
-      {invitationsLoading ? <p className="mt-2 text-sm text-muted">Checking pending invitations…</p> : null}
+      <h2 className="title-panel">{t`Pending invitations`}</h2>
+      {emailVerified === false ? <p className="mt-2 text-sm text-muted">{t`Verify your email to discover and claim invitations.`}</p> : null}
+      {invitationsLoading ? <p className="mt-2 text-sm text-muted">{t`Checking pending invitations…`}</p> : null}
       {invitationError ? <p className="mt-2 text-sm text-danger" role="alert">{invitationError.message}</p> : null}
-      {emailVerified !== false && !invitationsLoading && invitations.length === 0 ? <EmptyState message="No pending invitations for this makerspace." /> : null}
+      {emailVerified !== false && !invitationsLoading && invitations.length === 0 ? <EmptyState message={t`No pending invitations for this makerspace.`} /> : null}
       {emailVerified !== false && invitations.length ? <ul className="mt-3 space-y-3">
         {invitations.map((invitation) => <InvitationApplication key={invitation.id} invitation={invitation} schema={invitation.is_staff ? null : applicationSchema ?? null} admissionMode={admissionMode} pending={claimingId === invitation.id} onClaim={onClaim} />)}
       </ul> : null}
@@ -92,8 +93,8 @@ function InvitationApplication({ invitation, schema, admissionMode, pending, onC
   const [errors, setErrors] = useState<Record<string, string>>({});
   return <li className="rounded border border-line p-3">
     <p className="break-words text-sm font-medium text-ink">{invitation.makerspace.name}</p>
-    <p className="mt-1 text-sm text-muted">{invitation.inviter ? `Invited by ${invitation.inviter}` : "You have been invited."}{invitation.is_staff ? " Claiming sends this to a manager for approval." : admissionMode ? " Admission conditions apply when you claim." : invitation.auto_activates ? " Claiming activates your membership." : " Claiming sends this to a manager for approval."}</p>
-    {admissionMode === "closed" ? <p className="mt-3 text-sm text-muted">Membership applications are closed.</p> : <form className="mt-3 grid gap-3" onSubmit={(event) => {
+    <p className="mt-1 text-sm text-muted">{invitation.inviter ? t`Invited by ${invitation.inviter}` : t`You have been invited.`}{invitation.is_staff ? t` Claiming sends this to a manager for approval.` : admissionMode ? t` Admission conditions apply when you claim.` : invitation.auto_activates ? t` Claiming activates your membership.` : t` Claiming sends this to a manager for approval.`}</p>
+    {admissionMode === "closed" ? <p className="mt-3 text-sm text-muted">{t`Membership applications are closed.`}</p> : <form className="mt-3 grid gap-3" onSubmit={(event) => {
       event.preventDefault();
       const next = validateCustomAnswers(schema, answers);
       setErrors(next);
@@ -101,7 +102,7 @@ function InvitationApplication({ invitation, schema, admissionMode, pending, onC
       if (schema?.length) onClaim(invitation.id, answers); else onClaim(invitation.id);
     }}>
       <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} errors={errors} disabled={pending} />
-      <button type="submit" className="desk-button-brand w-full sm:w-fit" disabled={pending}>{pending ? "Claiming…" : "Claim invitation"}</button>
+      <button type="submit" className="desk-button-brand w-full sm:w-fit" disabled={pending}>{pending ? t`Claiming…` : t`Claim invitation`}</button>
     </form>}
   </li>;
 }

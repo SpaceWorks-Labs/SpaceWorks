@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -114,42 +115,42 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
       {/* Sized by the workbench column, not the viewport: beside the camera at xl the column is half width. */}
       <div className="grid gap-3 @lg:grid-cols-2 @4xl:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1fr)_12rem_9rem] @lg:items-end">
         <label className="eyebrow grid gap-1">
-          <span>Count type</span>
+          <span>{t`Count type`}</span>
           <select className="desk-input" value={mode} onChange={(event) => { setMode(event.target.value as "product" | "asset"); setAssetId(""); }}>
-            <option value="product">Product</option>
-            <option value="asset">Asset</option>
+            <option value="product">{t`Product`}</option>
+            <option value="asset">{t`Asset`}</option>
           </select>
         </label>
         <label className="eyebrow grid gap-1">
-          <span>{mode === "asset" ? "Product for asset" : "Product"}</span>
+          <span>{mode === "asset" ? t`Product for asset` : t`Product`}</span>
           <select className="desk-input" value={productId} disabled={products.isLoading} onChange={(event) => { setProductId(event.target.value); setAssetId(""); }}>
-            <option value="">Select product</option>
+            <option value="">{t`Select product`}</option>
             {products.data?.results.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
           </select>
         </label>
         {mode === "asset" ? (
           <label className="eyebrow grid gap-1">
-            <span>Asset</span>
+            <span>{t`Asset`}</span>
             <select className="desk-input" value={assetId} disabled={!productId || assets.isLoading} onChange={(event) => setAssetId(event.target.value)}>
-              <option value="">Select asset</option>
+              <option value="">{t`Select asset`}</option>
               {assets.data?.results.map((asset) => <option key={asset.id} value={asset.id}>{asset.asset_tag}{detail.data?.blind ? "" : ` (${asset.status})`}</option>)}
             </select>
           </label>
         ) : (
           <label className="eyebrow grid gap-1">
-            <span>Line container</span>
+            <span>{t`Line container`}</span>
             <select className="desk-input" value={containerId} onChange={(event) => setContainerId(event.target.value)}>
-              <option value="">No container</option>
+              <option value="">{t`No container`}</option>
               {containers.data?.results.map((container) => <option key={container.id} value={container.id}>{container.label}</option>)}
             </select>
           </label>
         )}
         <label className="eyebrow grid gap-1">
-          <span>Counted</span>
+          <span>{t`Counted`}</span>
           <QuantityStepper label="counted" value={counted} onValueChange={setCounted} />
         </label>
         <label className="eyebrow grid gap-1">
-          <span>Condition</span>
+          <span>{t`Condition`}</span>
           <select className="desk-input" value={condition} onChange={(event) => setCondition(event.target.value)}>
             {CONDITIONS.map((value) => <option key={value} value={value}>{value}</option>)}
           </select>
@@ -157,34 +158,34 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
       </div>
       {mode === "asset" ? (
         <label className="eyebrow mt-2 grid gap-1">
-          <span>Line container</span>
+          <span>{t`Line container`}</span>
           <select className="desk-input" value={containerId} onChange={(event) => setContainerId(event.target.value)}>
-            <option value="">No container</option>
+            <option value="">{t`No container`}</option>
             {containers.data?.results.map((container) => <option key={container.id} value={container.id}>{container.label}</option>)}
           </select>
         </label>
       ) : null}
       <label className="eyebrow mt-2 grid gap-1">
-        <span>Line notes</span>
+        <span>{t`Line notes`}</span>
         <input className="desk-input" value={notes} onChange={(event) => setNotes(event.target.value)} />
       </label>
       <div className="desk-actions mt-2 flex flex-wrap gap-2">
-        <button className="desk-button-primary w-full @md:w-auto" disabled={!canSave || record.isPending || readOnly} onClick={() => record.mutate()}>{record.isPending ? "Saving…" : "Record count"}</button>
+        <button className="desk-button-primary w-full @md:w-auto" disabled={!canSave || record.isPending || readOnly} onClick={() => record.mutate()}>{record.isPending ? t`Saving…` : t`Record count`}</button>
       </div>
         </div>} /> : null}
       {scanNote ? <p className={`mt-2 text-sm ${scanNote.startsWith("Scanned ") ? "text-muted" : "text-danger"}`}>{scanNote}</p> : null}
       {recordError ? <p className="mt-2 text-sm text-danger">{recordError}</p> : null}
-      <StatRow stats={[{ label: "Lines counted", value: lines.length }, ...(!detail.data?.blind ? [{ label: "Variances", value: lines.filter(line => line.variance_quantity != null && line.variance_quantity !== 0).length }] : [])]} />
-      <h2 className="title-section mt-6">Counted so far</h2>
+      <StatRow stats={[{ label: t`Lines counted`, value: lines.length }, ...(!detail.data?.blind ? [{ label: t`Variances`, value: lines.filter(line => line.variance_quantity != null && line.variance_quantity !== 0).length }] : [])]} />
+      <h2 className="title-section mt-6">{t`Counted so far`}</h2>
       {lines.length ? <DataTable<StocktakeLine> data={lines} getRowId={line => line.id} columns={[
         { key: "item", header: "Item", render: line => line.asset ? assetName(line.asset) : productName(line.product) },
         { key: "container", header: "Container", render: line => containerName(line.container) },
         { key: "expected_quantity", header: "Expected", render: line => line.expected_quantity ?? "Hidden" },
         { key: "counted_quantity", header: "Counted" },
-        { key: "variance_quantity", header: "Variance", render: line => <StatusPill label={line.variance_quantity === null ? "Hidden" : String(line.variance_quantity)} tone={line.variance_quantity ? "warn" : "neutral"} /> },
+        { key: "variance_quantity", header: "Variance", render: line => <StatusPill label={line.variance_quantity === null ? t`Hidden` : String(line.variance_quantity)} tone={line.variance_quantity ? "warn" : "neutral"} /> },
         { key: "condition", header: "Condition", render: line => <StatusPill label={line.condition} /> },
         { key: "notes", header: "Notes" },
-      ]} /> : <EmptyState message="No counts recorded yet. Scan or pick an item to start." />}
+      ]} /> : <EmptyState message={t`No counts recorded yet. Scan or pick an item to start.`} />}
 
     </div>
   );

@@ -15,6 +15,7 @@ One To-Buy list and one warranty app serve two parents, so the row decides the s
 A machines switch therefore never hides inventory rows, and the reverse.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 
@@ -46,7 +47,7 @@ def _makerspace(makerspace_or_id):
 
 
 def _refuse(key):
-    raise NotFound({"detail": f"{key} is switched off for this makerspace.",
+    raise NotFound({"detail": gettext('{key} is switched off for this makerspace.').format(key=key),
                     "code": "capability_disabled"})
 
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
@@ -22,20 +23,19 @@ export function GuestGiftPage() {
     },
   });
   if (gift.error instanceof StructuredApiError && gift.error.status === 404) {
-    return <DonationShell title="Your gift" state={{ status: "ready" }}>
-      <Card><p className="text-sm">This link isn't valid any more. Check the latest email from the space.</p></Card>
+    return <DonationShell title={t`Your gift`} state={{ status: "ready" }}>
+      <Card><p className="text-sm">{t`This link isn't valid any more. Check the latest email from the space.`}</p></Card>
     </DonationShell>;
   }
   const state = gift.isLoading ? { status: "loading" as const } : gift.error ? { status: "error" as const,
-    error: "Couldn't load your gift.", onRetry: () => { void gift.refetch(); } } : { status: "ready" as const };
-  return <DonationShell title="Your gift" state={state}>
+    error: t`Couldn't load your gift.`, onRetry: () => { void gift.refetch(); } } : { status: "ready" as const };
+  return <DonationShell title={t`Your gift`} state={state}>
     {gift.data ? <div className="grid gap-3">
       <GiftStatusView gift={gift.data} taxReceiptHref={donationsApi.taxReceiptUrl(token)} onPayOnline={() => pay.mutate()}
         paying={pay.isPending} />
       {gift.data.status === "pending" && gift.data.offline?.claimable ? <GuestPaidClaim token={token} /> : null}
-      {pay.error ? <p role="alert" className="text-sm text-danger">Online payment isn't available right now. Pay offline, or try
-        again later. ({giveError(pay.error)})</p> : null}
-      <p className="text-xs text-muted">Keep this link private: anyone with it can see this gift.</p>
+      {pay.error ? <p role="alert" className="text-sm text-danger">{t`Online payment isn't available right now. Pay offline, or try again later. (${giveError(pay.error)})`}</p> : null}
+      <p className="text-xs text-muted">{t`Keep this link private: anyone with it can see this gift.`}</p>
     </div> : null}
   </DonationShell>;
 }

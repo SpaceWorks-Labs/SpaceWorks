@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { CommandSession } from '../../events/hackathonAdmission/transport';
 import { useEffect, useRef } from "react";
 import { sessionScope } from "../eventProgramme/sessionScope";
@@ -44,10 +45,10 @@ export function useDeskPrint(eventId: number) {
     });
     command.current.job = job;
     for (let attempt = 0; job.state !== 'ready'; attempt++) {
-      if (['failed', 'revoked', 'expired', 'cancelled'].includes(job.state)) throw new Error(`This print job is ${job.state}. Refresh the desk before printing again.`);
-      if (attempt >= 30) throw new Error('The print job is still preparing. Retry to check this same job.');
+      if (['failed', 'revoked', 'expired', 'cancelled'].includes(job.state)) throw new Error(t`This print job is ${job.state}. Refresh the desk before printing again.`);
+      if (attempt >= 30) throw new Error(t`The print job is still preparing. Retry to check this same job.`);
       await new Promise<void>((resolve, reject) => {
-        const aborted = () => { clearTimeout(timer); reject(new Error('Print request closed.')); };
+        const aborted = () => { clearTimeout(timer); reject(new Error(t`Print request closed.`)); };
         const timer = setTimeout(() => { controller.signal.removeEventListener('abort', aborted); resolve(); }, 1000);
         controller.signal.addEventListener('abort', aborted, { once: true });
         if (controller.signal.aborted) aborted();

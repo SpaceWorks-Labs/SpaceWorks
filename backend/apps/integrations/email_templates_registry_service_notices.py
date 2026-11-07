@@ -4,14 +4,15 @@ Type-neutral wording ("request", not "print request") because these two events c
 every machine type with a service queue. They live in the existing printing stream so
 the requester template editor and mute controls apply unchanged.
 """
+from django.utils.translation import gettext_noop
 
 SERVICE_NOTICE_SUBJECTS = {
-    "next": "Your makerspace request is next in the queue",
-    "cancelled": "Your makerspace request was cancelled",
+    "next": gettext_noop("Your makerspace request is next in the queue"),
+    "cancelled": gettext_noop("Your makerspace request was cancelled"),
 }
 
 SERVICE_NOTICE_TEXT = {
-    "next": """Hello,
+    "next": gettext_noop("""Hello,
 
 Your request "{{ print_request.title }}" is next among approved jobs.
 
@@ -22,8 +23,8 @@ Staff start it when a compatible machine is free. Any start time shown is an est
 {% if status_url %}
 Track your request: {{ status_url }}
 {% endif %}
-""",
-    "cancelled": """Hello,
+"""),
+    "cancelled": gettext_noop("""Hello,
 
 Your request "{{ print_request.title }}" was cancelled. Nothing was charged for it.
 
@@ -32,11 +33,11 @@ Makerspace: {{ print_request.bucket.makerspace.name }}
 {% if status_url %}
 View your request: {{ status_url }}
 {% endif %}
-""",
+"""),
 }
 
 SERVICE_NOTICE_HTML = {
-    "next": """{% extends "email/base.html" %}
+    "next": gettext_noop("""{% extends "email/base.html" %}
 
 {% block body %}
   <p>Hello,</p>
@@ -48,8 +49,8 @@ SERVICE_NOTICE_HTML = {
     <p>Track your request: <a href="{{ status_url }}">{{ status_url }}</a></p>
   {% endif %}
 {% endblock %}
-""",
-    "cancelled": """{% extends "email/base.html" %}
+"""),
+    "cancelled": gettext_noop("""{% extends "email/base.html" %}
 
 {% block body %}
   <p>Hello,</p>
@@ -60,5 +61,5 @@ SERVICE_NOTICE_HTML = {
     <p>View your request: <a href="{{ status_url }}">{{ status_url }}</a></p>
   {% endif %}
 {% endblock %}
-""",
+"""),
 }

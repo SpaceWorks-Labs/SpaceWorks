@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Field } from "../../../components/ui";
 
 export type AuditFilters = {
@@ -47,13 +48,13 @@ export function AuditLogFilters({
     onChange({ ...filters, [key]: event.target.value });
   return (
     <div className="grid gap-2">
-      <Field label="Makerspace ID"><input className="desk-input" inputMode="numeric" value={filters.makerspace} onChange={set("makerspace")} /></Field>
-      <Field label="Action"><input className="desk-input" placeholder="e.g. request.issued" value={filters.action} onChange={set("action")} /></Field>
-      <Field label="Actor ID"><input className="desk-input" inputMode="numeric" value={filters.actor} onChange={set("actor")} /></Field>
-      <Field label="Target type"><input className="desk-input" placeholder="e.g. inventory.inventoryproduct" value={filters.targetType} onChange={set("targetType")} /></Field>
-      <Field label="Target ID"><input className="desk-input" value={filters.targetId} onChange={set("targetId")} /></Field>
-      <Field label="From"><input className="desk-input" type="date" value={filters.start} onChange={set("start")} /></Field>
-      <Field label="To"><input className="desk-input" type="date" value={filters.end} onChange={set("end")} /></Field>
+      <Field label={t`Makerspace ID`}><input className="desk-input" inputMode="numeric" value={filters.makerspace} onChange={set("makerspace")} /></Field>
+      <Field label={t`Action`}><input className="desk-input" placeholder={t`e.g. request.issued`} value={filters.action} onChange={set("action")} /></Field>
+      <Field label={t`Actor ID`}><input className="desk-input" inputMode="numeric" value={filters.actor} onChange={set("actor")} /></Field>
+      <Field label={t`Target type`}><input className="desk-input" placeholder={t`e.g. inventory.inventoryproduct`} value={filters.targetType} onChange={set("targetType")} /></Field>
+      <Field label={t`Target ID`}><input className="desk-input" value={filters.targetId} onChange={set("targetId")} /></Field>
+      <Field label={t`From`}><input className="desk-input" type="date" value={filters.start} onChange={set("start")} /></Field>
+      <Field label={t`To`}><input className="desk-input" type="date" value={filters.end} onChange={set("end")} /></Field>
     </div>
   );
 }

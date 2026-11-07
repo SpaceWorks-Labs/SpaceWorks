@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { COMPONENT_LABELS, domainLabel, type PricingDomain } from "./pricingApi";
 import type { DiscountForm } from "./discountForm";
 
@@ -15,8 +16,8 @@ export function DiscountScopeFields({ domains, form, onChange }: {
   };
   return <div className="grid gap-4">
     <fieldset className="grid gap-1">
-      <legend className="text-sm font-semibold text-ink">Areas</legend>
-      <p className="text-xs text-muted">Leave all unticked to apply in every area.</p>
+      <legend className="text-sm font-semibold text-ink">{t`Areas`}</legend>
+      <p className="text-xs text-muted">{t`Leave all unticked to apply in every area.`}</p>
       <div className="flex flex-wrap gap-x-5">
         {domains.map(domain => <label key={domain} className="flex min-h-11 items-center gap-2 text-sm">
           <input type="checkbox" className="h-4 w-4" checked={form.domains.includes(domain)}
@@ -24,9 +25,8 @@ export function DiscountScopeFields({ domains, form, onChange }: {
       </div>
     </fieldset>
     <fieldset className="grid gap-1">
-      <legend className="text-sm font-semibold text-ink">Only these prices (optional)</legend>
-      <p className="text-xs text-muted">Leave all unticked to discount rentals, machine time, bookings, registrations and dues.
-        Tick a deposit or a fee to discount it too; ticking any price limits the discount to the ticked ones.</p>
+      <legend className="text-sm font-semibold text-ink">{t`Only these prices (optional)`}</legend>
+      <p className="text-xs text-muted">{t`Leave all unticked to discount rentals, machine time, bookings, registrations and dues. Tick a deposit or a fee to discount it too; ticking any price limits the discount to the ticked ones.`}</p>
       <div className="grid gap-x-5 sm:grid-cols-2">
         {components.map(({ key, label, domain }) => <label key={`${domain}-${key}`} className="flex min-h-11 items-center gap-2 text-sm">
           <input type="checkbox" className="h-4 w-4" checked={form.components.includes(key)}

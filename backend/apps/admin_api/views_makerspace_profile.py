@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from contextlib import contextmanager
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -36,7 +37,7 @@ class MakerspaceProfileView(APIView):
 
     def handle_exception(self, exc):
         if isinstance(exc, ParseError):
-            return Response({"code": "invalid_profile", "detail": "Check the profile fields.",
+            return Response({"code": "invalid_profile", "detail": gettext("Check the profile fields."),
                              "fields": {"non_field_errors": [str(exc.detail)]}}, status=400)
         return super().handle_exception(exc)
 
@@ -103,7 +104,7 @@ class MakerspaceProfileView(APIView):
         get_object_or_404(self._queryset(request), pk=makerspace_id)
         serializer = MakerspaceProfileSerializer(data=request.data, partial=True)
         if not serializer.is_valid():
-            return Response({"code": "invalid_profile", "detail": "Check the profile fields.",
+            return Response({"code": "invalid_profile", "detail": gettext("Check the profile fields."),
                              "fields": serializer.errors}, status=400)
         values = serializer.validated_data
         default = MakerspacePaymentSettings._meta.get_field("default_currency").get_default()
@@ -113,6 +114,6 @@ class MakerspaceProfileView(APIView):
                 write_profile(request.user, makerspace, values, payment)
             except DjangoValidationError as exc:
                 transaction.set_rollback(True)
-                return Response({"code": "invalid_profile", "detail": "Check the profile fields.",
+                return Response({"code": "invalid_profile", "detail": gettext("Check the profile fields."),
                                  "fields": exc.message_dict}, status=400)
             return Response(profile_payload(makerspace, payment))

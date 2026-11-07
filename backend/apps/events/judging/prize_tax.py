@@ -9,6 +9,7 @@ A winner's PAN is collected on their claim, always encrypted, and only ever show
 (`••••••1234`). It never enters audit metadata, exports, reports or analytics.
 """
 
+from django.utils.translation import gettext
 from decimal import ROUND_HALF_UP, Decimal
 
 from apps.payments.donations.tax_receipts import PAN_RE, mask_pan, normalize_pan
@@ -36,5 +37,5 @@ def clean_pan(value):
     from rest_framework.exceptions import ValidationError
     pan = normalize_pan(value)
     if pan and not PAN_RE.match(pan):
-        raise ValidationError({"pan": "Enter a valid PAN (five letters, four digits, one letter)."})
+        raise ValidationError({"pan": gettext("Enter a valid PAN (five letters, four digits, one letter).")})
     return pan

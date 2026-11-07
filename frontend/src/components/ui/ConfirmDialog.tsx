@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Modal } from "./Modal";
 
 export type ConfirmDialogProps = {
@@ -17,8 +18,8 @@ export function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel = t`Confirm`,
+  cancelLabel = t`Cancel`,
   tone = "default",
   onConfirm,
   onCancel,

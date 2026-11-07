@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ListLayout } from "../../../components/layouts";
@@ -66,16 +67,16 @@ export function EmailTemplatesPanel({ makerspace }: { makerspace: Makerspace }) 
   if (requestedTemplate && selected) return <EmailTemplateEditor makerspaceId={makerspace.id} selected={selected}
     onSelectMachineType={machineType => setSelected({ ...selected, machineType })}
     onBack={() => { const next = new URLSearchParams(search); next.delete("template"); setSearch(next); }} />;
-  return <ListLayout header={{ title: "Email templates", subtitle: `What people receive from ${makerspace.name}, in your words.` }}
-    state={{ status: list.isLoading ? "loading" : list.error ? "error" : "ready", error: "Couldn't load email templates. Try again.", onRetry: () => { void list.refetch(); } }}
-    isEmpty={!rows.length} empty={{ message: "No editable templates here." }}
-    tabs={[{ key: "all", label: "All templates", href: href("all"), count: rows.length }, ...grouped.map(group => ({ key: group.stream, label: formatLabel(group.stream), href: href(group.stream), count: group.audiences.reduce((count, audience) => count + audience.templates.length, 0) }))]}
+  return <ListLayout header={{ title: t`Email templates`, subtitle: t`What people receive from ${makerspace.name}, in your words.` }}
+    state={{ status: list.isLoading ? "loading" : list.error ? "error" : "ready", error: t`Couldn't load email templates. Try again.`, onRetry: () => { void list.refetch(); } }}
+    isEmpty={!rows.length} empty={{ message: t`No editable templates here.` }}
+    tabs={[{ key: "all", label: t`All templates`, href: href("all"), count: rows.length }, ...grouped.map(group => ({ key: group.stream, label: formatLabel(group.stream), href: href(group.stream), count: group.audiences.reduce((count, audience) => count + audience.templates.length, 0) }))]}
     activeTab={streamFilter} body={{ kind: "rows", rows: grouped.filter(group => streamFilter === "all" || group.stream === streamFilter).map(group =>
       <div key={group.stream} className="grid gap-5">{group.audiences.map(audience => <section key={audience.audience} className="grid gap-3">
-        <h2 className="title-section">To {formatLabel(audience.audience)}</h2>
+        <h2 className="title-section">{t`To ${formatLabel(audience.audience)}`}</h2>
         {audience.templates.map(template => <ListRow key={`${template.stream}:${template.audience}:${template.key}`} title={template.label}
           meta={`Sent when ${formatLabel(template.key)} · ${formatLabel(group.stream)}`}
-          right={<StatusPill label={template.is_overridden || template.overridable_types.some(type => type.is_overridden) ? "Edited" : "Default"} tone={template.is_overridden ? "warn" : "neutral"} />}
+          right={<StatusPill label={template.is_overridden || template.overridable_types.some(type => type.is_overridden) ? t`Edited` : t`Default`} tone={template.is_overridden ? "warn" : "neutral"} />}
           onClick={() => { setSelected(selectTemplate(template)); const next = new URLSearchParams(search); next.set("template", `${template.stream}:${template.audience}:${template.key}`); setSearch(next); }} />)}
       </section>)}</div>) }} />;
 }

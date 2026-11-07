@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from collections import Counter
 from uuid import UUID
 
@@ -30,7 +31,7 @@ def validated_lease(
     try:
         lease = read_lease(token)
     except (signing.BadSignature, TypeError, ValueError, KeyError):
-        raise AuthenticationFailed("Invalid check-in lease.") from None
+        raise AuthenticationFailed(gettext("Invalid check-in lease.")) from None
     expected = (
         lease.get("kind") == kind
         and lease.get("event_id") == event.pk
@@ -40,7 +41,7 @@ def validated_lease(
         and (session_id is None or lease.get("lease_id") == str(session_id))
     )
     if not expected:
-        raise PermissionDenied("Check-in lease authority changed.")
+        raise PermissionDenied(gettext("Check-in lease authority changed."))
     if not sync_is_open(lease):
         raise CheckInLeaseExpired()
     return lease

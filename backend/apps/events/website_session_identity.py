@@ -1,5 +1,6 @@
 """Reconcile modern IDs and legacy slugs without transferring delay/history."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 from .models_website_revisions import EventSessionIdentity, EventSessionAlias
 
@@ -15,18 +16,18 @@ def reconcile(page, rows):
         slug = values["slug"]
         if supplied is not None:
             if supplied not in working:
-                raise ValidationError({"session_id": "Choose an active working session identity on this page."})
+                raise ValidationError({"session_id": gettext("Choose an active working session identity on this page.")})
             identity = supplied
             if slug in aliases and aliases[slug] != identity:
-                raise ValidationError({"slug": "This slug is permanently reserved for another session."})
+                raise ValidationError({"slug": gettext("This slug is permanently reserved for another session.")})
         elif slug in by_slug:
             identity = by_slug[slug].identity_id
         elif slug in aliases:
-            raise ValidationError({"slug": "This retired session slug is permanently reserved."})
+            raise ValidationError({"slug": gettext("This retired session slug is permanently reserved.")})
         else:
             identity = EventSessionIdentity.objects.create(page=page).pk
         if identity in seen:
-            raise ValidationError({"session_id": "A session identity can appear only once."})
+            raise ValidationError({"session_id": gettext("A session identity can appear only once.")})
         seen.add(identity)
         if slug not in aliases:
             EventSessionAlias.objects.create(page=page, identity_id=identity, slug=slug)

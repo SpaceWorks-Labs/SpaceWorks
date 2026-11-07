@@ -1,5 +1,6 @@
 """All compose/queue/cancel mutations revalidate under the event and tenant locks."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
@@ -53,7 +54,7 @@ def compose_locked(event, actor, values):
         values["body"] = pack(values.get("subject", ""), values.get("body", ""),
                               ctas=ctas, design=values.get("design", "classic"))
     elif schema != 1 or ctas:
-        raise ValidationError({"render_schema_version": "Choose composer version 2 for calls to action."})
+        raise ValidationError({"render_schema_version": gettext("Choose composer version 2 for calls to action.")})
     campaign = EventBroadcast(event=event, makerspace=event.makerspace, created_by=actor, **values)
     authorize(campaign, actor)
     # Validate caller input before encrypted persistence.
@@ -70,7 +71,7 @@ def validate_audience(campaign):
     if (not isinstance(campaign.statuses, list) or not campaign.statuses
             or set(campaign.statuses) - set(EventRegistration.Status.values)
             or campaign.attendance not in {"any", "attended", "not_attended"}):
-        raise ValidationError("Choose valid registration and attendance filters.")
+        raise ValidationError(gettext("Choose valid registration and attendance filters."))
 
 
 @transaction.atomic
@@ -81,19 +82,19 @@ def change(campaign, actor, action):
     authorize(campaign, actor)
     if action == "cancel":
         if campaign.render_schema_version == 2:
-            raise ValidationError("Use the versioned composer cancellation command.")
+            raise ValidationError(gettext("Use the versioned composer cancellation command."))
         return cancel_locked(campaign, actor)
     if action == "queue":
         if campaign.render_schema_version == 2:
-            raise ValidationError("Preview and confirm this composer campaign before scheduling it.")
+            raise ValidationError(gettext("Preview and confirm this composer campaign before scheduling it."))
         if campaign.status != "draft":
-            raise ValidationError("Only drafts can be queued.")
+            raise ValidationError(gettext("Only drafts can be queued."))
         if EventBroadcast.objects.filter(makerspace=event.makerspace,
                 queued_at__gte=timezone.now() - timedelta(hours=1)).count() >= 10:
-            raise Throttled(detail="Limit of 10 broadcasts per hour for this makerspace.")
+            raise Throttled(detail=gettext("Limit of 10 broadcasts per hour for this makerspace."))
         campaign.status, campaign.queued_at = "queued", timezone.now()
     else:
-        raise ValidationError("This campaign cannot be changed in its current state.")
+        raise ValidationError(gettext("This campaign cannot be changed in its current state."))
     campaign.version += 1
     campaign.save(update_fields=["status", "queued_at", "completed_at", "updated_at", "version"])
     record(actor, f"event.broadcast.{campaign.status}", makerspace=event.makerspace, target=campaign)
@@ -108,7 +109,7 @@ def cancel_locked(campaign, actor):
     if campaign.status == "cancelled":
         return campaign
     if campaign.status not in {"draft", "scheduled", "queued", "sending"}:
-        raise ValidationError("This campaign cannot be changed in its current state.")
+        raise ValidationError(gettext("This campaign cannot be changed in its current state."))
     now = timezone.now()
     # The undo: a "send now" stopped before its five-second hold elapsed. After the hold
     # this is an ordinary cancel, which stops only unclaimed sends.

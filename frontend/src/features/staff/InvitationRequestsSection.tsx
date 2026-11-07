@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -44,14 +45,13 @@ export function InvitationRequestsSection({ makerspaceId, roles }: { makerspaceI
   const pendingCount = rows.filter((row) => row.status === "pending").length;
 
   return (
-    <Panel title="Invitation requests">
+    <Panel title={t`Invitation requests`}>
       <p className="mb-3 text-sm text-muted">
-        People who asked to be invited from the public page. Inviting sends the same membership invitation a manager types by hand.
-        {pendingCount ? ` ${pendingCount} pending.` : ""}
+        {t`People who asked to be invited from the public page. Inviting sends the same membership invitation a manager types by hand.${pendingCount ? ` ${pendingCount} pending.` : ""}`}
       </p>
-      {requests.isLoading ? <p className="text-sm text-muted">Loading invitation requests…</p> : null}
+      {requests.isLoading ? <p className="text-sm text-muted">{t`Loading invitation requests…`}</p> : null}
       {requests.isError ? <p className="text-sm text-danger" role="alert">{planErrorText(requests.error, "Could not load invitation requests.")}</p> : null}
-      {requests.data?.length === 0 ? <EmptyState message="No invitation requests yet. New requests appear here." /> : null}
+      {requests.data?.length === 0 ? <EmptyState message={t`No invitation requests yet. New requests appear here.`} /> : null}
       {rows.map((row) => {
         const roleId = roleByRequest[row.id] ?? roles[0]?.id ?? null;
         return (
@@ -65,7 +65,7 @@ export function InvitationRequestsSection({ makerspaceId, roles }: { makerspaceI
               {row.status === "pending" ? (
                 <>
                   <select
-                    aria-label={`Role for ${row.name || row.email}`}
+                    aria-label={t`Role for ${row.name || row.email}`}
                     className="desk-input"
                     value={roleId ?? ""}
                     onChange={(event) => setRoleByRequest((current) => ({ ...current, [row.id]: Number(event.target.value) }))}
@@ -78,11 +78,9 @@ export function InvitationRequestsSection({ makerspaceId, roles }: { makerspaceI
                     disabled={!roleId || invite.isPending}
                     onClick={() => roleId && invite.mutate({ id: row.id, roleId })}
                   >
-                    Invite
-                  </button>
+                    {t`Invite`}</button>
                   <button className="desk-button" type="button" disabled={decline.isPending} onClick={() => decline.mutate(row.id)}>
-                    Decline
-                  </button>
+                    {t`Decline`}</button>
                 </>
               ) : null}
             </div>} />

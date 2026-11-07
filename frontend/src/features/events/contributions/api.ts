@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { sessionScope, useClearDeniedQuery } from '../../staff/eventProgramme/sessionScope'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -15,9 +16,9 @@ export function basePath(scope: EventScope, surface: Surface) {
 export function requestFor(surface: Surface) { return surface === 'member' ? memberRequest : staffRequest }
 export function errorText(error: unknown) {
   if (error instanceof StructuredApiError && ['stale_version', 'lease_lost'].includes(error.code ?? '')) {
-    return 'This changed in another session. Refresh, review the current state, and try again. Your text is still here.'
+    return t`This changed in another session. Refresh, review the current state, and try again. Your text is still here.`
   }
-  return error instanceof Error ? error.message : 'Could not complete this action. Try again.'
+  return error instanceof Error ? error.message : t`Could not complete this action. Try again.`
 }
 
 function useVisible() {

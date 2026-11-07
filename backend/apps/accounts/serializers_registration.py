@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -10,7 +11,7 @@ class MemberSignUpSerializer(serializers.Serializer):
 
     def validate_display_name(self, value):
         if not value.strip():
-            raise serializers.ValidationError("This field may not be blank.")
+            raise serializers.ValidationError(gettext("This field may not be blank."))
         return value
 
 

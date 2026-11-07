@@ -1,4 +1,5 @@
 // Small labelled inputs the inspector and background panel share.
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
@@ -36,7 +37,7 @@ export function ColourInput({ label, value, onChange, allowNone, disabled }: {
         value={HEX.test(draft) ? draft : "#FFFFFF"} disabled={disabled}
         onChange={(event) => { setDraft(event.target.value.toUpperCase()); onChange(event.target.value.toUpperCase()); }} />
       <input className="desk-input min-h-11 min-w-0 flex-1 font-mono uppercase" aria-label={`${label} hex`} value={draft}
-        placeholder={allowNone ? "None" : "#RRGGBB"} maxLength={7} disabled={disabled}
+        placeholder={allowNone ? t`None` : "#RRGGBB"} maxLength={7} disabled={disabled}
         onChange={(event) => {
           const next = event.target.value.startsWith("#") ? event.target.value : `#${event.target.value}`;
           setDraft(next);
@@ -44,7 +45,7 @@ export function ColourInput({ label, value, onChange, allowNone, disabled }: {
         }}
         onBlur={() => { if (!HEX.test(draft)) setDraft(value ?? ""); }} />
       {allowNone && value ? <button type="button" className="desk-button-ghost min-h-11" disabled={disabled}
-        onClick={() => onChange(null)}>None</button> : null}
+        onClick={() => onChange(null)}>{t`None`}</button> : null}
     </div>
   </div>;
 }

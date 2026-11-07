@@ -1,4 +1,5 @@
 """Membership lifecycle intents with explicit owners and live source checks."""
+from django.utils.translation import gettext
 from django.utils import timezone
 
 from apps.integrations.notification_links import local_link
@@ -265,7 +266,7 @@ def notify_invitation(row):
         # The invitation email was always sent; keep it unless the envelope emails.
         direct_mail_unless_routed(space=row.makerspace, source_kind=REQUEST, row=row,
             revision=request_revision(row, "invitation"), event="invitation", owner=row.user,
-            to_email=row.invite_email, subject="Makerspace membership invitation",
+            to_email=row.invite_email, subject=gettext("Makerspace membership invitation"),
             text="You have been invited to join this makerspace. Sign in with this email to claim the invitation.",
             stream=stream, audience="member", feature=feature, address_owner=False)
         return result

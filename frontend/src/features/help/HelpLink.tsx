@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useContext } from "react";
 import { CircleHelp } from "lucide-react";
 import { HELP_FEATURE, helpHref } from "./helpPaths";
@@ -26,12 +27,12 @@ type Props = {
 };
 
 /** "Help" beside a screen: a deep link into the guide, opened in a new tab so work in progress stays put. */
-export function HelpLink({ article, makerspace, singleTenant = false, platform = false, label = "Help for this page", className = "" }: Props) {
+export function HelpLink({ article, makerspace, singleTenant = false, platform = false, label = t`Help for this page`, className = "" }: Props) {
   if (!helpCentreOn(makerspace)) return null;
   const href = helpHref(article, { slug: singleTenant ? null : makerspace?.slug, platform });
-  return <a href={href} target="_blank" rel="noopener" aria-label={`${label} (opens in a new tab)`} className={`inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-accent-ink hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${className}`}>
+  return <a href={href} target="_blank" rel="noopener" aria-label={t`${label} (opens in a new tab)`} className={`inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-accent-ink hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${className}`}>
     <CircleHelp aria-hidden="true" className="size-4" />
-    <span>Help</span>
+    <span>{t`Help`}</span>
   </a>;
 }
 
@@ -47,5 +48,5 @@ export function ScreenHelp({ screen, className = "flex justify-end" }: { screen:
   const place = useContext(StaffHelpContext);
   const entry = STAFF_SUBSCREEN_HELP[screen];
   if (!place || !entry || !helpCentreOn(place.makerspace)) return null;
-  return <div className={className}><HelpLink article={entry.article} label={`Help with ${entry.topic}`} {...place} /></div>;
+  return <div className={className}><HelpLink article={entry.article} label={t`Help with ${entry.topic}`} {...place} /></div>;
 }

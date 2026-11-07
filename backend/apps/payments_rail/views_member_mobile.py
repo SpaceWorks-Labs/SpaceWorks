@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound
@@ -57,7 +58,7 @@ class MemberMobilePaymentIntentView(APIView):
             # the intent call, so raising here would surface as a 500.
             return Response(
                 {
-                    'detail': 'Online payment is not available for this charge.',
+                    'detail': gettext('Online payment is not available for this charge.'),
                     'code': 'payments_unavailable',
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -69,7 +70,7 @@ class MemberMobilePaymentIntentView(APIView):
         except PaymentRailConflict:
             return Response(
                 {
-                    'detail': 'The payment already uses a different online payment rail.',
+                    'detail': gettext('The payment already uses a different online payment rail.'),
                     'code': 'payment_rail_conflict',
                 },
                 status=status.HTTP_409_CONFLICT,
@@ -77,7 +78,7 @@ class MemberMobilePaymentIntentView(APIView):
         except (stripe_client.PaymentsUnavailable, ProviderPaymentsUnavailable):
             return Response(
                 {
-                    'detail': 'Payments are temporarily unavailable.',
+                    'detail': gettext('Payments are temporarily unavailable.'),
                     'code': 'payments_unavailable',
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -87,7 +88,7 @@ class MemberMobilePaymentIntentView(APIView):
             # or reveal Stripe diagnostics to the native client.
             return Response(
                 {
-                    'detail': 'Payments are temporarily unavailable.',
+                    'detail': gettext('Payments are temporarily unavailable.'),
                     'code': 'payments_unavailable',
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,

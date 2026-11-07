@@ -1,5 +1,6 @@
 """Ordinary reservation admission; callers hold the resource lock."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from .access import require_booking_account
@@ -36,7 +37,7 @@ def validate_admission(space, booking, *, now, actor, override_reason="", check_
     _validate(booking)
     enforce_booking_rules(space, booking.starts_at, booking.ends_at, now)
     if booking.ends_at <= now:
-        raise ValidationError({"ends_at": "End time must be in the future."})
+        raise ValidationError({"ends_at": gettext("End time must be in the future.")})
     if check_conflict is None:
         check_conflict = booking.status == Booking.Status.CONFIRMED
     if check_conflict and confirmed_overlap(

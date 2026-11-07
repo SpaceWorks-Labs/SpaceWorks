@@ -6,6 +6,7 @@ claimed by another object must never be attachable to a second one, or clearing 
 blanks the other.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -45,7 +46,7 @@ def _swap(
         profile_id=profile_id,
         project_id=project_id,
     ):
-        raise ValidationError({"object_key": "This image is already in use."})
+        raise ValidationError({"object_key": gettext("This image is already in use.")})
     if object_key:
         limits.add_storage(makerspace, new_size or 0)
     if old_key:

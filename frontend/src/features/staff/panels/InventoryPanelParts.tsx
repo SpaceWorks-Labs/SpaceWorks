@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { InventoryPublicPreview } from "./InventoryPublicPreview";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -29,20 +30,20 @@ export function ItemModal({ title, open, onClose, pending, onSubmit, ...fields }
   makerspace?: LendingFlagSpace;
 }) {
   if (!open) return null;
-  return <FormPageLayout header={{ title, subtitle: "Add a part to your Space Works catalogue." }} state={{ status: "ready" }}
-    form={<InventoryItemFields {...fields} />} submit={{ label: "Add item", pending, pendingLabel: "Adding…", disabled: !fields.form.name.trim(), disabledReason: "Enter an item name.", onClick: onSubmit }}
-    cancel={{ label: "Cancel", onClick: onClose }} preview={{ label: "Public catalogue preview", content: <InventoryPublicPreview form={fields.form} category={fields.categories.find(category => String(category.id) === fields.form.category)?.name} /> }} />;
+  return <FormPageLayout header={{ title, subtitle: t`Add a part to your Space Works catalogue.` }} state={{ status: "ready" }}
+    form={<InventoryItemFields {...fields} />} submit={{ label: t`Add item`, pending, pendingLabel: "Adding…", disabled: !fields.form.name.trim(), disabledReason: "Enter an item name.", onClick: onSubmit }}
+    cancel={{ label: t`Cancel`, onClick: onClose }} preview={{ label: t`Public catalogue preview`, content: <InventoryPublicPreview form={fields.form} category={fields.categories.find(category => String(category.id) === fields.form.category)?.name} /> }} />;
 }
 
 export function QuantityAdjust({ product, form, setForm, pending, error, onSubmit }: { product: AdminProduct; form: AdjustmentForm; setForm: (updater: (current: AdjustmentForm) => AdjustmentForm) => void; pending: boolean; error?: string; onSubmit: () => void }) {
   return (
     <div className="@container grid gap-3 border-t border-line pt-3">
-      <h3 className="title-section">Adjust quantities</h3>
-      <div className="grid gap-2 @lg:grid-cols-3"><InventoryMetric label="Available" value={product.available_quantity} /><InventoryMetric label="Damaged" value={product.damaged_quantity} /><InventoryMetric label="Lost" value={product.lost_quantity} /></div>
-      <div className="grid gap-2 @lg:grid-cols-3"><Field label="± Available"><input className="desk-input" type="number" value={form.delta_available} onChange={(e) => setForm((c) => ({ ...c, delta_available: e.target.value }))} /></Field><Field label="± Damaged"><input className="desk-input" type="number" value={form.delta_damaged} onChange={(e) => setForm((c) => ({ ...c, delta_damaged: e.target.value }))} /></Field><Field label="± Lost"><input className="desk-input" type="number" value={form.delta_lost} onChange={(e) => setForm((c) => ({ ...c, delta_lost: e.target.value }))} /></Field></div>
-      <Field label="Adjustment reason"><input className="desk-input" value={form.reason} onChange={(e) => setForm((c) => ({ ...c, reason: e.target.value }))} /></Field>
-      {!form.reason.trim() ? <p className="text-sm text-muted">Add an adjustment reason to continue.</p> : null}
-      <div className="desk-actions flex justify-end"><button className="desk-button-primary w-full @md:w-auto" type="button" disabled={pending || !form.reason.trim()} onClick={onSubmit}>{pending ? "Applying…" : "Apply adjustment"}</button></div>
+      <h3 className="title-section">{t`Adjust quantities`}</h3>
+      <div className="grid gap-2 @lg:grid-cols-3"><InventoryMetric label={t`Available`} value={product.available_quantity} /><InventoryMetric label={t`Damaged`} value={product.damaged_quantity} /><InventoryMetric label={t`Lost`} value={product.lost_quantity} /></div>
+      <div className="grid gap-2 @lg:grid-cols-3"><Field label={t`± Available`}><input className="desk-input" type="number" value={form.delta_available} onChange={(e) => setForm((c) => ({ ...c, delta_available: e.target.value }))} /></Field><Field label={t`± Damaged`}><input className="desk-input" type="number" value={form.delta_damaged} onChange={(e) => setForm((c) => ({ ...c, delta_damaged: e.target.value }))} /></Field><Field label={t`± Lost`}><input className="desk-input" type="number" value={form.delta_lost} onChange={(e) => setForm((c) => ({ ...c, delta_lost: e.target.value }))} /></Field></div>
+      <Field label={t`Adjustment reason`}><input className="desk-input" value={form.reason} onChange={(e) => setForm((c) => ({ ...c, reason: e.target.value }))} /></Field>
+      {!form.reason.trim() ? <p className="text-sm text-muted">{t`Add an adjustment reason to continue.`}</p> : null}
+      <div className="desk-actions flex justify-end"><button className="desk-button-primary w-full @md:w-auto" type="button" disabled={pending || !form.reason.trim()} onClick={onSubmit}>{pending ? t`Applying…` : t`Apply adjustment`}</button></div>
       {error ? <p className="text-sm text-danger">{error}</p> : null}
     </div>
   );
@@ -56,12 +57,12 @@ export function QrHistory({ title, queryKey, path, defaultOpen = false }: { titl
     <div className="grid w-full gap-2 border-t border-line pt-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="title-section">{title}</h3>
-        <button className="desk-button-ghost" type="button" onClick={() => setOpen((value) => !value)}>{open ? "Hide" : "History"}</button>
+        <button className="desk-button-ghost" type="button" onClick={() => setOpen((value) => !value)}>{open ? t`Hide` : t`History`}</button>
       </div>
       {open && history.isLoading ? <Skeleton className="h-32" /> : null}
       {open && history.error ? <ErrorBlock error={history.error} resource="history" onRetry={() => { void history.refetch(); }} /> : null}
-      {open && !history.isLoading && !rows.length ? <EmptyState message="No QR scans recorded. Future scans will appear here." /> : null}
-      {open && rows.length ? <div className="grid gap-3">{rows.map(scan => <ListRow key={scan.id} title={humanize(scan.context)} meta={<RelativeTime date={scan.created_at} exact />} right={scan.actor ? <span className="text-sm text-muted">User {scan.actor}</span> : null} />)}</div> : null}
+      {open && !history.isLoading && !rows.length ? <EmptyState message={t`No QR scans recorded. Future scans will appear here.`} /> : null}
+      {open && rows.length ? <div className="grid gap-3">{rows.map(scan => <ListRow key={scan.id} title={humanize(scan.context)} meta={<RelativeTime date={scan.created_at} exact />} right={scan.actor ? <span className="text-sm text-muted">{t`User ${scan.actor}`}</span> : null} />)}</div> : null}
 
     </div>
   );
@@ -96,24 +97,24 @@ export function IndividualAssets({ productId, makerspaceId, refreshInventory }: 
   });
   const rows = assets.data?.results ?? [];
   const selected = rows.find(asset => asset.id === editingAssetId);
-  return <section className="mt-6 grid gap-4"><h3 className="title-section">Individual assets</h3>
-    {assets.isLoading ? <Skeleton className="h-40" /> : assets.error ? <ErrorBlock error={assets.error} resource="assets" onRetry={() => { void assets.refetch(); }} /> : <DataTable data={rows} getRowId={asset => asset.id} emptyTitle="No asset records yet" columns={[
+  return <section className="mt-6 grid gap-4"><h3 className="title-section">{t`Individual assets`}</h3>
+    {assets.isLoading ? <Skeleton className="h-40" /> : assets.error ? <ErrorBlock error={assets.error} resource="assets" onRetry={() => { void assets.refetch(); }} /> : <DataTable data={rows} getRowId={asset => asset.id} emptyTitle={t`No asset records yet`} columns={[
       { key: "asset_tag", header: "Asset", render: asset => <div className="min-w-0 [overflow-wrap:anywhere]"><strong>{asset.asset_tag}</strong><p className="text-xs text-muted">{asset.serial_number}</p></div> },
       { key: "box_label", header: "Container" },
       { key: "status", header: "Status", render: asset => <StatusBadge status={asset.status} /> },
-      { key: "qr", header: "QR", render: asset => asset.qr_code_id ? <details><summary className="desk-button-ghost">Show QR</summary><div className="w-40 max-w-full"><QrImage qrId={asset.qr_code_id} label={asset.asset_tag} /></div><p className="break-all text-xs">{asset.qr_payload}</p></details> : "No QR linked" },
+      { key: "qr", header: "QR", render: asset => asset.qr_code_id ? <details><summary className="desk-button-ghost">{t`Show QR`}</summary><div className="w-40 max-w-full"><QrImage qrId={asset.qr_code_id} label={asset.asset_tag} /></div><p className="break-all text-xs">{asset.qr_payload}</p></details> : "No QR linked" },
       { key: "actions", header: "", render: asset => <div className="flex flex-wrap items-center gap-2">
         <button className="desk-button-ghost" disabled={action.isPending || (asset.status !== "maintenance" && !["available", "damaged"].includes(asset.status))}
-          onClick={() => action.mutate({ assetId: asset.id, action: asset.status === "maintenance" ? "repair" : "shelve" })}>{action.isPending && action.variables?.assetId === asset.id ? "Updating…" : asset.status === "maintenance" ? "Move back to inventory" : "To fix"}</button>
-        <button className="desk-button-ghost" type="button" aria-label={`Edit ${asset.asset_tag}`} onClick={() => setEditingAssetId(asset.id)}>Edit</button>
-        <OverflowMenu label={`Actions for ${asset.asset_tag}`} actions={[{ label: "QR history", onClick: () => setHistoryAssetId(asset.id) }]} />
+          onClick={() => action.mutate({ assetId: asset.id, action: asset.status === "maintenance" ? "repair" : "shelve" })}>{action.isPending && action.variables?.assetId === asset.id ? t`Updating…` : asset.status === "maintenance" ? t`Move back to inventory` : t`To fix`}</button>
+        <button className="desk-button-ghost" type="button" aria-label={t`Edit ${asset.asset_tag}`} onClick={() => setEditingAssetId(asset.id)}>{t`Edit`}</button>
+        <OverflowMenu label={t`Actions for ${asset.asset_tag}`} actions={[{ label: t`QR history`, onClick: () => setHistoryAssetId(asset.id) }]} />
       </div> },
     ]} />}
     {action.error ? <ErrorBlock error={action.error} /> : null}
-    <Modal open={Boolean(selected)} onClose={() => setEditingAssetId(null)} title={selected ? `Edit ${selected.asset_tag}` : "Edit asset"}>
+    <Modal open={Boolean(selected)} onClose={() => setEditingAssetId(null)} title={selected ? t`Edit ${selected.asset_tag}` : t`Edit asset`}>
       {selected ? <AssetEditForm key={selected.id} asset={selected} containers={containerOptions} onSaved={saveAsset} onCancel={() => setEditingAssetId(null)} /> : null}
     </Modal>
-    <Modal open={historyAssetId !== null} onClose={() => setHistoryAssetId(null)} title="Asset QR history">{historyAssetId ? <QrHistory key={historyAssetId} defaultOpen title="Asset QR history" queryKey={["asset-qr-history", historyAssetId]} path={`/admin/assets/${historyAssetId}/qr-history`} /> : null}</Modal>
+    <Modal open={historyAssetId !== null} onClose={() => setHistoryAssetId(null)} title={t`Asset QR history`}>{historyAssetId ? <QrHistory key={historyAssetId} defaultOpen title={t`Asset QR history`} queryKey={["asset-qr-history", historyAssetId]} path={`/admin/assets/${historyAssetId}/qr-history`} /> : null}</Modal>
   </section>;
 }
 
@@ -121,16 +122,16 @@ export function LendingHistory({ productId }: { productId: number }) {
   const history = useStaffGet<LendingHistoryResponse>(["lending-history", productId], `/admin/inventory/${productId}/lending-history`);
   const last = history.data?.last_borrower;
   const recent = history.data?.recent ?? [];
-  return <section className="grid gap-4"><h3 className="title-section">Lending history</h3>
-    {history.isLoading ? <Skeleton className="h-40" /> : history.error ? <ErrorBlock error={history.error} resource="lending history" onRetry={() => { void history.refetch(); }} /> : !recent.length ? <EmptyState message="No lending history yet. Handovers will appear here." /> : null}
-    {last ? <p className="text-sm">Last borrower: {last.username} · <RelativeTime date={last.issued_at} exact /><AttributionLine acceptedBy={last.accepted_by} issuedBy={last.issued_by} /></p> : null}
+  return <section className="grid gap-4"><h3 className="title-section">{t`Lending history`}</h3>
+    {history.isLoading ? <Skeleton className="h-40" /> : history.error ? <ErrorBlock error={history.error} resource="lending history" onRetry={() => { void history.refetch(); }} /> : !recent.length ? <EmptyState message={t`No lending history yet. Handovers will appear here.`} /> : null}
+    {last ? <p className="text-sm">{t`Last borrower: ${last.username} · `}<RelativeTime date={last.issued_at} exact /><AttributionLine acceptedBy={last.accepted_by} issuedBy={last.issued_by} /></p> : null}
     {recent.map(entry => <ListRow key={entry.id} title={entry.username} identity={{ kind: "avatar", name: entry.username, seed: entry.username }} meta={<><RelativeTime date={entry.issued_at} exact /><AttributionLine acceptedBy={entry.accepted_by} issuedBy={entry.issued_by} /></>} right={<span className="tabular-nums">{entry.quantity} units</span>} />)}
   </section>;
 }
 
 export function InventoryAvailability({ product }: { product: AdminProduct }) {
   const isLowStock = product.available_quantity <= Math.ceil(product.total_quantity * 0.2);
-  const badge = product.available_quantity <= 0 ? <StatusBadge status="unavailable" label="Unavailable" /> : isLowStock ? <StatusBadge status="limited" label="Limited" /> : <StatusBadge status="available" label="Available" />;
+  const badge = product.available_quantity <= 0 ? <StatusBadge status="unavailable" label={t`Unavailable`} /> : isLowStock ? <StatusBadge status="limited" label={t`Limited`} /> : <StatusBadge status="available" label={t`Available`} />;
   return <span className="inline-flex flex-wrap items-center gap-2"><span className="inline-block min-w-8 font-medium tabular-nums text-ink">{product.available_quantity}</span>{badge}</span>;
 }
 

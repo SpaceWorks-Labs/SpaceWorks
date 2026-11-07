@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { EventWebsite } from "./websiteTypes";
 
 const text = (value: unknown) => typeof value === "string" ? value : "";
@@ -10,9 +11,9 @@ export function ProgrammeWebsiteSections({ rows }: { rows: EventWebsite["program
       {photo(item.photo_url) ? <img className="h-16 w-16 rounded-full object-cover" src={photo(item.photo_url)!} alt="" loading="lazy" /> : null}
       <h3 className="title-section">{text(item.title) || text(item.display_name) || text(item.name) || text(item.prize)}</h3>
       {text(item.description) ? <p className="whitespace-pre-line text-sm text-muted">{text(item.description)}</p> : null}
-      {typeof item.rank === "number" ? <p className="text-sm">Rank {item.rank}</p> : null}
-      {profile(item.profile_url) ? <a className="desk-button justify-self-start" href={profile(item.profile_url)!}>View public profile</a> : null}
-      {Array.isArray(item.assets) ? item.assets.map((asset: Record<string, unknown>, n: number) => typeof asset.download_url === "string" && asset.download_url.startsWith("/api/v1/public/event-programmes/") ? <a key={n} className="desk-button justify-self-start" href={asset.download_url}>Download {text(asset.kind) || "project file"}</a> : null) : null}
+      {typeof item.rank === "number" ? <p className="text-sm">{t`Rank ${item.rank}`}</p> : null}
+      {profile(item.profile_url) ? <a className="desk-button justify-self-start" href={profile(item.profile_url)!}>{t`View public profile`}</a> : null}
+      {Array.isArray(item.assets) ? item.assets.map((asset: Record<string, unknown>, n: number) => typeof asset.download_url === "string" && asset.download_url.startsWith("/api/v1/public/event-programmes/") ? <a key={n} className="desk-button justify-self-start" href={asset.download_url}>{t`Download `}{text(asset.kind) || t`project file`}</a> : null) : null}
     </article>)}</div>
   </section>)}</>;
 }

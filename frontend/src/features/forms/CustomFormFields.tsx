@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 
 import type { CustomAnswers, CustomFormQuestion, CustomFormSchema } from "./customFormTypes";
@@ -37,7 +38,7 @@ function LegacyCustomFormFields({ schema, answers, onChange, errors = {}, disabl
   const setAnswer = (id: string, value: CustomAnswers[string]) => onChange({ ...answers, [id]: value });
   return (
     <fieldset className="grid gap-4" disabled={disabled}>
-      <legend className="title-section mb-1">Additional questions</legend>
+      <legend className="title-section mb-1">{t`Additional questions`}</legend>
       {schema.map((question) => (
         <QuestionField
           key={question.id}
@@ -79,7 +80,7 @@ function QuestionField({ question, inputId, value, error, yesNoAsCheckbox, onCha
     return <label className="grid gap-1 text-ink">{label}<textarea {...inputProps} className="desk-input min-h-24 resize-y" maxLength={5000} value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} />{message}</label>;
   }
   if (question.type === "dropdown") {
-    return <label className="grid gap-1 text-ink">{label}<select {...inputProps} className="desk-input" value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)}><option value="">Select an option</option>{question.options.map((option) => <option key={option} value={option}>{option}</option>)}</select>{message}</label>;
+    return <label className="grid gap-1 text-ink">{label}<select {...inputProps} className="desk-input" value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)}><option value="">{t`Select an option`}</option>{question.options.map((option) => <option key={option} value={option}>{option}</option>)}</select>{message}</label>;
   }
   if (question.type === "single_choice" || question.type === "yes_no") {
     const choices: [string, string | boolean][] = question.type === "yes_no"

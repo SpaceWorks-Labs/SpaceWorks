@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import { StatusPill } from "../../../components/ui";
@@ -12,22 +13,22 @@ export function EventOrdersList({ eventId }: { eventId: number }) {
   const [page, setPage] = useState(1);
   const orders = useEventOrders(eventId, page);
   const rows = orders.data?.results ?? [];
-  return <section className="grid gap-3" aria-label="Ticket orders">
-    <h3 className="title-section flex items-center gap-2"><ShoppingBag aria-hidden="true" size={18} />Orders</h3>
-    {orders.isLoading ? <p role="status" className="text-sm text-muted">Loading orders…</p> : null}
+  return <section className="grid gap-3" aria-label={t`Ticket orders`}>
+    <h3 className="title-section flex items-center gap-2"><ShoppingBag aria-hidden="true" size={18} />{t`Orders`}</h3>
+    {orders.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading orders…`}</p> : null}
     {orders.error ? <p role="alert" className="text-sm text-danger">{orders.error.message}</p> : null}
-    {!orders.isLoading && !rows.length ? <p className={panelEmpty}>No orders yet.</p> : null}
+    {!orders.isLoading && !rows.length ? <p className={panelEmpty}>{t`No orders yet.`}</p> : null}
     <ul className="grid gap-3">{rows.map(order => {
       const unclaimed = order.seats.filter(seat => seat.status === "unclaimed");
       return <li key={order.id} className={panelRow}>
         <div className="grid min-w-0 gap-1">
           <span className="font-semibold text-ink">#{order.id} · {order.buyer_name}</span>
           <span className="text-sm text-muted">{money(order.total, order.currency)} · {order.seats.length} places
-            {unclaimed.length ? ` · ${unclaimed.length} not claimed yet` : ""}</span>
-          {unclaimed.length ? <span className="text-xs text-muted">Waiting: {unclaimed.map(seat => seat.attendee_email || "no email yet").join(", ")}</span> : null}
+            {unclaimed.length ? t` · ${unclaimed.length} not claimed yet` : ""}</span>
+          {unclaimed.length ? <span className="text-xs text-muted">{t`Waiting: ${unclaimed.map(seat => seat.attendee_email || "no email yet").join(", ")}`}</span> : null}
         </div>
         <span className="flex flex-wrap gap-2">
-          {order.payment_disputed ? <StatusPill label="Payment disputed" tone="danger" /> : null}
+          {order.payment_disputed ? <StatusPill label={t`Payment disputed`} tone="danger" /> : null}
           <StatusPill label={ORDER_STATUS[order.status].label} tone={ORDER_STATUS[order.status].tone} />
         </span>
       </li>;

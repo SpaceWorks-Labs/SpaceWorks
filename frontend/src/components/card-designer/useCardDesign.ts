@@ -1,5 +1,6 @@
 // The working copy of one design: undo/redo (50 whole-document snapshots), autosave
 // debounced 900 ms with compare-and-swap, and a conflict state when someone else saved.
+import { t } from "@lingui/core/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -10,7 +11,7 @@ import { clearDeviceDraft, readDeviceDraft, writeDeviceDraft, type DeviceDraft }
 
 export type SaveStatus = "saved" | "pending" | "saving" | "error" | "conflict";
 export const SAVE_STATUS_LABELS: Record<SaveStatus, string> = {
-  saved: "Saved", pending: "Unsaved changes", saving: "Saving…", error: "Not saved", conflict: "Someone else saved",
+  saved: t`Saved`, pending: t`Unsaved changes`, saving: t`Saving…`, error: t`Not saved`, conflict: t`Someone else saved`,
 };
 const HISTORY = 50;
 const SAVE_DELAY_MS = 900;

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useSearchParams } from "react-router-dom";
 
 import { SegmentedControl } from "../../../components/ui";
@@ -24,10 +25,10 @@ export function RepairsPanel({ makerspace, actions }: { makerspace: Makerspace; 
   const repairsOn = REPAIRS.some(key => featureEnabled(features, key));
   const upkeepOn = UPKEEP.some(key => featureEnabled(features, key));
   const views = [
-    ...(manager ? [{ value: "queue", label: "Queue" }] : []),
-    ...(has("work_repairs") || manager ? [{ value: "mine", label: "My jobs" }] : []),
-    ...(manager && repairsOn ? [{ value: "technicians", label: "Technicians" }] : []),
-    ...(upkeepOn && (manager || has("run_maintenance")) ? [{ value: "upkeep", label: "Maintenance" }] : []),
+    ...(manager ? [{ value: "queue", label: t`Queue` }] : []),
+    ...(has("work_repairs") || manager ? [{ value: "mine", label: t`My jobs` }] : []),
+    ...(manager && repairsOn ? [{ value: "technicians", label: t`Technicians` }] : []),
+    ...(upkeepOn && (manager || has("run_maintenance")) ? [{ value: "upkeep", label: t`Maintenance` }] : []),
   ];
   const view = views.find(row => row.value === params.get("rp_view"))?.value ?? views[0]?.value ?? "mine";
   const issueId = Number(params.get("issue")) || null;
@@ -38,7 +39,7 @@ export function RepairsPanel({ makerspace, actions }: { makerspace: Makerspace; 
   });
   if (issueId) return <IssueDetail id={issueId} makerspaceId={makerspace.id} onBack={() => set("issue", null)} />;
   return <div className="grid gap-4">
-    {views.length > 1 ? <SegmentedControl label="Repairs view" value={view} options={views} onChange={value => set("rp_view", value)} /> : null}
+    {views.length > 1 ? <SegmentedControl label={t`Repairs view`} value={view} options={views} onChange={value => set("rp_view", value)} /> : null}
     {view === "queue" || view === "mine" ? <IssueQueue makerspace={makerspace} mine={view === "mine"} canOpen={manager && repairsOn}
       onOpen={id => set("issue", String(id))} /> : null}
     {view === "technicians" ? <TechniciansPanel makerspace={makerspace} canSetCoverage={has("manage_makerspace")} /> : null}

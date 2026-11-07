@@ -1,5 +1,6 @@
 """Field helpers for the workflow. Nothing here writes ``status``."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.hosting_requests.availability import admin_available
@@ -50,13 +51,13 @@ def clean_reason(reason):
     value = str(reason or "").strip()
     if not REASON_MIN <= len(value) <= REASON_MAX:
         raise ValidationError(
-            {"rejection_reason": f"Give a reason of {REASON_MIN} to {REASON_MAX} characters."}
+            {"rejection_reason": gettext('Give a reason of {REASON_MIN} to {REASON_MAX} characters.').format(REASON_MIN=REASON_MIN, REASON_MAX=REASON_MAX)}
         )
     return value
 
 
 def require_superadmin(actor):
     if not admin_available():
-        raise PermissionDenied("Hosting requests exist only on a managed deployment.")
+        raise PermissionDenied(gettext("Hosting requests exist only on a managed deployment."))
     if not is_superadmin(actor):
         raise PermissionDenied()

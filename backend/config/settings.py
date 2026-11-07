@@ -7,6 +7,7 @@ import environ
 from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
+from config.locale_registry import SYSTEM_LOCALE, django_languages
 from config.log_setup import build_logging
 from config.storage_validation import assert_distinct_storage_buckets
 
@@ -227,6 +228,9 @@ MIDDLEWARE = [
     # Binds the per-request correlation id before any layer below can log. The two gates
     # above refuse without logging through it; that is the accepted cost of their position.
     "config.request_id.RequestIdMiddleware",
+    # Phase 8 i18n: a fresh locale context per request, OUTSIDE every layer below that can
+    # answer early, so no refusal inherits another request's locale (config/locale_context.py).
+    "config.locale_context.LocaleContextResetMiddleware",
     # #189/#191: with CONTROL_PLANE_PROXY off, /control/ answers only the server and its
     # SSH tunnel; the public origin gets a plain 404 before any session or login layer runs.
     "config.control_plane_access.ControlPlaneReachMiddleware",
@@ -241,6 +245,10 @@ MIDDLEWARE = [
     "config.admin_access.AdminCspEvalMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # After sessions, before CommonMiddleware (Django's required placement); the explicit
+    # X-SpaceWorks-Locale choice is re-applied right after it.
+    "django.middleware.locale.LocaleMiddleware",
+    "config.locale_context.ExplicitLocaleMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "apps.inventory.middleware.FrontendHMACMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -334,7 +342,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = "en-us"
+# Phase 8 i18n: one code-defined locale registry (config/supported_locales.json), never an
+# env read. English is the only catalogue; docs/i18n.md covers adding a language.
+LANGUAGE_CODE = SYSTEM_LOCALE
+LANGUAGES = django_languages()
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
@@ -1047,6 +1059,8 @@ CORS_ALLOW_HEADERS = (
 )
 # --- release 2 lane L1: the SPA marks the first short-link resolve of a page load (one visit) ---
 CORS_ALLOW_HEADERS += ("x-sw-visit",)
+# --- release 2 lane L9: a deliberate in-app language choice (Accept-Language stays the fallback) ---
+CORS_ALLOW_HEADERS += ("x-spaceworks-locale",)
 CORS_ALLOW_CREDENTIALS = True
 
 HMAC_CLIENT_ID = env("HMAC_CLIENT_ID", default="")

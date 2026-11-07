@@ -1,3 +1,4 @@
+import { formatLocale } from "../../lib/format";
 import { memberRequest, staffRequest } from "../../lib/api";
 
 /** A place in an item's loan waitlist (`loans.waitlist`). `position` is set only while waiting. */
@@ -34,5 +35,5 @@ export const waitlistApi = {
 
 export function formatWhen(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(formatLocale(), { dateStyle: "medium", timeStyle: "short" });
 }

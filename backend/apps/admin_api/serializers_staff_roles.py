@@ -4,6 +4,7 @@ Capability flags (``can``) are viewer-relative. Names and emails are masked for 
 superadmin without a PII window on the space (#114.1).
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
@@ -24,7 +25,7 @@ class StaffRoleCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("user_id")) == bool(attrs.get("email")):
-            raise serializers.ValidationError("Provide exactly one of user_id or email.")
+            raise serializers.ValidationError(gettext("Provide exactly one of user_id or email."))
         return attrs
 
 
@@ -34,7 +35,7 @@ class StaffRoleChangeSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs:
-            raise serializers.ValidationError("Provide roles or machine_type_ids.")
+            raise serializers.ValidationError(gettext("Provide roles or machine_type_ids."))
         return attrs
 
 

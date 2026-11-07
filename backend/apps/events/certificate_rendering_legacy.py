@@ -1,5 +1,6 @@
 """Frozen pre-designer renderer for retries of certificates with empty snapshots."""
 
+from django.utils.translation import gettext
 from io import BytesIO
 from pathlib import Path
 
@@ -34,9 +35,9 @@ def render_legacy_certificate_pdf(certificate):
     canvas.setLineWidth(1.5)
     canvas.rect(12 * mm, 12 * mm, width - 24 * mm, height - 24 * mm)
     canvas.setFont("CertificateVeraBold", 28)
-    canvas.drawCentredString(width / 2, height - 48 * mm, "Certificate of Attendance")
+    canvas.drawCentredString(width / 2, height - 48 * mm, gettext("Certificate of Attendance"))
     canvas.setFont("CertificateVera", 14)
-    canvas.drawCentredString(width / 2, height - 70 * mm, "This certifies that")
+    canvas.drawCentredString(width / 2, height - 70 * mm, gettext("This certifies that"))
     canvas.setFont("CertificateVeraBold", 24)
     canvas.drawCentredString(width / 2, height - 91 * mm, certificate.recipient_name)
     canvas.setFont("CertificateVera", 14)
@@ -51,7 +52,7 @@ def render_legacy_certificate_pdf(certificate):
     canvas.drawRightString(
         width - 22 * mm,
         24 * mm,
-        f"Serial {certificate.serial} · Revision {certificate.revision}",
+        gettext('Serial {serial} · Revision {revision}').format(serial=certificate.serial, revision=certificate.revision),
     )
     canvas.showPage()
     canvas.save()

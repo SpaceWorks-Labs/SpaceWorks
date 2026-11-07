@@ -1,5 +1,6 @@
 """Full-manager result finalization, append-only correction and announcement."""
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -37,9 +38,9 @@ def finalize(event_id, *, actor, data, correction=False):
             if previous and not correction:
                 invalid("Create a correction to preserve finalized history.")
             if correction and (not previous or not values.get("reason")):
-                raise ValidationError({"reason": "A correction requires the previous result and a reason."})
+                raise ValidationError({"reason": gettext("A correction requires the previous result and a reason.")})
             if not values["integrity_reviewed"]:
-                raise ValidationError({"integrity_reviewed": "Review integrity flags before finalization."})
+                raise ValidationError({"integrity_reviewed": gettext("Review integrity flags before finalization.")})
             rounds = list(JudgingRound.objects.select_for_update().filter(
                 event=event, pk__in=values["round_ids"]).order_by("pk"))
             if len(rounds) != len(values["round_ids"]):
@@ -95,19 +96,19 @@ def _awards(event, selections, calculations, rounds=()):
         from apps.events.submissions.stage_judging import require_award_stage
         require_award_stage(rounds, snapshot)  # S17: awards point at the stage their round judges.
         if prize.pk not in snapshot.prize_ids or (prize.track_id and prize.track_id not in snapshot.track_ids):
-            raise ValidationError({"awards": "The project is not eligible for this prize."})
+            raise ValidationError({"awards": gettext("The project is not eligible for this prize.")})
         if selection["rank"] > prize.award_count:
-            raise ValidationError({"awards": "This prize has fewer award slots."})
+            raise ValidationError({"awards": gettext("This prize has fewer award slots.")})
         rank_key, project_key = (prize.pk, selection["rank"]), (prize.pk, snapshot.id)
         if rank_key in seen_ranks or project_key in seen_projects:
-            raise ValidationError({"awards": "Duplicate prize rank or project."})
+            raise ValidationError({"awards": gettext("Duplicate prize rank or project.")})
         seen_ranks.add(rank_key)
         seen_projects.add(project_key)
         tied = any(any(other["snapshot_id"] != snapshot.id and other["rank"] == row["rank"]
                        for other in c["rows"]) for c in calculations
                    for row in c["rows"] if row["snapshot_id"] == snapshot.id)
         if tied and not selection.get("tie_reason"):
-            raise ValidationError({"awards": "Record a reason for selecting a prize winner from a tie."})
+            raise ValidationError({"awards": gettext("Record a reason for selecting a prize winner from a tie.")})
         selection["prize_name"] = prize.name
     return selections
 

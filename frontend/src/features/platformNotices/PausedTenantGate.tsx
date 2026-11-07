@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery, useQueryClient, type Query } from "@tanstack/react-query";
 import { useCallback, useSyncExternalStore, type ReactNode } from "react";
 import { publicV1Request } from "../../lib/api";
@@ -40,7 +41,7 @@ export function PausedTenantGate({ slug, children }: { slug: string; children: R
     staleTime: 60_000,
   });
   if (notFound && availability.data?.state === "paused") {
-    return <PausedSpacePage primary={{ label: "Find another space", href: "/" }} />;
+    return <PausedSpacePage primary={{ label: t`Find another space`, href: "/" }} />;
   }
   return <>{children}</>;
 }

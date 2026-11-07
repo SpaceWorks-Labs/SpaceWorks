@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StatusPill as Badge } from "../../components/ui";
 
 // The backend has reported per-room delivery health since the destinations work
@@ -32,11 +33,11 @@ export type ChatDestinationsHealth = {
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
-  telegram: "Telegram",
-  slack: "Slack",
-  mattermost: "Mattermost",
-  discord: "Discord",
-  webhook: "Signed webhook",
+  telegram: t`Telegram`,
+  slack: t`Slack`,
+  mattermost: t`Mattermost`,
+  discord: t`Discord`,
+  webhook: t`Signed webhook`,
 };
 
 export function IntegrationHealthRooms({
@@ -49,7 +50,7 @@ export function IntegrationHealthRooms({
   const rooms = section?.destinations ?? [];
   const legacy = Object.entries(section?.legacy_deliveries ?? {});
   if (!rooms.length && !legacy.length) {
-    return <p className="text-sm text-muted">No chat or webhook rooms are configured.</p>;
+    return <p className="text-sm text-muted">{t`No chat or webhook rooms are configured.`}</p>;
   }
   return (
     <ul className="grid gap-2 @lg:grid-cols-2">
@@ -95,21 +96,21 @@ function RoomRow({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 break-words font-semibold text-ink">{title}</p>
         {!configured ? (
-          <Badge label="" tone="neutral">Not configured</Badge>
+          <Badge label="" tone="neutral">{t`Not configured`}</Badge>
         ) : inactive ? (
-          <Badge label="" tone="neutral">Inactive</Badge>
+          <Badge label="" tone="neutral">{t`Inactive`}</Badge>
         ) : health.failed > 0 ? (
           <Badge label="" tone="danger">{`${health.failed} failed`}</Badge>
         ) : (
-          <Badge label="" tone="success">Healthy</Badge>
+          <Badge label="" tone="success">{t`Healthy`}</Badge>
         )}
       </div>
       <p className="mt-1 text-xs text-muted">
-        {health.last_sent_at ? `Last sent ${formatTime(health.last_sent_at)}` : "Never sent"}
+        {health.last_sent_at ? t`Last sent ${formatTime(health.last_sent_at)}` : t`Never sent`}
       </p>
       {health.last_failure ? (
         <p className="mt-2 break-words text-danger">
-          {`Last delivery failed ${formatTime(health.last_failure.at)}: ${health.last_failure.error || "no detail"}`}
+          {t`Last delivery failed ${formatTime(health.last_failure.at)}: ${health.last_failure.error || "no detail"}`}
         </p>
       ) : null}
     </li>

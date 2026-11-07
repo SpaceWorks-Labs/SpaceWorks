@@ -1,5 +1,6 @@
 """Staff CRUD for per-event notification recipient selection."""
 
+from django.utils.translation import gettext
 from types import SimpleNamespace
 
 from django.db import IntegrityError
@@ -90,7 +91,7 @@ class NotificationRecipientRulesView(APIView):
             return self._error("This feature does not support recipient selection.")
         if delegated and feature != NotificationFeature.MAINTENANCE:
             raise PermissionDenied(
-                "Delegated recipient management is limited to maintenance alerts."
+                gettext("Delegated recipient management is limited to maintenance alerts.")
             )
         if not notification_recipients.category_available(makerspace, feature):
             return self._error(f"The {feature} module is not installed.")
@@ -129,7 +130,7 @@ class NotificationRecipientRulesView(APIView):
             _, still_delegated, fresh_reach = _access(request, makerspace_id)
             if not still_delegated or fresh_reach is None:
                 raise PermissionDenied(
-                    "Your recipient-management access changed while saving."
+                    gettext("Your recipient-management access changed while saving.")
                 )
             keep.reach = fresh_reach
             # The identity gate is resolved from the actor's ASSIGNED ROLE, which a

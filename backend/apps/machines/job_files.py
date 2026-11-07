@@ -8,6 +8,7 @@ range reads -- magic bytes and container structure, never a full parse -- before
 bound to the job. A file that fails never attaches.
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
@@ -38,7 +39,7 @@ def resolve(filename, content_type, groups):
             return spec, cap, group
         except FormatError as exc:
             last = exc.code
-    raise ValidationError({"file": "This file type is not accepted for this machine.", "code": last})
+    raise ValidationError({"file": gettext("This file type is not accepted for this machine."), "code": last})
 
 
 def stage_job_file(queue, actor, *, filename, content_type, kind):
@@ -73,16 +74,16 @@ def validate_job_object(file):
     from apps.machines.service_storage import ServiceObjectValidationResult, finalize_upload
     queue = file.queue
     if queue is None:
-        raise ValidationError({"file_id": "Attachment is unavailable for this request."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Attachment is unavailable for this request.")}, code="invalid_attachment")
     spec, cap, group = resolve(file.original_filename, file.content_type, groups_for(queue, file.kind))
     size = finalize_upload(file.object_key, cap)
     if size is None or not 1 <= size <= cap:
-        raise ValidationError({"file_id": "Uploaded attachment is invalid."}, code="invalid_attachment")
+        raise ValidationError({"file_id": gettext("Uploaded attachment is invalid.")}, code="invalid_attachment")
     try:
         result, checked = validate_upload(_reader(file, size), extension=extension_from_name(file.original_filename),
                                           group=group, subtype="auto", effective_cap=cap)
     except FormatError as exc:
-        raise ValidationError({"file_id": "The file's contents do not match its type.", "code": exc.code},
+        raise ValidationError({"file_id": gettext("The file's contents do not match its type."), "code": exc.code},
                               code="invalid_attachment") from exc
     return ServiceObjectValidationResult(size=size, content_type=getattr(result, "mime", "") or checked.canonical_mime)
 

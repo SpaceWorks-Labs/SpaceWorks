@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ActionControl, IdentityChip, PageHeader, StatusPill, Tabs } from "../ui";
 import type { Identity, StatusPillProps } from "../ui";
@@ -33,13 +34,13 @@ export function PublicDetailLayout({ cover, chips = [], title, tagline, facts = 
           </div>)}</div> : null}
           {sections.length ? <div className="mb-8" onClick={event => {
             const anchor = (event.target as HTMLElement).closest("a"); if (anchor?.hash) setActive(anchor.hash.slice(1));
-          }}><Tabs label="Page sections" tabs={sections.map(section => ({ key: section.id, label: section.label, href: `#${section.id}` }))} activeKey={active} /></div> : null}
+          }}><Tabs label={t`Page sections`} tabs={sections.map(section => ({ key: section.id, label: section.label, href: `#${section.id}` }))} activeKey={active} /></div> : null}
           <div className="grid gap-10">{sections.map(section => <section key={section.id} id={section.id} aria-label={section.label}
             tabIndex={-1} className="min-w-0 scroll-mt-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
             <h2 className="title-panel mb-4">{section.label}</h2>{section.content}
           </section>)}</div>
           {host ? <div className="mt-10 flex items-center gap-3 border-t border-line pt-6">
-            <IdentityChip identity={host.identity} label={host.name} /><div><p className="text-sm text-muted">Hosted by</p>
+            <IdentityChip identity={host.identity} label={host.name} /><div><p className="text-sm text-muted">{t`Hosted by`}</p>
               <ActionControl action={{ label: host.name, href: host.href }} /></div>
           </div> : null}
         </QueryContent>

@@ -8,6 +8,7 @@
 * Archiving keeps every dispatch and assignment; nothing is deleted.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -35,7 +36,7 @@ def _person(space, person_id):
     if person_id is None:
         return None
     if not MakerspaceMembership.both_tracks().filter(makerspace=space, user_id=person_id, status="active").exists():
-        raise ValidationError({"person_id": "Choose a person of this makerspace."})
+        raise ValidationError({"person_id": gettext("Choose a person of this makerspace.")})
     return User.objects.get(pk=person_id)
 
 
@@ -47,13 +48,13 @@ def _clean(values):
         value = values[name]
         if name == "channels":
             if not isinstance(value, list) or any(item not in CHANNELS for item in value):
-                raise ValidationError({"channels": f"Choose from {', '.join(CHANNELS)}."})
+                raise ValidationError({"channels": gettext('Choose from {value}.').format(value=', '.join(CHANNELS))})
             value = sorted(set(value) | {"email"}, key=CHANNELS.index)
         else:
             value = str(value or "").strip()
         cleaned[name] = value
     if "name" in cleaned and not cleaned["name"]:
-        raise ValidationError({"name": "Give the technician a name."})
+        raise ValidationError({"name": gettext("Give the technician a name.")})
     return cleaned
 
 
@@ -63,24 +64,24 @@ def _coverage(space, actor, contact, rows):
     from apps.machines.member_scope_services import assignable_machine_types
     from apps.maintenance.models import TechnicianCoverage
     if contact.person_id and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk):
-        raise PermissionDenied("Only the Space Manager sets an in-house technician's coverage.")
+        raise PermissionDenied(gettext("Only the Space Manager sets an in-house technician's coverage."))
     built = []
     for row in rows if isinstance(rows, list) else [None]:
         kind = row.get("kind") if isinstance(row, dict) else None
         if kind == "machine_type":
             found = assignable_machine_types(space).filter(pk=row.get("id")).first()
             if found is None:
-                raise ValidationError({"coverage": "Unknown machine type."})
+                raise ValidationError({"coverage": gettext("Unknown machine type.")})
             built.append(TechnicianCoverage(contact=contact, kind=kind, machine_type=found))
         elif kind == "room":
             found = BookableSpace.objects.filter(makerspace=space, pk=row.get("id")).first()
             if found is None:
-                raise ValidationError({"coverage": "Unknown room."})
+                raise ValidationError({"coverage": gettext("Unknown room.")})
             built.append(TechnicianCoverage(contact=contact, kind=kind, room=found))
         elif kind == "inventory":
             built.append(TechnicianCoverage(contact=contact, kind=kind))
         else:
-            raise ValidationError({"coverage": "Each row is a machine type, inventory or a room."})
+            raise ValidationError({"coverage": gettext("Each row is a machine type, inventory or a room.")})
     TechnicianCoverage.objects.filter(contact=contact).delete()
     TechnicianCoverage.objects.bulk_create(built, ignore_conflicts=True)
 
@@ -92,7 +93,7 @@ def create_contact(actor, space, values):
     person = _person(space, values.get("person_id"))
     kind = TechnicianContact.Kind.IN_HOUSE if person is not None else TechnicianContact.Kind.EXTERNAL
     if person is not None and TechnicianContact.objects.filter(makerspace=space, person=person).exists():
-        raise ValidationError({"person_id": "This person already has a technician entry."})
+        raise ValidationError({"person_id": gettext("This person already has a technician entry.")})
     fields = _clean({"channels": ["email"], **values})
     if person is not None and not fields.get("name"):
         fields["name"] = person.display_name or person.get_full_name() or person.username
@@ -142,7 +143,7 @@ def withdraw_consent(actor, contact, channel):
     _require(actor, contact.makerspace_id)
     field = {"telegram": "telegram_opted_in_at", "whatsapp": "whatsapp_opted_in_at", "sms": "sms_opted_in_at"}
     if channel not in field:
-        raise ValidationError({"channel": "Withdraw Telegram, WhatsApp or SMS."})
+        raise ValidationError({"channel": gettext("Withdraw Telegram, WhatsApp or SMS.")})
     setattr(contact, field[channel], None)
     if channel == "telegram":
         contact.telegram_chat_id = ""
@@ -156,11 +157,11 @@ def withdraw_consent(actor, contact, channel):
 def set_default(actor, space, *, area, contact, machine_type=None, room=None, remove=False):
     from apps.maintenance.models import TechnicianDefault
     if area not in areas.AREAS:
-        raise ValidationError({"area": "Choose machines, inventory or rooms."})
+        raise ValidationError({"area": gettext("Choose machines, inventory or rooms.")})
     if not rbac.can(actor, areas.MANAGER_ACTION[area], space.pk):
         raise PermissionDenied()
     if contact.makerspace_id != space.pk:
-        raise ValidationError({"contact_id": "Choose a technician of this makerspace."})
+        raise ValidationError({"contact_id": gettext("Choose a technician of this makerspace.")})
     lookup = {"makerspace": space, "area": area, "machine_type": machine_type if area == areas.MACHINES else None,
               "room": room if area == areas.ROOMS else None, "contact": contact}
     if remove:

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type { PositionedElement } from "../../components/print-layout/positionedLayout";
@@ -53,14 +54,14 @@ export function usePreviewEventCertificate(eventId: number) {
 export function useUploadCertificateArtwork(eventId: number) {
   return useMutation({ mutationFn: async (file: File) => {
     if (!["image/png", "image/jpeg"].includes(file.type) || file.size < 1 || file.size > 10 * 1024 * 1024) {
-      throw new Error("Choose a PNG or JPEG image up to 10 MB.");
+      throw new Error(t`Choose a PNG or JPEG image up to 10 MB.`);
     }
     const upload = await staffRequest<{ id: number; upload_url: string; headers: Record<string, string> }>(
       `/admin/events/${eventId}/certificate-artwork/`, {
         method: "POST", body: JSON.stringify({ content_type: file.type, content_length: file.size }),
       });
     const response = await fetch(upload.upload_url, { method: "PUT", headers: upload.headers, body: file });
-    if (!response.ok) throw new Error("Artwork upload failed. Select the image to try again.");
+    if (!response.ok) throw new Error(t`Artwork upload failed. Select the image to try again.`);
     return staffRequest<{ id: number }>(`/admin/events/${eventId}/certificate-artwork/${upload.id}/finalize/`, {
       method: "POST", body: JSON.stringify({}),
     });

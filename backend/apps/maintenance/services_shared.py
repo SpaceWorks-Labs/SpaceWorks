@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 
 from django.utils import timezone
@@ -48,22 +49,22 @@ def prepare_machine(machine, actor, *, manage, technician=False):
 
 def clean_text(value, field, *, allow_blank=False):
     if not isinstance(value, str):
-        raise ValidationError({field: "Must be a string."})
+        raise ValidationError({field: gettext("Must be a string.")})
     value = value.strip()
     if not value and not allow_blank:
-        raise ValidationError({field: "This field may not be blank."})
+        raise ValidationError({field: gettext("This field may not be blank.")})
     return value
 
 
 def clean_interval(value):
     if isinstance(value, bool):
-        raise ValidationError({"interval_days": "A positive integer is required."})
+        raise ValidationError({"interval_days": gettext("A positive integer is required.")})
     try:
         value = int(value)
     except (TypeError, ValueError):
-        raise ValidationError({"interval_days": "A positive integer is required."})
+        raise ValidationError({"interval_days": gettext("A positive integer is required.")})
     if value <= 0:
-        raise ValidationError({"interval_days": "Must be greater than zero."})
+        raise ValidationError({"interval_days": gettext("Must be greater than zero.")})
     return value
 
 
@@ -71,7 +72,7 @@ def clean_date(value, field="next_due"):
     try:
         return MaintenanceSchedule._meta.get_field("next_due").clean(value, None)
     except (TypeError, ValueError):
-        raise ValidationError({field: "Enter a valid date."})
+        raise ValidationError({field: gettext("Enter a valid date.")})
 
 
 def clean_performed_at(value):
@@ -79,9 +80,9 @@ def clean_performed_at(value):
     try:
         value = MaintenanceLog._meta.get_field("performed_at").clean(value, None)
     except (TypeError, ValueError):
-        raise ValidationError({"performed_at": "Enter a valid date/time."})
+        raise ValidationError({"performed_at": gettext("Enter a valid date/time.")})
     if timezone.is_naive(value):
-        raise ValidationError({"performed_at": "Timezone information is required."})
+        raise ValidationError({"performed_at": gettext("Timezone information is required.")})
     return value
 
 
@@ -91,13 +92,13 @@ def clean_cost(value):
     try:
         value = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
-        raise ValidationError({"cost": "Enter a valid amount."})
+        raise ValidationError({"cost": gettext("Enter a valid amount.")})
     if not value.is_finite() or value < 0:
-        raise ValidationError({"cost": "Must be zero or greater."})
+        raise ValidationError({"cost": gettext("Must be zero or greater.")})
     try:
         return MaintenanceLog._meta.get_field("cost").clean(value, None)
     except Exception:
-        raise ValidationError({"cost": "Enter an amount with at most 10 whole digits and 2 decimals."})
+        raise ValidationError({"cost": gettext("Enter an amount with at most 10 whole digits and 2 decimals.")})
 
 
 def validate_log_values(*, summary, performed_at, cost, parts_note):

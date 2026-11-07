@@ -5,12 +5,13 @@ parameter), so the dynamic policy denies their metadata at read time: these entr
 labels only, and the raw audit row keeps its typed ids for auditors.
 """
 
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("devices.integration_bound", "Machine integration bound to a type"),
-    P("devices.integration_updated", "Machine integration changed"),
-    P("devices.integration_unbound", "Machine integration removed"),
-    P("machine_service.agent_report_applied", "Printer report applied to a service job"),
-    P("machine_service.agent_report_refused", "Printer report refused"),
+    P("devices.integration_bound", gettext_noop("Machine integration bound to a type")),
+    P("devices.integration_updated", gettext_noop("Machine integration changed")),
+    P("devices.integration_unbound", gettext_noop("Machine integration removed")),
+    P("machine_service.agent_report_applied", gettext_noop("Printer report applied to a service job")),
+    P("machine_service.agent_report_refused", gettext_noop("Printer report refused")),
 )

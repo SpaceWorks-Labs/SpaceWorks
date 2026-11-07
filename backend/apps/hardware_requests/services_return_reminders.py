@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.operations.cloud_jobs import bounded
 from django.db import transaction
 from django.utils import timezone
@@ -64,8 +65,8 @@ def _run_legacy_return_reminders(*, now=None, limit=200) -> dict:
                     hardware_request.makerspace,
                     level="warning",
                     event="loan.overdue",
-                    title="Overdue loan reminder queued",
-                    body=f"Request #{hardware_request.pk} is overdue; a reminder was queued.",
+                    title=gettext("Overdue loan reminder queued"),
+                    body=gettext('Request #{pk} is overdue; a reminder was queued.').format(pk=hardware_request.pk),
                 )
                 continue
             counts["skipped"] += 1

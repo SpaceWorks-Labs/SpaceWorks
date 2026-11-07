@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { featureEnabled } from "../../../lib/features";
@@ -34,9 +35,9 @@ export function MembershipLifecycleTab({ tab, makerspaceId, slug, features, canM
   if (tab === "register") return <MemberRegisterList makerspaceId={makerspaceId} initialStanding={standing} />;
   if (tab === "renewals") return <RenewalDesk makerspaceId={makerspaceId} />;
   if (tab === "insights") return <MembershipInsights makerspaceId={makerspaceId} />;
-  if (tab === "import") return <section aria-label="Member import" className="grid gap-3">
-    <p className="text-sm text-muted">Bring members over from a spreadsheet. Each person is invited by email and joins when they accept; nobody is linked to an existing account for them.</p>
-    <div><button className="desk-button-primary" type="button" onClick={() => setImporting(true)}>Import members</button></div>
+  if (tab === "import") return <section aria-label={t`Member import`} className="grid gap-3">
+    <p className="text-sm text-muted">{t`Bring members over from a spreadsheet. Each person is invited by email and joins when they accept; nobody is linked to an existing account for them.`}</p>
+    <div><button className="desk-button-primary" type="button" onClick={() => setImporting(true)}>{t`Import members`}</button></div>
     <MemberImportWizard makerspaceId={makerspaceId} open={importing} onClose={() => setImporting(false)}
       sheetsEnabled={has(features, "import_sheets")} />
   </section>;

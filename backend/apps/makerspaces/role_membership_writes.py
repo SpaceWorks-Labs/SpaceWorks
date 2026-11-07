@@ -5,6 +5,7 @@ Member alone, a staff row holds built-in staff roles. Only the superadmin grants
 or revokes the Space Manager role (owner decisions #110, #111 Q14).
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.rbac_roles import membership_roles
@@ -24,21 +25,21 @@ def track_for_slugs(slugs):
 def validated_roles(membership, roles):
     roles = {role.pk: role for role in roles}
     if not roles or None in roles:
-        raise ValidationError({"role_ids": "Choose at least one saved role."})
+        raise ValidationError({"role_ids": gettext("Choose at least one saved role.")})
     values = list(roles.values())
     slugs = {role.slug for role in values}
     if (any(role.makerspace_id != membership.makerspace_id for role in values)
             or not slugs <= set(BUILTIN_ROLE_SLUGS)
             or len(slugs) != len(values)):
-        raise ValidationError({"role_ids": "Choose built-in roles from this makerspace."})
+        raise ValidationError({"role_ids": gettext("Choose built-in roles from this makerspace.")})
     if not slugs <= COMBINABLE_ROLE_SLUGS and len(values) != 1:
-        raise ValidationError({"role_ids": "Space Manager and Member must be assigned alone."})
+        raise ValidationError({"role_ids": gettext("Space Manager and Member must be assigned alone.")})
     # A saved row keeps its track for life (DB trigger); an unsaved template takes its
     # track from the roles, and the commit-time membership check proves the pairing.
     if membership.pk is not None and membership.track != track_for_slugs(slugs):
-        raise ValidationError({"role_ids": "The role set does not match this membership's track."})
+        raise ValidationError({"role_ids": gettext("The role set does not match this membership's track.")})
     if membership.user_id and not is_person(membership.user):
-        raise ValidationError({"role_ids": "Only a personal account holds memberships."})
+        raise ValidationError({"role_ids": gettext("Only a personal account holds memberships.")})
     order = {slug: index for index, slug in enumerate(BUILTIN_ROLE_SLUGS)}
     return sorted(values, key=lambda role: order[role.slug])
 
@@ -53,7 +54,7 @@ def assert_space_manager_change_allowed(actor, membership, roles=()):
     if membership is not None and membership.pk is not None:
         touches = touches or SPACE_MANAGER in {role.slug for role in membership_roles(membership)}
     if touches and not _is_superadmin(actor):
-        raise PermissionDenied("Only the platform administrator manages Space Managers.",
+        raise PermissionDenied(gettext("Only the platform administrator manages Space Managers."),
                                code="space_manager_superadmin_only")
 
 

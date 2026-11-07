@@ -1,4 +1,5 @@
 """Booking-only, answer-free layout adapter over core print geometry."""
+from django.utils.translation import gettext
 from copy import deepcopy
 
 from rest_framework.exceptions import ValidationError
@@ -29,14 +30,14 @@ def normalize_pass_template(value):
     if value is None or value == {}:
         value = deepcopy(DEFAULT_PASS_TEMPLATE)
     if not isinstance(value, dict) or set(value) - set(DEFAULT_PASS_TEMPLATE):
-        raise ValidationError({"template": "Unknown booking pass template properties."})
+        raise ValidationError({"template": gettext("Unknown booking pass template properties.")})
     template = {**deepcopy(DEFAULT_PASS_TEMPLATE), **value}
     if type(template["version"]) is not int or template["version"] != 2:
-        raise ValidationError({"version": "Use booking pass version 2."})
+        raise ValidationError({"version": gettext("Use booking pass version 2.")})
     if template["paper_size"] not in ("A4", "LETTER", "custom"):
-        raise ValidationError({"paper_size": "Use A4, LETTER or custom."})
+        raise ValidationError({"paper_size": gettext("Use A4, LETTER or custom.")})
     if template["orientation"] not in ("portrait", "landscape"):
-        raise ValidationError({"orientation": "Use portrait or landscape."})
+        raise ValidationError({"orientation": gettext("Use portrait or landscape.")})
     for key, bounds in {
         "card_width_mm": (40, 150), "card_height_mm": (30, 120),
         "margin_mm": (0, 40), "gap_mm": (0, 30), "grid_mm": (0.5, 10),

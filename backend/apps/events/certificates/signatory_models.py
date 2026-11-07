@@ -4,6 +4,7 @@ A signatory's printed name, title and signature image are frozen into each certi
 issuance. When the event requires approval, every signatory a design revision prints must
 approve that exact revision (and their own current details) before its certificates render.
 """
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -35,7 +36,7 @@ class EventCertificateSignatory(models.Model):
     def clean(self):
         super().clean()
         if self.signature_id and (self.signature.event_id != self.event_id or self.signature.promoted_at is None):
-            raise ValidationError({"signature": "Use a promoted signature image uploaded for this event."})
+            raise ValidationError({"signature": gettext("Use a promoted signature image uploaded for this event.")})
 
 
 class EventCertificateSignatoryApproval(models.Model):
@@ -54,7 +55,7 @@ class EventCertificateSignatoryApproval(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Signatory approvals are append-only.")
+            raise ValidationError(gettext("Signatory approvals are append-only."))
         if self.template_revision.event_id != self.signatory.event_id:
-            raise ValidationError("The approval must name a design of the signatory's event.")
+            raise ValidationError(gettext("The approval must name a design of the signatory's event."))
         return super().save(*args, **kwargs)

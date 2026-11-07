@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill, type Tone } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -12,9 +13,9 @@ const STATUS: Record<Announcement["status"], [string, Tone]> = {
 
 function CancelDialog({ row, onClose }: { row: Announcement; onClose: () => void }) {
   const cancel = useCancelAnnouncement();
-  return <ActionDialog title="Cancel this announcement" confirmLabel="Cancel announcement" tone="danger" pending={cancel.isPending}
-    error={cancel.error} onCancel={onClose} message={`"${row.title}" stops showing right away. Emails already sent cannot be recalled.`}
-    onSubmit={() => cancel.mutate(row.id, { onSuccess: () => { toast("Announcement cancelled."); onClose(); } })} />;
+  return <ActionDialog title={t`Cancel this announcement`} confirmLabel={t`Cancel announcement`} tone="danger" pending={cancel.isPending}
+    error={cancel.error} onCancel={onClose} message={t`"${row.title}" stops showing right away. Emails already sent cannot be recalled.`}
+    onSubmit={() => cancel.mutate(row.id, { onSuccess: () => { toast(t`Announcement cancelled.`); onClose(); } })} />;
 }
 
 function audience(row: Announcement) {
@@ -30,19 +31,19 @@ export function AnnouncementsSection() {
   const list = useAnnouncements(page);
   const rows = list.data?.results ?? [];
   return <div className="grid gap-4">
-    <CollapsibleSection title="New announcement" open={composing} onToggle={() => setComposing(!composing)}><AnnouncementForm /></CollapsibleSection>
+    <CollapsibleSection title={t`New announcement`} open={composing} onToggle={() => setComposing(!composing)}><AnnouncementForm /></CollapsibleSection>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
       : list.isError ? <ErrorText resource="announcements" onRetry={() => { void list.refetch(); }} />
-      : !rows.length ? <EmptyState message="No announcements yet." />
+      : !rows.length ? <EmptyState message={t`No announcements yet.`} />
       : <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.title}
-        meta={<>{SEVERITY_LABELS[row.severity] ?? row.severity} · {audience(row)} · starts <RelativeTime date={row.starts_at} exact />
-          {row.ends_at ? <> · ends <RelativeTime date={row.ends_at} exact /></> : null}
-          {row.email_sent_at ? ` · emailed to ${row.email_recipient_count}` : row.send_email ? " · email pending" : ""}
-          {row.show_to_members ? " · members see it" : ""}</>}
+        meta={<>{t`${SEVERITY_LABELS[row.severity] ?? row.severity} · ${audience(row)} · starts `}<RelativeTime date={row.starts_at} exact />
+          {row.ends_at ? <> {t` · ends `}<RelativeTime date={row.ends_at} exact /></> : null}
+          {row.email_sent_at ? t` · emailed to ${row.email_recipient_count}` : row.send_email ? t` · email pending` : ""}
+          {row.show_to_members ? t` · members see it` : ""}</>}
         right={<div className="flex flex-wrap items-center gap-2">
           <StatusPill label={STATUS[row.status][0]} tone={STATUS[row.status][1]} />
           {row.status === "live" || row.status === "scheduled" ? <button type="button" className="desk-button-danger-outline"
-            aria-label={`Cancel ${row.title}`} onClick={() => setCancelling(row)}>Cancel…</button> : null}
+            aria-label={t`Cancel ${row.title}`} onClick={() => setCancelling(row)}>{t`Cancel…`}</button> : null}
         </div>} />)}</div>}
     <Pagination page={page} totalPages={Math.max(1, Math.ceil((list.data?.count ?? 0) / PAGE_SIZE))} onChange={setPage}
       count={list.data?.count} pageSize={PAGE_SIZE} disabled={list.isFetching} />

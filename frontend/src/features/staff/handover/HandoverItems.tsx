@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { HardwareRequest } from "../panels/Queues";
 import type { ReturnRequestValues, AssetReturnOutcome } from "../panels/QueuesModalTypes";
 import { QuantityStepper } from "../QuantityStepper";
@@ -32,10 +33,10 @@ export function HandoverItems({ row, mode, resolutions, onChange }: { row: Hardw
   // column (not the viewport) has room for three thumb-sized steppers.
   return <div className="@container grid gap-3">{row.items.map(item => <fieldset key={item.id} className="grid min-w-0 gap-2 rounded border border-line p-3">
     <legend className="break-words px-1 font-semibold">{item.product_name}</legend>
-    {mode === "issue" ? <p>Accepted quantity: {item.accepted_quantity}</p> : item.requires_asset_qr ? (item.issued_assets ?? []).map(asset => <label key={asset.asset_id} className="grid min-w-0 gap-1 break-words">{asset.asset_tag}
+    {mode === "issue" ? <p>{t`Accepted quantity: ${item.accepted_quantity}`}</p> : item.requires_asset_qr ? (item.issued_assets ?? []).map(asset => <label key={asset.asset_id} className="grid min-w-0 gap-1 break-words">{asset.asset_tag}
       <select className="desk-input" value={resolutions.find(value => value.item_id === item.id)?.assets?.find(value => value.asset_id === asset.asset_id)?.outcome ?? "pending"} onChange={event => assetOutcome(item.id, asset.asset_id, event.target.value as AssetReturnOutcome | "pending")}>
-        <option value="returned">Returned</option><option value="damaged">Damaged</option><option value="missing">Missing</option><option value="pending">Not returned now</option>
-      </select></label>) : <><p className="text-sm text-muted">Remaining: {remaining(item)}</p><div className="grid gap-3 @lg:grid-cols-3">{(["returned", "damaged", "missing"] as const).map(key => {
+        <option value="returned">{t`Returned`}</option><option value="damaged">{t`Damaged`}</option><option value="missing">{t`Missing`}</option><option value="pending">{t`Not returned now`}</option>
+      </select></label>) : <><p className="text-sm text-muted">{t`Remaining: ${remaining(item)}`}</p><div className="grid gap-3 @lg:grid-cols-3">{(["returned", "damaged", "missing"] as const).map(key => {
         const current = resolutions.find(value => value.item_id === item.id)?.[key];
         return <label key={key} className="grid min-w-0 gap-1 capitalize">{key}<QuantityStepper label={key} max={remaining(item)} value={Number.isNaN(current) ? "" : current ?? 0} onValueChange={value => quantity(item.id, key, value)} /></label>;
       })}</div></>}

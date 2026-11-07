@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 /** Wire contract for catalog chart_spec. All field names refer to typed report rows. */
 export type ChartSpec = {
   kind: "bar" | "line" | "stacked_bar" | "pie" | "multi_line" | "heatmap" | "funnel" | "histogram";
@@ -28,12 +29,12 @@ const compare = (a: string | number, b: string | number) =>
 
 /** Pure projection. Never coerce null/blank/boolean to a measurement, or sum across units. */
 export function toChartData(spec: ChartSpec, rows: readonly ChartRecord[]): ChartData {
-  if (!spec.x.field || !spec.value_fields.length) throw new Error("Chart fields are required.");
-  if (spec.kind === "multi_line" && spec.x.kind !== "time") throw new Error("Multi-line charts require a time axis.");
+  if (!spec.x.field || !spec.value_fields.length) throw new Error(t`Chart fields are required.`);
+  if (spec.kind === "multi_line" && spec.x.kind !== "time") throw new Error(t`Multi-line charts require a time axis.`);
   if (spec.truncation && (!Number.isInteger(spec.truncation.topN) || spec.truncation.topN < 1)) {
-    throw new Error("Chart topN must be a positive integer.");
+    throw new Error(t`Chart topN must be a positive integer.`);
   }
-  if (spec.truncation && spec.x.kind === "time") throw new Error("Time axes cannot contain an Other bucket.");
+  if (spec.truncation && spec.x.kind === "time") throw new Error(t`Time axes cannot contain an Other bucket.`);
   const groups = new Map<string, ChartSeries>();
   for (const row of rows) {
     const rawX = row[spec.x.field];
@@ -79,7 +80,7 @@ export function toChartData(spec: ChartSpec, rows: readonly ChartRecord[]): Char
       for (const item of members) {
         const omitted = item.points.filter((point) => !keep.has(point.x));
         item.points = item.points.filter((point) => keep.has(point.x));
-        if (omitted.length) item.points.push({ x: otherX, label: spec.truncation.otherLabel ?? "Other", value: omitted.reduce((sum, point) => sum + point.value, 0), other: true });
+        if (omitted.length) item.points.push({ x: otherX, label: spec.truncation.otherLabel ?? t`Other`, value: omitted.reduce((sum, point) => sum + point.value, 0), other: true });
       }
     }
     for (const item of members) item.points.sort((a, b) => {

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { publicV1Request, staffRequest } from "../../../lib/api";
 import { healthKey, post, type Page } from "./spacesApi";
@@ -19,9 +21,9 @@ export const LIMIT_KEYS = ["members", "staff", "storage", "email_monthly", "sms_
   "products", "assets", "machines", "bookings", "api_clients"] as const;
 export type LimitKey = typeof LIMIT_KEYS[number];
 export const LIMIT_LABELS: Record<LimitKey, string> = {
-  members: "Members", staff: "Staff", storage: "Storage (bytes)", email_monthly: "Emails per month", sms_monthly: "SMS per month",
-  whatsapp_monthly: "WhatsApp per month", events_monthly: "Events per month", products: "Products", assets: "Assets",
-  machines: "Machines", bookings: "Bookings", api_clients: "API clients",
+  members: t`Members`, staff: t`Staff`, storage: t`Storage (bytes)`, email_monthly: t`Emails per month`, sms_monthly: t`SMS per month`,
+  whatsapp_monthly: t`WhatsApp per month`, events_monthly: t`Events per month`, products: t`Products`, assets: t`Assets`,
+  machines: t`Machines`, bookings: t`Bookings`, api_clients: t`API clients`,
 };
 export type HostingPlan = {
   id: number; key: string; name: string; description: string; is_active: boolean; trial_days: number;
@@ -50,7 +52,7 @@ const billingKey = ["platform-hosting-billing"] as const;
 
 export function formatMoney(minor: number, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(minor / 100);
+    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency }).format(minor / 100);
   } catch {
     return `${(minor / 100).toFixed(2)} ${currency}`;
   }

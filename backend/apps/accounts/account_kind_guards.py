@@ -5,6 +5,7 @@ answer earlier on ``save()``. Kind changes only in a unification run: staff->per
 (the conversion migration) and person->merged shell (the merge engine).
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import connections, router
 from rest_framework.exceptions import PermissionDenied
@@ -22,7 +23,7 @@ def require_member_account(user):
     """Refuse platform accounts and inert shells: the operation needs a person."""
     if (getattr(user, "account_kind", None) != "member" or user.retired_at is not None
             or getattr(user, "merged_into_id", None) is not None):
-        raise PermissionDenied("This operation requires a personal account.", code="member_account_required")
+        raise PermissionDenied(gettext("This operation requires a personal account."), code="member_account_required")
 
 
 def _setting(using, name):
@@ -36,7 +37,7 @@ def guard_account_identity(user, *, using=None):
         "deletion_requested_at", "deletion_purge_after", "purge_started_at",
         "account_restored_at", "account_purged_at", "deletion_email_ciphertext", "deletion_username",
     )):
-        raise ValidationError("Account deletion and restoration require a personal account.")
+        raise ValidationError(gettext("Account deletion and restoration require a personal account."))
     if user._state.adding:
         return
     using = using or router.db_for_write(type(user), instance=user)
@@ -50,10 +51,10 @@ def guard_account_identity(user, *, using=None):
         merging = (old["account_kind"] == "member" and user.account_kind == "staff"
                    and user.merged_into_id is not None and not user.is_active)
         if not (converting or merging) or not _setting(using, UNIFICATION_GUC):
-            raise ValidationError("Account kind changes only in an account-unification run.")
+            raise ValidationError(gettext("Account kind changes only in an account-unification run."))
         return
     if old["merged_into_id"] != user.merged_into_id and not _setting(using, SHELL_IMPORT_GUC):
-        raise ValidationError("A merged shell is remapped only by its tenant import.")
+        raise ValidationError(gettext("A merged shell is remapped only by its tenant import."))
     if (old["staff_makerspace_id"] == user.staff_makerspace_id
             and old["retired_at"] == user.retired_at):
         return
@@ -63,4 +64,4 @@ def guard_account_identity(user, *, using=None):
         and user.retired_at is not None and not user.is_active
     )
     if not retirement or _setting(using, RETIREMENT_GUC) != str(old["staff_makerspace_id"]):
-        raise ValidationError("Staff makerspace and retirement are immutable outside tenant purge.")
+        raise ValidationError(gettext("Staff makerspace and retirement are immutable outside tenant purge."))

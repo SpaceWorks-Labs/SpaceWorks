@@ -1,5 +1,6 @@
 """Encrypted source evidence; numeric age has no persistence field here."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -71,27 +72,27 @@ class EventAnswerDerivation(models.Model):
         if sum(getattr(self, f"{name}_id") is not None for name in (
             "registration", "application", "role_assignment",
         )) != 1:
-            raise ValidationError("Bind exactly one answer subject.")
+            raise ValidationError(gettext("Bind exactly one answer subject."))
         # Retained evidence can outlive its owner's User edge. Null/pseudonymous
         # owners cannot read or edit it, but tenant fidelity import must preserve it.
         for kind in SubjectKind:
             pk = getattr(self, f"{kind.value}_id")
             if pk is not None and not subject_model(kind).objects.filter(pk=pk, event_id=self.event_id).exists():
-                raise ValidationError("Answer subject must belong to this event.")
+                raise ValidationError(gettext("Answer subject must belong to this event."))
         if not self.question_id or len(self.question_id) > 128:
-            raise ValidationError("Use a bounded question identifier.")
+            raise ValidationError(gettext("Use a bounded question identifier."))
         if not is_envelope(self.source_dob_envelope):
-            raise ValidationError("Birth date source must be encrypted.")
+            raise ValidationError(gettext("Birth date source must be encrypted."))
         parse_envelope(self.source_dob_envelope)
         self._validate_history()
 
     def _validate_history(self):
         allowed = {"source_dob_envelope", "event_date_revision", "as_of_date", "locked_at", "version", "reason_envelope"}
         if not isinstance(self.source_history, list):
-            raise ValidationError("Use encrypted source snapshots.")
+            raise ValidationError(gettext("Use encrypted source snapshots."))
         for snapshot in self.source_history:
             if not isinstance(snapshot, dict) or set(snapshot) != allowed:
-                raise ValidationError("Use encrypted source snapshots.")
+                raise ValidationError(gettext("Use encrypted source snapshots."))
             for name in ("source_dob_envelope", "reason_envelope"):
                 parse_envelope(snapshot[name])
 
@@ -103,11 +104,11 @@ class EventAnswerDerivation(models.Model):
             prior = type(self).objects.get(pk=self.pk)
             identity = ("event_id", "registration_id", "application_id", "role_assignment_id", "question_id")
             if any(getattr(self, name) != getattr(prior, name) for name in identity):
-                raise ValidationError("Derivation identity is immutable.")
+                raise ValidationError(gettext("Derivation identity is immutable."))
             if self.source_history[:len(prior.source_history)] != prior.source_history:
-                raise ValidationError("Source history is append-only.")
+                raise ValidationError(gettext("Source history is append-only."))
             if prior.locked_at and not getattr(self, "_workflow_reopen", False):
                 protected = ("source_dob_envelope", "as_of_date", "event_date_revision", "locked_at")
                 if any(getattr(self, name) != getattr(prior, name) for name in protected):
-                    raise ValidationError("Locked source evidence is immutable.")
+                    raise ValidationError(gettext("Locked source evidence is immutable."))
         return super().save(*args, **kwargs)

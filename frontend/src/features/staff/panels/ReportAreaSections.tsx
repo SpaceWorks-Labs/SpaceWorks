@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { analyticsRows, analyticsMeta, periodParams, useAnalyticsReport, type AnalyticsPeriod } from "./analyticsApi";
 import { AnalyticsData } from "./AnalyticsData";
 import { DataState } from "./OperationsReportState";
@@ -13,12 +14,12 @@ export function ReportChartResult({ report, base, period, filters = {}, makerspa
   Object.entries(filters).forEach(([key, value]) => { if (value) params.set(key, value); });
   const enabled = report.available !== false && report.previewable !== false;
   const query = useAnalyticsReport(base, report.key, params, enabled);
-  if (!enabled) return <p className="text-sm text-muted">{report.unavailable_reason || "This report is available through exports only."}</p>;
-  if (query.isLoading) return <p role="status" className="text-sm text-muted">Loading {report.title}…</p>;
-  if (query.error instanceof StructuredApiError && query.error.status === 403) return <p role="alert" className="text-danger">Access to this makerspace's analytics is blocked. Your account needs authority for this report in this space.</p>;
+  if (!enabled) return <p className="text-sm text-muted">{report.unavailable_reason || t`This report is available through exports only.`}</p>;
+  if (query.isLoading) return <p role="status" className="text-sm text-muted">{t`Loading ${report.title}…`}</p>;
+  if (query.error instanceof StructuredApiError && query.error.status === 403) return <p role="alert" className="text-danger">{t`Access to this makerspace's analytics is blocked. Your account needs authority for this report in this space.`}</p>;
   const rows = analyticsRows(query.data).map(row => makerspaceId !== undefined ? { makerspace_id: makerspaceId, ...row } : row);
   return <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
-    <button type="button" className="desk-button mb-3" disabled={query.isFetching} onClick={() => void query.refetch()}>Refresh report</button>
+    <button type="button" className="desk-button mb-3" disabled={query.isFetching} onClick={() => void query.refetch()}>{t`Refresh report`}</button>
     <AnalyticsData title={report.title} rows={rows} spec={report.chart_spec} hint={report.chart_hint} meta={analyticsMeta(query.data)} />
   </DataState>;
 }
@@ -34,7 +35,7 @@ export function ReportAreaSections({ reports, selected, onSelect, base, period, 
       className="rounded-xl border border-line bg-panel p-4">
       <button type="button" aria-expanded={selected === report.key} onClick={() => onSelect(selected === report.key ? "" : report.key)}
         className="min-h-11 w-full rounded-control py-2 text-left font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-        {report.title}{report.identity_bearing ? <span className="ml-2 text-sm text-muted">Contains personal data</span> : null}
+        {report.title}{report.identity_bearing ? <span className="ml-2 text-sm text-muted">{t`Contains personal data`}</span> : null}
       </button>
       {selected === report.key ? <ReportChartResult report={report} base={base} period={period} filters={filters} makerspaceId={makerspaceId} /> : null}
     </section>)}</div>

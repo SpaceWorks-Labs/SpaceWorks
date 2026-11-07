@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
@@ -28,21 +29,21 @@ export function BillingDocumentsSettings({ makerspaceId }: { makerspaceId: numbe
     },
     onSuccess: (data) => { client.setQueryData(key, data); void client.invalidateQueries({ queryKey: ["operations-report", "accounting-journal"] }); },
   });
-  return <SettingsRow label="Billing documents and accounting" helper="Gross-only documents. Settings apply to newly issued bills, receipts and credit notes."><div className="@container grid min-w-0 gap-4">
+  return <SettingsRow label={t`Billing documents and accounting`} helper={t`Gross-only documents. Settings apply to newly issued bills, receipts and credit notes.`}><div className="@container grid min-w-0 gap-4">
 
 
-    <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>Configure documents</button>
+    <button className="desk-button mt-2" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{t`Configure documents`}</button>
     {expanded ? <SettingsQueryState query={policy} resource="receipt settings"><>
-      {policy.isLoading ? <p>Loading billing settings…</p> : null}
+      {policy.isLoading ? <p>{t`Loading billing settings…`}</p> : null}
       {policy.error || save.error ? <p role="alert" className="text-danger">{(policy.error || save.error)?.message}</p> : null}
       {draft ? <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
         {([ ["number_prefix", "Number prefix", 32], ["bill_prefix", "Bill prefix", 32], ["legal_name", "Issuer name", 150], ["address", "Issuer address", 1000], ["tax_id", "Issuer identifier (no tax calculation)", 64], ["footer", "Footer", 1000], ["upi_vpa", "UPI ID for the payment QR (name@bank)", 255], ["upi_payee_name", "UPI payee name", 50] ] as const).map(([name, label, length]) =>
           <Field key={name} label={label}><input className="desk-input" maxLength={length} value={draft[name]} onChange={(event) => setDraft({ ...draft, [name]: event.target.value })} /></Field>)}
-        <Field label="Payment instructions"><textarea className="desk-input" rows={4} maxLength={2000} value={draft.payment_instructions} onChange={event => setDraft({ ...draft, payment_instructions: event.target.value })} /></Field>
-        <Field label="Accounting account codes (JSON)"><textarea className="desk-input code-text" rows={6} value={codes} onChange={(event) => setCodes(event.target.value)} /></Field>
-        <p className="text-xs text-muted">Defaults: income 4000, cash 1000, online 1010, loan-deposit liability 2100. Override individual payment subject types as needed.</p>
+        <Field label={t`Payment instructions`}><textarea className="desk-input" rows={4} maxLength={2000} value={draft.payment_instructions} onChange={event => setDraft({ ...draft, payment_instructions: event.target.value })} /></Field>
+        <Field label={t`Accounting account codes (JSON)`}><textarea className="desk-input code-text" rows={6} value={codes} onChange={(event) => setCodes(event.target.value)} /></Field>
+        <p className="text-xs text-muted">{t`Defaults: income 4000, cash 1000, online 1010, loan-deposit liability 2100. Override individual payment subject types as needed.`}</p>
         <SettingsEditorActions dirty={Boolean(draft && policy.data && (JSON.stringify(draft) !== JSON.stringify(policy.data) || codes !== JSON.stringify(policy.data.account_codes, null, 2)))} onDiscard={() => { setDraft(policy.data ?? null); setCodes(JSON.stringify(policy.data?.account_codes ?? {}, null, 2)); }} pending={save.isPending} disabled={save.isPending} />
-        {save.isSuccess ? <p role="status">Document settings saved.</p> : null}
+        {save.isSuccess ? <p role="status">{t`Document settings saved.`}</p> : null}
       </form> : null}
     </></SettingsQueryState> : null}
   </div></SettingsRow>;

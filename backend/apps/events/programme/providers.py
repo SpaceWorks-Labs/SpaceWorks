@@ -1,5 +1,6 @@
 """Explicit domain seams. G installs providers; R owns stage transactions."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable
@@ -94,17 +95,17 @@ def append_stage_revision_locked(*, event, actor, target, schema):
         raise RuntimeError("Stage revisions require the locked domain transaction.")
     if (getattr(target, "event_id", None) != event.pk or type(getattr(target, "pk", None)) is not int
             or target.pk < 1):
-        raise NotFound("Unknown event form.")
+        raise NotFound(gettext("Unknown event form."))
     event_authority.require(actor, event, "edit_details")
     if isinstance(schema, dict) and "event_context" in schema:
-        raise ValidationError({"code": "invalid_form_schema", "detail": "Event context is read-only."})
+        raise ValidationError({"code": "invalid_form_schema", "detail": gettext("Event context is read-only.")})
     try:
         canonical = validate_schema(schema, context="stage")
     except SchemaError as exc:
         raise ValidationError({"code": getattr(exc, "code", None) or "invalid_form_schema",
                                "detail": " ".join(exc.messages)}) from exc
     if canonical["form_id"] != target.form_id:
-        raise ValidationError({"code": "invalid_form_context", "detail": "Use the stage's stable form ID."})
+        raise ValidationError({"code": "invalid_form_context", "detail": gettext("Use the stage's stable form ID.")})
     scope = {"event_id": event.pk, "form_key": "stage", "selector_kind": "stage", "selector_id": target.pk}
     history = EventFormRevision.objects.using(database)
     last = history.filter(**scope).order_by("-revision").first()

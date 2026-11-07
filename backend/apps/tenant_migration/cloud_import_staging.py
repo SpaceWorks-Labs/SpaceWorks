@@ -1,4 +1,5 @@
 """Managed staging carries only encrypted, digest-bound locators between jobs."""
+from django.utils.translation import gettext
 from pathlib import Path
 import tempfile
 
@@ -27,14 +28,14 @@ def stage(job_id, actor_id):
         _require_superadmin(actor)
         with staging.materialize(job.archive_path) as local:
             if sha256_file(local) != job.source_archive_digest:
-                raise ValidationError("The encrypted archive digest does not match.")
+                raise ValidationError(gettext("The encrypted archive digest does not match."))
             with decrypted_archive(local) as (root, _carried):
                 from .archive_envelope import FORMAT, READABLE_FORMAT_VERSIONS
                 from .pairing import _validated_identity
                 portable = PortableArchive(root)
                 manifest = portable.json("migration-manifest.json")
                 if manifest.get("format") != FORMAT or manifest.get("format_version") not in READABLE_FORMAT_VERSIONS:
-                    raise ValidationError("The tenant migration format is unsupported.")
+                    raise ValidationError(gettext("The tenant migration format is unsupported."))
                 source = manifest.get("source", {}).get("makerspace", {})
                 identity = _validated_identity(manifest.get("source", {}).get("deployment"), "source")
                 users = list(portable.rows("accounts.User"))

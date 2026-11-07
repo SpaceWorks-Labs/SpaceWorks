@@ -1,5 +1,6 @@
 """Evidence-backed member return workflow."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 
@@ -126,7 +127,7 @@ def return_tool(
                 makerspace,
                 level="warning",
                 event="problem_report.filed",
-                title="Tool problem reported",
-                body=f"Problem report #{report.pk} filed for loan #{loan.pk}.",
+                title=gettext("Tool problem reported"),
+                body=gettext('Problem report #{pk} filed for loan #{pk2}.').format(pk=report.pk, pk2=loan.pk),
             )
         return loan

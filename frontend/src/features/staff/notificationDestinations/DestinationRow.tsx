@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { StatusPill as Badge, ListRow, OverflowMenu } from "../../../components/ui";
@@ -40,12 +41,12 @@ export function DestinationRow({
 
   return <ListRow title={destination.label} meta={<span className="flex flex-wrap items-center gap-2">
     <Badge label={destination.channel} />
-    <Badge label={destination.credential_set ? "Configured" : "No credential"} tone={destination.credential_set ? "success" : "danger"} />
-    {destination.is_active ? null : <Badge label="Paused" tone="warn" />}
-    <span>{scopeCount === 0 ? "Everything" : `${scopeCount} scoped`}</span>
+    <Badge label={destination.credential_set ? t`Configured` : t`No credential`} tone={destination.credential_set ? "success" : "danger"} />
+    {destination.is_active ? null : <Badge label={t`Paused`} tone="warn" />}
+    <span>{scopeCount === 0 ? t`Everything` : `${scopeCount} scoped`}</span>
   </span>} right={<div className="flex flex-wrap gap-2">
-    <button className="desk-button" onClick={() => setEditing(true)} type="button">Edit</button>
-    <OverflowMenu label={`Actions for ${destination.label}`} actions={[{ label: "Remove", tone: "danger", onClick: onDelete,
-      confirm: { title: "Remove room?", message: `Alerts stop reaching ${destination.label}. Its saved webhook URL is discarded and can't be shown again.`, confirmLabel: "Remove room" } }]} />
+    <button className="desk-button" onClick={() => setEditing(true)} type="button">{t`Edit`}</button>
+    <OverflowMenu label={t`Actions for ${destination.label}`} actions={[{ label: t`Remove`, tone: "danger", onClick: onDelete,
+      confirm: { title: t`Remove room?`, message: t`Alerts stop reaching ${destination.label}. Its saved webhook URL is discarded and can't be shown again.`, confirmLabel: t`Remove room` } }]} />
   </div>} />;
 }

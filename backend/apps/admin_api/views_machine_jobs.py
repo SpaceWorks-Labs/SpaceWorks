@@ -2,6 +2,7 @@
 and Not collected. Every action resolves the job through the machine partition (manage
 scope), and every state change goes through the machines workflow."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
@@ -161,7 +162,7 @@ class BatchStartView(APIView):
         data = payload.validated_data
         jobs = list(_manage_queryset(request.user, space.pk).filter(pk__in=data["job_ids"]))
         if len(jobs) != len(set(data["job_ids"])):
-            raise serializers.ValidationError({"job_ids": "Every job must be one you manage in this makerspace."})
+            raise serializers.ValidationError({"job_ids": gettext("Every job must be one you manage in this makerspace.")})
         plans = {int(key): value for key, value in data["plans"].items()}
         batch, started = start_batch(jobs, request.user, machine_id=data["machine_id"], plans=plans,
                                      note=data["note"])
@@ -178,7 +179,7 @@ class BatchCompleteView(APIView):
         space = _visible_makerspace(request.user, batch.makerspace_id)
         running = batch.jobs.filter(status="in_progress").values_list("pk", flat=True)
         if _manage_queryset(request.user, space.pk).filter(pk__in=list(running)).count() != len(running):
-            raise serializers.ValidationError({"batch": "This batch has jobs outside your machine scope."})
+            raise serializers.ValidationError({"batch": gettext("This batch has jobs outside your machine scope.")})
         payload = BatchCompleteSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data

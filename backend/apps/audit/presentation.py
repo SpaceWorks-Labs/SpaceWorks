@@ -20,6 +20,7 @@ from .presentation_catalog import (
     UNRECOGNIZED_LABEL,
     is_denied,
 )
+from config.locale_resolution import display
 
 _MISSING = object()
 _SCALARS = (str, int, float, bool, type(None))
@@ -87,7 +88,7 @@ def target_link(row):
 
 def action_label(action):
     entry = PRESENTATION_CATALOG.get(action)
-    return entry.label if entry is not None else UNRECOGNIZED_LABEL
+    return display(entry.label) if entry is not None else display(UNRECOGNIZED_LABEL)
 
 
 def project(row):

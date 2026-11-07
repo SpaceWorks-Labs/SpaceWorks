@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { CameraTorch } from "./CameraTorch";
@@ -29,18 +30,18 @@ function cameraErrorMessage(error: unknown) {
   if (error instanceof Error && error.message === SECURE_CONTEXT_ERROR) return error.message;
   if (error instanceof DOMException) {
     if (error.name === "NotAllowedError") {
-      return "Camera permission was denied. Allow camera access in your browser and try again.";
+      return t`Camera permission was denied. Allow camera access in your browser and try again.`;
     }
-    if (error.name === "NotFoundError") return "No camera was found on this device.";
+    if (error.name === "NotFoundError") return t`No camera was found on this device.`;
   }
-  return "The camera could not start. Close this window and try again.";
+  return t`The camera could not start. Close this window and try again.`;
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error("The captured photo could not be encoded. Please retake it."));
+      else reject(new Error(t`The captured photo could not be encoded. Please retake it.`));
     }, "image/jpeg", quality);
   });
 }
@@ -50,9 +51,9 @@ function blobToDataUrl(blob: Blob) {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("The captured photo preview could not be created."));
+      else reject(new Error(t`The captured photo preview could not be created.`));
     };
-    reader.onerror = () => reject(new Error("The captured photo preview could not be created."));
+    reader.onerror = () => reject(new Error(t`The captured photo preview could not be created.`));
     reader.readAsDataURL(blob);
   });
 }
@@ -190,7 +191,7 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
     try {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
-      if (!context) throw new Error("The captured photo could not be processed. Please retake it.");
+      if (!context) throw new Error(t`The captured photo could not be processed. Please retake it.`);
 
       let selectedBlob: Blob | null = null;
       captureLoop: for (const longEdge of LONG_EDGE_STEPS) {
@@ -204,12 +205,12 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
         }
       }
 
-      if (!selectedBlob) throw new Error("The captured photo could not be encoded. Please retake it.");
+      if (!selectedBlob) throw new Error(t`The captured photo could not be encoded. Please retake it.`);
       const file = new File([selectedBlob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
       const preview = await blobToDataUrl(selectedBlob);
       setCaptured({ file, preview });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "The photo could not be captured. Please try again.");
+      setError(err instanceof Error ? err.message : t`The photo could not be captured. Please try again.`);
     } finally {
       setCapturing(false);
     }
@@ -230,26 +231,24 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
         </div>
         <div className={`sw-camera-media ${captured ? "hidden" : "relative"}`}>
           <video ref={videoRef} className="max-h-[60dvh] w-full rounded-md bg-surface object-contain" autoPlay playsInline muted onLoadedMetadata={updateReady} onCanPlay={updateReady} />
-          {!ready && !error ? <p className="absolute inset-0 grid place-items-center text-sm text-ink">Starting camera...</p> : null}
+          {!ready && !error ? <p className="absolute inset-0 grid place-items-center text-sm text-ink">{t`Starting camera...`}</p> : null}
         </div>
         {captured ? (
           <>
-            <img src={captured.preview} alt="Captured photo preview" className="sw-camera-media max-h-[60dvh] w-full rounded-md bg-surface object-contain" />
+            <img src={captured.preview} alt={t`Captured photo preview`} className="sw-camera-media max-h-[60dvh] w-full rounded-md bg-surface object-contain" />
             <div className="grid gap-2 sm:grid-cols-2">
               <button className="desk-button min-h-11" type="button" onClick={() => { setCaptured(null); setError(""); }}>
-                Retake
-              </button>
+                {t`Retake`}</button>
               <button className="desk-button-primary min-h-11" type="button" onClick={() => { onCapture(captured.file); close(); }}>
-                Use photo
-              </button>
+                {t`Use photo`}</button>
             </div>
           </>
         ) : (
           <button className="desk-button-primary min-h-11 w-full" type="button" disabled={!ready || capturing} onClick={takePhoto}>
-            {capturing ? "Capturing..." : "Take photo"}
+            {capturing ? t`Capturing...` : t`Take photo`}
           </button>
         )}
-        <button className="desk-button min-h-11 w-full" type="button" onClick={close}>Cancel</button>
+        <button className="desk-button min-h-11 w-full" type="button" onClick={close}>{t`Cancel`}</button>
         {!captured ? <CameraTorch stream={streamRef} ready={ready} /> : null}
       </div>
     </div>,

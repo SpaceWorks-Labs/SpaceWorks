@@ -1,4 +1,5 @@
 """Dormant owner route provider; G mounts only with exact claim/origin policies."""
+from django.utils.translation import gettext
 from uuid import UUID
 
 from django.db import transaction
@@ -57,7 +58,7 @@ class OwnerView(APIView):
         if isinstance(exc, PiiWriteFenced):
             exc = SavedDetailsError("pii_write_fenced", "Protected writes are temporarily paused.", 423)
         if isinstance(exc, ValidationError):
-            return Response({"code": "invalid_input", "detail": "Check the highlighted fields.", "fields": exc.detail}, status=400)
+            return Response({"code": "invalid_input", "detail": gettext("Check the highlighted fields."), "fields": exc.detail}, status=400)
         return super().handle_exception(exc)
 
     def command(self, schema, *, keyed=True):

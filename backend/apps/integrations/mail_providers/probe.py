@@ -1,5 +1,6 @@
 """Explicit operator-triggered round-trip, using the same policy/budget boundary."""
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from django.core.validators import validate_email
@@ -21,8 +22,8 @@ def probe_mail(*, actor, recipient, makerspace=None):
     validate_email(recipient)
     from apps.integrations.dispatch import dispatch_email
     from apps.audit import services as audit
-    log = dispatch_email(to_email=recipient, subject="Space Works email test",
-        text_body="This is a Space Works delivery test. Confirm it arrived in your inbox.",
+    log = dispatch_email(to_email=recipient, subject=gettext("Space Works email test"),
+        text_body=gettext("This is a Space Works delivery test. Confirm it arrived in your inbox."),
         makerspace=makerspace, stream="account", event="email_test", audience="staff",
         connection="makerspace" if makerspace else "platform", sync=True, persist_body=False)
     accepted = log.status == log.Status.SENT

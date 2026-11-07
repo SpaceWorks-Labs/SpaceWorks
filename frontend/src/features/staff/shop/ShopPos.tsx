@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -50,14 +51,14 @@ export function ShopPos({ makerspaceId, access }: { makerspaceId: number; access
   });
   const reset = () => { setLines([]); setMember(null); setPayment(fresh); setSold(null); sell.reset(); };
   if (sold) return access.features.receipts ? <div className="grid gap-4">
-    <p role="status" className="title-section">Sale recorded: order #{sold.id}.</p>
-    <button type="button" className="desk-button-primary min-h-14 justify-self-start px-6 text-lg" onClick={reset}>Start a new sale</button>
+    <p role="status" className="title-section">{t`Sale recorded: order #${sold.id}.`}</p>
+    <button type="button" className="desk-button-primary min-h-14 justify-self-start px-6 text-lg" onClick={reset}>{t`Start a new sale`}</button>
     <ShopReceipt orderId={sold.id} onBack={reset} />
-  </div> : <div className="grid gap-4"><p role="status" className="title-section">Sale recorded: order #{sold.id}.</p>
-    <button type="button" className="desk-button-primary min-h-14 justify-self-start px-6 text-lg" onClick={reset}>Start a new sale</button></div>;
+  </div> : <div className="grid gap-4"><p role="status" className="title-section">{t`Sale recorded: order #${sold.id}.`}</p>
+    <button type="button" className="desk-button-primary min-h-14 justify-self-start px-6 text-lg" onClick={reset}>{t`Start a new sale`}</button></div>;
   const canSell = lines.length > 0 && Boolean(quote.data) && !quote.isFetching && paymentReady(payment);
-  return <section aria-label="Till" className="grid min-w-0 gap-6">
-    <PageHeader eyebrow="Shop" title="Till" subtitle="Scan or type an item and press Enter. Prices and discounts come from the server." />
+  return <section aria-label={t`Till`} className="grid min-w-0 gap-6">
+    <PageHeader eyebrow={t`Shop`} title={t`Till`} subtitle={t`Scan or type an item and press Enter. Prices and discounts come from the server.`} />
     <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
       <div className="grid min-w-0 content-start gap-5">
         {catalogue.error ? <p role="alert" className="text-sm text-danger">{staffShopError(catalogue.error)}</p> : null}
@@ -67,15 +68,15 @@ export function ShopPos({ makerspaceId, access }: { makerspaceId: number; access
           onRemove={id => setLines(current => current.filter(line => line.variantId !== id))} />
         {access.features.memberPrices ? <PosMemberPicker makerspaceId={makerspaceId} member={member} onChange={setMember} /> : null}
       </div>
-      <aside aria-label="Payment" className="grid min-w-0 content-start gap-4 rounded-xl border border-line bg-panel p-4">
-        {quote.isFetching && !quote.data ? <p role="status" className="text-sm text-muted">Pricing…</p> : null}
+      <aside aria-label={t`Payment`} className="grid min-w-0 content-start gap-4 rounded-xl border border-line bg-panel p-4">
+        {quote.isFetching && !quote.data ? <p role="status" className="text-sm text-muted">{t`Pricing…`}</p> : null}
         {quote.error ? <p role="alert" className="text-sm text-danger">{staffShopError(quote.error)}</p> : null}
-        {quote.data && lines.length ? <ShopQuoteSummary quote={quote.data} title="Sale" /> : <p className="text-sm text-muted">The basket is empty.</p>}
+        {quote.data && lines.length ? <ShopQuoteSummary quote={quote.data} title={t`Sale`} /> : <p className="text-sm text-muted">{t`The basket is empty.`}</p>}
         <PosPayment value={payment} onChange={setPayment} receipts={access.features.receipts} />
         {sell.error ? <p role="alert" className="text-sm text-danger">{staffShopError(sell.error)}</p> : null}
         <button type="button" className="desk-button-primary min-h-14 w-full text-lg" disabled={!canSell || sell.isPending} onClick={() => sell.mutate()}>
-          {sell.isPending ? "Recording sale…" : "Sell"}</button>
-        {lines.length ? <button type="button" className="desk-button min-h-11" disabled={sell.isPending} onClick={reset}>Clear the basket</button> : null}
+          {sell.isPending ? t`Recording sale…` : t`Sell`}</button>
+        {lines.length ? <button type="button" className="desk-button min-h-11" disabled={sell.isPending} onClick={reset}>{t`Clear the basket`}</button> : null}
       </aside>
     </div>
   </section>;

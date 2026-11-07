@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { type ReactNode } from "react";
 import { ActionControl, FilterBar } from "../ui";
 import { FilterPopover } from "./FilterPopover";
@@ -27,8 +28,8 @@ export function ListFilters({ search, sort, views, controls, activeCount, toolba
       </div>
     </div>
     {chips.length ? <div className="flex flex-wrap items-center gap-2">
-      {chips.map(chip => <ActionControl key={chip.key} action={{ label: `Remove ${chip.label}`, onClick: chip.onRemove }} />)}
-      {onClear ? <ActionControl action={{ label: "Clear filters", onClick: onClear }} /> : null}
+      {chips.map(chip => <ActionControl key={chip.key} action={{ label: t`Remove ${chip.label}`, onClick: chip.onRemove }} />)}
+      {onClear ? <ActionControl action={{ label: t`Clear filters`, onClick: onClear }} /> : null}
     </div> : null}
   </div>;
 }

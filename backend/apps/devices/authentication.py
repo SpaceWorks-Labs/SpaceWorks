@@ -6,6 +6,7 @@ call the late source gate, and only then run the locked nonce claim. A gate refu
 therefore consumes no nonce, and a device can never select a tenant other than its own.
 """
 
+from django.utils.translation import gettext
 import re
 import time
 import uuid
@@ -37,10 +38,10 @@ class DeviceAuthentication(BaseAuthentication):
         device_id = _uuid(raw_device_id)
         key_version = _positive(headers.get("X-Device-Key-Version"), "key version")
         if headers.get("X-Device-Signature-Version") != protocol.VERSION:
-            raise AuthenticationFailed("Unsupported device signature version.")
+            raise AuthenticationFailed(gettext("Unsupported device signature version."))
         timestamp = _positive(headers.get("X-Device-Timestamp"), "timestamp")
         if abs(int(time.time()) - timestamp) > settings.DEVICE_SIGNATURE_MAX_SKEW_SECONDS:
-            raise AuthenticationFailed("Device request timestamp is outside the allowed skew.")
+            raise AuthenticationFailed(gettext("Device request timestamp is outside the allowed skew."))
         try:
             nonce = protocol.canonical_nonce(headers.get("X-Device-Nonce"))
             signature = protocol.b64_decode(
@@ -56,7 +57,7 @@ class DeviceAuthentication(BaseAuthentication):
             Device.objects.filter(pk=device_id), relation="makerspace"
         ).only("id", "makerspace_id").first()
         if device is None:
-            raise AuthenticationFailed("Device authorization is not active.")
+            raise AuthenticationFailed(gettext("Device authorization is not active."))
         request.selected_makerspace_id = device.makerspace_id
         _assert_source_gate(request)
         principal = claim_signed_request(
@@ -83,9 +84,9 @@ def raw_request_target(django_request):
         query = scope.get("query_string", b"").decode("latin-1")
         raw = f"{raw}?{query}" if raw and query else raw
     if not raw or not raw.startswith("/"):
-        raise AuthenticationFailed("The raw request target is unavailable.")
+        raise AuthenticationFailed(gettext("The raw request target is unavailable."))
     if unquote(urlsplit(raw).path) != django_request.path:
-        raise AuthenticationFailed("The raw request target does not match the route.")
+        raise AuthenticationFailed(gettext("The raw request target does not match the route."))
     return raw
 
 
@@ -93,13 +94,13 @@ def _uuid(value):
     try:
         parsed = uuid.UUID(value)
     except (TypeError, ValueError) as exc:
-        raise AuthenticationFailed("Invalid device id.") from exc
+        raise AuthenticationFailed(gettext("Invalid device id.")) from exc
     if str(parsed) != value:
-        raise AuthenticationFailed("Invalid device id.")
+        raise AuthenticationFailed(gettext("Invalid device id."))
     return parsed
 
 
 def _positive(value, label):
     if not isinstance(value, str) or not _DIGITS.match(value):
-        raise AuthenticationFailed(f"Invalid device {label}.")
+        raise AuthenticationFailed(gettext('Invalid device {label}.').format(label=label))
     return int(value)

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { memberRequest, StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { uploadToStorage, type PrintUpload } from "../printing/publicApi";
 import type { JobQuote, JobSubmitBody, JobType, MemberJob } from "./types";
@@ -22,7 +23,7 @@ export async function stageJobFile(slug: string, queueId: number, file: File, ki
   const staged = await tenantPublicRequest<StagedFile>(slug, `${space(slug)}/uploads`, { method: "POST",
     body: JSON.stringify({ queue_id: queueId, filename: file.name, content_type: file.type || "application/octet-stream", kind }) });
   if (staged.max_bytes && file.size > staged.max_bytes) {
-    throw new Error(`${file.name} is larger than the ${Math.floor(staged.max_bytes / 1_048_576)} MB this machine accepts.`);
+    throw new Error(t`${file.name} is larger than the ${Math.floor(staged.max_bytes / 1_048_576)} MB this machine accepts.`);
   }
   await uploadToStorage({ ...staged.upload, fields: staged.upload.fields ?? {} }, file);
   return staged.file_id;
@@ -59,22 +60,22 @@ export function changedQuote(error: unknown): JobQuote | null {
 }
 
 const SUBMIT_COPY: Record<string, string> = {
-  membership_required: "Job requests are for members of this space. Join or renew your membership first.",
-  presence_required: "Check in at the space first, then send your request.",
-  waiver_acceptance_required: "Accept the space's current waiver in your member area, then try again.",
-  job_limit_reached: "You already have as many open jobs on this machine type as the space allows. Wait for one to finish or cancel one.",
-  type_closed: "This machine type has stopped taking requests. Choose another type.",
-  capability_disabled: "This space isn't taking job requests right now.",
+  membership_required: t`Job requests are for members of this space. Join or renew your membership first.`,
+  presence_required: t`Check in at the space first, then send your request.`,
+  waiver_acceptance_required: t`Accept the space's current waiver in your member area, then try again.`,
+  job_limit_reached: t`You already have as many open jobs on this machine type as the space allows. Wait for one to finish or cancel one.`,
+  type_closed: t`This machine type has stopped taking requests. Choose another type.`,
+  capability_disabled: t`This space isn't taking job requests right now.`,
 };
 
 /** Clear copy for the refusals a member can act on; anything else keeps the server's message. */
 export function jobErrorMessage(error: unknown): string {
   if (error instanceof StructuredApiError) {
-    if (error.status === 401) return "Sign in to your member account to request a job.";
+    if (error.status === 401) return t`Sign in to your member account to request a job.`;
     if (error.code && SUBMIT_COPY[error.code]) return SUBMIT_COPY[error.code];
     // A refused file answers {file, code}; the code is for machines, the sentence is for people.
     const field = Object.entries(error.body).find(([key, value]) => key !== "code" && typeof value === "string");
     if (!error.detail && field) return field[1] as string;
   }
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }

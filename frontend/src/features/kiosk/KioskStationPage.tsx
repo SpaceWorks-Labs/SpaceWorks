@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 
@@ -56,12 +57,12 @@ export function KioskStationPage() {
     // Idle never discards pending captures silently. Authority expiry is pruned by
     // the store; the UI requests an explicit destructive reset for unexpired work.
     if (hasCommands) setResetRequested(true);
-    else void lock().catch(() => setError("Local reset failed. Close this kiosk and reconnect."));
+    else void lock().catch(() => setError(t`Local reset failed. Close this kiosk and reconnect.`));
   });
 
   async function unlock(pin: string) { setPending(true); setError(null);
     try { setSession(await startKioskSession(stationToken, pin, slug)); }
-    catch { setError("The Station PIN is invalid or this kiosk is not enabled."); }
+    catch { setError(t`The Station PIN is invalid or this kiosk is not enabled.`); }
     finally { setPending(false); }
   }
 
@@ -69,36 +70,36 @@ export function KioskStationPage() {
     if (shiftPending || !contextReady) return;
     setShiftPending(true); setError(null);
     try { setLease(await takeOperatorLease(stationToken)); }
-    catch { setError("Sign in to the staff console with an account allowed to work this Station."); }
+    catch { setError(t`Sign in to the staff console with an account allowed to work this Station.`); }
     finally { setShiftPending(false); }
   }
 
   const workPanel = !contextReady ? null : recoveryId && activeSession ? <KioskReplayCorrection key={`${stationToken}/${recoveryId}`} id={recoveryId} token={stationToken} session={activeSession} online={offline.online} onQueueChange={offline.setQueue} />
     : queueMode && offline.queue ? <KioskOfflineHandover queue={offline.queue}
       onChange={() => { void offline.refresh(); }} retry={() => { void offline.retry(); }}
-      acknowledge={() => { void lock().catch(() => setError("Local reset failed.")); }} />
+      acknowledge={() => { void lock().catch(() => setError(t`Local reset failed.`)); }} />
     : activeSession && activeLease ? <div className="grid gap-5">
       {activeSession.station.kind === "handover" && offline.online && !hasCommands ? <KioskOnlineHandover token={stationToken} lease={activeLease} makerspaceId={activeSession.makerspace.id}
         onWorkLoaded={work => offline.save(activeSession, activeLease, work)} /> : null}
-      {!offline.online ? <p role="status">Reconnect to unlock and load this handover</p> : null}
-      {offline.queue ? <button type="button" className="desk-button" onClick={() => setContinuing(true)}>Continue with encrypted queue</button> : null}
+      {!offline.online ? <p role="status">{t`Reconnect to unlock and load this handover`}</p> : null}
+      {offline.queue ? <button type="button" className="desk-button" onClick={() => setContinuing(true)}>{t`Continue with encrypted queue`}</button> : null}
     </div> : null;
-  return <KioskLayout context={{ title: activeSession?.station.name ?? "Enter the station PIN",
-    subtitle: activeSession ? `${activeSession.makerspace.name} · ${activeSession.station.kind} station` : "Enter the station PIN to begin a handover." }}
+  return <KioskLayout context={{ title: activeSession?.station.name ?? t`Enter the station PIN`,
+    subtitle: activeSession ? t`${activeSession.makerspace.name} · ${activeSession.station.kind} station` : t`Enter the station PIN to begin a handover.` }}
     connection={{ online: offline.online, queued: offline.queue?.commands.filter(command => command.status !== "succeeded").length }}
     idleCountdown={idle.seconds !== null && !hasCommands ? { seconds: idle.seconds, onKeep: idle.onKeep } : undefined}
     state={activeSession && !activeLease && !recoveryId && error ? { status: "error", error, onRetry: () => { void signIn(); } } : { status: "ready" }}
     mode={!activeSession && offline.online ? "lock" : activeSession && !activeLease && !recoveryId ? "ready" : "work"}
-    lock={{ title: "Enter the station PIN", helper: "Ask a manager for the 8-digit PIN. It unlocks this device only.",
-      pending, error: error ?? undefined, submitLabel: "Unlock station", pendingLabel: "Unlocking…", onSubmit: pin => { void unlock(pin); } }}
-    ready={{ primary: { label: "Start operator shift", pending: shiftPending, pendingLabel: "Starting…", onClick: () => { void signIn(); }, disabled: !offline.online || !contextReady,
+    lock={{ title: t`Enter the station PIN`, helper: t`Ask a manager for the 8-digit PIN. It unlocks this device only.`,
+      pending, error: error ?? undefined, submitLabel: t`Unlock station`, pendingLabel: "Unlocking…", onSubmit: pin => { void unlock(pin); } }}
+    ready={{ primary: { label: t`Start operator shift`, pending: shiftPending, pendingLabel: "Starting…", onClick: () => { void signIn(); }, disabled: !offline.online || !contextReady,
       disabledReason: !offline.online ? "Reconnect before starting an operator shift." : !contextReady ? "Preparing the tenant staff workspace." : undefined } }}
-    headerActions={activeSession ? [{ label: "Full screen", onClick: () => { void enterKioskMode(); } },
-      { label: "Lock station", onClick: () => { if (hasCommands) setResetRequested(true); else void lock().catch(() => setError("Local reset failed.")); } }] : []}
-    work={{ capture: !activeSession ? <Callout size="panel" tone="warn" lead="Reconnect to unlock and load this handover" /> : offline.online && activeLease && !hasCommands && !queueMode && !recoveryId ? <KioskOnlineScanner token={stationToken} lease={activeLease} /> : <div className="rounded-xl border border-dashed border-outline p-8"><p className="title-panel">{offline.online ? "Your handover workspace" : "Keep working offline"}</p><p className="mt-3 text-muted">Loaded handovers stay encrypted on this device until the server confirms them.</p></div>,
-      panel: <div className="grid gap-5">{!activeSession ? <p className="text-muted">The station PIN unlocks this device. An operator must then sign in before handling hardware.</p> : workPanel}{activeSession && error ? <Callout size="inline" tone="danger" lead={error} /> : null}
+    headerActions={activeSession ? [{ label: t`Full screen`, onClick: () => { void enterKioskMode(); } },
+      { label: t`Lock station`, onClick: () => { if (hasCommands) setResetRequested(true); else void lock().catch(() => setError(t`Local reset failed.`)); } }] : []}
+    work={{ capture: !activeSession ? <Callout size="panel" tone="warn" lead="Reconnect to unlock and load this handover" /> : offline.online && activeLease && !hasCommands && !queueMode && !recoveryId ? <KioskOnlineScanner token={stationToken} lease={activeLease} /> : <div className="rounded-xl border border-dashed border-outline p-8"><p className="title-panel">{offline.online ? t`Your handover workspace` : t`Keep working offline`}</p><p className="mt-3 text-muted">{t`Loaded handovers stay encrypted on this device until the server confirms them.`}</p></div>,
+      panel: <div className="grid gap-5">{!activeSession ? <p className="text-muted">{t`The station PIN unlocks this device. An operator must then sign in before handling hardware.`}</p> : workPanel}{activeSession && error ? <Callout size="inline" tone="danger" lead={error} /> : null}
         {offline.storageError ? <p role="status" className="text-muted">{offline.storageError}</p> : null}</div> }}
-    confirmLock={resetRequested ? { pendingCount: offline.queue?.commands.length ?? 0, title: "Discard handovers and lock?",
+    confirmLock={resetRequested ? { pendingCount: offline.queue?.commands.length ?? 0, title: t`Discard handovers and lock?`,
       consequence: "Queued handovers and their photos will be permanently removed from this device before they reach the server.",
-      onDiscard: () => { void lock().catch(() => setError("Local reset failed.")); }, onKeep: () => setResetRequested(false) } : undefined} />;
+      onDiscard: () => { void lock().catch(() => setError(t`Local reset failed.`)); }, onKeep: () => setResetRequested(false) } : undefined} />;
 }

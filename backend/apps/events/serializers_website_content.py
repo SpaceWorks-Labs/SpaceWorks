@@ -1,5 +1,6 @@
 """Page metadata has a typed schema even where stored as a single JSON value."""
 
+from django.utils.translation import gettext
 import math
 
 from rest_framework import serializers
@@ -15,7 +16,7 @@ class HttpLinkField(serializers.URLField):
     def to_internal_value(self, data):
         value = super().to_internal_value(data)
         if value and not value.lower().startswith(("https://", "http://")):
-            raise serializers.ValidationError("Use an HTTP or HTTPS link.")
+            raise serializers.ValidationError(gettext("Use an HTTP or HTTPS link."))
         return value
 
 
@@ -34,13 +35,13 @@ class WebsiteVenueSerializer(serializers.Serializer):
 
     def to_internal_value(self, data):
         if isinstance(data, dict) and set(data) - self.fields.keys():
-            raise serializers.ValidationError("Unknown venue fields.")
+            raise serializers.ValidationError(gettext("Unknown venue fields."))
         return super().to_internal_value(data)
 
     def validate(self, attrs):
         for key in ("latitude", "longitude"):
             if attrs[key] is not None and not math.isfinite(attrs[key]):
-                raise serializers.ValidationError({key: "Use a finite coordinate."})
+                raise serializers.ValidationError({key: gettext("Use a finite coordinate.")})
         return attrs
 
 
@@ -58,7 +59,7 @@ class WebsitePageFields(serializers.Serializer):
         if "EDITORIAL" not in value:
             value = [*value, "EDITORIAL"]
         if len(value) != len(PAGE_GROUPS) or set(value) != set(PAGE_GROUPS):
-            raise serializers.ValidationError("List each page section exactly once.")
+            raise serializers.ValidationError(gettext("List each page section exactly once."))
         return value
 
     def validate_editorial_document(self, value):
@@ -67,5 +68,5 @@ class WebsitePageFields(serializers.Serializer):
 
     def validate_section_enabled(self, value):
         if set(value) - set(PAGE_GROUPS):
-            raise serializers.ValidationError("Unknown page section.")
+            raise serializers.ValidationError(gettext("Unknown page section."))
         return {group: value.get(group, True) for group in PAGE_GROUPS}

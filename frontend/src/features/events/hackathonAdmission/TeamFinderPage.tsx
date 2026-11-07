@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { sessionScope } from '../../staff/eventProgramme/sessionScope'
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -21,33 +22,33 @@ export function TeamFinderPage({ context, accountId }: { context: ProgrammeConte
     enabled: context.programme.finder_enabled, staleTime: 0, gcTime: 0, retry: false })
   const action = useMutation({ mutationFn: ({ suffix, body, method = 'POST' }: { suffix: string; body: Record<string, unknown>; method?: 'POST' | 'PATCH' }) =>
     commands.current.send(base + suffix, method, body), onSuccess: () => client.invalidateQueries({ queryKey: key }) })
-  return <ListLayout header={{ title: 'Find your next teammate' }} state={cards.isLoading ? { status: 'loading' }
+  return <ListLayout header={{ title: t`Find your next teammate` }} state={cards.isLoading ? { status: 'loading' }
     : cards.error ? { status: 'error', error: cards.error.message, onRetry: () => { void cards.refetch() } } : { status: 'ready' }}
-    empty={{ message: 'No teams or participants match these skills.' }}
+    empty={{ message: t`No teams or participants match these skills.` }}
     pagination={{ page, pageSize: 24, count: cards.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>
       {action.error ? <ErrorText message={action.error.message} /> : null}
-      {!context.programme.finder_enabled ? <p className="text-sm text-muted">Team finder is not enabled for this event.</p> : <>
-        <label className="grid gap-1 text-sm text-ink">Filter skills (separate with commas)<input className="desk-input" maxLength={800} value={skills} onChange={e => { setSkills(e.target.value); setPage(1) }} /></label>
+      {!context.programme.finder_enabled ? <p className="text-sm text-muted">{t`Team finder is not enabled for this event.`}</p> : <>
+        <label className="grid gap-1 text-sm text-ink">{t`Filter skills (separate with commas)`}<input className="desk-input" maxLength={800} value={skills} onChange={e => { setSkills(e.target.value); setPage(1) }} /></label>
         <Card><form className="grid gap-3" onSubmit={event => { event.preventDefault(); action.mutate({ suffix: '/team-finder/me/', method: 'PATCH',
           body: { expected_version: own.data?.version ?? 0, opted_in: true, intro,
             skills: profileSkills.split(',').map(v => v.trim()).filter(Boolean) } }) }}>
-          <h2 className="title-section">Looking for a team?</h2>
-          <label className="grid gap-1 text-sm text-ink">Your public introduction<textarea className="desk-input" maxLength={500} value={intro} onChange={e => setIntro(e.target.value)} /></label>
-          <label className="grid gap-1 text-sm text-ink">Your chosen skills<input className="desk-input" maxLength={800} value={profileSkills} onChange={e => setProfileSkills(e.target.value)} /></label>
-          <p className="text-sm text-muted">Share chosen skills and a short introduction. Only a currently public member profile can be linked.</p>
-          <div className="flex flex-wrap gap-2"><button className="desk-button-primary" type="submit" disabled={action.isPending || own.isPending || Boolean(own.error)}>Show my finder card</button>
+          <h2 className="title-section">{t`Looking for a team?`}</h2>
+          <label className="grid gap-1 text-sm text-ink">{t`Your public introduction`}<textarea className="desk-input" maxLength={500} value={intro} onChange={e => setIntro(e.target.value)} /></label>
+          <label className="grid gap-1 text-sm text-ink">{t`Your chosen skills`}<input className="desk-input" maxLength={800} value={profileSkills} onChange={e => setProfileSkills(e.target.value)} /></label>
+          <p className="text-sm text-muted">{t`Share chosen skills and a short introduction. Only a currently public member profile can be linked.`}</p>
+          <div className="flex flex-wrap gap-2"><button className="desk-button-primary" type="submit" disabled={action.isPending || own.isPending || Boolean(own.error)}>{t`Show my finder card`}</button>
             {own.data?.opted_in ? <button className="desk-button" type="button" disabled={action.isPending} onClick={() => action.mutate({ suffix: '/team-finder/me/', method: 'PATCH',
-              body: { expected_version: own.data!.version, opted_in: false } })}>Hide my card now</button> : null}</div>
+              body: { expected_version: own.data!.version, opted_in: false } })}>{t`Hide my card now`}</button> : null}</div>
         </form></Card>
-        {!cards.data?.results.length ? <><AdmissionArtwork kind="teams" /><p className="text-sm text-muted">No matching finder cards yet.</p></> : null}
+        {!cards.data?.results.length ? <><AdmissionArtwork kind="teams" /><p className="text-sm text-muted">{t`No matching finder cards yet.`}</p></> : null}
         {cards.data?.results.map(card => <Card key={card.kind + card.id}>
-          <div className="grid gap-2"><h2 className="title-section">{card.name || card.profile?.display_name || 'Participant seeking a team'}</h2>
+          <div className="grid gap-2"><h2 className="title-section">{card.name || card.profile?.display_name || t`Participant seeking a team`}</h2>
             <p className="whitespace-pre-wrap break-words text-sm text-ink">{card.intro}</p>
             <p className="text-sm text-muted">{card.skills.join(' · ')}{card.slots !== undefined ? ' · ' + card.slots + ' open places' : ''}</p>
-            {card.profile?.url ? <a className="min-h-11 py-3 text-sm text-brand underline" href={card.profile.url}>Public profile</a> : null}
+            {card.profile?.url ? <a className="min-h-11 py-3 text-sm text-brand underline" href={card.profile.url}>{t`Public profile`}</a> : null}
             {card.kind === 'team' ? <button className="desk-button justify-self-start" type="button" disabled={action.isPending || card.slots === 0}
-              onClick={() => action.mutate({ suffix: '/teams/' + card.id + '/join-request/', body: { expected_version: card.version } })}>Request to join</button> : null}
+              onClick={() => action.mutate({ suffix: '/teams/' + card.id + '/join-request/', body: { expected_version: card.version } })}>{t`Request to join`}</button> : null}
           </div></Card>)}
       </>}
     </> }} />

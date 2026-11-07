@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Modal } from "../../../components/ui";
 import type { MemberProfile } from "../../members/memberProfile/types";
@@ -36,10 +37,9 @@ export function ProfilePreviewDialog({ open, onClose, profile, timeline }: {
   open: boolean; onClose: () => void; profile: MemberProfile; timeline: TimelineEntry[];
 }) {
   const [tab, setTab] = useState("profile");
-  return <Modal open={open} onClose={onClose} size="xl" title="Preview: what visitors see">
+  return <Modal open={open} onClose={onClose} size="xl" title={t`Preview: what visitors see`}>
     <p className="mb-6 rounded-control bg-info-soft p-3 text-sm text-info-ink">
-      Built from your saved profile. Save any edits first. Vouches appear on the live page.
-    </p>
+      {t`Built from your saved profile. Save any edits first. Vouches appear on the live page.`}</p>
     {open ? <PublicProfileView profile={toPublicPreview(profile, timeline)} tab={tab} onTab={setTab} preview /> : null}
   </Modal>;
 }

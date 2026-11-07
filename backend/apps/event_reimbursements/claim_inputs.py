@@ -1,4 +1,5 @@
 """Closed line evidence; F's reusable money/itinerary rules remain authoritative."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 from .serializers_request import ClosedSerializer, StrictInteger, Currency
 from apps.payments.event_payouts.validation import MAX_MINOR
@@ -37,5 +38,5 @@ class ClaimDraftInput(ClosedSerializer):
     def validate_lines(self, value):
         identities = [row["line_uuid"] for row in value]
         if len(identities) != len(set(identities)):
-            raise serializers.ValidationError("Line identifiers must be unique.")
+            raise serializers.ValidationError(gettext("Line identifiers must be unique."))
         return value

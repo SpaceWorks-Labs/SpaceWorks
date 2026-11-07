@@ -1,5 +1,6 @@
 """Curated website content; publication is independent of the event lifecycle."""
 
+from django.utils.translation import gettext_noop
 from django.db import models
 from django.db.models import F, Q
 
@@ -47,7 +48,7 @@ class EventPageSection(models.Model):
 
     class Kind(models.TextChoices):
         INTRO = "intro", "Introduction"
-        LOGO = "logo", "Page logo"
+        LOGO = "logo", gettext_noop("Page logo")
         SPEAKER = "speaker", "Speaker"
         TRACK = "track", "Track"
         ROOM = "room", "Room"
@@ -58,7 +59,7 @@ class EventPageSection(models.Model):
         PRIZES = "prizes", "Prizes"
         JUDGES = "judges", "Judges"
         MENTORS = "mentors", "Mentors"
-        PROJECT_GALLERY = "project_gallery", "Project gallery"
+        PROJECT_GALLERY = "project_gallery", gettext_noop("Project gallery")
         RESULTS = "results", "Results"
 
     page = models.ForeignKey(EventPage, on_delete=models.CASCADE, related_name="sections")

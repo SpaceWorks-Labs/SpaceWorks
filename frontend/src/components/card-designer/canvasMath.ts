@@ -1,5 +1,6 @@
 // Canvas maths kept out of the component so it can be tested: zoom sizing, pointer deltas in
 // millimetres, snapping a moved box (grid, guides, equal spacing) and proportional resizing.
+import { t } from "@lingui/core/macro";
 import type { Layer, Side } from "./cardTypes";
 import { clamp, qrMinimum, round1, SAFE_AREA_MM, snap } from "./cardGeometry";
 import { BARCODE_MIN_HEIGHT_MM, BARCODE_MIN_WIDTH_MM } from "./designDocument";
@@ -7,7 +8,7 @@ import { boundsOf, type Box, type Patches } from "./selection";
 
 export type Zoom = "fit" | 1 | 1.5 | 2;
 export const ZOOMS: { value: Zoom; label: string }[] = [
-  { value: "fit", label: "Fit" }, { value: 1, label: "100 %" }, { value: 1.5, label: "150 %" }, { value: 2, label: "200 %" },
+  { value: "fit", label: t`Fit` }, { value: 1, label: "100 %" }, { value: 1.5, label: "150 %" }, { value: 2, label: "200 %" },
 ];
 export const SNAP_THRESHOLD_MM = 1.2;
 

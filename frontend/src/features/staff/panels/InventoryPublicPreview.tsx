@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ProductCard } from "../../inventory/ProductCard";
 import type { Availability } from "../../../types/inventory";
 import type { ItemForm } from "./InventoryPanelShared";
@@ -8,7 +9,7 @@ export function publicPreviewAvailability(form: ItemForm): Availability {
  return form.public_availability_mode === "exact_count" && form.show_public_count ? { mode: "exact_count", label, count: available } : { mode: "status_only", label };
 }
 export function InventoryPublicPreview({ form, category }: { form: ItemForm; category?: string }) {
- if (!form.is_public) return <p className="rounded-xl border border-dashed border-line p-6 text-sm text-muted">Private item. This won't appear in the public catalogue.</p>;
+ if (!form.is_public) return <p className="rounded-xl border border-dashed border-line p-6 text-sm text-muted">{t`Private item. This won't appear in the public catalogue.`}</p>;
  return <div inert><ProductCard product={{ id: 0, name: form.name || "Item name", description: form.description, category_name: category, borrowing_terms: form.borrowing_terms, availability: publicPreviewAvailability(form) }} quantity={0}
    onIncrement={() => {}} onDecrement={() => {}} onOpenDetails={() => {}} /></div>;
 }

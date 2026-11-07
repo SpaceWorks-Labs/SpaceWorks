@@ -1,5 +1,6 @@
 """Per-person machine authority is assigned by type only."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -28,5 +29,5 @@ class MembershipMachineTypeScope(models.Model):
             return
         if machine_type.makerspace_id != self.membership.makerspace_id:
             raise ValidationError({
-                "machine_type": "A membership can only be scoped to its own makerspace's machine types.",
+                "machine_type": gettext("A membership can only be scoped to its own makerspace's machine types."),
             })

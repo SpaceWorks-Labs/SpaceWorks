@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Key, ReactNode } from "react";
 import { isValidElement, useEffect, useMemo, useRef, useState } from "react";
 
@@ -46,7 +47,7 @@ export function DataTable<T>({
   selectedIds,
   onSelectionChange,
   loading = false,
-  emptyTitle = "No records",
+  emptyTitle = t`No records`,
   emptyDescription,
   emptyAction,
   skeletonCols,
@@ -113,7 +114,7 @@ export function DataTable<T>({
           <tr role="row" className="flex flex-wrap items-center border-b border-line md:table-row">
             {selectionEnabled ? (
               <th role="columnheader" className="block w-16 px-3 py-2 md:table-cell" scope="col">
-                <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" ref={selectAllRef} type="checkbox" aria-label="Select all rows" checked={allSelected} onChange={(event) => changeAll(event.target.checked)} /></label>
+                <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" ref={selectAllRef} type="checkbox" aria-label={t`Select all rows`} checked={allSelected} onChange={(event) => changeAll(event.target.checked)} /></label>
               </th>
             ) : null}
             {visibleColumns.map((column) => (
@@ -149,7 +150,7 @@ export function DataTable<T>({
                 <tr role="row" key={id} className={`m-3 block min-w-0 max-md:grid max-md:grid-cols-[auto_auto_minmax(0,1fr)] max-md:gap-y-1 max-md:p-3 rounded-xl border border-line md:m-0 md:table-row md:rounded-none md:border-x-0 md:border-t-0 md:last:border-b-0 ${selectedSet.has(id) ? "bg-accent-soft" : "hover:bg-hover"}`}>
                   {selectionEnabled ? (
                     <td role="cell" className={`block px-3 py-2 md:table-cell ${PHONE_CELL.select}`}>
-                      <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" aria-label={`Select row ${String(id)}`} checked={selectedSet.has(id)} onChange={(event) => changeRow(id, event.target.checked)} /></label>
+                      <label className="inline-flex min-h-11 min-w-11 items-center justify-center"><input className="h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" aria-label={t`Select row ${String(id)}`} checked={selectedSet.has(id)} onChange={(event) => changeRow(id, event.target.checked)} /></label>
                     </td>
                   ) : null}
                   {visibleColumns.map((column, index) => {

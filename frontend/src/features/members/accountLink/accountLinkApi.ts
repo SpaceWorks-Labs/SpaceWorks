@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { memberRequest, StructuredApiError } from "../../../lib/api";
 import { getPasskeyAssertion } from "../../auth/passkeys/webauthn";
@@ -55,17 +56,17 @@ export function useMergeSuggested(enabled: boolean) {
 }
 
 const COPY: Record<string, string> = {
-  merge_not_allowed: "This account can't be linked.",
-  proof_failed: "That didn't match. Check and try again.",
-  factor_enrolment_required: "The other account has no authenticator. Use the emailed codes instead.",
-  proof_expired: "This link request expired. Start again.",
-  recent_reauth_required: "Confirm it's you, then try again.",
-  preview_stale: "Something changed. Review again.",
-  tenant_gated: "A makerspace is temporarily read-only. Try again later.",
-  already_merged: "These accounts are already linked.",
+  merge_not_allowed: t`This account can't be linked.`,
+  proof_failed: t`That didn't match. Check and try again.`,
+  factor_enrolment_required: t`The other account has no authenticator. Use the emailed codes instead.`,
+  proof_expired: t`This link request expired. Start again.`,
+  recent_reauth_required: t`Confirm it's you, then try again.`,
+  preview_stale: t`Something changed. Review again.`,
+  tenant_gated: t`A makerspace is temporarily read-only. Try again later.`,
+  already_merged: t`These accounts are already linked.`,
 };
 export const errorCode = (error: unknown) => error instanceof StructuredApiError ? error.code : undefined;
-export const linkErrorCopy = (error: unknown) => COPY[errorCode(error) ?? ""] ?? "Couldn't complete this step. Try again.";
+export const linkErrorCopy = (error: unknown) => COPY[errorCode(error) ?? ""] ?? t`Couldn't complete this step. Try again.`;
 
 /** Role keys arrive as slugs ("space_manager"); show them as words. */
 export const roleLabel = (role: string) => /^[a-z_]+$/.test(role)

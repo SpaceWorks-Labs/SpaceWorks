@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -47,13 +49,13 @@ export function PaymentReconcileActions({
   });
 
   if (!payment) return null;
-  const amount = new Intl.NumberFormat(undefined, {
+  const amount = new Intl.NumberFormat(formatLocale(), {
     style: "currency",
     currency: payment.currency.toUpperCase(),
   }).format(Number(payment.amount));
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-      <span className="tabular-nums font-semibold text-ink">Payment {amount}</span>
+      <span className="tabular-nums font-semibold text-ink">{t`Payment ${amount}`}</span>
       <StatusPill label={payment.status[0].toUpperCase() + payment.status.slice(1).replace(/_/g, " ")} tone={payment.status === "pending" ? "warn" : payment.status.startsWith("paid_") ? "success" : "neutral"} />
       {payment.status === "pending" ? (
         <>
@@ -63,9 +65,8 @@ export function PaymentReconcileActions({
             disabled={mutation.isPending}
             onClick={() => setSettling(true)}
           >
-            Mark offline
-          </button> : null}
-          {canWaive ? <OverflowMenu label="Payment actions" actions={[{ label: "Waive", disabled: mutation.isPending,
+            {t`Mark offline`}</button> : null}
+          {canWaive ? <OverflowMenu label={t`Payment actions`} actions={[{ label: t`Waive`, disabled: mutation.isPending,
             onClick: () => mutation.mutate({ action: "waive" }) }]} /> : null}
         </>
       ) : null}

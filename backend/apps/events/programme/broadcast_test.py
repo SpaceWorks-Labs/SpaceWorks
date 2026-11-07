@@ -1,5 +1,6 @@
 """Self-only test emails retain a live typed source on every attempt."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.core.validators import validate_email
@@ -27,16 +28,16 @@ def test_self(campaign, actor, payload):
         if row.status != "draft" or preview is None or preview.content_sha256 != content_digest(row):
             raise ProgrammeConflict("stale_version", "Create a fresh preview before sending a test.")
         if not locked_actor.email_verified_at:
-            raise ValidationError({"recipient": "Verify your own email before sending a test."})
+            raise ValidationError({"recipient": gettext("Verify your own email before sending a test.")})
         try:
             validate_email(locked_actor.email)
         except DjangoValidationError:
-            raise ValidationError({"recipient": "Your own verified email is required."}) from None
+            raise ValidationError({"recipient": gettext("Your own verified email is required.")}) from None
         if EmailLog.objects.filter(makerspace=row.makerspace, recipient_id=locked_actor.pk,
                 source_kind="events.broadcast_test", created_at__gte=timezone.now() - timedelta(hours=1)).count() >= 5:
-            raise Throttled(detail="Limit of five self-tests per hour.")
+            raise Throttled(detail=gettext("Limit of five self-tests per hour."))
         log = dispatch_email(makerspace=row.makerspace, to_email=locked_actor.email,
-            recipient_id=locked_actor.pk, subject="Broadcast preview", text_body="",
+            recipient_id=locked_actor.pk, subject=gettext("Broadcast preview"), text_body="",
             feature="events", stream="events", event="broadcast", audience="staff",
             source_kind="events.broadcast_test", source_id=preview.pk)
         record(locked_actor, "event.broadcast.test_queued", makerspace=row.makerspace, target=row,
@@ -62,7 +63,7 @@ def prepare_test(log):
         values = render_content(campaign, preview_context(campaign, actor))
     except APIException:
         return False
-    render(log, subject="[Test] " + values["subject"], text_body=values["text_body"],
+    render(log, subject=gettext("[Test] ") + values["subject"], text_body=values["text_body"],
            html_body=values.get("html_body", ""), to_email=actor.email)
     return True
 

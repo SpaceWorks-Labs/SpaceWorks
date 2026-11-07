@@ -5,6 +5,7 @@ superadmin without a PII window reads them masked. The PAN is never returned in 
 only `donor_pan_masked` (last four), itself masked for that superadmin.
 """
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
@@ -38,13 +39,13 @@ class DonationSettingsSerializer(serializers.ModelSerializer):
 
         value = normalize_pan(value)
         if value and not PAN_RE.match(value):
-            raise serializers.ValidationError("Enter the institution's 10-character PAN.")
+            raise serializers.ValidationError(gettext("Enter the institution's 10-character PAN."))
         return value
 
     def validate(self, data):
         start, end = data.get("tax_exempt_valid_from"), data.get("tax_exempt_valid_until")
         if start and end and end < start:
-            raise serializers.ValidationError({"tax_exempt_valid_until": "The validity must end after it starts."})
+            raise serializers.ValidationError({"tax_exempt_valid_until": gettext("The validity must end after it starts.")})
         data["suggested_amounts"] = [str(value) for value in data.get("suggested_amounts", [])]
         return data
 

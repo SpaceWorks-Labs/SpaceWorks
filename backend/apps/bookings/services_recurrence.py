@@ -1,5 +1,6 @@
 """Bounded weekly staff bookings; each occurrence uses the ordinary locked workflow."""
 
+from django.utils.translation import gettext
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -21,22 +22,22 @@ def create_recurring_bookings(space, *, actor, starts_at, ends_at, count, interv
     from .booking_authority import require
     require(actor, locked, "manage_reservations")
     if not feature_enabled(locked.makerspace, 'bookings.recurring'):
-        raise ValidationError({'feature': 'Recurring bookings are disabled.'})
+        raise ValidationError({'feature': gettext('Recurring bookings are disabled.')})
     if type(count) is not int or not 2 <= count <= 52 or type(interval_weeks) is not int or not 1 <= interval_weeks <= 12:
-        raise ValidationError({'count': 'Use 2–52 occurrences, spaced 1–12 weeks apart.'})
+        raise ValidationError({'count': gettext('Use 2–52 occurrences, spaced 1–12 weeks apart.')})
     if (count - 1) * interval_weeks > 52:
-        raise ValidationError({'count': 'The last occurrence must be within 52 weeks.'})
+        raise ValidationError({'count': gettext('The last occurrence must be within 52 weeks.')})
     if timezone.is_naive(starts_at) or timezone.is_naive(ends_at):
-        raise ValidationError({'starts_at': 'Datetime must include a timezone offset.'})
+        raise ValidationError({'starts_at': gettext('Datetime must include a timezone offset.')})
     try:
         ends_at + timedelta(weeks=(count - 1) * interval_weeks, days=1)
     except OverflowError:
-        raise ValidationError({'ends_at': 'Series exceeds the supported calendar range.'})
+        raise ValidationError({'ends_at': gettext('Series exceeds the supported calendar range.')})
     local = to_local(locked.makerspace, starts_at)
     zone = ZoneInfo(locked.makerspace.timezone)
     duration = ends_at - starts_at
     if duration <= timedelta(0):
-        raise ValidationError({'ends_at': 'End must follow start.'})
+        raise ValidationError({'ends_at': gettext('End must follow start.')})
     result = []
     for index in range(count):
         wall = datetime.combine(local.date() + timedelta(weeks=index * interval_weeks), local.time().replace(tzinfo=None))

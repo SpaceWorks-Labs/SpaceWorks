@@ -14,6 +14,7 @@ name and the due date only. Delivery re-checks the switches, the schedule and th
 occurrence at send time, so switching a key off drops what is already queued.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db.models import CharField, Q, Value
@@ -88,7 +89,7 @@ def _build(space, reminder, now, local_tz, *, area):
         return None
     if reminder.kind == "due_soon" and row.next_due < to_local(space, now).date():
         return None
-    return ReminderMessage(title=label(row), event=reminder.kind, body=f"Maintenance due {row.next_due.isoformat()}")
+    return ReminderMessage(title=label(row), event=reminder.kind, body=gettext('Maintenance due {value}').format(value=row.next_due.isoformat()))
 
 
 def _dispatch(space, reminder, message, now, local_tz, *, area):

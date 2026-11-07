@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { API_V1_URL, StructuredApiError, staffRequest } from "../../lib/api";
@@ -45,8 +46,8 @@ export type EventMoney = {
 };
 
 export const DOMAIN_LABELS: Record<string, string> = {
-  inventory: "Inventory", loans: "Lending", machines: "Machines", bookings: "Bookings and rooms", events: "Events",
-  membership: "Membership", donations: "Donations and sponsors", shop: "Shop", general: "General",
+  inventory: t`Inventory`, loans: t`Lending`, machines: t`Machines`, bookings: t`Bookings and rooms`, events: t`Events`,
+  membership: t`Membership`, donations: t`Donations and sponsors`, shop: t`Shop`, general: t`General`,
 };
 export const EXPENSE_CATEGORIES = ["to_buy", "repair", "maintenance", "consumables", "reimbursement", "prize", "rent",
   "utilities", "equipment", "salaries", "software", "events", "other_expense"] as const;
@@ -114,7 +115,7 @@ export async function uploadReceipt(makerspaceId: number, file: File) {
     form.append("file", file);
     response = await fetch(grant.upload_url, { method: "POST", body: form });
   }
-  if (!response.ok) throw new Error("The receipt upload failed. Try again.");
+  if (!response.ok) throw new Error(t`The receipt upload failed. Try again.`);
   return grant.evidence_id;
 }
 
@@ -137,8 +138,8 @@ export async function payLinkRequest<T>(path: string, init?: RequestInit): Promi
 
 export function financeError(error: unknown) {
   if (error instanceof StructuredApiError) {
-    if (error.status === 403) return "You don't have access to this money.";
+    if (error.status === 403) return t`You don't have access to this money.`;
     return error.detail || error.message;
   }
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }

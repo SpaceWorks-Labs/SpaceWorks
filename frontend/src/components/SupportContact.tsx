@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 type Props = { branding?: Record<string, string> };
 
 export function SupportContact({ branding }: Props) {
@@ -9,9 +10,9 @@ export function SupportContact({ branding }: Props) {
     if (["https:", "http:"].includes(parsed.protocol) && !parsed.username && !parsed.password) url = parsed.href;
   } catch { /* Empty or legacy invalid URLs are not links. */ }
   if (!emailSafe && !url) return null;
-  return <div className="flex flex-wrap items-center gap-3 text-sm text-muted" aria-label="Support contact">
-    <span>Need help?</span>
+  return <div className="flex flex-wrap items-center gap-3 text-sm text-muted" aria-label={t`Support contact`}>
+    <span>{t`Need help?`}</span>
     {emailSafe ? <a className="inline-flex min-h-11 min-w-0 items-center break-all underline hover:text-ink" href={`mailto:${encodeURI(email)}`}>{email}</a> : null}
-    {url ? <a className="inline-flex min-h-11 items-center underline hover:text-ink" href={url} target="_blank" rel="noreferrer">Contact support</a> : null}
+    {url ? <a className="inline-flex min-h-11 items-center underline hover:text-ink" href={url} target="_blank" rel="noreferrer">{t`Contact support`}</a> : null}
   </div>;
 }

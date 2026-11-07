@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { memberRequest, tenantPublicRequest } from '../../../lib/api';
@@ -16,7 +17,7 @@ export function useSharing(scope: MemberScope, loadConsents = true, pageNumber =
   const consents = useQuery({ queryKey: [...key, 'resume-consents', pageNumber], retry: false, enabled: loadConsents,
     queryFn: async () => {
       const value = await memberRequest<Page<SponsorConsent> & { sponsors: SponsorOption[] }>(`${base}resume-consents/?page=${pageNumber}`);
-      if (!Array.isArray(value.sponsors) || value.sponsors.some(s => !Number.isSafeInteger(s.id) || typeof s.name !== 'string' || !Number.isSafeInteger(s.disclosure_revision))) throw new Error('Invalid sponsor options.');
+      if (!Array.isArray(value.sponsors) || value.sponsors.some(s => !Number.isSafeInteger(s.id) || typeof s.name !== 'string' || !Number.isSafeInteger(s.disclosure_revision))) throw new Error(t`Invalid sponsor options.`);
       return { ...page(value, sponsorConsent), sponsors: value.sponsors };
     } });
   const mutate = useMutation({ retry: false, mutationFn: ({ suffix, version, fields = {} }: { suffix: string; version: number; fields?: Record<string, unknown> }) => {

@@ -1,5 +1,6 @@
 """Capture working content once. Public operational edits copy publication only."""
 
+from django.utils.translation import gettext
 import json
 from copy import deepcopy
 from datetime import datetime
@@ -52,7 +53,7 @@ def append_snapshot(page, *, actor=None, document=None, anchor=None, source_revi
         profiles = {row.pk: row for row in MemberProfile.objects.filter(pk__in=chosen).select_related(
             "membership__user", "membership__makerspace")}
         if any(not profile_is_public(profiles.get(pk)) for pk in chosen):
-            raise ValidationError("Choose currently public member profiles.")
+            raise ValidationError(gettext("Choose currently public member profiles."))
         for section in document["editorial_document"]["sections"]:
             if section["type"] == "team":
                 for row in section["payload"]["entries"]:
@@ -61,7 +62,7 @@ def append_snapshot(page, *, actor=None, document=None, anchor=None, source_revi
                         row["member_slot_id"] = row["id"]
     assets.update({f"editorial:{slot}": pk for slot, pk in editorial_assets.items()})
     if set(page.assets.filter(pk__in=assets.values()).values_list("pk", flat=True)) != set(assets.values()):
-        raise ValidationError("Snapshot images must belong to this page.")
+        raise ValidationError(gettext("Snapshot images must belong to this page."))
     revision = EventPageRevision.objects.create(
         page=page, document=document, source_anchor_start=anchor or window(page.event or page.series)[0], created_by=actor)
     EventPageRevisionAsset.objects.bulk_create([
@@ -97,7 +98,7 @@ def validate_snapshot_window(target, revision, *, inherited=False):
         if inherited:
             lo, hi = start + (lo - anchor), start + (hi - anchor)
         if not start <= lo < hi <= end:
-            raise ValidationError("The window excludes sessions in the released website. Release a fitting draft or unrelease it first.")
+            raise ValidationError(gettext("The window excludes sessions in the released website. Release a fitting draft or unrelease it first."))
 
 
 def operational_snapshot(page, identity, minutes, actor, *, source_revision=None):

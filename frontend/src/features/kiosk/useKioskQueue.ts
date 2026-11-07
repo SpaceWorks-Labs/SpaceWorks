@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_V1_URL } from "../../lib/api";
 import type { KioskBootstrap, KioskLease, KioskWorkPackage } from "./kioskApi";
@@ -33,7 +34,7 @@ export function useKioskQueue(token: string, slug?: string, recoveryId?: string 
         && (!recoveryId || item.commands.some((command) => command.recoveryReplayId === recoveryId)));
       // Never choose between two human shifts implicitly.
       if (active && selected.length === 1) { setQueue(selected[0]); setRestored(true); }
-    }).catch(() => { if (active) setStorageError("Encrypted offline storage is unavailable. Continue online."); });
+    }).catch(() => { if (active) setStorageError(t`Encrypted offline storage is unavailable. Continue online.`); });
     return () => { active = false; };
   }, [token, slug, recoveryId]);
 
@@ -49,7 +50,7 @@ export function useKioskQueue(token: string, slug?: string, recoveryId?: string 
   const retry = useCallback(async () => {
     if (!scope) return;
     try { await replayQueue(scope); await refresh(); }
-    catch { setStorageError("Replay could not start. Retry after reconnecting."); }
+    catch { setStorageError(t`Replay could not start. Retry after reconnecting.`); }
   }, [scope, refresh]);
 
   useEffect(() => {
@@ -82,14 +83,14 @@ export function useKioskQueue(token: string, slug?: string, recoveryId?: string 
       if (generation.current !== active) { await wipeQueue(saved.scope); return; }
       setQueue(saved); setStorageError(null);
     } catch (error) {
-      setStorageError(error instanceof Error ? error.message : "Offline preparation failed. Continue online.");
+      setStorageError(error instanceof Error ? error.message : t`Offline preparation failed. Continue online.`);
     }
   }, [token]);
 
   const reset = useCallback(async () => {
     generation.current += 1;
     if (typeof indexedDB === "undefined" || !navigator.locks) {
-      if (queue) throw new Error("Offline storage cannot be cleared. Reconnect on this browser.");
+      if (queue) throw new Error(t`Offline storage cannot be cleared. Reconnect on this browser.`);
       setQueue(null); setRestored(false); return;
     }
     // All cached shifts on this path are discarded explicitly, including a scope

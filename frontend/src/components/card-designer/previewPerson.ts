@@ -1,5 +1,6 @@
 // Who the designer draws the card for: a short or long sample name, or one real holder of a
 // card this design prints (their name and number; every other field stays a sample).
+import { t } from "@lingui/core/macro";
 import { SAMPLE_LONG, SAMPLE_SHORT } from "./dataFields";
 import type { CardHolder } from "./designerHistoryApi";
 
@@ -14,8 +15,8 @@ export function previewValues(person: PreviewPerson): Record<string, string> {
 }
 
 export function previewLabel(person: PreviewPerson) {
-  if (person.kind === "long") return `${SAMPLE_LONG.name} (long sample)`;
-  if (person.kind === "holder") return person.holder.name || "Hidden name";
+  if (person.kind === "long") return t`${SAMPLE_LONG.name} (long sample)`;
+  if (person.kind === "holder") return person.holder.name || t`Hidden name`;
   return `${SAMPLE_SHORT.name} (sample)`;
 }
 

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 import uuid
 
 from django.conf import settings
@@ -58,14 +59,14 @@ class Box(models.Model):
         if self.parent_id:
             if self.parent.makerspace_id != self.makerspace_id:
                 raise ValidationError(
-                    {"parent": "Parent box must be in the same makerspace."}
+                    {"parent": gettext("Parent box must be in the same makerspace.")}
                 )
             seen = set()
             node = self.parent
             while node is not None:
                 if node.pk == self.pk or node.pk in seen:
                     raise ValidationError(
-                        {"parent": "A box cannot be its own ancestor."}
+                        {"parent": gettext("A box cannot be its own ancestor.")}
                     )
                 seen.add(node.pk)
                 node = node.parent
@@ -122,7 +123,7 @@ class QrCode(models.Model):
         ASSET = "asset", "Asset"
         # A member ID card (makerspaces.MemberCard). Resolved ONLY through the dedicated
         # member-card resolver, never the generic scanner path.
-        MEMBER_CARD = "member_card", "Member card"
+        MEMBER_CARD = "member_card", gettext_noop("Member card")
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -171,10 +172,10 @@ class QrScanEvent(models.Model):
     class Context(models.TextChoices):
         ISSUE = "issue", "Issue"
         RETURN = "return", "Return"
-        INVENTORY_CHECK = "inventory_check", "Inventory Check"
+        INVENTORY_CHECK = "inventory_check", gettext_noop("Inventory Check")
         REASSIGNMENT = "reassignment", "Reassignment"
-        SCANNER_LOOKUP = "scanner_lookup", "Scanner Lookup"
-        MEMBER_LOOKUP = "member_lookup", "Member card lookup"
+        SCANNER_LOOKUP = "scanner_lookup", gettext_noop("Scanner Lookup")
+        MEMBER_LOOKUP = "member_lookup", gettext_noop("Member card lookup")
 
     makerspace = models.ForeignKey(
         Makerspace,

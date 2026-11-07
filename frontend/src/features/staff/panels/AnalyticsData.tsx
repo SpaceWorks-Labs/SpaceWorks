@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 import { CatalogChartPanel } from "./charts/CatalogChartPanel";
 import type { ChartRecord, ChartSpec } from "./charts/chartSpec";
@@ -17,15 +18,15 @@ export function AnalyticsData({ title, rows, spec, hint, meta }: {
   const fields = selectedFields.length ? selectedFields : allFields;
   const notes = ["definition", "basis", "limitations", "measurement", "coverage", "unknown_history"]
     .flatMap(key => typeof meta?.[key] === "string" ? [String(meta[key])] : []);
-  if (!rows.length) return <p className="text-sm text-muted">No activity in this period. Try a longer range.</p>;
+  if (!rows.length) return <p className="text-sm text-muted">{t`No activity in this period. Try a longer range.`}</p>;
   return <div className="min-w-0 space-y-3">
     {notes.map((note, index) => <p key={index} className="text-sm text-muted">{note}</p>)}
-    {spec ? <CatalogChartPanel title={title} rows={rows} spec={spec} hint={hint} /> : <p className="text-sm text-muted">This report is available as a data table.</p>}
+    {spec ? <CatalogChartPanel title={title} rows={rows} spec={spec} hint={hint} /> : <p className="text-sm text-muted">{t`This report is available as a data table.`}</p>}
     <button type="button" className="desk-button focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-      aria-expanded={table} aria-controls={id} onClick={() => setTable(!table)}>{table ? "Hide report data" : "Show report data"}</button>
+      aria-expanded={table} aria-controls={id} onClick={() => setTable(!table)}>{table ? t`Hide report data` : t`Show report data`}</button>
     {table ? <div id={id} className="overflow-x-auto"><table tabIndex={0}
       className="w-full text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-      <caption>{title} {selectedFields.length ? "selected columns" : "full report data"}</caption>
+      <caption>{title} {selectedFields.length ? t`selected columns` : t`full report data`}</caption>
       <thead><tr>{fields.map(field => <th scope="col" className="p-2" key={field}>{field.replace(/_/g, " ")}</th>)}</tr></thead>
       <tbody>{rows.map((row, index) => <tr key={index}>{fields.map((field, column) => {
         const value = row[field];

@@ -7,6 +7,7 @@ financial records; receipts are append-only. Money never moves without the payer
 there is no stored card and no automatic charge, only a checkout the Space Manager opens.
 """
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
@@ -19,7 +20,7 @@ class HostingPlan(models.Model):
     class Period(models.TextChoices):
         MONTHLY = "monthly", "Monthly"
         YEARLY = "yearly", "Yearly"
-        NONE = "none", "No recurring fee"
+        NONE = "none", gettext_noop("No recurring fee")
 
     key = models.SlugField(max_length=40, unique=True)
     name = models.CharField(max_length=80)
@@ -107,13 +108,13 @@ class HostingInvoiceReceipt(models.Model):
     """How an invoice was paid: an offline receipt, or the provider's payment. Append-only."""
 
     class Method(models.TextChoices):
-        BANK_TRANSFER = "bank_transfer", "Bank transfer"
+        BANK_TRANSFER = "bank_transfer", gettext_noop("Bank transfer")
         CASH = "cash", "Cash"
         CHEQUE = "cheque", "Cheque"
-        CARD_OFFLINE = "card_offline", "Card (offline terminal)"
+        CARD_OFFLINE = "card_offline", gettext_noop("Card (offline terminal)")
         OTHER = "other", "Other"
-        ONLINE_STRIPE = "online_stripe", "Online (Stripe)"
-        ONLINE_RAZORPAY = "online_razorpay", "Online (Razorpay)"
+        ONLINE_STRIPE = "online_stripe", gettext_noop("Online (Stripe)")
+        ONLINE_RAZORPAY = "online_razorpay", gettext_noop("Online (Razorpay)")
 
     invoice = models.ForeignKey(HostingInvoice, on_delete=models.PROTECT, related_name="receipts")
     method = models.CharField(max_length=16, choices=Method.choices)

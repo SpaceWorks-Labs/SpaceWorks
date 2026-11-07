@@ -1,5 +1,6 @@
 """Shared authorization and response helpers for staff machine-service views."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse
 from rest_framework import status
@@ -134,7 +135,7 @@ def _query_int(request, name):
     try:
         return int(value)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({name: "Must be an integer."}) from exc
+        raise ValidationError({name: gettext("Must be an integer.")}) from exc
 
 
 def _response(row, code=status.HTTP_200_OK):

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMemo } from "react";
 import type { ApiClientScopeOption } from "./apiClientsApi";
 
@@ -27,7 +28,7 @@ export function ApiClientScopePicker({
     onChange(options.filter((option) => next.has(option.value)).map((option) => option.value));
   };
   return (
-    <div className="@container grid gap-2" aria-label="API client scopes">
+    <div className="@container grid gap-2" aria-label={t`API client scopes`}>
       {Array.from(grouped.entries()).map(([group, groupOptions]) => (
         <section key={group} className="grid gap-3 @lg:grid-cols-2">
           <h4 className="title-section @lg:col-span-2">{group}</h4>
@@ -46,7 +47,7 @@ export function ApiClientScopePicker({
                 <span className="text-xs tabular-nums text-muted [overflow-wrap:anywhere]">{option.value}</span>
                 {!option.grantable ? (
                   <span className="text-xs text-danger">
-                    {option.lock_reason ?? "This scope cannot be granted here."}
+                    {option.lock_reason ?? t`This scope cannot be granted here.`}
                   </span>
                 ) : null}
               </span>

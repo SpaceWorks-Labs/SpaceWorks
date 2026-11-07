@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.operations.printable_layout import normalize_elements, page_layout, number
 
@@ -40,27 +41,27 @@ def normalize_badge_template(value, event):
     if value in (None, {}):
         value = DEFAULT_BADGE_TEMPLATE
     if not isinstance(value, dict):
-        raise serializers.ValidationError({"badge_template": "Expected an object."})
+        raise serializers.ValidationError({"badge_template": gettext("Expected an object.")})
     unknown = set(value) - set(DEFAULT_BADGE_TEMPLATE)
     if unknown:
         raise serializers.ValidationError({key: "Unknown template field." for key in unknown})
     template = {**DEFAULT_BADGE_TEMPLATE, **value}
     if type(template["version"]) is not int or template["version"] not in (1, 2):
-        raise serializers.ValidationError({"version": "Use badge template version 1 or 2."})
+        raise serializers.ValidationError({"version": gettext("Use badge template version 1 or 2.")})
     if type(template["include_qr"]) is not bool:
-        raise serializers.ValidationError({"include_qr": "Expected a boolean."})
+        raise serializers.ValidationError({"include_qr": gettext("Expected a boolean.")})
     legacy_version = template["version"] == 1
     legacy = legacy_version or not value.get("elements")
     template["version"] = 2
     template["include_qr"] = False
     if template["paper_size"] not in {"A4", "LETTER", "custom"}:
-        raise serializers.ValidationError({"paper_size": "Use A4, LETTER, or custom."})
+        raise serializers.ValidationError({"paper_size": gettext("Use A4, LETTER, or custom.")})
     if template["orientation"] not in {"portrait", "landscape"}:
-        raise serializers.ValidationError({"orientation": "Use portrait or landscape."})
+        raise serializers.ValidationError({"orientation": gettext("Use portrait or landscape.")})
     if template["template"] != "standard":
-        raise serializers.ValidationError({"template": "Unknown badge template."})
+        raise serializers.ValidationError({"template": gettext("Unknown badge template.")})
     if template["text_align"] not in {"left", "center"}:
-        raise serializers.ValidationError({"text_align": "Use left or center."})
+        raise serializers.ValidationError({"text_align": gettext("Use left or center.")})
     numeric_bounds = {
         "card_width_mm": (40, 150), "card_height_mm": (30, 120),
         "margin_mm": (0, 40), "gap_mm": (0, 30),
@@ -72,20 +73,20 @@ def normalize_badge_template(value, event):
         template[field] = number(template[field], minimum, maximum, field)
     fields = template["fields"]
     if not isinstance(fields, list) or not fields or len(fields) > 12:
-        raise serializers.ValidationError({"fields": "Choose between 1 and 12 fields."})
+        raise serializers.ValidationError({"fields": gettext("Choose between 1 and 12 fields.")})
     if any(not isinstance(item, str) for item in fields) or len(fields) != len(set(fields)):
-        raise serializers.ValidationError({"fields": "Field selectors must be unique strings."})
+        raise serializers.ValidationError({"fields": gettext("Field selectors must be unique strings.")})
     custom_ids = _custom_ids(event)
     invalid = [item for item in fields if (
         item not in SAFE_FIELDS | SENSITIVE_FIELDS
         and not (item.startswith("custom:") and item[7:] in custom_ids)
     )]
     if invalid:
-        raise serializers.ValidationError({"fields": f"Unknown selectors: {', '.join(invalid)}."})
+        raise serializers.ValidationError({"fields": gettext('Unknown selectors: {value}.').format(value=', '.join(invalid))})
     if legacy_version:
         fields = [field for field in fields if field not in SENSITIVE_FIELDS] or ["name"]
     if set(fields) & SENSITIVE_FIELDS:
-        raise serializers.ValidationError({"fields": "Email and phone must never appear on printed badges."})
+        raise serializers.ValidationError({"fields": gettext("Email and phone must never appear on printed badges.")})
     page_layout(template)
     template["fields"] = fields
     if legacy:
@@ -95,7 +96,7 @@ def normalize_badge_template(value, event):
         fields=set(fields), grid_mm=template["grid_mm"],
     )
     if {element["field"] for element in template["elements"]} != set(fields):
-        raise serializers.ValidationError({"elements": "Each selected field needs one positioned element."})
+        raise serializers.ValidationError({"elements": gettext("Each selected field needs one positioned element.")})
     return template
 
 

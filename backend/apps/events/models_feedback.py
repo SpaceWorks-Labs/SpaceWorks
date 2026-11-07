@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import json
 
 from django.core.exceptions import ValidationError
@@ -56,15 +57,15 @@ class EventFeedbackSurvey(models.Model):
         if not isinstance(self.answered_question_ids, list) or any(
             not isinstance(value, str) for value in self.answered_question_ids
         ):
-            raise ValidationError({"answered_question_ids": "Must be a list of IDs."})
+            raise ValidationError({"answered_question_ids": gettext("Must be a list of IDs.")})
         if not set(self.answered_question_ids).issubset(ids):
             raise ValidationError(
-                {"questions": "Answered questions cannot be removed."}
+                {"questions": gettext("Answered questions cannot be removed.")}
             )
         if self.is_open and not self.questions:
-            raise ValidationError({"questions": "An open survey needs a question."})
+            raise ValidationError({"questions": gettext("An open survey needs a question.")})
         if self.anonymous and self.certificate_enabled:
-            raise ValidationError({"anonymous": "Anonymous feedback needs certificates turned off."})
+            raise ValidationError({"anonymous": gettext("Anonymous feedback needs certificates turned off.")})
         if not self.pk:
             return
         original = type(self).objects.filter(pk=self.pk).first()
@@ -72,16 +73,16 @@ class EventFeedbackSurvey(models.Model):
             return
         if self.certificate_enabled != original.certificate_enabled:
             raise ValidationError(
-                {"certificate_enabled": "Certificate mode is frozen after a response."}
+                {"certificate_enabled": gettext("Certificate mode is frozen after a response.")}
             )
         if self.anonymous != original.anonymous:
-            raise ValidationError({"anonymous": "Anonymity is frozen after a response."})
+            raise ValidationError({"anonymous": gettext("Anonymity is frozen after a response.")})
         old = {question["id"]: question for question in original.questions}
         new = {question["id"]: question for question in self.questions}
         for question_id in original.answered_question_ids:
             if question_id not in new or _question_signature(old[question_id]) != _question_signature(new[question_id]):
                 raise ValidationError(
-                    {"questions": f"Answered question {question_id!r} is immutable."}
+                    {"questions": gettext('Answered question {question_id!r} is immutable.').format(question_id=question_id)}
                 )
 
     def save(self, *args, **kwargs):
@@ -138,7 +139,7 @@ class EventFeedbackResponse(ScopedPiiModelMixin, models.Model):
         if self.registration_id and self.survey_id:
             if self.registration.event_id != self.survey.event_id:
                 raise ValidationError(
-                    {"registration": "Registration must belong to the survey event."}
+                    {"registration": gettext("Registration must belong to the survey event.")}
                 )
 
     def save(self, *args, **kwargs):

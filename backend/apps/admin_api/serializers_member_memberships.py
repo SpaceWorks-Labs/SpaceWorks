@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.admin_api.serializers_role_sets import MembershipRoleSetMixin
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field, inline_serializer
@@ -31,7 +32,7 @@ class WitnessWaiverRequestSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict) or data:
             raise serializers.ValidationError(
-                {"detail": "This endpoint does not accept request fields."}
+                {"detail": gettext("This endpoint does not accept request fields.")}
             )
         return {}
 
@@ -114,7 +115,7 @@ class MembershipCapabilitiesSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs:
-            raise serializers.ValidationError("Provide at least one capability.")
+            raise serializers.ValidationError(gettext("Provide at least one capability."))
         return attrs
 
 

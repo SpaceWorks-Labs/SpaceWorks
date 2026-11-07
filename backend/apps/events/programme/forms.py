@@ -1,5 +1,6 @@
 """Form editing adapters; domain writers retain form ownership and their audit trail."""
 
+from django.utils.translation import gettext
 from copy import deepcopy
 
 from django.core.exceptions import ValidationError as SchemaError
@@ -25,7 +26,7 @@ SELECTORS = {"volunteer": "posting_id", "mentor": "posting_id", "round": "round_
 
 def _permission(key):
     if key not in FORM_PERMISSIONS:
-        raise NotFound("Unknown event form.")
+        raise NotFound(gettext("Unknown event form."))
     return FORM_PERMISSIONS[key][0]
 
 
@@ -39,7 +40,7 @@ def selector_for(key, data):
     selector = {name: data[name] for name in ("posting_id", "round_id", "track_id") if name in data}
     required = SELECTORS.get(key)
     if set(selector) != ({required} if required else set()):
-        raise ValidationError({"selector": f"Use only {required}." if required else "This form has no nested selector."})
+        raise ValidationError({"selector": gettext('Use only {required}.').format(required=required) if required else gettext("This form has no nested selector.")})
     return selector
 
 
@@ -52,7 +53,7 @@ def resolve_form(event, *, actor, key, selector, locked=False):
         raise ProgrammeUnavailable("form_provider_unavailable", "This form editor is not available yet.")
     target = provider.resolve(event=event, actor=actor, selector=selector, locked=locked)
     if target is None or getattr(target, "event_id", None) != event.pk:
-        raise NotFound("Unknown event form.")
+        raise NotFound(gettext("Unknown event form."))
     return target
 
 
@@ -74,8 +75,8 @@ def _schema(raw):
 def save_form(event, *, actor, key, data):
     require_form(actor, event, key)
     if isinstance(data["schema"], dict) and "event_context" in data["schema"]:
-        raise ValidationError({"code": "invalid_form_schema", "detail": "Event context is read-only.",
-                               "fields": {"event_context": ["Remove this read-only field before saving."]}})
+        raise ValidationError({"code": "invalid_form_schema", "detail": gettext("Event context is read-only."),
+                               "fields": {"event_context": [gettext("Remove this read-only field before saving.")]}})
     schema = _schema(data["schema"])
     if key == "registration" and isinstance(schema, dict) and schema.get("schema_version") == 2:
         from apps.events.registration_form_adapter import require_private_registration_answers

@@ -8,6 +8,7 @@ the view's check and the write cannot let it land. Lock order: makerspace -> mem
 and roles -> organizations -> host (asset or machine) -> warranty -> document.
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -71,7 +72,7 @@ def _vendor(makerspace_id, vendor_id):
     require_capability(makerspace_id, "inventory.vendors")
     vendor = Vendor.objects.filter(pk=vendor_id, makerspace_id=makerspace_id, is_archived=False).first()
     if vendor is None:
-        raise ValidationError({"vendor_id": "Choose a vendor of this makerspace."})
+        raise ValidationError({"vendor_id": gettext("Choose a vendor of this makerspace.")})
     return vendor
 
 
@@ -119,7 +120,7 @@ def finalize_document(actor, warranty, data):
     object_key = data["object_key"]
     storage.assert_warranty_object_key_for_makerspace(object_key, locked.makerspace_id)
     if WarrantyDocument.objects.filter(object_key=object_key).exists():
-        raise ValidationError({"object_key": "This warranty document is already attached."})
+        raise ValidationError({"object_key": gettext("This warranty document is already attached.")})
     storage.finalize_upload(object_key, settings.WARRANTY_DOC_MAX_BYTES)
     result = storage.validate_warranty_object(object_key)
     document = WarrantyDocument.objects.create(

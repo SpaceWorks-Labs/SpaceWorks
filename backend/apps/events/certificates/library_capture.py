@@ -1,4 +1,5 @@
 """Copy an immutable event design into independently owned tenant-library artwork."""
+from django.utils.translation import gettext
 from copy import deepcopy
 from uuid import uuid4
 import hashlib
@@ -21,7 +22,7 @@ from . import print_storage
 
 def capture(makerspace_id, *, actor, operation_id, expected_version, event_id, revision_id, name, template_id=None):
     if (template_id is None and expected_version != 0) or not isinstance(name, str) or not 1 <= len(name.strip()) <= 120:
-        raise ValidationError("Use a new library template and a name of 1–120 characters.")
+        raise ValidationError(gettext("Use a new library template and a name of 1–120 characters."))
     digest = hashlib.sha256(json.dumps(["library_capture", event_id, revision_id, name.strip(), template_id, expected_version]).encode()).hexdigest()
     event = event_authority.get_event(actor, event_id, EDIT_DETAILS)
     if event.makerspace_id != makerspace_id:

@@ -6,6 +6,7 @@ keys are locked by the platform in `security_settings`, never here. Rows are app
 revoking or releasing ends the live row, and the next grant or lock is a new row.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -24,13 +25,13 @@ def _require_manager(actor, makerspace):
     from apps.tenant_migration.gate_runtime import assert_write_allowed
 
     if not is_space_manager(actor, makerspace):
-        raise PermissionDenied("Only the Space Manager decides who may change settings.")
+        raise PermissionDenied(gettext("Only the Space Manager decides who may change settings."))
     assert_write_allowed(makerspace.pk)
 
 
 def _module(module):
     if module not in MODULE_MANAGER_ACTIONS:
-        raise ValidationError({"module": f"Choose one of: {', '.join(sorted(MODULE_MANAGER_ACTIONS))}."})
+        raise ValidationError({"module": gettext('Choose one of: {value}.').format(value=', '.join(sorted(MODULE_MANAGER_ACTIONS)))})
     return module
 
 
@@ -68,7 +69,7 @@ def set_grants(actor, makerspace, module, grantee_ids):
     refused = sorted(pk for pk in wanted if not eligible_grantee(makerspace, module, people.get(pk)))
     if refused:
         raise ValidationError({"grantee_ids": (
-            f"Not this space's {module} managers (or already a Space Manager): {refused}.")})
+            gettext("Not this space's {module} managers (or already a Space Manager): {refused}.").format(module=module, refused=refused))})
     live = {row.grantee_id: row for row in ModuleSettingsGrant.objects.select_for_update().filter(
         makerspace=makerspace, module=module, revoked_at__isnull=True)}
     for grantee_id in sorted(set(live) - wanted):
@@ -86,7 +87,7 @@ def set_lock(actor, makerspace, setting_key, locked, note=""):
 
     _require_manager(actor, makerspace)
     if is_security_feature(setting_key) or module_for_key(setting_key) is None:
-        raise ValidationError({"setting_key": "Not a delegable module setting of this space."})
+        raise ValidationError({"setting_key": gettext("Not a delegable module setting of this space.")})
     row = ModuleSettingLock.objects.select_for_update().filter(
         makerspace=makerspace, setting_key=setting_key, released_at__isnull=True).first()
     if locked and row is None:

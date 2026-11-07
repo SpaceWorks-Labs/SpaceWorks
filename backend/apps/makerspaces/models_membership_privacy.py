@@ -9,6 +9,7 @@ Erasure: the member asks one space to anonymise what it holds about their member
 Staff approve (anonymise that space's membership data; money rows and the audit log are
 kept) or reject with a note. Never deletes the account -- account deletion is separate.
 """
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -18,8 +19,8 @@ from apps.encryption.mappers import ScopedPiiModelMixin
 
 class MembershipConsent(models.Model):
     class Source(models.TextChoices):
-        MEMBER = "member", "Given by the member"
-        JOIN = "join", "Given when joining"
+        MEMBER = "member", gettext_noop("Given by the member")
+        JOIN = "join", gettext_noop("Given when joining")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     membership = models.ForeignKey(

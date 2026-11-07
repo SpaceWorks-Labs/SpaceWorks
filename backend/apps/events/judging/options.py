@@ -4,6 +4,7 @@ New events have no row, so every switch is off and no fee is charged. Existing e
 today's emails on when the table was added (migration), so nothing they did changes.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 
 from apps.audit.services import record
@@ -85,7 +86,7 @@ def update(event_id, *, actor, data):
                 from apps.events.submissions.models_stages import SubmissionStage
                 if changes["entry_fee_stage"] > max(1, SubmissionStage.objects.filter(event=event).count()):
                     from rest_framework.exceptions import ValidationError
-                    raise ValidationError({"entry_fee_stage": "Choose one of the event's submission stages."})
+                    raise ValidationError({"entry_fee_stage": gettext("Choose one of the event's submission stages.")})
             for key, value in changes.items():
                 setattr(row, key, value)
             row.version += 1

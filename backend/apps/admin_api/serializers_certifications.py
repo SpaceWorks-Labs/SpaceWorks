@@ -1,5 +1,6 @@
 """Serializers for the staff certification-type and grant surfaces."""
 
+from django.utils.translation import gettext
 from contextlib import contextmanager
 
 from django.db import IntegrityError, transaction
@@ -25,7 +26,7 @@ class CertificationTypeSerializer(serializers.ModelSerializer):
         if self.instance:
             rows = rows.exclude(pk=self.instance.pk)
         if rows.exists():
-            raise serializers.ValidationError({"name": "A certification with this name already exists for this machine type."})
+            raise serializers.ValidationError({"name": gettext("A certification with this name already exists for this machine type.")})
         return attrs
 
     class Meta:
@@ -125,4 +126,4 @@ def certification_type_write():
         constraint = getattr(getattr(exc.__cause__, "diag", None), "constraint_name", None)
         if constraint != "certificationtype_uniq_name":
             raise
-        raise serializers.ValidationError({"name": "A certification with this name already exists for this machine type."}) from exc
+        raise serializers.ValidationError({"name": gettext("A certification with this name already exists for this machine type.")}) from exc

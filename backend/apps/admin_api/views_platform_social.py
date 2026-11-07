@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, serializers
 
@@ -61,11 +62,11 @@ class PlatformSocialAuthSettingsSerializer(serializers.ModelSerializer):
 
     def validate_apple_native_app_ids(self, value):
         if not isinstance(value, list) or len(value) > 10:
-            raise serializers.ValidationError("Enter at most ten Apple app audiences.")
+            raise serializers.ValidationError(gettext("Enter at most ten Apple app audiences."))
         cleaned = []
         for item in value:
             if not isinstance(item, str) or not 3 <= len(item.strip()) <= 255:
-                raise serializers.ValidationError("Enter valid Apple app audiences.")
+                raise serializers.ValidationError(gettext("Enter valid Apple app audiences."))
             cleaned.append(item.strip())
         return list(dict.fromkeys(cleaned))
 

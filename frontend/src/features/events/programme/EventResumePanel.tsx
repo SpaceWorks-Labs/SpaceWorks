@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ErrorBlock, Field, Pagination } from '../../../components/ui'
@@ -24,19 +25,19 @@ export function EventResumePanel({ scope }: { scope: EventScope }) {
   const uploadRow = useRef<UploadResponse | null>(null)
   const refresh = async () => { await client.invalidateQueries({ queryKey: key }) }
   const upload = useMutation({ mutationFn: async () => {
-    if (!file || file.size > 10 * 1024 ** 2 || !file.name.toLowerCase().endsWith('.pdf')) throw new Error('Choose a PDF résumé of at most 10 MiB.')
+    if (!file || file.size > 10 * 1024 ** 2 || !file.name.toLowerCase().endsWith('.pdf')) throw new Error(t`Choose a PDF résumé of at most 10 MiB.`)
     const row = uploadRow.current ?? await memberRequest<UploadResponse>(base, { method: 'POST', headers: { 'Idempotency-Key': operation.current },
       body: JSON.stringify({ filename: file.name, bytes: file.size, mime: 'application/pdf' }) })
     uploadRow.current = row
     const descriptor = row.upload
-    if (descriptor?.method !== 'POST' || !descriptor.url || !descriptor.fields) throw new Error('The résumé upload is unavailable. Refresh and retry.')
+    if (descriptor?.method !== 'POST' || !descriptor.url || !descriptor.fields) throw new Error(t`The résumé upload is unavailable. Refresh and retry.`)
     const target = new URL(descriptor.url)
-    if (!uploadOrigins().includes(target.origin) || target.username || target.password) throw new Error('The configured upload destination is unavailable.')
+    if (!uploadOrigins().includes(target.origin) || target.username || target.password) throw new Error(t`The configured upload destination is unavailable.`)
     const body = new FormData()
     for (const [name, value] of Object.entries(descriptor.fields)) body.append(name, value)
     body.append('file', file)
     const response = await fetch(target.href, { method: 'POST', body, credentials: 'omit', cache: 'no-store', redirect: 'error' })
-    if (!response.ok) throw new Error('Upload interrupted. Retry with the same file.')
+    if (!response.ok) throw new Error(t`Upload interrupted. Retry with the same file.`)
     return memberRequest<AssetCommandResponse>(`${base}${row.asset_id}/complete/`, { method: 'POST', headers: { 'Idempotency-Key': completion.current },
       body: JSON.stringify({ expected_version: row.version, generation: row.generation, operation_id: completion.current }) })
   }, onSuccess: async () => { setFile(null); uploadRow.current = null; operation.current = crypto.randomUUID(); completion.current = crypto.randomUUID(); await refresh() } })
@@ -47,27 +48,27 @@ export function EventResumePanel({ scope }: { scope: EventScope }) {
       : memberRequest(`${base}from-saved/`, { method: 'POST', headers: { 'Idempotency-Key': id },
         body: JSON.stringify({ saved_asset_id: source?.asset_id, saved_detail_version: resume?.version }) })
   }, onSuccess: refresh })
-  return <section aria-label="Event résumé and sponsor sharing" className="grid gap-5">
-    <h2 className="title-panel">Your event résumé</h2><p className="text-sm text-muted">Files stay private. Copying a saved résumé creates a separate event copy. Sponsor recruiting access needs a separate choice below.</p>
-    <Field label="PDF résumé" hint="At most 10 MiB"><input type="file" accept="application/pdf,.pdf" className="desk-input" disabled={upload.isPending}
+  return <section aria-label={t`Event résumé and sponsor sharing`} className="grid gap-5">
+    <h2 className="title-panel">{t`Your event résumé`}</h2><p className="text-sm text-muted">{t`Files stay private. Copying a saved résumé creates a separate event copy. Sponsor recruiting access needs a separate choice below.`}</p>
+    <Field label={t`PDF résumé`} hint={t`At most 10 MiB`}><input type="file" accept="application/pdf,.pdf" className="desk-input" disabled={upload.isPending}
       onChange={event => { setFile(event.target.files?.[0] ?? null); uploadRow.current = null; operation.current = crypto.randomUUID(); completion.current = crypto.randomUUID() }} /></Field>
-    <button className="desk-button-primary" disabled={!file || upload.isPending} onClick={() => upload.mutate()}>{upload.isPending ? 'Uploading résumé…' : 'Upload event résumé'}</button>
-    <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={copy} onChange={event => setCopy(event.target.checked)} />Choose a copy from my Saved details</label>
-    {copy ? <button className="desk-button" disabled={!source || mutate.isPending} onClick={() => mutate.mutate(undefined)}>Copy saved résumé to this event</button> : null}
-    {copy && saved.isSuccess && !source ? <p>No ready résumé is saved in your account.</p> : null}
+    <button className="desk-button-primary" disabled={!file || upload.isPending} onClick={() => upload.mutate()}>{upload.isPending ? t`Uploading résumé…` : t`Upload event résumé`}</button>
+    <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={copy} onChange={event => setCopy(event.target.checked)} />{t`Choose a copy from my Saved details`}</label>
+    {copy ? <button className="desk-button" disabled={!source || mutate.isPending} onClick={() => mutate.mutate(undefined)}>{t`Copy saved résumé to this event`}</button> : null}
+    {copy && saved.isSuccess && !source ? <p>{t`No ready résumé is saved in your account.`}</p> : null}
     <ErrorBlock error={rows.error || upload.error || mutate.error || saved.error} onRetry={() => void rows.refetch()} />
-    {rows.isPending ? <p role="status">Loading event résumés…</p> : null}
+    {rows.isPending ? <p role="status">{t`Loading event résumés…`}</p> : null}
     {rows.data?.results.map(row => <article key={row.asset_id} className="grid gap-3 rounded-xl border border-line bg-panel p-4">
-      <p>{row.filename || `Résumé ${row.asset_id}`} · <span role="status">{row.state}</span></p>
+      <p>{row.filename || t`Résumé ${row.asset_id}`} · <span role="status">{row.state}</span></p>
       <div className="flex flex-wrap gap-3"><button className="desk-button" disabled={row.state !== 'ready'} onClick={() => {
         void memberRequestBlob(`${base}${row.asset_id}/download/`).then(blob => {
           const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = 'event-resume.pdf'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
         }).catch(() => void rows.refetch())
-      }}>Download my résumé</button><button className="desk-button" disabled={mutate.isPending || !row.allowed_actions.includes('delete')}
-        onClick={() => mutate.mutate(row)}>Delete event copy</button></div>
+      }}>{t`Download my résumé`}</button><button className="desk-button" disabled={mutate.isPending || !row.allowed_actions.includes('delete')}
+        onClick={() => mutate.mutate(row)}>{t`Delete event copy`}</button></div>
     </article>)}
     <Pagination page={page} count={rows.data?.count ?? 0} pageSize={24} totalPages={Math.ceil((rows.data?.count ?? 0) / 24)} onChange={setPage} />
     <ResumeSharing scope={{ ...scope, actorId: scope.accountId }} readyResumes={(rows.data?.results ?? []).filter(row => row.state === 'ready')
-      .map(row => ({ id: row.asset_id, label: row.filename || `Résumé ${row.asset_id}` }))} />
+      .map(row => ({ id: row.asset_id, label: row.filename || t`Résumé ${row.asset_id}` }))} />
   </section>
 }

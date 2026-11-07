@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { currentSessionContext } from "../../lib/api/sessionContext";
 import { useOptionalTenant } from "../../lib/tenant";
 import { reauthenticationSessionKey } from "./reauthenticationApi";
@@ -53,15 +54,15 @@ export function MfaAccountPage() {
   }), onSuccess: (value) => { setCodes(value.recovery_codes); setPassword(""); signedOut("Your previous sessions have ended. Sign in again to continue."); } });
   if (challenge) return <MfaFlow challenge={challenge} onCancel={() => { setChallenge(undefined); setReady(false); }}
     onComplete={result => { setAccessToken(result.access); setChallenge(undefined); setReady(true); void status.refetch(); }} />;
-  const links = <div className="flex flex-wrap gap-4"><Link to={signInHref} className={linkClass}>{ready && returnHref ? "Back to where you were" : "Return to sign-in"}</Link>
-    <Link to="/member" className={linkClass}>Member sign-in</Link></div>;
+  const links = <div className="flex flex-wrap gap-4"><Link to={signInHref} className={linkClass}>{ready && returnHref ? t`Back to where you were` : t`Return to sign-in`}</Link>
+    <Link to="/member" className={linkClass}>{t`Member sign-in`}</Link></div>;
   if (codes || !ready || status.error) {
-    return <CenteredCardLayout title={codes ? "Save your recovery codes" : "Two-step sign-in"} media={{ icon: "ShieldCheck", tone: "accent" }}
-      state={status.error && ready ? { status: "error", error: "Couldn't load authenticator settings. Try again.", onRetry: () => { void status.refetch(); } } : { status: "ready" }}
-      body={codes ? "Each code works once. Save them somewhere secure before you continue." : notice || "Sign in to manage your authenticator."}
+    return <CenteredCardLayout title={codes ? t`Save your recovery codes` : t`Two-step sign-in`} media={{ icon: "ShieldCheck", tone: "accent" }}
+      state={status.error && ready ? { status: "error", error: t`Couldn't load authenticator settings. Try again.`, onRetry: () => { void status.refetch(); } } : { status: "ready" }}
+      body={codes ? t`Each code works once. Save them somewhere secure before you continue.` : notice || t`Sign in to manage your authenticator.`}
       content={codes ? <MfaRecoveryCodes codes={codes} /> : undefined}
-      primary={codes ? { label: "I've saved my codes", onClick: () => { setCodes(undefined); setNotice(ready ? "" : "Your recovery codes are saved. Sign in again to continue."); } }
-        : { label: "Sign in", href: signInHref }}
+      primary={codes ? { label: t`I've saved my codes`, onClick: () => { setCodes(undefined); setNotice(ready ? "" : t`Your recovery codes are saved. Sign in again to continue.`); } }
+        : { label: t`Sign in`, href: signInHref }}
       footer={links} />;
   }
   const data = status.data;
@@ -70,23 +71,23 @@ export function MfaAccountPage() {
   // Staff enrol here (the console sends them with ?return=); the guide's two-step article covers staff too.
   const helpSpace = tenant?.mode === "single" ? { slug: tenant.slug, enabled_features: tenant.bootstrap?.features ?? [] } : undefined;
   return <SettingsLayout standalone state={status.isLoading || !data ? { status: "loading" } : { status: "ready" }}
-    header={{ title: "Account security", subtitle: person ? "Two-step sign-in, passkeys and the devices you sign in from." : "Two-step sign-in for the platform account.",
+    header={{ title: t`Account security`, subtitle: person ? t`Two-step sign-in, passkeys and the devices you sign in from.` : t`Two-step sign-in for the platform account.`,
       meta: <HelpLink article="member/two-step-sign-in" makerspace={helpSpace} singleTenant platform={context === "platform"} className="-ml-2" /> }}
     sections={[
-      { id: "two-step", title: "Authenticator app", rows: data ? <div className="grid gap-4">
+      { id: "two-step", title: t`Authenticator app`, rows: data ? <div className="grid gap-4">
         <MfaAuthenticatorSection status={data} hasPasskey={hasPasskey} passkeysOffered={person && passkeys.data?.passkeys_allowed !== false}
           password={password} setPassword={setPassword} busy={busy} onEnroll={() => enroll.mutate()} onRegenerate={() => change.mutate("recovery")} />
         {enroll.error || change.error ? <ErrorBlock error={(enroll.error ?? change.error)!} /> : null}
       </div> : null },
       ...(person ? [
-        { id: "passkeys", title: "Passkeys", rows: <PasskeyList onRecoveryCodes={setCodes} onSignedOut={() => signedOut("You removed the passkey this browser signed in with. Sign in again to continue.")} /> },
-        { id: "devices", title: "Remembered devices", rows: <KnownDevicesList /> },
+        { id: "passkeys", title: t`Passkeys`, rows: <PasskeyList onRecoveryCodes={setCodes} onSignedOut={() => signedOut("You removed the passkey this browser signed in with. Sign in again to continue.")} /> },
+        { id: "devices", title: t`Remembered devices`, rows: <KnownDevicesList /> },
       ] : []),
-      { id: "sessions", title: "Sessions", rows: <div className="grid gap-4">
+      { id: "sessions", title: t`Sessions`, rows: <div className="grid gap-4">
         <SignOutEverywhere signInHref={person ? "/member/account" : signInHref} onSignedOut={() => setReady(false)} />{links}</div> },
     ]}
-    danger={data?.enabled && (!data.required || hasPasskey) ? [{ title: "Disable MFA", consequence: "Your account will use password sign-in without an authenticator.",
-      action: { label: "Disable MFA", disabled: !password || busy, disabledReason: "Confirm your current password to continue.",
-        confirm: { title: "Disable MFA?", message: "Your account will no longer require an authenticator.", confirmLabel: "Disable MFA" },
+    danger={data?.enabled && (!data.required || hasPasskey) ? [{ title: t`Disable MFA`, consequence: "Your account will use password sign-in without an authenticator.",
+      action: { label: t`Disable MFA`, disabled: !password || busy, disabledReason: "Confirm your current password to continue.",
+        confirm: { title: t`Disable MFA?`, message: t`Your account will no longer require an authenticator.`, confirmLabel: t`Disable MFA` },
         onClick: () => change.mutate("disable") } }] : []} />;
 }

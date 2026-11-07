@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SegmentedControl } from "../../components/ui";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -100,26 +101,24 @@ export function PublicRequestPanel({
       {disabled ? (
         <div>
           <p className="eyebrow text-brand-ink">
-            Requests
-          </p>
-          <h2 className="title-panel mt-2">Unavailable</h2>
+            {t`Requests`}</p>
+          <h2 className="title-panel mt-2">{t`Unavailable`}</h2>
           <p className="mt-2 text-sm text-muted">
-            This makerspace is publishing inventory without public requests.
-          </p>
+            {t`This makerspace is publishing inventory without public requests.`}</p>
         </div>
       ) : (
         <>
           <div className="shrink-0">
-            <h2 className="title-panel text-brand-ink">{contactMode && activeTab === "borrow" ? "Borrow something" : "Member borrowing"}</h2>
+            <h2 className="title-panel text-brand-ink">{contactMode && activeTab === "borrow" ? t`Borrow something` : t`Member borrowing`}</h2>
             <p className="mt-1 text-sm leading-6 text-muted">
               {contactMode && activeTab === "borrow"
-                ? "No account needed. Give your name, phone and email and confirm the email with the code we send; staff review every request before anything is handed over."
-                : "Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required."}
+                ? t`No account needed. Give your name, phone and email and confirm the email with the code we send; staff review every request before anything is handed over.`
+                : t`Requests use your signed-in member account. An active membership, waiver acceptance, and current presence are required.`}
             </p>
           </div>
 
           <div className="shrink-0 [&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
-            <SegmentedControl label="Request actions" value={activeTab} options={[{ value: "borrow", label: "Borrow request" }, { value: "scan", label: "Scan a tool" }]} onChange={value => setActiveTab(value as ActiveTab)} />
+            <SegmentedControl label={t`Request actions`} value={activeTab} options={[{ value: "borrow", label: t`Borrow request` }, { value: "scan", label: t`Scan a tool` }]} onChange={value => setActiveTab(value as ActiveTab)} />
           </div>
 
           {/* p-1/-m-1 keeps focus outlines inside the scroll box from being clipped. */}
@@ -150,7 +149,7 @@ export function PublicRequestPanel({
 
             {activeTab === "scan" ? (
               <div
-                aria-label="Scan a tool"
+                aria-label={t`Scan a tool`}
                 id="public-request-scan-panel"
                 role="region"
               >

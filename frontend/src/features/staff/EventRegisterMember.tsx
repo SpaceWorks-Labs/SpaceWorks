@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { EventStaffTicketPicker } from "./EventStaffTicketPicker";
 import { useState } from "react";
 
@@ -116,7 +117,7 @@ export function EventRegisterMember({
   return (
     <div className="mt-3 rounded-lg border border-line bg-surface p-3">
       <label className="block text-sm font-semibold text-ink" htmlFor="event-register-member">
-        {audience === "members" ? "Register a member" : "Register an account"}
+        {audience === "members" ? t`Register a member` : t`Register an account`}
       </label>
       <div className="mt-1 flex flex-col gap-2 sm:flex-row">
         {audience === "members" ? <select
@@ -127,25 +128,25 @@ export function EventRegisterMember({
           onChange={(event) => selectAccount(event.target.value)}
         >
           <option value="">
-            {members.isLoading ? "Loading members…" : "Select a member"}
+            {members.isLoading ? t`Loading members…` : t`Select a member`}
           </option>
           {(members.data ?? []).map((row) => (
             <option key={row.member_id} value={row.member_id}>
               {row.display_name}
             </option>
           ))}
-        </select> : <input id="event-register-member" className="desk-input" aria-label="Account ID (including a staff-created walk-in)" type="number" min="1" value={memberId} disabled={register.isPending} onChange={(e) => selectAccount(e.target.value)} />}
+        </select> : <input id="event-register-member" className="desk-input" aria-label={t`Account ID (including a staff-created walk-in)`} type="number" min="1" value={memberId} disabled={register.isPending} onChange={(e) => selectAccount(e.target.value)} />}
         <button
           className="desk-button-primary shrink-0"
           type="button"
           disabled={!memberId || register.isPending}
           onClick={submit}
         >
-          {register.isPending ? "Registering…" : "Register"}
+          {register.isPending ? t`Registering…` : t`Register`}
         </button>
       </div>
-      {audience === "invite" ? <label className="grid gap-1 text-sm">Invitation code<input className="desk-input" maxLength={128} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
-      {promosEnabled ? <label className="grid gap-1 text-sm">Promo code (optional)<input className="desk-input" maxLength={128} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
+      {audience === "invite" ? <label className="grid gap-1 text-sm">{t`Invitation code`}<input className="desk-input" maxLength={128} value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} /></label> : null}
+      {promosEnabled ? <label className="grid gap-1 text-sm">{t`Promo code (optional)`}<input className="desk-input" maxLength={128} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
       {ticketsEnabled ? <EventStaffTicketPicker eventId={eventId} value={ticketId} onChange={setTicketId} /> : null}
       {customForm?.length ? (
         <div className="mt-3">
@@ -161,8 +162,7 @@ export function EventRegisterMember({
       {needsPhone ? (
         <div className="mt-2">
           <label className="block text-sm font-semibold text-ink" htmlFor="event-register-phone">
-            Contact number
-          </label>
+            {t`Contact number`}</label>
           <input
             id="event-register-phone"
             type="tel"
@@ -172,15 +172,13 @@ export function EventRegisterMember({
             onChange={(event) => setPhone(event.target.value)}
           />
           <p className="mt-1 text-xs text-muted">
-            This member&apos;s account has no number on file.
-          </p>
+            {t`This member's account has no number on file.`}</p>
         </div>
       ) : null}
       {needsEmail ? (
         <div className="mt-2">
           <label className="block text-sm font-semibold text-ink" htmlFor="event-register-email">
-            Contact email
-          </label>
+            {t`Contact email`}</label>
           <input
             id="event-register-email"
             type="email"
@@ -189,17 +187,16 @@ export function EventRegisterMember({
             onChange={(event) => setEmail(event.target.value)}
           />
           <p className="mt-1 text-xs text-muted">
-            This member&apos;s account has no address on file.
-          </p>
+            {t`This member's account has no address on file.`}</p>
         </div>
       ) : null}
       {register.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
-          {register.error instanceof Error ? register.error.message : "Could not register."}
+          {register.error instanceof Error ? register.error.message : t`Could not register.`}
         </p>
       ) : null}
       {audience === "members" && members.data && !members.data.length ? (
-        <p className="mt-2 text-sm text-muted">Every member is already registered.</p>
+        <p className="mt-2 text-sm text-muted">{t`Every member is already registered.`}</p>
       ) : null}
     </div>
   );

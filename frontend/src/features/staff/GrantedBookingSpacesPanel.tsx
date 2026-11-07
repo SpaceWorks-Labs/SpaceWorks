@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ListRow } from "../../components/ui";
 import { ListLayout } from "../../components/layouts";
@@ -11,10 +12,10 @@ export function GrantedBookingSpacesPanel({ makerspaceId, frame }: { makerspaceI
   const [selected, setSelected] = useState<{ id: number; makerspace_id: number } | null>(null);
   const spaces = useAccessibleBookingSpaces(page, makerspaceId);
   if (selected) return <BookingDrawer key={selected.id} spaceId={selected.id} makerspaceId={selected.makerspace_id} onClose={() => setSelected(null)} />;
-  return <ListLayout header={{ title: "Assigned booking resources", subtitle: "Open a resource to use your assigned permissions." }} {...frame}
+  return <ListLayout header={{ title: t`Assigned booking resources`, subtitle: t`Open a resource to use your assigned permissions.` }} {...frame}
     state={spaces.isLoading ? { status: "loading" } : spaces.error
-      ? { status: "error", error: `Unable to load resources. ${spaces.error.message}`, onRetry: () => { void spaces.refetch(); } } : { status: "ready" }}
-    isEmpty={spaces.data?.results.length === 0} empty={{ message: "No assigned resources. Your access may have been revoked." }}
+      ? { status: "error", error: t`Unable to load resources. ${spaces.error.message}`, onRetry: () => { void spaces.refetch(); } } : { status: "ready" }}
+    isEmpty={spaces.data?.results.length === 0} empty={{ message: t`No assigned resources. Your access may have been revoked.` }}
     body={{ kind: "rows", rows: spaces.data?.results.map((space) => <ListRow key={space.id} title={space.name}
       identity={{ kind: "icon", icon: "Calendar", tone: "info" }} onClick={() => setSelected(space)}
       meta={space.staff_permissions?.map((entry) => entry.replace(/_/g, " ")).join(", ")} />) }}

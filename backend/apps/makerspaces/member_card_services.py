@@ -5,6 +5,7 @@ Every mutation is audited and every lookup writes an immutable `QrScanEvent` wit
 never by role name, and a card never resolves through the generic inventory scanner.
 """
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -51,11 +52,11 @@ def issue_card(actor, membership, *, printed_name=""):
     require_module_locked(membership.makerspace_id, "membership")
     membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
     if membership.status != "active":
-        raise PermissionDenied("Only an active membership can hold a card.")
+        raise PermissionDenied(gettext("Only an active membership can hold a card."))
     # Only a LIVE card blocks a new one: after a revocation the member gets a fresh card
     # (new number, new QR), and the revoked one stays as the redacted record.
     if MemberCard.objects.filter(membership=membership, revoked_at__isnull=True).exists():
-        raise PermissionDenied("This membership already holds a card; reissue it instead.")
+        raise PermissionDenied(gettext("This membership already holds a card; reissue it instead."))
     return _issue_locked(actor, membership, printed_name)
 
 
@@ -109,10 +110,10 @@ def reissue_card(actor, card, *, reason):
     require_member_account(card.membership.user)
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, card.makerspace_id)
     if reason not in REISSUE_REASONS:
-        raise PermissionDenied("Unknown reissue reason.")
+        raise PermissionDenied(gettext("Unknown reissue reason."))
     card = MemberCard.objects.select_for_update().get(pk=card.pk)
     if not card.is_active:
-        raise PermissionDenied("A revoked card cannot be reissued; issue a new one.")
+        raise PermissionDenied(gettext("A revoked card cannot be reissued; issue a new one."))
     old = active_qr(card)
     if old is not None:
         revoke_qr_code(actor, old)

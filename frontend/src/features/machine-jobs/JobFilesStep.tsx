@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ChangeEvent } from "react";
 
 import { EmptyState, Field, ListRow } from "../../components/ui";
@@ -7,16 +8,16 @@ import { fileKey, type FileErrors } from "./jobUploads";
 export function formatError(file: File, accepted: string[]) {
   if (!accepted.length) return "";
   const name = file.name.toLowerCase();
-  return accepted.some(ext => name.endsWith(ext)) ? "" : `This machine doesn't take ${name.includes(".") ? name.slice(name.lastIndexOf(".")) : "this kind of"} files.`;
+  return accepted.some(ext => name.endsWith(ext)) ? "" : t`This machine doesn't take ${name.includes(".") ? name.slice(name.lastIndexOf(".")) : "this kind of"} files.`;
 }
 
 function FileList({ label, files, errors, onRemove }: { label: string; files: File[]; errors: FileErrors; onRemove: (file: File) => void }) {
   if (!files.length) return null;
-  return <ul className="grid gap-2" aria-label={`Chosen ${label.toLowerCase()}`}>{files.map(file => {
+  return <ul className="grid gap-2" aria-label={t`Chosen ${label.toLowerCase()}`}>{files.map(file => {
     const error = errors[fileKey(file)];
     return <li key={fileKey(file)}><ListRow title={file.name}
       meta={error ? <span className="text-danger">{error}</span> : `${Math.max(1, Math.round(file.size / 1024))} KB`}
-      right={<button className="desk-button-ghost text-danger" type="button" aria-label={`Remove ${file.name}`} onClick={() => onRemove(file)}>Remove</button>} /></li>;
+      right={<button className="desk-button-ghost text-danger" type="button" aria-label={t`Remove ${file.name}`} onClick={() => onRemove(file)}>{t`Remove`}</button>} /></li>;
   })}</ul>;
 }
 
@@ -35,19 +36,19 @@ export function JobFilesStep({ accepted, models, screenshots, errors, onChange, 
   const allErrors = { ...errors };
   for (const file of models) if (!allErrors[fileKey(file)]) { const error = formatError(file, accepted); if (error) allErrors[fileKey(file)] = error; }
   return <fieldset className="grid gap-5" disabled={disabled}>
-    <legend className="title-section mb-1">{optional ? "New files (optional)" : "Your files"}</legend>
+    <legend className="title-section mb-1">{optional ? t`New files (optional)` : t`Your files`}</legend>
     <div className="grid gap-3">
-      <Field label="Design files" hint={accepted.length ? `${typeName} accepts ${accepted.join(", ")}.` : undefined}>
+      <Field label={t`Design files`} hint={accepted.length ? t`${typeName} accepts ${accepted.join(", ")}.` : undefined}>
         <input className="desk-input w-full" type="file" multiple accept={accepted.join(",") || undefined} onChange={add("models")} />
       </Field>
-      <FileList label="Design files" files={models} errors={allErrors} onRemove={file => onChange({ models: models.filter(row => row !== file) })} />
-      {!models.length && !optional ? <EmptyState message="Add at least one design file. Screenshots alone can't be made." /> : null}
+      <FileList label={t`Design files`} files={models} errors={allErrors} onRemove={file => onChange({ models: models.filter(row => row !== file) })} />
+      {!models.length && !optional ? <EmptyState message={t`Add at least one design file. Screenshots alone can't be made.`} /> : null}
     </div>
     <div className="grid gap-3">
-      <Field label="Screenshots (optional)" hint="For example your slicer's time estimate, or a picture of what you want.">
+      <Field label={t`Screenshots (optional)`} hint={t`For example your slicer's time estimate, or a picture of what you want.`}>
         <input className="desk-input w-full" type="file" multiple accept="image/*,application/pdf" onChange={add("screenshots")} />
       </Field>
-      <FileList label="Screenshots" files={screenshots} errors={errors} onRemove={file => onChange({ screenshots: screenshots.filter(row => row !== file) })} />
+      <FileList label={t`Screenshots`} files={screenshots} errors={errors} onRemove={file => onChange({ screenshots: screenshots.filter(row => row !== file) })} />
     </div>
   </fieldset>;
 }

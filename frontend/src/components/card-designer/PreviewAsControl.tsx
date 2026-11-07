@@ -1,5 +1,6 @@
 // "Preview as": draw the card for a short or long sample name, or for one real holder of a
 // card this design prints (searchable). "Exact preview" asks the server for the printed PNG.
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { Eye, UserSearch } from "lucide-react";
 
@@ -26,35 +27,35 @@ export function PreviewAsControl({ design, document, person, onPerson }: {
   const selectedHolder = person.kind === "holder" ? person.holder.id : null;
   return <>
     <button type="button" className="desk-button min-h-11 max-w-full" onClick={() => setPicking(true)}>
-      <UserSearch size={16} aria-hidden="true" /><span className="truncate">Preview as: {previewLabel(person)}</span></button>
+      <UserSearch size={16} aria-hidden="true" /><span className="truncate">{t`Preview as: ${previewLabel(person)}`}</span></button>
     <button type="button" className="desk-button-ghost min-h-11" onClick={() => setExact(true)}>
-      <Eye size={16} aria-hidden="true" /> Render exact preview</button>
-    <Modal open={picking} onClose={() => setPicking(false)} title="Preview as">
+      <Eye size={16} aria-hidden="true" /> {t` Render exact preview`}</button>
+    <Modal open={picking} onClose={() => setPicking(false)} title={t`Preview as`}>
       <div className="grid gap-4">
         <div role="group" aria-labelledby="preview-as-samples" className="grid gap-1">
-          <h3 id="preview-as-samples" className="mb-1 text-xs font-semibold text-muted">Sample people</h3>
+          <h3 id="preview-as-samples" className="mb-1 text-xs font-semibold text-muted">{t`Sample people`}</h3>
           {(["short", "long"] as const).map((kind) => <button key={kind} type="button" aria-pressed={person.kind === kind}
             className={option(person.kind === kind)} onClick={() => choose({ kind })}>
             {mark(person.kind === kind)}{previewLabel({ kind })}</button>)}
         </div>
         <div role="group" aria-labelledby="preview-as-people" className="grid gap-2">
-          <h3 id="preview-as-people" className="mb-1 text-xs font-semibold text-muted">People with a card from this design</h3>
-          <input className="desk-input min-h-11" type="search" value={search} aria-label="Search by name or number"
-            placeholder="Search by name or number" onChange={(event) => setSearch(event.target.value)} />
+          <h3 id="preview-as-people" className="mb-1 text-xs font-semibold text-muted">{t`People with a card from this design`}</h3>
+          <input className="desk-input min-h-11" type="search" value={search} aria-label={t`Search by name or number`}
+            placeholder={t`Search by name or number`} onChange={(event) => setSearch(event.target.value)} />
           {holders.isLoading ? <Skeleton className="h-24 w-full" /> : null}
           {holders.isError ? <ErrorBlock error={holders.error} resource="card holders" onRetry={() => void holders.refetch()} /> : null}
-          {holders.data && !holders.data.length ? <p className="text-sm text-muted">No live cards use this design yet.</p> : null}
-          {holders.data?.length && !rows.length ? <p className="text-sm text-muted">No one matches “{search}”.</p> : null}
+          {holders.data && !holders.data.length ? <p className="text-sm text-muted">{t`No live cards use this design yet.`}</p> : null}
+          {holders.data?.length && !rows.length ? <p className="text-sm text-muted">{t`No one matches “${search}”.`}</p> : null}
           <div className="grid max-h-72 gap-1 overflow-y-auto overscroll-contain">
             {rows.map((holder) => <button key={`${holder.kind}-${holder.id}`} type="button" aria-pressed={selectedHolder === holder.id}
               className={option(selectedHolder === holder.id)} onClick={() => choose({ kind: "holder", holder })}>
               {mark(selectedHolder === holder.id)}
-              <span className="min-w-0"><span className="block truncate">{holder.name || "Name hidden"}
+              <span className="min-w-0"><span className="block truncate">{holder.name || t`Name hidden`}
                 {holder.pii_masked ? <span className="text-muted"> (hidden)</span> : null}</span>
                 <span className="block truncate text-xs text-muted">{[holder.number, holder.label].filter(Boolean).join(" · ")}</span></span>
             </button>)}
           </div>
-          <p className="text-xs text-muted">The card shows their name and number; every other field stays a sample.</p>
+          <p className="text-xs text-muted">{t`The card shows their name and number; every other field stays a sample.`}</p>
         </div>
       </div>
     </Modal>
@@ -85,17 +86,17 @@ function ExactPreview({ design, document, person, onClose }: {
     // One render per opening: the dialog shows the design as it was when it was opened.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  return <Modal open onClose={onClose} title="Exact preview" size="xl"
-    footer={<div className="flex justify-end"><button type="button" className="desk-button min-h-11" onClick={onClose}>Close</button></div>}>
+  return <Modal open onClose={onClose} title={t`Exact preview`} size="xl"
+    footer={<div className="flex justify-end"><button type="button" className="desk-button min-h-11" onClick={onClose}>{t`Close`}</button></div>}>
     <div className="grid gap-3">
-      <p className="text-sm text-muted">Drawn by the print engine for {previewLabel(person)}, marked PREVIEW. Sensitive extras are never shown.</p>
+      <p className="text-sm text-muted">{t`Drawn by the print engine for ${previewLabel(person)}, marked PREVIEW. Sensitive extras are never shown.`}</p>
       {state.loading ? <Skeleton className="h-56 w-full" /> : null}
       {state.error ? <ErrorBlock error={state.error} resource="preview" /> : null}
       <div className="grid gap-3 md:grid-cols-2">
         {state.urls.map(({ side, url }) => <figure key={side} className="grid gap-1">
           <img src={url} className="w-full rounded-control border border-line bg-white"
-            alt={`The ${side} of the card as it will print for ${previewLabel(person)}`} />
-          <figcaption className="text-xs text-muted">{side === "front" ? "Front" : "Back"}</figcaption>
+            alt={t`The ${side} of the card as it will print for ${previewLabel(person)}`} />
+          <figcaption className="text-xs text-muted">{side === "front" ? t`Front` : t`Back`}</figcaption>
         </figure>)}
       </div>
     </div>

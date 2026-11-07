@@ -1,5 +1,6 @@
 """Authenticated, tenant-scoped document metadata and expiring PDF grants."""
 
+from django.utils.translation import gettext
 from django.core import signing
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -58,11 +59,11 @@ class DocumentPdfUnavailable(APIException):
 def scoped_documents(user, makerspace_id, audience):
     if audience == "staff":
         if not active_user(user):
-            raise PermissionDenied("An active staff account is required.")
+            raise PermissionDenied(gettext("An active staff account is required."))
         return rbac.scope_by_action(user, rbac.Action.VIEW_FINANCE,
                                     PaymentDocument.objects.all(), field="makerspace_id").filter(makerspace_id=makerspace_id)
     if not member_may_see_own_charges(user, makerspace_id):
-        raise PermissionDenied("An active membership or an existing charge is required.")
+        raise PermissionDenied(gettext("An active membership or an existing charge is required."))
     return PaymentDocument.objects.filter(payment__in=member_payment_queryset(user, makerspace_id))
 
 
@@ -78,7 +79,7 @@ class MemberDocumentListView(APIView):
         kind = request.query_params.get("kind")
         if kind is not None:
             if kind not in PaymentDocument.Kind.values:
-                raise ValidationError({"detail": "Unknown document kind.", "code": "document_kind_invalid"})
+                raise ValidationError({"detail": gettext("Unknown document kind."), "code": "document_kind_invalid"})
             rows = rows.filter(kind=kind)
         paginator = PageNumberPagination()
         paginator.page_size = 24
@@ -121,12 +122,12 @@ class DocumentDownloadView(APIView):
         try:
             grant = signing.loads(request.query_params.get("token", ""), salt=SALT, max_age=DOWNLOAD_TTL)
         except signing.BadSignature:
-            raise ValidationError({"detail": "Download URL is invalid or expired.", "code": "document_url_expired"})
+            raise ValidationError({"detail": gettext("Download URL is invalid or expired."), "code": "document_url_expired"})
         if grant["user"] != request.user.pk or grant["document"] != document_id:
             raise PermissionDenied()
         document = get_object_or_404(scoped_documents(request.user, grant["space"], grant["audience"]), pk=document_id)
         if grant["audience"] == "staff" and not object_in_staff_origin_scope(request, document):
-            raise PermissionDenied("Document is outside this staff origin's makerspace.")
+            raise PermissionDenied(gettext("Document is outside this staff origin's makerspace."))
         from apps.payments.document_pdf import render_document_pdf
         try:
             payload = render_document_pdf(document)

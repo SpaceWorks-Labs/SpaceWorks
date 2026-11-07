@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { memberRequest } from '../../../lib/api'
@@ -20,6 +21,6 @@ export function DropInJourney({ scope, section }: { scope: EventScope; section: 
     <HelpQueue scope={scope} surface="member" onOpen={row => setHelpId(row.id)} />
     {categories.error ? <ErrorBlock error={categories.error} onRetry={() => void categories.refetch()} />
       : categories.data?.results.length ? <HelpComposer scope={scope} surface="member" teams={[]} categories={categories.data.results} />
-        : categories.isPending ? <p role="status">Loading help topics…</p> : <p className="text-sm text-muted">No help topics are available for this event.</p>}
+        : categories.isPending ? <p role="status">{t`Loading help topics…`}</p> : <p className="text-sm text-muted">{t`No help topics are available for this event.`}</p>}
   </div>
 }

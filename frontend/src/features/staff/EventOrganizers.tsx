@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import type { PickerOption } from "./AsyncSearchPicker";
@@ -21,12 +22,12 @@ export function EventOrganizers({ visible = true, event, makerspaceId, disabled 
   return (
     <section className="grid gap-3 rounded-xl border border-line bg-bg p-4" aria-labelledby={`event-${event.id}-organizers`}>
       <div>
-        <h3 className="title-section" id={`event-${event.id}-organizers`}>Organization organizers</h3>
-        <p className="mt-1 text-sm text-muted">Attribution and event-specific authority. The host makerspace remains the owner. Co-organizers someone else added stay until you remove them.</p>
+        <h3 className="title-section" id={`event-${event.id}-organizers`}>{t`Organization organizers`}</h3>
+        <p className="mt-1 text-sm text-muted">{t`Attribution and event-specific authority. The host makerspace remains the owner. Co-organizers someone else added stay until you remove them.`}</p>
       </div>
-      <OrganizerPicker selected={selected} onChange={setSelected} disabled={disabled} label="Organizers" helper="Search the organizations you belong to." />
+      <OrganizerPicker selected={selected} onChange={setSelected} disabled={disabled} label={t`Organizers`} helper={t`Search the organizations you belong to.`} />
       {!disabled && dirty ? <button className="desk-button-primary justify-self-start" type="button" disabled={replace.isPending}
-        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? "Saving..." : "Save organizers"}</button> : null}
+        onClick={() => replace.mutate(selected.map((row) => row.id))}>{replace.isPending ? t`Saving...` : t`Save organizers`}</button> : null}
       {replace.error ? <p className="text-sm text-danger" role="alert">{replace.error.message}</p> : null}
     </section>
   );

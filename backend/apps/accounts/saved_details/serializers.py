@@ -1,11 +1,12 @@
 """Closed command inputs and explicit owner-only HTTP projections."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
 class SavedVaultClosedSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict) or set(data) - set(self.fields):
-            raise serializers.ValidationError({"code": "invalid_input", "fields": {"body": ["Unexpected fields."]}})
+            raise serializers.ValidationError({"code": "invalid_input", "fields": {"body": [gettext("Unexpected fields.")]}})
         return super().to_internal_value(data)
 
 
@@ -15,7 +16,7 @@ class SavedVaultCommand(SavedVaultClosedSerializer):
 
     def validate_expected_version(self, value):
         if type(self.initial_data.get("expected_version")) is not int:
-            raise serializers.ValidationError("Use an integer version.")
+            raise serializers.ValidationError(gettext("Use an integer version."))
         return value
 
 
@@ -25,7 +26,7 @@ class SavedVaultDetailPut(SavedVaultCommand):
 
     def validate_save_consent(self, value):
         if self.initial_data.get("save_consent") is not True:
-            raise serializers.ValidationError("Explicit save consent is required.")
+            raise serializers.ValidationError(gettext("Explicit save consent is required."))
         return value
 
 
@@ -62,11 +63,11 @@ class SavedVaultPrefillSelector(SavedVaultClosedSerializer):
     def validate(self, attrs):
         if attrs["subject_kind"] == "stage_response":
             if "posting_id" in attrs or ("subject_id" in attrs) == ("creation_operation_id" in attrs):
-                raise serializers.ValidationError("Bind one stage response or one creation operation.")
+                raise serializers.ValidationError(gettext("Bind one stage response or one creation operation."))
             if "creation_operation_id" in attrs and "stage_form_id" not in attrs:
-                raise serializers.ValidationError("Choose the stage form for this creation operation.")
+                raise serializers.ValidationError(gettext("Choose the stage form for this creation operation."))
         elif "stage_form_id" in attrs or "creation_operation_id" in attrs:
-            raise serializers.ValidationError("Stage selectors require a stage response context.")
+            raise serializers.ValidationError(gettext("Stage selectors require a stage response context."))
         return attrs
 
 

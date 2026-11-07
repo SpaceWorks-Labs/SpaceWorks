@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -82,7 +83,7 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
   );
   const appendColour = useMutation({
     mutationFn: ({ name }: { name: string; hex: string }) => {
-      if (!machineType) throw new Error("A machine type is required.");
+      if (!machineType) throw new Error(t`A machine type is required.`);
       const capabilityConfig = machineType.capability_config ?? { metering_unit: "count", requires_booking: false };
       return updateMachineType(makerspaceId, machineType.id, {
         name: machineType.name,
@@ -104,11 +105,11 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
   const confirmCustom = () => {
     const name = customName.trim();
     if (!name) {
-      setCustomError("Colour name cannot be blank.");
+      setCustomError(t`Colour name cannot be blank.`);
       return;
     }
     if (colourNames.some((colour) => normaliseName(colour) === normaliseName(name))) {
-      setCustomError("Colour name already exists.");
+      setCustomError(t`Colour name already exists.`);
       return;
     }
     setCustomError("");
@@ -124,7 +125,7 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
     <div className="grid gap-3">
       {configuredColours.length ? (
         <fieldset className="grid gap-2 rounded-xl border border-line p-3">
-          <legend className="eyebrow px-1">Colour</legend>
+          <legend className="eyebrow px-1">{t`Colour`}</legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {colourNames.map((name) => {
               const hex = hexFor(name);
@@ -149,12 +150,11 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
         </fieldset>
       ) : (
         <label className="eyebrow grid gap-1">
-          Colour
-          <input
+          {t`Colour`}<input
             className="desk-input"
             value={value}
             onChange={(event) => onSelect(event.target.value, valueHex)}
-            placeholder="e.g. Signal red"
+            placeholder={t`e.g. Signal red`}
           />
         </label>
       )}
@@ -166,32 +166,29 @@ export function PoolColourSelector({ makerspaceId, machineType, existingPools, v
       {canConfigure && machineType ? (
         addingCustom ? (
           <fieldset className="grid gap-3 rounded-xl border border-line bg-surface p-3">
-            <legend className="eyebrow px-1">Add custom colour</legend>
+            <legend className="eyebrow px-1">{t`Add custom colour`}</legend>
             <label className="eyebrow grid gap-1">
-              Custom colour name
-              <input
+              {t`Custom colour name`}<input
                 aria-describedby={customError ? "custom-colour-error" : undefined}
                 className="desk-input"
                 value={customName}
                 onChange={(event) => { setCustomName(event.target.value); setCustomError(""); appendColour.reset(); }}
               />
             </label>
-            <PoolColourSwatchControl legend="Custom colour swatch" value={customHex} onChange={setCustomHex} />
+            <PoolColourSwatchControl legend={t`Custom colour swatch`} value={customHex} onChange={setCustomHex} />
             <div className="flex flex-wrap gap-2">
               <button className="desk-button-primary" disabled={appendColour.isPending} type="button" onClick={confirmCustom}>
-                {appendColour.isPending ? "Saving..." : "Save custom colour"}
+                {appendColour.isPending ? t`Saving...` : t`Save custom colour`}
               </button>
               <button className="desk-button-ghost" type="button" onClick={() => { setAddingCustom(false); setCustomError(""); appendColour.reset(); }}>
-                Cancel
-              </button>
+                {t`Cancel`}</button>
             </div>
             {customError ? <p className="text-sm text-danger" id="custom-colour-error" role="alert">{customError}</p> : null}
             {appendColour.error instanceof Error ? <p className="text-sm text-danger" role="alert">{appendColour.error.message}</p> : null}
           </fieldset>
         ) : (
           <button className="desk-button justify-self-start" type="button" onClick={() => setAddingCustom(true)}>
-            Add a custom colour
-          </button>
+            {t`Add a custom colour`}</button>
         )
       ) : null}
     </div>

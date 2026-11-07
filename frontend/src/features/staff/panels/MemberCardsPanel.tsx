@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { ListLayout } from "../../../components/layouts";
@@ -46,9 +47,9 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
   const printError = printCard.error ?? printSheet.error ?? startJob.error;
   const withoutCard = memberships.data && activeCards.data ? memberships.data.filter(item => !cardedMembershipIds.includes(item.id)).length : "—";
   const tabs = useOpsTabs("cardsTab", [
-    { key: "cards", label: "Cards", count: cards.data?.count },
-    { key: "issue", label: "Issue" }, { key: "scan", label: "Scan" }, { key: "design", label: "Card design" },
-    { key: "settings", label: "Settings" }, ...(programmesOn ? [{ key: "programmes", label: "ID programmes" }] : []),
+    { key: "cards", label: t`Cards`, count: cards.data?.count },
+    { key: "issue", label: t`Issue` }, { key: "scan", label: t`Scan` }, { key: "design", label: t`Card design` },
+    { key: "settings", label: t`Settings` }, ...(programmesOn ? [{ key: "programmes", label: t`ID programmes` }] : []),
   ], "cards");
   // Bulk outputs run as server jobs; a selection narrows them, otherwise every active card.
   const scope = { status: "active" as const, ...(selected.length ? { card_ids: selected } : {}) };
@@ -58,7 +59,7 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
 
   if (tabs.active === "design" || tabs.active === "settings" || tabs.active === "programmes") {
     return <div onClickCapture={tabs.onClickCapture}>
-      <ListLayout width={tabs.active === "design" ? "wide" : "default"} header={{ title: "Member cards" }}
+      <ListLayout width={tabs.active === "design" ? "wide" : "default"} header={{ title: t`Member cards` }}
         tabs={tabs.tabs} activeTab={tabs.active} state={{ status: "ready" }} isEmpty={false} empty={{ message: "" }}
         body={{ kind: "rows", rows: tabs.active === "design" ? <DesignTab makerspaceId={makerspaceId} />
           : tabs.active === "settings" ? <SettingsTab makerspaceId={makerspaceId} /> : <ProgrammesTab makerspaceId={makerspaceId}
@@ -66,19 +67,19 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
     </div>;
   }
   return <div onClickCapture={tabs.onClickCapture}>
-    <ListLayout header={{ title: "Member cards", subtitle: "Cards that open the member area at the desk and prove membership.",
-      primary: { label: selected.length ? "Print sheet (" + selected.length + " selected)" : "Print all active",
+    <ListLayout header={{ title: t`Member cards`, subtitle: t`Cards that open the member area at the desk and prove membership.`,
+      primary: { label: selected.length ? "Print sheet (" + selected.length + " selected)" : t`Print all active`,
         onClick: () => printSheet.mutate(selected), pending: printSheet.isPending, pendingLabel: "Preparing…" },
-      secondary: { label: "All cards", menu: [bulk("bulk_sheet"), bulk("zip"),
+      secondary: { label: t`All cards`, menu: [bulk("bulk_sheet"), bulk("zip"),
         ...(settings.data?.email_available ? [bulk("email")] : [])] } }}
-      tabs={tabs.tabs} activeTab={tabs.active} stats={[{ label: "Active cards on this page", value: activeCards.data?.results.length ?? 0 },
-        { label: "Members without a card", value: withoutCard, href: tabs.href("issue") }]}
+      tabs={tabs.tabs} activeTab={tabs.active} stats={[{ label: t`Active cards on this page`, value: activeCards.data?.results.length ?? 0 },
+        { label: t`Members without a card`, value: withoutCard, href: tabs.href("issue") }]}
       state={tabs.active === "cards" ? opsQueryState(cards, "member cards") : { status: "ready" }}
       isEmpty={tabs.active === "cards" && rows.length === 0}
-      empty={{ message: status === "active" ? "No cards yet. Issue one from the Issue tab." : "No revoked cards.",
-        action: status === "active" ? { label: "Issue a card", onClick: () => tabs.select("issue") } : undefined }}
-      filters={tabs.active === "cards" ? { views: <SegmentedControl label="Card status" value={status}
-        options={[{ value: "active", label: "Active" }, { value: "revoked", label: "Revoked" }]}
+      empty={{ message: status === "active" ? t`No cards yet. Issue one from the Issue tab.` : t`No revoked cards.`,
+        action: status === "active" ? { label: t`Issue a card`, onClick: () => tabs.select("issue") } : undefined }}
+      filters={tabs.active === "cards" ? { views: <SegmentedControl label={t`Card status`} value={status}
+        options={[{ value: "active", label: t`Active` }, { value: "revoked", label: t`Revoked` }]}
         onChange={value => { setStatus(value as CardStatus); setSelected([]); }} /> } : undefined}
       body={tabs.active === "cards" ? { kind: "table", table: <>
         <CardJobList listPath={jobsPath} />
@@ -89,6 +90,6 @@ export function MemberCardsPanel({ makerspaceId, enabledFeatures = [] }: { maker
           : <IssueRoster makerspaceId={makerspaceId} cardedMembershipIds={cardedMembershipIds} memberships={memberships} names={issueNames} setNames={setIssueNames} /> }}
       detail={<>{printError ? <ErrorBlock error={printError} /> : null}{row.dialogs}
         <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={scope} jobsPath={jobsPath}
-          previewPath={`${jobsPath}/preview`} title={selected.length ? `Print sheet: ${selected.length} selected cards` : "Print sheet: all active cards"} /></>} />
+          previewPath={`${jobsPath}/preview`} title={selected.length ? t`Print sheet: ${selected.length} selected cards` : t`Print sheet: all active cards`} /></>} />
   </div>;
 }

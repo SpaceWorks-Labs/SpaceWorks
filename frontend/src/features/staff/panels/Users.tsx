@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest, type StaffAuthUser } from "../../../lib/api";
@@ -33,13 +34,13 @@ export function Users({ makerspaces, isSuperadmin, currentUser, onAuthRefresh }:
   return <>
     {space ? <StaffRolesPanel key={space.id} space={space.id} onAuthRefresh={onAuthRefresh}
       canManageRoles={canManageRoles}
-      secondary={isSuperadmin ? { label: "Create makerspace", onClick: () => { create.reset(); setCreateOpen(true); } } : undefined}
+      secondary={isSuperadmin ? { label: t`Create makerspace`, onClick: () => { create.reset(); setCreateOpen(true); } } : undefined}
       toolbar={<>
-        {spaces.length > 1 ? <label className="grid gap-2 text-sm font-semibold">Makerspace<select className="desk-input" value={space.id} onChange={e => { setSelected(Number(e.target.value)); setCreatedSpace(undefined); }}>
+        {spaces.length > 1 ? <label className="grid gap-2 text-sm font-semibold">{t`Makerspace`}<select className="desk-input" value={space.id} onChange={e => { setSelected(Number(e.target.value)); setCreatedSpace(undefined); }}>
           {spaces.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
         </select></label> : null}
-      </>} /> : <ListLayout header={{ title: "Staff & roles", primary: isSuperadmin ? { label: "Create makerspace", onClick: () => setCreateOpen(true) } : undefined }}
-        state={{ status: "ready" }} isEmpty empty={{ message: "No makerspaces available for this account." }} body={{ kind: "rows", rows: null }} />}
+      </>} /> : <ListLayout header={{ title: t`Staff & roles`, primary: isSuperadmin ? { label: t`Create makerspace`, onClick: () => setCreateOpen(true) } : undefined }}
+        state={{ status: "ready" }} isEmpty empty={{ message: t`No makerspaces available for this account.` }} body={{ kind: "rows", rows: null }} />}
     <CreateMakerspaceModal open={createOpen} form={form} pending={create.isPending} error={create.error}
       onChange={setForm} onClose={() => setCreateOpen(false)} onSubmit={() => create.mutate()} />
   </>;

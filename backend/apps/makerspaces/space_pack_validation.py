@@ -1,4 +1,5 @@
 """Strict pack shape and field validation, shared by imports and saved profiles."""
+from django.utils.translation import gettext
 import json
 from django.apps import apps
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -25,7 +26,7 @@ def require_canonical_values(original, validated):
 class StrictFieldsMixin:
     def to_internal_value(self, data):
         if not isinstance(data, dict) or set(data) - set(self.fields):
-            raise serializers.ValidationError("Unknown configuration fields.")
+            raise serializers.ValidationError(gettext("Unknown configuration fields."))
         return super().to_internal_value(data)
 
 

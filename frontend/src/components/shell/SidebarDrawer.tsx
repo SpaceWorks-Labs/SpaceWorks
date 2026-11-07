@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { DetailDrawer } from "../ui";
@@ -16,6 +17,6 @@ export function SidebarDrawer({ open, onClose, children }: { open: boolean; onCl
   if (!open) return null;
   return createPortal(<div ref={root} className="[&_[role=dialog]]:left-0 [&_[role=dialog]]:right-auto [&_[role=dialog]]:w-[85vw] [&_[role=dialog]]:max-w-80 [&_[role=dialog]>div]:min-h-0 [&_[role=dialog]>div]:overflow-hidden [&_[role=dialog]>div]:p-0">
     {/* Already portalled: the drawer renders inline here, inside the layer its inert handling protects. */}
-    <OverlayPortalContext.Provider value={true}><DetailDrawer open title="Navigation" onClose={onClose}>{children}</DetailDrawer></OverlayPortalContext.Provider>
+    <OverlayPortalContext.Provider value={true}><DetailDrawer open title={t`Navigation`} onClose={onClose}>{children}</DetailDrawer></OverlayPortalContext.Provider>
   </div>, document.body);
 }

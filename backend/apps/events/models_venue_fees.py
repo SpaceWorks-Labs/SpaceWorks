@@ -8,6 +8,7 @@ charged once, when the event is confirmed (published), as one `Payment` with sub
 `event_venue_fee` recorded as events income. Waivers and refunds are staff decisions.
 """
 
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -16,18 +17,18 @@ from django.db.models import Q
 
 class EventVenueFee(models.Model):
     class Mode(models.TextChoices):
-        INHERIT = "inherit", "Use the room or space price"
+        INHERIT = "inherit", gettext_noop("Use the room or space price")
         FREE = "free", "Free"
-        CUSTOM = "custom", "Custom price"
+        CUSTOM = "custom", gettext_noop("Custom price")
 
     class Basis(models.TextChoices):
-        FLAT = "flat", "Flat fee"
-        PER_HOUR = "per_hour", "Per hour"
+        FLAT = "flat", gettext_noop("Flat fee")
+        PER_HOUR = "per_hour", gettext_noop("Per hour")
 
     class Status(models.TextChoices):
-        CONFIGURED = "configured", "Not charged yet"
+        CONFIGURED = "configured", gettext_noop("Not charged yet")
         CHARGED = "charged", "Charged"
-        FREE = "free", "Nothing to charge"
+        FREE = "free", gettext_noop("Nothing to charge")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.OneToOneField("events.Event", on_delete=models.CASCADE, related_name="venue_fee")

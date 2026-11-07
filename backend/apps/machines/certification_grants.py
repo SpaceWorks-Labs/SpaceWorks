@@ -1,5 +1,6 @@
 """Issuance and renewal append training evidence; neither rewrites an old expiry."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -25,22 +26,22 @@ def issue_grant(certification_type, membership, *, actor, expires_at=None, notes
     membership = rbac.scope_by_makerspace(actor, MakerspaceMembership.objects.select_for_update()).get(pk=membership.pk)
     require_member_account(membership.user)
     if not row.is_active:
-        raise ValidationError("This certification type is inactive.")
+        raise ValidationError(gettext("This certification type is inactive."))
     if membership.makerspace_id != row.makerspace_id or membership.status != "active":
-        raise ValidationError({"membership_id": "An active membership in this makerspace is required."})
+        raise ValidationError({"membership_id": gettext("An active membership in this makerspace is required.")})
     if not membership.user.is_active or membership.user.access_status != "active":
-        raise ValidationError({"membership_id": "This member account is unavailable."})
+        raise ValidationError({"membership_id": gettext("This member account is unavailable.")})
     if previous is not None and (previous.certification_type_id != row.pk or previous.membership_id != membership.pk):
-        raise ValidationError("Renewal must retain the certification and member.")
+        raise ValidationError(gettext("Renewal must retain the certification and member."))
     now = timezone.now()
     expiry = expires_at
     if expiry is None and row.validity_days:
         try:
             expiry = now + timedelta(days=row.validity_days)
         except OverflowError as exc:
-            raise ValidationError({"validity_days": "Validity is outside the supported date range."}) from exc
+            raise ValidationError({"validity_days": gettext("Validity is outside the supported date range.")}) from exc
     if expiry is not None and expiry <= now:
-        raise ValidationError({"expires_at": "Expiry must be in the future."})
+        raise ValidationError({"expires_at": gettext("Expiry must be in the future.")})
     grant = CertificationGrant.objects.create(
         certification_type=row, membership=membership, granted_by=actor,
         granted_at=now, expires_at=expiry, notes=notes,

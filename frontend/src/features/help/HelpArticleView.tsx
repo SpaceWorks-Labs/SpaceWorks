@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { PublicLayout } from "../../components/layouts";
 import { RouteLink } from "../../components/ui/RouteLink";
 import { HelpArticleBody } from "./HelpArticleBody";
@@ -21,10 +22,10 @@ const LINK = "rounded-control text-accent-ink underline-offset-4 hover:underline
 
 /** One article. A deep link the reader may not see explains why instead of failing silently. */
 export function HelpArticleView({ chrome, article, section, visible, loading, signedIn, memberHref, siblings, hrefFor }: Props) {
-  const home = { label: "Help", href: hrefFor("") };
+  const home = { label: t`Help`, href: hrefFor("") };
   if (!article || !section) {
-    return <PublicLayout {...chrome} header={{ title: "We couldn't find that article" }} breadcrumb={[home]} state={{ status: "ready" }}>
-      <p className="text-muted">The link may be old, or the article moved. <RouteLink className={`${LINK} font-semibold underline`} href={hrefFor("")}>Browse the guide</RouteLink> or search it.</p>
+    return <PublicLayout {...chrome} header={{ title: t`We couldn't find that article` }} breadcrumb={[home]} state={{ status: "ready" }}>
+      <p className="text-muted">{t`The link may be old, or the article moved. `}<RouteLink className={`${LINK} font-semibold underline`} href={hrefFor("")}>{t`Browse the guide`}</RouteLink> {t` or search it.`}</p>
     </PublicLayout>;
   }
   const crumbs = [home, { label: section.title, href: hrefFor(section.id) }, { label: article.title }];
@@ -32,10 +33,10 @@ export function HelpArticleView({ chrome, article, section, visible, loading, si
   if (!visible) {
     return <PublicLayout {...chrome} header={{ eyebrow: section.title, title: article.title }} breadcrumb={crumbs} state={{ status: "ready" }}>
       <div className="grid gap-3 rounded-2xl border border-line bg-surface p-5">
-        <p>This article is written for <strong>{section.title}</strong>, or for a feature this space has not switched on.</p>
+        <p>{t`This article is written for `}<strong>{section.title}</strong>{t`, or for a feature this space has not switched on.`}</p>
         <p className="text-muted">{signedIn
-          ? "Your account doesn't hold that role here. Ask your Space Manager if you think it should."
-          : <>If you hold that role, <RouteLink className={`${LINK} font-semibold underline`} href={memberHref}>sign in</RouteLink> and open this link again.</>}</p>
+          ? t`Your account doesn't hold that role here. Ask your Space Manager if you think it should.`
+          : <>{t`If you hold that role, `}<RouteLink className={`${LINK} font-semibold underline`} href={memberHref}>{t`sign in`}</RouteLink> {t` and open this link again.`}</>}</p>
       </div>
     </PublicLayout>;
   }
@@ -43,7 +44,7 @@ export function HelpArticleView({ chrome, article, section, visible, loading, si
     <article className="grid gap-10">
       <HelpArticleBody body={article.body} hrefFor={hrefFor} />
       {siblings.length ? <nav aria-labelledby="help-more" className="grid gap-3 border-t border-line pt-6">
-        <h2 id="help-more" className="title-section">More in {section.title}</h2>
+        <h2 id="help-more" className="title-section">{t`More in ${section.title}`}</h2>
         <ul className="grid gap-1.5 text-sm">
           {siblings.map(item => <li key={item.id}><RouteLink className={LINK} href={hrefFor(item.id)}>{item.title}</RouteLink></li>)}
         </ul>

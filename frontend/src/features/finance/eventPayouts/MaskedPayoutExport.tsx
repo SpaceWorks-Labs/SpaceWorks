@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
@@ -19,8 +20,8 @@ function ExportContent({ scope, ids, allowed }: { scope: FinanceScope; ids: stri
   const batch = request.data;
   const expired = batch ? !Number.isFinite(Date.parse(batch.expires_at)) || now >= Date.parse(batch.expires_at) : false;
   if (!allowed) return null;
-  return <section className="grid gap-3 rounded-2xl border border-line bg-panel p-5" aria-label="Masked payout CSV">
-    <h2 className="font-semibold">Masked payout checklist</h2><p>Selected: {ids.length}. Preview and CSV contain masked routing only. Exporting never records a payout or sends money. Batches expire after 24 hours and are rechecked before download.</p>
+  return <section className="grid gap-3 rounded-2xl border border-line bg-panel p-5" aria-label={t`Masked payout CSV`}>
+    <h2 className="font-semibold">{t`Masked payout checklist`}</h2><p>{t`Selected: ${ids.length}. Preview and CSV contain masked routing only. Exporting never records a payout or sends money. Batches expire after 24 hours and are rechecked before download.`}</p>
     <button className="desk-button min-h-11" type="button" disabled={!ids.length || ids.length > 500 || request.pending}
       onClick={() => {
         download.clear();
@@ -31,13 +32,13 @@ function ExportContent({ scope, ids, allowed }: { scope: FinanceScope; ids: stri
           method: "POST", cache: "no-store", signal, headers: { "Idempotency-Key": operation },
           body: JSON.stringify({ ...data, operation_id: operation }),
         }));
-      }}>Preview masked CSV</button>
-    {request.failed ? <p role="alert">The batch could not be prepared. Reload selection, payee verification and current eligibility, then reauthenticate.</p> : null}
-    {batch ? <><p>Batch {batch.id} · expires {batch.expires_at}</p>
+      }}>{t`Preview masked CSV`}</button>
+    {request.failed ? <p role="alert">{t`The batch could not be prepared. Reload selection, payee verification and current eligibility, then reauthenticate.`}</p> : null}
+    {batch ? <><p>{t`Batch ${batch.id} · expires ${batch.expires_at}`}</p>
       {batch.preview?.length ? <ul className="grid gap-2">{batch.preview.map(row => <li key={row.obligation_id} className="rounded-xl border border-line p-3">
         <span>{row.obligation_id} · {money(row.remaining_minor, row.currency)} · {row.masked_payee}</span>
-      </li>)}</ul> : <p role="alert">This response has no preview. Create a new reviewed batch before downloading.</p>}
-      {expired ? <p role="status">This batch expired. Prepare a new preview.</p> : null}
+      </li>)}</ul> : <p role="alert">{t`This response has no preview. Create a new reviewed batch before downloading.`}</p>}
+      {expired ? <p role="status">{t`This batch expired. Prepare a new preview.`}</p> : null}
       <button className="desk-button min-h-11" type="button" disabled={expired || !batch.preview?.length || !permits(batch, "export") || download.pending}
         onClick={() => { void download.run(async signal => {
           let blob: Blob;
@@ -49,9 +50,9 @@ function ExportContent({ scope, ids, allowed }: { scope: FinanceScope; ids: stri
           document.body.appendChild(link); link.click(); link.remove();
           window.setTimeout(() => URL.revokeObjectURL(url), 1000);
           return true;
-        }); }}><Download aria-hidden="true" size={18} />Download masked CSV</button>
-      {download.failed ? <p role="alert">Download refused. The batch may have expired or a selected obligation changed. Prepare a new preview.</p> : null}
-      {download.data ? <p role="status">Masked checklist downloaded. No payout was recorded.</p> : null}
+        }); }}><Download aria-hidden="true" size={18} />{t`Download masked CSV`}</button>
+      {download.failed ? <p role="alert">{t`Download refused. The batch may have expired or a selected obligation changed. Prepare a new preview.`}</p> : null}
+      {download.data ? <p role="status">{t`Masked checklist downloaded. No payout was recorded.`}</p> : null}
     </> : null}
   </section>;
 }

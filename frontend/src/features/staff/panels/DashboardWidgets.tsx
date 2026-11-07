@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
 import type { ReactNode } from "react";
 import { ListRow, RelativeTime, Skeleton, ErrorBlock, type Action } from "../../../components/ui";
@@ -20,18 +21,18 @@ export function DashboardActivity({ makerspace, guestOnly, singleTenantLocked, c
 }) {
   const query = `makerspace=${makerspace.id}`;
   const activity = useStaffGet<Paginated<AuditEntry>>(["audit", query], `/admin/audit-logs?${query}`);
-  const all: Action = { label: "See all activity →", href: consoleSessionHref(staffTabPath("audit", guestOnly, makerspace.slug, singleTenantLocked)) };
+  const all: Action = { label: t`See all activity →`, href: consoleSessionHref(staffTabPath("audit", guestOnly, makerspace.slug, singleTenantLocked)) };
   // The backend withholds actions its presentation catalogue does not describe; a dashboard rail
   // full of "Unrecognized audit action" says nothing, so only described activity is shown here
   // (the Audit log page still lists every row).
   const readable = (activity.data?.results ?? []).filter(row => row.action_label !== UNRECOGNIZED_AUDIT_LABEL);
   if (activity.isLoading || activity.error || !readable.length) return children(undefined, [{
-    title: "Recent activity", action: all, isEmpty: activity.isSuccess && !readable.length,
-    empty: { message: "No activity yet. New handovers and updates will appear here." },
+    title: t`Recent activity`, action: all, isEmpty: activity.isSuccess && !readable.length,
+    empty: { message: t`No activity yet. New handovers and updates will appear here.` },
     content: activity.error ? <ErrorBlock error={activity.error} resource="recent activity" onRetry={() => { void activity.refetch(); }} />
-      : <div role="status" aria-label="Loading recent activity"><Skeleton className="h-24 w-full" /></div>,
+      : <div role="status" aria-label={t`Loading recent activity`}><Skeleton className="h-24 w-full" /></div>,
   }]);
-  return children({ title: "Recent activity", seeAll: all,
+  return children({ title: t`Recent activity`, seeAll: all,
     items: readable.slice(0, 8).map(row => ({ key: String(row.id), actor: row.actor_display || "Space Works",
       date: row.created_at, children: row.target_link?.startsWith("/") && !row.target_link.startsWith("//")
         ? <RouteLink className="inline-flex min-h-11 items-center underline focus-visible:outline-2 focus-visible:outline-focus" href={row.target_link}>{row.action_label}</RouteLink>
@@ -53,12 +54,12 @@ export function DashboardDueBack({ makerspace, guestOnly, singleTenantLocked, ch
     title={row.requester_display || row.requester_username} identity={{ kind: "date", date: row.return_due_at! }}
     href={`${href}&id=${row.id}`} meta={`Request #${row.id} · ${row.items.map(item => `${item.product_name} × ${item.issued_quantity}`).join(", ")}`}
     right={<RelativeTime date={row.return_due_at!} />} />)}</div>;
-  if (loans.isLoading || loans.error) return children([{ title: "Due back", empty: { message: "No loans due in the next 3 days." },
+  if (loans.isLoading || loans.error) return children([{ title: t`Due back`, empty: { message: t`No loans due in the next 3 days.` },
     content: loans.error ? <ErrorBlock error={loans.error} resource="due loans" onRetry={() => { void loans.refetch(); }} />
-      : <div role="status" aria-label="Loading due loans"><Skeleton className="h-24 w-full" /></div> }]);
+      : <div role="status" aria-label={t`Loading due loans`}><Skeleton className="h-24 w-full" /></div> }]);
   return children([
-    ...(overdue.length ? [{ title: "Overdue", action: { label: "See all →", href }, content: rows(overdue), empty: { message: "No overdue loans." } }] : []),
-    { title: "Due within 3 days", action: { label: "See all →", href }, content: rows(soon), isEmpty: !soon.length,
-      empty: { message: "Nothing needs you right now. New requests and due-backs will show up here." } },
+    ...(overdue.length ? [{ title: t`Overdue`, action: { label: t`See all →`, href }, content: rows(overdue), empty: { message: t`No overdue loans.` } }] : []),
+    { title: t`Due within 3 days`, action: { label: t`See all →`, href }, content: rows(soon), isEmpty: !soon.length,
+      empty: { message: t`Nothing needs you right now. New requests and due-backs will show up here.` } },
   ]);
 }

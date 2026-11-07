@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 export type RelativeTimeProps = { date: string | number | Date; now?: string | number | Date;
   /** Also print the exact date and time: audit-grade records must not hide it behind a hover title, which touch screens never show. */
@@ -25,7 +27,7 @@ export function RelativeTime({ date, now, exact = false }: RelativeTimeProps) {
     return () => clearInterval(timer);
   }, [now]);
   const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) return <span>Unknown time</span>;
-  return <time dateTime={parsed.toISOString()} title={parsed.toLocaleString()}>
-    {formatRelativeTime(parsed, new Date(now ?? clock))}{exact ? <span className="text-muted"> · {parsed.toLocaleString()}</span> : null}</time>;
+  if (Number.isNaN(parsed.getTime())) return <span>{t`Unknown time`}</span>;
+  return <time dateTime={parsed.toISOString()} title={parsed.toLocaleString(formatLocale())}>
+    {formatRelativeTime(parsed, new Date(now ?? clock))}{exact ? <span className="text-muted"> · {parsed.toLocaleString(formatLocale())}</span> : null}</time>;
 }

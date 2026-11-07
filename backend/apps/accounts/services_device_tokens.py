@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import hmac
 from datetime import datetime
@@ -36,7 +37,7 @@ def mobile_grant_creation_enabled():
 def assert_mobile_grant_creation_enabled():
     """Refuse new grants while preserving already-issued device sessions."""
     if not mobile_grant_creation_enabled():
-        raise AuthenticationFailed("Mobile device sessions are not enabled.")
+        raise AuthenticationFailed(gettext("Mobile device sessions are not enabled."))
 
 
 def token_fingerprint(raw):
@@ -50,16 +51,16 @@ def issue_device_token_pair(user, grant, *, family=None):
 
     user = lock_session_user(user)
     if not is_person(user):
-        raise AuthenticationFailed("Invalid device authorization.")
+        raise AuthenticationFailed(gettext("Invalid device authorization."))
     assert_surface(user, "member")
     if grant is None or grant.user_id != user.pk:
-        raise AuthenticationFailed("Invalid device authorization.")
+        raise AuthenticationFailed(gettext("Invalid device authorization."))
     assert_token_issuance_allowed(user)
     staff = grant.authority == DeviceGrant.Authority.STAFF
     if staff or grant.authority == DeviceGrant.Authority.EVENT:
         from apps.accounts.mfa_policy import VERIFIED, source_for
         if source_for(user) != VERIFIED:
-            raise AuthenticationFailed("Native staff and event sessions require MFA.")
+            raise AuthenticationFailed(gettext("Native staff and event sessions require MFA."))
     grant = DeviceGrant.objects.select_for_update().filter(pk=grant.pk, user=user).first()
     if (grant is None or grant.status != grant.Status.ACTIVE
             or grant.revoked_at is not None or not registration_is_eligible(grant.registration)
@@ -68,11 +69,11 @@ def issue_device_token_pair(user, grant, *, family=None):
             or staff and (grant.staff_makerspace_id is None
                           or grant.registration.makerspace_id not in (None, grant.staff_makerspace_id)
                           or not has_staff_role(user, grant.staff_makerspace_id))):
-        raise AuthenticationFailed("Invalid device authorization.")
+        raise AuthenticationFailed(gettext("Invalid device authorization."))
     if family is not None:
         family = DeviceRefreshFamily.objects.select_for_update().get(pk=family.pk)
         if family.revoked_at or family.user_id != user.pk or family.grant_id != grant.pk:
-            raise AuthenticationFailed("Invalid device authorization.")
+            raise AuthenticationFailed(gettext("Invalid device authorization."))
     family = family or DeviceRefreshFamily.objects.create(grant=grant, user=user)
     refresh = SpaceWorksRefreshToken.for_user(user, web_session=False)
     refresh["surface"] = "member"
@@ -94,14 +95,14 @@ def rotate_device_refresh(raw, *, app_version=None):
     try:
         claims = UntypedToken(raw)
     except TokenError as exc:
-        raise AuthenticationFailed("Invalid device refresh token.") from exc
+        raise AuthenticationFailed(gettext("Invalid device refresh token.")) from exc
     if claims.get("token_type") != "refresh":
-        raise AuthenticationFailed("Invalid device refresh token.")
+        raise AuthenticationFailed(gettext("Invalid device refresh token."))
     jti = claims.get("jti")
     family_id = claims.get("device_family_id")
     grant_id = claims.get("device_grant_id")
     if not all((jti, family_id, grant_id)):
-        raise AuthenticationFailed("Invalid device refresh token.")
+        raise AuthenticationFailed(gettext("Invalid device refresh token."))
 
     replay = revoked = False
     result = None
@@ -110,12 +111,12 @@ def rotate_device_refresh(raw, *, app_version=None):
     owner_id = DeviceRefreshToken.objects.filter(jti=jti, token_fingerprint=token_fingerprint(raw)).values_list(
         "family__user_id", flat=True).first()
     if owner_id is None:
-        raise AuthenticationFailed("Invalid device refresh token.")
+        raise AuthenticationFailed(gettext("Invalid device refresh token."))
     with transaction.atomic():
         try:
             user = User.objects.select_for_update(no_key=True).get(pk=owner_id)
         except User.DoesNotExist as exc:
-            raise AuthenticationFailed("Invalid device refresh token.") from exc
+            raise AuthenticationFailed(gettext("Invalid device refresh token.")) from exc
         row = (
             DeviceRefreshToken.objects.select_for_update(of=("self",))
             .select_related("family__grant__registration", "family__user")
@@ -124,7 +125,7 @@ def rotate_device_refresh(raw, *, app_version=None):
         )
         if (row is None or str(row.family_id) != str(family_id) or row.family.user_id != user.pk
                 or str(claims.get(api_settings.USER_ID_CLAIM)) != str(getattr(user, api_settings.USER_ID_FIELD))):
-            raise AuthenticationFailed("Invalid device refresh token.")
+            raise AuthenticationFailed(gettext("Invalid device refresh token."))
         family, grant = row.family, row.family.grant
         if str(claims.get("auth_generation") or "") != current_auth_generation():
             # A cutover (A+2) or a recovery bumped the deployment generation: an old
@@ -135,7 +136,7 @@ def rotate_device_refresh(raw, *, app_version=None):
     if revoked:
         audit_events.record_auth_event(user, "auth.refresh_rejected", target=user,
                                        meta={"reason": "auth_generation_mismatch"})
-        raise AuthenticationFailed({"detail": "This session was signed out. Sign in again.",
+        raise AuthenticationFailed({"detail": gettext("This session was signed out. Sign in again."),
                                     "code": "session_revoked"}, code="session_revoked")
     # Refused before anything rotates, so the same refresh works after the app updates.
     assert_supported(grant.platform, app_version)
@@ -148,14 +149,14 @@ def rotate_device_refresh(raw, *, app_version=None):
             .first()
         )
         if row is None or str(row.family_id) != str(family_id) or row.family.user_id != user.pk:
-            raise AuthenticationFailed("Invalid device refresh token.")
+            raise AuthenticationFailed(gettext("Invalid device refresh token."))
         family, grant = row.family, row.family.grant
         from apps.accounts.surface_policy import validate_account_token
         validate_account_token(user, claims)
         from apps.accounts.session_issuance import validate_session_generation
         validate_session_generation(user, claims)
         if not is_person(user) or grant.user_id != user.pk:
-            raise AuthenticationFailed("Invalid device refresh token.")
+            raise AuthenticationFailed(gettext("Invalid device refresh token."))
         staff_state = (staff_role_state(user, grant.staff_makerspace_id)
                        if grant.authority == DeviceGrant.Authority.STAFF else None)
         if grant.authority == DeviceGrant.Authority.EVENT:  # #173: the event role is the grant's life.
@@ -207,7 +208,7 @@ def rotate_device_refresh(raw, *, app_version=None):
             None, "auth.device_refresh_reuse",
             meta={"family_hash": audit_events.fingerprint(family_id)},
         )
-        raise AuthenticationFailed("Invalid device refresh token.")
+        raise AuthenticationFailed(gettext("Invalid device refresh token."))
     if result is None:
-        raise AuthenticationFailed("Device authorization is no longer active.")
+        raise AuthenticationFailed(gettext("Device authorization is no longer active."))
     return result

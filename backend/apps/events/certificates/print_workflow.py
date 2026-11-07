@@ -1,5 +1,6 @@
 """Reserve â†’ prepare outside locks â†’ bind â†’ render â†’ reauthorize publication."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 import hashlib
 import json
@@ -39,7 +40,7 @@ def create(event_id, *, actor, operation_id, expected_version, registration_ids,
             or any(type(pk) is not int or pk <= 0 for pk in registration_ids)
             or len(set(registration_ids)) != len(registration_ids)):
         from rest_framework.exceptions import ValidationError
-        raise ValidationError({"registration_ids": "Choose 1–200 unique registrations."})
+        raise ValidationError({"registration_ids": gettext("Choose 1–200 unique registrations.")})
     digest = hashlib.sha256(json.dumps([sorted(registration_ids), expected_version, template_revision,
                                        stock, include_photo]).encode()).hexdigest()
     scope = prepare_scope(event_id, registration_ids)

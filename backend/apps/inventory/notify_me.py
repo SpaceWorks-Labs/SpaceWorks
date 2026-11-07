@@ -1,5 +1,6 @@
 """Watch availability rises inside the availability transaction; dispatch via F1."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import CharField, Value
 from django.db.models.functions import Cast, Concat
@@ -23,7 +24,7 @@ def tenant_watches(space):
 def subscribe(product, user):
     require_active_member(user, product.makerspace)
     if not product.makerspace.public_inventory_enabled:
-        raise ValidationError({"detail": "Public inventory is disabled."})
+        raise ValidationError({"detail": gettext("Public inventory is disabled.")})
     if not feature_enabled(product.makerspace, "inventory.notify_when_back"):
         from apps.makerspaces.guards import feature_off
         raise feature_off("inventory.notify_when_back", "Notify-me is turned off.")
@@ -33,9 +34,9 @@ def subscribe(product, user):
     ).get(pk=product.pk, is_public=True, is_archived=False)
     from .notifications_p2 import public_availability
     if not public_availability(product):
-        raise ValidationError({"detail": "Availability is not public for this item."})
+        raise ValidationError({"detail": gettext("Availability is not public for this item.")})
     if product.available_quantity > 0:
-        raise ValidationError({"detail": "This item is already available."})
+        raise ValidationError({"detail": gettext("This item is already available.")})
     watch, created = tenant_watches(product.makerspace).get_or_create(
         product=product, user=user, defaults={"makerspace": product.makerspace},
     )

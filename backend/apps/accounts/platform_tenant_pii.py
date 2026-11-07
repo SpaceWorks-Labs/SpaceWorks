@@ -13,6 +13,7 @@ DIRECT key, i.e. a person record such as a booking or a registration. A masked v
 must never come back as data, so a JSON write carrying the mask is refused.
 """
 
+from django.utils.translation import gettext
 from django.http.request import RawPostDataException
 from rest_framework.exceptions import ValidationError
 
@@ -64,7 +65,7 @@ def refuse_masked_write(request):
     except RawPostDataException:  # already streamed by an earlier reader; nothing to inspect
         return
     if any(marker in body for marker in _MASK_BYTES):
-        raise ValidationError({"detail": "Open a PII access window on this space before saving personal data.",
+        raise ValidationError({"detail": gettext("Open a PII access window on this space before saving personal data."),
                                "code": "pii_access_required"})
 
 

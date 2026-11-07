@@ -21,6 +21,7 @@ member-visible directory (display name and avatar only, never email or phone) on
 anything if being listed at all is a choice.
 """
 
+from django.utils.translation import gettext_lazy
 from django.db import models
 from django.conf import settings
 from django.db.models.functions import Lower
@@ -37,7 +38,7 @@ class MemberProfile(models.Model):
     )
     is_visible = models.BooleanField(
         default=False,
-        help_text="Whether other members of this makerspace can see this profile.",
+        help_text=gettext_lazy("Whether other members of this makerspace can see this profile."),
     )
     public_visible = models.BooleanField(default=False)
     public_consented_at = models.DateTimeField(null=True, blank=True, editable=False)
@@ -56,13 +57,13 @@ class MemberProfile(models.Model):
     # is_visible would disclose it on already-visible profiles without a new member act.
     show_attended_events = models.BooleanField(
         default=False,
-        help_text="Whether to publish recently attended events on this member profile.",
+        help_text=gettext_lazy("Whether to publish recently attended events on this member profile."),
     )
     # Same consent rule: certifications are staff-derived training records, not text the
     # member typed, so publishing them on a visible profile needs its own opt-in.
     show_certifications = models.BooleanField(
         default=False,
-        help_text="Whether to publish held certifications on this member profile.",
+        help_text=gettext_lazy("Whether to publish held certifications on this member profile."),
     )
     headline = models.CharField(max_length=200, blank=True, default="")
     institution = models.CharField(max_length=200, blank=True, default="")

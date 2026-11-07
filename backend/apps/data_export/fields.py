@@ -6,7 +6,8 @@ from .models import EXPORTED_MODEL_FIELDS
 from .types import Emitted, Fidelity, Omitted, Redacted, Remapped, Transformed
 
 USER_PROJECTIONS = {
-    Fidelity.REDACTED: frozenset({"id", "username"}),
+    # Phase 8 i18n: the locale preference is an exported, non-PII account setting.
+    Fidelity.REDACTED: frozenset({"id", "username", "preferred_locale"}),
     Fidelity.PORTABLE: frozenset(
         {
             "id",
@@ -22,6 +23,7 @@ USER_PROJECTIONS = {
             # person: staff roles are staff-track memberships in the roster.
             "account_kind",
             "is_active",
+            "preferred_locale",
         }
     ),
 }

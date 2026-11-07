@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ContentTarget } from "../layouts/LayoutFrame";
@@ -56,6 +57,6 @@ export function AppShell(props: AppShellProps) {
       </main>
     </div>
     <SidebarDrawer open={drawer} onClose={() => setDrawer(false)}><Sidebar {...shellProps} onNavigate={() => setDrawer(false)} /></SidebarDrawer>
-    {compactNav === "bottom-tabs" ? <BottomTabs items={items} activeKey={activeKey} label={props.variant === "staff" ? "Staff quick navigation" : "Member quick navigation"} onMore={openNavigation} /> : null}
+    {compactNav === "bottom-tabs" ? <BottomTabs items={items} activeKey={activeKey} label={props.variant === "staff" ? t`Staff quick navigation` : t`Member quick navigation`} onMore={openNavigation} /> : null}
   </div>;
 }

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -16,7 +18,7 @@ function price(amount: string) {
 
 function errorMessage(error: unknown) {
   if (error instanceof StructuredApiError) return error.detail ?? error.message;
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }
 
 /** Release 2 L6 (X41): buy one pass that covers every upcoming public occurrence of a series. */
@@ -44,22 +46,22 @@ export function MemberSeriesPassPage() {
   const offSale = (error instanceof StructuredApiError && [400, 404].includes(error.status)) || !id;
   const rows: PassType[] = (passes.data ?? []).filter(row => row.is_active);
   const selected = choice || rows[0]?.id || 0;
-  return <CenteredCardLayout width={480} eyebrow="Series pass" title="Buy a series pass"
+  return <CenteredCardLayout width={480} eyebrow={t`Series pass`} title={t`Buy a series pass`}
     state={restoring || space.loading || passes.isLoading ? { status: "loading" } : { status: "ready" }}
-    body={offSale || (!error && passes.data && !rows.length) ? "Passes for this series are not on sale."
-      : "One pass gives you a place at every upcoming public date of this series."}
+    body={offSale || (!error && passes.data && !rows.length) ? t`Passes for this series are not on sale.`
+      : t`One pass gives you a place at every upcoming public date of this series.`}
     content={<div className="grid gap-3">
       {error && !offSale ? <ErrorText message={errorMessage(error)} /> : null}
-      {rows.length ? <fieldset className="grid gap-2"><legend className="mb-1 text-sm font-semibold text-ink">Choose a pass</legend>
+      {rows.length ? <fieldset className="grid gap-2"><legend className="mb-1 text-sm font-semibold text-ink">{t`Choose a pass`}</legend>
         {rows.map(row => <label key={row.id} className="flex min-h-11 items-start gap-3 rounded-card border border-line p-3 text-sm text-ink">
           <input type="radio" name="pass" value={row.id} checked={selected === row.id} onChange={() => setChoice(row.id)} />
           <span className="grid gap-0.5"><span className="font-semibold">{row.name}</span>
-            <span className="text-muted">{price(row.amount)}{row.sales_end_at ? ` · on sale until ${new Date(row.sales_end_at).toLocaleString()}` : ""}</span></span>
+            <span className="text-muted">{price(row.amount)}{row.sales_end_at ? t` · on sale until ${new Date(row.sales_end_at).toLocaleString(formatLocale())}` : ""}</span></span>
         </label>)}
       </fieldset> : null}
       {buy.error ? <ErrorText message={errorMessage(buy.error)} /> : null}
     </div>}
-    primary={{ label: buy.isPending ? "Working…" : "Buy this pass", onClick: () => buy.mutate(selected),
+    primary={{ label: buy.isPending ? t`Working…` : t`Buy this pass`, onClick: () => buy.mutate(selected),
       disabled: !selected || buy.isPending, disabledReason: "Choose a pass first." }}
-    escape={{ label: "All events", href: tenantPath("events") }} />;
+    escape={{ label: t`All events`, href: tenantPath("events") }} />;
 }

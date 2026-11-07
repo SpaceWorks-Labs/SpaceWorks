@@ -1,4 +1,5 @@
 """Approved Twilio Content SIDs and bounded variables from the safe context only."""
+from django.utils.translation import gettext
 import json
 import math
 import re
@@ -89,9 +90,9 @@ def refresh_approvals(config, credentials, actor, *, content_sids=None):
         rows = rows.filter(template_name__in=content_sids)
     bindings = list(rows.order_by("pk")[:101])
     if len(bindings) > 100:
-        raise ValidationError({"templates": "At most 100 template bindings."})
+        raise ValidationError({"templates": gettext("At most 100 template bindings.")})
     if len({b.template_name for b in bindings if sid(b.template_name, "HX")}) > 5:
-        raise ValidationError({"content_sids": "Select at most five Content SIDs per refresh."})
+        raise ValidationError({"content_sids": gettext("Select at most five Content SIDs per refresh.")})
     results, approvals, contents, unavailable = {}, {}, {}, 0
     for binding in bindings:
         approved = False
@@ -120,7 +121,7 @@ def refresh_approvals(config, credentials, actor, *, content_sids=None):
             makerspace_id=config.makerspace_id).get(pk=config.pk)
         if (current.generation != generation or current.integration_identity != identity
                 or current.provider != "twilio"):
-            raise ValidationError({"channel": "Integration changed; refresh again."})
+            raise ValidationError({"channel": gettext("Integration changed; refresh again.")})
         changed = 0
         for binding in bindings:
             # A concurrent settings edit may have replaced the bindings entirely.

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Link } from "react-router-dom";
 
 import { EmptyState, ListRow, StatusPill } from "../../components/ui";
@@ -17,14 +18,14 @@ export type MemberServiceRequest = {
 
 export function MemberServiceRequestRows({ rows, makerspaceSlug }: { rows: MemberServiceRequest[]; makerspaceSlug: string }) {
   const tenantPath = useTenantPath(makerspaceSlug);
-  if (!rows.length) return <EmptyState message="Nothing here yet. Check back after your next visit." />;
+  if (!rows.length) return <EmptyState message={t`Nothing here yet. Check back after your next visit.`} />;
   return <>{rows.map((item, index) => <ListRow key={item.request_id ?? `${item.title}-${index}`} title={item.title}
     meta={item.eta ? <ServiceRequestEta eta={item.eta} status={item.status} compact />
       : item.queue_position ? `Queue ${item.queue_position}` : undefined}
     right={<div className="grid justify-items-start gap-2">
       <StatusPill label={serviceStatusLabel(item.status)} tone={serviceStatusTone(item.status)} />
-      {item.request_id ? <Link className="desk-button-ghost" to={tenantPath(`member/machine-jobs/${item.request_id}`)}>Open job</Link> : null}
-      {item.public_token ? <Link className="desk-button-ghost" to={tenantPath(`machine-service/requests/${item.public_token}`)}>Track job</Link> : null}
+      {item.request_id ? <Link className="desk-button-ghost" to={tenantPath(`member/machine-jobs/${item.request_id}`)}>{t`Open job`}</Link> : null}
+      {item.public_token ? <Link className="desk-button-ghost" to={tenantPath(`machine-service/requests/${item.public_token}`)}>{t`Track job`}</Link> : null}
       {item.can_cancel && item.request_id ? <ServiceCancelButton title={item.title}
         onCancel={() => cancelOwnServiceRequest(item.request_id!)}
         invalidate={[["member", makerspaceSlug, "activity"], ["public-machine-service-status"], ["public-printer-status"]]} /> : null}

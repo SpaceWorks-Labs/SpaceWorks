@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 export type Offender = {
   requester_id: number;
   username: string;
@@ -35,8 +36,8 @@ export type AccountabilityResponse = {
 export type TriageOutcome = "no_issue" | "damaged" | "missing" | "needs_fix";
 
 export const OUTCOME_OPTIONS: Array<{ value: TriageOutcome; label: string }> = [
-  { value: "no_issue", label: "No issue" },
-  { value: "damaged", label: "Damaged" },
-  { value: "missing", label: "Missing" },
-  { value: "needs_fix", label: "Needs fix" },
+  { value: "no_issue", label: t`No issue` },
+  { value: "damaged", label: t`Damaged` },
+  { value: "missing", label: t`Missing` },
+  { value: "needs_fix", label: t`Needs fix` },
 ];

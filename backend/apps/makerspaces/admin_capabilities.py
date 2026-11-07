@@ -15,7 +15,7 @@ from apps.makerspaces.security_settings_registry import is_security_feature
 
 
 def _labels(keys):
-    return ", ".join(BY_KEY[key].label if key in BY_KEY else FEATURES[key].label if key in FEATURES else key
+    return ", ".join(str(BY_KEY[key].label if key in BY_KEY else FEATURES[key].label if key in FEATURES else key)
                      for key in keys)
 
 

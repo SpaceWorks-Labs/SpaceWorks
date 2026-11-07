@@ -1,5 +1,6 @@
 """Deployment-local typed resource credentials; omitted from portable archives."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -19,7 +20,7 @@ class _BookingSpaceScope(models.Model):
     def clean(self):
         super().clean()
         if self.space.makerspace_id != self.makerspace_id:
-            raise ValidationError("The resource must belong to this makerspace.")
+            raise ValidationError(gettext("The resource must belong to this makerspace."))
 
 
 class BookingSpaceStaffGrant(_BookingSpaceScope, ResourceStaffGrant):

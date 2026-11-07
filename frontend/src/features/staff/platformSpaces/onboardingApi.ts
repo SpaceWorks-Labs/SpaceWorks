@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import { StructuredApiError } from "../../../lib/api/errors";
@@ -19,8 +20,8 @@ export type ApproveResult = { request: HostingRequestRow; makerspace: { id: numb
   invitation: "sent" | "skipped" | "unavailable" };
 
 export const HOSTING_STATUS_LABELS: Record<HostingRequestState, string> = {
-  submitted: "Submitted", changes_requested: "Changes requested", accepted: "Accepted", rejected: "Rejected",
-  pending_verification: "Awaiting email check", invited: "Invited", withdrawn: "Withdrawn",
+  submitted: t`Submitted`, changes_requested: t`Changes requested`, accepted: t`Accepted`, rejected: t`Rejected`,
+  pending_verification: t`Awaiting email check`, invited: t`Invited`, withdrawn: t`Withdrawn`,
 };
 
 const BASE = "/admin/platform/hosting-requests";

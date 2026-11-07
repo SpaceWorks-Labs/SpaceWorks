@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from decimal import Decimal, ROUND_HALF_UP
 import secrets
 
@@ -23,20 +24,20 @@ def create_promo(event, *, actor, code="", percent_off=0, amount_off=0, max_uses
     if ticket_type_id is not None:
         ticket_type = event.ticket_types.filter(pk=ticket_type_id).first()
         if ticket_type is None:
-            raise ValidationError({"ticket_type_id": "Choose a ticket type of this event."})
+            raise ValidationError({"ticket_type_id": gettext("Choose a ticket type of this event.")})
     if kind == "access":
         # Release 2 L6 (G29): an access code unlocks one hidden ticket type and discounts nothing.
         require_feature(event, "events.orders")
         if ticket_type is None or percent_off or amount_off:
-            raise ValidationError("An access code names one ticket type and gives no discount.")
+            raise ValidationError(gettext("An access code names one ticket type and gives no discount."))
     elif not (0 <= percent_off <= 100) or amount_off < 0 or bool(percent_off) == bool(amount_off):
-        raise ValidationError("Choose one positive percentage or amount discount.")
+        raise ValidationError(gettext("Choose one positive percentage or amount discount."))
     if max_uses < 1 or (expires_at and expires_at <= timezone.now()):
-        raise ValidationError("Use a positive limit and future expiry.")
+        raise ValidationError(gettext("Use a positive limit and future expiry."))
     code = code.strip() or secrets.token_urlsafe(24)
     digest = code_digest(code, "promo")
     if EventPromoCode.objects.filter(event=event, code_digest=digest).exists():
-        raise ValidationError({"code": "Code is unavailable."})
+        raise ValidationError({"code": gettext("Code is unavailable.")})
     promo = EventPromoCode.objects.create(
         event=event, makerspace=event.makerspace, code_digest=digest,
         percent_off=percent_off, amount_off=amount_off, max_uses=max_uses, expires_at=expires_at,
@@ -54,7 +55,7 @@ def redeem_promo(event, code, amount):
     if not promo or promo.kind != "discount" or promo.revoked_at or promo.uses >= promo.max_uses or (
         promo.expires_at and promo.expires_at <= timezone.now()
     ):
-        raise NotFound("Promo code not found.")
+        raise NotFound(gettext("Promo code not found."))
     discount = amount * Decimal(promo.percent_off) / 100 if promo.percent_off else promo.amount_off
     discount = min(amount, discount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     promo.uses += 1

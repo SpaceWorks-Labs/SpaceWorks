@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { SpaceWorksLogo } from "../../components/SpaceWorksLogo";
@@ -12,7 +14,7 @@ import { HeadlineRow, formatMetric, metricsFor } from "./StatsMetrics";
 import { formatDate } from "./StatsParts";
 
 const SECTION_TITLES: Record<StatsSectionKey, string> = {
-  events: "Events", machines: "Machines", printing: "Printing", lending: "Lending", community: "Community",
+  events: t`Events`, machines: t`Machines`, printing: t`Printing`, lending: t`Lending`, community: t`Community`,
 };
 
 /**
@@ -42,13 +44,13 @@ export function PublicStatsTvPage() {
           {stats ? <p className="mt-2 text-2xl text-muted">{stats.period.label}</p> : null}
         </div>
         {query.dataUpdatedAt ? <p className="text-xl tabular-nums text-muted">
-          Updated {new Date(query.dataUpdatedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</p> : null}
+          {t`Updated ${new Date(query.dataUpdatedAt).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit" })}`}</p> : null}
       </header>
       <QueryContent state={query.isLoading ? { status: "loading" } : query.isError
         ? publicErrorState(query.error, { noun: "Public stats", missing: "Stats are not available for this makerspace." }, () => { void query.refetch(); })
         : { status: "ready" }}
         isEmpty={Boolean(stats && !stats.tv.enabled)}
-        empty={{ message: "TV mode is off for this makerspace. A Space Manager can turn it on in Settings › Public stats." }}>
+        empty={{ message: t`TV mode is off for this makerspace. A Space Manager can turn it on in Settings › Public stats.` }}>
         {stats ? <TvBoard stats={stats} /> : null}
       </QueryContent>
     </LayoutFrame>

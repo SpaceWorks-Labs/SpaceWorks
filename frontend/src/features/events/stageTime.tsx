@@ -1,11 +1,13 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 /** S13: every stage deadline in the event's time zone AND the viewer's own, with a live countdown. */
 export function inZone(iso: string, timeZone?: string) {
   try {
-    return new Intl.DateTimeFormat(undefined, { timeZone, dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+    return new Intl.DateTimeFormat(formatLocale(), { timeZone, dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
   } catch {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString(formatLocale());
   }
 }
 
@@ -16,7 +18,7 @@ export function viewerZone() {
 export function deadlineText(iso: string, eventZone: string) {
   const local = viewerZone();
   const event = `${inZone(iso, eventZone)} (${eventZone})`;
-  return local === eventZone ? event : `${event} · ${inZone(iso, local)} your time`;
+  return local === eventZone ? event : t`${event} · ${inZone(iso, local)} your time`;
 }
 
 export function countdownTo(iso: string, now: number) {
@@ -49,7 +51,7 @@ export function PublicStageDeadlines({ stages, timeZone }: { stages: readonly Pu
   return <ol className="grid gap-3">
     {stages.map(stage => <li key={stage.position} className="grid gap-1 rounded-2xl border border-line p-3">
       <span className="font-semibold text-ink">{`${stage.position}. ${stage.name}`}</span>
-      <span className="text-sm text-muted">{`Deadline: ${deadlineText(stage.deadline, timeZone)}`}</span>
+      <span className="text-sm text-muted">{t`Deadline: ${deadlineText(stage.deadline, timeZone)}`}</span>
       {next?.position === stage.position ? <span className="text-sm font-semibold text-accent-ink">{countdownTo(stage.deadline, now)}</span> : null}
     </li>)}
   </ol>;

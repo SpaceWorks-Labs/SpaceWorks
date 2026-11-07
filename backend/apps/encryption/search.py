@@ -1,5 +1,6 @@
 """Scoped candidate generation followed by authenticated source verification."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db import connection
 from rest_framework.exceptions import ValidationError
@@ -17,7 +18,7 @@ CANDIDATE_LIMIT = 250
 def _limit(rows):
     rows = list(rows[: CANDIDATE_LIMIT + 1])
     if len(rows) > CANDIDATE_LIMIT:
-        raise ValidationError({"search": "Refine search."})
+        raise ValidationError({"search": gettext("Refine search.")})
     return rows
 
 
@@ -42,7 +43,7 @@ def indexed_candidates(*, makerspace_id, model_label, field_name, term, exact=Fa
         return _limit(PiiBlindIndex.objects.filter(match, **filters).values_list("object_id", flat=True))
     normalized = normalized_name(term)
     if len(normalized) < 3:
-        raise ValidationError({"search": "Enter at least three characters."})
+        raise ValidationError({"search": gettext("Enter at least three characters.")})
     clauses, params = [], []
     for version, key in keys:
         if version:

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from math import isfinite
 
 from rest_framework import serializers
@@ -32,7 +33,7 @@ class PresenceStartSerializer(PresenceRenewSerializer):
     def validate(self, attrs):
         for key in ("latitude", "longitude", "accuracy"):
             if key in attrs and not isfinite(attrs[key]):
-                raise serializers.ValidationError({key: "Provide a finite number."})
+                raise serializers.ValidationError({key: gettext("Provide a finite number.")})
         return attrs
 
 

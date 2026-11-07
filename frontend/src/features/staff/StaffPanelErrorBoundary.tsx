@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 import { CenteredCardLayout } from "../../components/layouts";
@@ -32,8 +33,8 @@ export class StaffPanelErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children;
 
     return <CenteredCardLayout standalone={false} state={{ status: "ready" }}
-      media={{ icon: "TriangleAlert", tone: "danger" }} title="This page couldn't load"
-      body="Something went wrong on our side. Reloading usually fixes it."
-      primary={{ label: "Reload page", onClick: () => window.location.reload() }} />;
+      media={{ icon: "TriangleAlert", tone: "danger" }} title={t`This page couldn't load`}
+      body={t`Something went wrong on our side. Reloading usually fixes it.`}
+      primary={{ label: t`Reload page`, onClick: () => window.location.reload() }} />;
   }
 }

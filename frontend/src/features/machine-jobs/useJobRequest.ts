@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -44,7 +45,7 @@ export function useJobRequest(slug: string, features: string[], search: URLSearc
 
   const submit = useMutation({
     mutationFn: async () => {
-      if (!type) throw new Error("Choose a machine type first.");
+      if (!type) throw new Error(t`Choose a machine type first.`);
       const all: JobFile[] = [...models.map(file => ({ file, kind: "model" as const })), ...screenshots.map(file => ({ file, kind: "screenshot" as const }))];
       const pending = all.filter(item => !staged.current.has(fileKey(item.file)));
       const ids = await uploadJobFiles(slug, type.queue_id, pending, setProgress);

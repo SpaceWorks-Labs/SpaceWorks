@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FlowLayout } from "../../../components/layouts";
@@ -12,7 +13,7 @@ import { isPasskeyCancelled, passkeysSupported } from "../../auth/passkeys/webau
 
 type Step = "start" | "prove" | "review" | "confirm";
 const ORDER: Step[] = ["start", "prove", "review", "confirm"];
-const LABELS: Record<Step, string> = { start: "Start", prove: "Prove", review: "Review", confirm: "Confirm" };
+const LABELS: Record<Step, string> = { start: t`Start`, prove: t`Prove`, review: t`Review`, confirm: t`Confirm` };
 const EMPTY: ProofFields = { password: "", otp: "", survivorCode: "", sourceCode: "" };
 const ignore = () => undefined;
 
@@ -62,7 +63,7 @@ export function AccountLinkFlow({ open, onClose }: { open: boolean; onClose: () 
   const switchToCodes = () => { dropIntent(); setMethod("email_codes"); begin.mutate("email_codes"); };
   const code = errorCode(error);
   const callout: CalloutProps | undefined = error ? { size: "panel", tone: code === "preview_stale" || code === "proof_expired" ? "warn" : "danger",
-    lead: linkErrorCopy(error), action: code === "factor_enrolment_required" ? { label: "Use emailed codes instead", onClick: switchToCodes } : undefined } : undefined;
+    lead: linkErrorCopy(error), action: code === "factor_enrolment_required" ? { label: t`Use emailed codes instead`, onClick: switchToCodes } : undefined } : undefined;
 
   const reviewing = step === "review" || step === "confirm";
   const state = reviewing && preview.isPending ? { status: "loading" as const }
@@ -72,29 +73,29 @@ export function AccountLinkFlow({ open, onClose }: { open: boolean; onClose: () 
   const steps = ORDER.map((key, i) => ({ key, label: LABELS[key], required: true,
     state: i < index ? "done" as const : i === index ? "current" as const : "todo" as const }));
   const footers: Record<Step, { back?: Action; next: Action }> = {
-    start: { next: { label: "Continue", pending: begin.isPending, pendingLabel: "Starting…", onClick: () => begin.mutate(method),
+    start: { next: { label: t`Continue`, pending: begin.isPending, pendingLabel: "Starting…", onClick: () => begin.mutate(method),
       disabled: !identifier.trim(), disabledReason: "Enter the other account's username or email." } },
-    prove: { back: { label: "Back", disabled: prove.isPending, onClick: () => { dropIntent(); setError(null); setStep("start"); } },
-      next: { label: "Verify", pending: prove.isPending, pendingLabel: "Checking…", onClick: () => prove.mutate(), disabled: !proofReady(method, fields),
+    prove: { back: { label: t`Back`, disabled: prove.isPending, onClick: () => { dropIntent(); setError(null); setStep("start"); } },
+      next: { label: t`Verify`, pending: prove.isPending, pendingLabel: "Checking…", onClick: () => prove.mutate(), disabled: !proofReady(method, fields),
         disabledReason: method === "credentials" ? "Enter the password and the authenticator code." : "Enter both codes." } },
-    review: { next: { label: "Continue to confirm", onClick: () => { setError(null); setStep("confirm"); } } },
-    confirm: { back: { label: "Back to review", disabled: confirm.isPending, onClick: () => setStep("review") },
-      next: { label: "Link accounts", pending: confirm.isPending, pendingLabel: "Linking…", disabled: !understood || !preview.data,
+    review: { next: { label: t`Continue to confirm`, onClick: () => { setError(null); setStep("confirm"); } } },
+    confirm: { back: { label: t`Back to review`, disabled: confirm.isPending, onClick: () => setStep("review") },
+      next: { label: t`Link accounts`, pending: confirm.isPending, pendingLabel: "Linking…", disabled: !understood || !preview.data,
         disabledReason: "Tick the box to confirm you understand.", onClick: () => { if (preview.data) confirm.mutate(preview.data.preview_sha256); } } },
   };
 
   const grace = Boolean(result?.grace_opened);
-  const staff: Action | undefined = result?.roles_gained.length ? { label: "Open the staff console", href: "/admin" } : undefined;
-  const back: Action = { label: "Back to your account", onClick: onClose };
-  return <FlowLayout presentation="dialog" open={open} title="Link your staff account" accentTitle state={state}
+  const staff: Action | undefined = result?.roles_gained.length ? { label: t`Open the staff console`, href: "/admin" } : undefined;
+  const back: Action = { label: t`Back to your account`, onClick: onClose };
+  return <FlowLayout presentation="dialog" open={open} title={t`Link your staff account`} accentTitle state={state}
     subject="Bring a second account's roles and history into the one you're signed in to."
     steps={steps} current={step} footer={footers[step]} onCancel={close} error={callout}
     leaveGuard={intent && !result ? "Your link request will be cancelled. Nothing has been linked." : undefined}
-    result={result ? { tone: "success", title: "Accounts linked",
-      summary: grace ? "Set up two-step sign-in within 3 days to keep using staff screens. Member features keep working."
-        : "Your roles and history now live in this account. The other account no longer signs in.",
+    result={result ? { tone: "success", title: t`Accounts linked`,
+      summary: grace ? t`Set up two-step sign-in within 3 days to keep using staff screens. Member features keep working.`
+        : t`Your roles and history now live in this account. The other account no longer signs in.`,
       children: <><ResultCounts result={result} />{grace && staff ? <div><ActionControl action={staff} /></div> : null}</>,
-      next: grace ? { label: "Set up two-step sign-in", href: "/mfa" } : back, undo: grace ? back : staff } : undefined}
+      next: grace ? { label: t`Set up two-step sign-in`, href: "/mfa" } : back, undo: grace ? back : staff } : undefined}
     work={step === "start" ? <StartStep identifier={identifier} method={method} onIdentifier={setIdentifier} onMethod={setMethod} />
       : step === "prove" ? <ProveStep method={method} identifier={identifier.trim()} fields={fields} onChange={setFields}
         onResend={() => resend.mutate()} resending={resend.isPending} resent={resent}

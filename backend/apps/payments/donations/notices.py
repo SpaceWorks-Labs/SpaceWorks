@@ -5,6 +5,7 @@ direct email carrying only their own signed status link. Staff hear about perks 
 `payments` matrix. No message names another person or carries a PAN.
 """
 
+from django.utils.translation import gettext
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, direct_mail_unless_routed, fanout, revision, safe_notification
 
@@ -42,7 +43,7 @@ def notify_receipt(donation):
     link = ("" if donation.donor_id else public_link(space, "donate/gift", link_token(donation, "access_secret",
                                                                                       STATUS_SALT)))
     return _send(space, donation, "donation_received", account=donation.donor, email=donation.donor_email,
-                 subject=f"Thank you for supporting {space.name}", text=text, link=link, marker=donation.paid_at)
+                 subject=gettext('Thank you for supporting {name}').format(name=space.name), text=text, link=link, marker=donation.paid_at)
 
 
 @safe_notification
@@ -58,7 +59,7 @@ def notify_pledge_due(pledge, donation):
         link = public_link(space, "donate/gift", link_token(donation, "access_secret", STATUS_SALT))
         text += f"\nManage or cancel your pledge: {public_link(space, 'donate/pledge', link_token(pledge, 'manage_secret', PLEDGE_SALT))}"
     return _send(space, donation, "pledge_due", account=pledge.donor, email=pledge.donor_email,
-                 subject=f"Your pledge to {space.name} is due", text=text, link=link, marker=donation.period_start)
+                 subject=gettext('Your pledge to {name} is due').format(name=space.name), text=text, link=link, marker=donation.period_start)
 
 
 @safe_notification

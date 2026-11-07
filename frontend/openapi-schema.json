@@ -3,7 +3,7 @@
     "info": {
         "title": "Space Works API",
         "version": "0.9.2",
-        "description": "The SpaceWorks API: one deployment, many makerspaces. Full guide: `docs/api-guide.md`\nin the repository (getting a client, scopes, signing in Python/JS/curl, pagination,\nerrors, webhooks, rate limits and versioning).\n\n## Authorise\n\n* **People (staff and members)** send `Authorization: Bearer <access>`. Get an access\n  token from `POST /api/v1/auth/login` (or a social/passkey/phone sign-in), refresh it\n  with `POST /api/v1/auth/refresh`. Staff routes also need staff MFA. In this page, press\n  **Authorize** and paste the access token under `jwtAuth`.\n* **API clients** (another system: a university ERP, a script, another space's backend)\n  are created by a Space Manager under *Settings -> API access*, with chosen scopes. A\n  server client signs every request: `X-Client-Id`, `X-Timestamp`, `X-Nonce` and\n  `X-Signature = hex(HMAC-SHA256(secret, METHOD\\nFULL_PATH\\nTIMESTAMP\\nNONCE\\nBODY))`.\n  Swagger UI cannot compute a signature, so use the guide's snippets for signed calls.\n  A browser client sends `X-Client-Id` from a registered `Origin`; a public site can\n  send `X-Publishable-Key`.\n* Public routes under `/api/v1/public/` answer anonymously until the operator turns on\n  `API_CLIENT_AUTH_REQUIRED`.\n\n## Conventions\n\n* **Versioning:** everything lives under `/api/v1/`; `/api/public/` is the frozen\n  pre-v1 alias of the public catalogue. Breaking changes get a new version prefix.\n* **Pagination:** lists answer `{count, next, previous, results}` (page size 24, `?page=`);\n  signed integration reads use `{next_cursor, results}` with `?cursor=`.\n* **Errors:** `{\"detail\": \"...\", \"code\": \"...\"}` with the HTTP status; validation errors\n  map each field to its messages.\n* **Rate limits:** `429` with `Retry-After`. API clients are limited per client by tier.\n"
+        "description": "The SpaceWorks API: one deployment, many makerspaces. Full guide: `docs/api-guide.md`\nin the repository (getting a client, scopes, signing in Python/JS/curl, pagination,\nerrors, webhooks, rate limits and versioning).\n\n## Authorise\n\n* **People (staff and members)** send `Authorization: Bearer <access>`. Get an access\n  token from `POST /api/v1/auth/login` (or a social/passkey/phone sign-in), refresh it\n  with `POST /api/v1/auth/refresh`. Staff routes also need staff MFA. In this page, press\n  **Authorize** and paste the access token under `jwtAuth`.\n* **API clients** (another system: a university ERP, a script, another space's backend)\n  are created by a Space Manager under *Settings -> API access*, with chosen scopes. A\n  server client signs every request: `X-Client-Id`, `X-Timestamp`, `X-Nonce` and\n  `X-Signature = hex(HMAC-SHA256(secret, METHOD\\nFULL_PATH\\nTIMESTAMP\\nNONCE\\nBODY))`.\n  Swagger UI cannot compute a signature, so use the guide's snippets for signed calls.\n  A browser client sends `X-Client-Id` from a registered `Origin`; a public site can\n  send `X-Publishable-Key`.\n* Public routes under `/api/v1/public/` answer anonymously until the operator turns on\n  `API_CLIENT_AUTH_REQUIRED`.\n\n## Conventions\n\n* **Versioning:** everything lives under `/api/v1/`; `/api/public/` is the frozen\n  pre-v1 alias of the public catalogue. Breaking changes get a new version prefix.\n* **Pagination:** lists answer `{count, next, previous, results}` (page size 24, `?page=`);\n  signed integration reads use `{next_cursor, results}` with `?cursor=`.\n* **Errors:** `{\"detail\": \"...\", \"code\": \"...\"}` with the HTTP status; validation errors\n  map each field to its messages.\n* **Rate limits:** `429` with `Retry-After`. API clients are limited per client by tier.\n* **Language:** send `X-SpaceWorks-Locale: <code>` only for a deliberate in-app choice; it\n  outranks the account preference, the makerspace default and `Accept-Language`, in that\n  order. `Accept-Language` is the ambient fallback. Unsupported values are ignored. Responses\n  carry `Content-Language` and vary on both headers. Codes, keys and enum values are never\n  translated; only human-readable text is.\n"
     },
     "paths": {
         "/.well-known/apple-app-site-association": {
@@ -165538,6 +165538,62 @@
                         "description": "Request throttled."
                     }
                 }
+            },
+            "patch": {
+                "operationId": "api_v1_auth_me_partial_update",
+                "description": "Self-only: sets the signed-in account's `preferred_locale` (a supported code, or null to follow the makerspace default). A real change writes one `account.locale_changed` audit row; repeating the current value writes nothing. Claim sessions are refused.",
+                "summary": "Change your own language preference",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPreferredLocaleUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPreferredLocaleUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPreferredLocaleUpdate"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthUserPayload"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Blank, unsupported or extra fields."
+                    },
+                    "401": {
+                        "description": "Authentication credentials were not provided."
+                    },
+                    "403": {
+                        "description": "Permission denied (for example a claim session)."
+                    },
+                    "429": {
+                        "description": "Request throttled."
+                    }
+                }
             }
         },
         "/api/v1/auth/member-sign-up": {
@@ -245829,6 +245885,21 @@
                         "type": "boolean",
                         "description": "A former staff account that has not linked another account yet: show the \"Link your accounts\" nudge (Q17). There is no deadline."
                     },
+                    "preferred_locale": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The account's own language; null follows the makerspace default."
+                    },
+                    "effective_locale": {
+                        "type": "string",
+                        "description": "The language this request resolved to."
+                    },
+                    "supported_locales": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SupportedLocale"
+                        }
+                    },
                     "event_grants": {
                         "type": "array",
                         "items": {
@@ -245844,6 +245915,7 @@
                 },
                 "required": [
                     "display_name",
+                    "effective_locale",
                     "email",
                     "email_verified",
                     "has_elevated_authority",
@@ -245858,10 +245930,12 @@
                     "mfa_grace_ends_at",
                     "must_change_password",
                     "phone",
+                    "preferred_locale",
                     "role",
                     "session_authority",
                     "staff_roles",
                     "superadmin_actions",
+                    "supported_locales",
                     "username"
                 ]
             },
@@ -261768,6 +261842,13 @@
                     "details",
                     "used"
                 ]
+            },
+            "DefaultLocaleEnum": {
+                "enum": [
+                    "en"
+                ],
+                "type": "string",
+                "description": "* `en` - English"
             },
             "DefaultRegistrationAudienceEnum": {
                 "enum": [
@@ -290995,6 +291076,14 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "default_locale": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DefaultLocaleEnum"
+                            }
+                        ],
+                        "description": "The language shared output and members without a preference use (phase 8 i18n).\n\n* `en` - English"
+                    },
                     "country": {
                         "type": "string",
                         "readOnly": true
@@ -314652,6 +314741,14 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "default_locale": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DefaultLocaleEnum"
+                            }
+                        ],
+                        "description": "The language shared output and members without a preference use (phase 8 i18n).\n\n* `en` - English"
+                    },
                     "country": {
                         "type": "string",
                         "readOnly": true
@@ -317702,6 +317799,24 @@
                     },
                     "daily_digest": {
                         "type": "boolean"
+                    }
+                }
+            },
+            "PatchedPreferredLocaleUpdate": {
+                "type": "object",
+                "description": "Exactly ``{\"preferred_locale\": \"<code>\"}`` or ``{\"preferred_locale\": null}``.\n\nNull means \"use the makerspace default\". Blank strings and unsupported codes are 400s;\nthere is no user id: only the signed-in account's own preference can change.",
+                "properties": {
+                    "preferred_locale": {
+                        "nullable": true,
+                        "description": "A supported locale code, or null to follow the makerspace default.\n\n* `en` - English",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/PreferredLocaleEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
                     }
                 }
             },
@@ -324999,6 +325114,13 @@
                 "required": [
                     "cells"
                 ]
+            },
+            "PreferredLocaleEnum": {
+                "enum": [
+                    "en"
+                ],
+                "type": "string",
+                "description": "* `en` - English"
             },
             "Prefill": {
                 "type": "object",
@@ -356688,6 +356810,21 @@
                     "refunds"
                 ]
             },
+            "SupportedLocale": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "label"
+                ]
+            },
             "Suppression": {
                 "type": "object",
                 "properties": {
@@ -357864,6 +358001,16 @@
                     "email_enabled": {
                         "type": "boolean"
                     },
+                    "default_locale": {
+                        "type": "string",
+                        "description": "The space's default language code."
+                    },
+                    "supported_locales": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SupportedLocale"
+                        }
+                    },
                     "messaging": {
                         "$ref": "#/components/schemas/TenantMessagingAvailability"
                     },
@@ -357874,6 +358021,7 @@
                 "required": [
                     "branding",
                     "charges_tracked",
+                    "default_locale",
                     "edition",
                     "email_enabled",
                     "features",
@@ -357882,6 +358030,7 @@
                     "messaging",
                     "modules",
                     "public_api",
+                    "supported_locales",
                     "theme",
                     "workflows"
                 ]

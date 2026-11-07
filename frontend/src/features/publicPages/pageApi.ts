@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_V1_URL, publicV1Request, staffRequest, StructuredApiError, tenantPublicRequest } from "../../lib/api";
 import { currentSessionContext } from "../../lib/api/sessionContext";
@@ -30,7 +31,7 @@ export function pageApiPath(value: string) {
   const prefix = base.pathname.replace(/\/$/, "");
   const path = url.pathname.startsWith(`${prefix}/`) ? url.pathname.slice(prefix.length) : url.pathname;
   if (url.origin !== base.origin || url.username || url.password || url.hash || !path.startsWith("/public/")) {
-    throw new Error("The page returned an unsupported content address.");
+    throw new Error(t`The page returned an unsupported content address.`);
   }
   return `${path}${url.search}`;
 }

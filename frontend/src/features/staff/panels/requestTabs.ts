@@ -1,9 +1,10 @@
+import { t } from "@lingui/core/macro";
 export const REQUEST_TABS = ["pending", "accepted", "active", "history"] as const;
 export type RequestTab = typeof REQUEST_TABS[number];
 /** "all" stacks every queue the actor may see; the per-queue tabs stay the default. */
 export type RequestView = RequestTab | "all";
 export const requestTabLabels: Record<RequestView, string> = {
-  pending: "Pending review", accepted: "Ready for handover", active: "Active loans", history: "History", all: "All queues",
+  pending: t`Pending review`, accepted: t`Ready for handover`, active: t`Active loans`, history: t`History`, all: t`All queues`,
 };
 // Mirrors the list endpoints' own authority (hardware_requests/queue_views.py): pending-requests is
 // scoped by ACCEPT_REQUEST, and accepted-requests, active-loans and request-history all by

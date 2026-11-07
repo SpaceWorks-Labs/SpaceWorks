@@ -13,6 +13,7 @@ follows the module-purge contract (`module_purge`) exactly, narrowed per parent:
 * **Audited** (`makerspace.capability_purge_started` / `makerspace.capability_purged`).
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
@@ -45,18 +46,17 @@ def preview(makerspace, key):
 def _plan(key):
     plan = BY_KEY.get(key)
     if plan is None:
-        raise ValidationError(f"{key!r} has no purgeable data of its own.")
+        raise ValidationError(gettext('{key!r} has no purgeable data of its own.').format(key=key))
     return plan
 
 
 def _resolve(makerspace, key, actor):
     if not getattr(actor, "is_superuser", False):
-        raise ValidationError("Only a superadmin can purge capability data.")
+        raise ValidationError(gettext("Only a superadmin can purge capability data."))
     plan = _plan(key)
     if key in (makerspace.enabled_features or []):
         raise ValidationError(
-            f"{key} is still switched on. Switch it off first -- purging is a separate, "
-            "irreversible step."
+            gettext('{key} is still switched on. Switch it off first -- purging is a separate, irreversible step.').format(key=key)
         )
     return plan
 
@@ -95,7 +95,7 @@ def purge_capability(makerspace, key, actor):
         locked = makerspace.__class__.objects.select_for_update().get(pk=makerspace.pk)
         # Re-check under the lock: a switch-on could have committed since `_resolve`.
         if plan.key in (locked.enabled_features or []):
-            raise ValidationError(f"{plan.key} was switched back on; switch it off before purging.")
+            raise ValidationError(gettext('{key} was switched back on; switch it off before purging.').format(key=plan.key))
         private_keys, private_sizes = _collect(locked, plan)
         with connection.cursor() as cursor:
             if settings.MANAGED_POSTGRES:

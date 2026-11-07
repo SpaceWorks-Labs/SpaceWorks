@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, QrCode } from "lucide-react";
@@ -23,7 +24,7 @@ function LoanResult({ loan }: { loan: PublicToolLoan }) {
   return (
     <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success-soft dark:text-success-ink">
       <h3 className="title-section break-words capitalize text-on-success dark:text-success-ink">
-        {loan.status.replace(/_/g, " ")}: {loan.items.map((item) => item.product_name).join(", ") || "Tool loan"}
+        {loan.status.replace(/_/g, " ")}: {loan.items.map((item) => item.product_name).join(", ") || t`Tool loan`}
       </h3>
       <p className="mt-1 break-all code-text text-xs">{loan.public_token}</p>
       <div className="mt-2 space-y-1">
@@ -124,38 +125,35 @@ export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToo
   return (
     <div className="grid min-w-0 gap-4">
       <div>
-        <h2 className="title-panel">Check out or return a tool</h2>
+        <h2 className="title-panel">{t`Check out or return a tool`}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">
-          Scan the tool's QR label, add a photo, then confirm.
-        </p>
+          {t`Scan the tool's QR label, add a photo, then confirm.`}</p>
       </div>
       <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
-        <SegmentedControl label="Scan action" value={mode} options={[{ value: "checkout", label: "Check out" }, { value: "return", label: "Return" }]}
+        <SegmentedControl label={t`Scan action`} value={mode} options={[{ value: "checkout", label: t`Check out` }, { value: "return", label: t`Return` }]}
           onChange={(value) => setMode(value as Mode)} />
       </div>
 
       {contact.details ? (
-        <Step n={1} title="Your details (no account needed)">
+        <Step n={1} title={t`Your details (no account needed)`}>
           <ContactFields contact={contact.details} />
         </Step>
       ) : null}
 
-      <Step n={contact.details ? 2 : 1} title="Scan the tool's QR">
+      <Step n={contact.details ? 2 : 1} title={t`Scan the tool's QR`}>
         {scannedToken ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-success bg-success-soft px-3 py-1 text-success-ink">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold"><CircleCheck aria-hidden="true" size={18} />Tool scanned</span>
+            <span className="inline-flex items-center gap-2 text-sm font-semibold"><CircleCheck aria-hidden="true" size={18} />{t`Tool scanned`}</span>
             <button type="button" className="min-h-11 px-2 text-sm underline underline-offset-4" onClick={() => setScannedToken("")}>
-              Clear scan
-            </button>
+              {t`Clear scan`}</button>
           </div>
         ) : (
           <button className="desk-button w-full" type="button" onClick={() => setScannerOpen(true)}>
-            <QrCode aria-hidden="true" size={18} />Scan QR with camera
-          </button>
+            <QrCode aria-hidden="true" size={18} />{t`Scan QR with camera`}</button>
         )}
       </Step>
 
-      <Step n={contact.details ? 3 : 2} title={returning ? "Return photo and notes" : "Photo of the tool"}>
+      <Step n={contact.details ? 3 : 2} title={returning ? t`Return photo and notes` : t`Photo of the tool`}>
         <div hidden={returning}>
           <PublicEvidenceUpload
             key={`issue-${uploadKey}`}
@@ -176,10 +174,10 @@ export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToo
             onUploaded={(id, grant) => { contact.remember(id, grant); setReturnEvidenceId(id); }}
           />
           <label className="grid gap-1">
-            <span className="text-sm font-semibold text-ink">Return condition notes</span>
+            <span className="text-sm font-semibold text-ink">{t`Return condition notes`}</span>
             <textarea
               className="desk-input min-h-24 w-full resize-y"
-              placeholder="Clean, working, all parts back"
+              placeholder={t`Clean, working, all parts back`}
               value={returnRemark}
               onChange={(event) => setReturnRemark(event.target.value)}
             />
@@ -191,11 +189,11 @@ export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToo
               checked={reportProblem}
               onChange={(event) => setReportProblem(event.target.checked)}
             />
-            <span className="min-w-0">Report a problem with this tool</span>
+            <span className="min-w-0">{t`Report a problem with this tool`}</span>
           </label>
           {reportProblem ? (
             <label className="grid gap-1">
-              <span className="text-sm font-semibold text-ink">What's wrong? (staff will review)</span>
+              <span className="text-sm font-semibold text-ink">{t`What's wrong? (staff will review)`}</span>
               <textarea
                 className="desk-input min-h-20 w-full resize-y"
                 value={problemNote}
@@ -213,7 +211,7 @@ export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToo
           type="button"
           onClick={() => (returning ? returnTool.mutate() : checkout.mutate())}
         >
-          {returning ? (returnTool.isPending ? "Returning..." : "Return") : checkout.isPending ? "Checking out..." : "Check out"}
+          {returning ? (returnTool.isPending ? t`Returning...` : t`Return`) : checkout.isPending ? t`Checking out...` : t`Check out`}
         </button>
         {missing || contactMissing ? <p className="text-sm text-muted">{missing || contactMissing}</p> : null}
       </div>

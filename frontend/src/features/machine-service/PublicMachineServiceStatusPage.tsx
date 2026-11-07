@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -15,15 +16,15 @@ import { normalizeServiceStatus, serviceStatusLabel, serviceStatusTone, statusRe
 
 /** Accurate copy for a job that no longer has an estimate. */
 function terminalMessage(status: string): string {
-  if (status === "cancelled") return "This job was cancelled. Nothing was charged for it.";
-  if (status === "completed") return "Your job finished and is ready to collect.";
-  if (status === "collected") return "This job is finished and has been collected.";
-  if (status === "rejected") return "This request wasn't approved, so it won't be run. Contact the makerspace if you have questions.";
-  if (status === "failed") return "This job couldn't be completed. Contact the makerspace about next steps.";
-  if (status === "changes_requested") return "Staff need changes from you before this job can go ahead. Open it in your member area to reply.";
-  if (status === "quoted") return "There is a quote waiting for you. Open the job in your member area to approve or decline it.";
-  if (status === "uncollected") return "This job wasn't collected within 14 days, so it now belongs to the space.";
-  return "There is no estimate for this job right now.";
+  if (status === "cancelled") return t`This job was cancelled. Nothing was charged for it.`;
+  if (status === "completed") return t`Your job finished and is ready to collect.`;
+  if (status === "collected") return t`This job is finished and has been collected.`;
+  if (status === "rejected") return t`This request wasn't approved, so it won't be run. Contact the makerspace if you have questions.`;
+  if (status === "failed") return t`This job couldn't be completed. Contact the makerspace about next steps.`;
+  if (status === "changes_requested") return t`Staff need changes from you before this job can go ahead. Open it in your member area to reply.`;
+  if (status === "quoted") return t`There is a quote waiting for you. Open the job in your member area to approve or decline it.`;
+  if (status === "uncollected") return t`This job wasn't collected within 14 days, so it now belongs to the space.`;
+  return t`There is no estimate for this job right now.`;
 }
 
 export function PublicMachineServiceStatusPage() {
@@ -43,22 +44,22 @@ export function PublicMachineServiceStatusPage() {
   const state = bootstrapQuery.isLoading || statusQuery.isPending
     ? { status: "loading" as const }
     : statusQuery.isError
-      ? { status: "error" as const, error: "We couldn't find that job, or it isn't trackable any more.", onRetry: () => { void statusQuery.refetch(); } }
+      ? { status: "error" as const, error: t`We couldn't find that job, or it isn't trackable any more.`, onRetry: () => { void statusQuery.refetch(); } }
       : { status: "ready" as const };
   const status = job ? normalizeServiceStatus(job.status) : "";
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
-    <PublicDetailLayout state={state} title={job ? job.title : "Machine job"}
+    <PublicDetailLayout state={state} title={job ? job.title : t`Machine job`}
       chips={job ? [{ label: job.machine_type_name, tone: "accent" }, { label: serviceStatusLabel(status), tone: serviceStatusTone(status) }] : []}
-      sections={[{ id: "job-status", label: "Status", content: job ? <div className="grid gap-4">
-        <p className="text-sm text-muted">Requested <RelativeTime date={job.created_at} /></p>
+      sections={[{ id: "job-status", label: t`Status`, content: job ? <div className="grid gap-4">
+        <p className="text-sm text-muted">{t`Requested `}<RelativeTime date={job.created_at} /></p>
         {job.eta ? <ServiceRequestEta eta={job.eta} status={job.status} /> : <EmptyState message={terminalMessage(status)} />}
-        {job.queue_position != null ? <p className="text-sm text-muted">Position {job.queue_position} in this queue.</p> : null}
+        {job.queue_position != null ? <p className="text-sm text-muted">{t`Position ${job.queue_position} in this queue.`}</p> : null}
         <OwnerJobLink token={publicToken} path={tenantPath} />
         <OwnerCancel token={publicToken} title={job.title} makerspaceSlug={makerspaceSlug} />
       </div> : null }]}
-      actionCard={{ title: "Your job", state: "open",
+      actionCard={{ title: t`Your job`, state: "open",
         summary: job ? <StatusPill label={serviceStatusLabel(status)} tone={serviceStatusTone(status)} /> : undefined,
-        form: job ? <p className="text-sm text-muted">Keep this link private: anyone with it can see this job's progress.</p> : undefined,
-        mobileBar: { summary: job ? serviceStatusLabel(status) : "Job status", label: "Your job" } }} />
+        form: job ? <p className="text-sm text-muted">{t`Keep this link private: anyone with it can see this job's progress.`}</p> : undefined,
+        mobileBar: { summary: job ? serviceStatusLabel(status) : t`Job status`, label: t`Your job` } }} />
   </PublicLayout></div>;
 }

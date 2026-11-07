@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -30,7 +31,7 @@ def accessible_views(actor, space):
 
 def validate_share(actor, space, shared):
     if shared and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk):
-        raise PermissionDenied("Only makerspace managers may publish shared views.")
+        raise PermissionDenied(gettext("Only makerspace managers may publish shared views."))
 
 
 class SavedViewListCreateView(APIView):
@@ -41,7 +42,7 @@ class SavedViewListCreateView(APIView):
         space = visible_space(request.user, makerspace_id)
         entity = request.query_params.get("entity", "")
         if entity not in ENTITY_ACTIONS:
-            raise ValidationError({"entity": "Choose a staff list."})
+            raise ValidationError({"entity": gettext("Choose a staff list.")})
         require_entity(request.user, space, entity)
         pager = StaffListPagination()
         page = pager.paginate_queryset(accessible_views(request.user, space).filter(entity=entity), request, view=self)
@@ -84,7 +85,7 @@ class SavedViewDetailView(APIView):
     def patch(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may edit this view.")
+            raise PermissionDenied(gettext("Only the owner may edit this view."))
         payload = SavedViewSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
         require_entity(request.user, space, payload.validated_data.get("entity", row.entity))
@@ -106,7 +107,7 @@ class SavedViewDetailView(APIView):
     def delete(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may delete this view.")
+            raise PermissionDenied(gettext("Only the owner may delete this view."))
         if row.shared:
             validate_share(request.user, space, True)
         audit.record(request.user, "saved_view.deleted", makerspace=space, target=row)

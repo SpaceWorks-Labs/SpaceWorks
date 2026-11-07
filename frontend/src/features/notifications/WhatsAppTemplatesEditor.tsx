@@ -1,13 +1,14 @@
+import { t } from "@lingui/core/macro";
 import { StatusPill } from "../../components/ui";
 import type { WhatsAppTemplate } from "./channelsApi";
 
 const AUDIENCES: { key: WhatsAppTemplate["audience"]; label: string }[] = [
-  { key: "member", label: "Members" }, { key: "requester", label: "Requesters" }, { key: "staff", label: "Staff" },
+  { key: "member", label: t`Members` }, { key: "requester", label: t`Requesters` }, { key: "staff", label: t`Staff` },
 ];
 const blank: WhatsAppTemplate = { event: "", audience: "member", locale: "en", template_name: "", variables: [] };
 const CONNECTION_TEMPLATES = [
-  { event: "notification_opt_in", label: "Add opt-in template", variables: ["code"] },
-  { event: "notification_test", label: "Add test template", variables: [] },
+  { event: "notification_opt_in", label: t`Add opt-in template`, variables: ["code"] },
+  { event: "notification_test", label: t`Add test template`, variables: [] },
 ];
 
 /**
@@ -21,34 +22,33 @@ export function WhatsAppTemplatesEditor({ templates, disabled, onChange }: {
   const update = (index: number, patch: Partial<WhatsAppTemplate>) =>
     onChange(templates.map((row, at) => at === index ? { ...row, ...patch, approved: undefined } : row));
   return <fieldset className="grid min-w-0 gap-3 rounded-lg border border-line p-3">
-    <legend className="px-1 text-sm font-semibold text-ink">Message templates</legend>
-    <p className="text-sm text-muted">Bind each notification event to a template your provider approved. Variables are filled in order.</p>
-    <p className="text-sm text-muted">For Twilio and Meta, connecting uses notification_opt_in (member, en) with the code variable.
-      Test sends use notification_test (member, en) with no variables.</p>
-    {templates.length ? null : <p className="text-sm text-muted">No templates yet.</p>}
-    {templates.map((row, index) => <div key={index} role="group" aria-label={`Template ${index + 1}`}
+    <legend className="px-1 text-sm font-semibold text-ink">{t`Message templates`}</legend>
+    <p className="text-sm text-muted">{t`Bind each notification event to a template your provider approved. Variables are filled in order.`}</p>
+    <p className="text-sm text-muted">{t`For Twilio and Meta, connecting uses notification_opt_in (member, en) with the code variable. Test sends use notification_test (member, en) with no variables.`}</p>
+    {templates.length ? null : <p className="text-sm text-muted">{t`No templates yet.`}</p>}
+    {templates.map((row, index) => <div key={index} role="group" aria-label={t`Template ${index + 1}`}
       className="grid min-w-0 gap-2 rounded-md border border-line p-3 sm:grid-cols-2">
-      <label className="grid gap-1 text-sm">Event<input className="desk-input" value={row.event} maxLength={64} disabled={disabled}
+      <label className="grid gap-1 text-sm">{t`Event`}<input className="desk-input" value={row.event} maxLength={64} disabled={disabled}
         placeholder="request_accepted" onChange={event => update(index, { event: event.target.value })} /></label>
-      <label className="grid gap-1 text-sm">Feature (optional)<input className="desk-input" value={row.feature ?? ""} maxLength={64} disabled={disabled}
+      <label className="grid gap-1 text-sm">{t`Feature (optional)`}<input className="desk-input" value={row.feature ?? ""} maxLength={64} disabled={disabled}
         placeholder="hardware_requests" onChange={event => update(index, { feature: event.target.value || undefined })} /></label>
-      <label className="grid gap-1 text-sm">Audience<select className="desk-input" value={row.audience} disabled={disabled}
+      <label className="grid gap-1 text-sm">{t`Audience`}<select className="desk-input" value={row.audience} disabled={disabled}
         onChange={event => update(index, { audience: event.target.value as WhatsAppTemplate["audience"] })}>
         {AUDIENCES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
-      <label className="grid gap-1 text-sm">Template name<input className="desk-input" value={row.template_name} maxLength={255} disabled={disabled}
+      <label className="grid gap-1 text-sm">{t`Template name`}<input className="desk-input" value={row.template_name} maxLength={255} disabled={disabled}
         onChange={event => update(index, { template_name: event.target.value })} /></label>
-      <label className="grid gap-1 text-sm">Language<input className="desk-input" value={row.locale} maxLength={16} disabled={disabled}
+      <label className="grid gap-1 text-sm">{t`Language`}<input className="desk-input" value={row.locale} maxLength={16} disabled={disabled}
         onChange={event => update(index, { locale: event.target.value })} /></label>
-      <label className="grid gap-1 text-sm sm:col-span-2">Variables (comma separated)<input className="desk-input" value={row.variables.join(", ")} disabled={disabled}
+      <label className="grid gap-1 text-sm sm:col-span-2">{t`Variables (comma separated)`}<input className="desk-input" value={row.variables.join(", ")} disabled={disabled}
         onChange={event => update(index, { variables: event.target.value.split(",").map(part => part.trim()).filter(Boolean) })} /></label>
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-        <StatusPill label={row.approved && !row.needs_review ? "Approved" : "Needs provider review"} tone={row.approved && !row.needs_review ? "success" : "neutral"} />
+        <StatusPill label={row.approved && !row.needs_review ? t`Approved` : t`Needs provider review`} tone={row.approved && !row.needs_review ? "success" : "neutral"} />
         <button type="button" className="desk-button" disabled={disabled}
-          onClick={() => onChange(templates.filter((_, at) => at !== index))}>Remove template</button>
+          onClick={() => onChange(templates.filter((_, at) => at !== index))}>{t`Remove template`}</button>
       </div>
     </div>)}
     <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={disabled || templates.length >= 100}
-      onClick={() => onChange([...templates, { ...blank }])}>Add template</button>
+      onClick={() => onChange([...templates, { ...blank }])}>{t`Add template`}</button>
       {CONNECTION_TEMPLATES.map(binding => <button key={binding.event} type="button" className="desk-button"
         disabled={disabled || templates.length >= 100 || templates.some(row => row.event === binding.event && row.audience === "member" && row.locale === "en")}
         onClick={() => onChange([...templates, { ...blank, event: binding.event, variables: [...binding.variables] }])}>

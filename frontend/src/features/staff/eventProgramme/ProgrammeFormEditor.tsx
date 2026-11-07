@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
@@ -33,13 +34,13 @@ export function ProgrammeFormEditor({ eventId, formKey, selector = {} }: { event
   const denied = [query.error, save.error, validation.error].some(isProtectedDenial);
   useClearDeniedQuery([query.error, save.error, validation.error].find(isProtectedDenial), key);
   useEffect(() => { if (denied) { setDraft(null); setSample({ answers: {}, derivations: {}, save_choices: {}, saved_detail_versions: {} }); setPreview(false); } }, [denied]);
-  if (denied) return <p role="alert" className="text-sm text-danger">This form is no longer available for your access.</p>;
-  return <section className="grid gap-4" aria-label="Registration form editor"><h3 className="title-section">Questions and saved details</h3>
-    {query.isLoading ? <p role="status">Loading form…</p> : null}{query.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error)}</p> : null}
-    {row ? <>{row.schema && !Array.isArray(row.schema) ? <FormBuilderV2 value={row.schema} onChange={schema => { setDraft({ ...row, schema }); validation.reset(); }} errors={customAnswerErrors(validation.data?.errors)} /> : <><CustomFormBuilder value={row.schema} onChange={schema => setDraft({ ...row, schema })} /><button className="desk-button justify-self-start" type="button" onClick={() => setDraft({ ...row, schema: upgradeLegacyForm(row.schema as import("../../forms/customFormTypes").CustomFormSchema, `${formKey}-${eventId}`) })}>Upgrade draft to form v2</button><p className="text-sm text-muted">Upgrading changes new submissions to stable option IDs and enables conditions. Existing answer snapshots keep their original revision.</p></>}
-      <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" aria-expanded={preview} onClick={() => setPreview(!preview)}>Preview questions</button><button className="desk-button" type="button" disabled={validation.isPending} onClick={() => validation.mutate()}>Validate sample</button></div>
+  if (denied) return <p role="alert" className="text-sm text-danger">{t`This form is no longer available for your access.`}</p>;
+  return <section className="grid gap-4" aria-label={t`Registration form editor`}><h3 className="title-section">{t`Questions and saved details`}</h3>
+    {query.isLoading ? <p role="status">{t`Loading form…`}</p> : null}{query.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(query.error)}</p> : null}
+    {row ? <>{row.schema && !Array.isArray(row.schema) ? <FormBuilderV2 value={row.schema} onChange={schema => { setDraft({ ...row, schema }); validation.reset(); }} errors={customAnswerErrors(validation.data?.errors)} /> : <><CustomFormBuilder value={row.schema} onChange={schema => setDraft({ ...row, schema })} /><button className="desk-button justify-self-start" type="button" onClick={() => setDraft({ ...row, schema: upgradeLegacyForm(row.schema as import("../../forms/customFormTypes").CustomFormSchema, `${formKey}-${eventId}`) })}>{t`Upgrade draft to form v2`}</button><p className="text-sm text-muted">{t`Upgrading changes new submissions to stable option IDs and enables conditions. Existing answer snapshots keep their original revision.`}</p></>}
+      <div className="flex flex-wrap gap-2"><button className="desk-button" type="button" aria-expanded={preview} onClick={() => setPreview(!preview)}>{t`Preview questions`}</button><button className="desk-button" type="button" disabled={validation.isPending} onClick={() => validation.mutate()}>{t`Validate sample`}</button></div>
       {preview ? row.schema && !Array.isArray(row.schema) ? <FormV2Fields schema={row.schema} value={sample} onChange={setSample} /> : <CustomFormFields schema={row.schema} answers={sample.answers as CustomAnswers} onChange={answers => setSample({ ...sample, answers })} /> : null}
-      {validation.data ? <p role="status" className="text-sm">{validation.data.valid ? "Sample is valid." : "Review sample answers and conditions."}</p> : null}
+      {validation.data ? <p role="status" className="text-sm">{validation.data.valid ? t`Sample is valid.` : t`Review sample answers and conditions.`}</p> : null}
       {validation.error ? <p role="alert" className="text-sm text-danger">{eventErrorText(validation.error)}</p> : null}
       <DirtySaveBar dirty={Boolean(draft)} pending={save.isPending} error={save.error ? eventErrorText(save.error) : undefined} onDiscard={() => { setDraft(null); save.reset(); }} onSave={() => save.mutate({ operation_id: operationId(row), expected_version: row.version, schema: editorSchema(row.schema) })} />
     </> : null}

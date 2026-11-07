@@ -1,5 +1,6 @@
 """Cancellation refund policy per area, and per membership plan. Editing needs manage_makerspace."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -31,7 +32,7 @@ def _space(actor, makerspace_id, actions=(rbac.Action.MANAGE_MAKERSPACE,)):
         space = rbac.scope_by_action(actor, action, servable_queryset(), field="pk").filter(pk=makerspace_id).first()
         if space is not None:
             return space
-    raise NotFound("Makerspace not found.")
+    raise NotFound(gettext("Makerspace not found."))
 
 
 def _context(space, area):
@@ -65,7 +66,7 @@ def _remove(request, space, area, plan=None):
 
 def _area(area):
     if area not in RefundPolicy.Area.values:
-        raise NotFound("Unknown refund policy area.")
+        raise NotFound(gettext("Unknown refund policy area."))
     return area
 
 

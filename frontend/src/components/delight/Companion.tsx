@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { DelightArt } from "./Artwork";
 import { useDelight, useReducedMotion } from "./DelightProvider";
@@ -15,7 +16,7 @@ export function Companion() {
   }, [on, enabled, reduced, pose, position]);
   if (!enabled) return null;
   return <div className="grid gap-3">
-    <button type="button" className="desk-button" aria-pressed={on} onClick={() => { setOn(!on); setPose("companionWalk"); }}>Workshop companion: {on ? "on" : "off"}</button>
+    <button type="button" className="desk-button" aria-pressed={on} onClick={() => { setOn(!on); setPose("companionWalk"); }}>{t`Workshop companion: ${on ? "on" : "off"}`}</button>
     {on ? <><div className="relative h-20 overflow-hidden" onPointerMove={event => {
       if (reduced) return;
       const bounds = event.currentTarget.getBoundingClientRect();
@@ -23,7 +24,7 @@ export function Companion() {
       setPose("companionFollow");
     }}><span aria-hidden="true" className={`pointer-events-none absolute h-16 w-16 ${!reduced && pose === "companionWalk" ? "sw-delight-walk" : ""}`} style={{ left: `${reduced ? 50 : position}%` }}>
       <DelightArt name={reduced && pose !== "companionPrint" ? "companionNap" : pose} className="h-16 w-16" /></span></div>
-      <button type="button" className="desk-button" onClick={() => setPose("companionPrint")}>Print a tiny layer stack</button>
-      <span className="sr-only" role="status">{pose === "companionPrint" ? "The workshop companion printed a tiny layer stack." : ""}</span></> : null}
+      <button type="button" className="desk-button" onClick={() => setPose("companionPrint")}>{t`Print a tiny layer stack`}</button>
+      <span className="sr-only" role="status">{pose === "companionPrint" ? t`The workshop companion printed a tiny layer stack.` : ""}</span></> : null}
   </div>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Icon, IconButton } from "../../../components/ui";
 import type { StatsSectionKey } from "../api";
 
@@ -19,7 +20,7 @@ export function SectionOrderList({ choices, value, disabled, onChange }: {
     onChange(next);
   };
   const toggle = (key: StatsSectionKey, on: boolean) => onChange(on ? [...value, key] : value.filter(item => item !== key));
-  return <ol className="grid gap-2" aria-label="Sections in page order">
+  return <ol className="grid gap-2" aria-label={t`Sections in page order`}>
     {[...value, ...hidden].map(key => {
       const index = value.indexOf(key);
       const shown = index >= 0;
@@ -28,12 +29,12 @@ export function SectionOrderList({ choices, value, disabled, onChange }: {
         <label className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-sm font-semibold">
           <input type="checkbox" checked={shown} disabled={disabled} onChange={event => toggle(key, event.target.checked)} />
           <span className="min-w-0 break-words">{shown ? `${index + 1}. ` : ""}{label}</span>
-          {shown ? null : <span className="text-xs font-normal text-muted">Hidden</span>}
+          {shown ? null : <span className="text-xs font-normal text-muted">{t`Hidden`}</span>}
         </label>
         {shown ? <span className="flex gap-1">
-          <IconButton label={`Move ${label} up`} disabled={disabled || index === 0} onClick={() => move(index, -1)}>
+          <IconButton label={t`Move ${label} up`} disabled={disabled || index === 0} onClick={() => move(index, -1)}>
             <Icon name="ArrowUp" className="h-5 w-5" /></IconButton>
-          <IconButton label={`Move ${label} down`} disabled={disabled || index === value.length - 1} onClick={() => move(index, 1)}>
+          <IconButton label={t`Move ${label} down`} disabled={disabled || index === value.length - 1} onClick={() => move(index, 1)}>
             <Icon name="ArrowDown" className="h-5 w-5" /></IconButton>
         </span> : null}
       </li>;

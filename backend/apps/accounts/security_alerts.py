@@ -13,6 +13,7 @@ once the mail is sent; an unsent alert keeps them until it expires
 (``SECURITY_ALERT_LINK_TTL_DAYS``), and retention deletes the row 30 days after that.
 """
 
+from django.utils.translation import gettext
 import hashlib
 import logging
 import secrets
@@ -146,7 +147,7 @@ def send_login_code(user_id, code):
     base = (settings.PUBLIC_APP_BASE_URL or "").rstrip("/")
     context = {"user": user, "code": code, "minutes": minutes, "reset_link": f"{base}/reset-password"}
     log = dispatch_email(
-        to_email=user.email, subject="Your Space Works sign-in code",
+        to_email=user.email, subject=gettext("Your Space Works sign-in code"),
         text_body=render_to_string("email/security_login_code.txt", context),
         html_body=render_to_string("email/security_login_code.html", context),
         makerspace=None, stream="account", event=LOGIN_CODE_EVENT, audience="user",

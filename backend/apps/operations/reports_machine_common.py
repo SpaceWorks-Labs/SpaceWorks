@@ -1,5 +1,6 @@
 """Shared authority, calendar and output boundaries for machine analytics."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -27,7 +28,7 @@ def spaces(makerspace_id, modules, actor=None, *, identities=False):
     """
     if identities and (makerspace_id is None or actor is None):
         from rest_framework.exceptions import PermissionDenied
-        raise PermissionDenied("Member analytics require a tenant staff actor.")
+        raise PermissionDenied(gettext("Member analytics require a tenant staff actor."))
     queryset = report_spaces(makerspace_id, *modules)
     if actor is not None and not active_user(actor):
         from rest_framework.exceptions import PermissionDenied

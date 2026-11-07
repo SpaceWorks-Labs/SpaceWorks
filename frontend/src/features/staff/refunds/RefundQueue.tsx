@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -29,12 +30,12 @@ export function RefundQueue({ makerspaceId, makerspaceName, canDecide, canEditPo
     key: value || "all", label, count: status === value ? cases.data?.count : undefined,
   }));
   return <ListLayout
-    header={{ title: "Refunds", subtitle: `What members may be owed by ${makerspaceName ?? "your makerspace"}. No money moves until someone approves it.`,
-      secondary: { label: "Refund policy", onClick: () => setPolicyOpen(true) } }}
+    header={{ title: t`Refunds`, subtitle: t`What members may be owed by ${makerspaceName ?? "your makerspace"}. No money moves until someone approves it.`,
+      secondary: { label: t`Refund policy`, onClick: () => setPolicyOpen(true) } }}
     state={cases.isLoading ? { status: "loading" } : cases.error && !cases.data
-      ? { status: "error", error: "Couldn't load refunds. Try again.", onRetry: () => { void cases.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load refunds. Try again.`, onRetry: () => { void cases.refetch(); } } : { status: "ready" }}
     isEmpty={cases.data?.count === 0}
-    empty={{ message: status === "open" ? "Nothing to decide. New refund requests and cancellations that owe money appear here." : "No refunds in this view yet." }}
+    empty={{ message: status === "open" ? t`Nothing to decide. New refund requests and cancellations that owe money appear here.` : t`No refunds in this view yet.` }}
     tabs={tabs} activeTab={status || "all"} onTabChange={(key) => { setStatus(key === "all" ? "" : key); setPage(1); }}
     pagination={{ page, count: cases.data?.count ?? 0, pageSize: 24, onChange: setPage }}
     body={{ kind: "rows", rows: (cases.data?.results ?? []).map((row) =>
@@ -42,7 +43,7 @@ export function RefundQueue({ makerspaceId, makerspaceName, canDecide, canEditPo
     detail={<>
       {deciding ? <RefundDecisionDialog key={deciding.id} makerspaceId={makerspaceId} refundCase={deciding}
         onClose={() => setDeciding(null)} /> : null}
-      {policyOpen ? <DetailLayout presentation="drawer" open onClose={() => setPolicyOpen(false)} title="Refund policy"
+      {policyOpen ? <DetailLayout presentation="drawer" open onClose={() => setPolicyOpen(false)} title={t`Refund policy`}
         state={{ status: "ready" }} main={<RefundPolicyPanel makerspaceId={makerspaceId} canEdit={canEditPolicy} />} /> : null}
     </>}
   />;

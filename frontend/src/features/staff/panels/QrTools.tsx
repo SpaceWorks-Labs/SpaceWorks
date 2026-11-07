@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type React from "react";
 import { ListLayout, DetailLayout } from "../../../components/layouts";
 import { ErrorText, Field, Modal, EmptyState, ListRow, RelativeTime, SegmentedControl } from "../../../components/ui";
@@ -16,23 +17,23 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
    assetOptions, canReprintAsset, reprintAsset, canAddItemQr, addProduct,
  } = useQrBatchBuilder({ makerspace });
   const createDialog = <>
-      <Modal open={batchModalOpen} onClose={() => setBatchModalOpen(false)} title="Create QR print batch" footer={<ModalActions pending={createBatch.isPending} onCancel={() => setBatchModalOpen(false)} onSubmit={() => createBatch.mutate()} submitLabel="Create batch" disabled={!batchTitle.trim()} />}>
-        <Field label="Batch title"><input className="desk-input w-full" value={batchTitle} onChange={(event) => setBatchTitle(event.target.value)} /></Field>
+      <Modal open={batchModalOpen} onClose={() => setBatchModalOpen(false)} title={t`Create QR print batch`} footer={<ModalActions pending={createBatch.isPending} onCancel={() => setBatchModalOpen(false)} onSubmit={() => createBatch.mutate()} submitLabel={t`Create batch`} disabled={!batchTitle.trim()} />}>
+        <Field label={t`Batch title`}><input className="desk-input w-full" value={batchTitle} onChange={(event) => setBatchTitle(event.target.value)} /></Field>
         {createBatch.isError ? <ErrorText message={createBatch.error.message} /> : null}
       </Modal>
   </>;
-  if (!batchId) return <ListLayout header={{ title: "QR labels", subtitle: "Print labels for items, units and boxes.", primary: { label: "New batch", onClick: () => setBatchModalOpen(true) } }}
+  if (!batchId) return <ListLayout header={{ title: t`QR labels`, subtitle: t`Print labels for items, units and boxes.`, primary: { label: t`New batch`, onClick: () => setBatchModalOpen(true) } }}
     state={inventoryQueryState(batches, "label batches")} isEmpty={!batches.data?.results.length}
-    empty={{ message: "No label batches yet. Start one to print QR labels.", action: { label: "New batch", onClick: () => setBatchModalOpen(true) } }}
+    empty={{ message: t`No label batches yet. Start one to print QR labels.`, action: { label: t`New batch`, onClick: () => setBatchModalOpen(true) } }}
     body={{ kind: "rows", rows: batches.data?.results.map(item => <ListRow key={item.id} title={item.title} identity={{ kind: "date", date: item.created_at }} meta={<RelativeTime date={item.created_at} />} onClick={() => setBatchId(String(item.id))} />) }} detail={createDialog} />;
-  return <DetailLayout title={batch.data?.title ?? "QR labels"} back={{ label: "All batches", onClick: () => setBatchId("") }} state={inventoryQueryState(batch, "this label batch")} meta={[`${batchItems.length} labels`]}
-    actions={{ primary: { label: "Download all (ZIP)", pending: downloadZip.isPending, pendingLabel: "Preparing…", disabled: !batchItems.length, disabledReason: "Add a label to this batch first.", onClick: () => downloadZip.mutate() },
-      secondary: { label: "New batch", icon: "Plus", onClick: () => setBatchModalOpen(true) } }}
+  return <DetailLayout title={batch.data?.title ?? t`QR labels`} back={{ label: t`All batches`, onClick: () => setBatchId("") }} state={inventoryQueryState(batch, "this label batch")} meta={[`${batchItems.length} labels`]}
+    actions={{ primary: { label: t`Download all (ZIP)`, pending: downloadZip.isPending, pendingLabel: "Preparing…", disabled: !batchItems.length, disabledReason: "Add a label to this batch first.", onClick: () => downloadZip.mutate() },
+      secondary: { label: t`New batch`, icon: "Plus", onClick: () => setBatchModalOpen(true) } }}
     main={<div className="grid gap-6">
-        <ActionBox title="Add labels">
-          <SegmentedControl label="Label type" value={labelMode} options={[{ value: "item", label: "Item" }, { value: "units", label: "Units" }, { value: "reprint", label: "Reprint a unit" }]} onChange={value => { setLabelMode(value); setProductId(""); setAssetId(""); }} />
-          <Field label="Inventory item"><select className="desk-input w-full" value={productId} disabled={!hasBatch || products.isLoading} onChange={(event) => selectProduct(event.target.value)}>
-            <option value="">Inventory item</option>
+        <ActionBox title={t`Add labels`}>
+          <SegmentedControl label={t`Label type`} value={labelMode} options={[{ value: "item", label: t`Item` }, { value: "units", label: t`Units` }, { value: "reprint", label: t`Reprint a unit` }]} onChange={value => { setLabelMode(value); setProductId(""); setAssetId(""); }} />
+          <Field label={t`Inventory item`}><select className="desk-input w-full" value={productId} disabled={!hasBatch || products.isLoading} onChange={(event) => selectProduct(event.target.value)}>
+            <option value="">{t`Inventory item`}</option>
             {productOptions.filter(product => labelMode === "item" ? product.tracking_mode !== "individual" : product.tracking_mode === "individual").map((product) => (
               <option key={product.id} value={product.id}>
                 {product.name} | {product.tracking_mode} | {product.available_quantity} available
@@ -42,39 +43,38 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
           {selectedProduct ? <p className="mt-2 text-xs uppercase text-muted">{selectedProduct.tracking_mode}</p> : null}
           {selectedIsIndividual && !assetUnitsEnabled ? (
             <p className="mt-2 text-sm text-muted">
-              Unit QR generation needs the Asset units module.
-            </p>
+              {t`Unit QR generation needs the Asset units module.`}</p>
           ) : null}
           {selectedIsIndividual && assetUnitsEnabled ? (
             <div className="mt-2 grid gap-3">
               {labelMode === "units" ? <div className="grid gap-2 sm:grid-cols-[110px_1fr_auto]">
-                <Field label="Unit count"><input className="desk-input" inputMode="numeric" value={assetCount} onChange={(event) => setAssetCount(event.target.value)} /></Field>
-                <Field label="Label prefix"><input className="desk-input" value={assetPrefix} onChange={(event) => setAssetPrefix(event.target.value)} /></Field>
+                <Field label={t`Unit count`}><input className="desk-input" inputMode="numeric" value={assetCount} onChange={(event) => setAssetCount(event.target.value)} /></Field>
+                <Field label={t`Label prefix`}><input className="desk-input" value={assetPrefix} onChange={(event) => setAssetPrefix(event.target.value)} /></Field>
                 <button className="desk-button" type="button" disabled={!canGenerateAssets || generateAssets.isPending} onClick={() => generateAssets.mutate()}>
-                  {generateAssets.isPending ? "Generating…" : "Generate missing/new unit QRs"}
+                  {generateAssets.isPending ? t`Generating…` : t`Generate missing/new unit QRs`}
                 </button>
               </div> : null}
               {labelMode === "reprint" ? <div className="grid gap-2 border-t border-line pt-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                <Field label="Existing unit to reprint"><select className="desk-input w-full" value={assetId} disabled={!hasBatch || assets.isLoading} onChange={(event) => setAssetId(event.target.value)}>
-                  <option value="">Existing unit to reprint</option>
+                <Field label={t`Existing unit to reprint`}><select className="desk-input w-full" value={assetId} disabled={!hasBatch || assets.isLoading} onChange={(event) => setAssetId(event.target.value)}>
+                  <option value="">{t`Existing unit to reprint`}</option>
                   {assetOptions.map((asset) => (
                     <option key={asset.id} value={asset.id}>
-                      {asset.asset_tag} | {asset.status} | {asset.qr_code_id ? `QR #${asset.qr_code_id}` : "no QR linked"}
+                      {asset.asset_tag} | {asset.status} | {asset.qr_code_id ? t`QR #${asset.qr_code_id}` : t`no QR linked`}
                     </option>
                   ))}
                 </select></Field>
                 <button className="desk-button" type="button" disabled={!canReprintAsset || reprintAsset.isPending} onClick={() => reprintAsset.mutate()}>
-                  {reprintAsset.isPending ? "Adding…" : "Reprint unit QR"}
+                  {reprintAsset.isPending ? t`Adding…` : t`Reprint unit QR`}
                 </button>
               </div> : null}
-              {assets.isLoading ? <p className="text-sm text-muted">Loading units…</p> : null}
+              {assets.isLoading ? <p className="text-sm text-muted">{t`Loading units…`}</p> : null}
               {assets.isError ? <ErrorText message={assets.error.message} /> : null}
-              {!assets.isLoading && selectedProduct && !assetOptions.length ? <p className="text-sm text-muted">No individual units yet.</p> : null}
+              {!assets.isLoading && selectedProduct && !assetOptions.length ? <p className="text-sm text-muted">{t`No individual units yet.`}</p> : null}
             </div>
           ) : null}
           {labelMode === "item" ? (
             <button className="desk-button mt-2" type="button" disabled={!canAddItemQr || addProduct.isPending} onClick={() => addProduct.mutate()}>
-              {addProduct.isPending ? "Adding…" : "Add/reprint item QR"}
+              {addProduct.isPending ? t`Adding…` : t`Add/reprint item QR`}
             </button>
           ) : null}
           {addProduct.isError ? <ErrorText message={addProduct.error.message} /> : null}
@@ -85,14 +85,14 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
         <div className="rounded-md border border-line bg-surface p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="title-section">Labels in this batch</h3>
-              <p className="text-sm text-muted">{batchItems.length} QR labels accumulated</p>
+              <h3 className="title-section">{t`Labels in this batch`}</h3>
+              <p className="text-sm text-muted">{t`${batchItems.length} QR labels accumulated`}</p>
             </div>
 
           </div>
-          {batch.isLoading ? <p className="mt-3 text-sm text-muted">Loading batch…</p> : null}
+          {batch.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading batch…`}</p> : null}
           {batch.isError ? <ErrorText message={batch.error.message} /> : null}
-          {!batch.isLoading && !batchItems.length ? <EmptyState message="This batch is empty. Add an item or units to start." /> : null}
+          {!batch.isLoading && !batchItems.length ? <EmptyState message={t`This batch is empty. Add an item or units to start.`} /> : null}
           {/* Fill by label size, not breakpoint: two labels across a phone, more on wide screens, never one giant QR. */}
           <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(9rem,100%),1fr))] gap-3">
             {batchItems.map((item) => (
@@ -116,9 +116,9 @@ function ActionBox({ children, title }: { children: React.ReactNode; title: stri
 function ModalActions(props: { pending: boolean; disabled: boolean; submitLabel: string; onCancel: () => void; onSubmit: () => void }) {
   return (
     <div className="flex flex-wrap justify-end gap-2">
-      <button className="desk-button-ghost" type="button" disabled={props.pending} onClick={props.onCancel}>Cancel</button>
+      <button className="desk-button-ghost" type="button" disabled={props.pending} onClick={props.onCancel}>{t`Cancel`}</button>
       <button className="desk-button-primary" type="button" disabled={props.pending || props.disabled} onClick={props.onSubmit}>
-        {props.pending ? "Saving…" : props.submitLabel}
+        {props.pending ? t`Saving…` : props.submitLabel}
       </button>
     </div>
   );

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 
 type Props = {
@@ -17,11 +18,11 @@ export function CapabilityPresetListEditor({ label, singularLabel, values, disab
   const addValue = () => {
     const value = draft.trim();
     if (!value) {
-      setError(`${singularLabel} cannot be blank.`);
+      setError(t`${singularLabel} cannot be blank.`);
       return;
     }
     if (values.some((existing) => existing.toLocaleLowerCase() === value.toLocaleLowerCase())) {
-      setError(`${singularLabel} already exists.`);
+      setError(t`${singularLabel} already exists.`);
       return;
     }
     onChange([...values, value]);
@@ -34,7 +35,7 @@ export function CapabilityPresetListEditor({ label, singularLabel, values, disab
       <legend className="eyebrow px-1">{label}</legend>
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <label className="eyebrow grid gap-1" htmlFor={inputId}>
-          New {singularLabel.toLocaleLowerCase()}
+          {t`New ${singularLabel.toLocaleLowerCase()}`}
           <input
             id={inputId}
             className="desk-input min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
@@ -44,7 +45,7 @@ export function CapabilityPresetListEditor({ label, singularLabel, values, disab
           />
         </label>
         <button className="desk-button min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="button" onClick={addValue}>
-          Add {singularLabel.toLocaleLowerCase()}
+          {t`Add ${singularLabel.toLocaleLowerCase()}`}
         </button>
       </div>
       {error ? <p id={errorId} className="text-sm text-danger" role="alert">{error}</p> : null}
@@ -54,17 +55,16 @@ export function CapabilityPresetListEditor({ label, singularLabel, values, disab
             <li key={value} className="flex items-center gap-1 rounded-lg bg-surface p-1 pl-3 text-sm text-ink">
               <span>{value}</span>
               <button
-                aria-label={`Remove ${singularLabel.toLocaleLowerCase()} ${value}`}
+                aria-label={t`Remove ${singularLabel.toLocaleLowerCase()} ${value}`}
                 className="desk-button-ghost min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                 type="button"
                 onClick={() => onChange(values.filter((existing) => existing !== value))}
               >
-                Remove
-              </button>
+                {t`Remove`}</button>
             </li>
           ))}
         </ul>
-      ) : <p className="text-sm text-muted">No presets. The consumable form will use free text.</p>}
+      ) : <p className="text-sm text-muted">{t`No presets. The consumable form will use free text.`}</p>}
     </fieldset>
   );
 }

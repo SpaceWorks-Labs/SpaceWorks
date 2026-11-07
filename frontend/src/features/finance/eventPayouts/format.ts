@@ -1,8 +1,9 @@
+import { formatLocale } from "../../../lib/format";
 export const reasonIsValid = (value: string) => /^[a-z][a-z0-9_]{0,63}$/.test(value);
 export function money(minor: number | null | undefined, currency: string) {
   if (minor == null || !Number.isSafeInteger(minor)) return "Unavailable";
   try {
-    const format = new Intl.NumberFormat(undefined, { style: "currency", currency });
+    const format = new Intl.NumberFormat(formatLocale(), { style: "currency", currency });
     const exponent = format.resolvedOptions().maximumFractionDigits ?? 2;
     const value = BigInt(minor), factor = 10n ** BigInt(exponent);
     const whole = value / factor, remainder = value < 0n ? -(value % factor) : value % factor;

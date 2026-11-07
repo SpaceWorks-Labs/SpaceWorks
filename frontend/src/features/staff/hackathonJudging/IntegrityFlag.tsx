@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from '@tanstack/react-query';
 import { Info } from 'lucide-react';
 import { staffRequest } from '../../../lib/api';
@@ -15,11 +16,11 @@ export function IntegrityFlag({ scope, snapshotIds }: { scope: Scope; snapshotId
   // 404 while events.submission_integrity is off: nothing to show.
   const rows = (query.data?.results ?? []).filter(row => snapshotIds.includes(row.snapshot_id));
   if (!rows.length) return null;
-  return <section aria-label="Integrity information" className="grid gap-2 rounded-xl border border-line bg-info-soft p-3">
-    <p className="flex items-center gap-2 text-sm font-semibold text-info-ink"><Info aria-hidden="true" className="size-4" />For your information</p>
+  return <section aria-label={t`Integrity information`} className="grid gap-2 rounded-xl border border-line bg-info-soft p-3">
+    <p className="flex items-center gap-2 text-sm font-semibold text-info-ink"><Info aria-hidden="true" className="size-4" />{t`For your information`}</p>
     <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.snapshot_id} className="rounded-full border border-info bg-panel px-3 py-1 text-xs text-ink">
-      Project {row.snapshot_id}: {row.rule_keys.map(key => RULES[key] ?? 'information for judges').join('; ')}
+      {t`Project ${row.snapshot_id}: ${row.rule_keys.map(key => RULES[key] ?? 'information for judges').join('; ')}`}
     </li>)}</ul>
-    <p className="text-xs text-muted">A flag never disqualifies or hides a project. Ask the team before drawing any conclusion.</p>
+    <p className="text-xs text-muted">{t`A flag never disqualifies or hides a project. Ask the team before drawing any conclusion.`}</p>
   </section>;
 }

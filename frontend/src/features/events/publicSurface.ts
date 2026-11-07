@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 /**
  * L1's additions to the public event payload. They live here until the coordinator
  * regenerates `generated/api.ts` at merge; reading them through `surfaceOf` keeps every
@@ -11,7 +12,7 @@ export type PublicSurfaceFields = {
   delivery_mode?: DeliveryMode | null;
 };
 
-export const DELIVERY_LABELS: Record<DeliveryMode, string> = { in_person: "In person", online: "Online", hybrid: "Hybrid" };
+export const DELIVERY_LABELS: Record<DeliveryMode, string> = { in_person: t`In person`, online: t`Online`, hybrid: t`Hybrid` };
 
 export function surfaceOf(event: object | undefined | null): PublicSurfaceFields {
   return (event ?? {}) as PublicSurfaceFields;

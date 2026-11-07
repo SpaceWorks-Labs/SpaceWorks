@@ -1,14 +1,15 @@
 """Staff-only device notification wording, with no machine or credential context."""
+from django.utils.translation import gettext_noop
 
 DEFAULTS = {
     "offline": (
-        "Device offline: {{ device.name }}",
-        "Device {{ device.name }} ({{ device.kind }}, {{ device.id }}) is offline.\n"
-        "Last seen: {{ device.last_seen_at }}\nOffline since: {{ device.offline_since }}",
+        gettext_noop("Device offline: {{ device.name }}"),
+        gettext_noop("Device {{ device.name }} ({{ device.kind }}, {{ device.id }}) is offline.\n"
+        "Last seen: {{ device.last_seen_at }}\nOffline since: {{ device.offline_since }}"),
     ),
     "recovered": (
-        "Device recovered: {{ device.name }}",
-        "Device {{ device.name }} ({{ device.kind }}, {{ device.id }}) has recovered.\n"
-        "Last seen: {{ device.last_seen_at }}",
+        gettext_noop("Device recovered: {{ device.name }}"),
+        gettext_noop("Device {{ device.name }} ({{ device.kind }}, {{ device.id }}) has recovered.\n"
+        "Last seen: {{ device.last_seen_at }}"),
     ),
 }

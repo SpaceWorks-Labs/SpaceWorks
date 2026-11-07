@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RoleApplicationForm, type RoleFormBridge } from '../contributions/RoleApplicationForm'
@@ -38,12 +39,12 @@ export function ProgrammeRolePage({ scope, context, postingId, applicationId, ba
           save_choices: context.saved_details.readiness === 'ready' ? next.save_choices : {} })} />
         <p className="whitespace-pre-wrap text-sm">{posting.data?.coc?.body ?? context.coc?.body}</p>
         <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={value.coc?.accepted ?? false}
-          onChange={event => onChange({ ...value, coc: { revision: value.coc?.revision ?? 0, accepted: event.target.checked } })} />I agree to this code of conduct.</label>
+          onChange={event => onChange({ ...value, coc: { revision: value.coc?.revision ?? 0, accepted: event.target.checked } })} />{t`I agree to this code of conduct.`}</label>
         {posting.data?.host_waiver?.acceptance_required ? <section className="grid gap-2">
           <p className="whitespace-pre-wrap text-sm">{posting.data.host_waiver.body}</p>
           <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={value.host_waiver_accepted === true && value.host_waiver_id === posting.data.host_waiver.id && value.host_waiver_version === posting.data.host_waiver.version}
             onChange={event => onChange({ ...value, host_waiver_id: posting.data!.host_waiver!.id,
-              host_waiver_version: posting.data!.host_waiver!.version, host_waiver_accepted: event.target.checked })} />I accept this host waiver for my contributor role.</label>
+              host_waiver_version: posting.data!.host_waiver!.version, host_waiver_accepted: event.target.checked })} />{t`I accept this host waiver for my contributor role.`}</label>
         </section> : null}
       </fieldset>
     },
@@ -51,7 +52,7 @@ export function ProgrammeRolePage({ scope, context, postingId, applicationId, ba
   }), [scope.accountId, scope.eventId, scope.makerspaceId, context, application.data?.form, posting.data])
   const error = application.error || posting.error
   if (error) return <ErrorBlock error={error} onRetry={() => { void application.refetch(); void posting.refetch() }} />
-  if (!posting.data || (applicationId && !application.data)) return <p role="status">Loading your role application…</p>
+  if (!posting.data || (applicationId && !application.data)) return <p role="status">{t`Loading your role application…`}</p>
   return <RoleApplicationForm scope={scope} posting={posting.data} application={application.data ?? posting.data.application ?? null}
     bridge={bridge} completionReady onSaved={savedId => navigate(`${base}/role-applications/${savedId}`)} />
 }

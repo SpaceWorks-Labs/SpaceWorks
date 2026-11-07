@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
@@ -92,7 +93,7 @@ class OrganizationListView(APIView):
         active = request.query_params.get("active")
         if active is not None:
             if active not in ("true", "false"):
-                raise ValidationError({"active": "Use true or false."})
+                raise ValidationError({"active": gettext("Use true or false.")})
             queryset = queryset.filter(is_active=active == "true")
         search = request.query_params.get("search", "").strip()
         if search:

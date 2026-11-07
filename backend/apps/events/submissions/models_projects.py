@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -62,11 +63,11 @@ class SubmissionSnapshot(PrivateDocumentMixin, models.Model):
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
-            raise ValidationError("Submission snapshots are immutable.")
+            raise ValidationError(gettext("Submission snapshots are immutable."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Submission snapshots are retained.")
+        raise ValidationError(gettext("Submission snapshots are retained."))
 
 
 class SubmissionLink(models.Model):

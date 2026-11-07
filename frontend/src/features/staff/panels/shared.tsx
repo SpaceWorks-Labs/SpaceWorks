@@ -7,6 +7,8 @@ export type Makerspace = {
   id: number;
   name: string;
   default_loan_days?: number;
+  /** Phase 8 i18n: the space's default language code (registry: generated/locales.ts). */
+  default_locale?: string;
   public_inventory_enabled?: boolean;
   public_site_enabled?: boolean;
   public_landing_page?: "auto" | "inventory" | "events" | "machines" | "bookings" | "membership";

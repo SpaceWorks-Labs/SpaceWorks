@@ -19,6 +19,7 @@ lock is a floor (owner decision #111 Q9): a space may only choose values at leas
 strict as the floor, and a boolean lock means "forced on".
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 from .security_setting_types import (  # noqa: F401 -- re-exported
@@ -57,7 +58,7 @@ assert all(setting.kind == BOOL for setting in REGISTRY if setting.storage == FE
 def get(key):
     setting = BY_KEY.get(key)
     if setting is None:
-        raise ValidationError("Unknown security setting.", code="unknown_security_setting")
+        raise ValidationError(gettext("Unknown security setting."), code="unknown_security_setting")
     return setting
 
 

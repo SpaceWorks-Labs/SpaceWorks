@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils.text import slugify
 from drf_spectacular.utils import extend_schema_field
@@ -111,16 +112,16 @@ class InventoryProductAdminSerializer(serializers.ModelSerializer):
         consumable = attrs.get("is_consumable", getattr(self.instance, "is_consumable", False))
         mode = attrs.get("tracking_mode", getattr(self.instance, "tracking_mode", TrackingMode.QUANTITY))
         if consumable and mode != TrackingMode.QUANTITY:
-            raise serializers.ValidationError({"is_consumable": "Only quantity-tracked items can be consumables."})
+            raise serializers.ValidationError({"is_consumable": gettext("Only quantity-tracked items can be consumables.")})
 
     def validate_tracking_mode(self, value):
         if value not in TrackingMode.values:
-            raise serializers.ValidationError("Invalid tracking mode.")
+            raise serializers.ValidationError(gettext("Invalid tracking mode."))
         return value
 
     def validate_public_availability_mode(self, value):
         if value not in PublicAvailabilityMode.values:
-            raise serializers.ValidationError("Invalid public availability mode.")
+            raise serializers.ValidationError(gettext("Invalid public availability mode."))
         return value
 
 
@@ -144,7 +145,7 @@ class InventoryProductAdminCreateSerializer(InventoryProductAdminSerializer):
         available = attrs.get("available_quantity", 0)
         if available > total:
             raise serializers.ValidationError(
-                {"available_quantity": "Available quantity cannot exceed total quantity."}
+                {"available_quantity": gettext("Available quantity cannot exceed total quantity.")}
             )
         return attrs
 
@@ -239,7 +240,7 @@ class CategoryAdminSerializer(serializers.ModelSerializer):
             slug = slugify(name or "")
         if not slug:
             raise serializers.ValidationError(
-                {"slug": "Provide a name that yields a valid slug."}
+                {"slug": gettext("Provide a name that yields a valid slug.")}
             )
         duplicate = (
             Category.objects.filter(makerspace_id=makerspace_id, slug=slug)
@@ -249,7 +250,7 @@ class CategoryAdminSerializer(serializers.ModelSerializer):
         if duplicate:
             raise serializers.ValidationError(
                 {
-                    "slug": "A category with this slug already exists in this makerspace."
+                    "slug": gettext("A category with this slug already exists in this makerspace.")
                 }
             )
         attrs["slug"] = slug

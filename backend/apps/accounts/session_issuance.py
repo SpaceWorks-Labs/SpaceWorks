@@ -1,5 +1,6 @@
 """Serialize session issuance with account departure and credential changes."""
 
+from django.utils.translation import gettext
 import hmac
 
 from rest_framework.exceptions import AuthenticationFailed
@@ -10,7 +11,7 @@ from apps.accounts.staff_identity import context_label
 
 def validate_session_generation(user, token):
     if token.get("credential_generation") != user.credential_generation:
-        raise AuthenticationFailed("Account credentials have changed. Sign in again.")
+        raise AuthenticationFailed(gettext("Account credentials have changed. Sign in again."))
 
 
 def lock_session_user(authenticated):
@@ -34,7 +35,7 @@ def lock_session_user(authenticated):
         or not hmac.compare_digest(user.password, authenticated.password)
         or user.account_restored_at != authenticated.account_restored_at
     ):
-        raise AuthenticationFailed("Account or credentials are no longer available. Sign in again.")
+        raise AuthenticationFailed(gettext("Account or credentials are no longer available. Sign in again."))
     for attr in ("_mfa_verified_version", "_mfa_provider_verified", "_mfa_source", "_mfa_method"):
         if hasattr(authenticated, attr):
             setattr(user, attr, getattr(authenticated, attr))

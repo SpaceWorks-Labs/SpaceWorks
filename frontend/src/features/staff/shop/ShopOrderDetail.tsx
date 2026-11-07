@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -40,19 +41,19 @@ export function ShopOrderDetail({ makerspaceId, orderId, access, onBack }: {
   const label = orderStatus(status);
   const open = (next: Dialog) => () => setDialog(next);
   const primary: Action | undefined = !order || !access.sell ? undefined
-    : isUnpaid(status) && Number(order.amount_due) > 0 ? { label: "Take payment", onClick: open("pay") }
-    : status === "paid" ? { label: "Mark ready", onClick: () => ready.mutate(), pending: ready.isPending, pendingLabel: "Marking…" }
-    : status === "ready" || (isUnpaid(status) && Number(order.amount_due) <= 0) ? { label: "Hand over", onClick: open("collect") } : undefined;
+    : isUnpaid(status) && Number(order.amount_due) > 0 ? { label: t`Take payment`, onClick: open("pay") }
+    : status === "paid" ? { label: t`Mark ready`, onClick: () => ready.mutate(), pending: ready.isPending, pendingLabel: "Marking…" }
+    : status === "ready" || (isUnpaid(status) && Number(order.amount_due) <= 0) ? { label: t`Hand over`, onClick: open("collect") } : undefined;
   const overflow: Action[] = [
-    ...(order && access.features.receipts ? [{ label: "Receipt", onClick: () => setReceipt(true) }] : []),
-    ...(order && status === "paid" && access.sell ? [{ label: "Hand over", onClick: open("collect") }] : []),
-    ...(order && access.manage && access.features.returns && status === "collected" ? [{ label: "Return items", onClick: open("return") }] : []),
-    ...(order && access.manage && !FINAL.includes(status) ? [{ label: "Cancel order", tone: "danger" as const, onClick: open("cancel") }] : []),
+    ...(order && access.features.receipts ? [{ label: t`Receipt`, onClick: () => setReceipt(true) }] : []),
+    ...(order && status === "paid" && access.sell ? [{ label: t`Hand over`, onClick: open("collect") }] : []),
+    ...(order && access.manage && access.features.returns && status === "collected" ? [{ label: t`Return items`, onClick: open("return") }] : []),
+    ...(order && access.manage && !FINAL.includes(status) ? [{ label: t`Cancel order`, tone: "danger" as const, onClick: open("cancel") }] : []),
   ];
   const buyer = order ? order.buyer_name || order.guest_name || "Walk-in" : "";
   const error = ready.error;
   return <>
-    <DetailLayout back={{ label: "All orders", onClick: onBack }} title={order ? `Order #${order.id}` : "Order"}
+    <DetailLayout back={{ label: t`All orders`, onClick: onBack }} title={order ? t`Order #${order.id}` : t`Order`}
       status={order ? <StatusPill label={label.label} tone={label.tone} /> : undefined}
       meta={order ? [buyer, CHANNEL_LABELS[order.channel ?? ""] ?? order.channel ?? ""] : undefined}
       state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
@@ -64,20 +65,20 @@ export function ShopOrderDetail({ makerspaceId, orderId, access, onBack }: {
           subtotal: order.subtotal ?? "0", discount_total: order.discount_total ?? "0", total: order.total ?? "0", tax_total: order.tax_total ?? "0",
           amount_due: order.amount_due ?? "0", expires_at: order.expires_at ?? null, paid_at: order.paid_at ?? null,
           ready_at: order.ready_at ?? null, collected_at: order.collected_at ?? null }} />
-        {order.returns.length ? <section aria-label="Returns" className="grid gap-2">
-          <h2 className="title-section">Returns</h2>
+        {order.returns.length ? <section aria-label={t`Returns`} className="grid gap-2">
+          <h2 className="title-section">{t`Returns`}</h2>
           <ul className="grid gap-2">{order.returns.map(row => <li key={row.id} className="rounded-xl border border-line p-3 text-sm">
-            {row.quantity} × {order.lines.find(line => line.id === row.line_id)?.label ?? "Item"} · {row.disposition === "restock" ? "back to stock" : "written off"}
+            {row.quantity} × {order.lines.find(line => line.id === row.line_id)?.label ?? t`Item`} · {row.disposition === "restock" ? t`back to stock` : t`written off`}
             {" · "}{shopMoney(row.amount, order.currency)}
-            {row.refund_case_id ? <span className="block text-muted">Refund case #{row.refund_case_id}: approve it in the Refunds tab.</span> : null}
+            {row.refund_case_id ? <span className="block text-muted">{t`Refund case #${row.refund_case_id}: approve it in the Refunds tab.`}</span> : null}
           </li>)}</ul></section> : null}
       </div> : null}
       aside={order ? <KeyValueCard items={[
-        { label: "Buyer", value: buyer },
-        ...(order.buyer_email || order.guest_email ? [{ label: "Email", value: order.buyer_email || order.guest_email }] : []),
-        { label: "Payment", value: order.payment_status || (isUnpaid(status) ? "Not paid" : "—") },
-        { label: "Pickup", value: order.pickup_at === "event" ? order.pickup_event_title || "At an event" : "At the space" },
-        ...(order.close_reason ? [{ label: "Closed because", value: order.close_reason }] : []),
+        { label: t`Buyer`, value: buyer },
+        ...(order.buyer_email || order.guest_email ? [{ label: t`Email`, value: order.buyer_email || order.guest_email }] : []),
+        { label: t`Payment`, value: order.payment_status || (isUnpaid(status) ? "Not paid" : "—") },
+        { label: t`Pickup`, value: order.pickup_at === "event" ? order.pickup_event_title || "At an event" : "At the space" },
+        ...(order.close_reason ? [{ label: t`Closed because`, value: order.close_reason }] : []),
       ]} /> : undefined} />
     {order && dialog === "collect" ? <CollectDialog open onClose={() => setDialog(null)} pending={collect.isPending} error={collect.error} onSubmit={code => collect.mutate(code)} /> : null}
     {order && dialog === "pay" ? <PaymentDialog open order={order} onClose={() => setDialog(null)} pending={pay.isPending} error={pay.error} onSubmit={body => pay.mutate(body)} /> : null}

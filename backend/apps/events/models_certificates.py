@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -16,10 +17,10 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         PARTICIPANT = "participant", "Participant"
         FINALIST = "finalist", "Finalist"
         WINNER = "winner", "Winner"
-        VOLUNTEER_THANKS = "volunteer_thanks", "Volunteer thanks"
-        MENTOR_THANKS = "mentor_thanks", "Mentor thanks"
-        JUDGE_THANKS = "judge_thanks", "Judge thanks"
-        ORGANISER_THANKS = "organiser_thanks", "Organiser thanks"
+        VOLUNTEER_THANKS = "volunteer_thanks", gettext_noop("Volunteer thanks")
+        MENTOR_THANKS = "mentor_thanks", gettext_noop("Mentor thanks")
+        JUDGE_THANKS = "judge_thanks", gettext_noop("Judge thanks")
+        ORGANISER_THANKS = "organiser_thanks", gettext_noop("Organiser thanks")
 
     event = models.ForeignKey("events.Event", on_delete=models.PROTECT, related_name="certificates")
     recipient_member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
@@ -42,9 +43,9 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         REVOKED = "revoked", "Revoked"
 
     class RevocationReason(models.TextChoices):
-        ATTENDANCE_CORRECTED = "attendance_corrected", "Attendance corrected"
-        EVENT_CANCELLED = "event_cancelled", "Event cancelled"
-        STAFF_REVOKED = "staff_revoked", "Staff revoked"
+        ATTENDANCE_CORRECTED = "attendance_corrected", gettext_noop("Attendance corrected")
+        EVENT_CANCELLED = "event_cancelled", gettext_noop("Event cancelled")
+        STAFF_REVOKED = "staff_revoked", gettext_noop("Staff revoked")
 
     response = models.ForeignKey(
         EventFeedbackResponse,
@@ -133,21 +134,21 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
         if self.response_id and self.registration_id:
             if self.response.registration_id != self.registration_id:
                 raise ValidationError(
-                    {"response": "Response and certificate registration must match."}
+                    {"response": gettext("Response and certificate registration must match.")}
                 )
         if self.content_type != "application/pdf":
-            raise ValidationError({"content_type": "Certificates must be PDF files."})
+            raise ValidationError({"content_type": gettext("Certificates must be PDF files.")})
         if bool(self.registration_id) == bool(self.role_assignment_id):
-            raise ValidationError("A certificate has exactly one registration or role subject.")
+            raise ValidationError(gettext("A certificate has exactly one registration or role subject."))
         subject = self.registration if self.registration_id else self.role_assignment
         if subject.event_id != self.event_id or subject.member_id != self.recipient_member_id:
-            raise ValidationError("Certificate event and recipient must match its subject.")
+            raise ValidationError(gettext("Certificate event and recipient must match its subject."))
         if self.award_id and self.award.event_id != self.event_id:
-            raise ValidationError("Award belongs to another event.")
+            raise ValidationError(gettext("Award belongs to another event."))
         if self.result_revision_id and self.result_revision.event_id != self.event_id:
-            raise ValidationError("Results belong to another event.")
+            raise ValidationError(gettext("Results belong to another event."))
         if self.template_revision_id and self.template_revision.event_id != self.event_id:
-            raise ValidationError({"template_revision": "Template belongs to another event."})
+            raise ValidationError({"template_revision": gettext("Template belongs to another event.")})
 
     def save(self, *args, **kwargs):
         # Older internal attendance callers provide the immutable registration.
@@ -170,7 +171,7 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
                 getattr(self, field) != getattr(original, field)
                 for field in issuance_fields
             ):
-                raise ValidationError("Certificate issuance snapshots are immutable.")
+                raise ValidationError(gettext("Certificate issuance snapshots are immutable."))
             allowed = {
                 self.Status.PENDING: {self.Status.RENDERING},
                 self.Status.FAILED: {self.Status.RENDERING},
@@ -179,10 +180,10 @@ class EventAttendanceCertificate(ScopedPiiModelMixin, models.Model):
                 self.Status.REVOKED: set(),
             }
             if self.status != original.status and self.status not in allowed[original.status]:
-                raise ValidationError({"status": "Invalid certificate transition."})
+                raise ValidationError({"status": gettext("Invalid certificate transition.")})
             if original.status == self.Status.ACTIVE:
                 frozen = ("size_bytes", "sha256", "rendered_at")
                 if any(getattr(self, field) != getattr(original, field) for field in frozen):
-                    raise ValidationError("An active certificate artifact is immutable.")
+                    raise ValidationError(gettext("An active certificate artifact is immutable."))
         self.full_clean(validate_unique=False, validate_constraints=False)
         return super().save(*args, **kwargs)

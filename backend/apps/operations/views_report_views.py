@@ -1,5 +1,6 @@
 """A saved report preference never confers authority on its owner or its reader."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Q
 from django.http import Http404
@@ -34,7 +35,7 @@ def space_for_views(actor, pk, *, lock=False):
 def authorize_view(actor, space, state):
     definition = REPORT_REGISTRY.get(state.get("report_key"))
     if definition is None:
-        raise PermissionDenied("The saved report is unavailable.")
+        raise PermissionDenied(gettext("The saved report is unavailable."))
     from .report_subjects import require_report_action
     require_report_action(actor, definition, space.pk, state.get("filters", {}))
     from .report_sources import require_source
@@ -121,7 +122,7 @@ class SavedReportViewDetailView(APIView):
         row = get_object_or_404(rows, pk=pk)
         authorize_view(request.user, space, row.state)
         if not owner_authorized(row, space):
-            raise PermissionDenied("The view owner can no longer open this report.")
+            raise PermissionDenied(gettext("The view owner can no longer open this report."))
         return row, space
 
     @extend_schema(tags=["Reports"], request=None, responses={200: SavedReportViewSerializer, **ERRORS})
@@ -134,7 +135,7 @@ class SavedReportViewDetailView(APIView):
     def patch(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may edit this view.")
+            raise PermissionDenied(gettext("Only the owner may edit this view."))
         payload = SavedReportViewSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
         authorize_view(request.user, space, payload.validated_data.get("state", row.state))
@@ -151,7 +152,7 @@ class SavedReportViewDetailView(APIView):
     def delete(self, request, makerspace_id, pk):
         row, space = self.row(request, makerspace_id, pk, lock=True)
         if row.owner_id != request.user.pk:
-            raise PermissionDenied("Only the owner may delete this view.")
+            raise PermissionDenied(gettext("Only the owner may delete this view."))
         audit.record(request.user, "saved_view.deleted", makerspace=space, target=row)
         row.delete()
         return Response(status=204)

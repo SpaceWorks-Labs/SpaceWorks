@@ -1,4 +1,5 @@
 // "My cards": every live card of this account across spaces, programmes and events.
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -91,7 +92,7 @@ export async function uploadCardPhoto(card: MyCard, file: Blob) {
       form.append("file", file);
       return form;
     })() });
-  if (!upload.ok) throw new Error(`Upload failed (${upload.status})`);
+  if (!upload.ok) throw new Error(t`Upload failed (${upload.status})`);
   return memberRequest(`${cardPath(card)}/photo`, { method: "PUT",
     body: JSON.stringify({ object_key: presign.object_key, consent: true }) });
 }
@@ -106,7 +107,7 @@ export function useWalletPass(card: MyCard) {
       await new Promise((resolve) => window.setTimeout(resolve, 1000));
       job = await memberRequest<PassJob>(`/member/card-jobs/${job.id}`);
     }
-    if (job.state !== "succeeded") throw new Error("The wallet pass isn't ready. Try again in a minute.");
+    if (job.state !== "succeeded") throw new Error(t`The wallet pass isn't ready. Try again in a minute.`);
     const target = job.save_url || (await memberRequest<{ url: string }>(`/member/card-jobs/${job.id}/result`)).url;
     window.location.assign(target);
   } });

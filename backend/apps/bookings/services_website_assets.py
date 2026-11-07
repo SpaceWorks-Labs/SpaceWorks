@@ -1,5 +1,6 @@
 """Private gallery writes use the shared durable storage transaction."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -14,13 +15,13 @@ from .services_website import bump, locked_target, own_page
 
 def upload_asset(space, *, actor, file, alt_text, replace_id=None):
     if not isinstance(alt_text, str) or not alt_text.strip() or len(alt_text) > 200:
-        raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
+        raise ValidationError({"alt_text": gettext("Provide an image description of at most 200 characters.")})
     with clone_transaction() as copies:
         space, actor = locked_target(space, actor, "edit_details")
         page = own_page(space)
         old = get_object_or_404(page.assets, pk=replace_id) if replace_id else None
         if page.assets.count() >= 100 and old is None:
-            raise ValidationError("A page may have at most 100 images.")
+            raise ValidationError(gettext("A page may have at most 100 images."))
         key, size = website_assets.upload(file, module="bookings", page=page, copies=copies)
         asset = BookingResourcePageAsset.objects.create(page=page, object_key=key,
                                                         size_bytes=size, alt_text=alt_text.strip())

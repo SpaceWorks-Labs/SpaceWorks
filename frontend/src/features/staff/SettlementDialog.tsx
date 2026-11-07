@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { FlowLayout } from "../../components/layouts";
 
@@ -37,17 +38,16 @@ export function SettlementDialog({
 
   return (
     <FlowLayout presentation="dialog" open state={{ status: "ready" }} onCancel={() => { if (!pending) onCancel(); }}
-      title={title ?? `Record payment${count > 1 ? ` for ${count} charges` : ""}`}
-      steps={[{ key: "receipt", label: "Payment receipt", state: "current" }]} current="receipt"
-      footer={{ next: { label: title ? "Save correction" : "Save receipt", pending,
+      title={title ?? t`Record payment${count > 1 ? ` for ${count} charges` : ""}`}
+      steps={[{ key: "receipt", label: t`Payment receipt`, state: "current" }]} current="receipt"
+      footer={{ next: { label: title ? t`Save correction` : t`Save receipt`, pending,
         disabled: !receivedValid, onClick: () => onConfirm({ method, reference, received_at: new Date(receivedAt).toISOString() }) } }}
       work={<>
       <p className="mt-1 text-sm text-muted">
-        How and when the money arrived. This is kept as a permanent receipt.
-      </p>
+        {t`How and when the money arrived. This is kept as a permanent receipt.`}</p>
       <div className="@container mt-3"><div className="grid gap-3 @2xl:grid-cols-3">
         <label className="block text-sm">
-          <span className="eyebrow">Method</span>
+          <span className="eyebrow">{t`Method`}</span>
           <select
             className="desk-input mt-1 w-full"
             value={method}
@@ -59,17 +59,17 @@ export function SettlementDialog({
           </select>
         </label>
         <label className="block text-sm">
-          <span className="eyebrow">Reference</span>
+          <span className="eyebrow">{t`Reference`}</span>
           <input
             className="desk-input mt-1 w-full"
             maxLength={64}
             onChange={(event) => setReference(event.target.value)}
-            placeholder="Optional"
+            placeholder={t`Optional`}
             value={reference}
           />
         </label>
         <label className="block text-sm">
-          <span className="eyebrow">Received</span>
+          <span className="eyebrow">{t`Received`}</span>
           <input
             className="desk-input mt-1 w-full"
             onChange={(event) => setReceivedAt(event.target.value)}
@@ -80,8 +80,7 @@ export function SettlementDialog({
       </div></div>
       {receivedValid ? null : (
         <p className="mt-2 text-sm text-danger" role="alert">
-          Enter the date and time the money was received.
-        </p>
+          {t`Enter the date and time the money was received.`}</p>
       )}
       {error ? <p role="alert" className="mt-3 text-sm text-danger">{error}</p> : null}
       </>}

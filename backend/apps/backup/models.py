@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -44,7 +45,7 @@ class PlatformBackupSettings(models.Model):
 
 class BackupArchive(models.Model):
     class Scope(models.TextChoices):
-        DEPLOYMENT = "deployment", "Full deployment"
+        DEPLOYMENT = "deployment", gettext_noop("Full deployment")
         MAKERSPACE = "makerspace", "Makerspace"
 
     class Status(models.TextChoices):
@@ -56,10 +57,10 @@ class BackupArchive(models.Model):
         EXPIRED = "expired", "Expired"
 
     class Trigger(models.TextChoices):
-        ON_DEMAND = "on_demand", "Back up now"
+        ON_DEMAND = "on_demand", gettext_noop("Back up now")
         NIGHTLY = "nightly", "Nightly"
-        SAFETY = "safety", "Before a restore"
-        EXTRACTED = "extracted", "From a whole-platform backup"
+        SAFETY = "safety", gettext_noop("Before a restore")
+        EXTRACTED = "extracted", gettext_noop("From a whole-platform backup")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     scope = models.CharField(max_length=16, choices=Scope.choices)

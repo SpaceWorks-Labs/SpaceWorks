@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { capabilityOn } from "../../../lib/features";
 
 type Space = { enabled_modules?: string[]; enabled_features?: string[] };
@@ -28,12 +29,12 @@ export type ShopView = "orders" | "pos" | "cash" | "catalogue" | "stock" | "repo
 /** Sub-views the actor may open, in the order the tab lists them. Gated views are omitted, never disabled. */
 export function shopViews(access: ShopAccess): { key: ShopView; label: string }[] {
   return [
-    access.view ? { key: "orders" as const, label: "Orders" } : null,
-    access.sell ? { key: "pos" as const, label: "Till" } : null,
-    access.sell && access.features.cashUp ? { key: "cash" as const, label: "Cash-up" } : null,
-    access.manage ? { key: "catalogue" as const, label: "Catalogue" } : null,
-    access.view ? { key: "stock" as const, label: "Stock" } : null,
-    access.manage ? { key: "reports" as const, label: "Reports" } : null,
-    access.manage ? { key: "settings" as const, label: "Settings" } : null,
+    access.view ? { key: "orders" as const, label: t`Orders` } : null,
+    access.sell ? { key: "pos" as const, label: t`Till` } : null,
+    access.sell && access.features.cashUp ? { key: "cash" as const, label: t`Cash-up` } : null,
+    access.manage ? { key: "catalogue" as const, label: t`Catalogue` } : null,
+    access.view ? { key: "stock" as const, label: t`Stock` } : null,
+    access.manage ? { key: "reports" as const, label: t`Reports` } : null,
+    access.manage ? { key: "settings" as const, label: t`Settings` } : null,
   ].filter((view): view is { key: ShopView; label: string } => view !== null);
 }

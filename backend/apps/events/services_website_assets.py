@@ -1,5 +1,6 @@
 """Private asset writes share the durable quota/copy/cleanup boundary."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
@@ -18,7 +19,7 @@ from .website_preparation import prepared_page_write, prepared_copies
 @prepared_page_write
 def upload_asset(target, *, actor, file, alt_text, replace_id=None, revision=None):
     if not isinstance(alt_text, str) or not alt_text.strip() or len(alt_text) > 200:
-        raise ValidationError({"alt_text": "Provide an image description of at most 200 characters."})
+        raise ValidationError({"alt_text": gettext("Provide an image description of at most 200 characters.")})
     from .website_preparation import prepared_page_id
     return event_asset_transaction(lambda copies: _upload_asset(
         target, actor=actor, file=file, alt_text=alt_text, replace_id=replace_id,
@@ -37,13 +38,13 @@ def _upload_asset_locked(target, actor, file, alt_text, replace_id, revision, co
     copies.watch("target", target)
     from .website_projection import project
     if revision is not None and revision != project(target)["revision"]:
-        raise ValidationError({"revision": "The page changed. Reload before uploading."})
+        raise ValidationError({"revision": gettext("The page changed. Reload before uploading.")})
     remapped = {}
     page = own_page(target, copies, asset_map=remapped)
     old = get_object_or_404(page.assets, pk=remapped.get(replace_id, replace_id)) if replace_id else None
     from apps.makerspaces.website_asset_journal import pending_count
     if page.assets.count() + pending_count(page, exclude_ids=copies.journal_ids) >= 100:
-        raise ValidationError("A page may have at most 100 images.")
+        raise ValidationError(gettext("A page may have at most 100 images."))
     key, size = website_assets.upload(file, module="events", page=page, copies=copies)
     asset = EventPageAsset.objects.create(page=page, object_key=key,
                                            size_bytes=size, alt_text=alt_text)
@@ -83,7 +84,7 @@ def delete_asset(target, asset_id, *, actor):
     page = get_object_or_404(EventPage.objects.select_for_update(), **owner(target))
     asset = get_object_or_404(page.assets, pk=asset_id)
     if asset.eventpagerevisionasset_set.exists():
-        raise ValidationError({"asset_id": "Saved revisions retain this image."})
+        raise ValidationError({"asset_id": gettext("Saved revisions retain this image.")})
     from apps.makerspaces.website_asset_journal import schedule
     job_id = schedule(asset)
     asset.delete()

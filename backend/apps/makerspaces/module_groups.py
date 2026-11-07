@@ -19,6 +19,7 @@ from apps.makerspaces.module_registry import (
 )
 from apps.makerspaces.platform import MODULE_WORKFLOWS
 from apps.separability.tombstones import SEPARABLE_APPS, tombstoned_app_labels
+from config.locale_resolution import display
 
 # What each separable app actually costs an operator who does not use it. Written out
 # rather than derived, because "what does this app give me" is not something the registry
@@ -63,8 +64,8 @@ def grouped_module_status(makerspace):
         groups.append(
             {
                 "key": group.key,
-                "label": group.label,
-                "description": group.description,
+                "label": display(group.label),
+                "description": display(group.description),
                 # A group holding a core key can never be switched off: core is added
                 # back on every write, so a master toggle offering "off" would be a
                 # control whose effect is silently undone.

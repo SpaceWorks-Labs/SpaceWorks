@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { MfaChallenge } from "./mfaApi";
 import { publicV1Request } from "../../lib/api";
 
@@ -56,7 +57,7 @@ function loadScript(src: string) {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Unable to load the identity provider."));
+    script.onerror = () => reject(new Error(t`Unable to load the identity provider.`));
     document.head.appendChild(script);
   });
   scripts.set(src, pending);
@@ -100,16 +101,16 @@ export async function mountGoogleButton(
 ) {
   const { nonce } = await requestNonce("google", surface);
   await loadScript("https://accounts.google.com/gsi/client");
-  if (!window.google) throw new Error("Google sign-in is unavailable.");
+  if (!window.google) throw new Error(t`Google sign-in is unavailable.`);
   window.google.accounts.id.initialize({
     client_id: clientId,
     nonce,
     callback: async ({ credential }: { credential?: string }) => {
-      if (!credential) return onError(new Error("Google sign-in was cancelled."));
+      if (!credential) return onError(new Error(t`Google sign-in was cancelled.`));
       try {
         onSuccess(await complete("google", surface, credential, nonce));
       } catch (error) {
-        onError(error instanceof Error ? error : new Error("Google sign-in failed."));
+        onError(error instanceof Error ? error : new Error(t`Google sign-in failed.`));
       }
     },
   });
@@ -124,7 +125,7 @@ export async function mountGoogleButton(
 export async function signInWithApple(serviceId: string, surface: SocialSurface) {
   const { nonce } = await requestNonce("apple", surface);
   await loadScript("https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js");
-  if (!window.AppleID) throw new Error("Apple sign-in is unavailable.");
+  if (!window.AppleID) throw new Error(t`Apple sign-in is unavailable.`);
   window.AppleID.auth.init({
     clientId: serviceId,
     scope: "name email",
@@ -159,7 +160,7 @@ export async function beginOidcBrowser(
   try {
     window.sessionStorage.setItem(`${OIDC_NONCE_PREFIX}${started.state}`, started.nonce);
   } catch {
-    throw new Error("Browser storage is required for secure identity-provider sign-in.");
+    throw new Error(t`Browser storage is required for secure identity-provider sign-in.`);
   }
   window.location.assign(started.authorization_url);
 }
@@ -176,7 +177,7 @@ export async function beginGithubBrowser() {
   try {
     window.sessionStorage.setItem(`${GITHUB_NONCE_PREFIX}${started.state}`, nonce);
   } catch {
-    throw new Error("Browser storage is required for secure identity-provider sign-in.");
+    throw new Error(t`Browser storage is required for secure identity-provider sign-in.`);
   }
   window.location.assign(started.authorization_url);
 }
@@ -188,7 +189,7 @@ export async function completeOidcBrowserCallback(): Promise<SocialLoginResult |
   if (!code && !state && !query.get("error")) return null;
   if (!code || !state || query.get("error")) {
     clearOidcQuery();
-    throw new Error("Identity-provider sign-in was cancelled or refused.");
+    throw new Error(t`Identity-provider sign-in was cancelled or refused.`);
   }
   let nonce = "";
   let provider = "oidc";
@@ -202,7 +203,7 @@ export async function completeOidcBrowserCallback(): Promise<SocialLoginResult |
     // The backend still refuses the callback because the nonce is mandatory.
   }
   clearOidcQuery();
-  if (!nonce) throw new Error("Identity-provider sign-in expired. Please try again.");
+  if (!nonce) throw new Error(t`Identity-provider sign-in expired. Please try again.`);
   return publicV1Request<SocialLoginResult | MfaChallenge>(`/auth/social/${provider}/callback`, {
     method: "POST",
     credentials: "include",

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ListLayout } from "../../../components/layouts";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { useState } from "react";
@@ -103,7 +104,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
         editingId === category.id ? (
           <input
             className="desk-input w-full"
-            aria-label={`Name for ${category.name}`}
+            aria-label={t`Name for ${category.name}`}
             value={editForm.name}
             onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))}
           />
@@ -120,7 +121,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
         editingId === category.id ? (
           <input
             className="desk-input w-24"
-            aria-label={`Order for ${category.name}`}
+            aria-label={t`Order for ${category.name}`}
             type="number"
             value={editForm.display_order}
             onChange={(event) => setEditForm((current) => ({ ...current, display_order: event.target.value }))}
@@ -136,7 +137,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
         editingId === category.id ? (
           <input
             className="desk-input w-28"
-            aria-label={`Icon for ${category.name}`}
+            aria-label={t`Icon for ${category.name}`}
             value={editForm.icon}
             onChange={(event) => setEditForm((current) => ({ ...current, icon: event.target.value }))}
           />
@@ -157,43 +158,42 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
               disabled={!editForm.name.trim() || update.isPending}
               onClick={() => update.mutate(category)}
             >
-              {update.isPending ? "Saving…" : "Save"}
+              {update.isPending ? t`Saving…` : t`Save`}
             </button>
             <button className="desk-button-ghost" type="button" onClick={() => setEditingId(null)}>
-              Cancel
-            </button>
+              {t`Cancel`}</button>
           </div>
         ) : (
-          <div className="flex items-center gap-2"><button className="desk-button-ghost" onClick={() => startEdit(category)}>Edit</button>
-          <OverflowMenu label={`Actions for ${category.name}`} actions={[{ label: "Delete", confirms: true, tone: "danger", disabled: remove.isPending, onClick: () => setDeleteTarget(category) }]} /></div>
+          <div className="flex items-center gap-2"><button className="desk-button-ghost" onClick={() => startEdit(category)}>{t`Edit`}</button>
+          <OverflowMenu label={t`Actions for ${category.name}`} actions={[{ label: t`Delete`, confirms: true, tone: "danger", disabled: remove.isPending, onClick: () => setDeleteTarget(category) }]} /></div>
         ),
     },
   ];
-  const add = { label: "Add category", onClick: () => setAddOpen(true) };
-  return <ListLayout header={{ title: "Categories", subtitle: "Group the parts in your catalogue.", primary: add }}
-    state={inventoryQueryState(categories, "categories")} isEmpty={!rows.length} empty={{ message: "No categories yet. Add one to group your catalogue.", action: add }}
+  const add = { label: t`Add category`, onClick: () => setAddOpen(true) };
+  return <ListLayout header={{ title: t`Categories`, subtitle: t`Group the parts in your catalogue.`, primary: add }}
+    state={inventoryQueryState(categories, "categories")} isEmpty={!rows.length} empty={{ message: t`No categories yet. Add one to group your catalogue.`, action: add }}
     body={{ kind: "table", table: <DataTable<Category> columns={columns} data={rows} getRowId={row => row.id} /> }}
-    detail={<><Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add category">
+    detail={<><Modal open={addOpen} onClose={() => setAddOpen(false)} title={t`Add category`}>
         <div className="grid gap-4">
-          <Field label="Name"><input className="desk-input" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></Field>
-          <Field label="Slug"><input className="desk-input" placeholder="auto from name" value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))} /></Field>
-          <Field label="Order"><input className="desk-input" type="number" value={form.display_order} onChange={(event) => setForm((current) => ({ ...current, display_order: event.target.value }))} /></Field>
-          <Field label="Icon"><input className="desk-input" value={form.icon} onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))} /></Field>
+          <Field label={t`Name`}><input className="desk-input" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></Field>
+          <Field label={t`Slug`}><input className="desk-input" placeholder={t`auto from name`} value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))} /></Field>
+          <Field label={t`Order`}><input className="desk-input" type="number" value={form.display_order} onChange={(event) => setForm((current) => ({ ...current, display_order: event.target.value }))} /></Field>
+          <Field label={t`Icon`}><input className="desk-input" value={form.icon} onChange={(event) => setForm((current) => ({ ...current, icon: event.target.value }))} /></Field>
           <button className="desk-button-primary" type="button" disabled={!form.name.trim() || create.isPending} onClick={() => create.mutate()}>
-            {create.isPending ? "Adding…" : "Add category"}
+            {create.isPending ? t`Adding…` : t`Add category`}
           </button>
         </div>
       {create.error ? <p role="alert" className="text-sm text-danger">{create.error.message}</p> : null}</Modal>
       {update.error || remove.error ? <p role="alert" className="text-sm text-danger">{(update.error || remove.error)?.message}</p> : null}
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="Delete category"
+        title={t`Delete category`}
         message={
           deleteTarget
-            ? `Delete ${deleteTarget.name}? This will detach ${deleteTarget.product_count} products.`
+            ? t`Delete ${deleteTarget.name}? This will detach ${deleteTarget.product_count} products.`
             : ""
         }
-        confirmLabel="Delete"
+        confirmLabel={t`Delete`}
         tone="danger"
         pending={remove.isPending}
         onCancel={() => setDeleteTarget(null)}

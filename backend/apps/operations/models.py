@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -57,7 +58,7 @@ class StockTransferLine(models.Model):
 
     def clean(self):
         if bool(self.product_id) == bool(self.asset_id):
-            raise ValidationError("Provide exactly one of product or asset.")
+            raise ValidationError(gettext("Provide exactly one of product or asset."))
 
 
 from .models_stocktake_discipline import StocktakePolicy, StocktakeSchedule  # noqa: F401
@@ -113,7 +114,7 @@ class StocktakeLine(models.Model):
 
     def clean(self):
         if bool(self.product_id) == bool(self.asset_id):
-            raise ValidationError("Provide exactly one of product or asset.")
+            raise ValidationError(gettext("Provide exactly one of product or asset."))
 
     class Meta:
         constraints = [

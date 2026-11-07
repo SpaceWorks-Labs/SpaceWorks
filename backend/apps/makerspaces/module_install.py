@@ -25,6 +25,7 @@ from apps.makerspaces.module_registry import (
     module_available,
     with_dependencies,
 )
+from config.locale_resolution import display
 
 
 class ModuleInstallError(Exception):
@@ -48,8 +49,8 @@ def module_status(makerspace):
     return [
         {
             "key": definition.key,
-            "label": definition.label,
-            "description": definition.description,
+            "label": display(definition.label),
+            "description": display(definition.description),
             "installed": definition.key in enabled or definition.key in core,
             "core": definition.key in core,
             # False when the owning app is tombstoned. Reported separately from

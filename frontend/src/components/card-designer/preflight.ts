@@ -1,5 +1,6 @@
 // Preflight: what to fix before printing, checked as you edit. Errors are what the server
 // refuses on publish (contrast, QR and barcode sizes); warnings are what tends to print badly.
+import { t } from "@lingui/core/macro";
 import type { CardDocument, CardDomain, Layer, Side, SideName } from "./cardTypes";
 import { qrMinimum, SAFE_AREA_MM } from "./cardGeometry";
 import { layerContrast, MINIMUM_RATIO } from "./contrast";
@@ -75,18 +76,18 @@ export function preflight(document: CardDocument, domain: CardDomain, assetColou
     issues.push(...checkSide(document.back, "back", document.stock, assetColours));
     if (!visible(document.back).length) {
       issues.push({ id: "back-empty", severity: "warn", side: "back", layerId: null,
-        message: "The back is switched on but has nothing on it. Add layers or switch two-sided off." });
+        message: t`The back is switched on but has nothing on it. Add layers or switch two-sided off.` });
     }
   }
   if (!visible(document.front).some(hasName)) {
     issues.push({ id: "no-name", severity: "warn", side: "front", layerId: null,
-      message: "The front has no name on it. Add a Name data field or {{name}} in a text layer." });
+      message: t`The front has no name on it. Add a Name data field or {{name}} in a text layer.` });
   }
   if (domain === "member_cards") {
     const all = [...visible(document.front), ...(document.back_enabled ? visible(document.back) : [])];
     if (!all.some((layer) => isQr(layer) || layer.kind === "barcode")) {
       issues.push({ id: "no-code", severity: "warn", side: "front", layerId: null,
-        message: "Nothing on this card can be scanned. Add a desk QR or barcode for the desk, or a check QR." });
+        message: t`Nothing on this card can be scanned. Add a desk QR or barcode for the desk, or a check QR.` });
     }
   }
   const order: Record<Severity, number> = { error: 0, warn: 1, info: 2 };

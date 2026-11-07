@@ -8328,3 +8328,85 @@ reconciliation may release it. Full never consults free accounting caps or free 
 - **Public stock follows the public availability rule.** Labels by default, exact counts only for a
   product that opts in (`show_exact_stock` with `shop.public_stock`); never storage, costs, linked items
   or other buyers.
+
+## Internationalisation (release 2, lane L9; phase 8, #75g, #76)
+
+English is the only catalogue, and every screen is ready for translation. The contributor how-to is
+`docs/i18n.md`.
+
+- **One locale registry.** `backend/config/supported_locales.json` is the only authored list. It
+  feeds `LANGUAGES`, the field validator and the committed `frontend/src/generated/locales.ts`
+  (`npm run generate:locales`). The list is code-defined, never read from the environment, so
+  `ENV_SURFACE` is unchanged. Neither locale field has DB choices, so adding a language needs no
+  migration. `LANGUAGE_CODE` is `en`.
+- **Precedence, with the source kept beside the code.** A valid `X-SpaceWorks-Locale` comes first
+  (`explicit`), then `User.preferred_locale` (`user`), then a makerspace the endpoint has ALREADY
+  scoped (`makerspace`), then `Accept-Language` (`accept_language`), then `en` (`system`).
+  `Accept-Language` can never become explicit. A malformed, multiple or unsupported value falls
+  through. A later makerspace resolution (`activate_resolved_makerspace_locale`, used by
+  bootstrap) replaces only an ambient or system result. Never resolve a default from an unchecked
+  id, slug or body.
+- **Middleware order is pinned.** `config.locale_context.LocaleContextResetMiddleware` sits right
+  after the request-id and metrics layers. That puts it OUTSIDE the control-plane reach check, the
+  source gate, host validation, the IP guard, the PII net and the RLS boundary, so no early
+  refusal inherits another request's locale, and every answer gets `Content-Language` and
+  `Vary: Accept-Language, X-SpaceWorks-Locale`. Django's `LocaleMiddleware` and
+  `ExplicitLocaleMiddleware` follow `SessionMiddleware`. The recovery gate must stay first, so it
+  renders its refusal inside `early_response_locale`. Anything added above the reset must be
+  pass-through or use that helper.
+- **Authentication re-resolves.** `SpaceWorksJWTAuthentication` activates the account's locale as
+  soon as the principal is valid, before any refusal and before every `_assert_source_gate()`.
+  The native path adds the selected makerspace and the claim path adds the claim's makerspace. A
+  one-locale deployment never pays a query for this.
+- **The preference is self-only.** `PATCH /api/v1/auth/me` takes exactly
+  `{"preferred_locale": "<code>"|null}`. It writes one `account.locale_changed` audit row (meta:
+  `before`/`after` codes, `default` for null) per real change and nothing when the value is
+  unchanged. Claim sessions are refused, the source gate exempts it as platform-global, and
+  recovery quarantine refuses it. `Makerspace.default_locale` changes only through the scoped
+  admin PATCH (`MANAGE_MAKERSPACE`) and records `makerspace.default_locale_changed`. Both fields
+  are non-PII settings: data_export emits them (both user fidelities), the tenant dump carries
+  them (stubs get null), and a created person keeps a supported source preference.
+- **Who renders in which language.** Request errors use the request locale. Shared output uses the
+  makerspace default: a chat message, a makerspace-wide notification row, batch PDFs and
+  address-only email. Output addressed to one account uses its preference, then the makerspace,
+  then `en`. `config.locale_resolution.override_for` is the only helper; it restores the previous
+  locale. Coerce lazy text to `str` inside it before it reaches SMTP, a chat API, ReportLab, a
+  model field, Celery or `on_commit`.
+- **Email defaults translate; edited templates never do.** Registry defaults are `gettext_noop`
+  strings, translated in `email_templates.render()` inside the recipient's override. Requester
+  hardware and booking mail pass their recipient lazily. Staff fan-out mail renders once, in the
+  makerspace default. A stored `EmailTemplate` or `MachineTypeEmailTemplate` row renders
+  byte-for-byte and never goes through gettext.
+- **Never translated:** audit `action`/`meta`, API error `code`s, module, feature, report and
+  notification-event keys, QR target types, object keys, enum values, routes and query keys.
+  Tenant- and user-authored text (names, descriptions, custom roles, remarks, form questions and
+  answers, chat-template bodies, edited templates) is never translated either. Only display labels
+  are marked. The parity route map (`config/control_parity_entries*.py`) and the /control/ Django
+  templates are not marked: the first is a technical route map, the second keeps Django's and
+  Unfold's own catalogues. The /control/ catalogue titles and help are marked.
+- **No lazy proxy in data structures.** Choice labels and the display catalogues (module registry,
+  capabilities, report definitions, audit presentation labels, claim refusal reasons) are
+  `gettext_noop` strings, translated where they are shown (`config.locale_resolution.display`), so
+  joins, sorting, hashing and JSON snapshots keep plain `str`. Only Django-owned declarations
+  (`verbose_name`, `help_text`, serializer `error_messages`) and the /control/ catalogue rendered
+  by templates are `gettext_lazy`.
+- **Every user-facing literal is marked, and two guards enforce it.**
+  `backend/scripts/check_i18n_literals.py` covers exceptions, `detail` responses, field and choice
+  labels, notification and email fields, email defaults, ReportLab text and the display
+  catalogues. `frontend/scripts/check-i18n-literals.mjs` covers JSX text, display attributes and
+  properties, copy maps, toasts, errors and label functions, and it renders each generator to a
+  temp file and scans the output. Both must report 0. A technical exception carries
+  `i18n-ignore: <reason>`. The catalogues are `backend/locale/en/LC_MESSAGES/django.po`
+  (`makemessages ... --no-location`) and `frontend/src/locales/en/messages.po` (`lingui extract`,
+  no origins); both change only when wording does.
+- **Frontend runtime.** `src/lib/i18n.ts` activates Lingui when `main.tsx` first imports it, before
+  anything renders. English ships no catalogue: the macros keep each message beside its id
+  (`descriptorFields: "message"`), compiled once per message. A change of effective locale
+  reloads the page once, because copy evaluated at module load would otherwise keep the old
+  language. The last effective locale is remembered, so this cannot loop.
+  `src/lib/localeFetch.ts` adds `Accept-Language` (and `X-SpaceWorks-Locale` for an explicit
+  choice only) to SpaceWorks API URLs, and never to signed object-storage URLs. Modules bundled
+  into a worker carry no macro.
+- **Formatting goes through `src/lib/format.ts`.** `formatLocale()` keeps the browser's regional
+  variant of the active language (an en-GB browser keeps day-first dates). No call passes
+  `undefined` to Intl. CSV and API timestamps are never formatted.

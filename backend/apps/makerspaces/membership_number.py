@@ -12,6 +12,7 @@ The printed form follows the space's pattern (`member_number_pattern`): `{number
 first joined), around literal letters, digits and `- / _ .` -- e.g. `TNK-{number:4}`.
 An empty pattern prints four digits.
 """
+from django.utils.translation import gettext
 import re
 
 from django.db.models import Max
@@ -32,9 +33,9 @@ def validate_pattern(pattern):
         return ""
     numbers = [m for m in _TOKEN.finditer(pattern) if m.group(1).startswith("number")]
     if len(numbers) != 1:
-        raise ValidationError({"member_number_pattern": "Use {number} or {number:N} exactly once."})
+        raise ValidationError({"member_number_pattern": gettext("Use {number} or {number:N} exactly once.")})
     if not _LITERAL.match(_TOKEN.sub("", pattern)):
-        raise ValidationError({"member_number_pattern": "Use letters, digits, spaces and - / _ . around the tokens."})
+        raise ValidationError({"member_number_pattern": gettext("Use letters, digits, spaces and - / _ . around the tokens.")})
     return pattern
 
 

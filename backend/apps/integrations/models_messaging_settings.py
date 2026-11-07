@@ -1,4 +1,5 @@
 """Addressed senders. Secrets use deployment encryption, never scoped PII."""
+from django.utils.translation import gettext_noop
 import secrets
 
 from django.db import models
@@ -63,8 +64,8 @@ class MakerspaceMessagingSettings(MessagingSecrets, models.Model):
 
 class MessagingSenderIdentity(models.Model):
     class Owner(models.TextChoices):
-        PLATFORM_OTP = "platform_otp", "Platform OTP"
-        PLATFORM = "platform", "Platform notifications"
+        PLATFORM_OTP = "platform_otp", gettext_noop("Platform OTP")
+        PLATFORM = "platform", gettext_noop("Platform notifications")
         MAKERSPACE = "makerspace", "Makerspace"
 
     sender_key = models.CharField(max_length=255, unique=True)

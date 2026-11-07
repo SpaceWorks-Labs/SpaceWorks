@@ -5,6 +5,7 @@ are superadmin-only. Every change needs recent re-authentication and is audited 
 service. Module managers and organization grants get 403.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -29,7 +30,7 @@ KEY = OpenApiParameter("key", str, OpenApiParameter.PATH, description="A registe
 def _space(request, makerspace_id):
     space = get_object_or_404(Makerspace, pk=makerspace_id)
     if service.editor_via(request.user, space) is None:
-        raise PermissionDenied("Only this space's Space Manager or a platform superadmin can view security settings.")
+        raise PermissionDenied(gettext("Only this space's Space Manager or a platform superadmin can view security settings."))
     return space
 
 
@@ -85,7 +86,7 @@ class SecuritySettingLockView(APIView):
     def _locked_space(self, request, makerspace_id):
         space = get_object_or_404(Makerspace, pk=makerspace_id)
         if not is_platform_superadmin(request.user):
-            raise PermissionDenied("Only a platform superadmin can lock or unlock security settings.")
+            raise PermissionDenied(gettext("Only a platform superadmin can lock or unlock security settings."))
         require_recent_reauth(request)
         return space
 
@@ -112,6 +113,6 @@ class SecuritySettingLockView(APIView):
     def delete(self, request, makerspace_id, key):
         space = self._locked_space(request, makerspace_id)
         if not _call(service.unlock, request.user, space, key):
-            return Response({"detail": "This setting is not locked.", "code": "not_locked"}, status=404)
+            return Response({"detail": gettext("This setting is not locked."), "code": "not_locked"}, status=404)
         space.refresh_from_db()
         return _no_store(Response(_payload(request, space)))

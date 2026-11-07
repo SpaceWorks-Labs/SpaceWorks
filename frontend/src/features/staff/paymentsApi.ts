@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { StructuredApiError, staffRequest } from "../../lib/api";
@@ -211,12 +213,12 @@ export function refundErrorMessage(error: unknown) {
   if (error instanceof StructuredApiError && error.code && REFUND_ERRORS[error.code]) {
     return REFUND_ERRORS[error.code];
   }
-  return error instanceof Error ? error.message : "Refund failed.";
+  return error instanceof Error ? error.message : t`Refund failed.`;
 }
 
 export function formatMoney(amount: string, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
+    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
   } catch {
     return `${currency.toUpperCase()} ${amount}`;
   }

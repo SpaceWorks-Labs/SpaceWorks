@@ -1,5 +1,6 @@
 """Receipt rows for offline settlement: the append-only cash-book writes."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import NotFound
 
@@ -27,11 +28,11 @@ def amend_settlement(*, actor, makerspace_id, payment_id, settlement):
         .first()
     )
     if payment is None or payment.status != Payment.Status.PAID_OFFLINE:
-        raise NotFound("Settled payment not found.")
+        raise NotFound(gettext("Settled payment not found."))
     _require_record_authority(actor, [payment])
     current = ManualSettlement.effective_for(payment)
     if current is None:
-        raise NotFound("This payment has no settlement to correct.")
+        raise NotFound(gettext("This payment has no settlement to correct."))
     receipt = ManualSettlement.objects.create(
         payment=payment,
         method=settlement["method"],

@@ -13,6 +13,7 @@ closes the rest the same way, so a window nobody reads again still gets its expi
 in the space's audit log. No mail is sent.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -36,7 +37,7 @@ class PiiAccessAlreadyOpen(APIException):
 def clean_reason(reason):
     reason = " ".join(str(reason or "").split())
     if not 10 <= len(reason) <= 300:
-        raise ValidationError("Give a reason of 10 to 300 characters.", code="invalid_pii_reason")
+        raise ValidationError(gettext("Give a reason of 10 to 300 characters."), code="invalid_pii_reason")
     return reason
 
 
@@ -83,7 +84,7 @@ def _record_closed(actor, grant):
 
 def _require_superadmin(actor):
     if not is_platform_superadmin(actor):
-        raise PermissionDenied("Only a platform superadmin opens a PII access window.")
+        raise PermissionDenied(gettext("Only a platform superadmin opens a PII access window."))
 
 
 @transaction.atomic
@@ -95,7 +96,7 @@ def open_grant(actor, space, reason):
     from apps.makerspaces.servability import is_servable
     space = Makerspace.objects.select_for_update().get(pk=space.pk)
     if not is_servable(space):
-        raise PermissionDenied("This makerspace is not available.")
+        raise PermissionDenied(gettext("This makerspace is not available."))
     return _open(actor, reason, makerspace=space)
 
 
@@ -107,7 +108,7 @@ def open_person_grant(actor, person, reason):
     from apps.accounts.models import User
     person = User.objects.select_for_update().get(pk=person.pk)
     if is_platform(person):
-        raise ValidationError("Platform accounts are not masked.", code="invalid_pii_subject")
+        raise ValidationError(gettext("Platform accounts are not masked."), code="invalid_pii_subject")
     return _open(actor, reason, subject=person)
 
 
@@ -136,7 +137,7 @@ def close_grant(actor, grant):
     _require_superadmin(actor)
     grant = PlatformPiiAccessGrant.objects.select_for_update().get(pk=grant.pk)
     if grant.actor_id != actor.pk:
-        raise PermissionDenied("Only the superadmin who opened this window can close it.")
+        raise PermissionDenied(gettext("Only the superadmin who opened this window can close it."))
     now = timezone.now()
     if grant.closed_at is not None:
         return grant

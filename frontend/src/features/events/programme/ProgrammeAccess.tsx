@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { BrandLoader } from '../../../components/delight'
 import { ProgrammeMakerToggle } from './ProgrammeDelight'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -31,15 +32,15 @@ function AccountScreen({ slug, children, onAuthenticated }: { slug: string; chil
   const denied = (account.error instanceof StructuredApiError && account.error.status === 401) || Boolean(account.data && account.data.kind !== 'person')
   const home = slug ? `/m/${encodeURIComponent(slug)}` : ''
   return <AppShell variant="member" compactNav="drawer" activeKey="programme" nav={[{ key: 'events', items: [
-    { key: 'programme', label: 'Events', href: `${home}/events`, icon: CalendarDays },
-    { key: 'saved-details', label: 'Saved details', href: `${home}/member/account/saved-details`, icon: UserRound },
-  ] }]} user={{ menu: [{ label: 'Account', href: `${home}/member/account` }], name: account.data?.display_name || account.data?.username || 'Your account',
+    { key: 'programme', label: t`Events`, href: `${home}/events`, icon: CalendarDays },
+    { key: 'saved-details', label: t`Saved details`, href: `${home}/member/account/saved-details`, icon: UserRound },
+  ] }]} user={{ menu: [{ label: t`Account`, href: `${home}/member/account` }], name: account.data?.display_name || account.data?.username || 'Your account',
     onSignOut: () => { void logout().finally(onAuthenticated) } }}>
     <div className="mb-4 flex justify-end"><ProgrammeMakerToggle /></div>
     {denied ? <MemberAuthPanel makerspaceSlug={slug} onAuthenticated={onAuthenticated} /> : account.isPending
-      ? <BrandLoader label="Opening your event programme" />
-      : account.error || !account.data ? <CenteredCardLayout standalone={false} title="Account unavailable" body={account.error?.message || 'Sign in to continue.'}
-        state={{ status: 'ready' }} primary={{ label: 'Try again', onClick: () => void account.refetch() }} />
+      ? <BrandLoader label={t`Opening your event programme`} />
+      : account.error || !account.data ? <CenteredCardLayout standalone={false} title={t`Account unavailable`} body={account.error?.message || t`Sign in to continue.`}
+        state={{ status: 'ready' }} primary={{ label: t`Try again`, onClick: () => void account.refetch() }} />
         : children(account.data)}
   </AppShell>
 }

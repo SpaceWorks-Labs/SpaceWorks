@@ -1,5 +1,6 @@
 """Thin event adapter over the common campaign/outbox pipeline."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import validate_email
 from django.db.models import Subquery
@@ -36,7 +37,7 @@ def authorize(campaign, actor):
         require_module(event.makerspace, module)
     if (campaign.status in {"queued", "sending"} and campaign.available_at
             and campaign.available_at > timezone.now()):
-        raise PermissionDenied("This campaign is not due.")
+        raise PermissionDenied(gettext("This campaign is not due."))
 
 
 def registrations(campaign):

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { BarChart, LineChart, PieChart, StackedBarChart } from "../OperationsReportCharts";
 import { DataState } from "../OperationsReportState";
 import { ChartFrame, type ChartProps } from "./ChartFrame";
@@ -30,7 +31,7 @@ function Chart({ spec, ...props }: ChartProps & { spec: ChartSpec }) {
     case "pie": return <PieChart title={props.title} chartData={props.data} valueLabel={props.data.series[0]?.unit}
       rows={props.data.series.flatMap(series => series.points.map(point => ({ label: `${series.label} — ${point.label}`, value: point.value })))} />;
     case "bar": break;
-    default: return <ChartFrame {...props}><p>Chart type unavailable. Show the table to explore this report.</p></ChartFrame>;
+    default: return <ChartFrame {...props}><p>{t`Chart type unavailable. Show the table to explore this report.`}</p></ChartFrame>;
   }
   const Component = spec.kind === "line" ? LineChart : BarChart;
   return <div className="space-y-4">{props.data.series.map((series) => <Component key={series.id}
@@ -61,8 +62,8 @@ export function CatalogChartPanel({ spec: inputSpec, hint, rows, title, loading 
     const input = funnelInput(wireChartSpec(inputSpec, hint, rows), rows);
     spec = input.spec; data = rankedTimeSeries(inputSpec, toChartData(spec, input.rows));
   } catch { invalid = true; }
-  if (loading) return <div role="status" className="p-4 text-muted">Loading chart…</div>;
-  if (invalid && !error) return <p role="alert" className="text-danger">This report has an invalid chart specification.</p>;
+  if (loading) return <div role="status" className="p-4 text-muted">{t`Loading chart…`}</div>;
+  if (invalid && !error) return <p role="alert" className="text-danger">{t`This report has an invalid chart specification.`}</p>;
   const panels = [...new Set(data?.series.map((series) => series.panelKey))];
   return <DataState loading={false} error={error} onRetry={onRetry} empty={!data?.series.length}>
     <div className="space-y-6">{reportAlternative(inputSpec, rows) ? <p className="text-sm text-muted">{reportAlternative(inputSpec, rows)}</p> : null}{panels.map((key) => {

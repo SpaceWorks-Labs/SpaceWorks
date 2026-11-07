@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.template import Context, Template, TemplateSyntaxError
 
@@ -216,7 +217,7 @@ def all_send_keys():
 def validate_email_template_strings(stream, audience, key, subject, text_body, html_body):
     entry = get_entry(stream, audience, key)
     if entry is None:
-        raise ValidationError("Unknown email template stream, audience, or key.")
+        raise ValidationError(gettext("Unknown email template stream, audience, or key."))
 
     context = Context(entry.sample_context, autoescape=True)
     values = [subject, text_body]
@@ -228,6 +229,6 @@ def validate_email_template_strings(stream, audience, key, subject, text_body, h
             _validate_template_delimiters(value or "")
             Template(value or "").render(context)
         except TemplateSyntaxError as exc:
-            raise ValidationError(f"Email template has invalid syntax: {exc}") from exc
+            raise ValidationError(gettext('Email template has invalid syntax: {exc}').format(exc=exc)) from exc
         except Exception as exc:
-            raise ValidationError(f"Email template has invalid syntax: {exc}") from exc
+            raise ValidationError(gettext('Email template has invalid syntax: {exc}').format(exc=exc)) from exc

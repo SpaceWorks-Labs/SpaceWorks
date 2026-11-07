@@ -6,6 +6,7 @@ governors run programmes without a space role. No new scoping axis: every progra
 query is `rbac.scope_by_action` on the host makerspace. The capability
 `membership.id_programmes` must be on, or every route is 404.
 """
+from django.utils.translation import gettext
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
@@ -27,7 +28,7 @@ def programme_for(actor, pk, action=VIEW):
     if not programmes_on(programme.makerspace):
         raise Http404
     if action == MANAGE and not rbac.can(actor, MANAGE, programme.makerspace_id):
-        raise PermissionDenied("You can view this programme but not change it.")
+        raise PermissionDenied(gettext("You can view this programme but not change it."))
     return programme
 
 
@@ -37,7 +38,7 @@ def card_for(actor, pk, action=VIEW):
     if not programmes_on(card.makerspace):
         raise Http404
     if action == MANAGE and not rbac.can(actor, MANAGE, card.makerspace_id):
-        raise PermissionDenied("You can view this card but not change it.")
+        raise PermissionDenied(gettext("You can view this card but not change it."))
     return card
 
 

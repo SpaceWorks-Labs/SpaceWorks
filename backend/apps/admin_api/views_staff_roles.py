@@ -5,6 +5,7 @@ Every route needs recent re-authentication (reads included) and is in
 The superadmin reaches the same routes for any space through Lane D's surface.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
@@ -78,7 +79,7 @@ class StaffRoleListCreateView(StaffRoleBase):
         context = self.context_for(request, makerspace_id)
         include = request.query_params.get("include_revoked", "0")
         if include not in {"0", "1"}:
-            raise ValidationError({"include_revoked": "Use 0 or 1."})
+            raise ValidationError({"include_revoked": gettext("Use 0 or 1.")})
         rows = MakerspaceMembership.staff_tracks.filter(makerspace=context["space"]).select_related("user")
         if include != "1":
             rows = rows.filter(status="active")

@@ -1,5 +1,6 @@
 """Member-editable identity fields and revocable browser/native sessions."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -89,7 +90,7 @@ class AccountSessionDetailView(APIView):
         own_membership(request.user, makerspace_id)
         kind, separator, identifier = session_id.partition(":")
         if not separator:
-            raise NotFound("Session not found.")
+            raise NotFound(gettext("Session not found."))
         with transaction.atomic():
             require_feature_locked(makerspace_id, "membership.self_service")
             membership = own_membership(request.user, makerspace_id)
@@ -103,13 +104,13 @@ class AccountSessionDetailView(APIView):
                 try:
                     grant_id = uuid.UUID(identifier)
                 except ValueError as exc:
-                    raise NotFound("Session not found.") from exc
+                    raise NotFound(gettext("Session not found.")) from exc
                 row = DeviceGrant.objects.select_for_update().filter(pk=grant_id, user=request.user).first()
                 if row is None:
-                    raise NotFound("Session not found.")
+                    raise NotFound(gettext("Session not found."))
                 revoke_device_grant(row)
             else:
-                raise NotFound("Session not found.")
+                raise NotFound(gettext("Session not found."))
             audit.record(request.user, "account.session_revoked", makerspace=membership.makerspace,
                          target=request.user, meta={"kind": kind,
                                                   "session_hash": audit_events.fingerprint(row.pk)})

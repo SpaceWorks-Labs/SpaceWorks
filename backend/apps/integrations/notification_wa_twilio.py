@@ -1,4 +1,5 @@
 """Personal WhatsApp adapter. Import/registration never reads DB or contacts Twilio."""
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -117,7 +118,7 @@ class TwilioWhatsAppProvider:
                 or challenge.integration_generation != config.generation
                 or challenge.integration_identity != config.integration_identity
                 or challenge.consumed_at or challenge.expires_at <= timezone.now()):
-            raise ValidationError({"channel": "Account linking is unavailable."})
+            raise ValidationError({"channel": gettext("Account linking is unavailable.")})
         if not challenge.candidate_destination:
             return {"instructions": f"Message the WhatsApp business number with: {code}"}
         from .notification_cutover import sending_allowed, CutoverClosed
@@ -127,7 +128,7 @@ class TwilioWhatsAppProvider:
         import json
         if (payload is None or code not in json.loads(payload["ContentVariables"]).values()
                 or not self._send(challenge.candidate_destination, payload).accepted):
-            raise ValidationError({"channel": "The opt-in template could not be sent."})
+            raise ValidationError({"channel": gettext("The opt-in template could not be sent.")})
         return {"instructions": "Reply to the WhatsApp business sender with the verification code to connect."}
 
     def test(self, target):

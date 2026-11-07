@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
@@ -26,26 +27,26 @@ export function PayLinkPage() {
     onSuccess: () => { void link.refetch(); },
   });
   if (token === "complete") {
-    return <CenteredCardLayout media={{ icon: "CheckCircle", tone: "success" }} title="Thank you"
-      body="Your payment is being confirmed by the provider. You can close this page."
-      primary={{ label: "Close", onClick: () => window.close() }} state={{ status: "ready" }} />;
+    return <CenteredCardLayout media={{ icon: "CheckCircle", tone: "success" }} title={t`Thank you`}
+      body={t`Your payment is being confirmed by the provider. You can close this page.`}
+      primary={{ label: t`Close`, onClick: () => window.close() }} state={{ status: "ready" }} />;
   }
   const gone = link.error instanceof StructuredApiError && link.error.status === 404;
   if (gone) {
-    return <CenteredCardLayout media={{ icon: "CircleAlert", tone: "warn" }} title="This payment link has expired"
-      body="Ask the space for a new link." primary={{ label: "Go home", href: "/" }} state={{ status: "ready" }} />;
+    return <CenteredCardLayout media={{ icon: "CircleAlert", tone: "warn" }} title={t`This payment link has expired`}
+      body={t`Ask the space for a new link.`} primary={{ label: t`Go home`, href: "/" }} state={{ status: "ready" }} />;
   }
   const data = link.data;
   const paid = data && data.status !== "pending";
-  return <CenteredCardLayout eyebrow={data?.makerspace} title={data ? `Pay ${data.currency.toUpperCase()} ${data.amount}` : "Payment"}
-    state={link.isLoading ? { status: "loading" } : link.error ? { status: "error", error: "Couldn't open this link.",
+  return <CenteredCardLayout eyebrow={data?.makerspace} title={data ? t`Pay ${data.currency.toUpperCase()} ${data.amount}` : t`Payment`}
+    state={link.isLoading ? { status: "loading" } : link.error ? { status: "error", error: t`Couldn't open this link.`,
       onRetry: () => { void link.refetch(); } } : { status: "ready" }}
-    body={data ? <p>{paid ? "This charge is already settled. Nothing more to pay." : `For ${data.label}.`}</p> : null}
+    body={data ? <p>{paid ? t`This charge is already settled. Nothing more to pay.` : t`For ${data.label}.`}</p> : null}
     content={data && !paid ? <OfflinePayment offline={data} onClaim={body => claim.mutate(body)} pending={claim.isPending}
       error={claim.error} /> : null}
     primary={data?.online_available && !paid
-      ? { label: "Pay online", onClick: () => checkout.mutate(), pending: checkout.isPending, pendingLabel: "Opening checkout…" }
-      : { label: "Done", href: "/" }}
-    footer={checkout.error ? <p role="alert" className="text-sm text-danger">Online payment isn't available right now. Try again or pay offline.</p> : null}
+      ? { label: t`Pay online`, onClick: () => checkout.mutate(), pending: checkout.isPending, pendingLabel: "Opening checkout…" }
+      : { label: t`Done`, href: "/" }}
+    footer={checkout.error ? <p role="alert" className="text-sm text-danger">{t`Online payment isn't available right now. Try again or pay offline.`}</p> : null}
   />;
 }

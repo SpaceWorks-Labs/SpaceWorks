@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 export type PaginationProps = {
   page: number;
   totalPages: number;
@@ -23,7 +24,7 @@ export function Pagination({ page, totalPages, onChange, count, pageSize, disabl
       : null;
 
   return (
-    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted">
+    <nav aria-label={t`Pagination`} className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted">
       {rangeLabel ? <span className="mr-auto">{rangeLabel}</span> : null}
       <button
         className="desk-button"
@@ -31,10 +32,9 @@ export function Pagination({ page, totalPages, onChange, count, pageSize, disabl
         disabled={disabled || page <= 1}
         onClick={() => onChange(Math.max(1, page - 1))}
       >
-        Previous
-      </button>
+        {t`Previous`}</button>
       <span>
-        Page {page} of {totalPages}
+        {t`Page ${page} of ${totalPages}`}
       </span>
       <button
         className="desk-button"
@@ -42,8 +42,7 @@ export function Pagination({ page, totalPages, onChange, count, pageSize, disabl
         disabled={disabled || page >= totalPages}
         onClick={() => onChange(Math.min(totalPages, page + 1))}
       >
-        Next
-      </button>
+        {t`Next`}</button>
     </nav>
   );
 }

@@ -13,6 +13,7 @@ Refused whatever the scopes say: sign-in, MFA, passkeys and every other /api/v1/
 route (so a token can never mint, see or revoke credentials), the Django control plane,
 superadmin/platform routes, and the security and credential routes of the console.
 """
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 ACCOUNT_READ, ACCOUNT_WRITE = "account:read", "account:write"
@@ -84,7 +85,7 @@ def admit(request, scopes, makerspace_id):
     access = "read" if method in SAFE_METHODS else "write"
     name = getattr(getattr(request, "resolver_match", None), "url_name", None)
     if _credential_route(request, name):
-        raise PermissionDenied("Tokens cannot reach sign-in, security or credential routes.")
+        raise PermissionDenied(gettext("Tokens cannot reach sign-in, security or credential routes."))
     path = request.path
     if path.startswith(tuple("/" + prefix for prefix in scope_registry._protected_prefixes())):
         entry = scope_registry.lookup(scope_registry.resolve_view_name(request), method)
@@ -92,17 +93,17 @@ def admit(request, scopes, makerspace_id):
         area = f"public:{entry.area}:{entry.access}" if entry is not None and entry.area else None
         if broad in scopes or (area is not None and area in scopes):
             return
-        raise PermissionDenied("This token's scopes do not include this public route.")
+        raise PermissionDenied(gettext("This token's scopes do not include this public route."))
     if path.startswith(ACCOUNT_PREFIXES):
         if (ACCOUNT_READ if access == "read" else ACCOUNT_WRITE) in scopes:
             return
-        raise PermissionDenied("This token's scopes do not include your account routes.")
+        raise PermissionDenied(gettext("This token's scopes do not include your account routes."))
     if path.startswith(STAFF_PREFIXES):
         if (STAFF_READ if access == "read" else STAFF_WRITE) not in scopes or makerspace_id is None:
-            raise PermissionDenied("This token's scopes do not include staff routes.")
+            raise PermissionDenied(gettext("This token's scopes do not include staff routes."))
         from apps.makerspaces.origin_scope_routes import request_route_targets
         _name, targets, invalid, _recognized = request_route_targets(request)
         if invalid or set(targets) != {makerspace_id}:
-            raise PermissionDenied("This token reaches staff routes of its own space only.")
+            raise PermissionDenied(gettext("This token reaches staff routes of its own space only."))
         return
-    raise PermissionDenied("Tokens cannot reach this route.")
+    raise PermissionDenied(gettext("Tokens cannot reach this route."))

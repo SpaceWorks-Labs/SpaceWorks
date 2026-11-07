@@ -1,5 +1,6 @@
 """Read-only target lookup for checklist capture, never issues stock."""
 
+from django.utils.translation import gettext
 from collections import Counter
 
 from django.shortcuts import get_object_or_404
@@ -37,7 +38,7 @@ def preview_targets(actor, makerspace, *, items=(), qr_payloads=(), container_id
     seen = set()
     for payload in qr_payloads:
         if payload in seen:
-            raise ValidationError("The same QR was scanned more than once.")
+            raise ValidationError(gettext("The same QR was scanned more than once."))
         seen.add(payload)
         qr = get_object_or_404(scoped(inventory_qr_codes(QrCode.objects.all())),
                                payload=payload, status=QrCode.Status.ACTIVE)
@@ -49,7 +50,7 @@ def preview_targets(actor, makerspace, *, items=(), qr_payloads=(), container_id
         else:
             target = get_object_or_404(scoped(Box.objects.all()), pk=qr.target_id, is_active=True)
             if box and box.pk != target.pk:
-                raise ValidationError("Only one container may be checked out.")
+                raise ValidationError(gettext("Only one container may be checked out."))
             box = target
             for asset in assets.filter(box=box).select_related("product"):
                 quantities[asset.product] += 1

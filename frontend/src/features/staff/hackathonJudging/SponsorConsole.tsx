@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DetailLayout } from '../../../components/layouts';
@@ -25,20 +26,20 @@ function SponsorConsoleContent({ scope, sponsorId, sponsorName, renderProjectFil
   if (denied) return <ErrorBlock error={query.error || mutate.error || downloadError} />;
   return <DetailLayout title={`${sponsorName} projects`} state={{ status: query.isLoading ? 'loading' : query.isError ? 'error' : 'ready',
     error: query.error?.message, onRetry: () => void query.refetch() }} main={<div className="grid gap-5">
-      <p className="text-sm text-muted">Only projects in your assigned sponsor tracks appear here. Résumés appear only with the participant’s current recruiting consent.</p>
-      <Field label="Sponsor prize for a winner proposal"><select className="desk-input min-h-11" value={prizeId} onChange={e => setPrizeId(e.target.value)}>
-        <option value="">Choose your prize</option>{prizeOptions.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}</select></Field>
+      <p className="text-sm text-muted">{t`Only projects in your assigned sponsor tracks appear here. Résumés appear only with the participant’s current recruiting consent.`}</p>
+      <Field label={t`Sponsor prize for a winner proposal`}><select className="desk-input min-h-11" value={prizeId} onChange={e => setPrizeId(e.target.value)}>
+        <option value="">{t`Choose your prize`}</option>{prizeOptions.map(prize => <option key={prize.id} value={prize.id}>{prize.name}</option>)}</select></Field>
       {!query.isError && query.data?.results.map(project => <article key={project.snapshot_id} className="grid gap-3 rounded-xl border border-line bg-panel p-4">
         <h2 className="title-section">{project.title}</h2><p className="whitespace-pre-wrap text-sm">{project.description}</p>
         {renderProjectFiles(project.snapshot_id, project.asset_ids)}
-        {project.links.map(link => <a key={link.url} className="inline-flex min-h-11 items-center underline" href={link.url} rel="noopener noreferrer" target="_blank">{link.kind}<span className="sr-only"> (opens in a new tab)</span></a>)}
+        {project.links.map(link => <a key={link.url} className="inline-flex min-h-11 items-center underline" href={link.url} rel="noopener noreferrer" target="_blank">{link.kind}<span className="sr-only"> {t` (opens in a new tab)`}</span></a>)}
         {project.resumes.map(resume => <button className="desk-button min-h-11" key={resume.asset_id} type="button" disabled={pending} onClick={async () => {
           setPending(true); setDownloadError(null); try { await downloadResume(resume.asset_id); } catch (error) { setDownloadError(error); } finally { setPending(false); }
-        }}>Download consented recruiting résumé {resume.asset_id}</button>)}
+        }}>{t`Download consented recruiting résumé ${resume.asset_id}`}</button>)}
         <button className="desk-button min-h-11" type="button" disabled={!prizeId || mutate.isPending} onClick={() => {
           const prize = prizeOptions.find(p => p.id === Number(prizeId)); if (prize) mutate.mutate({ suffix: `sponsors/${sponsorId}/prizes/${prize.id}/propose/`,
             version: prize.version, fields: { snapshot_id: project.snapshot_id } });
-        }}>Propose this project for your prize</button>
+        }}>{t`Propose this project for your prize`}</button>
       </article>)}
       <Pagination page={page} count={query.data?.count ?? 0} pageSize={24} totalPages={Math.ceil((query.data?.count ?? 0) / 24)} onChange={setPage} disabled={mutate.isPending || pending} />
       <ErrorBlock error={downloadError || mutate.error} />

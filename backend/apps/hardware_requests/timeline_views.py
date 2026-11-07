@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -94,7 +95,7 @@ def _limit(request):
     try:
         value = int(raw)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({"limit": "Limit must be an integer."}) from exc
+        raise ValidationError({"limit": gettext("Limit must be an integer.")}) from exc
     if value < 1:
-        raise ValidationError({"limit": "Limit must be at least 1."})
+        raise ValidationError({"limit": gettext("Limit must be at least 1.")})
     return min(value, MAX_LIMIT)

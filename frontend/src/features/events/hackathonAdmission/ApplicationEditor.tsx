@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from 'react'
 import { FormPageLayout } from '../../../components/layouts'
 import { ErrorText } from '../../../components/ui'
@@ -48,30 +49,30 @@ export function ApplicationEditor({ context, application, Fields, prefill, pendi
   }
   const fields = error instanceof StructuredApiError && error.body.fields && typeof error.body.fields === 'object'
     ? error.body.fields as Record<string, unknown> : {}
-  return <FormPageLayout header={{ title: 'Apply to make something together', subtitle: 'Review your own answers, ticket and agreements before submitting.' }}
-    state={{ status: 'ready' }} submit={{ label: editingSubmitted ? 'Save answers' : 'Submit application', pending, disabled: !coc || conflict, onClick: () => save(editingSubmitted) }}
-    cancel={editingSubmitted ? undefined : { label: 'Save draft', disabled: pending || conflict, onClick: () => save(true) }}
+  return <FormPageLayout header={{ title: t`Apply to make something together`, subtitle: t`Review your own answers, ticket and agreements before submitting.` }}
+    state={{ status: 'ready' }} submit={{ label: editingSubmitted ? t`Save answers` : t`Submit application`, pending, disabled: !coc || conflict, onClick: () => save(editingSubmitted) }}
+    cancel={editingSubmitted ? undefined : { label: t`Save draft`, disabled: pending || conflict, onClick: () => save(true) }}
     form={<div className="grid gap-6">
       <AdmissionArtwork kind="hackathon" />
-      {dirty ? <p className="rounded-xl border border-line bg-panel p-3 text-sm text-ink" role="status">You have unsaved changes.</p> : null}
-      {conflict ? <div role="alert" className="grid gap-3 rounded-xl border border-line p-4"><p>The application changed. Your draft is preserved. Review the current questions before reapplying your answers.</p>
-        <button className="desk-button" type="button" onClick={() => { setBaseVersion(application.version); setCoc(false) }}>Keep my draft and review the new version</button>
-        <button className="desk-button" type="button" onClick={() => { setValue({ answers: Object.fromEntries(application.answers.filter(answer => typeof answer.id === 'string' && answer.type !== 'age_at_event' && 'value' in answer).map(answer => [answer.id as string, answer.value])), derivations: {}, save_choices: {}, saved_detail_versions: {} }); setBaseVersion(application.version); setDirty(false); setCoc(false) }}>Reload server answers</button>
+      {dirty ? <p className="rounded-xl border border-line bg-panel p-3 text-sm text-ink" role="status">{t`You have unsaved changes.`}</p> : null}
+      {conflict ? <div role="alert" className="grid gap-3 rounded-xl border border-line p-4"><p>{t`The application changed. Your draft is preserved. Review the current questions before reapplying your answers.`}</p>
+        <button className="desk-button" type="button" onClick={() => { setBaseVersion(application.version); setCoc(false) }}>{t`Keep my draft and review the new version`}</button>
+        <button className="desk-button" type="button" onClick={() => { setValue({ answers: Object.fromEntries(application.answers.filter(answer => typeof answer.id === 'string' && answer.type !== 'age_at_event' && 'value' in answer).map(answer => [answer.id as string, answer.value])), derivations: {}, save_choices: {}, saved_detail_versions: {} }); setBaseVersion(application.version); setDirty(false); setCoc(false) }}>{t`Reload server answers`}</button>
       </div> : null}
       {error ? <ErrorText message={error.message} /> : null}
       {context.application_form ? <Fields schema={context.application_form} value={value} prefill={prefill}
         onChange={next => { setValue(next); setDirty(true) }} errors={fields} disabled={pending}
         savedDetailsAvailable={context.saved_details.readiness === 'ready'} /> : null}
-      {context.saved_details.readiness === 'unavailable' ? <p className="text-sm text-muted">Saved details are unavailable. You can apply with saving switched off.</p> : null}
+      {context.saved_details.readiness === 'unavailable' ? <p className="text-sm text-muted">{t`Saved details are unavailable. You can apply with saving switched off.`}</p> : null}
       <AdmissionFields requirements={application.admission_requirements} value={selection} disabled={pending || editingSubmitted}
         onChange={next => { setSelection(next); setDirty(true) }} />
-      <fieldset disabled={pending} className="grid gap-3"><legend className="title-section mb-3">Code of conduct</legend>
+      <fieldset disabled={pending} className="grid gap-3"><legend className="title-section mb-3">{t`Code of conduct`}</legend>
         <p className="whitespace-pre-wrap text-sm text-ink">{context.coc?.body}</p>
         <label className="flex min-h-11 items-center gap-3 text-sm text-ink"><input type="checkbox" required checked={coc}
-          onChange={event => { setCoc(event.target.checked); setDirty(true) }} />I agree to this code of conduct.</label>
+          onChange={event => { setCoc(event.target.checked); setDirty(true) }} />{t`I agree to this code of conduct.`}</label>
         {application.optional_consent_purposes?.includes('mlh_data_sharing') ? <label className="flex min-h-11 items-center gap-3 text-sm text-ink"><input type="checkbox" checked={sharing}
-          onChange={event => { setSharing(event.target.checked); setDirty(true) }} />I choose to share my submitted details with MLH (optional).</label> : null}
+          onChange={event => { setSharing(event.target.checked); setDirty(true) }} />{t`I choose to share my submitted details with MLH (optional).`}</label> : null}
       </fieldset>
-      <p className="text-sm text-muted">An offer needs your RSVP before you have a confirmed place. Saved details remain private until you submit them to an event.</p>
+      <p className="text-sm text-muted">{t`An offer needs your RSVP before you have a confirmed place. Saved details remain private until you submit them to an event.`}</p>
     </div>} />
 }

@@ -1,4 +1,5 @@
 """Superadmin organization setup, with tenant roots locked before changing reach."""
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException, PermissionDenied
@@ -63,7 +64,7 @@ def change_link(actor, organization_id, makerspace_id, *, relationship=None):
         raise OrganizationConflict("Reactivate the organization before linking a makerspace.")
     if relationship not in OrganizationMakerspace.Relationship.values:
         from rest_framework.exceptions import ValidationError
-        raise ValidationError({"relationship": "Unknown relationship."})
+        raise ValidationError({"relationship": gettext("Unknown relationship.")})
     try:
         with transaction.atomic():
             row, created = links.get_or_create(

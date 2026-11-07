@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import hmac
 
@@ -54,7 +55,7 @@ class PushDeviceListCreateView(APIView):
         data = serializer.validated_data
         expected_provider = "apns" if request.device_grant.platform == "apple" else "fcm"
         if data["provider"] != expected_provider or data["environment"] != request.device_grant.environment:
-            return Response({"detail": "Push identity does not match the attested device.", "code": "push_identity_mismatch"}, status=403)
+            return Response({"detail": gettext("Push identity does not match the attested device."), "code": "push_identity_mismatch"}, status=403)
         try:
             fingerprint = _fingerprint(data["provider"], data["environment"], data["token"])
             with transaction.atomic():
@@ -67,7 +68,7 @@ class PushDeviceListCreateView(APIView):
                 if device is not None and device.user_id != request.user.pk:
                     return Response(
                         {
-                            'detail': 'The push token is owned by another account.',
+                            'detail': gettext('The push token is owned by another account.'),
                             'code': 'push_token_ownership_conflict',
                         },
                         status=status.HTTP_409_CONFLICT,
@@ -94,7 +95,7 @@ class PushDeviceListCreateView(APIView):
                     },
                 )
         except Exception:
-            return Response({"detail": "Push registration is unavailable.", "code": "push_unavailable"}, status=503)
+            return Response({"detail": gettext("Push registration is unavailable."), "code": "push_unavailable"}, status=503)
         return Response(PushDeviceSerializer(device).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 

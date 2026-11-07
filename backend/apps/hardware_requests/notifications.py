@@ -155,6 +155,7 @@ def render_email(request, key):
         "requester",
         key,
         hardware_context(request, staff=False),
+        recipient=lambda: request.requester,
     )
 
 

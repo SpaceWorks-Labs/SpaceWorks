@@ -1,10 +1,11 @@
+import { t } from "@lingui/core/macro";
 import type { JobType } from "./types";
 
 const QUOTE_HINT: Record<JobType["quotes"], string> = {
   off: "",
-  auto: "If the job is priced, you approve a quote before it joins the queue.",
-  above: "Larger jobs get a quote for you to approve first.",
-  always: "Every job gets a quote for you to approve first.",
+  auto: t`If the job is priced, you approve a quote before it joins the queue.`,
+  above: t`Larger jobs get a quote for you to approve first.`,
+  always: t`Every job gets a quote for you to approve first.`,
 };
 
 export function extensionList(type: JobType) {
@@ -30,8 +31,8 @@ export function preselectType(types: JobType[], params: URLSearchParams): JobTyp
  */
 export function JobTypeStep({ types, value, onChange, showPrice = true }: { types: JobType[]; value: number | null; onChange: (queueId: number) => void; showPrice?: boolean }) {
   return <fieldset className="grid gap-3">
-    <legend className="title-section mb-1">What should make it?</legend>
-    <p className="text-sm text-muted">Pick the kind of machine. Staff choose the exact machine when your job runs.</p>
+    <legend className="title-section mb-1">{t`What should make it?`}</legend>
+    <p className="text-sm text-muted">{t`Pick the kind of machine. Staff choose the exact machine when your job runs.`}</p>
     {types.map(type => {
       const hints = [showPrice ? QUOTE_HINT[type.quotes] : "", showPrice && type.prepay ? "Paid before the job runs." : "",
         type.runs_unattended ? "Runs unattended — it may finish while nobody is at the machine." : "",
@@ -41,7 +42,7 @@ export function JobTypeStep({ types, value, onChange, showPrice = true }: { type
         <input type="radio" name="job-type" className="mt-1 h-5 w-5 shrink-0 accent-brand" checked={selected} onChange={() => onChange(type.queue_id)} />
         <span className="grid min-w-0 gap-1">
           <span className="font-semibold text-ink">{type.name}{type.name !== type.machine_type_name ? <span className="font-normal text-muted"> · {type.machine_type_name}</span> : null}</span>
-          <span className="break-words text-sm text-muted">{extensionList(type).length ? `Accepts ${extensionList(type).join(", ")}` : "Ask staff which files this machine takes."}</span>
+          <span className="break-words text-sm text-muted">{extensionList(type).length ? t`Accepts ${extensionList(type).join(", ")}` : t`Ask staff which files this machine takes.`}</span>
           {hints.map(hint => <span key={hint} className="text-sm text-ink">{hint}</span>)}
         </span>
       </label>;

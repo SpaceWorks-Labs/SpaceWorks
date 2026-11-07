@@ -1,3 +1,4 @@
+import { formatLocale } from "../../lib/format";
 import { serviceStatusLabel, serviceStatusTone, type ServiceRequestEta } from "../machine-service/types";
 
 /** One machine type taking job requests (GET /public/{slug}/machine-jobs/types). */
@@ -71,7 +72,7 @@ export function failureText(job: Pick<MemberJob, "fail_code" | "failure_outcome"
 
 const DAY = 24 * 60 * 60 * 1000;
 function clock(date: Date) {
-  return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+  return new Intl.DateTimeFormat(formatLocale(), { hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
 }
 
 /** Within a day: "in about 2 h 10 min". Beyond: a day and a clock time, "Thu, about 14:00". */
@@ -80,7 +81,7 @@ export function etaWhen(iso: string, now: Date, minutesLabel: (minutes: number) 
   const ms = date.getTime() - now.getTime();
   if (ms <= 0) return "now";
   if (ms <= DAY) return `in ${minutesLabel(Math.round(ms / 60_000))}`;
-  const day = new Intl.DateTimeFormat(undefined, ms > 6 * DAY
+  const day = new Intl.DateTimeFormat(formatLocale(), ms > 6 * DAY
     ? { weekday: "short", day: "numeric", month: "short" } : { weekday: "short" }).format(date);
   return `${day}, about ${clock(date)}`;
 }

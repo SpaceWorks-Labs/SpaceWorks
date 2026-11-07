@@ -9,6 +9,7 @@
   check-in, judging, mentoring or volunteer grant (Q-I9). An organisation library
   default and the space-wide event default need `MANAGE_EVENTS`.
 """
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound, PermissionDenied
 
@@ -49,7 +50,7 @@ def require_edit(actor, design):
     if not domain_on(design.makerspace, design.domain):
         raise NotFound()
     if not can_edit(actor, design):
-        raise PermissionDenied("You cannot edit this card design.")
+        raise PermissionDenied(gettext("You cannot edit this card design."))
     return design
 
 

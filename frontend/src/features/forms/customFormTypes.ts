@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { FormSchemaV2, QuestionType } from "./types";
 import { visibleQuestions } from "./conditions";
 
@@ -50,14 +51,14 @@ export const CHOICE_QUESTION_TYPES = new Set<CustomQuestionType>([
 ]);
 
 export const QUESTION_TYPE_LABELS: Record<CustomQuestionType, string> = {
-  short_text: "Short text",
-  paragraph: "Paragraph",
-  number: "Number",
-  date: "Date",
-  single_choice: "Single choice",
-  multi_choice: "Multiple choice",
-  dropdown: "Dropdown",
-  yes_no: "Yes / No",
+  short_text: t`Short text`,
+  paragraph: t`Paragraph`,
+  number: t`Number`,
+  date: t`Date`,
+  single_choice: t`Single choice`,
+  multi_choice: t`Multiple choice`,
+  dropdown: t`Dropdown`,
+  yes_no: t`Yes / No`,
 };
 
 export function customAnswerErrors(value: unknown): Record<string, string> {

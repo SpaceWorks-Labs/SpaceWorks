@@ -5,6 +5,7 @@ member's own. Every route answers 404 while `machines.sessions` is off for the m
 space. A claim session (a kiosk walk-in claim) never starts or stops a machine.
 """
 
+from django.utils.translation import gettext
 from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -41,7 +42,7 @@ ERRORS = {
 
 def _member(request):
     if getattr(request, "claim_session", None) is not None:
-        raise PermissionDenied("Claim sessions cannot use machines.")
+        raise PermissionDenied(gettext("Claim sessions cannot use machines."))
     require_member_account(request.user)
     return request.user
 

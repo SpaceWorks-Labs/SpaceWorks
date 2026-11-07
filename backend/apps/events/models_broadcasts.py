@@ -1,5 +1,6 @@
 """Event campaign identity and concrete recipient uniqueness."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -58,7 +59,7 @@ class EventBroadcastPreview(models.Model):
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
-            raise ValidationError("Broadcast previews are immutable.")
+            raise ValidationError(gettext("Broadcast previews are immutable."))
         return super().save(*args, **kwargs)
 
 

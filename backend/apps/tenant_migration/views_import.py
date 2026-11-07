@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.operations.durable_dispatch import dispatch
 from datetime import timedelta
 import logging
@@ -84,7 +85,7 @@ class TenantImportListCreateView(MigrationAPIView):
             not isinstance(archive, PersistedImportUpload)
             or archive.persisted_path not in handler.created_paths
         ):
-            raise ValidationError({"archive": ["Upload an archive file using multipart form data."]})
+            raise ValidationError({"archive": [gettext("Upload an archive file using multipart form data.")]})
         try:
             job = accept_import_upload(
                 actor=request.user,
@@ -190,7 +191,7 @@ class TenantImportRunView(MigrationAPIView):
                 terminal_at=timezone.now(),
             )
             return Response(
-                {"detail": "The tenant import worker is unavailable.", "code": "worker_unavailable"},
+                {"detail": gettext("The tenant import worker is unavailable."), "code": "worker_unavailable"},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         return Response(ImportJobSerializer(job).data, status=status.HTTP_202_ACCEPTED)
@@ -202,7 +203,7 @@ class TenantImportVerificationView(MigrationAPIView):
         job = _job(request.user, job_id)
         if not job.verification_report:
             return Response(
-                {"detail": "The verification report is not available.", "code": "report_unavailable"},
+                {"detail": gettext("The verification report is not available."), "code": "report_unavailable"},
                 status=status.HTTP_409_CONFLICT,
             )
         audit.record(

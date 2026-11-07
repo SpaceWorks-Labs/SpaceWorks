@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StructuredApiError } from "../../../lib/api/errors";
 import type { Project } from "./types";
 
@@ -36,17 +37,17 @@ export type CheckItem = { label: string; met: boolean };
 export function checklist(stage: ParticipantStage, project: Project): CheckItem[] {
   const { rules } = stage; const items: CheckItem[] = []; const files = project.asset_ids.length; const links = project.links.filter(l => l.url.trim());
   const show = parts(stage);
-  if (rules.content_mode !== "presentation" && show.files && show.links) items.push({ label: "At least one file or link", met: files + links.length > 0 });
-  if (rules.content_mode === "files_only") items.push({ label: "At least one file", met: files > 0 });
-  if (rules.content_mode === "links_only") items.push({ label: "At least one link", met: links.length > 0 });
-  if (rules.min_files > 0) items.push({ label: `At least ${rules.min_files} ${rules.min_files === 1 ? "file" : "files"}`, met: files >= rules.min_files });
-  if (show.files && rules.max_files !== null) items.push({ label: `No more than ${rules.max_files} ${rules.max_files === 1 ? "file" : "files"}`, met: files <= rules.max_files });
-  if (show.links && rules.max_links !== null) items.push({ label: `No more than ${rules.max_links} ${rules.max_links === 1 ? "link" : "links"}`, met: links.length <= rules.max_links });
-  for (const kind of rules.required_link_kinds) items.push({ label: `A ${kind} link`, met: links.some(link => link.kind === kind) });
-  if (!show.files && files) items.push({ label: "No files (this stage takes links only)", met: false });
-  if (!show.links && links.length) items.push({ label: "No links (this stage takes files only)", met: false });
+  if (rules.content_mode !== "presentation" && show.files && show.links) items.push({ label: t`At least one file or link`, met: files + links.length > 0 });
+  if (rules.content_mode === "files_only") items.push({ label: t`At least one file`, met: files > 0 });
+  if (rules.content_mode === "links_only") items.push({ label: t`At least one link`, met: links.length > 0 });
+  if (rules.min_files > 0) items.push({ label: t`At least ${rules.min_files} ${rules.min_files === 1 ? "file" : "files"}`, met: files >= rules.min_files });
+  if (show.files && rules.max_files !== null) items.push({ label: t`No more than ${rules.max_files} ${rules.max_files === 1 ? "file" : "files"}`, met: files <= rules.max_files });
+  if (show.links && rules.max_links !== null) items.push({ label: t`No more than ${rules.max_links} ${rules.max_links === 1 ? "link" : "links"}`, met: links.length <= rules.max_links });
+  for (const kind of rules.required_link_kinds) items.push({ label: t`A ${kind} link`, met: links.some(link => link.kind === kind) });
+  if (!show.files && files) items.push({ label: t`No files (this stage takes links only)`, met: false });
+  if (!show.links && links.length) items.push({ label: t`No links (this stage takes files only)`, met: false });
   const answers = stageAnswers(project, stage);
-  for (const field of stage.custom_fields.filter(f => f.required)) items.push({ label: `Answer: ${field.label}`, met: Boolean(answers[field.key]?.trim()) });
+  for (const field of stage.custom_fields.filter(f => f.required)) items.push({ label: t`Answer: ${field.label}`, met: Boolean(answers[field.key]?.trim()) });
   return items;
 }
 

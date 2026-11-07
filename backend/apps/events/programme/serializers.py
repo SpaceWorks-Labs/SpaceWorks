@@ -1,5 +1,6 @@
 """Closed operation payloads and explicit OpenAPI response shapes."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.forms_schema.serializers import FormEditorDocumentField
 
@@ -42,7 +43,7 @@ class PublishingInput(CommandSerializer):
 
     def validate(self, attrs):
         if attrs["release_saved_website"] and "website_revision" not in attrs:
-            raise serializers.ValidationError({"website_revision": "Choose the saved website revision."})
+            raise serializers.ValidationError({"website_revision": gettext("Choose the saved website revision.")})
         return attrs
 
 

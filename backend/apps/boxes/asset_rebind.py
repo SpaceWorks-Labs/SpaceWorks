@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -26,15 +27,15 @@ def move_asset_across_makerspaces(
     user, qr, dest_makerspace_id, destination_product_id, new_name, request_target_id=None
 ):
     if qr.target_type != QrCode.TargetType.ASSET:
-        raise ValidationError("QR code does not target an asset.")
+        raise ValidationError(gettext("QR code does not target an asset."))
     if request_target_id is not None and int(request_target_id) != qr.target_id:
-        raise ValidationError("target_id must match the scanned asset.")
+        raise ValidationError(gettext("target_id must match the scanned asset."))
 
     asset = InventoryAsset.objects.select_for_update().get(pk=qr.target_id)
     source_makerspace_id = qr.makerspace_id
     _require_transfer_permission(user, source_makerspace_id, dest_makerspace_id)
     if int(dest_makerspace_id) == source_makerspace_id:
-        raise ValidationError("Destination makerspace must be different.")
+        raise ValidationError(gettext("Destination makerspace must be different."))
 
     dest_makerspace = require_module(dest_makerspace_id, "qr_management")
     _guard_asset_is_movable(asset, qr)
@@ -184,7 +185,7 @@ def _resolve_destination_product(
             or product.tracking_mode != TrackingMode.INDIVIDUAL
             or product.is_archived
         ):
-            raise ValidationError("destination_product_id must be an unarchived individual product in the destination makerspace.")
+            raise ValidationError(gettext("destination_product_id must be an unarchived individual product in the destination makerspace."))
         return product
 
     candidates = [locked_products[pk] for pk in sorted(candidate_ids) if pk in locked_products]

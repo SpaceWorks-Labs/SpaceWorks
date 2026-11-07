@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation } from "@tanstack/react-query";
 
 import { downloadStaffFile } from "../../../lib/api";
@@ -57,7 +58,7 @@ export function OperationsReportExports({
   const exportReport = useOperationsReportExport({ reports, grain, filters, reportsBase, dateSuffix, aggregate });
 
   return (
-    <section aria-label="Exports">
+    <section aria-label={t`Exports`}>
         <div className="grid gap-3 sm:grid-cols-2">
           {reports.map((definition) => (
             <div key={definition.key} className={`rounded-md border p-3 ${selectedReport === definition.key ? "border-accent bg-accent-soft" : "border-line bg-bg"}`}>
@@ -74,7 +75,7 @@ export function OperationsReportExports({
         </div>
         {exportReport.error ? (
           <p role="alert" className="mt-3 rounded-md border border-danger-line bg-panel px-3 py-2 text-sm text-danger">
-            {exportReport.error instanceof Error ? exportReport.error.message : "Could not export report."}
+            {exportReport.error instanceof Error ? exportReport.error.message : t`Could not export report.`}
           </p>
         ) : null}
       {/* Only schedulable definitions reach schedules: email/chat delivery of e.g. the

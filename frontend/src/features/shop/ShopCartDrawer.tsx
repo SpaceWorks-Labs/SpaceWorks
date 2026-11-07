@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Modal } from "../../components/ui";
 import { ShopCartLines } from "./ShopCartLines";
 import { ShopCheckout } from "./ShopCheckout";
@@ -11,7 +12,7 @@ export function ShopCartDrawer({ open, onClose, slug, shop, cart, path }: {
   path: (part?: string) => string;
 }) {
   const [session, setSession] = useMemberSession();
-  return <Modal open={open} onClose={onClose} title="Your basket" size="xl">
+  return <Modal open={open} onClose={onClose} title={t`Your basket`} size="xl">
     <div className="grid gap-5">
       <ShopCartLines lines={cart.lines} currency={shop.currency} onQuantity={cart.setQuantity} onRemove={cart.remove} />
       <ShopCheckout slug={slug} shop={shop} lines={cart.lines} session={session} onSession={setSession}

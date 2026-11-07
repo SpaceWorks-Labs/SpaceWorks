@@ -1,5 +1,6 @@
 """Validation and cross-model ownership checks for public image keys."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
@@ -77,11 +78,11 @@ def public_url(object_key):
 def ext_for(content_type, filename):
     allowed_exts = settings.PUBLIC_IMAGE_ALLOWED_MIME.get(content_type)
     if not allowed_exts:
-        raise ValidationError({"content_type": "Unsupported public image content type."})
+        raise ValidationError({"content_type": gettext("Unsupported public image content type.")})
     safe_name = (filename or "").replace("\\", "/").rsplit("/", 1)[-1]
     ext = f".{safe_name.rsplit('.', 1)[-1].lower()}" if "." in safe_name else ""
     if ext not in allowed_exts:
         raise ValidationError(
-            {"filename": "Filename extension does not match the content type."}
+            {"filename": gettext("Filename extension does not match the content type.")}
         )
     return ext

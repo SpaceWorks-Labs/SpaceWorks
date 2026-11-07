@@ -1,5 +1,6 @@
 """Staff editor surfaces use event predicates, never tenant-wide grant expansion."""
 
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiResponse
@@ -112,7 +113,7 @@ class EventWebsiteAssetView(StaffWebsiteBase):
         try:
             asset = upload_asset(target, actor=request.user, **data.validated_data)
         except StorageUnavailable:
-            return Response({"detail": "Image storage is unavailable."}, status=503)
+            return Response({"detail": gettext("Image storage is unavailable.")}, status=503)
         return Response(WebsiteAssetSerializer(asset).data, status=201)
 
 

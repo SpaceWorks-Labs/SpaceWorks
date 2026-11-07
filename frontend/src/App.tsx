@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ProgrammeDelight } from "./features/events/programme/ProgrammeDelight";
 import { ReauthenticationDialog } from "./features/auth/ReauthenticationDialog";
 import { ReauthenticationReturn } from "./features/auth/ReauthenticationReturn";
@@ -15,7 +16,7 @@ const ChartTestPage = import.meta.env.DEV && import.meta.env.MODE === "chart-tes
 export default function App() {
   const tenant = useTenant();
   const { pathname } = useLocation();
-  if (ChartTestPage && pathname === "/__test/charts") return <Suspense fallback={<p role="status">Loading chart fixture…</p>}><ChartTestPage /></Suspense>;
+  if (ChartTestPage && pathname === "/__test/charts") return <Suspense fallback={<p role="status">{t`Loading chart fixture…`}</p>}><ChartTestPage /></Suspense>;
   if (pathname === "/reauth/callback" || pathname === "/reauth/confirm") return <ReauthenticationReturn confirmation={pathname === "/reauth/confirm"} />;
   if (pathname === "/account/restore" || pathname === "/member/archived") {
     return <><AppRoutes mode={tenant.mode} landing={null} /><ReauthenticationDialog /></>;
@@ -24,7 +25,7 @@ export default function App() {
   // config.js / tenant bootstrap cannot load. Central /kiosk/:slug stays distinct.
   if (/^\/m\/[^/]+\/kiosk\/[^/]+\/?$/.test(pathname)
       || /^\/kiosk\/[0-9a-f-]{36}\/?$/i.test(pathname)) {
-    return <Suspense fallback={<div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Loading kiosk…" body="" primary={{ label: "Loading…", disabled: true, disabledReason: "The kiosk is opening." }} /></div>}><Routes>
+    return <Suspense fallback={<div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Loading kiosk…`} body="" primary={{ label: t`Loading…`, disabled: true, disabledReason: "The kiosk is opening." }} /></div>}><Routes>
       <Route path="/kiosk/:stationToken" element={<KioskStationPage />} />
       <Route path="/m/:slug/kiosk/:stationToken" element={<KioskStationPage />} />
     </Routes></Suspense>;
@@ -36,13 +37,13 @@ export default function App() {
   // this branch stale and sent every click on the recovery CTA to the not-found page.
   const accountUtility = /^\/(?:m\/[^/]+\/)?member\/account\/(?:saved-details|security-activity)\/?$/.test(pathname);
   if (!accountUtility && tenant.mode === "single" && tenant.loading) {
-    return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Loading site…" body=""
-      primary={{ label: "Loading…", disabled: true, disabledReason: "The site is opening." }} /></div>;
+    return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Loading site…`} body=""
+      primary={{ label: t`Loading…`, disabled: true, disabledReason: "The site is opening." }} /></div>;
   }
   if (!accountUtility && tenant.mode === "single" && tenant.error) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "TriangleAlert", tone: "danger" }}
-      title="Site unavailable" body="The configured tenant could not be resolved."
-      primary={{ label: "Retry", onClick: () => window.location.reload() }} />;
+      title={t`Site unavailable`} body={t`The configured tenant could not be resolved.`}
+      primary={{ label: t`Retry`, onClick: () => window.location.reload() }} />;
   }
   return <ProgrammeDelight><AppRoutes mode={tenant.mode} landing={<LandingPage />} /><ReauthenticationDialog /></ProgrammeDelight>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ScanLine } from "lucide-react";
 import { DelightArt } from "../../components/delight/Artwork";
@@ -9,12 +10,12 @@ export function SpaceWorksDemo() {
   const { enabled } = useDelight();
   if (!enabled) return null;
   return <section aria-labelledby="demo-title" className="my-8 grid gap-4 rounded-2xl border border-line bg-panel p-5 text-ink">
-    <p className="eyebrow">Demo</p><h2 id="demo-title" className="title-panel">Try a sample handover</h2>
+    <p className="eyebrow">{t`Demo`}</p><h2 id="demo-title" className="title-panel">{t`Try a sample handover`}</h2>
     <DelightArt name="demo" className="h-40 w-full" />
-    <p>This sample box stays in your browser. Real handovers require a scanned tool and evidence.</p>
-    <p role="status">Sample box: {issued ? "Issued" : "On shelf"}</p>
+    <p>{t`This sample box stays in your browser. Real handovers require a scanned tool and evidence.`}</p>
+    <p role="status">{t`Sample box: `}{issued ? t`Issued` : t`On shelf`}</p>
     <div className="flex flex-wrap gap-3"><button type="button" className="desk-button-primary gap-2" onClick={() => setIssued(true)} disabled={issued}>
-      <ScanLine size={20} aria-hidden="true" />Scan sample box</button>
-      <button type="button" className="desk-button" onClick={() => setIssued(false)} disabled={!issued}>Reset demo</button></div>
+      <ScanLine size={20} aria-hidden="true" />{t`Scan sample box`}</button>
+      <button type="button" className="desk-button" onClick={() => setIssued(false)} disabled={!issued}>{t`Reset demo`}</button></div>
   </section>;
 }

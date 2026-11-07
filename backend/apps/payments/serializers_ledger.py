@@ -1,5 +1,6 @@
 """Finance-ledger request and response shapes (lane L5, #94/#100)."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -50,9 +51,9 @@ class LedgerEntryCreateSerializer(serializers.Serializer):
         allowed = (LedgerEntry.RECEIPT_CATEGORIES if attrs["kind"] == LedgerEntry.Kind.RECEIPT
                    else LedgerEntry.EXPENSE_CATEGORIES)
         if attrs["category"] not in allowed:
-            raise serializers.ValidationError({"category": "Choose a category for this kind of entry."})
+            raise serializers.ValidationError({"category": gettext("Choose a category for this kind of entry.")})
         if attrs.get("machine_type_id") and attrs["domain"] != LedgerEntry.Domain.MACHINES:
-            raise serializers.ValidationError({"machine_type_id": "Only machines entries name a machine type."})
+            raise serializers.ValidationError({"machine_type_id": gettext("Only machines entries name a machine type.")})
         return attrs
 
 

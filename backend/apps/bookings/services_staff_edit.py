@@ -1,5 +1,6 @@
 """Purpose-limited staff edits; transitions and money use their named services."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -27,11 +28,11 @@ def edit_booking_details(booking, *, actor, **changes):
     unknown = set(changes) - {"note", "custom_answers"}
     if unknown or not changes:
         raise ValidationError({key: "This field cannot be edited." for key in sorted(unknown)}
-                              or {"detail": "Provide a note or custom answers."})
+                              or {"detail": gettext("Provide a note or custom answers.")})
     if "note" in changes:
         note = changes["note"]
         if not isinstance(note, str) or len(note) > 5000:
-            raise ValidationError({"note": "Must be a string of at most 5000 characters."})
+            raise ValidationError({"note": gettext("Must be a string of at most 5000 characters.")})
         locked.note = note.strip()
     if "custom_answers" in changes:
         locked.custom_answers = validate_answers(space.custom_form, changes["custom_answers"])
@@ -57,7 +58,7 @@ def move_locked_booking(space, locked, *, actor, starts_at, ends_at, now):
     locked.starts_at, locked.ends_at = starts_at, ends_at
     validate_admission(space, locked, now=now, actor=actor, check_conflict=True)
     if starts_at <= now + timedelta(hours=space.cancellation_cutoff_hours):
-        raise ValidationError({"starts_at": "New time must be after the reschedule cutoff."})
+        raise ValidationError({"starts_at": gettext("New time must be after the reschedule cutoff.")})
     locked.calendar_sequence += 1
     locked.calendar_updated_at = now
     locked.save(update_fields=["starts_at", "ends_at", "calendar_sequence", "calendar_updated_at"])

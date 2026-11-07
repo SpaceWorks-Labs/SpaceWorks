@@ -6,6 +6,7 @@ value, compared in constant time). OAuth tokens, codes and client secrets are
 django-oauth-toolkit's own models; this module adds who registered an app for which
 space, and each person's consent, which carries the MFA proof captured at consent.
 """
+from django.utils.translation import gettext_lazy
 import hashlib
 import secrets
 from datetime import timedelta
@@ -27,7 +28,7 @@ class PersonalAccessToken(models.Model):
                              related_name="personal_access_tokens")
     makerspace = models.ForeignKey("makerspaces.Makerspace", null=True, blank=True, on_delete=models.CASCADE,
                                    related_name="personal_access_tokens",
-                                   help_text="The one space staff scopes apply to.")
+                                   help_text=gettext_lazy("The one space staff scopes apply to."))
     name = models.CharField(max_length=120)
     lookup = models.CharField(max_length=16, unique=True, editable=False)
     token_digest = models.CharField(max_length=64, editable=False)

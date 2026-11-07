@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema, PolymorphicProxySerializer
 from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer
@@ -41,7 +42,7 @@ def _reject_browser_headers(request):
         request.META.get(name)
         for name in ('HTTP_COOKIE', 'HTTP_ORIGIN', 'HTTP_REFERER')
     ):
-        raise PermissionDenied("Browser credential transport is not allowed on device auth routes.")
+        raise PermissionDenied(gettext("Browser credential transport is not allowed on device auth routes."))
 
 
 class IsDeviceAccessToken(BasePermission):
@@ -70,7 +71,7 @@ class DeviceAttestationChallengeView(APIView):
         try:
             raw = create_challenge(**serializer.validated_data)
         except AttestationUnavailable:
-            return Response({"detail": "Device attestation is unavailable.", "code": "attestation_unavailable"}, status=503)
+            return Response({"detail": gettext("Device attestation is unavailable."), "code": "attestation_unavailable"}, status=503)
         audit_events.record_auth_event(
             None,
             'auth.device_challenge_created',
@@ -118,15 +119,15 @@ class DeviceLoginView(APIView):
         challenge = _consume_challenge(data)
         if challenge is None:
             _audit_login_failure(data, 'invalid_challenge')
-            raise AuthenticationFailed("Invalid device credentials or attestation.")
+            raise AuthenticationFailed(gettext("Invalid device credentials or attestation."))
         try:
             verified = verify_attestation(challenge, data["challenge"], data["attestation"])
         except AttestationUnavailable:
             _audit_login_failure(data, 'provider_unavailable')
-            return Response({"detail": "Device attestation is unavailable.", "code": "attestation_unavailable"}, status=503)
+            return Response({"detail": gettext("Device attestation is unavailable."), "code": "attestation_unavailable"}, status=503)
         except AttestationRejected as exc:
             _audit_login_failure(data, 'attestation_rejected')
-            raise AuthenticationFailed("Invalid device credentials or attestation.") from exc
+            raise AuthenticationFailed(gettext("Invalid device credentials or attestation.")) from exc
         from apps.accounts.services_device_login import DevicePasswordRejected, password_login
         try:
             return password_login(request, data, challenge, verified)
@@ -171,7 +172,7 @@ class DeviceLogoutView(APIView):
         revoke_device_grant(request.device_grant)
         audit_events.record_auth_event(request.user, "auth.device_logout", target=request.user,
             meta={"grant_hash": audit_events.fingerprint(request.device_grant.pk)})
-        return Response({"detail": "Device logged out."})
+        return Response({"detail": gettext("Device logged out.")})
 
 
 class DeviceGrantListView(APIView):

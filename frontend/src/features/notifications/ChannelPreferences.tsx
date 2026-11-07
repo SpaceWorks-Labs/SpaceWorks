@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { CATEGORY_LABELS, CHANNEL_LABELS, CONNECTABLE } from "./channelCatalog";
@@ -22,8 +23,8 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
   const dirty = edited.length > 0;
   const update = (category: string, patch: Partial<Selection>) =>
     setDraft(current => current.map(row => row.category === category ? { ...row, ...patch } : row));
-  if (!shown.length) return <p className="text-sm text-muted">There are no notifications to choose channels for in this space yet.</p>;
-  return <form className="grid min-w-0 gap-3" aria-label="Where your notifications go" onSubmit={event => {
+  if (!shown.length) return <p className="text-sm text-muted">{t`There are no notifications to choose channels for in this space yet.`}</p>;
+  return <form className="grid min-w-0 gap-3" aria-label={t`Where your notifications go`} onSubmit={event => {
     event.preventDefault();
     // Defaults may contain channels disabled by the tenant or source module.
     save.mutate(edited.map(row => ({ ...row,
@@ -43,22 +44,21 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
                 aria-label={`${name}: ${CHANNEL_LABELS[channel] ?? channel}`}
                 onChange={event => update(row.category, { channels: event.target.checked
                   ? [...row.channels, channel] : row.channels.filter(item => item !== channel) })} />
-              <span>{CHANNEL_LABELS[channel] ?? channel}{needsConnection ? <span className="text-muted"> ({channel === "sms" ? "allow SMS first" : "connect first"})</span> : null}</span>
+              <span>{CHANNEL_LABELS[channel] ?? channel}{needsConnection ? <span className="text-muted"> ({channel === "sms" ? t`allow SMS first` : t`connect first`})</span> : null}</span>
             </label>;
           })}
         </div>
         <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
           <input className="h-4 w-4" type="checkbox" checked={row.email_fallback} disabled={save.isPending}
             onChange={event => update(row.category, { email_fallback: event.target.checked })} />
-          Email me if none of these could deliver
-        </label>
+          {t`Email me if none of these could deliver`}</label>
       </fieldset>;
     })}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
-    {save.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">Saved.</p> : null}
+    {save.isSuccess && !dirty ? <p role="status" className="text-sm text-muted">{t`Saved.`}</p> : null}
     <div className="flex flex-wrap gap-2">
-      <button className="desk-button" type="submit" disabled={!dirty || save.isPending}>{save.isPending ? "Saving…" : "Save choices"}</button>
-      {dirty ? <button className="desk-button" type="button" onClick={() => setDraft(preferences)}>Discard</button> : null}
+      <button className="desk-button" type="submit" disabled={!dirty || save.isPending}>{save.isPending ? t`Saving…` : t`Save choices`}</button>
+      {dirty ? <button className="desk-button" type="button" onClick={() => setDraft(preferences)}>{t`Discard`}</button> : null}
     </div>
   </form>;
 }

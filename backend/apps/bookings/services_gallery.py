@@ -5,6 +5,7 @@ holding it). Storage I/O (HEAD, sniff, copy) happens before the row lock, the qu
 charged inside it, and a removed photo's bytes and quota are released only after commit.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
@@ -23,16 +24,16 @@ def _locked(space, actor):
     locked = BookableSpace.objects.select_for_update().select_related("makerspace").get(pk=space.pk)
     require(actor, locked, "edit_details")
     if not locked.is_active:
-        raise serializers.ValidationError({"space": "Inactive spaces cannot have photos changed."})
+        raise serializers.ValidationError({"space": gettext("Inactive spaces cannot have photos changed.")})
     return locked
 
 
 def require_room(space):
     if not space.is_active:
-        raise serializers.ValidationError({"space": "Inactive spaces cannot have photos changed."})
+        raise serializers.ValidationError({"space": gettext("Inactive spaces cannot have photos changed.")})
     if space.photos.count() >= MAX_PHOTOS_PER_SPACE:
         raise serializers.ValidationError(
-            {"photos": f"A space can show at most {MAX_PHOTOS_PER_SPACE} photos. Remove one first."})
+            {"photos": gettext('A space can show at most {MAX_PHOTOS_PER_SPACE} photos. Remove one first.').format(MAX_PHOTOS_PER_SPACE=MAX_PHOTOS_PER_SPACE)})
 
 
 def presign_photo(space, *, filename, content_type):
@@ -56,12 +57,12 @@ def cleanup_unattached(object_key):
 def attach_photo(space, *, actor, object_key, size_bytes, caption=""):
     locked = _locked(space, actor)
     if not storage.is_owned_object_key(locked, object_key) or not storage.has_allowed_extension(object_key):
-        raise serializers.ValidationError({"object_key": "Photo object key is outside this space."})
+        raise serializers.ValidationError({"object_key": gettext("Photo object key is outside this space.")})
     if storage.public_image_key_in_use(locked.makerspace_id, object_key):
-        raise serializers.ValidationError({"object_key": "This image is already in use."})
+        raise serializers.ValidationError({"object_key": gettext("This image is already in use.")})
     if locked.photos.count() >= MAX_PHOTOS_PER_SPACE:
         raise serializers.ValidationError(
-            {"photos": f"A space can show at most {MAX_PHOTOS_PER_SPACE} photos. Remove one first."})
+            {"photos": gettext('A space can show at most {MAX_PHOTOS_PER_SPACE} photos. Remove one first.').format(MAX_PHOTOS_PER_SPACE=MAX_PHOTOS_PER_SPACE)})
     limits.add_storage(locked.makerspace, size_bytes)
     position = (locked.photos.aggregate(top=Max("position"))["top"] or 0) + 1
     photo = BookableSpacePhoto.objects.create(space=locked, object_key=object_key, size_bytes=size_bytes,
@@ -87,7 +88,7 @@ def reorder_photos(space, *, actor, order):
     locked = _locked(space, actor)
     rows = {row.pk: row for row in BookableSpacePhoto.objects.select_for_update().filter(space=locked)}
     if len(order) != len(set(order)) or set(order) != set(rows):
-        raise serializers.ValidationError({"order": "List every photo of this space exactly once."})
+        raise serializers.ValidationError({"order": gettext("List every photo of this space exactly once.")})
     for position, pk in enumerate(order, start=1):
         if rows[pk].position != position:
             rows[pk].position = position

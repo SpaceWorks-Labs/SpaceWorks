@@ -8,6 +8,7 @@ encryption mixin. Staff notes are staff-only: never serialized to the member.
 Titles ("Secretary", "Treasurer") are DISPLAY ONLY. They grant nothing: authority stays
 in RBAC roles. One title per membership may be primary; the card prints that one (L3).
 """
+from django.utils.translation import gettext
 import re
 
 from django.conf import settings
@@ -24,12 +25,12 @@ STATE_CODE_PATTERN = re.compile(r"^\d{2}$")
 
 def validate_gstin(value):
     if value and not GSTIN_PATTERN.match(value):
-        raise ValidationError("Enter a 15-character GSTIN, for example 29ABCDE1234F1Z5.")
+        raise ValidationError(gettext("Enter a 15-character GSTIN, for example 29ABCDE1234F1Z5."))
 
 
 def validate_state_code(value):
     if value and not STATE_CODE_PATTERN.match(value):
-        raise ValidationError("Enter the two-digit state code, for example 29.")
+        raise ValidationError(gettext("Enter the two-digit state code, for example 29."))
 
 
 class MembershipRecord(ScopedPiiModelMixin, models.Model):
@@ -52,7 +53,7 @@ class MembershipRecord(ScopedPiiModelMixin, models.Model):
         validate_gstin(self.gstin)
         validate_state_code(self.state_code)
         if self.gstin and self.state_code and self.gstin[:2] != self.state_code:
-            raise ValidationError({"gstin": "The GSTIN's first two digits must match the state code."})
+            raise ValidationError({"gstin": gettext("The GSTIN's first two digits must match the state code.")})
 
 
 class MembershipTitle(models.Model):

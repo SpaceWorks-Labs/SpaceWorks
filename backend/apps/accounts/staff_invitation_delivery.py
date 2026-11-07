@@ -10,6 +10,7 @@ The bearer lives in the URL fragment, so it stays out of access logs and Referer
 Every step fails safe: a delivery problem never undoes the invitation.
 """
 
+from django.utils.translation import gettext
 import logging
 from urllib.parse import urlencode
 
@@ -43,11 +44,8 @@ def deliver(invitation, raw):
     status = "unavailable"
     try:
         log = dispatch_email(
-            to_email=invitation.email, subject=f"Staff invitation to {space.name}",
-            text_body=f"{label}.\nAccept: {link}\nExpires: {invitation.expires_at.isoformat()}.\n"
-                      "Sign in to your own account (or create one with this email address) to accept; "
-                      "we will email you a code to confirm the address. If you did not expect this "
-                      "invitation, ignore it.",
+            to_email=invitation.email, subject=gettext('Staff invitation to {name}').format(name=space.name),
+            text_body=gettext('{label}.\nAccept: {link}\nExpires: {value}.\nSign in to your own account (or create one with this email address) to accept; we will email you a code to confirm the address. If you did not expect this invitation, ignore it.').format(label=label, link=link, value=invitation.expires_at.isoformat()),
             makerspace=space, stream="account", event="staff_invitation", audience="staff",
             persist_body=False, sync=True,
         )

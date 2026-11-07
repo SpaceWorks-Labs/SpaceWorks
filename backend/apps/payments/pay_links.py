@@ -7,6 +7,7 @@ and shows nothing about who owes it. Registration is NOT payable this way: event
 registration still requires an account (Hard Rule), so its charges always have one.
 """
 
+from django.utils.translation import gettext
 import hashlib
 import secrets
 from datetime import timedelta
@@ -61,7 +62,7 @@ def create_link(*, actor, makerspace_id, payment_id, days=DEFAULT_DAYS, email=""
         pk=payment_id, makerspace_id=makerspace_id).first()
     if payment is None:
         from rest_framework.exceptions import NotFound
-        raise NotFound("Payment not found.")
+        raise NotFound(gettext("Payment not found."))
     _require_record_authority(actor, [payment])
     if payment.status != Payment.Status.PENDING:
         raise PayLinkRefused("Only a pending charge can be paid by link.", "payment_terminal")
@@ -91,7 +92,7 @@ def _send(payment, token, email, link):
             f"Pay securely here: {link_url(token)}\nThis link expires on {link.expires_at.date().isoformat()}.")
     direct_mail_unless_routed(space=space, source_kind="payments.pay_link", row=link, revision=str(link.pk),
                               event="pay_link_sent", owner=None, to_email=email,
-                              subject=f"Payment request from {space.name}", text=text, stream="payments",
+                              subject=gettext('Payment request from {name}').format(name=space.name), text=text, stream="payments",
                               audience="requester", feature="", persist_body=False, address_owner=False)
 
 

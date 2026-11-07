@@ -7,6 +7,7 @@ printed, and the attach is refused without that. Authority per kind, through eac
 own staff resolver: member cards need MANAGE_MEMBER_CARDS in the card's space, programme
 cards MANAGE_ID_PROGRAMMES on the host space, event cards an organiser of the event.
 """
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -95,7 +96,7 @@ class MemberCardStaffPhotoView(_StaffCardPhotoView):
         from apps.makerspaces.member_card_admin_views_l3 import _card
         card = _card(request.user, pk)
         if not card.is_active:
-            raise ValidationError({"detail": "A revoked card cannot take a new photo."})
+            raise ValidationError({"detail": gettext("A revoked card cannot take a new photo.")})
         return card
 
 
@@ -107,7 +108,7 @@ class ProgrammeCardStaffPhotoView(_StaffCardPhotoView):
         from apps.id_programmes.access import MANAGE, card_for
         card = card_for(request.user, pk, MANAGE)
         if card.status not in ("pending", "approved"):
-            raise ValidationError({"detail": "Only a waiting or approved card can take a photo."})
+            raise ValidationError({"detail": gettext("Only a waiting or approved card can take a photo.")})
         return card
 
 
@@ -119,5 +120,5 @@ class EventCardStaffPhotoView(_StaffCardPhotoView):
         from apps.events.id_cards_views import organiser_card
         card = organiser_card(request.user, pk)
         if card.status != "active":
-            raise ValidationError({"detail": "A revoked card cannot take a new photo."})
+            raise ValidationError({"detail": gettext("A revoked card cannot take a new photo.")})
         return card

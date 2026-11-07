@@ -7,6 +7,7 @@ lifecycle records the staff User, PIN failure/session start record ``actor=None`
 carry the Station identity in metadata.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 from uuid import UUID, uuid4
 
@@ -63,10 +64,10 @@ def _material_for(station):
 @transaction.atomic
 def create_station(makerspace, *, actor, name, kind):
     if kind not in KIOSK_KINDS:
-        raise ValidationError({"kind": "Only scanner and handover Stations are managed here."})
+        raise ValidationError({"kind": gettext("Only scanner and handover Stations are managed here.")})
     locked = require_feature_locked(makerspace.pk, KIOSK_FEATURE)
     if Station.objects.filter(makerspace=locked, kind=kind, name=name).exists():
-        raise ValidationError({"name": "A Station of this kind already has that name."})
+        raise ValidationError({"name": gettext("A Station of this kind already has that name.")})
     station = Station.objects.create(makerspace=locked, kind=kind, name=name, created_by=actor)
     credential, pin = rotate_credential(station, material_for=_material_for(station))
     audit.record(
@@ -80,7 +81,7 @@ def _locked_kiosk_station(station):
     require_feature_locked(station.makerspace_id, KIOSK_FEATURE)
     locked = Station.objects.select_for_update().get(pk=station.pk)
     if locked.kind not in KIOSK_KINDS:
-        raise ValidationError({"station": "Not a kiosk Station."})
+        raise ValidationError({"station": gettext("Not a kiosk Station.")})
     return locked
 
 
@@ -111,7 +112,7 @@ def reveal(station, *, actor, current_password):
 def disable(station, *, actor):
     locked = Station.objects.select_for_update().get(pk=station.pk)
     if locked.kind not in KIOSK_KINDS:
-        raise ValidationError({"station": "Not a kiosk Station."})
+        raise ValidationError({"station": gettext("Not a kiosk Station.")})
     credential = disable_credential(locked)
     _revoke_station_leases(locked)
     if credential is not None:

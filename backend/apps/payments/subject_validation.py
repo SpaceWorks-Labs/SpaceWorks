@@ -1,5 +1,6 @@
 """Ownership checks for admission charges, including preserved orphan receipts."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 
@@ -11,10 +12,10 @@ def validate_membership_request(payment, identity_unchanged):
     ).only("user_id").first()
     if request is None and not identity_unchanged:
         raise ValidationError({
-            "subject_id": "Payment subject must belong to the payment makerspace.",
+            "subject_id": gettext("Payment subject must belong to the payment makerspace."),
         })
     if request is not None and (request.user_id is None or payment.member_id != request.user_id):
-        raise ValidationError({"member": "Payment member must be the applicant."})
+        raise ValidationError({"member": gettext("Payment member must be the applicant.")})
 
 
 def validate_loan_accountability(payment, identity_unchanged):
@@ -25,9 +26,9 @@ def validate_loan_accountability(payment, identity_unchanged):
         pk=payment.subject_id, makerspace_id=payment.makerspace_id,
     ).only("requester_id").first()
     if row is None and not identity_unchanged:
-        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+        raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if row is not None and payment.member_id != row.requester_id:
-        raise ValidationError({"member": "Payment member must be the borrower."})
+        raise ValidationError({"member": gettext("Payment member must be the borrower.")})
 
 
 def validate_event_money(payment, identity_unchanged):
@@ -38,9 +39,9 @@ def validate_event_money(payment, identity_unchanged):
                     else (EventVenueFee, "payer_id"))
     row = model.objects.filter(pk=payment.subject_id, makerspace_id=payment.makerspace_id).values(owner).first()
     if row is None and not identity_unchanged:
-        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+        raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if row is not None and payment.member_id != row[owner]:
-        raise ValidationError({"member": "Payment member must be the payer."})
+        raise ValidationError({"member": gettext("Payment member must be the payer.")})
 
 
 def validate_programme_money(payment, identity_unchanged):
@@ -58,9 +59,9 @@ def validate_programme_money(payment, identity_unchanged):
     if identity_unchanged:
         return
     if row is None:
-        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+        raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if payment.member_id != leader:
-        raise ValidationError({"member": "The team leader pays this charge."})
+        raise ValidationError({"member": gettext("The team leader pays this charge.")})
 
 
 def validate_event_deposit(payment, identity_unchanged):
@@ -70,9 +71,9 @@ def validate_event_deposit(payment, identity_unchanged):
     row = EventRegistration.objects.filter(pk=payment.subject_id, event__makerspace_id=payment.makerspace_id
                                            ).values("member_id").first()
     if row is None and not identity_unchanged:
-        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+        raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if row is not None and payment.member_id != row["member_id"]:
-        raise ValidationError({"member": "Payment member must be the registered member."})
+        raise ValidationError({"member": gettext("Payment member must be the registered member.")})
 
 
 def validate_shop_order(payment, identity_unchanged):
@@ -82,9 +83,9 @@ def validate_shop_order(payment, identity_unchanged):
     row = ShopOrder.objects.filter(pk=payment.subject_id, makerspace_id=payment.makerspace_id).values(
         "buyer_id").first()
     if row is None and not identity_unchanged:
-        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+        raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if row is not None and payment.member_id != row["buyer_id"]:
-        raise ValidationError({"member": "Payment member must be the buyer."})
+        raise ValidationError({"member": gettext("Payment member must be the buyer.")})
 
 
 def validate_subject(payment, identity_unchanged):
@@ -100,7 +101,7 @@ def validate_subject(payment, identity_unchanged):
             pk=payment.subject_id,
             makerspace_id=payment.makerspace_id,
         ).exists():
-            raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+            raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if payment.subject_type == Payment.SubjectType.BOOKING and payment.subject_id:
         from apps.bookings.models import Booking
 
@@ -111,7 +112,7 @@ def validate_subject(payment, identity_unchanged):
             ).exists()
             if not booking_exists:
                 raise ValidationError(
-                    {"subject_id": "Payment subject must belong to the payment makerspace."}
+                    {"subject_id": gettext("Payment subject must belong to the payment makerspace.")}
                 )
     if payment.subject_type == Payment.SubjectType.EVENT_REGISTRATION and payment.subject_id:
         from apps.events.models import EventRegistration
@@ -123,7 +124,7 @@ def validate_subject(payment, identity_unchanged):
             ).exists()
             if not registration_exists:
                 raise ValidationError(
-                    {"subject_id": "Payment subject must belong to the payment makerspace."}
+                    {"subject_id": gettext("Payment subject must belong to the payment makerspace.")}
                 )
     if payment.subject_type in Payment.LOAN_SUBJECT_TYPES and payment.subject_id:
         from apps.hardware_requests.models import HardwareRequest
@@ -132,14 +133,14 @@ def validate_subject(payment, identity_unchanged):
             pk=payment.subject_id,
             makerspace_id=payment.makerspace_id,
         ).exists():
-            raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+            raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if payment.subject_type == Payment.SubjectType.MACHINE_SESSION and payment.subject_id:
         from apps.machines.models import MachineSession
 
         if not identity_unchanged and not MachineSession.objects.filter(
             pk=payment.subject_id, makerspace_id=payment.makerspace_id,
         ).exists():
-            raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+            raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if payment.subject_type in Payment.LOAN_ACCOUNTABILITY_SUBJECT_TYPES and payment.subject_id:
         validate_loan_accountability(payment, identity_unchanged)
     if payment.subject_type in ("event_order", "event_venue_fee") and payment.subject_id:
@@ -161,7 +162,7 @@ def validate_subject(payment, identity_unchanged):
             pk=payment.subject_id,
             membership__makerspace_id=payment.makerspace_id,
         ).exists():
-            raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+            raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if payment.subject_type == Payment.SubjectType.MAKERSPACE_MEMBERSHIP and payment.subject_id:
         from apps.makerspaces.models import MakerspaceMembership
 
@@ -171,9 +172,9 @@ def validate_subject(payment, identity_unchanged):
         ).only("user_id").first()
         if membership is None and not identity_unchanged:
             raise ValidationError(
-                {"subject_id": "Payment subject must belong to the payment makerspace."}
+                {"subject_id": gettext("Payment subject must belong to the payment makerspace.")}
             )
         if membership is not None and payment.member_id != membership.user_id:
             raise ValidationError(
-                {"member": "Payment member must be the membership user."}
+                {"member": gettext("Payment member must be the membership user.")}
             )

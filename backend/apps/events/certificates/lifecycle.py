@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import logging
 from datetime import timedelta
 from uuid import uuid4
@@ -126,7 +127,7 @@ def revoke_locked(event, row, *, actor, reason):
         raise EventInvalidTransition("Only an active certificate can be revoked.")
     if reason not in Certificate.RevocationReason.values:
         from rest_framework.exceptions import ValidationError
-        raise ValidationError({"reason": "Choose a certificate revocation reason."})
+        raise ValidationError({"reason": gettext("Choose a certificate revocation reason.")})
     row.status, row.revoked_at, row.revoked_by, row.revocation_reason = "revoked", timezone.now(), actor, reason
     save_operational(row, ("status", "revoked_at", "revoked_by", "revocation_reason"))
     record(actor, "event.certificate_revoked", makerspace=event.makerspace, target=row,

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -125,7 +126,7 @@ class ToBuyReceiptListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
         if ToBuyReceipt.objects.filter(object_key=object_key).exists():
-            raise ValidationError({"object_key": "This receipt is already attached."})
+            raise ValidationError({"object_key": gettext("This receipt is already attached.")})
         try:
             storage.finalize_receipt_upload(item, object_key)
         except StorageUnavailable:
@@ -138,7 +139,7 @@ class ToBuyReceiptListCreateView(APIView):
                     uploaded_by=request.user,
                 )
         except IntegrityError as exc:
-            raise ValidationError({"object_key": "This receipt is already attached."}) from exc
+            raise ValidationError({"object_key": gettext("This receipt is already attached.")}) from exc
         audit.record(
             request.user,
             "procurement.receipt_added",

@@ -1,5 +1,6 @@
 """Immutable issued financial documents, permanently part of the core ledger."""
 
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal, InvalidOperation
@@ -8,7 +9,7 @@ from decimal import Decimal, InvalidOperation
 class PaymentDocument(models.Model):
     class Kind(models.TextChoices):
         RECEIPT = "receipt", "Receipt"
-        CREDIT_NOTE = "credit_note", "Credit note"
+        CREDIT_NOTE = "credit_note", gettext_noop("Credit note")
         BILL = "bill", "Bill"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
@@ -67,38 +68,38 @@ class PaymentDocument(models.Model):
         import re
         if (bool(self.branding_logo_key) != bool(self.branding_logo_sha256) or
                 (self.branding_logo_sha256 and not re.fullmatch(r"[0-9a-f]{64}", self.branding_logo_sha256))):
-            raise ValidationError("Invalid document logo identity.")
+            raise ValidationError(gettext("Invalid document logo identity."))
         if sum(bool(source) for source in (self.settlement_id, self.refund_id, self.reverses_id)) > 1:
-            raise ValidationError("A document must have only one financial source.")
+            raise ValidationError(gettext("A document must have only one financial source."))
         if (not isinstance(self.issuer, dict) or not isinstance(self.issuer.get("name"), str)
                 or not self.issuer["name"].strip() or any(
                     not isinstance(self.issuer.get(key, ""), str) for key in ("address", "tax_id", "footer"))):
-            raise ValidationError("Invalid document issuer snapshot.")
+            raise ValidationError(gettext("Invalid document issuer snapshot."))
         if self.payment_id and self.payment.makerspace_id != self.makerspace_id:
-            raise ValidationError("Document must belong to the payment's makerspace.")
+            raise ValidationError(gettext("Document must belong to the payment's makerspace."))
         for source in (self.settlement, self.refund, self.reverses):
             if source and source.payment_id != self.payment_id:
-                raise ValidationError("Document sources must refer to the same payment.")
+                raise ValidationError(gettext("Document sources must refer to the same payment."))
         if self.currency != self.payment.currency:
-            raise ValidationError("Document must match the payment's currency.")
+            raise ValidationError(gettext("Document must match the payment's currency."))
         if self.kind == "bill":
             if (self.payment.status != "pending" or self.amount != self.payment.amount or
                     self.settlement_id or self.refund_id or self.reverses_id):
-                raise ValidationError("A bill must match a pending charge without a financial source.")
+                raise ValidationError(gettext("A bill must match a pending charge without a financial source."))
         elif self.payment.status not in ("paid_online", "paid_offline"):
-            raise ValidationError("Document must match a collected payment's currency.")
+            raise ValidationError(gettext("Document must match a collected payment's currency."))
         if self.reverses:
             if ({self.kind, self.reverses.kind} != {"receipt", "credit_note"}
                     or self.amount != self.reverses.amount):
-                raise ValidationError("A reversal must offset the original document exactly.")
+                raise ValidationError(gettext("A reversal must offset the original document exactly."))
         elif self.refund:
             if self.kind != "credit_note" or self.refund.status != "succeeded" or self.amount != self.refund.amount:
-                raise ValidationError("A credit note must match a succeeded refund.")
+                raise ValidationError(gettext("A credit note must match a succeeded refund."))
         elif self.kind not in ("receipt", "bill") or (
                 self.amount != self.payment.amount and not self._received_amount_released()):
-            raise ValidationError("A receipt must match the full collected amount.")
+            raise ValidationError(gettext("A receipt must match the full collected amount."))
         if self.settlement and (self.kind != "receipt" or self.amount != self.settlement.amount):
-            raise ValidationError("A settlement receipt must match its settlement.")
+            raise ValidationError(gettext("A settlement receipt must match its settlement."))
         try:
             if not self.lines or not isinstance(self.lines, list) or len(self.lines) > 200 or any(
                 not isinstance(line, dict) or not isinstance(line.get("label"), str) or
@@ -108,9 +109,9 @@ class PaymentDocument(models.Model):
                 Decimal(line["quantity"]) * Decimal(line["unit_amount"]) != Decimal(line["total"])
                 for line in self.lines
             ) or sum(Decimal(line["total"]) for line in self.lines) != Decimal(self.amount):
-                raise ValidationError("Document lines must reconcile to the total.")
+                raise ValidationError(gettext("Document lines must reconcile to the total."))
         except (InvalidOperation, TypeError, KeyError, ValueError):
-            raise ValidationError("Invalid document lines.")
+            raise ValidationError(gettext("Invalid document lines."))
 
     def _received_amount_released(self):
         """Staff released a held receipt on the amount actually received (capture flag)."""
@@ -121,9 +122,9 @@ class PaymentDocument(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Payment documents are append-only.")
+            raise ValidationError(gettext("Payment documents are append-only."))
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Payment documents are append-only.")
+        raise ValidationError(gettext("Payment documents are append-only."))

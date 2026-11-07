@@ -1,4 +1,5 @@
 """Default pricing for core staff-created memberships without bypassing gates."""
+from django.utils.translation import gettext
 from apps.audit import services as audit
 from apps.accounts import rbac
 from rest_framework.exceptions import PermissionDenied
@@ -12,7 +13,7 @@ def prepare_direct_admission(actor, makerspace, user, role):
     if not module_enabled(makerspace, "membership") or not policy.configured:
         return None
     if policy.join_mode != "open" and not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk):
-        raise PermissionDenied("A membership manager must decide this admission.")
+        raise PermissionDenied(gettext("A membership manager must decide this admission."))
     paid = policy.joining_fee > 0 or (policy.default_plan and policy.default_plan.amount > 0)
     if (policy.payment_timing == "before_activation" and paid) or vouching_on(makerspace, policy) or application_schema_for(makerspace, policy):
         raise AdmissionError("membership_application_required", "Use the admission application to complete this makerspace's join conditions.")
@@ -45,7 +46,7 @@ def admit_walk_in(actor, makerspace, user, raw_answers=None):
 
     policy = ensure_join_allowed(makerspace)
     if policy.join_mode == "invite_only" and not rbac.can(actor, rbac.Action.MANAGE_MEMBERS, makerspace.pk):
-        raise PermissionDenied("A membership manager must invite this person.")
+        raise PermissionDenied(gettext("A membership manager must invite this person."))
     row = MembershipRequest.objects.create(
         makerspace=makerspace, user=user, kind="request", state="requested",
         requested_by=actor, assigned_role=_member_role(makerspace),

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsRow } from "../../components/ui";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { useEffect, useState, type CSSProperties } from "react";
@@ -37,18 +38,16 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
     },
   });
   useEffect(() => { save.reset(); }, [makerspace.id]);
-  return <SettingsRow label="Public and member colours"><form className="@container mt-6 space-y-3" onSubmit={(event) => {
+  return <SettingsRow label={t`Public and member colours`}><form className="@container mt-6 space-y-3" onSubmit={(event) => {
     event.preventDefault();
     if (settings && report.valid && changed && !loading && !save.isPending) save.mutate({ id: makerspace.id, slug: makerspace.slug, theme });
   }}>
 
-    <p className="text-sm text-muted">Leave blank to use Maker Teal. Staff screens always use the Space Works palette.</p>
+    <p className="text-sm text-muted">{t`Leave blank to use Maker Teal. Staff screens always use the Space Works palette.`}</p>
     <div className="grid gap-3 @md:grid-cols-2">
-      <label className="grid gap-1 text-sm" htmlFor="theme-primary">Primary fill
-        <input id="theme-primary" className="desk-input" placeholder="#006e63" value={primary} disabled={loading || save.isPending} onChange={(event) => setPrimary(event.target.value)} />
+      <label className="grid gap-1 text-sm" htmlFor="theme-primary">{t`Primary fill`}<input id="theme-primary" className="desk-input" placeholder="#006e63" value={primary} disabled={loading || save.isPending} onChange={(event) => setPrimary(event.target.value)} />
       </label>
-      <label className="grid gap-1 text-sm" htmlFor="theme-accent">Link colour seed
-        <input id="theme-accent" className="desk-input" placeholder="Derived from primary" value={accent} disabled={loading || save.isPending} onChange={(event) => setAccent(event.target.value)} />
+      <label className="grid gap-1 text-sm" htmlFor="theme-accent">{t`Link colour seed`}<input id="theme-accent" className="desk-input" placeholder={t`Derived from primary`} value={accent} disabled={loading || save.isPending} onChange={(event) => setAccent(event.target.value)} />
       </label>
     </div>
     <div className="grid gap-3 @md:grid-cols-2">
@@ -65,24 +64,24 @@ export function MakerspaceThemeSettings({ makerspace, settings, loading }: Props
         const worstUI = Math.min(...palette.pairs.filter((pair) => pair.minimum === 3).map((pair) => pair.ratio));
         const surface = BRAND_SURFACES[mode][0].join(" ");
         return <div key={mode} data-testid={`theme-preview-${mode}`} style={{ ...style, backgroundColor: `rgb(${surface})`, color: `rgb(${BODY_TEXT[mode][0].join(" ")})` }} className="">
-          <p className="font-semibold">{mode === "light" ? "Light" : "Dark"} preview</p>
-          {!report.valid ? <p className="text-xs">Product palette fallback shown; ratios below describe the entered colours.</p> : null}
-          <a href="#theme-primary" className="my-2 block text-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" style={{ color: `rgb(${preview.ink.join(" ")})` }}>Example link</a>
-          <button className="desk-button-brand" type="button">Example action</button>
+          <p className="font-semibold">{mode === "light" ? t`Light` : t`Dark`} preview</p>
+          {!report.valid ? <p className="text-xs">{t`Product palette fallback shown; ratios below describe the entered colours.`}</p> : null}
+          <a href="#theme-primary" className="my-2 block text-sm underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" style={{ color: `rgb(${preview.ink.join(" ")})` }}>{t`Example link`}</a>
+          <button className="desk-button-brand" type="button">{t`Example action`}</button>
           <div className="min-h-11 mt-2 flex gap-2 text-sm">
-            {(["hover", "active"] as const).map((state) => <span key={state} className="rounded-control px-3 py-2" style={{ backgroundColor: `rgb(${preview[state].join(" ")})`, color: `rgb(${preview.foreground.join(" ")})` }}>{state === "hover" ? "Hover" : "Active"}</span>)}
+            {(["hover", "active"] as const).map((state) => <span key={state} className="rounded-control px-3 py-2" style={{ backgroundColor: `rgb(${preview[state].join(" ")})`, color: `rgb(${preview.foreground.join(" ")})` }}>{state === "hover" ? t`Hover` : t`Active`}</span>)}
           </div>
-          <div className="mt-2 rounded-xl p-3" style={{ backgroundColor: `rgb(${preview.soft.join(" ")})`, color: `rgb(${BODY_TEXT[mode][1].join(" ")})` }}>Brand soft with muted text</div>
-          <p className="mt-2 text-xs">Text minimum {worstText.toFixed(2)}:1 (AA 4.5:1); component minimum {worstUI.toFixed(2)}:1 (AA 3:1).</p>
+          <div className="mt-2 rounded-xl p-3" style={{ backgroundColor: `rgb(${preview.soft.join(" ")})`, color: `rgb(${BODY_TEXT[mode][1].join(" ")})` }}>{t`Brand soft with muted text`}</div>
+          <p className="mt-2 text-xs">{t`Text minimum ${worstText.toFixed(2)}:1 (AA 4.5:1); component minimum ${worstUI.toFixed(2)}:1 (AA 3:1).`}</p>
         </div>;
       })}
     </div>
     <div aria-live="polite">
       {report.errors.map((error) => <p className="text-sm text-danger" key={error}>{error}</p>)}
-      {report.failures.map((pair) => <p className="text-sm text-danger" key={`${pair.mode}-${pair.pair}`}>{pair.mode}: {pair.pair} is {pair.ratio.toFixed(2)}:1; requires {pair.minimum}:1.</p>)}
-      {report.valid ? <p className="text-sm text-success-ink">All checked pairs meet WCAG AA in both modes.</p> : <p className="text-sm text-danger">Enter a #RGB or #RRGGBB colour. Public pages use Maker Teal until valid colours are saved.</p>}
+      {report.failures.map((pair) => <p className="text-sm text-danger" key={`${pair.mode}-${pair.pair}`}>{t`${pair.mode}: ${pair.pair} is ${pair.ratio.toFixed(2)}:1; requires ${pair.minimum}:1.`}</p>)}
+      {report.valid ? <p className="text-sm text-success-ink">{t`All checked pairs meet WCAG AA in both modes.`}</p> : <p className="text-sm text-danger">{t`Enter a #RGB or #RRGGBB colour. Public pages use Maker Teal until valid colours are saved.`}</p>}
       {save.error ? <p className="text-sm text-danger">{save.error.message}</p> : null}
-      {save.isSuccess && !changed ? <p className="text-sm text-success-ink">Colours saved.</p> : null}
+      {save.isSuccess && !changed ? <p className="text-sm text-success-ink">{t`Colours saved.`}</p> : null}
     </div>
     <SettingsEditorActions dirty={changed} onDiscard={() => { setPrimary(savedPrimary); setAccent(savedAccent); }} pending={save.isPending} disabled={!settings || loading || save.isPending || !changed || !report.valid} />
   </form></SettingsRow>;

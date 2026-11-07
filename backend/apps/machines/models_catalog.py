@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.contrib.postgres.indexes import GinIndex
@@ -93,7 +94,7 @@ class MakerspaceMachineTypePricing(models.Model):
     def clean(self):
         super().clean()
         if self.machine_type_id and self.machine_type.makerspace_id not in (None, self.makerspace_id):
-            raise ValidationError("Machine type must be global or belong to this makerspace.")
+            raise ValidationError(gettext("Machine type must be global or belong to this makerspace."))
 
 
 class Machine(models.Model):

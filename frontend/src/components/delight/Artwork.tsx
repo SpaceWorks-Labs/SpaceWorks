@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useDelight, useReducedMotion, type DelightArtwork } from "./DelightProvider";
 import "./delight.css";
 
@@ -12,7 +13,7 @@ export function DelightArt({ name, className = "" }: { name: keyof DelightArtwor
   </span>;
 }
 
-export function BrandLoader({ label = "Loading" }: { label?: string }) {
+export function BrandLoader({ label = t`Loading` }: { label?: string }) {
   const { enabled } = useDelight();
   const reduced = useReducedMotion();
   return <div role="status" className="flex min-h-11 items-center justify-center gap-3 text-muted">

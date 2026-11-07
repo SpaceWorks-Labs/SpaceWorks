@@ -7,6 +7,7 @@ of VIEW_FINANCE see every case in the space but cannot decide one -- deciding go
 back through `_require_subject_authority` per case.
 """
 
+from django.utils.translation import gettext
 from django.db.models import Q
 from rest_framework.exceptions import NotFound
 
@@ -64,7 +65,7 @@ def require_queue(actor, makerspace_id):
     from apps.makerspaces.servability import servable_queryset
 
     if not may_read_queue(actor, makerspace_id) or not servable_queryset().filter(pk=makerspace_id).exists():
-        raise NotFound("Makerspace not found.")
+        raise NotFound(gettext("Makerspace not found."))
 
 
 def with_case_rows(queryset):
@@ -77,5 +78,5 @@ def with_case_rows(queryset):
 def get_visible_case(actor, makerspace_id, case_id):
     case = with_case_rows(visible_cases(actor, makerspace_id)).filter(pk=case_id).first()
     if case is None:
-        raise NotFound("Refund case not found.")
+        raise NotFound(gettext("Refund case not found."))
     return case

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { eggsAllowed, useDelight } from "./DelightProvider";
 import { clearMakerModePending, countLogoClick, makerModePending } from "./logoClicks";
@@ -62,16 +63,16 @@ export function MakerModePanel({ mode, version }: { mode: ReturnType<typeof useM
   if (!mode.allowed) return null;
   return <>
     {mode.active ? <div aria-hidden="true" className="sw-blueprint-decoration pointer-events-none fixed inset-0 -z-10" /> : null}
-    <div className="sr-only" role="status">{mode.active ? "Maker mode on. Workshop grid enabled for 12 seconds." : "Maker mode off."}</div>
-    {mode.active ? <aside aria-label="Built by makers" className="fixed bottom-4 right-4 z-40 max-w-xs rounded-2xl border border-line bg-panel p-5 text-ink shadow-overlay">
-      <p className="font-medium">Built by makers</p><p className="text-sm text-muted">Space Works {version}</p>
-      <p className="text-sm text-muted">Workshop grid enabled for 12 seconds.</p>
-      <button type="button" className="desk-button mt-3" onClick={mode.dismiss}>Dismiss maker mode</button>
+    <div className="sr-only" role="status">{mode.active ? t`Maker mode on. Workshop grid enabled for 12 seconds.` : t`Maker mode off.`}</div>
+    {mode.active ? <aside aria-label={t`Built by makers`} className="fixed bottom-4 right-4 z-40 max-w-xs rounded-2xl border border-line bg-panel p-5 text-ink shadow-overlay">
+      <p className="font-medium">{t`Built by makers`}</p><p className="text-sm text-muted">{t`Space Works ${version}`}</p>
+      <p className="text-sm text-muted">{t`Workshop grid enabled for 12 seconds.`}</p>
+      <button type="button" className="desk-button mt-3" onClick={mode.dismiss}>{t`Dismiss maker mode`}</button>
     </aside> : null}
   </>;
 }
 
 export function MakerModeToggle({ mode }: { mode: ReturnType<typeof useMakerMode> }) {
   if (!mode.allowed) return null;
-  return <button type="button" className="desk-button" aria-pressed={mode.active} onClick={mode.toggle}>Maker mode: {mode.active ? "on" : "off"}</button>;
+  return <button type="button" className="desk-button" aria-pressed={mode.active} onClick={mode.toggle}>{t`Maker mode: ${mode.active ? "on" : "off"}`}</button>;
 }

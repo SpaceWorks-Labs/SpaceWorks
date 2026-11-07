@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import secrets
 
 """Event invitations contain digests only; clear codes are returned once."""
@@ -21,7 +22,7 @@ class EventInvite(models.Model):
     def clean(self):
         super().clean()
         if self.event_id and self.event.makerspace_id != self.makerspace_id:
-            raise ValidationError({"event": "Event must belong to this makerspace."})
+            raise ValidationError({"event": gettext("Event must belong to this makerspace.")})
 
     class Meta:
         constraints = [

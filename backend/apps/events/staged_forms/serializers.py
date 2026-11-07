@@ -1,4 +1,5 @@
 """Closed staged command envelopes and explicit revision-detail response types."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.events.programme.serializers import ClosedSerializer, ErrorSerializer
 
@@ -15,7 +16,7 @@ class StageCommand(ClosedSerializer):
                 if key in data and data[key] is not None and (
                     isinstance(field, serializers.IntegerField) and type(data[key]) is not int or
                     isinstance(field, serializers.BooleanField) and type(data[key]) is not bool):
-                    raise serializers.ValidationError({"code": "invalid_stage_command", "fields": {key: ["Use the declared JSON type."]}})
+                    raise serializers.ValidationError({"code": "invalid_stage_command", "fields": {key: [gettext("Use the declared JSON type.")]}})
         return super().to_internal_value(data)
 
 

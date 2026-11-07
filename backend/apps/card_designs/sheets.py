@@ -4,6 +4,7 @@ CR80 landscape on A4 portrait is 2 x 5. Crop marks are 0.25 pt, starting 2 mm ou
 the grid and 5 mm long. Backs are mirrored per row, so a long-edge duplex print (or
 re-feeding the fronts for a single-sided printer) puts each back behind its front.
 """
+from django.utils.translation import gettext
 from io import BytesIO
 from math import floor
 
@@ -21,7 +22,7 @@ def grid(paper, card_w_mm, card_h_mm):
     paper_w, paper_h = stocks.PAPERS[paper]
     columns, rows = floor(paper_w / card_w_mm), floor(paper_h / card_h_mm)
     if columns < 1 or rows < 1:
-        raise ValidationError({"paper": "This card stock is larger than the paper."})
+        raise ValidationError({"paper": gettext("This card stock is larger than the paper.")})
     left = (paper_w - columns * card_w_mm) / 2
     top = (paper_h - rows * card_h_mm) / 2
     return columns, rows, left, top
@@ -64,9 +65,9 @@ def render_sheets(cards, *, paper="a4", order="duplex", crop_marks=True, title="
     from reportlab.pdfgen.canvas import Canvas
     from reportlab.lib.units import mm
     if paper not in stocks.PAPERS or order not in ORDERS:
-        raise ValidationError({"paper": "Choose A4 or Letter, duplex or fronts then backs."})
+        raise ValidationError({"paper": gettext("Choose A4 or Letter, duplex or fronts then backs.")})
     if not 1 <= len(cards) <= MAX_CARDS_PER_PDF:
-        raise ValidationError({"cards": f"A sheet PDF holds 1-{MAX_CARDS_PER_PDF} cards."})
+        raise ValidationError({"cards": gettext('A sheet PDF holds 1-{MAX_CARDS_PER_PDF} cards.').format(MAX_CARDS_PER_PDF=MAX_CARDS_PER_PDF)})
     first = cards[0][0]["front"]
     card_w, card_h = first["page_width_mm"], first["page_height_mm"]
     columns, rows, left, top = grid(paper, card_w, card_h)

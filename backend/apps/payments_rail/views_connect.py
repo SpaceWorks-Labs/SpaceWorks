@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hmac
 import logging
 
@@ -273,7 +274,7 @@ class StripeConnectWebhookView(APIView):
     def post(self, request):
         if is_self_host():
             return Response(
-                {"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": gettext("Not found.")}, status=status.HTTP_404_NOT_FOUND
             )
         platform = PlatformStripeConnectSettings.load()
         try:
@@ -285,13 +286,13 @@ class StripeConnectWebhookView(APIView):
         except (ImproperlyConfigured, InvalidToken):
             logger.warning("stripe_connect_webhook_configuration_unavailable")
             return Response(
-                {"detail": "Invalid Stripe webhook signature."},
+                {"detail": gettext("Invalid Stripe webhook signature.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except (StripeWebhookSignatureError, PaymentsUnavailable, ValueError):
             logger.warning("stripe_connect_webhook_rejected")
             return Response(
-                {"detail": "Invalid Stripe webhook signature."},
+                {"detail": gettext("Invalid Stripe webhook signature.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         apply_connect_webhook_event(event)

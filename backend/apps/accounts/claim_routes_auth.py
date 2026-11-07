@@ -1,5 +1,6 @@
 """Claim policies for the authentication surface."""
 
+from django.utils.translation import gettext_noop
 from apps.accounts.claim_route_types import AnonymousRead, ControlRoute, Refused
 
 
@@ -86,6 +87,8 @@ AUTH_CLAIM_ROUTES = {
     ("auth-me", "GET"): ControlRoute(),
     ("auth-me", "HEAD"): ControlRoute(),
     ("auth-me", "OPTIONS"): AnonymousRead(),
+    # Phase 8 i18n: the language preference is platform account data, not the walk-in's.
+    ("auth-me", "PATCH"): Refused(gettext_noop("claim sessions cannot change account preferences")),
     **_refused("auth-change-password", ("POST",), "walk-ins have no password credential"),
     **_refused("auth-forgot-password", ("POST",), "walk-ins have no password credential"),
     **_refused("auth-reset-password", ("POST",), "walk-ins have no password credential"),

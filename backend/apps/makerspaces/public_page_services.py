@@ -1,5 +1,6 @@
 """Owner-locked optimistic mutations; saving never changes the live pointer."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from apps.audit.services import record
@@ -16,7 +17,7 @@ def lock_state(kind, owner_id, actor, version=None):
     owner, actor = typed.lock_owner(owner_id, actor)
     page = typed.page.objects.select_for_update().filter(**typed.lookup(owner)).first()
     if version is not None and (isinstance(version, bool) or not isinstance(version, int) or version < 0):
-        raise ValidationError({"version": "Use a nonnegative integer."})
+        raise ValidationError({"version": gettext("Use a nonnegative integer.")})
     if version is not None and version != (page.version if page else 0):
         raise PageConflict("stale_version", "The page changed. Reload before trying again.")
     return typed, owner, actor, page
@@ -76,7 +77,7 @@ def publish(kind, owner_id, *, actor, version, draft_revision_id):
     if page is None or page.draft_revision_id is None or str(page.draft_revision_id) != str(draft_revision_id):
         raise PageConflict("stale_version", "Only the current saved draft can be published.")
     if not PublicHandle.objects.filter(**owner_filter(kind, owner)).exists():
-        raise ValidationError({"handle": "Claim a handle before publishing."})
+        raise ValidationError({"handle": gettext("Claim a handle before publishing.")})
     validated_revision(page.draft_revision, kind)
     page.published_revision = page.draft_revision
     page.save(update_fields=["published_revision"])
@@ -163,11 +164,11 @@ def preview(kind, owner_id, *, actor, version, document, request=None):
     document = normalize_document(document, kind=kind, previous=previous)
     assets, members = reference_slots(document)
     if assets and (page is None or set(page.assets.filter(pk__in=assets.values()).values_list("pk", flat=True)) != set(assets.values())):
-        raise ValidationError({"document": "Images must belong to this page."})
+        raise ValidationError({"document": gettext("Images must belong to this page.")})
     profiles = {row.pk: row for row in MemberProfile.objects.filter(pk__in=members.values()).select_related(
         "membership__user", "membership__makerspace")}
     if any(not profile_is_public(profiles.get(pk)) for pk in members.values()):
-        raise ValidationError({"document": "Choose currently public member profiles."})
+        raise ValidationError({"document": gettext("Choose currently public member profiles.")})
     class PreviewReferences:
         def select_related(self, *args):
             return [SimpleNamespace(slot=slot, profile=profiles[pk]) for slot, pk in members.items()]

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -67,13 +68,13 @@ class EventSeriesImageView(APIView):
         serializer.is_valid(raise_exception=True)
         object_key = serializer.validated_data["object_key"]
         if not object_key.startswith(f"{PREFIX}/{series.makerspace_id}/"):
-            raise ValidationError({"object_key": "Image object key is outside this makerspace."})
+            raise ValidationError({"object_key": gettext("Image object key is outside this makerspace.")})
         if not public_image_storage.is_safe_object_key(object_key):
-            raise ValidationError({"object_key": "Invalid image object key."})
+            raise ValidationError({"object_key": gettext("Invalid image object key.")})
         if public_image_storage.public_image_key_in_use(
             series.makerspace_id, object_key, series_id=series.pk
         ):
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
             result = public_image_storage.finalize_upload(object_key)
             valid = result.status == "ok" and public_image_storage.sniff_is_valid_image(object_key)

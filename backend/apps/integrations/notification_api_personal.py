@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from .notification_cutover import guarded
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -44,7 +45,7 @@ class EndpointListView(APIView):
             from .notification_oauth_verification import oauth_return
             state = request.query_params["oauth_state"]
             if not 1 <= len(state) <= 512:
-                raise ValidationError({"proof": "Invalid OAuth state."})
+                raise ValidationError({"proof": gettext("Invalid OAuth state.")})
             from .notification_api_serializers import OAuthReturnSerializer
             response.data["oauth_return"] = OAuthReturnSerializer(oauth_return(space, request.user, state)).data
         return response
@@ -93,7 +94,7 @@ class EndpointVerifyView(APIView):
             config = challenge.configuration
             if (endpoint.revoked_at or endpoint.verification_state != "verified"
                     or endpoint.integration_generation != config.generation):
-                raise ValidationError({"proof": "This connection is no longer valid."})
+                raise ValidationError({"proof": gettext("This connection is no longer valid.")})
             # A signed inbound proof may already have consumed the challenge. The
             # browser can acknowledge its own proven result without supplying IDs.
             return Response(EndpointSerializer(endpoint).data)
@@ -145,7 +146,7 @@ class PersonalSelectionView(APIView):
     def put(self, request, makerspace_id):
         NotificationPreference = selection_model()
         if NotificationPreference is None:
-            raise ValidationError("Category preferences are unavailable.")
+            raise ValidationError(gettext("Category preferences are unavailable."))
         space = contract_space(request.user, makerspace_id)
         serializer = PreferencesSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -153,7 +154,7 @@ class PersonalSelectionView(APIView):
         from .notification_availability import available_channels
         for preference in preferences:
             if set(preference["channels"]) - set(available_channels(space, preference["category"])):
-                raise ValidationError({"channels": "Choose channels enabled by this makerspace for the category."})
+                raise ValidationError({"channels": gettext("Choose channels enabled by this makerspace for the category.")})
         with tenant_write(space.pk), transaction.atomic():
             # Replace supplied categories only; absence is neither opt-out nor reset.
             from apps.notifications.models_inbox import MemberNotificationPreference

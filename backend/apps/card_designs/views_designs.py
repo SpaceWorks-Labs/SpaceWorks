@@ -1,4 +1,5 @@
 """Staff card-design endpoints: list/create per space, read/save one design (CAS)."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -50,7 +51,7 @@ class SpaceCardDesignListView(APIView):
         data.is_valid(raise_exception=True)
         values = data.validated_data
         if values["domain"] != "member_cards" or bool(values.get("plan_id")) == bool(values.get("title_id")):
-            raise ValidationError({"detail": "Choose exactly one plan or one title for an override."})
+            raise ValidationError({"detail": gettext("Choose exactly one plan or one title for an override.")})
         from apps.makerspaces.models import MembershipPlan, MembershipTitle
         target = {}
         if values.get("plan_id"):
@@ -94,7 +95,7 @@ class CardDesignDetailView(APIView):
         design = require_edit(request.user, design_for(request.user, pk))
         if not (design.plan_id or design.title_id or design.ticket_type_id or
                 (design.event_id and design.domain in ("event_card", "event_ticket"))):
-            raise ValidationError({"detail": "The default design cannot be deleted; reset it instead."})
+            raise ValidationError({"detail": gettext("The default design cannot be deleted; reset it instead.")})
         from apps.audit import services as audit
         audit.record(request.user, "card_design.deleted", makerspace=design.makerspace, target=design,
                      meta={"design_id": design.pk, "domain": design.domain})

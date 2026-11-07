@@ -1,7 +1,8 @@
+import { t } from "@lingui/core/macro";
 export function ModalActions({
   pending,
   disabled,
-  submitLabel = "Save",
+  submitLabel = t`Save`,
   onClose,
   onSubmit,
 }: {
@@ -13,7 +14,7 @@ export function ModalActions({
 }) {
   return (
     <div className="desk-actions flex flex-wrap justify-end gap-2">
-      <button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>Cancel</button>
+      <button className="desk-button-ghost" type="button" disabled={pending} onClick={onClose}>{t`Cancel`}</button>
       <button className="desk-button-primary" type="button" disabled={disabled} onClick={onSubmit}>{submitLabel}</button>
     </div>
   );

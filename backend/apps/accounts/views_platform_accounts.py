@@ -5,6 +5,7 @@ Parity with the /control/ Accounts actions: the same services (``staff_account_l
 answer carries no contact detail (no email, phone or display name), so PII masking holds.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
@@ -53,7 +54,7 @@ class TwoStepResetSerializer(serializers.Serializer):
 def _person(pk):
     user = get_object_or_404(User, pk=pk, is_tenant_dump_stub=False)
     if not is_person(user):
-        raise PermissionDenied("Only a personal account is managed here.")
+        raise PermissionDenied(gettext("Only a personal account is managed here."))
     return user
 
 

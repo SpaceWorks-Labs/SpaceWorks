@@ -1,5 +1,6 @@
 """Reject/cancel reasons: bounded staff text shown to the requester and kept in history."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 MAX_REASON = 1000
@@ -8,9 +9,9 @@ MAX_REASON = 1000
 def clean_reason(value, *, required):
     reason = (value or "").strip()
     if required and not reason:
-        raise serializers.ValidationError({"reason": "Tell the requester why this booking is being rejected."})
+        raise serializers.ValidationError({"reason": gettext("Tell the requester why this booking is being rejected.")})
     if len(reason) > MAX_REASON:
-        raise serializers.ValidationError({"reason": f"Keep the reason under {MAX_REASON} characters."})
+        raise serializers.ValidationError({"reason": gettext('Keep the reason under {MAX_REASON} characters.').format(MAX_REASON=MAX_REASON)})
     return reason
 
 

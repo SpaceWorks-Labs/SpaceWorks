@@ -10,6 +10,7 @@ scope's new accepted head is re-evaluated for its once-only ``next`` notice. A d
 report arriving afterwards is refused by ``printer_access.live_target`` (not running).
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 
@@ -99,7 +100,7 @@ def cancel(service_request, actor, *, reason="", by_owner=False, consumed_quanti
         running = previous == Status.IN_PROGRESS
         if consumed_quantity and not running:
             from rest_framework.exceptions import ValidationError
-            raise ValidationError({"consumed_quantity": "Only a running job can record material used."})
+            raise ValidationError({"consumed_quantity": gettext("Only a running job can record material used.")})
         if running:
             _lock_assigned_machine(locked)
         else:

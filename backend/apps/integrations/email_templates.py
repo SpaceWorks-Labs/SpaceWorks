@@ -2,6 +2,9 @@ import logging
 
 from django.template import Context, Template
 from django.utils import timezone
+from django.utils.translation import gettext
+
+from config.locale_resolution import override_for
 
 from apps.integrations.email_templates_registry import bag, get_entry
 from apps.integrations.models import EmailTemplate, MachineTypeEmailTemplate
@@ -93,7 +96,7 @@ def printing_context(print_request, status_url, public_token):
     }
 
 
-def render(makerspace, stream, audience, key, context, *, machine_type=None, use_tz=None):
+def render(makerspace, stream, audience, key, context, *, machine_type=None, use_tz=None, recipient=None):
     # use_tz=False is for contexts already localized to a resolved UTC offset;
     # a second template conversion would lose that offset during a DST fold.
     # is_active=False means "use the built-in default for this event" (the original
@@ -155,12 +158,21 @@ def render(makerspace, stream, audience, key, context, *, machine_type=None, use
                 exc_info=True,
             )
 
-    return _render_strings(
-        entry.default_subject,
-        entry.default_text,
-        entry.default_html,
-        context, use_tz=use_tz,
-    )
+    # Phase 8 i18n: only the registry default is translated, in the recipient's language
+    # (account preference, then the makerspace default, then en); an edited tenant row
+    # above is rendered byte-for-byte as stored.
+    with override_for(user=recipient, makerspace=makerspace):
+        return _render_strings(
+            _translated(entry.default_subject),
+            _translated(entry.default_text),
+            _translated(entry.default_html),
+            context, use_tz=use_tz,
+        )
+
+
+def _translated(value):
+    # gettext("") would return the catalogue header, so empty defaults stay empty.
+    return gettext(value) if value else value
 
 
 def render_preview(stream, audience, key, subject, text_body, html_body):

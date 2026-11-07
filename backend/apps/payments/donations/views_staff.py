@@ -5,6 +5,7 @@ return case also need `record_payment`; the page text and 80G registration are f
 settings, written through the settings authority (Space Manager only, never delegated).
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.exceptions import NotFound
@@ -43,7 +44,7 @@ def gift_or_404(request, makerspace_id, pk, *, record=False):
     donation = scoped(request.user, Donation, makerspace_id).select_related("makerspace", "campaign").filter(
         pk=pk).first()
     if donation is None:
-        raise NotFound("Donation not found.")
+        raise NotFound(gettext("Donation not found."))
     return donation
 
 
@@ -110,7 +111,7 @@ class CampaignDetailView(APIView):
         space = staff_space(request.user, makerspace_id, DONATIONS, record=True)
         row = scoped(request.user, DonationCampaign, makerspace_id).filter(pk=pk).first()
         if row is None:
-            raise NotFound("Campaign not found.")
+            raise NotFound(gettext("Campaign not found."))
         payload = s.CampaignSerializer(row, data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
         with tenant_write(space.pk):
@@ -207,7 +208,7 @@ class StaffTaxReceiptView(APIView):
         donation = gift_or_404(request, makerspace_id, pk)
         require_feature(donation.makerspace, TAX)
         if not donation.tax_receipt:
-            raise NotFound({"detail": "No tax-exempt receipt was issued for this gift.", "code": "no_tax_receipt"})
+            raise NotFound({"detail": gettext("No tax-exempt receipt was issued for this gift."), "code": "no_tax_receipt"})
         return pdf_response(donation, show_pan=pii_visible(request.user, donation.makerspace_id))
 
 
@@ -233,7 +234,7 @@ class PledgeActionView(APIView):
         staff_space(request.user, makerspace_id, PLEDGES, record=True)
         pledge = scoped(request.user, DonationPledge, makerspace_id).filter(pk=pk).first()
         if pledge is None:
-            raise NotFound("Pledge not found.")
+            raise NotFound(gettext("Pledge not found."))
         payload = PledgeActionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data

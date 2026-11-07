@@ -1,5 +1,6 @@
 """DB deadlines are authoritative; broker timers are only a delivery hint."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from celery import shared_task
@@ -20,7 +21,7 @@ from .commands import ProgrammeConflict
 def cancel_composer(campaign, actor, payload):
     def cancel(row, locked_actor):
         if row.render_schema_version != 2:
-            raise ValidationError("Use the legacy cancellation action for this campaign.")
+            raise ValidationError(gettext("Use the legacy cancellation action for this campaign."))
         from apps.events.services_broadcasts import cancel_locked
         row = cancel_locked(row, locked_actor)
         return {"campaign_id": row.pk, "state": row.status, "version": row.version}
@@ -37,12 +38,12 @@ def _confirm_locked(row, locked_actor, payload, *, available_at, hold):
     if row.status != "draft" or row.render_schema_version != 2:
         raise ProgrammeConflict("invalid_transition", "Only a composer draft can be scheduled.")
     if payload["confirm"] is not True:
-        raise ValidationError({"confirm": "Confirm the selected audience before sending."})
+        raise ValidationError({"confirm": gettext("Confirm the selected audience before sending.")})
     now = timezone.now()
     if available_at is None:
         available_at = now + HOLD
     elif available_at < now + HOLD:
-        raise ValidationError({"available_at": "Choose a send time at least five seconds from now."})
+        raise ValidationError({"available_at": gettext("Choose a send time at least five seconds from now.")})
     preview = EventBroadcastPreview.objects.filter(pk=payload["preview_id"], campaign=row,
                                                     created_by=locked_actor).first()
     count, revision = audience_proof(row)
@@ -52,7 +53,7 @@ def _confirm_locked(row, locked_actor, payload, *, available_at, hold):
         raise ProgrammeConflict("stale_version", "The audience or event changed. Preview it again.")
     if EventBroadcast.objects.filter(makerspace=row.makerspace,
             queued_at__gte=now - timedelta(hours=1)).count() >= 10:
-        raise Throttled(detail="Limit of 10 broadcasts per hour for this makerspace.")
+        raise Throttled(detail=gettext("Limit of 10 broadcasts per hour for this makerspace."))
     row.status = "scheduled"
     row.available_at = available_at
     row.confirmed_preview = preview

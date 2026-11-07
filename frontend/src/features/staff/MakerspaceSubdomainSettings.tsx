@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { ErrorBlock } from "../../components/ui";
 import { SettingsRow } from "../../components/ui";
@@ -62,19 +63,19 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
     requests.isLoading || submitRequest.isPending || Boolean(pendingRequest) || !requestedLabel.trim();
 
   return (
-    <SettingsQueryState query={requests} resource="subdomain"><SettingsRow label="Request a subdomain" helper="Ask the platform team to provision a dedicated subdomain for this makerspace."><div className="@container grid min-w-0 gap-4">
+    <SettingsQueryState query={requests} resource="subdomain"><SettingsRow label={t`Request a subdomain`} helper={t`Ask the platform team to provision a dedicated subdomain for this makerspace.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-4">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">
 
-            {hasActiveSubdomain ? <Badge label="" tone="success">Active</Badge> : null}
+            {hasActiveSubdomain ? <Badge label="" tone="success">{t`Active`}</Badge> : null}
           </div>
 
         </div>
 
         {hasActiveSubdomain ? (
           <p className="text-sm text-ink">
-            Active subdomain: <span className="font-semibold">{activeSubdomain}</span>
+            {t`Active subdomain: `}<span className="font-semibold">{activeSubdomain}</span>
           </p>
         ) : (
           <form
@@ -85,8 +86,7 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
             }}
           >
             <label className="grid gap-2 text-sm font-semibold text-ink" htmlFor="subdomain-label">
-              Desired subdomain label
-              <input
+              {t`Desired subdomain label`}<input
                 id="subdomain-label"
                 className="desk-input"
                 placeholder="alpha"
@@ -96,20 +96,20 @@ export function MakerspaceSubdomainSettings({ makerspace, settings }: Props) {
               />
             </label>
             <button className="desk-button-primary" type="submit" disabled={submitDisabled}>
-              {submitRequest.isPending ? "Submitting…" : "Submit request"}
+              {submitRequest.isPending ? t`Submitting…` : t`Submit request`}
             </button>
           </form>
         )}
 
         {pendingRequest && !hasActiveSubdomain ? (
-          <p className="text-sm text-muted">Request pending review</p>
+          <p className="text-sm text-muted">{t`Request pending review`}</p>
         ) : null}
         {submitRequest.error ? (
           <p className="text-sm text-danger">{submitRequest.error.message}</p>
         ) : null}
-        {requests.error ? <ErrorBlock error={new Error("Couldn't load subdomain. Try again.")} onRetry={() => { void requests.refetch(); }} /> : null}
+        {requests.error ? <ErrorBlock error={new Error(t`Couldn't load subdomain. Try again.`)} onRetry={() => { void requests.refetch(); }} /> : null}
 
-        {requests.isLoading ? <p className="text-sm text-muted">Loading requests…</p> : null}
+        {requests.isLoading ? <p className="text-sm text-muted">{t`Loading requests…`}</p> : null}
         {history.length > 0 ? (
           <ul className="grid gap-2">
             {history.map((request) => (

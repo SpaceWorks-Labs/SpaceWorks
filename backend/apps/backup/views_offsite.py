@@ -1,5 +1,6 @@
 """Superadmin API for offsite backup destinations. Deployment-level; never module-gated."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -118,8 +119,8 @@ class BackupDestinationPushView(APIView):
     def post(self, request):
         audit.record(request.user, "backup.offsite_push_requested", target=None, meta={})
         if not dispatch_offsite_push():
-            return Response({"detail": "The backup worker is unavailable."}, status=503)
-        return Response({"detail": "Offsite push dispatched."}, status=status.HTTP_202_ACCEPTED)
+            return Response({"detail": gettext("The backup worker is unavailable.")}, status=503)
+        return Response({"detail": gettext("Offsite push dispatched.")}, status=status.HTTP_202_ACCEPTED)
 
 
 class BackupArchiveRehydrateView(APIView):
@@ -137,7 +138,7 @@ class BackupArchiveRehydrateView(APIView):
         if not resident_delivery():
             # No durable rehydration request model exists. Never report queued
             # work which cannot survive this request or execute it eagerly here.
-            return Response({"detail": "The backup worker is unavailable."}, status=503)
+            return Response({"detail": gettext("The backup worker is unavailable.")}, status=503)
         audit.record(
             request.user, "backup.archive_rehydrate_requested", target=archive,
             meta={"destination_id": destination.pk},
@@ -145,5 +146,5 @@ class BackupArchiveRehydrateView(APIView):
         try:
             rehydrate_backup_archive_task.delay(str(archive.pk), destination.pk, request.user.pk)
         except Exception:
-            return Response({"detail": "The backup worker is unavailable."}, status=503)
-        return Response({"detail": "Rehydration dispatched."}, status=status.HTTP_202_ACCEPTED)
+            return Response({"detail": gettext("The backup worker is unavailable.")}, status=503)
+        return Response({"detail": gettext("Rehydration dispatched.")}, status=status.HTTP_202_ACCEPTED)

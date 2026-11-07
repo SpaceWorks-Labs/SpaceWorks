@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Modal } from "../../components/ui";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -22,7 +23,7 @@ export function IntakeFields({ intake, values, setValues }: {
   intake: TypeIntake | undefined; values: IntakeValues; setValues: (update: (current: IntakeValues) => IntakeValues) => void;
 }) {
   return <>{intake?.intake_schema.fields?.map(field => <label key={field.key} className={field.type === "boolean" ? "flex min-h-11 flex-row-reverse items-center justify-end gap-3 text-sm" : "grid gap-1 text-sm"}>{field.label}
-    {field.type === "choice" ? <select className="desk-input" required={field.required} value={String(values[field.key] ?? "")} onChange={event => setValues(v => { const next = { ...v }; if (event.target.value) next[field.key] = event.target.value; else delete next[field.key]; return next; })}><option value="">Choose</option>{field.choices?.map(c => <option key={c}>{c}</option>)}</select> :
+    {field.type === "choice" ? <select className="desk-input" required={field.required} value={String(values[field.key] ?? "")} onChange={event => setValues(v => { const next = { ...v }; if (event.target.value) next[field.key] = event.target.value; else delete next[field.key]; return next; })}><option value="">{t`Choose`}</option>{field.choices?.map(c => <option key={c}>{c}</option>)}</select> :
       <input className={field.type === "boolean" ? "h-5 w-5 shrink-0 accent-brand" : "desk-input"} type={field.type === "boolean" ? "checkbox" : field.type === "text" ? "text" : "number"}
         required={field.required && field.type !== "boolean"} min={field.min} max={field.max} step={field.type === "integer" ? 1 : "any"}
         checked={field.type === "boolean" ? Boolean(values[field.key]) : undefined}
@@ -52,15 +53,15 @@ export function MachineIntakeForm({ slug, machineId, typeId, dialog = false, tra
     }) }) });
   if (schema.data && !schema.data.intake_schema.version) return null;
   const form = <form className="mt-3 grid gap-2" onSubmit={event => { event.preventDefault(); submit.mutate(); }}>
-    <label className="grid gap-1 text-sm">Job title<input className="desk-input" required maxLength={200} value={title} onChange={event => setTitle(event.target.value)} /></label>
+    <label className="grid gap-1 text-sm">{t`Job title`}<input className="desk-input" required maxLength={200} value={title} onChange={event => setTitle(event.target.value)} /></label>
     <IntakeFields intake={schema.data} values={values} setValues={setValues} />
     <PricePreview makerspaceSlug={slug} request={{ domain: "machines", machine_id: machineId }} />
-    {schema.isPending ? <p role="status">Loading job requirements…</p> : null}
+    {schema.isPending ? <p role="status">{t`Loading job requirements…`}</p> : null}
     {schema.error || submit.error ? <p role="alert" className="text-sm text-danger">{(schema.error || submit.error)?.message}</p> : null}
-    {submit.isSuccess ? <div role="status" className="grid gap-2"><p>Request submitted for review.</p>
-      {submit.data?.public_token && trackingPath ? <Link className="desk-button" to={trackingPath(submit.data.public_token)}>Track your job</Link> : null}
-      <p className="text-xs text-muted">Keep the tracking link private.</p></div> : <button className="desk-button-brand" disabled={submit.isPending || !schema.data}>Request work</button>}
+    {submit.isSuccess ? <div role="status" className="grid gap-2"><p>{t`Request submitted for review.`}</p>
+      {submit.data?.public_token && trackingPath ? <Link className="desk-button" to={trackingPath(submit.data.public_token)}>{t`Track your job`}</Link> : null}
+      <p className="text-xs text-muted">{t`Keep the tracking link private.`}</p></div> : <button className="desk-button-brand" disabled={submit.isPending || !schema.data}>{t`Request work`}</button>}
   </form>;
-  return dialog ? <><button className="desk-button mt-3" type="button" onClick={() => setOpen(true)}>Request a job</button>
-    <Modal open={open} onClose={() => setOpen(false)} title="Request a job">{form}</Modal></> : form;
+  return dialog ? <><button className="desk-button mt-3" type="button" onClick={() => setOpen(true)}>{t`Request a job`}</button>
+    <Modal open={open} onClose={() => setOpen(false)} title={t`Request a job`}>{form}</Modal></> : form;
 }

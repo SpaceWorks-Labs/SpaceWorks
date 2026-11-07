@@ -8,6 +8,7 @@ staff authority (``limit_staff_authority`` gives it none), so the view's own ``e
 check is answered by the person's event staff grants alone.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 EVENT = "event"
@@ -37,11 +38,11 @@ def admits_event_route(user, token, request, name, grant):
         return False
     kwargs = getattr(getattr(request, "resolver_match", None), "kwargs", {}) or {}
     if str(kwargs.get("pk")) != str(grant.event_id):
-        raise PermissionDenied("This event grant is limited to its own event.")
+        raise PermissionDenied(gettext("This event grant is limited to its own event."))
     if token.get("mfa_source") != "verified":
-        raise PermissionDenied("Native event sessions require MFA.")
+        raise PermissionDenied(gettext("Native event sessions require MFA."))
     if request.headers.get("X-Makerspace-Id") is not None:
-        raise PermissionDenied("Native event routes take their event, not a makerspace selection.")
+        raise PermissionDenied(gettext("Native event routes take their event, not a makerspace selection."))
     return True
 
 

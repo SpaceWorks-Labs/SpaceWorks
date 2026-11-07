@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { currentSessionContext, type SessionContext } from "../../lib/api/sessionContext";
 export type Toast = { id: number; message: string; tone: "success" | "error" | "info"; undo?: () => Promise<unknown>; undoKey?: string; busy?: boolean;
   action?: { label: string; onClick(): void } };
@@ -54,10 +55,10 @@ export async function undoToast(id: number) {
     await row.undo();
     if (startedIn !== state().session) return;
     state().rows = state().rows.filter(value => value.id !== id); publish();
-    toast("Action undone.");
+    toast(t`Action undone.`);
   } catch (error) {
     if (startedIn !== state().session) return;
-    state().rows = state().rows.map(value => value.id === id ? { id, tone: "error", message: `Could not undo: ${error instanceof Error ? error.message : "Please refresh and try again."}` } : value);
+    state().rows = state().rows.map(value => value.id === id ? { id, tone: "error", message: t`Could not undo: ${error instanceof Error ? error.message : "Please refresh and try again."}` } : value);
     publish();
   }
 }

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import hashlib
 import json
 
@@ -12,7 +13,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 def set_policy(event_id, *, actor, operation_id, expected_version, enabled, certificate_ids=()):
     if type(enabled) is not bool or len(certificate_ids) > 200 or len(set(certificate_ids)) != len(certificate_ids):
-        raise ValidationError("Choose at most 200 unique certificate IDs.")
+        raise ValidationError(gettext("Choose at most 200 unique certificate IDs."))
     digest = hashlib.sha256(json.dumps(["verification_policy", expected_version, enabled, sorted(certificate_ids)]).encode()).hexdigest()
     def identities():
         return tuple(EventAttendanceCertificate.objects.filter(event_id=event_id, pk__in=certificate_ids)

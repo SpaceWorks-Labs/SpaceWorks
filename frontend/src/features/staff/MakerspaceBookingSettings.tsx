@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { toast, invalidateToastUndo } from "../../components/ui/toastStore";
 import { SettingsRow } from "../../components/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,7 +30,7 @@ export function MakerspaceBookingSettings({ makerspace, settings, loading }: {
         queryClient.invalidateQueries({ queryKey: ["bookings", makerspace.id] }),
       ]);
     })();
-      toast(`Booking requester emails turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-update`, undo: async () => {
+      toast(t`Booking requester emails turned ${next ? "on" : "off"}.`, { undoKey: `settings-${makerspace.id}-update`, undo: async () => {
         await ((next: boolean) => staffRequest<Makerspace>("/admin/makerspaces/" + makerspace.id, {
       method: "PATCH",
       body: JSON.stringify({ booking_requester_notifications_enabled: next }),
@@ -46,19 +47,19 @@ export function MakerspaceBookingSettings({ makerspace, settings, loading }: {
   });
 
   return (
-    <SettingsRow label="Booking requester emails" helper="Set the default for booking submitted, confirmed, and rejected emails. Each space may inherit or override this setting."><div className="@container grid min-w-0 gap-4">
+    <SettingsRow label={t`Booking requester emails`} helper={t`Set the default for booking submitted, confirmed, and rejected emails. Each space may inherit or override this setting.`}><div className="@container grid min-w-0 gap-4">
       <div className="grid min-w-0 gap-3  md:items-start">
         <div className="grid min-w-0 max-w-2xl gap-2">
           <div className="flex flex-wrap items-center gap-2">
 
-            <Badge label="" tone={enabled ? "success" : "neutral"}>{enabled ? "On" : "Off"}</Badge>
+            <Badge label="" tone={enabled ? "success" : "neutral"}>{enabled ? t`On` : t`Off`}</Badge>
           </div>
 
           {update.error ? <p className="text-sm text-danger" role="alert">{update.error.message}</p> : null}
         </div>
         <label className="min-h-11 flex min-w-0 items-start gap-3 text-sm text-ink md:justify-self-end">
           <input className="mt-1 h-4 w-4" type="checkbox" checked={enabled} disabled={loading || update.isPending} onChange={(event) => update.mutate(event.target.checked)} />
-          <span className="font-semibold">Email booking requesters</span>
+          <span className="font-semibold">{t`Email booking requesters`}</span>
         </label>
       </div>
     </div></SettingsRow>

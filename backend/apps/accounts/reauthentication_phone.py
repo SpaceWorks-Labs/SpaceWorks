@@ -1,5 +1,6 @@
 """Phone-only recent authentication with committed OTP attempt accounting."""
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -65,5 +66,5 @@ def confirm(request, *, token, code):
             intent.save(update_fields=["consumed_at"])
             stamp(request)
     if failed:
-        raise AuthenticationFailed("Invalid or expired verification code.")
+        raise AuthenticationFailed(gettext("Invalid or expired verification code."))
     return {"verified": True, "expires_in": 600}

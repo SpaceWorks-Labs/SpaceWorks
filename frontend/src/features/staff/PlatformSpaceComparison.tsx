@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { DataTable, type DataTableColumn } from "../../components/ui";
 import { DataState } from "./panels/OperationsReportState";
@@ -38,15 +40,15 @@ export function PlatformSpaceComparison({ period, spaces }: { period: AnalyticsP
   const columns: DataTableColumn<Row>[] = [
     { key: "name", header: "Space", phone: "title", render: row => row.id === "totals" ? <strong>{row.name}</strong> : row.name },
     ...metrics.map(metric => ({ key: metric, header: metric.replace(/_/g, " "), phone: "detail" as const,
-      render: (row: Row) => (row.values[metric] ?? 0).toLocaleString() })),
+      render: (row: Row) => (row.values[metric] ?? 0).toLocaleString(formatLocale()) })),
     { key: "actions", header: "Reports", render: row => row.slug
-      ? <a className="desk-button" href={consoleSessionHref(`/admin/reports?space=${encodeURIComponent(row.slug)}`, "platform")}>Open reports</a> : null },
+      ? <a className="desk-button" href={consoleSessionHref(`/admin/reports?space=${encodeURIComponent(row.slug)}`, "platform")}>{t`Open reports`}</a> : null },
   ];
-  return <section aria-label="Compare spaces" className="min-w-0 rounded-xl border border-line bg-panel p-4">
-    <h3 className="title-section mb-3">Compare spaces</h3>
-    <p className="mb-3 text-sm text-muted">Counted activity per space for the chosen period, with the total across every live space. Open a space's reports to see exactly what its Space Manager sees.</p>
-    {query.isLoading ? <p role="status">Loading the comparison…</p> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
-      <DataTable caption="Activity per space" data={rows} getRowId={row => row.id} columns={columns} />
+  return <section aria-label={t`Compare spaces`} className="min-w-0 rounded-xl border border-line bg-panel p-4">
+    <h3 className="title-section mb-3">{t`Compare spaces`}</h3>
+    <p className="mb-3 text-sm text-muted">{t`Counted activity per space for the chosen period, with the total across every live space. Open a space's reports to see exactly what its Space Manager sees.`}</p>
+    {query.isLoading ? <p role="status">{t`Loading the comparison…`}</p> : <DataState loading={false} error={query.error} empty={!rows.length} onRetry={() => void query.refetch()}>
+      <DataTable caption={t`Activity per space`} data={rows} getRowId={row => row.id} columns={columns} />
     </DataState>}
   </section>;
 }

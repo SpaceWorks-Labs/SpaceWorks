@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -33,23 +34,23 @@ export function PublicShopPage() {
     setCategories(current => [...new Set([...current, ...seen])].sort());
   }, [category, products.data]);
   const failed = !space.slug || shop.error || products.error;
-  const state: QueryState = failed ? { status: "error", error: !space.slug ? "This shop is not available." : shopErrorMessage(shop.error ?? products.error),
+  const state: QueryState = failed ? { status: "error", error: !space.slug ? t`This shop is not available.` : shopErrorMessage(shop.error ?? products.error),
     onRetry: shop.error || products.error ? () => { void shop.refetch(); void products.refetch(); } : undefined }
     : shop.isPending || products.isPending ? { status: "loading" } : { status: "ready" };
   const rows = products.data?.results ?? [];
   const currency = shop.data?.currency ?? "inr";
   const choose = (next: string) => { setCategory(next); setPage(1); };
   return <div style={space.brandStyle}>
-    <PageMetadata title={`Shop · ${space.name}`} description={`Things to buy from ${space.name}, for pickup at the space.`} path={space.path("shop")} />
+    <PageMetadata title={t`Shop · ${space.name}`} description={t`Things to buy from ${space.name}, for pickup at the space.`} path={space.path("shop")} />
     <PublicLayout {...space.chrome} state={state} isEmpty={!rows.length}
-      empty={{ message: category ? "Nothing in this category right now." : "Nothing is on sale right now. Check back soon." }}
-      breadcrumb={[{ label: space.name, href: space.path() }, { label: "Shop" }]}
-      header={{ title: "Shop", subtitle: `Order online and collect at ${space.name}.`,
-        primary: selling ? { label: cart.count ? `Basket (${cart.count})` : "Basket", onClick: () => setOpen(true) } : undefined }}>
+      empty={{ message: category ? t`Nothing in this category right now.` : t`Nothing is on sale right now. Check back soon.` }}
+      breadcrumb={[{ label: space.name, href: space.path() }, { label: t`Shop` }]}
+      header={{ title: t`Shop`, subtitle: t`Order online and collect at ${space.name}.`,
+        primary: selling ? { label: cart.count ? t`Basket (${cart.count})` : t`Basket`, onClick: () => setOpen(true) } : undefined }}>
       <div className="grid gap-6">
-        {categories.length ? <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-2">
+        {categories.length ? <div role="group" aria-label={t`Filter by category`} className="flex flex-wrap gap-2">
           {["", ...categories].map(name => <button key={name || "all"} type="button" aria-pressed={category === name}
-            className={`${category === name ? "desk-button-primary" : "desk-button"} min-h-11`} onClick={() => choose(name)}>{name || "All"}</button>)}
+            className={`${category === name ? "desk-button-primary" : "desk-button"} min-h-11`} onClick={() => choose(name)}>{name || t`All`}</button>)}
         </div> : null}
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map(product => <ShopProductCard key={product.id} product={product} currency={currency}

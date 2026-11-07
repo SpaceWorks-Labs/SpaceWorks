@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import timedelta
 from math import ceil
 
@@ -178,13 +179,13 @@ def _page_number(request, total_count, page_size, page_query_param):
     try:
         page_number = int(raw)
     except (TypeError, ValueError) as exc:
-        raise NotFound("Invalid page.") from exc
+        raise NotFound(gettext("Invalid page.")) from exc
     if page_number < 1:
-        raise NotFound("Invalid page.")
+        raise NotFound(gettext("Invalid page."))
     if total_count == 0 and page_number != 1:
-        raise NotFound("Invalid page.")
+        raise NotFound(gettext("Invalid page."))
     if total_count and (page_number - 1) * page_size >= total_count:
-        raise NotFound("Invalid page.")
+        raise NotFound(gettext("Invalid page."))
     return page_number
 
 

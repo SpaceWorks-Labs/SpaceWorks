@@ -1,4 +1,5 @@
 """Audited workflow services for machine mutations."""
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db import transaction
@@ -17,7 +18,7 @@ from apps.makerspaces.guards import require_module_locked
 
 def _retired(machine):
     if not machine.is_active:
-        raise ValidationError("Machine is retired.")
+        raise ValidationError(gettext("Machine is retired."))
 
 
 def _audit(machine, actor, action, meta=None):
@@ -30,7 +31,7 @@ def _audit(machine, actor, action, meta=None):
 @transaction.atomic
 def set_status(machine, actor, status, *, reason="", expected_back_at=None):
     if status not in Machine.Status.values:
-        raise ValidationError({"status": "Invalid machine status."})
+        raise ValidationError({"status": gettext("Invalid machine status.")})
     _retired(machine)
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
@@ -43,7 +44,7 @@ def set_status(machine, actor, status, *, reason="", expected_back_at=None):
 def log_usage(machine, actor, hours, note="", *, member=None, started_at=None):
     _retired(machine)
     if hours <= 0:
-        raise ValidationError({"hours": "Hours must be greater than zero."})
+        raise ValidationError({"hours": gettext("Hours must be greater than zero.")})
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
     from .usage_attribution import validate_attribution
@@ -77,7 +78,7 @@ def update_image(machine, actor, object_key):
         object_key,
         machine_id=machine.pk,
     ):
-        raise ValidationError({"object_key": "This image is already in use."})
+        raise ValidationError({"object_key": gettext("This image is already in use.")})
     if old_key and old_key != object_key:
         public_image_storage.release_public_image_on_commit(
             machine.makerspace, old_key
@@ -107,11 +108,11 @@ def remove_image(machine, actor):
 def assign_operator(machine, actor, user, access_level):
     _retired(machine)
     if access_level not in MachineOperator.AccessLevel.values:
-        raise ValidationError({"access_level": "Invalid operator access level."})
+        raise ValidationError({"access_level": gettext("Invalid operator access level.")})
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
     if not access.is_active_member(user, machine.makerspace_id):
-        raise ValidationError({"user": "User is not an active makerspace member."})
+        raise ValidationError({"user": gettext("User is not an active makerspace member.")})
     existing = MachineOperator.objects.filter(machine=machine, user=user).first()
     existing_level = existing.access_level if existing else None
     if not access.can_assign_operator(
@@ -189,7 +190,7 @@ def unretire_machine(machine, actor):
 def log_error(machine, actor, severity, message):
     _retired(machine)
     if severity not in MachineErrorLog.Severity.values:
-        raise ValidationError({"severity": "Invalid error severity."})
+        raise ValidationError({"severity": gettext("Invalid error severity.")})
     machine = Machine.objects.select_for_update().get(pk=machine.pk)
     _retired(machine)
     row = MachineErrorLog.objects.create(
@@ -205,10 +206,10 @@ def log_error(machine, actor, severity, message):
 @transaction.atomic
 def attach_document(machine, actor, object_key, doc_type, original_filename):
     if doc_type not in MachineDocument.DocType.values:
-        raise ValidationError({"doc_type": "Invalid machine document type."})
+        raise ValidationError({"doc_type": gettext("Invalid machine document type.")})
     storage.assert_machine_object_key_for_makerspace(object_key, machine.makerspace_id)
     if MachineDocument.objects.filter(object_key=object_key).exists():
-        raise ValidationError("Evidence already used.")
+        raise ValidationError(gettext("Evidence already used."))
     from django.conf import settings
 
     storage.finalize_upload(object_key, settings.MACHINE_DOC_MAX_BYTES)

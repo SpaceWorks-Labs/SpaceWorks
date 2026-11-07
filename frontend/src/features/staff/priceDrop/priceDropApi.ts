@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { QueryClientContext } from "@tanstack/react-query";
 import { useContext } from "react";
 
@@ -65,5 +66,5 @@ export async function previewPriceDrop(path: string, method: string, body: unkno
 }
 
 export const AREA_LABELS: Record<PriceDropItem["area"], string> = {
-  bookings: "Booking", events: "Ticket", machines: "Machine job", membership: "Membership",
+  bookings: t`Booking`, events: t`Ticket`, machines: t`Machine job`, membership: t`Membership`,
 };

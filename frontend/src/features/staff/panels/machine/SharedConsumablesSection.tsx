@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -30,12 +31,12 @@ export function poolStockState(pool: PrinterPool): StockState {
     ? null
     : Number(pool.low_threshold_grams);
   if (remaining <= 0) {
-    return { label: "Empty", band: "bg-danger text-on-danger", fill: "bg-danger" };
+    return { label: t`Empty`, band: "bg-danger text-on-danger", fill: "bg-danger" };
   }
   if (threshold !== null && remaining <= threshold) {
-    return { label: "Low stock", band: "bg-warn text-on-warn", fill: "bg-warn" };
+    return { label: t`Low stock`, band: "bg-warn text-on-warn", fill: "bg-warn" };
   }
-  return { label: "In stock", band: "bg-success text-on-success", fill: "bg-success" };
+  return { label: t`In stock`, band: "bg-success text-on-success", fill: "bg-success" };
 }
 
 export function SharedConsumablesSection({ makerspaceId, pools, existingPools, poolError, open, onToggle, visible = true }: Props) {
@@ -43,11 +44,11 @@ export function SharedConsumablesSection({ makerspaceId, pools, existingPools, p
   const [stockDraft, setStockDraft] = useState<StockDraft>({ adjustingId: null, quantityDelta: "" });
   if (!visible) return null;
   return (
-    <CollapsibleSection title="Shared consumables" count={pools.length} open={open} onToggle={onToggle}>
+    <CollapsibleSection title={t`Shared consumables`} count={pools.length} open={open} onToggle={onToggle}>
       <div className="grid gap-4 p-3">
         <ConsumablePoolCreateForm makerspaceId={makerspaceId} existingPools={existingPools} draft={poolDraft} onDraftChange={setPoolDraft} />
         <section>
-          <h4 className="title-section mb-2">Space-wide stock</h4>
+          <h4 className="title-section mb-2">{t`Space-wide stock`}</h4>
           <ConsumablePoolList makerspaceId={makerspaceId} pools={pools} draft={stockDraft} onDraftChange={setStockDraft} />
         </section>
         <ErrorBlock className="mt-2" error={poolError} />
@@ -68,7 +69,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
   const adjustPool = useMutation({
     mutationFn: ({ id, quantity_delta }: { id: number; quantity_delta: string }) => staffRequest(`/admin/machine-service/consumable-pools/${id}/adjustments`, {
       method: "POST",
-      body: JSON.stringify({ quantity_delta, reason: "Manual correction" }),
+      body: JSON.stringify({ quantity_delta, reason: t`Manual correction` }),
     }),
     onSuccess: async () => {
       setAdjustingId(null);
@@ -102,7 +103,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
             <article className="overflow-hidden rounded-xl border border-line bg-bg" key={pool.id}>
               <div className={`flex items-center justify-between gap-2 px-3 py-1.5 tabular-nums text-xs font-semibold ${state.band}`}>
                 <span>{state.label}</span>
-                <span>{Math.round(percent)}% remaining</span>
+                <span>{t`${Math.round(percent)}% remaining`}</span>
               </div>
               <div className="grid gap-3 p-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -110,7 +111,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                     <strong className="text-sm text-ink">{label}</strong>
                     <div className="mt-1 flex flex-wrap gap-2">
                       <Badge tone={pool.machine_id !== null ? "emphasis" : pool.machine_type_id !== null ? "accent" : "neutral"}>
-                        {pool.machine_id !== null ? "Machine-specific" : pool.machine_type_id !== null ? "Type-wide" : "Space-wide"}
+                        {pool.machine_id !== null ? t`Machine-specific` : pool.machine_type_id !== null ? t`Type-wide` : t`Space-wide`}
                       </Badge>
                       <span className="chip">
                         <span
@@ -118,9 +119,9 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                           className="h-3 w-3 rounded-full border border-outline bg-surface"
                           style={pool.color_hex || pool.color ? { backgroundColor: pool.color_hex || pool.color } : undefined}
                         />
-                        Colour: {pool.color || "Not specified"}
+                        {t`Colour: `}{pool.color || t`Not specified`}
                       </span>
-                      {!isPublic ? <Badge tone="warn">Hidden from requesters</Badge> : null}
+                      {!isPublic ? <Badge tone="warn">{t`Hidden from requesters`}</Badge> : null}
                     </div>
                   </div>
                   {/* The accessible name must START with the visible text, or voice control cannot
@@ -128,13 +129,13 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                       match. State lives in the label rather than aria-pressed: carrying both a
                       changing name and a pressed state double-signals the same fact. */}
                   <button
-                    aria-label={`${isPublic ? "Public" : "Hidden"}: ${label} — activate to ${isPublic ? "hide from" : "show to"} requesters`}
+                    aria-label={t`${isPublic ? "Public" : "Hidden"}: ${label} — activate to ${isPublic ? "hide from" : "show to"} requesters`}
                     className={isPublic ? "desk-button-warn" : "desk-button-success"}
                     disabled={visibility.isPending}
                     type="button"
                     onClick={() => visibility.mutate({ id: pool.id, isPublic: !isPublic })}
                   >
-                    {isPublic ? "Public" : "Hidden"}
+                    {isPublic ? t`Public` : t`Hidden`}
                   </button>
                 </div>
                 <div>
@@ -155,8 +156,7 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                 {isAdjusting ? (
                   <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); if (validAdjustment) adjustPool.mutate({ id: pool.id, quantity_delta: quantityDelta }); }}>
                     <label className="eyebrow grid min-w-48 flex-1 gap-1">
-                      Adjustment ({unit}, + or −)
-                      <input
+                      {t`Adjustment (${unit}, + or −)`}<input
                         autoFocus
                         className="desk-input"
                         inputMode="decimal"
@@ -168,23 +168,21 @@ export function ConsumablePoolList({ makerspaceId, pools, visible = true, draft,
                       />
                     </label>
                     <button className="desk-button-primary" disabled={!validAdjustment || adjustPool.isPending} type="submit">
-                      {adjustPool.isPending ? "Saving..." : "Save adjustment"}
+                      {adjustPool.isPending ? t`Saving...` : t`Save adjustment`}
                     </button>
                     <button className="desk-button-ghost" disabled={adjustPool.isPending} type="button" onClick={() => { setAdjustingId(null); setQuantityDelta(""); adjustPool.reset(); }}>
-                      Cancel
-                    </button>
+                      {t`Cancel`}</button>
                   </form>
                 ) : (
                   <button className="desk-button justify-self-start" type="button" onClick={() => { setAdjustingId(pool.id); setQuantityDelta(""); adjustPool.reset(); }}>
-                    Adjust stock
-                  </button>
+                    {t`Adjust stock`}</button>
                 )}
                 <PriceOverrideCard makerspaceId={makerspaceId} targetType="consumable_pool" targetId={pool.id} compact />
               </div>
             </article>
           );
         })}
-        {!pools.length ? <p className="text-sm text-muted">No consumable pools.</p> : null}
+        {!pools.length ? <p className="text-sm text-muted">{t`No consumable pools.`}</p> : null}
       </div>
       <ErrorBlock className="mt-2" error={adjustPool.error ?? visibility.error} />
     </>

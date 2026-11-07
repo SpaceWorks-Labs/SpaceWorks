@@ -3,6 +3,7 @@
 These are /api/v1/auth/ routes, which no token can ever reach (person_scopes), so a
 token cannot mint, list or revoke tokens: only the person's own signed-in session can.
 """
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -65,7 +66,7 @@ class PersonScopeCatalogSerializer(serializers.Serializer):
 def require_person(user):
     from apps.accounts.surface_policy import PERSON_KIND, token_kind
     if token_kind(user) != PERSON_KIND:
-        raise PermissionDenied("Only a person's account can hold access tokens.")
+        raise PermissionDenied(gettext("Only a person's account can hold access tokens."))
 
 
 def staff_spaces(user):
@@ -112,7 +113,7 @@ class AccessTokenListCreateView(RecentReauthenticationMixin, APIView):
         space_id = values.get("makerspace")
         makerspace = spaces.get(space_id) if space_id is not None else None
         if space_id is not None and makerspace is None:
-            raise ValidationError({"makerspace": "You hold no staff role in that space."})
+            raise ValidationError({"makerspace": gettext("You hold no staff role in that space.")})
         try:
             scopes = person_scopes.validate(values["scopes"], makerspace=makerspace, staff_space_ids=set(spaces))
         except ValueError as exc:

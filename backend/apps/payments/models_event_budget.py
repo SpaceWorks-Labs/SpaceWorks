@@ -5,6 +5,7 @@ measured against, survives an events tombstone and an event purge (the FK is SET
 and the id/title snapshots keep the row readable).
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -27,11 +28,11 @@ class EventFinanceBudget(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Event budgets are revised by appending a new row.")
+            raise ValidationError(gettext("Event budgets are revised by appending a new row."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Event budgets are revised by appending a new row.")
+        raise ValidationError(gettext("Event budgets are revised by appending a new row."))
 
 
 def effective_budgets(makerspace_id, event_ids=None):

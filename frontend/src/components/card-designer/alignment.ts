@@ -1,6 +1,7 @@
 // Align and distribute. Each group in the selection moves as one unit; a unit holding a
 // locked layer never moves. One unit aligns to the card, several align to the selection's
 // bounds; "to the safe area" aligns everything to the 3 mm safe area instead.
+import { t } from "@lingui/core/macro";
 import type { Layer, Side } from "./cardTypes";
 import { round1, SAFE_AREA_MM } from "./cardGeometry";
 import { boundsOf, moveUnits, selectedLayers, type Box, type Patches } from "./selection";
@@ -9,8 +10,8 @@ export type AlignEdge = "left" | "centre" | "right" | "top" | "middle" | "bottom
 export type DistributeAxis = "horizontal" | "vertical";
 
 export const ALIGN_LABELS: Record<AlignEdge, string> = {
-  left: "Align left edges", centre: "Align centres", right: "Align right edges",
-  top: "Align top edges", middle: "Align middles", bottom: "Align bottom edges",
+  left: t`Align left edges`, centre: t`Align centres`, right: t`Align right edges`,
+  top: t`Align top edges`, middle: t`Align middles`, bottom: t`Align bottom edges`,
 };
 
 function shift(unit: Layer[], dx: number, dy: number, patches: Patches) {

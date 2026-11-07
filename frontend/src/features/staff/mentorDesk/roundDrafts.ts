@@ -1,12 +1,13 @@
+import { t } from "@lingui/core/macro";
 import { decryptBytes, deleteScopes, encryptBytes, expired, keyFor, openEncryptedDatabase, readKey, requestValue, transactionDone, type Ciphertext } from '../../../lib/encryptedIndexedDb'
 
 const DB = 'spaceworks-mentor-round-drafts-v1'
 type RecordValue = { id: string; scope: string; closesAt: string; encrypted: Ciphertext }
 async function database() { return openEncryptedDatabase(DB, 1, [{ name: 'keys' }, { name: 'drafts', keyPath: 'id' }]) }
 export async function saveRoundDraft(scope: string, teamId: number, closesAt: string, answers: Record<string, unknown>) {
-  if (expired(closesAt)) throw new Error('This round has closed. The draft cannot be saved.')
+  if (expired(closesAt)) throw new Error(t`This round has closed. The draft cannot be saved.`)
   const bytes = new TextEncoder().encode(JSON.stringify(answers))
-  if (bytes.byteLength > 64_000) throw new Error('Keep this visit draft below 64 KB.')
+  if (bytes.byteLength > 64_000) throw new Error(t`Keep this visit draft below 64 KB.`)
   const db = await database()
   try {
     const id = `${scope}:${teamId}`

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsRow } from "../../components/ui";
@@ -20,17 +21,17 @@ export function NotificationTimingSettings({ makerspaceId, timezone }: { makersp
     quiet_start: values?.quiet_start, quiet_end: values?.quiet_end, digest_at: values?.digest_at, channels: values?.channels, daily_digest_default: values?.daily_digest_default,
     ...(secret ? { bounce_secret: secret } : {}),
   }) }), onSuccess: (data) => { client.setQueryData(key, data); setDraft(null); setSecret(""); } });
-  return <SettingsQueryState query={policy} resource="timing"><SettingsRow label="Notification delivery times"><form className="@container grid gap-3 rounded-lg border border-line p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }} aria-label="Notification delivery times">
+  return <SettingsQueryState query={policy} resource="timing"><SettingsRow label={t`Notification delivery times`}><form className="@container grid gap-3 rounded-lg border border-line p-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }} aria-label={t`Notification delivery times`}>
 
-    <p className="text-sm text-muted">Times use {timezone ?? "the makerspace timezone"}. Enable quiet hours and digests in Features. Safety alerts remain immediate; members can override the daily digest default in their preferences.</p>
+    <p className="text-sm text-muted">{t`Times use `}{timezone ?? t`the makerspace timezone`}. Enable quiet hours and digests in Features. Safety alerts remain immediate; members can override the daily digest default in their preferences.</p>
     {values ? <fieldset className="grid gap-3 @lg:grid-cols-3" disabled={save.isPending}>
-      {(["quiet_start", "quiet_end", "digest_at"] as const).map((name) => <label key={name} className="grid gap-1 text-sm">{name === "quiet_start" ? "Quiet from" : name === "quiet_end" ? "Quiet until" : "Daily digest at"}<input className="desk-input" type="time" required value={values[name].slice(0, 5)} onChange={(event) => setDraft({ ...values, [name]: event.target.value })} /></label>)}
-      <label className="min-h-11 flex gap-2 text-sm @lg:col-span-3"><input type="checkbox" checked={values.daily_digest_default} onChange={(event) => setDraft({ ...values, daily_digest_default: event.target.checked })} />Daily digests on by default</label>
+      {(["quiet_start", "quiet_end", "digest_at"] as const).map((name) => <label key={name} className="grid gap-1 text-sm">{name === "quiet_start" ? t`Quiet from` : name === "quiet_end" ? t`Quiet until` : t`Daily digest at`}<input className="desk-input" type="time" required value={values[name].slice(0, 5)} onChange={(event) => setDraft({ ...values, [name]: event.target.value })} /></label>)}
+      <label className="min-h-11 flex gap-2 text-sm @lg:col-span-3"><input type="checkbox" checked={values.daily_digest_default} onChange={(event) => setDraft({ ...values, daily_digest_default: event.target.checked })} />{t`Daily digests on by default`}</label>
       <div className="flex flex-wrap gap-3 @lg:col-span-3">{channels.map((channel) => <label key={channel} className="min-h-11 flex gap-2 text-sm"><input type="checkbox" checked={values.channels.includes(channel)} onChange={(event) => setDraft({ ...values, channels: event.target.checked ? [...values.channels, channel] : values.channels.filter((item) => item !== channel) })} />{channel.replace(/_/g, " ")}</label>)}</div>
-      <label className="grid gap-1 text-sm @lg:col-span-3">Inbound bounce signing secret<input type="password" className="desk-input" autoComplete="new-password" minLength={32} maxLength={200} value={secret} onChange={(event) => setSecret(event.target.value)} /><span className="text-xs text-muted">{values.bounce_configured ? "Configured. Leave blank to keep it; enter a new secret to rotate." : "Use at least 32 characters. Configure the same secret in your provider adapter."}</span></label>
-    </fieldset> : <p role="status">Loading delivery times…</p>}
+      <label className="grid gap-1 text-sm @lg:col-span-3">{t`Inbound bounce signing secret`}<input type="password" className="desk-input" autoComplete="new-password" minLength={32} maxLength={200} value={secret} onChange={(event) => setSecret(event.target.value)} /><span className="text-xs text-muted">{values.bounce_configured ? t`Configured. Leave blank to keep it; enter a new secret to rotate.` : t`Use at least 32 characters. Configure the same secret in your provider adapter.`}</span></label>
+    </fieldset> : <p role="status">{t`Loading delivery times…`}</p>}
     {policy.error || save.error ? <p role="alert" className="text-danger">{(save.error ?? policy.error)?.message}</p> : null}
     <SettingsEditorActions dirty={Boolean(draft || secret)} onDiscard={() => { setDraft(null); setSecret(""); }} pending={save.isPending} disabled={!values || save.isPending} />
-    {save.isSuccess ? <p role="status">Delivery policy saved.</p> : null}
+    {save.isSuccess ? <p role="status">{t`Delivery policy saved.`}</p> : null}
   </form></SettingsRow></SettingsQueryState>;
 }

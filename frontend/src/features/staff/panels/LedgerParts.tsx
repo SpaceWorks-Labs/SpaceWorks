@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { Skeleton, SkeletonRows } from "../../../components/ui";
 
 export type LedgerSource = "request" | "self_checkout" | "direct_handout";
@@ -27,9 +29,9 @@ export type SortKey = "item_name" | "holder" | "quantity" | "since" | "due" | "s
 export type SortDirection = "asc" | "desc";
 
 export const sourceLabels: Record<LedgerSource, string> = {
-  request: "Request",
-  self_checkout: "Self-checkout",
-  direct_handout: "Direct",
+  request: t`Request`,
+  self_checkout: t`Self-checkout`,
+  direct_handout: t`Direct`,
 };
 
 export function LedgerSkeleton({ aggregate }: { aggregate: boolean }) {
@@ -134,5 +136,5 @@ export function formatDate(value: string | null) {
   if (!value) return "\u2014";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "\u2014";
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return date.toLocaleDateString(formatLocale(), { year: "numeric", month: "short", day: "numeric" });
 }

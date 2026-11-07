@@ -1,4 +1,5 @@
 """Current consumable price basis shared by inventory and machine pools."""
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 from rest_framework.exceptions import ValidationError
 
@@ -17,18 +18,18 @@ UNITS = {
 def validate_price(unit_cost, currency, cost_unit, measurement_unit):
     if unit_cost is None:
         if currency or cost_unit:
-            raise ValidationError({"unit_cost": "A price is required with currency and cost unit."})
+            raise ValidationError({"unit_cost": gettext("A price is required with currency and cost unit.")})
         return
     try:
         price = Decimal(str(unit_cost))
     except (InvalidOperation, TypeError, ValueError) as exc:
-        raise ValidationError({"unit_cost": "Enter a valid price."}) from exc
+        raise ValidationError({"unit_cost": gettext("Enter a valid price.")}) from exc
     if not price.is_finite() or price < 0:
-        raise ValidationError({"unit_cost": "Enter a non-negative price."})
+        raise ValidationError({"unit_cost": gettext("Enter a non-negative price.")})
     if not isinstance(currency, str) or len(currency) != 3 or not currency.isascii() or not currency.isalpha() or currency != currency.upper():
-        raise ValidationError({"cost_currency": "Use a three-letter uppercase currency code."})
+        raise ValidationError({"cost_currency": gettext("Use a three-letter uppercase currency code.")})
     if not isinstance(cost_unit, str) or cost_unit not in UNITS or measurement_unit not in UNITS or UNITS[cost_unit][0] != UNITS[measurement_unit][0]:
-        raise ValidationError({"cost_unit": "Price unit must match the consumable's measurement dimension."})
+        raise ValidationError({"cost_unit": gettext("Price unit must match the consumable's measurement dimension.")})
 
 
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Callout, ConfirmDialog } from "../../../components/ui";
@@ -20,28 +21,28 @@ export function AnalyticsLoginCard({ scope, connection }: { scope: AnalyticsScop
 
   if (!connection.available) {
     return <Callout size="inline" tone="warn" lead="Not available on this hosting."
-      body="The database owner cannot create logins here, so Metabase cannot connect directly. Dashboards you already list still embed." />;
+      body={t`The database owner cannot create logins here, so Metabase cannot connect directly. Dashboards you already list still embed.`} />;
   }
   return (
     <div className="grid gap-3">
       {login.role ? (
         <dl className="grid gap-1 text-sm sm:grid-cols-[10rem_1fr]">
-          <dt className="text-muted">Login</dt><dd className="code-text break-all">{login.role}</dd>
-          <dt className="text-muted">Database</dt>
+          <dt className="text-muted">{t`Login`}</dt><dd className="code-text break-all">{login.role}</dd>
+          <dt className="text-muted">{t`Database`}</dt>
           <dd className="code-text break-all">{connection.database.host}:{connection.database.port} / {connection.database.database}</dd>
-          <dt className="text-muted">Schema</dt><dd className="code-text">{connection.database.schema}</dd>
-          {!login.exists ? <><dt className="text-muted">State</dt><dd>Missing from the database: rotate to recreate it.</dd></> : null}
+          <dt className="text-muted">{t`Schema`}</dt><dd className="code-text">{connection.database.schema}</dd>
+          {!login.exists ? <><dt className="text-muted">{t`State`}</dt><dd>{t`Missing from the database: rotate to recreate it.`}</dd></> : null}
         </dl>
-      ) : <p className="text-sm text-muted">No login yet. Metabase connects to the curated views with a read-only login of its own.</p>}
+      ) : <p className="text-sm text-muted">{t`No login yet. Metabase connects to the curated views with a read-only login of its own.`}</p>}
       {shown ? (
         <div className="rounded-md border border-line bg-warn-soft p-3">
-          <Callout size="inline" tone="warn" lead="Copy the password now." body="It is shown once. Paste these into Metabase as a PostgreSQL database." />
+          <Callout size="inline" tone="warn" lead="Copy the password now." body={t`It is shown once. Paste these into Metabase as a PostgreSQL database.`} />
           <p className="mt-2 break-all rounded-md border border-line bg-bg p-2 code-text text-xs text-ink">
-            user {shown.role} · password {shown.password} · schema {shown.schema}
+            {t`user ${shown.role} · password ${shown.password} · schema ${shown.schema}`}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button className="desk-button" type="button" onClick={() => void navigator.clipboard.writeText(shown.password)}>Copy password</button>
-            <button className="desk-button-primary" type="button" onClick={() => setShown(null)}>Done</button>
+            <button className="desk-button" type="button" onClick={() => void navigator.clipboard.writeText(shown.password)}>{t`Copy password`}</button>
+            <button className="desk-button-primary" type="button" onClick={() => setShown(null)}>{t`Done`}</button>
           </div>
         </div>
       ) : null}
@@ -49,16 +50,16 @@ export function AnalyticsLoginCard({ scope, connection }: { scope: AnalyticsScop
       <div className="flex flex-wrap gap-2">
         {login.role ? (
           <>
-            <button className="desk-button" type="button" disabled={pending} onClick={() => rotate.mutate(undefined, { onSuccess: reveal })}>Rotate password</button>
-            <button className="desk-button" type="button" disabled={pending} onClick={() => setConfirmRevoke(true)}>Revoke login</button>
+            <button className="desk-button" type="button" disabled={pending} onClick={() => rotate.mutate(undefined, { onSuccess: reveal })}>{t`Rotate password`}</button>
+            <button className="desk-button" type="button" disabled={pending} onClick={() => setConfirmRevoke(true)}>{t`Revoke login`}</button>
           </>
         ) : (
-          <button className="desk-button-primary" type="button" disabled={pending} onClick={() => create.mutate(undefined, { onSuccess: reveal })}>Create login</button>
+          <button className="desk-button-primary" type="button" disabled={pending} onClick={() => create.mutate(undefined, { onSuccess: reveal })}>{t`Create login`}</button>
         )}
       </div>
-      <ConfirmDialog open={confirmRevoke} title="Revoke the analytics login?" tone="danger" pending={revoke.isPending}
-        message="Metabase loses access straight away. You can create a new login later."
-        confirmLabel="Revoke" onCancel={() => setConfirmRevoke(false)}
+      <ConfirmDialog open={confirmRevoke} title={t`Revoke the analytics login?`} tone="danger" pending={revoke.isPending}
+        message={t`Metabase loses access straight away. You can create a new login later.`}
+        confirmLabel={t`Revoke`} onCancel={() => setConfirmRevoke(false)}
         onConfirm={() => revoke.mutate(undefined, { onSettled: () => setConfirmRevoke(false) })} />
     </div>
   );

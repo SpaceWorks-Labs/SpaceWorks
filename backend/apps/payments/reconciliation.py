@@ -1,5 +1,6 @@
 """Transactional reconciliation for every payment subject type."""
 
+from django.utils.translation import gettext
 import logging
 from decimal import Decimal
 
@@ -60,7 +61,7 @@ def list_payments(*, actor, makerspace_id, status=None, subject_type=None, for_r
         actor, action, Makerspace.objects.all(), field="pk",
     ).filter(pk=makerspace_id).first()
     if makerspace is None:
-        raise NotFound("Makerspace not found.")
+        raise NotFound(gettext("Makerspace not found."))
     return order_by_due(with_refunds(filter_due(queryset, makerspace, due_state)))
 
 
@@ -174,7 +175,7 @@ def reconcile_payments(
     )
     by_id = {payment.pk: payment for payment in locked}
     if len(by_id) != len(requested_ids):
-        raise NotFound("Payment not found.")
+        raise NotFound(gettext("Payment not found."))
 
     if target_status == Payment.Status.PAID_OFFLINE:
         _require_record_authority(actor, locked)

@@ -1,4 +1,5 @@
 """Durable addressed delivery/outcome and normalized webhook inbox contracts."""
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -9,23 +10,23 @@ from .notification_scope_contract import validate_notification_scope
 
 class MessagingDelivery(models.Model):
     class SkipReason(models.TextChoices):
-        TENANT_UNSERVABLE = "tenant_unservable", "Tenant unavailable"
-        MODULE_DISABLED = "module_disabled", "Channel module disabled"
-        FEATURE_UNAVAILABLE = "feature_unavailable", "Source feature unavailable"
-        MATRIX_DISABLED = "matrix_disabled", "Notification rule disabled"
-        ACCOUNT_INACTIVE = "account_inactive", "Account inactive or restricted"
-        NO_MEMBERSHIP = "no_membership", "No active local membership"
-        NO_TENANT_TIE = "no_tenant_tie", "No tie to this makerspace"
-        MEMBERSHIP_OPTED_OUT = "membership_opted_out", "Membership notifications disabled"
-        RECIPIENT_CHANGED = "recipient_changed", "Recipient selection or scope changed"
-        PERSONAL_DISABLED = "personal_disabled", "Personal preference disabled"
-        PHONE_UNVERIFIED = "phone_unverified", "Phone unverified"
-        NO_CONSENT = "no_consent", "No live consent"
-        SENDER_UNAVAILABLE = "sender_unavailable", "Sender unavailable"
-        NO_TEMPLATE = "no_template", "No approved audience template"
-        QUOTA_EXCEEDED = "quota_exceeded", "Quota exhausted"
-        SOURCE_CHANGED = "source_changed", "Source removed or scope changed"
-        IDENTITY_UNCONFIRMED = "identity_unconfirmed", "Recipient correlation unconfirmed"
+        TENANT_UNSERVABLE = "tenant_unservable", gettext_noop("Tenant unavailable")
+        MODULE_DISABLED = "module_disabled", gettext_noop("Channel module disabled")
+        FEATURE_UNAVAILABLE = "feature_unavailable", gettext_noop("Source feature unavailable")
+        MATRIX_DISABLED = "matrix_disabled", gettext_noop("Notification rule disabled")
+        ACCOUNT_INACTIVE = "account_inactive", gettext_noop("Account inactive or restricted")
+        NO_MEMBERSHIP = "no_membership", gettext_noop("No active local membership")
+        NO_TENANT_TIE = "no_tenant_tie", gettext_noop("No tie to this makerspace")
+        MEMBERSHIP_OPTED_OUT = "membership_opted_out", gettext_noop("Membership notifications disabled")
+        RECIPIENT_CHANGED = "recipient_changed", gettext_noop("Recipient selection or scope changed")
+        PERSONAL_DISABLED = "personal_disabled", gettext_noop("Personal preference disabled")
+        PHONE_UNVERIFIED = "phone_unverified", gettext_noop("Phone unverified")
+        NO_CONSENT = "no_consent", gettext_noop("No live consent")
+        SENDER_UNAVAILABLE = "sender_unavailable", gettext_noop("Sender unavailable")
+        NO_TEMPLATE = "no_template", gettext_noop("No approved audience template")
+        QUOTA_EXCEEDED = "quota_exceeded", gettext_noop("Quota exhausted")
+        SOURCE_CHANGED = "source_changed", gettext_noop("Source removed or scope changed")
+        IDENTITY_UNCONFIRMED = "identity_unconfirmed", gettext_noop("Recipient correlation unconfirmed")
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

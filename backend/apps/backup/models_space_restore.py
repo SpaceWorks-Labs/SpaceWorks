@@ -4,6 +4,7 @@ Re-exported from :mod:`apps.backup.models`. Every stage change is audited in the
 At most one unfinished restore exists per makerspace (database constraint).
 """
 
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -14,16 +15,16 @@ from django.db.models import Q
 class MakerspaceRestoreOperation(models.Model):
     class Stage(models.TextChoices):
         REQUESTED = "requested", "Requested"
-        STAGING = "staging", "Preparing preview"
-        PREVIEW_READY = "preview_ready", "Preview ready"
+        STAGING = "staging", gettext_noop("Preparing preview")
+        PREVIEW_READY = "preview_ready", gettext_noop("Preview ready")
         APPLYING = "applying", "Restoring"
         COMPLETED = "completed", "Completed"
         FAILED = "failed", "Failed"
         ABORTED = "aborted", "Cancelled"
 
     class Source(models.TextChoices):
-        SPACE_ARCHIVE = "space_archive", "One-space backup"
-        DEPLOYMENT_ARCHIVE = "deployment_archive", "Whole-platform backup"
+        SPACE_ARCHIVE = "space_archive", gettext_noop("One-space backup")
+        DEPLOYMENT_ARCHIVE = "deployment_archive", gettext_noop("Whole-platform backup")
 
     TERMINAL = (Stage.COMPLETED, Stage.FAILED, Stage.ABORTED)
 

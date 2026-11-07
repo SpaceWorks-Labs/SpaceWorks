@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { SpaceWorksLogo } from "../SpaceWorksLogo";
 import { ActionControl, Callout, Card, ConfirmDialog, PageHeader, StatusPill } from "../ui";
@@ -33,7 +34,7 @@ export function KioskLayout({ context, connection, progress, headerActions, mode
       </div>
       <div className="mb-8 flex flex-wrap justify-end gap-3">{headerActions.map(action => <ActionControl key={action.label} action={action} />)}</div>
       {idleCountdown ? <div className="mb-6"><Callout size="panel" tone="warn" lead={`Station locks in ${idleCountdown.seconds} seconds.`}
-        action={{ label: "Keep working", onClick: idleCountdown.onKeep }} /></div> : null}
+        action={{ label: t`Keep working`, onClick: idleCountdown.onKeep }} /></div> : null}
       <QueryContent {...query}>
         {mode === "lock" && lock ? <><KioskPin {...lock} />
           {work?.panel ? <div className="mt-6">{work.panel}</div> : null}</> : null}
@@ -43,8 +44,8 @@ export function KioskLayout({ context, connection, progress, headerActions, mode
         </div>{work.recent}</div> : null}
       </QueryContent>
     </LayoutFrame>
-    <ConfirmDialog open={Boolean(confirmLock)} title={confirmLock?.title ?? "Lock this station?"}
-      message={confirmLock?.consequence ?? `${confirmLock?.pendingCount ?? 0} queued actions are still on this device.`} confirmLabel="Discard and lock" cancelLabel="Keep working"
+    <ConfirmDialog open={Boolean(confirmLock)} title={confirmLock?.title ?? t`Lock this station?`}
+      message={confirmLock?.consequence ?? t`${confirmLock?.pendingCount ?? 0} queued actions are still on this device.`} confirmLabel={t`Discard and lock`} cancelLabel={t`Keep working`}
       tone="danger" safePrimary onConfirm={() => confirmLock?.onDiscard()} onCancel={() => confirmLock?.onKeep()} />
   </div>;
 }

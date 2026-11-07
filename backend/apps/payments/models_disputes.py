@@ -7,14 +7,15 @@ money itself, and the outcome arrives as later status events. `PaymentDisputeEve
 the append-only history; `PaymentDispute.status` is the latest of it.
 """
 
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 
 
 class PaymentDispute(models.Model):
     class Status(models.TextChoices):
-        OPEN = "open", "Needs response"
-        UNDER_REVIEW = "under_review", "Under review"
+        OPEN = "open", gettext_noop("Needs response")
+        UNDER_REVIEW = "under_review", gettext_noop("Under review")
         WON = "won", "Won"
         LOST = "lost", "Lost"
         CLOSED = "closed", "Closed"
@@ -40,7 +41,7 @@ class PaymentDispute(models.Model):
         indexes = [models.Index(fields=["makerspace", "status"], name="dispute_space_status_idx")]
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Disputes are permanent records.")
+        raise ValidationError(gettext("Disputes are permanent records."))
 
 
 class PaymentDisputeEvent(models.Model):
@@ -59,8 +60,8 @@ class PaymentDisputeEvent(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Dispute history is append-only.")
+            raise ValidationError(gettext("Dispute history is append-only."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Dispute history is append-only.")
+        raise ValidationError(gettext("Dispute history is append-only."))

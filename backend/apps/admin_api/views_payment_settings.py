@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -124,7 +125,7 @@ class StripeConnectOnboardingView(APIView):
     def post(self, request, makerspace_id):
         if is_self_host():
             return Response(
-                {"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": gettext("Not found.")}, status=status.HTTP_404_NOT_FOUND
             )
         makerspace = get_object_or_404(
             rbac.scope_by_action(
@@ -139,7 +140,7 @@ class StripeConnectOnboardingView(APIView):
             authorize_url = create_onboarding(makerspace, request.user)
         except PaymentsUnavailable:
             return Response(
-                {"detail": "Stripe Connect is unavailable."},
+                {"detail": gettext("Stripe Connect is unavailable.")},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         audit.record(

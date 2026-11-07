@@ -1,5 +1,6 @@
 """WP4 detail surface, independent of WP2's original public machine list."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
@@ -34,7 +35,7 @@ class PublicMachineDetailMixin:
             from apps.makerspaces.guards import feature_off
             raise feature_off("machines.public_detail", "Public machine details are turned off.")
         if not getattr(space, "public_site_enabled", space.public_inventory_enabled):
-            raise ValidationError({"detail": "Public site is disabled."})
+            raise ValidationError({"detail": gettext("Public site is disabled.")})
         return rbac.scope_public_catalogue(
             Machine.objects.select_related("machine_type", "makerspace"), space,
         ).filter(is_public=True, is_active=True).order_by("name", "pk")

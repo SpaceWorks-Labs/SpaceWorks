@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Field } from "../../components/ui";
 import type { HostingFormKey, HostingFormValue } from "./hostingForm";
 
@@ -25,45 +26,44 @@ export function HostingRequestFields({ value, onChange, errors, showOrganization
   const descriptionLength = value.description.trim().length;
   return <div className="grid gap-4">
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Your name" error={errors.applicant_name}>
+      <Field label={t`Your name`} error={errors.applicant_name}>
         <input {...input("applicant_name")} required minLength={2} maxLength={200} autoComplete="name" />
       </Field>
-      <Field label="Email" error={errors.applicant_email}>
+      <Field label={t`Email`} error={errors.applicant_email}>
         <input {...input("applicant_email")} required type="email" maxLength={254} autoComplete="email" />
       </Field>
-      <Field label="Phone (optional)" error={errors.applicant_phone}>
+      <Field label={t`Phone (optional)`} error={errors.applicant_phone}>
         <input {...input("applicant_phone")} type="tel" maxLength={32} autoComplete="tel" />
       </Field>
-      <Field label="Makerspace name" error={errors.space_name}>
+      <Field label={t`Makerspace name`} error={errors.space_name}>
         <input {...input("space_name")} required minLength={2} maxLength={200} autoComplete="organization" />
       </Field>
-      <Field label="Location" hint="City and country, or the campus it sits on." error={errors.location}>
+      <Field label={t`Location`} hint={t`City and country, or the campus it sits on.`} error={errors.location}>
         <input {...input("location")} required minLength={2} maxLength={200} />
       </Field>
-      <Field label="Space website (optional)" error={errors.space_website_url}>
+      <Field label={t`Space website (optional)`} error={errors.space_website_url}>
         <input {...input("space_website_url")} type="url" maxLength={200} placeholder="https://" autoComplete="url" />
       </Field>
-      {showExpectedMembers ? <Field label="Expected members (optional)" hint="Roughly how many people will use the space." error={errors.expected_members}>
+      {showExpectedMembers ? <Field label={t`Expected members (optional)`} hint={t`Roughly how many people will use the space.`} error={errors.expected_members}>
         <input {...input("expected_members")} type="number" min={1} max={100000} step={1} inputMode="numeric" />
       </Field> : null}
     </div>
-    <Field label="About your space" error={errors.description}
+    <Field label={t`About your space`} error={errors.description}
       hint={`${descriptionLength}/2000 characters · at least 20. What you make, who uses it and what you'd run on Space Works.`}>
       <textarea {...input("description")} className="desk-input min-h-32" required minLength={20} maxLength={2000} />
     </Field>
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Suggested web address (optional)" hint="Lowercase letters, numbers and hyphens, like north-lab." error={errors.proposed_slug}>
+      <Field label={t`Suggested web address (optional)`} hint={t`Lowercase letters, numbers and hyphens, like north-lab.`} error={errors.proposed_slug}>
         <input {...input("proposed_slug")} maxLength={50} pattern="[a-z0-9]+(-[a-z0-9]+)*" autoCapitalize="none" spellCheck={false} />
       </Field>
-      {showOrganizationName ? <Field label="Organization name (optional)" hint="The group that runs the space, if it has one."
+      {showOrganizationName ? <Field label={t`Organization name (optional)`} hint={t`The group that runs the space, if it has one.`}
         error={errors.new_organization_name}>
         <input {...input("new_organization_name")} maxLength={200} />
       </Field> : null}
     </div>
     <div className="hidden" aria-hidden="true">
       <label>
-        Website
-        <input name="website" tabIndex={-1} autoComplete="off" value={value.website} onChange={(event) => onChange("website", event.target.value)} />
+        {t`Website`}<input name="website" tabIndex={-1} autoComplete="off" value={value.website} onChange={(event) => onChange("website", event.target.value)} />
       </label>
     </div>
   </div>;

@@ -7,6 +7,7 @@ that request converts the hold into its reservation inside one transaction. Offe
 are not claimed in time lapse and the next entry is offered.
 """
 
+from django.utils.translation import gettext
 import logging
 from datetime import timedelta
 
@@ -59,12 +60,12 @@ def join(user, product, quantity):
     require_waitlist_member(user, product.makerspace)
     product = type(product).objects.select_for_update().get(pk=product.pk)
     if not product.is_public or product.is_archived or product.is_consumable:
-        raise ValidationError({"detail": "This item cannot be waitlisted."})
+        raise ValidationError({"detail": gettext("This item cannot be waitlisted.")})
     ahead = Entry.objects.filter(product=product, status__in=Entry.ACTIVE)
     if product.available_quantity >= quantity and not ahead.exists():
-        raise ValidationError({"detail": "This item is available now; request it instead."})
+        raise ValidationError({"detail": gettext("This item is available now; request it instead.")})
     if ahead.filter(user=user).exists():
-        raise ValidationError({"detail": "You are already on the waitlist for this item."})
+        raise ValidationError({"detail": gettext("You are already on the waitlist for this item.")})
     entry = Entry.objects.create(makerspace=product.makerspace, product=product, user=user, quantity=quantity)
     audit.record(user, "inventory.waitlist_joined", makerspace=product.makerspace, target=entry,
                  meta={"entry_id": entry.pk, "product_id": product.pk, "quantity": quantity})
@@ -76,7 +77,7 @@ def join(user, product, quantity):
 def leave(user, entry):
     entry = _locked(entry)
     if entry.user_id != user.pk or entry.status not in (Entry.Status.WAITING, Entry.Status.OFFERED):
-        raise ValidationError({"detail": "This waitlist entry cannot be left."})
+        raise ValidationError({"detail": gettext("This waitlist entry cannot be left.")})
     _release(entry, Entry.Status.CANCELLED, actor=user)
     schedule_offers(entry.product_id)
     return entry
@@ -164,10 +165,10 @@ def claim(entry_id, user, items):
     """Inside submit: bind the member's open offer to the new request's items."""
     entry = Entry.objects.select_for_update().filter(pk=entry_id, user=user, status=Entry.Status.OFFERED).first()
     if entry is None:
-        raise ValidationError({"waitlist_entry_id": "This waitlist offer is not open."})
+        raise ValidationError({"waitlist_entry_id": gettext("This waitlist offer is not open.")})
     wanted = next((item["quantity"] for item in items if item["product"].pk == entry.product_id), 0)
     if not 1 <= wanted <= entry.held_quantity:
-        raise ValidationError({"waitlist_entry_id": "Request the offered item, up to the offered quantity."})
+        raise ValidationError({"waitlist_entry_id": gettext("Request the offered item, up to the offered quantity.")})
     return entry
 
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ModuleAnalytics } from "./panels/ModuleAnalytics";
 import { capabilityOn } from "../../lib/features";
 import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
@@ -87,13 +88,13 @@ export function StaffTabContent({
     return <StaffPanelErrorBoundary resetKey="organizations"><Suspense fallback={<Skeleton className="h-40 w-full" />}><OrganizationsPanel isSuperadmin={isSuperadmin} makerspaces={makerspaces} /></Suspense></StaffPanelErrorBoundary>;
   }
   if (activeTab === "granted" && (currentUser.event_grants?.length || currentUser.booking_grants?.length)) {
-    if (singleTenantLocked && lockedMakerspaceId === undefined) return <ListLayout header={{ title: "Assigned resources" }} state={{ status: "ready" }}
-      isEmpty empty={{ message: "Unable to resolve this makerspace." }} body={{ kind: "rows", rows: null }} />;
+    if (singleTenantLocked && lockedMakerspaceId === undefined) return <ListLayout header={{ title: t`Assigned resources` }} state={{ status: "ready" }}
+      isEmpty empty={{ message: t`Unable to resolve this makerspace.` }} body={{ kind: "rows", rows: null }} />;
     return <StaffPanelErrorBoundary resetKey="granted"><Suspense fallback={<Skeleton className="h-40 w-full" />}><GrantedResourcesPanel eventGrants={currentUser.event_grants} bookingGrants={Boolean(currentUser.booking_grants?.length)} makerspaceId={singleTenantLocked ? lockedMakerspaceId : undefined} /></Suspense></StaffPanelErrorBoundary>;
   }
   if (!activeMakerspace) {
-    return <ListLayout header={{ title: "No makerspace" }} state={{ status: "ready" }}
-      isEmpty empty={{ message: "Assign a makerspace to this account." }} body={{ kind: "rows", rows: null }} />;
+    return <ListLayout header={{ title: t`No makerspace` }} state={{ status: "ready" }}
+      isEmpty empty={{ message: t`Assign a makerspace to this account.` }} body={{ kind: "rows", rows: null }} />;
   }
   const makerspaceKey = activeMakerspace.id;
   // A platform superadmin has no membership row; inside a chosen space they hold every action (#115).
@@ -116,7 +117,7 @@ export function StaffTabContent({
         <NotificationInbox key={makerspaceKey} makerspace={activeMakerspace} canManageMembers={has("manage_members")} />
       ) : null}
       {activeTab === "channels" && !isSuperadmin && actorActions.length > 0 ? <section className="desk-panel p-5">
-        <h1 className="title-panel mb-4">My notification channels</h1>
+        <h1 className="title-panel mb-4">{t`My notification channels`}</h1>
         <MyNotificationSettings key={makerspaceKey} makerspaceId={makerspaceKey} />
       </section> : null}
       {activeTab === "requests" ? (

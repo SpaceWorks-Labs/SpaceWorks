@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { useOptionalTenant } from "../../lib/tenant";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
@@ -29,6 +30,6 @@ export function PageHelp({ article, topic, slug, className = "flex justify-end" 
   if ((single || spaceSlug) && !bootstrap) return null;
   const makerspace = bootstrap ? { slug: bootstrap.makerspace.slug, enabled_features: bootstrap.features ?? [] } : undefined;
   return <div className={className}>
-    <HelpLink article={article} makerspace={makerspace} singleTenant={single} label={`Help with ${topic}`} />
+    <HelpLink article={article} makerspace={makerspace} singleTenant={single} label={t`Help with ${topic}`} />
   </div>;
 }

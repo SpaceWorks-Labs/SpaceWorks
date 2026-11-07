@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,9 +57,9 @@ export function MemberTermsDialog({
     <DetailLayout presentation="drawer"
       open
       onClose={onClose}
-      title={`Membership terms for ${memberName}`}
-      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: "Couldn't load terms. Try again.", onRetry: () => { void terms.refetch(); } }}
-      footer={{ secondary: [{ label: "Close", onClick: onClose }] }} main={<>
+      title={t`Membership terms for ${memberName}`}
+      state={{ status: terms.isLoading ? "loading" : terms.isError ? "error" : "ready", error: t`Couldn't load terms. Try again.`, onRetry: () => { void terms.refetch(); } }}
+      footer={{ secondary: [{ label: t`Close`, onClick: onClose }] }} main={<>
       <form
         className="flex flex-wrap items-end gap-2"
         onSubmit={(event) => {
@@ -65,14 +67,14 @@ export function MemberTermsDialog({
           if (selectedPlan) start.mutate();
         }}
       >
-        <Field label="Plan" className="min-w-48 flex-1">
+        <Field label={t`Plan`} className="min-w-48 flex-1">
           <select
             className="desk-input"
             value={selectedPlan ?? ""}
             disabled={!activePlans.length}
             onChange={(event) => setPlanId(Number(event.target.value))}
           >
-            {!activePlans.length ? <option value="">{plans.isLoading ? "Loading plans…" : "No active plans"}</option> : null}
+            {!activePlans.length ? <option value="">{plans.isLoading ? t`Loading plans…` : t`No active plans`}</option> : null}
             {activePlans.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.name} · {planIntervalLabel(plan)}{chargesOn ? ` · ${formatMoney(plan.amount, plan.currency)}` : ""}
@@ -81,11 +83,11 @@ export function MemberTermsDialog({
           </select>
         </Field>
         <button className="desk-button-primary" type="submit" disabled={!selectedPlan || start.isPending}>
-          {start.isPending ? "Starting…" : "Start term"}
+          {start.isPending ? t`Starting…` : t`Start term`}
         </button>
       </form>
-      {terms.isLoading ? <p className="mt-3 text-sm text-muted">Loading terms…</p> : null}
-      {terms.data?.length === 0 ? <EmptyState message="No terms yet." /> : null}
+      {terms.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading terms…`}</p> : null}
+      {terms.data?.length === 0 ? <EmptyState message={t`No terms yet.`} /> : null}
       {terms.data?.length ? (
         <ul className="mt-3 divide-y divide-line text-sm">
           {terms.data.map((term) => (
@@ -93,7 +95,7 @@ export function MemberTermsDialog({
               <div>
                 <p className="font-semibold text-ink">{term.plan_name}</p>
                 <p className="text-xs text-muted">
-                  {new Date(term.starts_at).toLocaleDateString()} – {term.is_lifetime ? "lifetime" : new Date(term.ends_at).toLocaleDateString()}
+                  {new Date(term.starts_at).toLocaleDateString(formatLocale())} – {term.is_lifetime ? "lifetime" : new Date(term.ends_at).toLocaleDateString(formatLocale())}
                   {term.kind ? ` · ${term.kind}` : ""}{chargesOn && term.price != null ? ` · ${formatMoney(term.price, term.currency || "usd")}` : ""}
                 </p>
               </div>
@@ -101,8 +103,7 @@ export function MemberTermsDialog({
                 <StatusPill tone={term.status === "active" ? "success" : term.status === "expired" ? "neutral" : "warn"} label={term.status} />
                 {term.status === "active" ? (
                   <button className="desk-button" type="button" disabled={cancel.isPending} onClick={() => cancel.mutate(term.id)}>
-                    Cancel term
-                  </button>
+                    {t`Cancel term`}</button>
                 ) : null}
               </div>
             </li>

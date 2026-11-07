@@ -1,6 +1,9 @@
+from django.utils.translation import gettext
 from apps.integrations.email_provider_serializers import EmailProviderFields
 from apps.admin_api.serializers_theme import ThemeConfigField
 from rest_framework import serializers
+
+from config.locale_registry import django_languages
 
 from apps.admin_api.serializers_makerspace_aux import (
     MakerspaceSwitcherSerializer,
@@ -29,7 +32,7 @@ class MakerspaceSerializer(
 
     def validate_creation_setup(self, value):
         if self.instance is not None:
-            raise serializers.ValidationError("Use setup only when creating a makerspace.")
+            raise serializers.ValidationError(gettext("Use setup only when creating a makerspace."))
         return value
 
     def validate(self, attrs):
@@ -71,6 +74,10 @@ class MakerspaceSerializer(
         max_length=100, required=False, validators=[validate_reminder_lead_hours],
     )
     resource_limit_overrides = serializers.JSONField(required=False)
+    default_locale = serializers.ChoiceField(
+        choices=django_languages(), required=False,
+        help_text="The language shared output and members without a preference use (phase 8 i18n).",
+    )
     frontend_domain = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -134,6 +141,7 @@ class MakerspaceSerializer(
             "slug",
             "location",
             "timezone",
+            "default_locale",
             "country",
             "opening_hours",
             "map_url",

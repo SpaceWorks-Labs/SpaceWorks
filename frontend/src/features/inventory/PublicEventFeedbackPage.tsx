@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { PublicLayout, CenteredCardLayout } from "../../components/layouts";
 import { publicPageChrome } from "./PublicPageChrome";
 import { useEffect, useState } from "react";
@@ -56,21 +57,21 @@ export function PublicEventFeedbackPage() {
   });
   const apiErrors = submit.error instanceof StructuredApiError ? submit.error.body.answers : undefined;
 
-  if (form.error || (!form.isLoading && !form.data)) return <div style={brandStyle}><CenteredCardLayout state={{ status: "ready" }} title="Feedback unavailable" body="This survey is closed, the event has not ended yet, or the link is invalid." primary={{ label: "Back to events", href: tenantPath("events") }} /></div>;
-  if (submit.data) return <div style={brandStyle}><CenteredCardLayout state={{ status: "ready" }} media={{ icon: "CheckCircle", tone: "success" }} title="Thank you"
-    body={<>{submit.data.thank_you_text || "Your response was recorded."}{submit.data.certificate ? <p className="mt-3">Your certificate is being prepared. Download it from Member activity.</p> : null}</>}
-    primary={{ label: "Open member area", href: tenantPath("member") }} /></div>;
+  if (form.error || (!form.isLoading && !form.data)) return <div style={brandStyle}><CenteredCardLayout state={{ status: "ready" }} title={t`Feedback unavailable`} body={t`This survey is closed, the event has not ended yet, or the link is invalid.`} primary={{ label: t`Back to events`, href: tenantPath("events") }} /></div>;
+  if (submit.data) return <div style={brandStyle}><CenteredCardLayout state={{ status: "ready" }} media={{ icon: "CheckCircle", tone: "success" }} title={t`Thank you`}
+    body={<>{submit.data.thank_you_text || t`Your response was recorded.`}{submit.data.certificate ? <p className="mt-3">{t`Your certificate is being prepared. Download it from Member activity.`}</p> : null}</>}
+    primary={{ label: t`Open member area`, href: tenantPath("member") }} /></div>;
   const data = form.data;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || "Makerspace";
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} width="narrow"
-    header={{ eyebrow: data?.event.title, title: data?.survey.title ?? "Event feedback", subtitle: data?.mode === "anonymous" ? "We don't store who sent this." : data?.mode === "identified" ? "Sign in so the organisers know this came from an attendee." : "Certificates go to people marked as attended." }}
+    header={{ eyebrow: data?.event.title, title: data?.survey.title ?? t`Event feedback`, subtitle: data?.mode === "anonymous" ? t`We don't store who sent this.` : data?.mode === "identified" ? t`Sign in so the organisers know this came from an attendee.` : t`Certificates go to people marked as attended.` }}
     state={form.isLoading ? { status: "loading" } : { status: "ready" }}>
     {data ? <>
-      {data.requires_auth && !restored ? <Card><p>{data.mode === "certificate" ? "Sign in to get your certificate." : "Sign in to share your feedback."}</p><Link className="desk-button-brand mt-3" to={tenantPath("member")}>Member sign in</Link></Card> : null}
+      {data.requires_auth && !restored ? <Card><p>{data.mode === "certificate" ? t`Sign in to get your certificate.` : t`Sign in to share your feedback.`}</p><Link className="desk-button-brand mt-3" to={tenantPath("member")}>{t`Member sign in`}</Link></Card> : null}
       <form className="desk-panel mt-5 grid gap-5 p-5" onSubmit={event => { event.preventDefault(); const next = validateCustomAnswers(data.survey.questions, answers); setErrors(next); if (!Object.keys(next).length) submit.mutate(); }}>
         <EventFeedbackFields schema={data.survey.questions} answers={answers} onChange={setAnswers} errors={{ ...errors, ...customAnswerErrors(apiErrors) }} yesNoAsCheckbox />
-        {data.mode === "certificate" ? <label className="grid gap-1"><span className="text-sm font-semibold text-ink">Registration email</span><input className="desk-input" type="email" required value={email} onChange={event => setEmail(event.target.value)} /></label> : null}
-        <button className="desk-button-brand" type="submit" disabled={submit.isPending || (data.requires_auth && !restored)}>{submit.isPending ? "Submitting…" : "Submit feedback"}</button>
+        {data.mode === "certificate" ? <label className="grid gap-1"><span className="text-sm font-semibold text-ink">{t`Registration email`}</span><input className="desk-input" type="email" required value={email} onChange={event => setEmail(event.target.value)} /></label> : null}
+        <button className="desk-button-brand" type="submit" disabled={submit.isPending || (data.requires_auth && !restored)}>{submit.isPending ? t`Submitting…` : t`Submit feedback`}</button>
         {submit.error ? <p className="text-sm text-danger" role="alert">{submit.error.message}</p> : null}
       </form>
     </> : null}

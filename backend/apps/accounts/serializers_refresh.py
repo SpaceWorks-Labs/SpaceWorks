@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.settings import api_settings
@@ -18,7 +19,7 @@ class SpaceWorksTokenRefreshSerializer(TokenRefreshSerializer):
         def validate_token(refresh):
             if any(claim in refresh.payload for claim in DEVICE_REFRESH_CLAIMS):
                 raise AuthenticationFailed(
-                    "Device refresh tokens must use the device refresh endpoint.",
+                    gettext("Device refresh tokens must use the device refresh endpoint."),
                     code="device_refresh_wrong_endpoint",
                 )
             validate_auth_generation(refresh)

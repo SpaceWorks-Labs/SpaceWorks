@@ -1,7 +1,9 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import type { OverviewSpace } from "./platformOverviewApi";
 
-const NUMBER = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+const NUMBER = new Intl.NumberFormat(formatLocale(), { maximumFractionDigits: 1 });
 
 export function formatBytes(value: number) {
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -23,14 +25,14 @@ export function formatValue(unit: string, value: number | null | undefined) {
 export function formatMoney(currency: string, amount: string) {
   const value = Number(amount);
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(value);
+    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(value);
   } catch {
     return `${currency.toUpperCase()} ${amount}`;
   }
 }
 
 export const EXCLUDED_LABEL: Record<string, string> = {
-  archived: "Archived", importing: "Importing", aborted: "Import aborted",
+  archived: t`Archived`, importing: t`Importing`, aborted: t`Import aborted`,
 };
 
 /** A directory-hidden space is left out by default too, but it is live: the console still opens it. */
@@ -51,5 +53,5 @@ export function drillHref(space: OverviewSpace | undefined, tab: string) {
 }
 
 export function offText(offIn: number) {
-  return offIn ? `Off in ${offIn} ${offIn === 1 ? "space" : "spaces"}` : "On in every space";
+  return offIn ? t`Off in ${offIn} ${offIn === 1 ? "space" : "spaces"}` : t`On in every space`;
 }

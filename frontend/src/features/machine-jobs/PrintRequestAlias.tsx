@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
 
 import { CenteredCardLayout } from "../../components/layouts";
@@ -20,8 +21,8 @@ export function PrintRequestAlias() {
   const bootstrap = tenant.mode === "single" ? tenant.bootstrap : bootstrapQuery.data;
   const token = search.get("token")?.trim();
   if (token) return <Navigate replace to={path(`machine-service/requests/${encodeURIComponent(token)}`)} />;
-  if (!bootstrap && !bootstrapQuery.isError) return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title="Opening the print form…" body=""
-    primary={{ label: "Loading…", disabled: true, disabledReason: "The page is opening." }} /></div>;
+  if (!bootstrap && !bootstrapQuery.isError) return <div role="status"><CenteredCardLayout state={{ status: "loading" }} title={t`Opening the print form…`} body=""
+    primary={{ label: t`Loading…`, disabled: true, disabledReason: "The page is opening." }} /></div>;
   if (bootstrap?.features.includes("machines.job_requests")) return <Navigate replace to={path("machine-jobs/new?type=printer")} />;
   return <PublicPrintRequestPage />;
 }

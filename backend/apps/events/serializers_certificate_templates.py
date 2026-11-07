@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.events.certificate_artwork_storage import MAX_BYTES
@@ -69,9 +70,9 @@ class CertificateArtworkPresignSerializer(PrintInputSerializer):
 
     def validate(self, data):
         if data["purpose"] == "signature" and data["content_length"] > SIGNATURE_MAX_BYTES:
-            raise serializers.ValidationError({"content_length": "A signature image must be at most 2 MB."})
+            raise serializers.ValidationError({"content_length": gettext("A signature image must be at most 2 MB.")})
         if data["purpose"] == "artwork" and data["content_type"] == "image/webp":
-            raise serializers.ValidationError({"content_type": "Artwork must be PNG or JPEG."})
+            raise serializers.ValidationError({"content_type": gettext("Artwork must be PNG or JPEG.")})
         return data
 
 

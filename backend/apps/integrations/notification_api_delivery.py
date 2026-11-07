@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from dataclasses import asdict
 from .notification_cutover import guarded, sending_allowed, CutoverClosed
 
@@ -75,10 +76,10 @@ class ContractTestView(APIView):
                 user=request.user, configuration=config, integration_generation=config.generation,
                 verification_state="verified", revoked_at=None)
             if not config.personal_enabled:
-                raise ValidationError({"channel": "Personal delivery is disabled."})
+                raise ValidationError({"channel": gettext("Personal delivery is disabled.")})
         else:
             if not config.room_enabled:
-                raise ValidationError({"channel": "Room delivery is disabled."})
+                raise ValidationError({"channel": gettext("Room delivery is disabled.")})
             target = get_object_or_404(policy_rows(NotificationDestination, space), pk=data["room_id"],
                                       channel=config.channel, is_active=True)
         provider = provider_for(config)

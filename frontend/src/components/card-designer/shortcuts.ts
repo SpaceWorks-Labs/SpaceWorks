@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // The designer's keyboard shortcuts, as a pure mapping from a key event to a command so the
 // window listener stays small and the rules are testable. Nothing fires while typing in a field.
 export type DesignerCommand =
@@ -42,21 +43,21 @@ export function designerCommand(event: KeyLike): DesignerCommand | null {
 }
 
 export const SHORTCUT_GROUPS: { title: string; rows: { keys: string[]; action: string }[] }[] = [
-  { title: "Select", rows: [
+  { title: t`Select`, rows: [
     { keys: ["Click"], action: "Select a layer (a grouped layer selects its group)" },
     { keys: ["Shift", "Click"], action: "Add to or take from the selection (Ctrl or Cmd works too)" },
     { keys: ["Alt", "Click"], action: "Select one layer inside a group" },
     { keys: ["Ctrl or Cmd", "A"], action: "Select every layer on this side" },
     { keys: ["Esc"], action: "Clear the selection" },
   ] },
-  { title: "Move and size", rows: [
+  { title: t`Move and size`, rows: [
     { keys: ["Arrows"], action: "Move 1 mm (with Shift, 5 mm)" },
     { keys: ["Alt", "Arrows"], action: "Resize 1 mm (with Shift, 5 mm)" },
     { keys: ["Alt", "Drag"], action: "Move without snapping" },
     { keys: ["Shift", "Drag corner"], action: "Keep the shape (photos, images and logos keep it unless Shift is held)" },
     { keys: ["Shift", "Drag rotate"], action: "Turn in 15° steps" },
   ] },
-  { title: "Edit", rows: [
+  { title: t`Edit`, rows: [
     { keys: ["Ctrl or Cmd", "C"], action: "Copy the selection" },
     { keys: ["Ctrl or Cmd", "V"], action: "Paste, also onto the other side" },
     { keys: ["Ctrl or Cmd", "D"], action: "Duplicate the selection" },

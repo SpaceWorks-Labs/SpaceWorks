@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
@@ -75,53 +76,49 @@ export function PlatformSocialAuthPanel({ embedded = false }: { embedded?: boole
   const disabled = !settings.data || save.isPending;
   const anyProvider = Boolean(settings.data && (settings.data.google_enabled || settings.data.apple_enabled || settings.data.github_enabled));
   return (
-    <PlatformConfigurationSection title="Social sign-in" subtitle="Platform identities link to global accounts; memberships grant each space’s permissions." embedded={embedded}
-      state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready", error: "Couldn't load sign-in providers. Try again.", onRetry: () => { void settings.refetch(); } }}
+    <PlatformConfigurationSection title={t`Social sign-in`} subtitle={t`Platform identities link to global accounts; memberships grant each space’s permissions.`} embedded={embedded}
+      state={{ status: settings.isLoading ? "loading" : settings.error ? "error" : "ready", error: t`Couldn't load sign-in providers. Try again.`, onRetry: () => { void settings.refetch(); } }}
       save={{ dirty: JSON.stringify(form) !== JSON.stringify(savedForm), pending: save.isPending, error: save.error?.message,
         onSave: () => save.mutate(), onDiscard: () => { setForm(savedForm); save.reset(); } }}>
       <p className="text-sm text-muted">
-        Platform-wide identities link to global accounts; makerspace permissions still come from each membership.
-      </p>
+        {t`Platform-wide identities link to global accounts; makerspace permissions still come from each membership.`}</p>
       {settings.data ? <div className="mt-2 text-sm text-muted">
-        {settings.data.google_enabled ? <p>Google: {[settings.data.google_web_client_id, settings.data.google_ios_client_id, settings.data.google_android_client_id].some((id) => id.trim()) ? "Client IDs configured" : "Not configured"}</p> : null}
-        {settings.data.apple_enabled ? <p>Apple: {settings.data.apple_service_id.trim() || settings.data.apple_native_app_ids.length ? "Audiences configured" : "Not configured"}</p> : null}
-        {settings.data.github_enabled ? <p>GitHub: {settings.data.github_client_id.trim() && settings.data.github_client_secret_set ? "OAuth App configured" : "Not configured"}</p> : null}
-        {!anyProvider ? <p>No social sign-in provider was installed on this deployment.</p> : null}
+        {settings.data.google_enabled ? <p>{t`Google: `}{[settings.data.google_web_client_id, settings.data.google_ios_client_id, settings.data.google_android_client_id].some((id) => id.trim()) ? t`Client IDs configured` : t`Not configured`}</p> : null}
+        {settings.data.apple_enabled ? <p>{t`Apple: `}{settings.data.apple_service_id.trim() || settings.data.apple_native_app_ids.length ? t`Audiences configured` : t`Not configured`}</p> : null}
+        {settings.data.github_enabled ? <p>{t`GitHub: `}{settings.data.github_client_id.trim() && settings.data.github_client_secret_set ? t`OAuth App configured` : t`Not configured`}</p> : null}
+        {!anyProvider ? <p>{t`No social sign-in provider was installed on this deployment.`}</p> : null}
       </div> : null}
       <div className="mt-4 grid gap-5 divide-y divide-line [&>*+*]:pt-5">
         {settings.data?.github_enabled ? <fieldset disabled={disabled} className="space-y-3">
-          <legend className="font-semibold text-ink">GitHub OAuth App (members)</legend>
-          <LabeledInput label="GitHub client ID" value={form.github_client_id} onChange={(value) => setForm({ ...form, github_client_id: value })} />
-          <SettingsRow label="GitHub client secret"><input aria-label="GitHub client secret" type="password" autoComplete="new-password" className="desk-input w-full"
+          <legend className="font-semibold text-ink">{t`GitHub OAuth App (members)`}</legend>
+          <LabeledInput label={t`GitHub client ID`} value={form.github_client_id} onChange={(value) => setForm({ ...form, github_client_id: value })} />
+          <SettingsRow label={t`GitHub client secret`}><input aria-label={t`GitHub client secret`} type="password" autoComplete="new-password" className="desk-input w-full"
             value={form.github_client_secret} disabled={form.clear_github_client_secret}
             onChange={(event) => setForm({ ...form, github_client_secret: event.target.value })}
-            placeholder={settings.data.github_client_secret_set ? "Secret set — leave blank to keep it" : "Paste the client secret"} /></SettingsRow>
+            placeholder={settings.data.github_client_secret_set ? t`Secret set — leave blank to keep it` : t`Paste the client secret`} /></SettingsRow>
           <label className="flex min-h-11 items-center gap-2 text-sm text-muted">
             <input type="checkbox" checked={form.clear_github_client_secret}
               onChange={(event) => setForm({ ...form, clear_github_client_secret: event.target.checked, github_client_secret: "" })} />
-            Clear saved GitHub secret
-          </label>
+            {t`Clear saved GitHub secret`}</label>
         </fieldset> : null}
         {settings.data?.google_enabled ? <fieldset disabled={disabled} className="space-y-3">
-          <legend className="font-semibold text-ink">Google OAuth clients</legend>
-          <LabeledInput label="Web client ID" value={form.google_web_client_id} onChange={(value) => setForm({ ...form, google_web_client_id: value })} />
+          <legend className="font-semibold text-ink">{t`Google OAuth clients`}</legend>
+          <LabeledInput label={t`Web client ID`} value={form.google_web_client_id} onChange={(value) => setForm({ ...form, google_web_client_id: value })} />
           <div className="grid gap-3">
-            <LabeledInput label="iOS client ID" value={form.google_ios_client_id} onChange={(value) => setForm({ ...form, google_ios_client_id: value })} />
-            <LabeledInput label="Android client ID" value={form.google_android_client_id} onChange={(value) => setForm({ ...form, google_android_client_id: value })} />
+            <LabeledInput label={t`iOS client ID`} value={form.google_ios_client_id} onChange={(value) => setForm({ ...form, google_ios_client_id: value })} />
+            <LabeledInput label={t`Android client ID`} value={form.google_android_client_id} onChange={(value) => setForm({ ...form, google_android_client_id: value })} />
           </div>
         </fieldset> : null}
         {settings.data?.apple_enabled ? <fieldset disabled={disabled} className="space-y-3">
-          <legend className="font-semibold text-ink">Apple Sign in</legend>
-          <LabeledInput label="Web Service ID" value={form.apple_service_id} onChange={(value) => setForm({ ...form, apple_service_id: value })} />
-          <label className="block text-sm font-semibold text-ink">Native app audiences
-            <textarea className="desk-input mt-1 min-h-20 w-full" value={form.apple_native_app_ids} onChange={(event) => setForm({ ...form, apple_native_app_ids: event.target.value })} placeholder="One audience per line" />
+          <legend className="font-semibold text-ink">{t`Apple Sign in`}</legend>
+          <LabeledInput label={t`Web Service ID`} value={form.apple_service_id} onChange={(value) => setForm({ ...form, apple_service_id: value })} />
+          <label className="block text-sm font-semibold text-ink">{t`Native app audiences`}<textarea className="desk-input mt-1 min-h-20 w-full" value={form.apple_native_app_ids} onChange={(event) => setForm({ ...form, apple_native_app_ids: event.target.value })} placeholder={t`One audience per line`} />
           </label>
           <div className="grid gap-3">
-            <LabeledInput label="Team ID" value={form.apple_team_id} onChange={(value) => setForm({ ...form, apple_team_id: value })} />
-            <LabeledInput label="Key ID" value={form.apple_key_id} onChange={(value) => setForm({ ...form, apple_key_id: value })} />
+            <LabeledInput label={t`Team ID`} value={form.apple_team_id} onChange={(value) => setForm({ ...form, apple_team_id: value })} />
+            <LabeledInput label={t`Key ID`} value={form.apple_key_id} onChange={(value) => setForm({ ...form, apple_key_id: value })} />
           </div>
-          <label className="block text-sm font-semibold text-ink">Apple private key (.p8)
-            <textarea className="desk-input mt-1 min-h-24 w-full code-text text-base md:text-xs" value={form.apple_private_key} onChange={(event) => setForm({ ...form, apple_private_key: event.target.value })} placeholder={settings.data?.apple_private_key_set ? "Private key set — leave blank to keep it" : "Paste the private key"} />
+          <label className="block text-sm font-semibold text-ink">{t`Apple private key (.p8)`}<textarea className="desk-input mt-1 min-h-24 w-full code-text text-base md:text-xs" value={form.apple_private_key} onChange={(event) => setForm({ ...form, apple_private_key: event.target.value })} placeholder={settings.data?.apple_private_key_set ? t`Private key set — leave blank to keep it` : t`Paste the private key`} />
           </label>
         </fieldset> : null}
       </div>

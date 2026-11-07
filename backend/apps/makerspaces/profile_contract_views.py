@@ -1,5 +1,6 @@
 """Member-owned handle and timeline mutations; never accept a profile/user ID."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -69,7 +70,7 @@ class TimelineListView(MemberProfileBaseView):
         profile = profile_for(membership)
         profile = MemberProfile.objects.select_for_update().get(pk=profile.pk)
         if profile.timeline.count() >= 100:
-            raise ValidationError({"timeline": "At most 100 entries are allowed."})
+            raise ValidationError({"timeline": gettext("At most 100 entries are allowed.")})
         data = TimelineWriteSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         entry = data.save(profile=profile)

@@ -3,6 +3,7 @@
 Register typed targets at app startup; this module never imports a domain app.
 """
 
+from django.utils.translation import gettext
 from dataclasses import dataclass
 
 from django.apps import apps
@@ -69,14 +70,14 @@ class SignedServerReadPermission(BasePermission):
     def has_permission(self, request, view):
         client = getattr(request, "api_client", None)
         if not getattr(request, "api_client_signature_verified", False) or client is None:
-            raise AuthenticationFailed("A verified server signature is required.")
+            raise AuthenticationFailed(gettext("A verified server signature is required."))
         if client.client_type != "server" or client.makerspace_id is None:
-            raise PermissionDenied("A tenant-bound server client is required.")
+            raise PermissionDenied(gettext("A tenant-bound server client is required."))
         if not set(view.required_scopes).issubset(client.scopes):
-            raise PermissionDenied("Required integration scopes are missing.")
+            raise PermissionDenied(gettext("Required integration scopes are missing."))
         from apps.apiclients.scope_registry import classify
         if not classify(request, client).verdict:
-            raise PermissionDenied("This API target is unavailable.")
+            raise PermissionDenied(gettext("This API target is unavailable."))
         return True
 
 
@@ -126,7 +127,7 @@ def keyset_page(request, queryset, *, subject):
                 raise ValueError()
             queryset = queryset.filter(pk__gt=decoded["after"])
         except (signing.BadSignature, ValueError, KeyError, TypeError):
-            raise serializers.ValidationError({"cursor": "Invalid or expired cursor."}) from None
+            raise serializers.ValidationError({"cursor": gettext("Invalid or expired cursor.")}) from None
     rows = list(queryset.order_by("pk")[:size + 1])
     next_cursor = None
     if len(rows) > size:

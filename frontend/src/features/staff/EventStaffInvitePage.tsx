@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -59,26 +60,26 @@ export function EventStaffInvitePage() {
     catch (error) { setAuthError(eventErrorText(error)); }
   };
   // The member sign-in screen is this page while signing in; the invitation names itself in its eyebrow.
-  if (!restoring && !user && (token || oidcCallback)) return <MemberAuthPanel eyebrow="Event staff invitation"
-    context={<div className="grid gap-2"><p className="text-sm text-muted">Sign in with the invited account to continue.</p>
+  if (!restoring && !user && (token || oidcCallback)) return <MemberAuthPanel eyebrow={t`Event staff invitation`}
+    context={<div className="grid gap-2"><p className="text-sm text-muted">{t`Sign in with the invited account to continue.`}</p>
       {authError ? <p className="text-sm text-danger" role="alert">{authError}</p> : null}</div>}
-    footer={<button className="desk-button w-full" type="button" onClick={cancel}>Cancel invitation</button>}
+    footer={<button className="desk-button w-full" type="button" onClick={cancel}>{t`Cancel invitation`}</button>}
     onAuthenticated={() => { void authenticated(); }} />;
-  const cancelAction = { label: "Cancel invitation", onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish." : undefined };
+  const cancelAction = { label: t`Cancel invitation`, onClick: cancel, disabled: redeem.isPending, disabledReason: redeem.isPending ? "Wait for the invitation to finish." : undefined };
   const primary = redeem.isSuccess
-    ? { label: "Open helper workspace", onClick: openStaff }
-    : user ? { label: "Accept staff invitation", pending: redeem.isPending, pendingLabel: "Accepting…", disabled: !token,
+    ? { label: t`Open helper workspace`, onClick: openStaff }
+    : user ? { label: t`Accept staff invitation`, pending: redeem.isPending, pendingLabel: "Accepting…", disabled: !token,
       disabledReason: !token ? "The invitation link is missing its token." : undefined, onClick: () => redeem.mutate() }
     : cancelAction;
   return <CenteredCardLayout state={{ status: "ready" }} width={480} media={{ icon: "Calendar", tone: "accent" }}
-    title="Event staff invitation"
-    body={<p>Sign in with the invited account and verify its email before accepting. This invitation can be used once.</p>}
+    title={t`Event staff invitation`}
+    body={<p>{t`Sign in with the invited account and verify its email before accepting. This invitation can be used once.`}</p>}
     content={<div className="grid gap-3 empty:hidden">
       {restoring ? <Skeleton className="h-32 w-full" /> : null}
-      {!token ? <p className="text-sm text-danger" role="alert">The invitation link is missing its token. Open the original invitation link again.</p> : null}
-      {user && !redeem.isSuccess ? <p className="text-sm text-ink">Signed in as {user.username}.</p> : null}
+      {!token ? <p className="text-sm text-danger" role="alert">{t`The invitation link is missing its token. Open the original invitation link again.`}</p> : null}
+      {user && !redeem.isSuccess ? <p className="text-sm text-ink">{t`Signed in as ${user.username}.`}</p> : null}
       {redeem.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(redeem.error)}</p> : null}
-      {redeem.isSuccess ? <div className="grid gap-3 rounded-xl border border-line bg-surface p-4 text-sm text-ink" role="status"><p>Your event staff access is active. Open your helper workspace to use it.</p></div> : null}
+      {redeem.isSuccess ? <div className="grid gap-3 rounded-xl border border-line bg-surface p-4 text-sm text-ink" role="status"><p>{t`Your event staff access is active. Open your helper workspace to use it.`}</p></div> : null}
     </div>}
     primary={primary}
     escape={user && !redeem.isSuccess ? cancelAction : undefined} />;

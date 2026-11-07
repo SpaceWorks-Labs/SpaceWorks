@@ -1,5 +1,6 @@
 """Receipt metadata for an offline refund or a cash deposit release."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.utils import timezone
@@ -16,7 +17,7 @@ class ManualRefundReceiptSerializer(serializers.Serializer):
 
     def validate_refunded_at(self, value):
         if value > timezone.now() + timedelta(minutes=5):
-            raise serializers.ValidationError("A refund cannot be dated in the future.")
+            raise serializers.ValidationError(gettext("A refund cannot be dated in the future."))
         return value
 
 

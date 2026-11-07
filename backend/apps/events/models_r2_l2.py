@@ -10,6 +10,7 @@
   Desk help alerts. Rooms get a short outbound notice only; no buttons, no names.
 """
 
+from django.utils.translation import gettext, gettext_noop
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -18,10 +19,10 @@ from django.db import models
 class SubmissionIntegrityCheck(models.Model):
     class State(models.TextChoices):
         PENDING = "pending", "Pending"
-        CLEAR = "clear", "No early commits"
-        FLAGGED = "flagged", "Flagged for information"
-        NO_REPOSITORY = "no_repository", "No GitHub repository"
-        UNAVAILABLE = "unavailable", "GitHub unavailable"
+        CLEAR = "clear", gettext_noop("No early commits")
+        FLAGGED = "flagged", gettext_noop("Flagged for information")
+        NO_REPOSITORY = "no_repository", gettext_noop("No GitHub repository")
+        UNAVAILABLE = "unavailable", gettext_noop("GitHub unavailable")
 
     snapshot = models.OneToOneField("events.SubmissionSnapshot", on_delete=models.CASCADE,
                                     related_name="integrity_check")
@@ -60,11 +61,11 @@ class SubmissionStorageCleanupReceipt(models.Model):
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
-            raise ValidationError("Storage cleanup receipts are append-only.")
+            raise ValidationError(gettext("Storage cleanup receipts are append-only."))
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Storage cleanup receipts are permanent.")
+        raise ValidationError(gettext("Storage cleanup receipts are permanent."))
 
 
 class MentorAlertRoute(models.Model):

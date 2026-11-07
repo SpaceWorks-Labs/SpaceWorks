@@ -8,6 +8,7 @@ makerspace link); the space itself is created exactly as the /control/ add form 
 default roles and its owner rules apply. All of it commits together.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils.text import slugify
 from rest_framework.exceptions import ValidationError
@@ -27,14 +28,14 @@ S = HostingRequest.Status
 
 def _owner(row, organization_id, new_organization_name):
     if organization_id and new_organization_name:
-        raise ValidationError({"organization_id": "Choose an existing organization or a new name, not both."})
+        raise ValidationError({"organization_id": gettext("Choose an existing organization or a new name, not both.")})
     if organization_id or new_organization_name:
         return organization_id, (new_organization_name or None)
     joined = join_organization(row)
     if joined is not None:
         return joined.pk, None
     if row.organization_choice == HostingRequest.OrganizationChoice.JOIN:
-        raise ValidationError({"organization_id": "The inviting organization is no longer active; choose an owner."})
+        raise ValidationError({"organization_id": gettext("The inviting organization is no longer active; choose an owner.")})
     return None, (row.new_organization_name or row.space_name)
 
 
@@ -54,9 +55,9 @@ def approve(actor, request_id, *, name="", slug="", organization_id=None, new_or
         name = str(name or row.space_name).strip()[:200]
         slug = slugify(str(slug or row.proposed_slug or name))[:50]
         if not slug:
-            raise ValidationError({"slug": "Enter a web address name for the space."})
+            raise ValidationError({"slug": gettext("Enter a web address name for the space.")})
         if Makerspace.objects.filter(slug=slug).exists():
-            raise ValidationError({"slug": "This web address name is already taken."})
+            raise ValidationError({"slug": gettext("This web address name is already taken.")})
         owner_id, owner_name = _owner(row, organization_id, str(new_organization_name or "").strip())
         space = Makerspace.objects.create(name=name, slug=slug, location=row.location, created_by=actor)
         audit.record(actor, "makerspace.created", makerspace=space, target=space, meta={"via": "onboarding"})

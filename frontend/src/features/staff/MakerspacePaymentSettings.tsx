@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -62,22 +63,22 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
 
   return <>
     <SettingsQueryState query={settings} resource="payment">
-      <SettingsRow label="Online payments" helper="Choose one provider for this makerspace. Saved credentials are encrypted and never displayed again. Credential changes require recent identity verification.">
+      <SettingsRow label={t`Online payments`} helper={t`Choose one provider for this makerspace. Saved credentials are encrypted and never displayed again. Credential changes require recent identity verification.`}>
         <div className="@container grid min-w-0 gap-4">
-          <StatusPill label={settings.data?.effective_mode === "raw" ? "Own credentials"
-            : settings.data?.effective_mode === "connect" ? "Stripe Connect" : "Unavailable"}
+          <StatusPill label={settings.data?.effective_mode === "raw" ? t`Own credentials`
+            : settings.data?.effective_mode === "connect" ? t`Stripe Connect` : t`Unavailable`}
             tone={settings.data?.effective_mode === "unavailable" ? "neutral" : "success"} />
-          <Field label="Payment provider">
+          <Field label={t`Payment provider`}>
             <select className="desk-input" value={provider} disabled={busy}
               onChange={(event) => { setProvider(event.target.value as Provider); setDraft({}); }}>
-              <option value="stripe">Stripe</option>
-              <option value="razorpay">Razorpay</option>
+              <option value="stripe">{t`Stripe`}</option>
+              <option value="razorpay">{t`Razorpay`}</option>
             </select>
           </Field>
-          <p className="text-sm text-muted">Settle or close pending online collections before switching providers.</p>
+          <p className="text-sm text-muted">{t`Settle or close pending online collections before switching providers.`}</p>
           <PaymentCredentialFields provider={provider} settings={settings.data} draft={draft}
             onChange={setDraft} disabled={busy} />
-          <Field label="Default payment currency">
+          <Field label={t`Default payment currency`}>
             <input className="desk-input" maxLength={3} value={currency} disabled={busy}
               onChange={(event) => setCurrency(event.target.value.toLowerCase())} />
           </Field>
@@ -88,12 +89,12 @@ function PaymentSettingsEditor({ makerspace }: { makerspace: Makerspace }) {
           }} pending={save.isPending} disabled={busy} onSave={() => save.mutate()} />
           {provider === "stripe" && makerspace.platform_hosting ? (
             <div className="rounded-md border border-line bg-surface p-3">
-              <p className="font-semibold text-ink">Stripe Connect</p>
-              <p className="text-sm text-muted">Status: {settings.data?.connect_status ?? "unconnected"}</p>
+              <p className="font-semibold text-ink">{t`Stripe Connect`}</p>
+              <p className="text-sm text-muted">{t`Status: ${settings.data?.connect_status ?? "unconnected"}`}</p>
               <button className="desk-button-primary mt-2" disabled={busy || dirty} onClick={() => onboard.mutate()}>
-                {settings.data?.connect_status === "unconnected" ? "Connect Stripe" : "Reconnect Stripe"}
+                {settings.data?.connect_status === "unconnected" ? t`Connect Stripe` : t`Reconnect Stripe`}
               </button>
-              <p className="mt-2 text-sm text-muted">Own Stripe credentials take precedence. Clearing them restores an available Connect account.</p>
+              <p className="mt-2 text-sm text-muted">{t`Own Stripe credentials take precedence. Clearing them restores an available Connect account.`}</p>
             </div>
           ) : null}
           {settings.error || save.error || onboard.error ? (

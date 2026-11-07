@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 import { staffRequestBlob } from "../../../lib/api";
@@ -44,19 +45,19 @@ function ReceiptContent({ scope, receipt }: { scope: FinanceScope; receipt: Rece
     finally { if (!controller.signal.aborted) setPending(false); }
   };
   return <article className="grid gap-3 rounded-2xl border border-line p-4">
-    <h3 className="flex items-center gap-2 font-semibold"><FileText aria-hidden="true" size={18} />Receipt {receipt.id}</h3>
-    <p className="break-all text-sm text-muted">{receipt.mime} · {receipt.bytes} bytes · generation {receipt.generation} · {receipt.state}</p>
-    <p className="break-all text-xs text-muted">SHA-256: {receipt.sha256}</p>
-    {allowed ? <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => { void open(); }}>{pending ? "Opening receipt…" : "Open finance receipt"}</button>
-      : <p className="text-sm text-muted">Receipt bytes are unavailable. Retained metadata remains part of the financial record.</p>}
-    {error ? <p role="alert">The receipt could not be opened. Access may have changed or its bytes may have expired. Reload to check.</p> : null}
-    {url ? <><p className="text-sm text-muted">Private preview closes when you leave this view. Only download to an approved finance location.</p>
-      {receipt.mime === "application/pdf" ? <iframe className="h-96 w-full rounded-xl border border-line" title={`Receipt ${receipt.id} preview`} sandbox="" src={url} />
-        : ["image/jpeg", "image/png"].includes(receipt.mime) ? <img className="max-h-96 max-w-full object-contain" src={url} alt={`Receipt ${receipt.id}`} />
-          : <p>HEIC previews are not supported by every browser. Download to inspect this receipt.</p>}
-      <a className="desk-button min-h-11" href={url} download={`finance-receipt-${receipt.id}.${extension}`}>Download private receipt</a>
+    <h3 className="flex items-center gap-2 font-semibold"><FileText aria-hidden="true" size={18} />{t`Receipt ${receipt.id}`}</h3>
+    <p className="break-all text-sm text-muted">{t`${receipt.mime} · ${receipt.bytes} bytes · generation ${receipt.generation} · ${receipt.state}`}</p>
+    <p className="break-all text-xs text-muted">{t`SHA-256: ${receipt.sha256}`}</p>
+    {allowed ? <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => { void open(); }}>{pending ? t`Opening receipt…` : t`Open finance receipt`}</button>
+      : <p className="text-sm text-muted">{t`Receipt bytes are unavailable. Retained metadata remains part of the financial record.`}</p>}
+    {error ? <p role="alert">{t`The receipt could not be opened. Access may have changed or its bytes may have expired. Reload to check.`}</p> : null}
+    {url ? <><p className="text-sm text-muted">{t`Private preview closes when you leave this view. Only download to an approved finance location.`}</p>
+      {receipt.mime === "application/pdf" ? <iframe className="h-96 w-full rounded-xl border border-line" title={t`Receipt ${receipt.id} preview`} sandbox="" src={url} />
+        : ["image/jpeg", "image/png"].includes(receipt.mime) ? <img className="max-h-96 max-w-full object-contain" src={url} alt={t`Receipt ${receipt.id}`} />
+          : <p>{t`HEIC previews are not supported by every browser. Download to inspect this receipt.`}</p>}
+      <a className="desk-button min-h-11" href={url} download={`finance-receipt-${receipt.id}.${extension}`}>{t`Download private receipt`}</a>
       <button type="button" className="desk-button min-h-11" onClick={() => {
         if (liveUrl.current) URL.revokeObjectURL(liveUrl.current); liveUrl.current = null; setUrl(null);
-      }}>Close receipt</button></> : null}
+      }}>{t`Close receipt`}</button></> : null}
   </article>;
 }

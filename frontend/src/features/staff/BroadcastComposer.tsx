@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
@@ -22,19 +23,19 @@ export function BroadcastComposer({ makerspaceId }: { makerspaceId: number }) {
     }),
   }), onSuccess: async () => { setTitle(""); setBody(""); await client.invalidateQueries({ queryKey: ["notifications-inbox", makerspaceId] }); } });
   const submit = (event: FormEvent) => { event.preventDefault(); send.mutate(); };
-  return <form onSubmit={submit} className="desk-panel mb-4 grid gap-3 p-5" aria-label="Member broadcast">
-    <h2 className="title-panel">Send a member announcement</h2>
-    <p className="text-sm text-muted">All selected conditions must match. Personal opt-outs and makerspace channel settings apply. Only active, unrestricted accounts receive announcements.</p>
+  return <form onSubmit={submit} className="desk-panel mb-4 grid gap-3 p-5" aria-label={t`Member broadcast`}>
+    <h2 className="title-panel">{t`Send a member announcement`}</h2>
+    <p className="text-sm text-muted">{t`All selected conditions must match. Personal opt-outs and makerspace channel settings apply. Only active, unrestricted accounts receive announcements.`}</p>
     <fieldset className="grid gap-3 sm:grid-cols-3" disabled={send.isPending || options.isLoading || options.isError}>
-      <label className="grid gap-1 text-sm">Plan<select className="desk-input" value={plan} onChange={(event) => setPlan(event.target.value)}><option value="">All plans</option>{options.data?.plans.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-      <label className="grid gap-1 text-sm">Plan status<select className="desk-input" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">Any plan status</option><option value="active">Current term</option><option value="lapsed">Lapsed term</option></select></label>
-      <label className="grid gap-1 text-sm">Certification<select className="desk-input" value={certification} onChange={(event) => setCertification(event.target.value)}><option value="">Any certification</option>{options.data?.certifications.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-      <label className="grid gap-1 text-sm sm:col-span-3">Title<input className="desk-input" required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-      <label className="grid gap-1 text-sm sm:col-span-3">Message<textarea className="desk-input" required maxLength={12000} value={body} onChange={(event) => setBody(event.target.value)} /></label>
+      <label className="grid gap-1 text-sm">{t`Plan`}<select className="desk-input" value={plan} onChange={(event) => setPlan(event.target.value)}><option value="">{t`All plans`}</option>{options.data?.plans.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
+      <label className="grid gap-1 text-sm">{t`Plan status`}<select className="desk-input" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">{t`Any plan status`}</option><option value="active">{t`Current term`}</option><option value="lapsed">{t`Lapsed term`}</option></select></label>
+      <label className="grid gap-1 text-sm">{t`Certification`}<select className="desk-input" value={certification} onChange={(event) => setCertification(event.target.value)}><option value="">{t`Any certification`}</option>{options.data?.certifications.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
+      <label className="grid gap-1 text-sm sm:col-span-3">{t`Title`}<input className="desk-input" required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+      <label className="grid gap-1 text-sm sm:col-span-3">{t`Message`}<textarea className="desk-input" required maxLength={12000} value={body} onChange={(event) => setBody(event.target.value)} /></label>
     </fieldset>
-    {options.isLoading ? <p role="status">Loading segments…</p> : null}
+    {options.isLoading ? <p role="status">{t`Loading segments…`}</p> : null}
     {options.error || send.error ? <p role="alert" className="text-sm text-danger">{(send.error ?? options.error)?.message}</p> : null}
-    <button type="submit" className="desk-button-primary w-fit" disabled={send.isPending || options.isLoading || options.isError}>{send.isPending ? "Sending…" : "Send announcement"}</button>
-    {send.data ? <p role="status" className="text-sm">Announcement queued for {send.data.recipients} eligible members. Delivery follows their channel preferences.</p> : null}
+    <button type="submit" className="desk-button-primary w-fit" disabled={send.isPending || options.isLoading || options.isError}>{send.isPending ? t`Sending…` : t`Send announcement`}</button>
+    {send.data ? <p role="status" className="text-sm">{t`Announcement queued for ${send.data.recipients} eligible members. Delivery follows their channel preferences.`}</p> : null}
   </form>;
 }

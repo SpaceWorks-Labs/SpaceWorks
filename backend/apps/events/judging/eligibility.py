@@ -1,5 +1,6 @@
 """B consumes D's track/prize rules under the submission event lock."""
 
+from django.utils.translation import gettext
 from django.http import Http404
 from rest_framework.exceptions import ValidationError
 
@@ -29,13 +30,13 @@ def require_selections_locked(*, event_id, team_id, track_ids, prize_ids, tech_t
     for prize in prizes.values():
         _tags(prize.eligibility_rules, tech_tags)
         if prize.track_id and prize.track_id not in tracks:
-            raise ValidationError({"prize_ids": "Select the prize's track as well."})
+            raise ValidationError({"prize_ids": gettext("Select the prize's track as well.")})
     return {"tracks": [{"id": t.pk, "version": t.version, "form": t.form} for t in tracks.values()],
             "prizes": [{"id": p.pk, "version": p.version, "form": p.form} for p in prizes.values()]}
 
 
 def _tags(rules, tech_tags):
     if set(rules) - {"required_tech_tags"}:
-        raise ValidationError({"prize_ids": "Unsupported eligibility rules must be reviewed by the organizer."})
+        raise ValidationError({"prize_ids": gettext("Unsupported eligibility rules must be reviewed by the organizer.")})
     if not set(rules.get("required_tech_tags", ())) <= set(tech_tags):
-        raise ValidationError({"track_ids": "This project does not meet the chosen track or prize criteria."})
+        raise ValidationError({"track_ids": gettext("This project does not meet the chosen track or prize criteria.")})

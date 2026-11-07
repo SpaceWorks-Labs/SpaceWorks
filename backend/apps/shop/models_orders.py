@@ -8,6 +8,7 @@ one of its events (Q-S3, #135); no shipping. Every refund is a staff-approved re
 (#59); a returned line goes back to stock or is written off (`ShopOrderReturn`).
 """
 
+from django.utils.translation import gettext, gettext_noop
 import secrets
 
 from django.conf import settings
@@ -28,22 +29,22 @@ def new_status_secret():
 class ShopOrder(ScopedPiiModelMixin, models.Model):
     class Channel(models.TextChoices):
         ONLINE = "online", "Online"
-        POS = "pos", "Front desk"
+        POS = "pos", gettext_noop("Front desk")
 
     class Status(models.TextChoices):
-        HELD = "held", "Checkout in progress"
-        AWAITING_PAYMENT = "awaiting_payment", "Pay at the desk"
+        HELD = "held", gettext_noop("Checkout in progress")
+        AWAITING_PAYMENT = "awaiting_payment", gettext_noop("Pay at the desk")
         PAID = "paid", "Paid"
-        READY = "ready", "Ready for pickup"
+        READY = "ready", gettext_noop("Ready for pickup")
         COLLECTED = "collected", "Collected"
         CANCELLED = "cancelled", "Cancelled"
         #: Paid without held stock and the stock ran out first; a staff-approved refund is due.
-        UNFULFILLED = "unfulfilled", "Paid, out of stock"
+        UNFULFILLED = "unfulfilled", gettext_noop("Paid, out of stock")
         REFUNDED = "refunded", "Refunded"
 
     class Pickup(models.TextChoices):
-        SPACE = "space", "At the space"
-        EVENT = "event", "At an event"
+        SPACE = "space", gettext_noop("At the space")
+        EVENT = "event", gettext_noop("At an event")
 
     OPEN_STATUSES = (Status.HELD, Status.AWAITING_PAYMENT)
     PAID_STATUSES = (Status.PAID, Status.READY)
@@ -109,7 +110,7 @@ class ShopOrder(ScopedPiiModelMixin, models.Model):
         if self.pk:
             frozen = type(self).objects.filter(pk=self.pk).values_list("pricing_snapshot", "total").first()
             if frozen and (frozen[0] != self.pricing_snapshot or frozen[1] != self.total):
-                raise ValidationError("An order's quote is frozen once placed.")
+                raise ValidationError(gettext("An order's quote is frozen once placed."))
         return super().save(*args, **kwargs)
 
     @property
@@ -149,8 +150,8 @@ class ShopOrderReturn(models.Model):
     """
 
     class Disposition(models.TextChoices):
-        RESTOCK = "restock", "Back to stock"
-        WRITE_OFF = "write_off", "Written off"
+        RESTOCK = "restock", gettext_noop("Back to stock")
+        WRITE_OFF = "write_off", gettext_noop("Written off")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     order = models.ForeignKey(ShopOrder, on_delete=models.CASCADE, related_name="returns")
@@ -172,5 +173,5 @@ class ShopOrderReturn(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk and type(self).objects.filter(pk=self.pk).exists():
-            raise ValidationError("Shop returns are append-only.")
+            raise ValidationError(gettext("Shop returns are append-only."))
         return super().save(*args, **kwargs)

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -10,9 +12,9 @@ import { WorkOrderDetail } from "./WorkOrderDetail";
 import { PRIORITY_LABELS, STATUS_LABELS, priorityTone, statusTone, useWorkOrders, type WorkOrder } from "./workOrdersApi";
 
 const FILTERS = [
-  { key: "open", label: "Open", query: "status=open,in_progress,on_hold" },
-  { key: "closed", label: "Closed", query: "status=done,cancelled" },
-  { key: "all", label: "All", query: "" },
+  { key: "open", label: t`Open`, query: "status=open,in_progress,on_hold" },
+  { key: "closed", label: t`Closed`, query: "status=done,cancelled" },
+  { key: "all", label: t`All`, query: "" },
 ];
 
 /** The work-order list (`?view=work-orders`) and, with `&work_order=<id>`, one order's detail. */
@@ -32,11 +34,11 @@ export function WorkOrdersScreen({ makerspaceId, machines, onBack }: { makerspac
   if (selectedId) return <WorkOrderDetail order={rows.find(row => row.id === selectedId)} state={opsQueryState(orders, "work order")}
     onBack={() => setParam("work_order", null)} />;
   return <>
-    <ListLayout header={{ title: "Work orders", subtitle: "Repairs and jobs on your machines, from report to fix.",
-      primary: { label: "New work order", icon: "Plus", onClick: () => setCreating(true) }, secondary: { label: "All machines", onClick: onBack } }}
+    <ListLayout header={{ title: t`Work orders`, subtitle: t`Repairs and jobs on your machines, from report to fix.`,
+      primary: { label: t`New work order`, icon: "Plus", onClick: () => setCreating(true) }, secondary: { label: t`All machines`, onClick: onBack } }}
       tabs={FILTERS.map(row => ({ key: row.key, label: row.label, href: "#" }))} activeTab={filter.key} onTabChange={key => setParam("wo_status", key)}
       state={opsQueryState(orders, "work orders")} isEmpty={!rows.length}
-      empty={{ message: filter.key === "open" ? "No open work orders. Report a problem with New work order." : "No work orders here yet." }}
+      empty={{ message: filter.key === "open" ? t`No open work orders. Report a problem with New work order.` : t`No work orders here yet.` }}
       body={{ kind: "rows", rows: rows.map(order => <WorkOrderRow key={order.id} order={order} onOpen={() => setParam("work_order", String(order.id))} />) }} />
     {creating ? <WorkOrderCreateDialog makerspaceId={makerspaceId} machines={machines} onClose={() => setCreating(false)}
       onCreated={order => setParam("work_order", String(order.id))} /> : null}
@@ -45,7 +47,7 @@ export function WorkOrdersScreen({ makerspaceId, machines, onBack }: { makerspac
 
 export function WorkOrderRow({ order, onOpen }: { order: WorkOrder; onOpen: () => void }) {
   return <ListRow title={order.title} onClick={onOpen} identity={{ kind: "icon", icon: "Wrench", tone: "accent" }}
-    meta={[order.subject_label, order.due_on ? `Due ${new Date(`${order.due_on}T00:00:00`).toLocaleDateString()}` : "", order.takes_machine_down ? "Takes the machine down" : ""].filter(Boolean).join(" · ")}
+    meta={[order.subject_label, order.due_on ? `Due ${new Date(`${order.due_on}T00:00:00`).toLocaleDateString(formatLocale())}` : "", order.takes_machine_down ? "Takes the machine down" : ""].filter(Boolean).join(" · ")}
     right={<span className="flex flex-wrap gap-1.5"><StatusPill tone={statusTone(order.status)} label={STATUS_LABELS[order.status]} />
       {order.priority !== "normal" ? <StatusPill tone={priorityTone(order.priority)} label={PRIORITY_LABELS[order.priority]} /> : null}</span>} />;
 }

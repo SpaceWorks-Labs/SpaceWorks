@@ -2,6 +2,7 @@
 
 Gated by ACTIONS (`MANAGE_MEMBER_CARDS`, `SCAN_MEMBER_CARDS`), scoped through `rbac`.
 """
+from django.utils.translation import gettext
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -142,7 +143,7 @@ class MemberCardPrintView(APIView):
         from apps.card_designs.cards import render
         card = _card_for(request.user, rbac.Action.MANAGE_MEMBER_CARDS, pk)
         if not card.is_active:
-            raise PermissionDenied("A revoked card cannot be printed.")
+            raise PermissionDenied(gettext("A revoked card cannot be printed."))
         pdf, _content_type, filename = render("member_card", card, fmt="pdf")
         member_card_services.record_print(request.user, [card])
         return _pdf_response(pdf, filename)
@@ -168,10 +169,10 @@ class MemberCardSheetView(APIView):
         if ids:
             cards = cards.filter(pk__in=ids)
         if cards.count() > SYNC_SHEET_LIMIT:
-            raise ValidationError({"detail": f"More than {SYNC_SHEET_LIMIT} cards: queue a print job instead."})
+            raise ValidationError({"detail": gettext('More than {SYNC_SHEET_LIMIT} cards: queue a print job instead.').format(SYNC_SHEET_LIMIT=SYNC_SHEET_LIMIT)})
         cards = list(cards.order_by("card_number"))
         if not cards:
-            raise ValidationError({"detail": "No active cards to print."})
+            raise ValidationError({"detail": gettext("No active cards to print.")})
         rendered = []
         for card in cards:
             document = document_for("member_card", card)

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState, type ReactNode } from 'react';
 import { Scale } from 'lucide-react';
 import { EmptyState, ErrorBlock, Field } from '../../../components/ui';
@@ -45,40 +46,40 @@ export function PairwiseJudge({ state, onCommand, pending, error, renderAssets, 
     return () => window.removeEventListener('keydown', keys);
   });
   const progress = `${state.compared} compared · ${state.remaining} still to see`;
-  return <section className="grid gap-4" aria-label={`Pairwise round ${state.round_key}`}>
+  return <section className="grid gap-4" aria-label={t`Pairwise round ${state.round_key}`}>
     <div className="flex flex-wrap items-start gap-3"><Scale className="mt-1 text-accent" aria-hidden="true" />
-      <div className="min-w-0 flex-1"><h2 className="title-panel">Compare projects · {state.round_key}</h2>
+      <div className="min-w-0 flex-1"><h2 className="title-panel">{t`Compare projects · ${state.round_key}`}</h2>
         <p className="text-sm text-muted">{state.guidance}</p></div>
       <p aria-live="polite" className="text-sm font-semibold tabular-nums">{progress}</p></div>
-    {state.finished ? <EmptyState title="You have compared every project available to you"
-      description="Thank you. The organizer finalizes the round; your choices count once it closes." /> : <>
+    {state.finished ? <EmptyState title={t`You have compared every project available to you`}
+      description={t`Thank you. The organizer finalizes the round; your choices count once it closes.`} /> : <>
       <div className="grid gap-4 md:grid-cols-2">
-        {state.previous ? <Project label="Before" card={state.previous} renderAssets={renderAssets} />
-          : <p className="rounded-xl border border-dashed border-line p-4 text-sm text-muted">Your first project is only viewed. From the next one on, you choose which was better.</p>}
-        {state.current ? <Project label="Now" card={state.current} renderAssets={renderAssets} />
-          : <p className="rounded-xl border border-dashed border-line p-4 text-sm text-muted">Load your next project when you are ready.</p>}
+        {state.previous ? <Project label={t`Before`} card={state.previous} renderAssets={renderAssets} />
+          : <p className="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{t`Your first project is only viewed. From the next one on, you choose which was better.`}</p>}
+        {state.current ? <Project label={t`Now`} card={state.current} renderAssets={renderAssets} />
+          : <p className="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{t`Load your next project when you are ready.`}</p>}
       </div>
-      {state.current ? <Field label="Private notes" hint="Only you and the event's full managers can read these.">
+      {state.current ? <Field label={t`Private notes`} hint={t`Only you and the event's full managers can read these.`}>
         <textarea className="desk-input min-h-20" maxLength={2000} value={notes} onChange={e => setNotes(e.target.value)} /></Field> : null}
       <div className="flex flex-wrap gap-2">
         {state.allowed_actions.includes('compare') ? <>
           <button type="button" className="desk-button-primary min-h-11 gap-2" disabled={!allowed('compare')}
-            onClick={() => choose('compare', { outcome: 'previous', notes })}>Before was better <kbd className="text-xs">1</kbd></button>
+            onClick={() => choose('compare', { outcome: 'previous', notes })}>{t`Before was better `}<kbd className="text-xs">1</kbd></button>
           <button type="button" className="desk-button-primary min-h-11 gap-2" disabled={!allowed('compare')}
-            onClick={() => choose('compare', { outcome: 'current', notes })}>Now is better <kbd className="text-xs">2</kbd></button></> : null}
+            onClick={() => choose('compare', { outcome: 'current', notes })}>{t`Now is better `}<kbd className="text-xs">2</kbd></button></> : null}
         {state.allowed_actions.includes('next') ? <button type="button" className="desk-button-primary min-h-11 gap-2" disabled={!allowed('next')}
-          onClick={() => choose('next')}>{state.current ? 'Next project' : 'Show my next project'} <kbd className="text-xs">N</kbd></button> : null}
+          onClick={() => choose('next')}>{state.current ? t`Next project` : t`Show my next project`} <kbd className="text-xs">{t`N`}</kbd></button> : null}
         {state.allowed_actions.includes('skip') ? <button type="button" className="desk-button min-h-11 gap-2" disabled={!allowed('skip')}
-          onClick={() => choose('skip', { notes })}>Can't judge this one <kbd className="text-xs">S</kbd></button> : null}
+          onClick={() => choose('skip', { notes })}>{t`Can't judge this one `}<kbd className="text-xs">{t`S`}</kbd></button> : null}
       </div>
       {state.allowed_actions.includes('recuse') ? <details className="rounded-xl border border-line p-3">
-        <summary className="min-h-11 cursor-pointer py-2 font-semibold">More: declare a conflict</summary>
-        <div className="mt-3 grid gap-3"><Field label="Private reason"><textarea className="desk-input min-h-20" maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></Field>
+        <summary className="min-h-11 cursor-pointer py-2 font-semibold">{t`More: declare a conflict`}</summary>
+        <div className="mt-3 grid gap-3"><Field label={t`Private reason`}><textarea className="desk-input min-h-20" maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></Field>
           <button type="button" className="desk-button min-h-11 w-fit" disabled={!allowed('recuse') || !reason.trim()}
-            onClick={() => { choose('recuse', { reason }); setReason(''); }}>Declare conflict and recuse</button></div>
+            onClick={() => { choose('recuse', { reason }); setReason(''); }}>{t`Declare conflict and recuse`}</button></div>
       </details> : null}
     </>}
     <ErrorBlock error={error} />
-    {error ? <button type="button" className="desk-button min-h-11 w-fit" disabled={pending} onClick={onReload}>Reload my place in this round</button> : null}
+    {error ? <button type="button" className="desk-button min-h-11 w-fit" disabled={pending} onClick={onReload}>{t`Reload my place in this round`}</button> : null}
   </section>;
 }

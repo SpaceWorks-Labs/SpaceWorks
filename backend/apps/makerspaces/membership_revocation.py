@@ -5,6 +5,7 @@ Split out of `membership_services` (which re-exports both names) when that file 
 membership or request row.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -19,7 +20,7 @@ def revoke_membership(actor, membership, reason=""):
     # One account per person: this is the COMMUNITY revocation (cards, terms, presence,
     # admission cleanup). A staff-track row is revoked by the staff-roles service.
     if membership.track == MakerspaceMembership.Track.STAFF:
-        raise PermissionDenied("Revoke staff roles from the staff roles screen.")
+        raise PermissionDenied(gettext("Revoke staff roles from the staff roles screen."))
     with transaction.atomic():
         makerspace = Makerspace.objects.select_for_update().get(pk=membership.makerspace_id)
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
@@ -27,10 +28,10 @@ def revoke_membership(actor, membership, reason=""):
             raise PermissionDenied()
         if (not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)
                 and rbac.actions_for_membership(membership)):
-            raise PermissionDenied("Managing staff memberships requires makerspace administration.")
+            raise PermissionDenied(gettext("Managing staff memberships requires makerspace administration."))
         actor_is_superadmin = actor.is_superuser or actor.role == User.Role.SUPERADMIN
         if not actor_is_superadmin and rbac.Action.MANAGE_MAKERSPACE in rbac.actions_for_membership(membership):
-            raise PermissionDenied("Only a superadmin can revoke a makerspace manager.")
+            raise PermissionDenied(gettext("Only a superadmin can revoke a makerspace manager."))
         return _revoke_locked(actor, membership, makerspace, reason)
 
 
@@ -87,7 +88,7 @@ def revoke_request(actor, request, reason=""):
             raise PermissionDenied()
         if (request.assigned_role_id and request.assigned_role.granted_actions
                 and not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, makerspace.pk)):
-            raise PermissionDenied("Managing staff invitations requires makerspace administration.")
+            raise PermissionDenied(gettext("Managing staff invitations requires makerspace administration."))
         if request.state == MembershipRequest.State.ACTIVE and request.user_id:
             membership = MakerspaceMembership.objects.filter(makerspace=makerspace, user=request.user).first()
             if membership:

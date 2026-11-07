@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.apiclients.models import ApiClient, ApiKeyRequest
@@ -73,7 +74,7 @@ class ApiClientSerializer(serializers.ModelSerializer):
         scopes = attrs.get("scopes", getattr(self.instance, "scopes", []))
         if client_type == "browser" and not set(scopes or []).issubset(BROWSER_SCOPES):
             raise serializers.ValidationError(
-                {"scopes": "Browser clients may only use public/read scopes."}
+                {"scopes": gettext("Browser clients may only use public/read scopes.")}
             )
         if client_type == "peer" and not set(scopes or []).issubset(CLIENT_TYPE_SCOPES["peer"]):
             raise serializers.ValidationError({"scopes": PEER_SCOPE_ERROR})

@@ -5,6 +5,7 @@ the caller to show), syncs the space's allowed origins, and audits both the deci
 the new client; rejecting closes the request. The requester is told either way.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -23,7 +24,7 @@ def _pending(pk):
     locked = (ApiKeyRequest.objects.select_for_update(of=("self",)).select_related("makerspace", "requester")
               .get(pk=pk))
     if locked.status != ApiKeyRequest.Status.PENDING:
-        raise ValidationError("This API key request is already decided.")
+        raise ValidationError(gettext("This API key request is already decided."))
     return locked
 
 

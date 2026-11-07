@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { staffRequest } from '../../../lib/api'
@@ -24,6 +25,6 @@ export function QuickBadgePrint({ eventId, registrationId, name, onClose }: {
           setTimeout(() => URL.revokeObjectURL(url), 1000); onClose()
         } })
     }} />
-    {design.error || print.error ? <p role="alert" className="text-sm text-danger">{design.error ? 'Choose and save a current desk design before printing this ID card.' : print.error?.message}</p> : null}
+    {design.error || print.error ? <p role="alert" className="text-sm text-danger">{design.error ? t`Choose and save a current desk design before printing this ID card.` : print.error?.message}</p> : null}
   </>
 }

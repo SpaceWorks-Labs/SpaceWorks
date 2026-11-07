@@ -5,6 +5,7 @@ records a FAILED delivery and lets the sweep carry on. The run is idempotent und
 coarse cron because the claim advances `next_run_at` under a `skip_locked` row lock
 BEFORE any work happens; a second worker in the same minute finds nothing due.
 """
+from django.utils.translation import gettext
 from apps.operations.cloud_jobs import bounded
 
 
@@ -267,7 +268,7 @@ def _send(schedule, definition, url, delivery=None):
         try:
             log = dispatch_email(
                 makerspace=makerspace, to_email=email,
-                subject=f"[{makerspace.name}] Scheduled report: {title}", text_body=text,
+                subject=gettext('[{name}] Scheduled report: {title}').format(name=makerspace.name, title=title), text_body=text,
                 stream="reports", event=NOTIFICATION_EVENT, audience="staff", sync=True,
             )
         except Exception as exc:  # noqa: BLE001 - SMTP/fence failures are per-recipient facts

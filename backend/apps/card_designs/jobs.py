@@ -5,6 +5,7 @@ Scopes: `member_cards` (a space's member cards), `id_programme` (one programme) 
 per ZIP; one bulk job runs per space at a time; a repeated request with the same
 inputs returns the same job (idempotency key).
 """
+from django.utils.translation import gettext
 import hashlib
 import json
 from datetime import timedelta
@@ -38,7 +39,7 @@ def clean_params(kind, params):
     if kind == "bulk_sheet":
         if params.get("paper", "a4") not in ("a4", "letter") or params.get("order", "duplex") not in (
                 "duplex", "fronts_then_backs"):
-            raise ValidationError({"params": "Choose A4 or Letter, and duplex or fronts then backs."})
+            raise ValidationError({"params": gettext("Choose A4 or Letter, and duplex or fronts then backs.")})
         return {"paper": params.get("paper", "a4"), "order": params.get("order", "duplex"),
                 "crop_marks": bool(params.get("crop_marks", True))}
     if kind == "email":
@@ -49,14 +50,13 @@ def clean_params(kind, params):
 @transaction.atomic
 def enqueue(actor, makerspace, kind, *, scope, scope_id=None, targets, params=None, revision=None):
     if kind not in CardJob.Kind.values or scope not in SCOPE_KINDS:
-        raise ValidationError({"kind": "Unknown card job."})
+        raise ValidationError({"kind": gettext("Unknown card job.")})
     targets = sorted({int(value) for value in targets})
     if not targets:
-        raise ValidationError({"targets": "No cards match this selection."})
+        raise ValidationError({"targets": gettext("No cards match this selection.")})
     cap = CAPS.get(kind)
     if cap and len(targets) > cap:
-        raise ValidationError({"targets": f"One job holds at most {cap} cards; this selection has {len(targets)}. "
-                                          "Narrow the filter or split it."})
+        raise ValidationError({"targets": gettext('One job holds at most {cap} cards; this selection has {value}. Narrow the filter or split it.').format(cap=cap, value=len(targets))})
     params = clean_params(kind, params)
     key = _key(kind, scope, scope_id, targets, params, revision)
     existing = CardJob.objects.filter(makerspace=makerspace, kind=kind, idempotency_key=key).first()
@@ -67,14 +67,14 @@ def enqueue(actor, makerspace, kind, *, scope, scope_id=None, targets, params=No
         key = _key(kind, scope, scope_id, targets, params, f"{revision}:{timezone.now().isoformat()}")
     if kind in BULK_KINDS and CardJob.objects.filter(makerspace=makerspace, kind__in=BULK_KINDS,
                                                      state__in=("queued", "running")).exists():
-        raise ValidationError({"detail": "Another print job is running for this space. Wait for it or cancel it."})
+        raise ValidationError({"detail": gettext("Another print job is running for this space. Wait for it or cancel it.")})
     try:
         with transaction.atomic():
             job = CardJob.objects.create(makerspace=makerspace, kind=kind, scope=scope, scope_id=scope_id,
                                          requested_by=actor, params=params, targets=targets, total=len(targets),
                                          idempotency_key=key)
     except IntegrityError:
-        raise ValidationError({"detail": "Another print job is running for this space."}) from None
+        raise ValidationError({"detail": gettext("Another print job is running for this space.")}) from None
     audit.record(actor, "card_job.queued", makerspace=makerspace, target=job,
                  meta={"job_id": job.pk, "kind": kind, "count": len(targets), "scope": scope})
     from .tasks import dispatch
@@ -125,9 +125,9 @@ def cancel(actor, job):
 def result_link(actor, job):
     from .storage import signed_url
     if job.state != CardJob.State.SUCCEEDED or not job.result_key:
-        raise ValidationError({"detail": "This job has no file to download."})
+        raise ValidationError({"detail": gettext("This job has no file to download.")})
     if job.result_expires_at and job.result_expires_at <= timezone.now():
-        raise ValidationError({"detail": "This file has expired. Run the job again."})
+        raise ValidationError({"detail": gettext("This file has expired. Run the job again.")})
     from apps.accounts.pii_presentation import is_platform_superadmin, require_pii_access
     if job.requested_by_id != actor.pk:
         if not is_platform_superadmin(actor):

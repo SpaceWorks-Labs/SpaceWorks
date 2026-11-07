@@ -6,6 +6,7 @@ period), ONE mail is sent and every passed threshold is marked, so nobody gets t
 mails at once. Keys live in ``SpaceControlState.reminders_sent`` and reset with the schedule.
 """
 
+from django.utils.translation import gettext
 import math
 
 from django.utils import timezone
@@ -28,18 +29,18 @@ def schedule_set_mail(space, state):
     else:
         body = (f"{space.name} is archived and is scheduled to be permanently deleted on {_day(state.purge_due_at)}.\n\n"
                 "Contact the platform operator if you need anything from it before then.")
-    schedule_manager_mail(space.pk, subject=f"{space.name}: archive and deletion scheduled", body=body,
+    schedule_manager_mail(space.pk, subject=gettext('{name}: archive and deletion scheduled').format(name=space.name), body=body,
                           event="space_control_schedule_set")
 
 
 def schedule_cancelled_mail(space):
-    schedule_manager_mail(space.pk, subject=f"{space.name}: scheduled archive cancelled",
+    schedule_manager_mail(space.pk, subject=gettext('{name}: scheduled archive cancelled').format(name=space.name),
                           body=f"The platform operator cancelled the scheduled archive or deletion of {space.name}.",
                           event="space_control_schedule_cancelled")
 
 
 def archived_mail(space, state):
-    schedule_manager_mail(space.pk, subject=f"{space.name} has been archived",
+    schedule_manager_mail(space.pk, subject=gettext('{name} has been archived').format(name=space.name),
                           body=(f"{space.name} was archived as scheduled. Its data will be permanently deleted on "
                                 f"{_day(state.purge_due_at)} unless the platform operator cancels it."),
                           event="space_control_scheduled_archive")
@@ -72,7 +73,7 @@ def send_reminder(state, now=None):
     when = "archived" if kind == "archive" else "permanently deleted"
     moment = state.archive_on if kind == "archive" else state.purge_due_at
     plural = "day" if days_left == 1 else "days"
-    schedule_manager_mail(space.pk, subject=f"Reminder: {space.name} will be {when} in {days_left} {plural}",
+    schedule_manager_mail(space.pk, subject=gettext('Reminder: {name} will be {when} in {days_left} {plural}').format(name=space.name, when=when, days_left=days_left, plural=plural),
                           body=(f"{space.name} will be {when} on {_day(moment)}.\n\n"
                                 "Export anything you need before then. Contact the platform operator to cancel."),
                           event=f"space_control_{kind}_reminder")

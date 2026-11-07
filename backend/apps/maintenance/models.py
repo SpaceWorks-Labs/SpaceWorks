@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -17,8 +18,8 @@ class MaintenanceSchedule(models.Model):
     job_count = models.PositiveIntegerField(null=True, blank=True)
     meter_started_at = models.DateTimeField(default=timezone.now, editable=False)
     class Anchor(models.TextChoices):
-        COMPLETION = "completion", "Completion date"
-        CALENDAR = "calendar", "Fixed calendar"
+        COMPLETION = "completion", gettext_noop("Completion date")
+        CALENDAR = "calendar", gettext_noop("Fixed calendar")
 
     anchor = models.CharField(max_length=16, choices=Anchor.choices, default=Anchor.COMPLETION)
     machine = models.ForeignKey(

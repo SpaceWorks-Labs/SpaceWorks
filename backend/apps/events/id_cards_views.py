@@ -4,6 +4,7 @@ Every organiser of the event -- anyone holding its edit permission (Q-I9) -- man
 designs and cards, with no approval unless an event, its organisation or the space
 turned approval on (#136). Door staff (check-in permission) may scan cards.
 """
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
@@ -101,7 +102,7 @@ class EventIdCardListView(APIView):
     def post(self, request, pk):
         event = organiser_event(request.user, pk)
         if not id_cards.has_published_design(event):
-            raise ValidationError({"detail": "Publish the event card design first."})
+            raise ValidationError({"detail": gettext("Publish the event card design first.")})
         issued, revoked = id_cards.reconcile_event(event.pk, actor=request.user)
         return Response({"issued": issued, "revoked": revoked})
 

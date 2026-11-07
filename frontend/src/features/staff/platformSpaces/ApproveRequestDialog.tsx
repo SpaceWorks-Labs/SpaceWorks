@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Field } from "../../../components/ui";
@@ -25,34 +26,31 @@ export function ApproveRequestDialog({ request, onClose }: { request: HostingReq
   const submit = () => {
     const body: ApproveBody = { name: name.trim(), invite_manager: invite, ...(slug.trim() ? { slug: slug.trim() } : {}),
       ...(owner === "new" ? { new_organization_name: orgName.trim() } : { organization_id: Number(orgId) }) };
-    approve.mutate(body, { onSuccess: (result) => { toast(`${result.makerspace.name} was created. ${INVITATION[result.invitation]}`); onClose(); } });
+    approve.mutate(body, { onSuccess: (result) => { toast(t`${result.makerspace.name} was created. ${INVITATION[result.invitation]}`); onClose(); } });
   };
-  return <ActionDialog title="Approve and create the space" confirmLabel="Approve" pending={approve.isPending} error={approve.error}
+  return <ActionDialog title={t`Approve and create the space`} confirmLabel={t`Approve`} pending={approve.isPending} error={approve.error}
     canSubmit={canSubmit} onCancel={onClose} onSubmit={submit}
-    message={`Creates the space for ${request.applicant_name} (${request.applicant_email}).`}>
-    <Field label="Space name"><input className="desk-input" value={name} maxLength={200} onChange={event => setName(event.target.value)} /></Field>
-    <Field label="Web address" hint="Lowercase letters, numbers and hyphens. Leave empty to derive it from the name.">
+    message={t`Creates the space for ${request.applicant_name} (${request.applicant_email}).`}>
+    <Field label={t`Space name`}><input className="desk-input" value={name} maxLength={200} onChange={event => setName(event.target.value)} /></Field>
+    <Field label={t`Web address`} hint={t`Lowercase letters, numbers and hyphens. Leave empty to derive it from the name.`}>
       <input className="desk-input" value={slug} maxLength={50} autoCapitalize="none" spellCheck={false} onChange={event => setSlug(event.target.value)} />
     </Field>
     <fieldset className="grid gap-2">
-      <legend className="mb-1 text-sm font-semibold text-ink">Owner organization</legend>
+      <legend className="mb-1 text-sm font-semibold text-ink">{t`Owner organization`}</legend>
       <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-        <input type="radio" name="owner" checked={owner === "new"} onChange={() => setOwner("new")} />A new organization
-      </label>
+        <input type="radio" name="owner" checked={owner === "new"} onChange={() => setOwner("new")} />{t`A new organization`}</label>
       <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-        <input type="radio" name="owner" checked={owner === "existing"} onChange={() => setOwner("existing")} />An existing organization
-      </label>
+        <input type="radio" name="owner" checked={owner === "existing"} onChange={() => setOwner("existing")} />{t`An existing organization`}</label>
     </fieldset>
-    {owner === "new" ? <Field label="New organization name">
+    {owner === "new" ? <Field label={t`New organization name`}>
       <input className="desk-input" value={orgName} maxLength={200} onChange={event => setOrgName(event.target.value)} />
-    </Field> : <Field label="Existing organization" hint={organizations.isError ? "Couldn't load organizations." : undefined}>
+    </Field> : <Field label={t`Existing organization`} hint={organizations.isError ? t`Couldn't load organizations.` : undefined}>
       <select className="desk-input" value={orgId} onChange={event => setOrgId(event.target.value)}>
-        <option value="">{organizations.isLoading ? "Loading…" : "Choose an organization"}</option>
+        <option value="">{organizations.isLoading ? t`Loading…` : t`Choose an organization`}</option>
         {(organizations.data?.results ?? []).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
       </select>
     </Field>}
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-      <input type="checkbox" checked={invite} onChange={event => setInvite(event.target.checked)} />Email the applicant a Space Manager invitation
-    </label>
+      <input type="checkbox" checked={invite} onChange={event => setInvite(event.target.checked)} />{t`Email the applicant a Space Manager invitation`}</label>
   </ActionDialog>;
 }

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -18,7 +19,7 @@ class MakerspaceMutationMixin:
         if values.get("event_default_registration_audience") == "participating_organizations":
             from apps.makerspaces.platform import feature_enabled
             if not feature_enabled(instance, "events.organization_audience"):
-                raise serializers.ValidationError({"event_default_registration_audience": "Enable organization audience first."})
+                raise serializers.ValidationError({"event_default_registration_audience": gettext("Enable organization audience first.")})
 
     @transaction.atomic
     def create(self, validated_data):
@@ -69,9 +70,9 @@ class MakerspaceMutationMixin:
         if owner_fields:
             raise serializers.ValidationError(owner_fields)
         if "creation_setup" in validated_data:
-            raise serializers.ValidationError({"creation_setup": "Use setup only when creating a makerspace."})
+            raise serializers.ValidationError({"creation_setup": gettext("Use setup only when creating a makerspace.")})
         if "install_profile_id" in validated_data:
-            raise serializers.ValidationError({"install_profile_id": "Choose a profile only when creating a makerspace."})
+            raise serializers.ValidationError({"install_profile_id": gettext("Choose a profile only when creating a makerspace.")})
         missing = object()
         telegram_bot_token = validated_data.pop("telegram_bot_token", missing)
         smtp_password = validated_data.pop("smtp_password", missing)

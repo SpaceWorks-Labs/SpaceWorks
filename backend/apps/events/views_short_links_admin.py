@@ -5,6 +5,7 @@ SPEC §7 Q1); collaborators hold it only when granted. While `events.short_links
 every route answers 404 and the stored codes are kept.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -39,7 +40,7 @@ class RegenerateInput(serializers.Serializer):
 
     def validate_confirm(self, value):
         if value is not True:
-            raise serializers.ValidationError("Confirm that the old link stops working.")
+            raise serializers.ValidationError(gettext("Confirm that the old link stops working."))
         return value
 
 

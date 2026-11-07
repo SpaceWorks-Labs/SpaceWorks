@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Channel, ChannelKey, ProviderKey } from "./channelsApi";
 
 export type CredentialField = { key: string; label: string; optional?: boolean; secret?: boolean; hint?: string };
@@ -20,47 +21,47 @@ const plain = (key: string, label: string, hint?: string, optional = false): Cre
  * the server validates them, this table only decides which inputs to draw.
  */
 export const CHANNEL_SPECS: readonly ChannelSpec[] = [
-  { key: "email", label: "Email", description: "Messages to each person's verified email address. Also the fallback when a chosen chat channel cannot deliver.",
-    rooms: false, personal: true, module: "email", providers: [{ key: "builtin", label: "Space Works email", credentials: [] }] },
-  { key: "telegram", label: "Telegram", description: "Group alerts for staff rooms, and private messages from your bot to people who connect their Telegram.",
-    rooms: true, personal: true, module: "telegram", providers: [{ key: "telegram", label: "Telegram bot",
+  { key: "email", label: t`Email`, description: t`Messages to each person's verified email address. Also the fallback when a chosen chat channel cannot deliver.`,
+    rooms: false, personal: true, module: "email", providers: [{ key: "builtin", label: t`Space Works email`, credentials: [] }] },
+  { key: "telegram", label: t`Telegram`, description: t`Group alerts for staff rooms, and private messages from your bot to people who connect their Telegram.`,
+    rooms: true, personal: true, module: "telegram", providers: [{ key: "telegram", label: t`Telegram bot`,
       identityLabel: "Bot username", identityHint: "The bot people open to connect, without the @.",
       credentials: [secret("bot_token", "Bot token", "From @BotFather.")] }] },
-  { key: "slack", label: "Slack", description: "Room alerts and direct messages from your Slack app to people who sign in with Slack.",
-    rooms: true, personal: true, module: "slack", providers: [{ key: "slack", label: "Slack app",
+  { key: "slack", label: t`Slack`, description: t`Room alerts and direct messages from your Slack app to people who sign in with Slack.`,
+    rooms: true, personal: true, module: "slack", providers: [{ key: "slack", label: t`Slack app`,
       installation: "slack", credentials: [plain("client_id", "Client ID"), secret("client_secret", "Client secret"),
         secret("signing_secret", "Signing secret")] }] },
-  { key: "mattermost", label: "Mattermost", description: "Room alerts and direct messages from your Mattermost bot to people who connect their account.",
-    rooms: true, personal: true, module: "mattermost", providers: [{ key: "mattermost", label: "Mattermost bot",
+  { key: "mattermost", label: t`Mattermost`, description: t`Room alerts and direct messages from your Mattermost bot to people who connect their account.`,
+    rooms: true, personal: true, module: "mattermost", providers: [{ key: "mattermost", label: t`Mattermost bot`,
       derivedIdentity: "mattermost",
       credentials: [plain("server_url", "Server URL", "HTTPS origin of your Mattermost server."), secret("bot_token", "Bot token"),
         plain("client_id", "OAuth client ID"), secret("client_secret", "OAuth client secret"), secret("webhook_token", "Webhook token")] }] },
-  { key: "discord", label: "Discord", description: "Room alerts and direct messages from your Discord bot to people who link their Discord account.",
-    rooms: true, personal: true, module: "discord", providers: [{ key: "discord", label: "Discord bot",
+  { key: "discord", label: t`Discord`, description: t`Room alerts and direct messages from your Discord bot to people who link their Discord account.`,
+    rooms: true, personal: true, module: "discord", providers: [{ key: "discord", label: t`Discord bot`,
       derivedIdentity: "discord", credentials: [secret("bot_token", "Bot token"), plain("application_id", "Application ID"),
         secret("client_secret", "OAuth client secret"), plain("public_key", "Public key"), plain("guild_id", "Server (guild) ID")] }] },
-  { key: "sms", label: "SMS", description: "Personal texts to verified phone numbers with separate consent for this space and sender.",
-    rooms: false, personal: true, module: "sms", providers: [{ key: "twilio", label: "Twilio",
+  { key: "sms", label: "SMS", description: t`Personal texts to verified phone numbers with separate consent for this space and sender.`,
+    rooms: false, personal: true, module: "sms", providers: [{ key: "twilio", label: t`Twilio`,
       credentials: [plain("account_sid", "Account SID"), secret("auth_token", "Auth token"), plain("from_number", "Sender phone number", "E.164, for example +14155550100.")] }] },
-  { key: "whatsapp", label: "WhatsApp", description: "Personal messages to people who connect their WhatsApp account. Outside a 24-hour reply window only approved templates are sent.",
+  { key: "whatsapp", label: t`WhatsApp`, description: t`Personal messages to people who connect their WhatsApp account. Outside a 24-hour reply window only approved templates are sent.`,
     rooms: false, personal: true, module: "whatsapp", providers: [
-      { key: "twilio", label: "Twilio", identityLabel: "WhatsApp sender number", identityHint: "E.164, for example +14155550100.",
+      { key: "twilio", label: t`Twilio`, identityLabel: "WhatsApp sender number", identityHint: "E.164, for example +14155550100.",
         credentials: [plain("account_sid", "Account SID"), secret("auth_token", "Auth token"),
           plain("public_base_url", "Public callback base URL", "HTTPS origin of the API, without a path."),
           plain("api_key_sid", "API key SID", "Optional; the auth token still signs callbacks.", true),
           { ...secret("api_key_secret", "API key secret"), optional: true },
           plain("whatsapp_sender", "WhatsApp sender", "Leave empty when you use a Messaging Service.", true),
           plain("messaging_service_sid", "Messaging Service SID", undefined, true)] },
-      { key: "meta", label: "Meta WhatsApp Cloud", identityLabel: "Phone number ID", identityCredential: "phone_number_id",
+      { key: "meta", label: t`Meta WhatsApp Cloud`, identityLabel: "Phone number ID", identityCredential: "phone_number_id",
         credentials: [plain("app_id", "App ID"), secret("app_secret", "App secret"), plain("business_account_id", "WhatsApp Business Account ID"),
           secret("access_token", "Permanent access token"),
           secret("webhook_verify_token", "Webhook verify token")] }] },
-  { key: "native_push", label: "App push", description: "Notifications on people's phones through the Space Works app. Needs the mobile push feature.",
-    rooms: false, personal: true, module: null, providers: [{ key: "builtin", label: "Space Works app", credentials: [] }] },
+  { key: "native_push", label: t`App push`, description: t`Notifications on people's phones through the Space Works app. Needs the mobile push feature.`,
+    rooms: false, personal: true, module: null, providers: [{ key: "builtin", label: t`Space Works app`, credentials: [] }] },
 ];
 
 export const CHANNEL_LABELS: Readonly<Record<string, string>> = {
-  ...Object.fromEntries(CHANNEL_SPECS.map(spec => [spec.key, spec.label])), in_app: "Inbox", webhook: "Signed webhook",
+  ...Object.fromEntries(CHANNEL_SPECS.map(spec => [spec.key, spec.label])), in_app: t`Inbox`, webhook: t`Signed webhook`,
 };
 
 /** Channels a person connects by proving an account; email, inbox and push need no connection. */
@@ -83,7 +84,7 @@ export function providerSpec(spec: ChannelSpec, provider: ProviderKey) {
 }
 
 export const CATEGORY_LABELS: Readonly<Record<string, string>> = {
-  hardware_requests: "Hardware requests", printing: "Printing", events: "Events", bookings: "Bookings",
-  maintenance: "Maintenance", members: "Members", api_access: "API access", devices: "Devices",
-  payments: "Payments", stock: "Stock and procurement", certifications: "Certifications",
+  hardware_requests: t`Hardware requests`, printing: t`Printing`, events: t`Events`, bookings: t`Bookings`,
+  maintenance: t`Maintenance`, members: t`Members`, api_access: t`API access`, devices: t`Devices`,
+  payments: t`Payments`, stock: t`Stock and procurement`, certifications: t`Certifications`,
 };

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -13,10 +14,10 @@ class OfflineCheckInSyncRequestSerializer(serializers.Serializer):
 
     def validate_operations(self, value):
         if len(value) > 200:
-            raise serializers.ValidationError("At most 200 operations may be synchronized.")
+            raise serializers.ValidationError(gettext("At most 200 operations may be synchronized."))
         operation_ids = [item["operation_id"] for item in value]
         if len(operation_ids) != len(set(operation_ids)):
-            raise serializers.ValidationError("Operation IDs must be unique within a batch.")
+            raise serializers.ValidationError(gettext("Operation IDs must be unique within a batch."))
         return value
 
 

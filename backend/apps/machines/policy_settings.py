@@ -1,4 +1,5 @@
 """Shared machine-type reminder settings, retaining the existing editor's contract."""
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -17,7 +18,7 @@ def update_policy(actor, space, machine_type, values):
     if not rbac.is_space_manager_identity(actor, space.pk):
         raise PermissionDenied()
     if machine_type.makerspace_id not in (None, space.pk):
-        raise ValidationError("Machine type is outside this makerspace.")
+        raise ValidationError(gettext("Machine type is outside this makerspace."))
     serializer = MachineTypePolicySerializer(data=values)
     from apps.makerspaces.settings_validation import validate_settings
     validate_settings(serializer)

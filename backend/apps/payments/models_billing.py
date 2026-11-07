@@ -1,5 +1,6 @@
 """Core billing policy; no credentials or rail prerequisite."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
@@ -15,7 +16,7 @@ def validate_account_codes(value):
     if (not isinstance(value, dict) or set(value) - allowed or
             any(not isinstance(code, str) or not code.strip() or len(code) > 32 or
                 any(ord(char) < 32 for char in code) for code in value.values())):
-        raise ValidationError("Use recognized account keys and nonempty codes of at most 32 characters.")
+        raise ValidationError(gettext("Use recognized account keys and nonempty codes of at most 32 characters."))
 
 
 def reminder_before_default():
@@ -61,7 +62,7 @@ class MakerspaceBillingSettings(models.Model):
         validate_account_codes(self.account_codes)
         for name in ("number_prefix", "bill_prefix"):
             if any(ord(char) < 32 or ord(char) == 127 or char in "/\\" for char in getattr(self, name)):
-                raise ValidationError({name: "Use a prefix without control characters or slashes."})
+                raise ValidationError({name: gettext("Use a prefix without control characters or slashes.")})
         if self.upi_vpa:
             from apps.payments.upi import UpiError, validate_vpa
             try:
@@ -69,13 +70,13 @@ class MakerspaceBillingSettings(models.Model):
             except UpiError as exc:
                 raise ValidationError({"upi_vpa": str(exc)})
         if self.bill_prefix == self.number_prefix:
-            raise ValidationError({"bill_prefix": "Bill and receipt prefixes must differ."})
+            raise ValidationError({"bill_prefix": gettext("Bill and receipt prefixes must differ.")})
         for name in ("reminder_days_before", "reminder_days_after"):
             values = getattr(self, name)
             if (not isinstance(values, list) or len(values) > 20 or
                     any(type(day) is not int or not 1 <= day <= 365 for day in values) or
                     len(set(values)) != len(values)):
-                raise ValidationError({name: "Use at most 20 distinct whole days between 1 and 365."})
+                raise ValidationError({name: gettext("Use at most 20 distinct whole days between 1 and 365.")})
 
     def save(self, *args, **kwargs):
         self.full_clean()

@@ -1,4 +1,5 @@
 """Serializers for the staff membership-plan, term and invitation-request surfaces."""
+from django.utils.translation import gettext
 import re
 
 from rest_framework import serializers
@@ -32,7 +33,7 @@ class MembershipPlanSerializer(serializers.ModelSerializer):
 
     def validate_currency(self, value):
         if not _CURRENCY.match(value or ""):
-            raise serializers.ValidationError("Use a three-letter ISO 4217 code.")
+            raise serializers.ValidationError(gettext("Use a three-letter ISO 4217 code."))
         return value.lower()
 
     def validate(self, attrs):
@@ -41,18 +42,18 @@ class MembershipPlanSerializer(serializers.ModelSerializer):
             if not isinstance(values, list) or len(values) > 10 or any(
                 type(day) is not int or not 1 <= day <= 365 for day in values
             ):
-                raise serializers.ValidationError({name: "Use up to ten day offsets between 1 and 365."})
+                raise serializers.ValidationError({name: gettext("Use up to ten day offsets between 1 and 365.")})
         interval = attrs.get("interval", getattr(self.instance, "interval", None))
         custom_days = attrs.get("custom_days", getattr(self.instance, "custom_days", None))
         if interval == MembershipPlan.Interval.CUSTOM_DAYS:
             if not custom_days:
                 raise serializers.ValidationError(
-                    {"custom_days": "Required for a custom-days interval."}
+                    {"custom_days": gettext("Required for a custom-days interval.")}
                 )
         elif custom_days is not None:
             # Silently normalising would hide a client bug; refusing keeps the row honest.
             raise serializers.ValidationError(
-                {"custom_days": "Only a custom-days interval takes a day count."}
+                {"custom_days": gettext("Only a custom-days interval takes a day count.")}
             )
         return validate_plan_rules(attrs, self.instance, self.context.get("makerspace"))
 

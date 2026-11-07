@@ -1,5 +1,6 @@
 """Managed-hosting API shapes (#187A)."""
 
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -127,7 +128,7 @@ class HostingBillingSettingsSerializer(serializers.ModelSerializer):
 
     def validate_provider(self, value):
         if value not in ("", "stripe", "razorpay"):
-            raise serializers.ValidationError("Choose stripe, razorpay or none.")
+            raise serializers.ValidationError(gettext("Choose stripe, razorpay or none."))
         return value
 
     def get_online_billing_switch(self, obj) -> bool:

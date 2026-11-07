@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -21,11 +22,11 @@ class ProblemReportTriageSerializer(serializers.Serializer):
         item_ids = [entry["item_id"] for entry in resolutions]
         if len(item_ids) != len(set(item_ids)):
             raise serializers.ValidationError(
-                {"resolutions": "Duplicate item_id values are not allowed."}
+                {"resolutions": gettext("Duplicate item_id values are not allowed.")}
             )
         if attrs["outcome"] != "no_issue" and not resolutions:
             raise serializers.ValidationError(
-                {"resolutions": "At least one item must be triaged."}
+                {"resolutions": gettext("At least one item must be triaged.")}
             )
         return attrs
 

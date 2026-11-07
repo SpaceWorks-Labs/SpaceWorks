@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -26,24 +27,24 @@ export function ServerReportViews({ makerspaceId, state, fields, onColumns, onAp
   const error = save.error ?? open.error ?? remove.error ?? views.error;
   return <div className="mt-4 space-y-3 border-t border-line pt-3">
     <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
-      <label className="eyebrow grid gap-1">View name<input className="desk-input" value={name} maxLength={80} onChange={(event) => setName(event.target.value)} required /></label>
-      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={shared} onChange={(event) => setShared(event.target.checked)} />Share with makerspace (managers)</label>
-      <button className="desk-button-primary" disabled={!name.trim() || save.isPending}>{save.isPending ? "Saving…" : "Save view"}</button>
+      <label className="eyebrow grid gap-1">{t`View name`}<input className="desk-input" value={name} maxLength={80} onChange={(event) => setName(event.target.value)} required /></label>
+      <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={shared} onChange={(event) => setShared(event.target.checked)} />{t`Share with makerspace (managers)`}</label>
+      <button className="desk-button-primary" disabled={!name.trim() || save.isPending}>{save.isPending ? t`Saving…` : t`Save view`}</button>
     </form>
-    <fieldset className="flex flex-wrap gap-2"><legend className="eyebrow">Visible columns (none selected shows all)</legend>
+    <fieldset className="flex flex-wrap gap-2"><legend className="eyebrow">{t`Visible columns (none selected shows all)`}</legend>
       {fields.map((field) => <label className="flex min-h-11 items-center gap-2 text-sm" key={field}><input type="checkbox" checked={state.columns.includes(field)} onChange={(event) => onColumns(event.target.checked ? [...state.columns, field] : state.columns.filter((value) => value !== field))} /> {field.replace(/_/g, " ")}</label>)}
     </fieldset>
-    {views.isLoading ? <p className="text-sm text-muted">Loading saved views...</p> : null}
+    {views.isLoading ? <p className="text-sm text-muted">{t`Loading saved views...`}</p> : null}
     <div className="flex flex-wrap gap-2">{views.data?.results?.map((view) => <div key={view.id} className="flex min-w-0 max-w-full flex-wrap items-center gap-2 rounded border border-line p-2">
       <button className="desk-button-ghost min-w-0 break-words text-left" disabled={open.isPending} onClick={() => open.mutate(view.id)}>{view.name}{view.shared ? " (shared)" : ""}</button>
-      <button className="desk-button-ghost" disabled={remove.isPending} aria-label={`Delete ${view.name}`} onClick={() => setDeleting({ id: view.id, name: view.name })}>Delete</button>
+      <button className="desk-button-ghost" disabled={remove.isPending} aria-label={t`Delete ${view.name}`} onClick={() => setDeleting({ id: view.id, name: view.name })}>{t`Delete`}</button>
     </div>)}</div>
     {(views.data?.previous || views.data?.next) ? <div className="flex flex-wrap gap-2">
-      <button className="desk-button" disabled={!views.data.previous} onClick={() => setPage((value) => value - 1)}>Previous views</button>
-      <button className="desk-button" disabled={!views.data.next} onClick={() => setPage((value) => value + 1)}>Next views</button>
+      <button className="desk-button" disabled={!views.data.previous} onClick={() => setPage((value) => value - 1)}>{t`Previous views`}</button>
+      <button className="desk-button" disabled={!views.data.next} onClick={() => setPage((value) => value + 1)}>{t`Next views`}</button>
     </div> : null}
-    {error ? <p role="alert" className="text-sm text-danger">{error instanceof Error ? error.message : "Could not update saved views."}</p> : null}
-    <ConfirmDialog open={Boolean(deleting)} title="Delete saved view" message={deleting ? `Delete ${deleting.name}? The saved filters and columns will be removed.` : ""}
-      confirmLabel="Delete saved view" tone="danger" pending={remove.isPending} onConfirm={() => deleting && remove.mutate(deleting.id)} onCancel={() => setDeleting(null)} />
+    {error ? <p role="alert" className="text-sm text-danger">{error instanceof Error ? error.message : t`Could not update saved views.`}</p> : null}
+    <ConfirmDialog open={Boolean(deleting)} title={t`Delete saved view`} message={deleting ? t`Delete ${deleting.name}? The saved filters and columns will be removed.` : ""}
+      confirmLabel={t`Delete saved view`} tone="danger" pending={remove.isPending} onConfirm={() => deleting && remove.mutate(deleting.id)} onCancel={() => setDeleting(null)} />
   </div>;
 }

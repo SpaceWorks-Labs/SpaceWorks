@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Modal } from "../../components/ui";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
@@ -24,7 +25,7 @@ export function EventRegistrationEntry({ event, makerspaceSlug, organisation, or
   if (orderable) return <TicketShopEntry makerspaceSlug={makerspaceSlug} publicToken={event.public_token} />;
   if ((event.ticket_selection_required && !event.ticket_types?.length) || (!event.custom_form && !event.ticket_types?.length && !event.promo_codes_enabled && event.registration_audience !== "invite")) return form;
   return <><button hidden={open} className="desk-button-brand w-full" type="button" onClick={() => setOpen(true)}>{label}</button>
-    <Modal open={open} onClose={() => setOpen(false)} title={event.title} footer={<button className="desk-button" type="button" onClick={() => setOpen(false)}>Close form</button>}>
+    <Modal open={open} onClose={() => setOpen(false)} title={event.title} footer={<button className="desk-button" type="button" onClick={() => setOpen(false)}>{t`Close form`}</button>}>
       {form}
     </Modal></>;
 }

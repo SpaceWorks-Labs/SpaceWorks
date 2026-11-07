@@ -1,5 +1,6 @@
 // The per-card dialogs of the Cards tab (reissue, revoke with a required note, photo
 // request) and the row-menu actions that need no dialog (downloads, email).
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -29,14 +30,14 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
   const photo = useRequestPhoto(makerspaceId);
 
   const rowActions = (card: MemberCard) => [
-    { label: "Download PDF", onClick: () => download.mutate({ card, format: "pdf" }) },
-    { label: "Download PNG", onClick: () => download.mutate({ card, format: "png" }) },
-    ...(emailAvailable ? [{ label: "Email card", onClick: () => email.mutate(card, {
-      onSuccess: () => toast(`Card emailed to ${card.printed_name}.`, { tone: "success" }),
-      onError: (error) => toast(message(error) ?? "The card couldn't be emailed.", { tone: "error" }),
+    { label: t`Download PDF`, onClick: () => download.mutate({ card, format: "pdf" }) },
+    { label: t`Download PNG`, onClick: () => download.mutate({ card, format: "png" }) },
+    ...(emailAvailable ? [{ label: t`Email card`, onClick: () => email.mutate(card, {
+      onSuccess: () => toast(t`Card emailed to ${card.printed_name}.`, { tone: "success" }),
+      onError: (error) => toast(message(error) ?? t`The card couldn't be emailed.`, { tone: "error" }),
     }) }] : []),
-    { label: "Take or upload photo", confirms: true, onClick: () => setUploadTarget(card) },
-    { label: "Request new photo", confirms: true, onClick: () => { setPhotoReason(""); setPhotoTarget(card); } },
+    { label: t`Take or upload photo`, confirms: true, onClick: () => setUploadTarget(card) },
+    { label: t`Request new photo`, confirms: true, onClick: () => { setPhotoReason(""); setPhotoTarget(card); } },
   ];
 
   const dialogs = <>
@@ -52,10 +53,10 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
     <PhotoRequestDialog card={photoTarget} reason={photoReason} pending={photo.isPending} error={message(photo.error)}
       onReasonChange={setPhotoReason} onClose={() => setPhotoTarget(null)}
       onSubmit={() => photoTarget && photo.mutate({ card: photoTarget, reason: photoReason.trim() },
-        { onSuccess: () => { setPhotoTarget(null); toast("Photo update requested.", { tone: "success" }); } })} />
+        { onSuccess: () => { setPhotoTarget(null); toast(t`Photo update requested.`, { tone: "success" }); } })} />
     <StaffPhotoDialog holderName={uploadTarget?.printed_name ?? null} photoPath={`/admin/member-cards/${uploadTarget?.id}/photo`}
       onClose={() => setUploadTarget(null)} onSaved={() => {
-        toast(`Photo saved for ${uploadTarget?.printed_name}.`, { tone: "success" });
+        toast(t`Photo saved for ${String(uploadTarget?.printed_name)}.`, { tone: "success" });
         setUploadTarget(null);
         void client.invalidateQueries({ queryKey: ["member-cards", makerspaceId] });
       }} />

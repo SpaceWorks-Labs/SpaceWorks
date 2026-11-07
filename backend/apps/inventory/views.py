@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import Count, Q
 from django.contrib.postgres.search import SearchVector
 from django.http import Http404
@@ -195,7 +196,7 @@ class PublicInventoryDetailView(RetrieveAPIView):
         try:
             return super().get_object()
         except Http404 as exc:
-            raise NotFound("Item not found.") from exc
+            raise NotFound(gettext("Item not found.")) from exc
 
     def get_queryset(self):
         makerspace = get_public_makerspace(self.kwargs["makerspace_slug"])

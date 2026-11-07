@@ -1,5 +1,6 @@
 """Reservation occupancy, creation lead time, and authorized member rankings."""
 
+from django.utils.translation import gettext
 from datetime import timedelta, timezone as dt_timezone
 from decimal import Decimal
 
@@ -102,7 +103,7 @@ def build_booking_lead_time(makerspace_id, *, limit=None, date_range=None, grain
 
 def build_booking_top_members(makerspace_id, *, limit=None, date_range=None, actor=None):
     if makerspace_id is None:
-        raise PermissionDenied("Member rankings require a single makerspace.")
+        raise PermissionDenied(gettext("Member rankings require a single makerspace."))
     require_action(actor, rbac.Action.MANAGE_BOOKINGS, makerspace_id)
     require_action(actor, rbac.Action.VIEW_AUDIT, makerspace_id)
     records = []

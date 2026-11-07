@@ -5,6 +5,7 @@ transaction. Only the FK-free object intents survive it. Reserved primary keys
 are reused by the final pass; no page, clone, revision or audit is visible early.
 """
 
+from django.utils.translation import gettext
 from copy import deepcopy
 
 from django.db import transaction
@@ -37,7 +38,7 @@ class EventAssetCopies(AssetCopies):
         if name not in self.snapshots:
             self.snapshots[name] = deepcopy(value)
         elif self.snapshots[name] != value:
-            raise ValidationError({"revision": "The source changed. Reload before retrying."})
+            raise ValidationError({"revision": gettext("The source changed. Reload before retrying.")})
 
     def remember(self, name, pk):
         self.identities.setdefault(name, pk)
@@ -66,7 +67,7 @@ class EventAssetCopies(AssetCopies):
         if position == len(self.plans) and self.phase == "reserve":
             self.plans.append(reserve())
         if position >= len(self.plans) or self.plans[position]["signature"] != signature:
-            raise ValidationError({"revision": "The source images changed. Reload before retrying."})
+            raise ValidationError({"revision": gettext("The source images changed. Reload before retrying.")})
         plan = self.plans[position]
         if self.phase == "finalize":
             # Use the freshly locked owner and its CURRENT quota settings, not
@@ -113,7 +114,7 @@ def event_asset_transaction(operation, *, page_id=None):
             transaction.on_commit(lambda: setattr(copies, "committed", True), robust=True)
             result = operation(copies)
             if copies.position != len(copies.plans):
-                raise ValidationError({"revision": "The source images changed. Reload before retrying."})
+                raise ValidationError({"revision": gettext("The source images changed. Reload before retrying.")})
         return result
     except BaseException:
         if not copies.committed:

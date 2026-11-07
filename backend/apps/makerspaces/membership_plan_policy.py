@@ -6,6 +6,7 @@ space settings with the plan's overrides applied, so every existing admission ga
 reading one `policy` object. The space's own "closed" switch stays the master: a closed
 space is closed for every plan (`ensure_join_allowed` refuses before any plan is read).
 """
+from django.utils.translation import gettext
 import copy
 from decimal import Decimal
 
@@ -50,7 +51,7 @@ def choose_plan(makerspace, policy, plan_id):
         return policy.default_plan
     plan = listed_plans(makerspace).filter(pk=plan_id).first()
     if plan is None:
-        raise ValidationError({"plan_id": "Choose one of this makerspace's listed plans."})
+        raise ValidationError({"plan_id": gettext("Choose one of this makerspace's listed plans.")})
     return plan
 
 

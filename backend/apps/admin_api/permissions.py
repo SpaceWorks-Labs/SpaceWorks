@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework.permissions import BasePermission
 from rest_framework.exceptions import PermissionDenied
 
@@ -55,5 +56,5 @@ def require_user_access_mutation(actor, target):
     # community restrict/restore switch never silently removes someone's staff access.
     if not is_person(target) or has_staff_role(target):
         raise PermissionDenied(
-            "Staff and platform accounts cannot use community access changes."
+            gettext("Staff and platform accounts cannot use community access changes.")
         )

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from datetime import datetime, time, timedelta
 
 from django.shortcuts import get_object_or_404
@@ -30,7 +31,7 @@ def date_range_from_dates(start, end, *, makerspace=None):
     `start`/`end` mean exactly what the same dates mean on a manual export.
     """
     if start and end and start > end:
-        raise ValidationError({"end": "End date must be on or after start date."})
+        raise ValidationError({"end": gettext("End date must be on or after start date.")})
     try:
         if makerspace is not None:
             from apps.makerspaces.local_time import local_day_bounds
@@ -40,7 +41,7 @@ def date_range_from_dates(start, end, *, makerspace=None):
             start_dt = timezone.make_aware(datetime.combine(start, time.min)) if start else None
             end_dt = timezone.make_aware(datetime.combine(end + timedelta(days=1), time.min)) if end else None
     except (OverflowError, ValueError) as exc:
-        raise ValidationError({"end" if end else "start": "Date range exceeds the supported calendar."}) from exc
+        raise ValidationError({"end" if end else "start": gettext("Date range exceeds the supported calendar.")}) from exc
     return CalendarDateRange((start_dt, end_dt)) if start_dt or end_dt else None
 
 
@@ -53,7 +54,7 @@ def _date_param(request, name):
     except ValueError:
         parsed = None
     if parsed is None:
-        raise ValidationError({name: "Use YYYY-MM-DD."})
+        raise ValidationError({name: gettext("Use YYYY-MM-DD.")})
     return parsed
 
 
@@ -118,9 +119,9 @@ def _positive_int_param(request, name, default, maximum):
     try:
         value = int(raw)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({name: "Enter a positive integer."}) from exc
+        raise ValidationError({name: gettext("Enter a positive integer.")}) from exc
     if value < 1:
-        raise ValidationError({name: "Enter a positive integer."})
+        raise ValidationError({name: gettext("Enter a positive integer.")})
     return min(value, maximum)
 
 

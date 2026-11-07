@@ -1,5 +1,6 @@
 """Staff routes for programme cards: list (chips, search), add, edit, delete, bulk
 decisions, import, single download/email, photo request and bulk jobs."""
+from django.utils.translation import gettext
 from django.db.models import Q
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -104,7 +105,7 @@ class ProgrammeDecisionView(APIView):
         if values["all"]:
             source = {"approve": "pending", "renew": "approved"}.get(values["action"])
             if source is None:
-                raise ValidationError({"all": "“All” works for approve and renew only."})
+                raise ValidationError({"all": gettext("“All” works for approve and renew only.")})
             ids = list(programme.cards.filter(status=source).values_list("pk", flat=True)[:500])
         changed = cards.decide(request.user, programme, values["action"], ids, values.get("reason", ""))
         return Response({"changed": len(changed)})
@@ -151,7 +152,7 @@ class ProgrammeCardDownloadView(APIView):
         from apps.card_designs.downloads import record_download
         card = card_for(request.user, pk, MANAGE)
         if card.status != "approved":
-            raise PermissionDenied("Only an approved card can be downloaded.")
+            raise PermissionDenied(gettext("Only an approved card can be downloaded."))
         fmt, side = request.query_params.get("format", "pdf"), request.query_params.get("side", "front")
         data, content_type, filename = render("programme_card", card, fmt=fmt, side=side)
         record_download(request.user, "programme_card", card, fmt, side)
@@ -168,7 +169,7 @@ class ProgrammeCardEmailView(APIView):
     def post(self, request, pk):
         from apps.card_designs.email import send_card_email
         if not send_card_email("programme_card", card_for(request.user, pk, MANAGE), actor=request.user, explicit=True):
-            raise ValidationError({"detail": "Not sent: emailed recently, over the daily limit, or not approved."})
+            raise ValidationError({"detail": gettext("Not sent: emailed recently, over the daily limit, or not approved.")})
         return Response({"queued": True}, status=202)
 
 

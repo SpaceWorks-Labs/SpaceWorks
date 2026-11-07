@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { DataState, PerMakerspaceTables, ReportTable, StatCards } from "./OperationsReportsParts";
 import { OperationsReportsBookings } from "./OperationsReportsBookings";
@@ -35,9 +36,9 @@ export function OperationsReportsFablab({
   if (healthRow?.maintenance_available) healthStats.push(["Maintenance logs", healthRow.maintenance_logs ?? 0], ["Overdue schedules (snapshot)", healthRow.maintenance_overdue_schedules ?? 0]);
   if (healthRow?.bookings_available) healthStats.push(["Upcoming bookings", healthRow.bookings_upcoming ?? 0]);
   return (
-    <section className="contents" aria-label="FabLab analytics">
-      <Panel title="FabLab health">
-        {!reportsEnabled ? <p className="text-sm text-muted">Module disabled</p> : (
+    <section className="contents" aria-label={t`FabLab analytics`}>
+      <Panel title={t`FabLab health`}>
+        {!reportsEnabled ? <p className="text-sm text-muted">{t`Module disabled`}</p> : (
           <DataState loading={health.isLoading} error={health.error} onRetry={() => void health.refetch()} empty={!health.data?.typed_rows.length}>
             {aggregate ? (
               <PerMakerspaceTables data={health.data} nameOf={makerspaceName} />
@@ -45,10 +46,10 @@ export function OperationsReportsFablab({
               <>
                 {healthStats.length ? <StatCards stats={healthStats} /> : null}
                 <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                  <HealthState label="Events" enabled={healthRow.events_enabled} available={healthRow.events_available} />
-                  <HealthState label="Bookings" enabled={healthRow.bookings_enabled} available={healthRow.bookings_available} />
-                  <HealthState label="Machines" enabled={healthRow.machines_enabled} available={healthRow.machines_available} />
-                  <HealthState label="Maintenance" enabled={healthRow.maintenance_enabled} available={healthRow.maintenance_available} />
+                  <HealthState label={t`Events`} enabled={healthRow.events_enabled} available={healthRow.events_available} />
+                  <HealthState label={t`Bookings`} enabled={healthRow.bookings_enabled} available={healthRow.bookings_available} />
+                  <HealthState label={t`Machines`} enabled={healthRow.machines_enabled} available={healthRow.machines_available} />
+                  <HealthState label={t`Maintenance`} enabled={healthRow.maintenance_enabled} available={healthRow.maintenance_available} />
                 </div>
                 <ReportTable data={health.data} />
               </>

@@ -12,6 +12,7 @@ Approval anonymises what THIS space holds about the membership and ends it:
 * money rows (payments, refunds, settlements) and the audit log are KEPT, and the
   account itself is never deleted (account deletion belongs to U-C).
 """
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
@@ -35,13 +36,13 @@ def request_erasure(member, membership, note=""):
             space = _lock(membership.makerspace_id)
             membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
             if membership.user_id != member.pk:
-                raise NotFound("Membership not found.")
+                raise NotFound(gettext("Membership not found."))
             row = MembershipErasureRequest.objects.create(
                 makerspace=space, membership=membership, member_note=(note or "").strip()[:1000])
             audit.record(member, "membership.erasure_requested", makerspace=space, target=row,
                          meta={"membership_id": membership.pk, "request_id": row.pk})
     except IntegrityError as exc:
-        raise ValidationError({"detail": "An erasure request is already open."}) from exc
+        raise ValidationError({"detail": gettext("An erasure request is already open.")}) from exc
     return row
 
 
@@ -50,7 +51,7 @@ def withdraw(member, row):
         space = _lock(row.makerspace_id)
         row = MembershipErasureRequest.objects.select_for_update().select_related("membership").get(pk=row.pk)
         if row.membership.user_id != member.pk or row.status != row.Status.REQUESTED:
-            raise ValidationError({"detail": "This request can no longer be withdrawn."})
+            raise ValidationError({"detail": gettext("This request can no longer be withdrawn.")})
         row.status, row.decided_at = row.Status.WITHDRAWN, timezone.now()
         row.save(update_fields=["status", "decided_at", "updated_at"])
         audit.record(member, "membership.erasure_withdrawn", makerspace=space, target=row,
@@ -61,14 +62,14 @@ def withdraw(member, row):
 def _open(row):
     row = MembershipErasureRequest.objects.select_for_update().select_related("membership__user").get(pk=row.pk)
     if row.status != row.Status.REQUESTED:
-        raise ValidationError({"detail": "This request has already been decided."})
+        raise ValidationError({"detail": gettext("This request has already been decided.")})
     return row
 
 
 def reject(actor, row, note):
     note = (note or "").strip()
     if not note:
-        raise ValidationError({"note": "Tell the member why their request was rejected."})
+        raise ValidationError({"note": gettext("Tell the member why their request was rejected.")})
     with transaction.atomic():
         space = _lock(row.makerspace_id)
         row = _open(row)

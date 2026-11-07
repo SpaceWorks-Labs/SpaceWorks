@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import uuid
 from types import SimpleNamespace
 
@@ -108,7 +109,7 @@ class RequestSubmitView(APIView):
         products = _requestable_products(product_ids, makerspace)
         if len(products) != len(product_ids):
             raise ValidationError(
-                {"items": "One or more products are unavailable for request."}
+                {"items": gettext("One or more products are unavailable for request.")}
             )
 
         if contact:

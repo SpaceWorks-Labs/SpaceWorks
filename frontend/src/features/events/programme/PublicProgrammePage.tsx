@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useParams } from 'react-router-dom'
 import { PublicLayout } from '../../../components/layouts'
 import { useTenant, useTenantPath } from '../../../lib/tenant'
@@ -24,8 +25,8 @@ export function PublicProgrammePage({ results = false }: { results?: boolean }) 
   const peoplesChoice = bootstrap?.features.includes('events.peoples_choice') ? bootstrap.makerspace.id : undefined
   const projectHref = (id: string) => `${base}/gallery/${encodeURIComponent(id)}`
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, name, tenantPath, bootstrap)} state={{ status: 'ready' }}
-    breadcrumb={[{ label: 'All events', href: tenantPath('events') }, { label: 'Event', href: base },
-      ...(entryPublicId && !results ? [{ label: here, href: `${base}/gallery` }, { label: 'Project' }] : [{ label: here }])]}>
+    breadcrumb={[{ label: t`All events`, href: tenantPath('events') }, { label: t`Event`, href: base },
+      ...(entryPublicId && !results ? [{ label: here, href: `${base}/gallery` }, { label: t`Project` }] : [{ label: here }])]}>
     {results ? <ResultsPage makerspaceSlug={makerspaceSlug} publicToken={publicToken} eventTitle="Event"
       peoplesChoice={peoplesChoice !== undefined} projectHref={projectHref} /> : <GalleryPage
       peoplesChoice={peoplesChoice !== undefined ? { makerspaceId: peoplesChoice } : undefined}

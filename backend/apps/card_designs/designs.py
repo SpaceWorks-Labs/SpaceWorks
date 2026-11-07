@@ -6,6 +6,7 @@ approver, or when no level asks for it; otherwise the editor submits the revisio
 and an approver publishes it by approving. Editing a submitted design withdraws it.
 Every step is audited; autosaves at most once per design per 10 minutes.
 """
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -32,7 +33,7 @@ def asset_colours(makerspace_id, document):
     found = {str(row.asset_id): row.mean_colour or "#808080" for row in rows}
     missing = ids - set(found)
     if missing:
-        raise ValidationError({"document": "An image in this design was not uploaded to this space."})
+        raise ValidationError({"document": gettext("An image in this design was not uploaded to this space.")})
     return found
 
 
@@ -88,7 +89,7 @@ def _publish(actor, design, revision_document, *, acted_for=None):
 def publish(actor, design, *, acted_for=None):
     design = CardDesign.objects.select_for_update().get(pk=design.pk)
     if approval.needs_approval(actor, design):
-        raise PermissionDenied("This design needs approval. Submit it for approval instead.")
+        raise PermissionDenied(gettext("This design needs approval. Submit it for approval instead."))
     _publish(actor, design, validated(design.makerspace_id, design.document), acted_for=acted_for)
     return design
 
@@ -97,9 +98,9 @@ def publish(actor, design, *, acted_for=None):
 def submit(actor, design):
     design = CardDesign.objects.select_for_update().get(pk=design.pk)
     if not approval.needs_approval(actor, design):
-        raise ValidationError({"detail": "You can publish this design directly."})
+        raise ValidationError({"detail": gettext("You can publish this design directly.")})
     if design.approvals.filter(decision=CardDesignApproval.Decision.PENDING).exists():
-        raise ValidationError({"detail": "This design is already waiting for approval."})
+        raise ValidationError({"detail": gettext("This design is already waiting for approval.")})
     validated(design.makerspace_id, design.document)
     row = CardDesignApproval.objects.create(design=design, revision=design.revision, requested_by=actor)
     design.status = CardDesign.Status.PENDING_APPROVAL
@@ -115,10 +116,10 @@ def submit(actor, design):
 def decide(actor, design, *, approve, note=""):
     design = CardDesign.objects.select_for_update().get(pk=design.pk)
     if not approval.can_approve(actor, design):
-        raise PermissionDenied("Only an approver in this space can decide.")
+        raise PermissionDenied(gettext("Only an approver in this space can decide."))
     row = design.approvals.select_for_update().filter(decision=CardDesignApproval.Decision.PENDING).first()
     if row is None:
-        raise ValidationError({"detail": "Nothing is waiting for approval."})
+        raise ValidationError({"detail": gettext("Nothing is waiting for approval.")})
     if row.revision != design.revision:
         raise DesignConflict({"revision": "The design changed after it was submitted."})
     row.decision = CardDesignApproval.Decision.APPROVED if approve else CardDesignApproval.Decision.REJECTED

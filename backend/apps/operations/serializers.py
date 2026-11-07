@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.operations.serializers_health import (
@@ -116,7 +117,7 @@ class StockTransferLineInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if bool(attrs.get("product_id")) == bool(attrs.get("asset_id")):
-            raise serializers.ValidationError("Provide exactly one of product_id or asset_id.")
+            raise serializers.ValidationError(gettext("Provide exactly one of product_id or asset_id."))
         return attrs
 
 

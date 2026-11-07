@@ -1,5 +1,6 @@
 """Platform authority for lifecycle decisions, independent of the admin caller."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 from apps.accounts.staff_identity import is_platform
@@ -15,4 +16,4 @@ def require_platform_superadmin(actor):
         and getattr(actor, "access_status", None) == "active"
         and not getattr(actor, "must_change_password", False)
     ):
-        raise ValidationError("Only an active platform superadmin can manage makerspace lifecycle.")
+        raise ValidationError(gettext("Only an active platform superadmin can manage makerspace lifecycle."))

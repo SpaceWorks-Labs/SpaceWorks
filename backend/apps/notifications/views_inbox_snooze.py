@@ -5,6 +5,7 @@ leave them until restored. Switching the feature off keeps both columns and simp
 shows every row again (no data loss). Each change is audited without the message text.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.shortcuts import get_object_or_404
@@ -31,7 +32,7 @@ class InboxSnoozeSerializer(serializers.Serializer):
     def validate_until(self, value):
         now = timezone.now()
         if not now < value <= now + MAX_SNOOZE:
-            raise serializers.ValidationError("Choose a time in the next 30 days.")
+            raise serializers.ValidationError(gettext("Choose a time in the next 30 days."))
         return value
 
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { memberRequest, memberRequestBlob } from "../../lib/api";
 import type { ExportJob, FieldKey, Prefill, PrefillSelector, ResumeAsset, SavedCommand, SavedDetails, SavedValue, SaveIntent } from "./types";
 import { parseDetail, parseExport, parseIntent, parsePrefill, parseResume, parseSavedDetails } from "./parsers";
@@ -22,14 +23,14 @@ export const exportStatus = (id: string) => memberRequest<ExportJob>(base + `exp
 export const downloadExport = (id: string) => memberRequestBlob(base + `export/${encodeURIComponent(id)}/download/`);
 
 export async function uploadResume(file: File, asset: ResumeAsset, signal?: AbortSignal) {
-  if (!asset.upload) throw new Error("Restart this upload.");
+  if (!asset.upload) throw new Error(t`Restart this upload.`);
   const target = new URL(asset.upload.url);
-  if (!["https:", "http:"].includes(target.protocol) || target.username || target.password) throw new Error("The upload address is unavailable.");
+  if (!["https:", "http:"].includes(target.protocol) || target.username || target.password) throw new Error(t`The upload address is unavailable.`);
   const data = new FormData();
   Object.entries(asset.upload.fields).forEach(([key, value]) => data.append(key, value));
   data.append("file", file);
   const response = await fetch(target, { method: "POST", body: data, credentials: "omit", signal });
-  if (!response.ok) throw new Error("The PDF upload failed. Try again.");
+  if (!response.ok) throw new Error(t`The PDF upload failed. Try again.`);
 }
 
 export function saveBlob(blob: Blob, filename: string) {

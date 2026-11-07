@@ -5,6 +5,7 @@ in RBAC roles, and no rbac reader looks at titles. A membership may hold several
 and mark one primary; the card (L3) prints the primary one. Archiving a title keeps its
 assignments as history but hides it from pickers and cards. Every change is audited.
 """
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -42,7 +43,7 @@ def save_title(actor, makerspace, values, title=None):
                 audit.record(actor, "membership.title_updated", makerspace=space, target=title,
                              meta={"title_id": title.pk, "fields": sorted(values)})
     except IntegrityError as exc:
-        raise ValidationError({"name": "A title with this name already exists."}) from exc
+        raise ValidationError({"name": gettext("A title with this name already exists.")}) from exc
     return title
 
 
@@ -67,7 +68,7 @@ def assign(actor, membership, title, *, primary=False):
         space = _locked(membership.makerspace_id)
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
         if title.makerspace_id != space.pk or title.archived_at is not None:
-            raise ValidationError({"title_id": "Choose a current title of this makerspace."})
+            raise ValidationError({"title_id": gettext("Choose a current title of this makerspace.")})
         if primary:
             MembershipTitleAssignment.objects.filter(membership=membership, is_primary=True).update(is_primary=False)
         row, created = MembershipTitleAssignment.objects.get_or_create(

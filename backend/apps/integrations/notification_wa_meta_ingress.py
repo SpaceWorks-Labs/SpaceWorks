@@ -1,4 +1,5 @@
 """Compatibility journal adapter and canonical transient-failure replay helper."""
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.utils import timezone
@@ -19,10 +20,10 @@ def apply_item(configuration, request, index, item):
     from .notification_wa_journal import accept_meta_item
     payload = verified_payload(configuration, request)
     if payload is None:
-        raise ValidationError({"proof": "Provider verification failed."})
+        raise ValidationError({"proof": gettext("Provider verification failed.")})
     batch = items(configuration, payload)
     if type(index) is not int or not 0 <= index < len(batch) or batch[index] != item:
-        raise ValidationError({"proof": "Invalid authenticated batch item."})
+        raise ValidationError({"proof": gettext("Invalid authenticated batch item.")})
     return accept_meta_item(configuration, request, index, item)
 
 

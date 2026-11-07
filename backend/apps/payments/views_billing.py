@@ -1,5 +1,6 @@
 """Staff policy belongs to the core ledger, independently of provider settings."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -49,7 +50,7 @@ class BillingSettingsSerializer(serializers.ModelSerializer):
 
     def validate_number_prefix(self, value):
         if any(ord(char) < 32 or ord(char) == 127 or char in "/\\" for char in value):
-            raise serializers.ValidationError("Use a prefix without control characters or slashes.")
+            raise serializers.ValidationError(gettext("Use a prefix without control characters or slashes."))
         return value
 
     validate_bill_prefix = validate_number_prefix
@@ -58,10 +59,10 @@ class BillingSettingsSerializer(serializers.ModelSerializer):
         number_prefix = attrs.get("number_prefix", getattr(self.instance, "number_prefix", ""))
         bill_prefix = attrs.get("bill_prefix", getattr(self.instance, "bill_prefix", "BILL-"))
         if number_prefix == bill_prefix:
-            raise serializers.ValidationError({"bill_prefix": "Bill and receipt prefixes must differ."})
+            raise serializers.ValidationError({"bill_prefix": gettext("Bill and receipt prefixes must differ.")})
         for name in ("reminder_days_before", "reminder_days_after"):
             if name in attrs and len(attrs[name]) != len(set(attrs[name])):
-                raise serializers.ValidationError({name: "Reminder days must be distinct."})
+                raise serializers.ValidationError({name: gettext("Reminder days must be distinct.")})
         return attrs
 
 

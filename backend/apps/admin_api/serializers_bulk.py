@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import json
 from rest_framework import serializers
 
@@ -72,16 +73,15 @@ def _validate_import_payload(attrs):
     has_file = bool(attrs.get("file"))
     has_rows = bool(attrs.get("rows"))
     if not has_file and not has_rows:
-        raise serializers.ValidationError("Provide either file or rows.")
+        raise serializers.ValidationError(gettext("Provide either file or rows."))
     if has_file and has_rows:
-        raise serializers.ValidationError("Provide file or rows, not both.")
+        raise serializers.ValidationError(gettext("Provide file or rows, not both."))
     uploaded_file = attrs.get("file")
     if uploaded_file and uploaded_file.size > bulk_import.MAX_IMPORT_UPLOAD_BYTES:
         raise serializers.ValidationError(
             {
                 "file": (
-                    "Import file must be "
-                    f"{bulk_import.MAX_IMPORT_UPLOAD_BYTES} bytes or smaller."
+                    gettext('Import file must be {MAX_IMPORT_UPLOAD_BYTES} bytes or smaller.').format(MAX_IMPORT_UPLOAD_BYTES=bulk_import.MAX_IMPORT_UPLOAD_BYTES)
                 )
             }
         )
@@ -96,9 +96,9 @@ def _mapping_value(value):
         try:
             value = json.loads(value)
         except json.JSONDecodeError as exc:
-            raise serializers.ValidationError({"mapping": "Mapping must be valid JSON."}) from exc
+            raise serializers.ValidationError({"mapping": gettext("Mapping must be valid JSON.")}) from exc
     if not isinstance(value, dict):
-        raise serializers.ValidationError({"mapping": "Mapping must be an object."})
+        raise serializers.ValidationError({"mapping": gettext("Mapping must be an object.")})
     return value
 
 

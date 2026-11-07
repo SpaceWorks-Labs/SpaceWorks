@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import ValidationError
@@ -181,21 +182,21 @@ def _ledger_export_response(makerspace_id, request, filename_base):
 def _ledger_filters(request):
     search = (request.query_params.get("search") or "").strip()
     if len(search) > 200:
-        raise ValidationError({"search": "Search must be 200 characters or fewer."})
+        raise ValidationError({"search": gettext("Search must be 200 characters or fewer.")})
 
     raw_source = (request.query_params.get("source") or "").strip()
     source = None
     if raw_source:
         source = ledger.normalize_source(raw_source)
         if source is None:
-            raise ValidationError({"source": "Use reviewed, self_checkout, or direct."})
+            raise ValidationError({"source": gettext("Use reviewed, self_checkout, or direct.")})
 
     raw_sort = (request.query_params.get("sort") or "").strip()
     sort = None
     if raw_sort:
         sort = ledger.normalize_sort(raw_sort)
         if sort is None:
-            raise ValidationError({"sort": "Use a supported ledger sort field."})
+            raise ValidationError({"sort": gettext("Use a supported ledger sort field.")})
 
     return {
         "search": search,
@@ -212,15 +213,15 @@ def _aggregate_ledger_makerspace_id(request):
     try:
         makerspace_id = int(raw)
     except ValueError as exc:
-        raise ValidationError({"makerspace": "Enter a makerspace id."}) from exc
+        raise ValidationError({"makerspace": gettext("Enter a makerspace id.")}) from exc
     if makerspace_id < 1:
-        raise ValidationError({"makerspace": "Enter a makerspace id."})
+        raise ValidationError({"makerspace": gettext("Enter a makerspace id.")})
     excluded = rbac.archived_makerspace_ids()
     queryset = Makerspace.objects.all()
     if excluded:
         queryset = queryset.exclude(pk__in=excluded)
     if not queryset.filter(pk=makerspace_id).exists():
-        raise ValidationError({"makerspace": "Makerspace is not available."})
+        raise ValidationError({"makerspace": gettext("Makerspace is not available.")})
     return makerspace_id
 
 
@@ -232,7 +233,7 @@ def _bool_param(request, name):
         return True
     if raw in {"0", "false", "no"}:
         return False
-    raise ValidationError({name: "Use true or false."})
+    raise ValidationError({name: gettext("Use true or false.")})
 
 
 def _pagination_links(request, page, page_size, count):
@@ -254,7 +255,7 @@ def _page_url(request, page):
 def _export_format(request):
     fmt = (request.query_params.get("format") or "csv").strip().lower()
     if fmt not in {"csv", "xlsx"}:
-        raise ValidationError({"format": "Use csv or xlsx."})
+        raise ValidationError({"format": gettext("Use csv or xlsx.")})
     return fmt
 
 

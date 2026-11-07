@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
@@ -16,11 +17,11 @@ export function EventPayoutsSection({ makerspaceId }: { makerspaceId: number }) 
     gcTime: 0, retry: false });
   const [selected, setSelected] = useState<string | null>(null);
   if (account.error) return <ErrorBlock error={account.error} />;
-  if (!account.data) return <p role="status">Loading event payouts…</p>;
+  if (!account.data) return <p role="status">{t`Loading event payouts…`}</p>;
   const scope = { actorId: account.data.id, makerspaceId };
-  return <section className="mt-8 grid gap-6" aria-label="Event reimbursement payouts">
+  return <section className="mt-8 grid gap-6" aria-label={t`Event reimbursement payouts`}>
     {selected ? <>
-      <button type="button" className="desk-button justify-self-start" onClick={() => setSelected(null)}>All event payouts</button>
+      <button type="button" className="desk-button justify-self-start" onClick={() => setSelected(null)}>{t`All event payouts`}</button>
       <PayoutDetail key={selected} scope={scope} id={selected} />
     </> : <>
       <PayoutDashboard scope={scope} />

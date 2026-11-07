@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers, status
@@ -150,7 +151,7 @@ class PublicBookingSubmissionView(APIView):
         require_booking_account(request.user, makerspace)
 
         if not isinstance(request.data, Mapping):
-            raise serializers.ValidationError({'non_field_errors': ['Expected an object.']})
+            raise serializers.ValidationError({'non_field_errors': [gettext('Expected an object.')]})
         website = request.data.get('website')
         if website and str(website).strip():
             expected_status = (

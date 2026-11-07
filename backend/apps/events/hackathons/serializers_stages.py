@@ -1,4 +1,5 @@
 """Closed payloads and response shapes for review stages and the panel workspace (lane L21a)."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from .admission_inputs import CommandInput, LiteralBoolean, StrictSerializer
@@ -51,7 +52,7 @@ class StageReviewInput(StrictSerializer):
 
     def validate(self, attrs):
         if ("scores" in attrs) == ("recusal_code" in attrs):
-            raise serializers.ValidationError("Submit scores or recuse.")
+            raise serializers.ValidationError(gettext("Submit scores or recuse."))
         return attrs
 
 

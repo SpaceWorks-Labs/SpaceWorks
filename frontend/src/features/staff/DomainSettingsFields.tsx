@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState, type ReactNode } from "react";
 
 import { SettingsRow } from "../../components/ui";
@@ -9,24 +10,24 @@ type Draft = Partial<Record<Field, string | boolean>>;
 
 const COPY: Record<Field, { label: string; helper: string }> = {
   event_default_registration_audience: {
-    label: "Default registration audience",
-    helper: "New events and recurring series start with this audience. Existing events keep theirs.",
+    label: t`Default registration audience`,
+    helper: t`New events and recurring series start with this audience. Existing events keep theirs.`,
   },
   event_reminder_lead_hours: {
-    label: "Event reminder lead hours",
-    helper: "Hours before a confirmed event to email members, for example: 24, 2. Leave blank to disable.",
+    label: t`Event reminder lead hours`,
+    helper: t`Hours before a confirmed event to email members, for example: 24, 2. Leave blank to disable.`,
   },
   booking_requester_notifications_enabled: {
-    label: "Email booking requesters",
-    helper: "Default for booking submitted, confirmed and rejected emails. Each space may override it.",
+    label: t`Email booking requesters`,
+    helper: t`Default for booking submitted, confirmed and rejected emails. Each space may override it.`,
   },
   booking_reminder_lead_hours: {
-    label: "Booking reminder lead hours",
-    helper: "Hours before a confirmed booking to email the booker, for example: 24, 2. Leave blank to disable.",
+    label: t`Booking reminder lead hours`,
+    helper: t`Hours before a confirmed booking to email the booker, for example: 24, 2. Leave blank to disable.`,
   },
   filament_low_stock_threshold_grams: {
-    label: "Filament low-stock threshold (grams)",
-    helper: "Spools at or below this weight can suggest a reorder. 0 turns it off.",
+    label: t`Filament low-stock threshold (grams)`,
+    helper: t`Spools at or below this weight can suggest a reorder. 0 turns it off.`,
   },
 };
 
@@ -60,7 +61,7 @@ function changes(values: DomainSettingValues, initial: Draft, draft: Draft): { p
       if (!hours) return { error: HOURS_ERROR };
       patch[field] = hours;
     } else if (field === "filament_low_stock_threshold_grams") {
-      if (!/^\d+(\.\d{1,2})?$/.test(String(value).trim())) return { error: "Enter a weight of 0 or more grams." };
+      if (!/^\d+(\.\d{1,2})?$/.test(String(value).trim())) return { error: t`Enter a weight of 0 or more grams.` };
       patch[field] = String(value).trim();
     } else {
       patch[field] = value;
@@ -105,7 +106,7 @@ export function DomainSettingsFields({ values, disabled, pending, error, onSave,
           <label className="min-h-11 flex items-start gap-3 text-sm text-ink">
             <input id={inputId} className="mt-1 h-4 w-4" type="checkbox" checked={value} disabled={fieldDisabled}
               onChange={(event) => set(field, event.target.checked)} />
-            <span>{value ? "On" : "Off"}</span>
+            <span>{value ? t`On` : t`Off`}</span>
           </label>
         ) : field === "event_default_registration_audience" ? (
           <select id={inputId} className="desk-input w-full min-w-0" value={String(value)} disabled={fieldDisabled}

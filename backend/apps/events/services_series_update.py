@@ -1,5 +1,6 @@
 """Series edits and projection onto locked future occurrences."""
 
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework import serializers
 from apps.audit import services as audit
@@ -29,7 +30,7 @@ def update_series(series, *, actor, effective_from=None, **changes):
         require(actor, locked, None)
     recurrence_changed = bool(set(changes) & RECURRENCE_FIELDS)
     if recurrence_changed and locked.status == EventSeries.Status.PUBLISHED and effective_from is None:
-        raise serializers.ValidationError({"effective_from": "Required for a published schedule change."})
+        raise serializers.ValidationError({"effective_from": gettext("Required for a published schedule change.")})
     cutoff = effective_from or timezone.now()
     old_revision = locked.revision
     old_audience = locked.registration_audience

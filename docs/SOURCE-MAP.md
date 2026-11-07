@@ -1070,6 +1070,36 @@ identity normalization and production minimum-version comparison. `mobile_associ
   page, the public `PausedTenantGate` and `SuperadminSpaceGuard`, which sets `lib/api/requests.setStaffWriteGuard`), `features/staff/hostingPlan/` (the Space Manager's plan usage
   and invoices inside `TenantUsagePanel`).
 
+### Release 2 L9 (internationalisation, phase 8)
+
+- Registry and resolution (`backend/config/`): `supported_locales.json` (the one locale list),
+  `locale_registry.py` (`LANGUAGES`, `canonicalize`, `validate_supported_locale`),
+  `locale_resolution.py` (precedence, request activation, `override_for` for background output,
+  `early_response_locale`), `locale_context.py` (`LocaleContextResetMiddleware`,
+  `ExplicitLocaleMiddleware`). Activation in `accounts/authentication.py`; bootstrap in
+  `makerspaces/views.py`.
+- Persistence: `accounts/models_user.py` `preferred_locale` (`0057`),
+  `makerspaces/models_makerspace_core.py` `default_locale` (`0132`); `accounts/serializers_locale.py`
+  and `services_locale.py` (`PATCH auth/me` on `MeView` in `views_profile.py`), the payload fields
+  in `serializers_payload.py` and `schemas_auth.py`; the makerspace field and its audit in
+  `admin_api/serializers_makerspaces.py` and `views_makerspaces.py`.
+- Registries: `audit/presentation_catalog_r2_l9.py`, `data_export/classification_r2_l9.py` (plus
+  the user projection in `data_export/fields.py`), `tenant_migration/catalog_r2_l9.py`,
+  `tenant_dump_user_rows.py` (stub null), `portable_people.py` (created people keep a supported
+  preference), the `auth-me` entries in `accounts/claim_routes_auth.py` and
+  `tenant_migration/gate_policy_http.py`.
+- Catalogues and guards: `backend/locale/en/LC_MESSAGES/django.po`,
+  `backend/scripts/check_i18n_literals.py`; templates in `integrations/email_templates.py`
+  (defaults translated per recipient; edited rows byte-for-byte).
+- Frontend: `lingui.config.ts`, `src/lib/i18n.ts` (runtime and precedence), `src/lib/I18nRoot.tsx`
+  (provider and cache refresh), `src/lib/localeFetch.ts` (API locale headers), `src/lib/format.ts`
+  (formatting), `src/generated/locales.ts` (from `scripts/generate-locales.mjs`),
+  `src/locales/en/messages.po`, `components/shell/LanguageSwitcher.tsx` (mounted in `UserMenu`,
+  `features/inventory/PublicPageChrome.tsx` and `features/members/MemberAccountPage.tsx`),
+  the space default in `features/staff/MakerspaceGeneralSettings.tsx`; guards
+  `scripts/check-i18n-literals.mjs`, `scripts/i18n-literal-positions.mjs` and
+  `scripts/i18n-worker-closure.mjs`. Contributor guide: `docs/i18n.md`.
+
 ## Domain and frontend map
 See [SOURCE-MAP-DOMAINS.md](SOURCE-MAP-DOMAINS.md) for hardware loans, payments,
 printing, events, the frontend directories and connected device monitoring.

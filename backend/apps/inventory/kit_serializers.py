@@ -1,5 +1,6 @@
 """Bounded checklist definitions and physical-count inputs shared by loan surfaces."""
 
+from django.utils.translation import gettext
 import uuid
 
 from rest_framework import serializers
@@ -26,7 +27,7 @@ class KitDefinitionField(serializers.ListField):
             return value
         keys = [entry["key"] for entry in value]
         if len(keys) != len(set(keys)):
-            raise serializers.ValidationError("Component keys must be unique.")
+            raise serializers.ValidationError(gettext("Component keys must be unique."))
         return value
 
 

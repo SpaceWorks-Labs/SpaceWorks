@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { plural } from "../../../../lib/plural";
 import { QueueSummary } from "../../../machine-service/QueueSummary";
 import { machineStatusLabel } from "./machineStatusLabel";
@@ -69,18 +70,18 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
   const [params] = useSearchParams();
   const queueStatus = params.get("job_status") ?? undefined;
   const service = machineServiceEnabled && canManage;
-  const choices = [{ key: "machines", label: "Machines", count: allMachines.length },
-    ...(service ? [{ key: "queue", label: "Service queue" }, { key: "board", label: "Queue board" }, { key: "consumables", label: "Consumables" }] : []),
-    ...(machineType.can_create_machine === true ? [{ key: "certifications", label: "Certifications" }] : []),
-    ...(canConfigureMachineTypes || settings ? [{ key: "settings", label: "Settings" }] : [])];
+  const choices = [{ key: "machines", label: t`Machines`, count: allMachines.length },
+    ...(service ? [{ key: "queue", label: t`Service queue` }, { key: "board", label: t`Queue board` }, { key: "consumables", label: t`Consumables` }] : []),
+    ...(machineType.can_create_machine === true ? [{ key: "certifications", label: t`Certifications` }] : []),
+    ...(canConfigureMachineTypes || settings ? [{ key: "settings", label: t`Settings` }] : [])];
   const view = useOpsTabs("view", choices, "machines");
   const statuses = ["all", "idle", "running", "reserved", "maintenance", "offline"] as const;
   const main = <>
     {view.active === "machines" ? <section aria-label={`${machineType.name} machines`} className="grid gap-4">
-      <Tabs label="Machine status" activeKey={statusFilter} onChange={key => onStatusFilter(key as typeof statusFilter & ("all" | Machine["status"]))}
-        tabs={statuses.map(key => ({ key, label: key === "all" ? "All statuses" : key.charAt(0).toUpperCase() + key.slice(1), href: "#" }))}>
-      {!allMachines.length ? <EmptyState message="No machines are registered for this type. Add the first one with Add machine." /> :
-        !visibleMachines.length ? <EmptyState message="No machines match the selected status. Choose another status." /> :
+      <Tabs label={t`Machine status`} activeKey={statusFilter} onChange={key => onStatusFilter(key as typeof statusFilter & ("all" | Machine["status"]))}
+        tabs={statuses.map(key => ({ key, label: key === "all" ? t`All statuses` : key.charAt(0).toUpperCase() + key.slice(1), href: "#" }))}>
+      {!allMachines.length ? <EmptyState message={t`No machines are registered for this type. Add the first one with Add machine.`} /> :
+        !visibleMachines.length ? <EmptyState message={t`No machines match the selected status. Choose another status.`} /> :
         <DataTable data={visibleMachines} columns={[
           { key: "name", header: "Name", render: machine => <button className="desk-button-ghost min-h-11 max-w-full justify-start text-left" onClick={() => onSelectMachine(machine.id)}><ImageThumbnail src={machine.image_url} alt={machine.name} className="h-10 w-10 shrink-0" /><span className="min-w-0 break-words">
             <strong className="block">{machine.name}</strong><span className="block text-sm text-muted">{[machine.type_payload?.model, machine.location || "No location"].filter(Boolean).join(" · ")}</span>
@@ -108,23 +109,23 @@ export function MachineTypePage({ enabledFeatures = [], makerspaceId, canManage,
       {canConfigureMachineTypes && machineServiceEnabled ? <JobSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}
       {canConfigureMachineTypes && enabledFeatures.includes("machines.sessions") ? <SessionSettingsEditor visible={view.active === "settings"} makerspaceId={makerspaceId} machineTypeId={machineType.id} /> : null}{settings}
     </>
-    {creating ? <FlowLayout presentation="dialog" open title="Add machine" steps={[]} current="create" state={{ status: "ready" }} onCancel={() => { setCreating(false); setCreatedMachineId(null); }}
+    {creating ? <FlowLayout presentation="dialog" open title={t`Add machine`} steps={[]} current="create" state={{ status: "ready" }} onCancel={() => { setCreating(false); setCreatedMachineId(null); }}
       work={<MachineCreateForm makerspaceId={makerspaceId} machineType={machineType} hideSubmit onCreated={setCreatedMachineId}
         onDone={() => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); if (id !== null) onSelectMachine(id); }} />}
-      footer={createdMachineId === null ? { next: { label: "Add machine", onClick: () => document.querySelector<HTMLFormElement>("#machine-create-form")?.requestSubmit() } }
-        : { next: { label: "Done", onClick: () => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); onSelectMachine(id); } } }} /> : null}
+      footer={createdMachineId === null ? { next: { label: t`Add machine`, onClick: () => document.querySelector<HTMLFormElement>("#machine-create-form")?.requestSubmit() } }
+        : { next: { label: t`Done`, onClick: () => { const id = createdMachineId; setCreating(false); setCreatedMachineId(null); onSelectMachine(id); } } }} /> : null}
     {detail}
   </>;
   return <div onClickCapture={view.onClickCapture}>
-    <DetailLayout title={indexHref ? machineType.name : "Machines"} identity={machineTypeIdentity(machineType)}
-      back={indexHref ? { label: "All machine types", href: indexHref } : undefined}
+    <DetailLayout title={indexHref ? machineType.name : t`Machines`} identity={machineTypeIdentity(machineType)}
+      back={indexHref ? { label: t`All machine types`, href: indexHref } : undefined}
       meta={[...(indexHref ? [] : [machineType.name]), plural(allMachines.length, "machine"), `${allMachines.filter(machine => machine.status === "running").length} running`]}
-      actions={{ primary: canManage && machineType.can_create_machine === true ? { label: "Add machine", icon: "Plus", onClick: () => setCreating(true) } : undefined,
-        secondary: service && view.active === "queue" ? { label: "Log usage", onClick: () => setLogging(true) } : undefined,
-        overflow: onWorkOrders ? [{ label: "Work orders", onClick: onWorkOrders }] : undefined }}
-      banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: "Retry", onClick: onRetryPools } } : undefined}
+      actions={{ primary: canManage && machineType.can_create_machine === true ? { label: t`Add machine`, icon: "Plus", onClick: () => setCreating(true) } : undefined,
+        secondary: service && view.active === "queue" ? { label: t`Log usage`, onClick: () => setLogging(true) } : undefined,
+        overflow: onWorkOrders ? [{ label: t`Work orders`, onClick: onWorkOrders }] : undefined }}
+      banner={poolError ? { size: "banner", tone: "warn", lead: "Couldn’t load consumable pools. Try again before starting work.", action: { label: t`Retry`, onClick: onRetryPools } } : undefined}
       tabs={view.tabs} activeTab={view.active} main={main}
-      state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: "Couldn't load machines. Try again.", onRetry } : { status: "ready" }} />
+      state={view.active !== "machines" ? { status: "ready" } : machinesLoading ? { status: "loading" } : machinesFailed ? { status: "error", error: t`Couldn't load machines. Try again.`, onRetry } : { status: "ready" }} />
 
   </div>;
 }

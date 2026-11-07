@@ -8,6 +8,7 @@
   (LANE-RULES §13). Membership has no module-manager role, so these stay the Space
   Manager's (or the superadmin's); each change is audited as `settings.changed`.
 """
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 from apps.makerspaces.membership_features import membership_feature_on
@@ -30,7 +31,7 @@ def gate_settings(makerspace, values, row):
                        or values[name] in ("never", "after_lapse")]
         if changed and not membership_feature_on(makerspace, key):
             raise PermissionDenied({"code": "feature_disabled", "feature": f"membership.{key}",
-                                    "detail": f"Turn on membership.{key} to change: {', '.join(changed)}."})
+                                    "detail": gettext('Turn on membership.{key} to change: {value}.').format(key=key, value=', '.join(changed))})
     return values
 
 

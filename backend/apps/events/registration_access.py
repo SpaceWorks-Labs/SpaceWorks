@@ -1,5 +1,6 @@
 """Audience checks shared by every registration caller."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from apps.makerspaces.platform import feature_enabled, module_enabled
@@ -12,10 +13,10 @@ def validate_event_audience(event):
     from .models_categories import EventCategory
     category_id = getattr(event, "category_id", None)
     if category_id and not EventCategory.objects.filter(pk=category_id, makerspace=event.makerspace).exists():
-        raise NotFound("Category not found.")
+        raise NotFound(gettext("Category not found."))
     key = {"accounts": "events.account_registration", "invite": "events.invites", "participating_organizations": "events.organization_audience"}.get(event.registration_audience)
     if key and not feature_enabled(event.makerspace, key):
-        raise ValidationError({"registration_audience": "Enable this event audience feature first."})
+        raise ValidationError({"registration_audience": gettext("Enable this event audience feature first.")})
 
 
 def require_registration_access(event, member, *, staff=False, collaborative=False, via=None):

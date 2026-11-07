@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Clock, MapPin } from "lucide-react";
 import { ActionControl } from "../../components/ui";
 import type { Action } from "../../components/ui";
@@ -25,17 +26,17 @@ export function MakerspaceHeader({ name, bootstrap, actions }: Props) {
     </div>
     {location || mapUrl || hours ? <dl className="grid gap-3 text-sm sm:flex sm:flex-wrap sm:gap-x-8">
       {location || mapUrl ? <div className="flex min-w-0 items-start gap-2">
-        <dt><MapPin aria-hidden="true" size={18} className="mt-0.5 text-muted" /><span className="sr-only">Location</span></dt>
+        <dt><MapPin aria-hidden="true" size={18} className="mt-0.5 text-muted" /><span className="sr-only">{t`Location`}</span></dt>
         <dd className="min-w-0 [overflow-wrap:anywhere]">{location}{mapUrl ? <>{location ? " · " : null}
           <a className="font-semibold text-brand-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            href={mapUrl} target="_blank" rel="noopener noreferrer">Get directions</a></> : null}</dd>
+            href={mapUrl} target="_blank" rel="noopener noreferrer">{t`Get directions`}</a></> : null}</dd>
       </div> : null}
       {hours ? <div className="flex min-w-0 items-start gap-2">
-        <dt><Clock aria-hidden="true" size={18} className="mt-0.5 text-muted" /><span className="sr-only">Opening hours</span></dt>
+        <dt><Clock aria-hidden="true" size={18} className="mt-0.5 text-muted" /><span className="sr-only">{t`Opening hours`}</span></dt>
         <dd className="min-w-0">
           <details>
             <summary className="cursor-pointer rounded-control font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{hours.today}</summary>
-            <table className="mt-2 text-sm"><caption className="sr-only">Weekly opening hours</caption><tbody>
+            <table className="mt-2 text-sm"><caption className="sr-only">{t`Weekly opening hours`}</caption><tbody>
               {hours.week.map((row) => <tr key={row.day} className={row.isToday ? "font-semibold text-ink" : "text-muted"}>
                 <th scope="row" className="py-0.5 pr-4 text-left font-[inherit]">{row.day}</th><td className="tabular-nums">{row.hours}</td>
               </tr>)}
@@ -44,7 +45,7 @@ export function MakerspaceHeader({ name, bootstrap, actions }: Props) {
         </dd>
       </div> : null}
     </dl> : null}
-    {actions.length ? <nav aria-label="Quick actions" className="flex flex-wrap gap-2">
+    {actions.length ? <nav aria-label={t`Quick actions`} className="flex flex-wrap gap-2">
       {actions.map((action, index) => <ActionControl key={action.label} action={action} primary={index === 0} className={index === 0 ? "desk-button-brand" : undefined} />)}
     </nav> : null}
   </header>;

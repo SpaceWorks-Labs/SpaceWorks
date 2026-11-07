@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { Callout, EmptyState, StatusPill, TicketCard, Icon } from "../../components/ui";
@@ -29,13 +31,13 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
   }, [card.error]);
 
   if (card.isLoading) {
-    return <section className="desk-panel p-5 text-sm text-muted">Loading your card…</section>;
+    return <section className="desk-panel p-5 text-sm text-muted">{t`Loading your card…`}</section>;
   }
   if (notIssued) {
     return (
       <section className="desk-panel p-5">
-        <h2 className="title-panel">Your member card</h2>
-        <EmptyState message="No card issued yet. Ask the front desk for your member card." />
+        <h2 className="title-panel">{t`Your member card`}</h2>
+        <EmptyState message={t`No card issued yet. Ask the front desk for your member card.`} />
       </section>
     );
   }
@@ -44,9 +46,9 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
   if (card.error || !card.data) {
     return (
       <section className="desk-panel p-5">
-        <h2 className="title-panel">Your member card</h2>
+        <h2 className="title-panel">{t`Your member card`}</h2>
         <p className="mt-1 text-sm text-danger" role="alert">
-          {card.error instanceof Error ? card.error.message : "Could not load your card."}
+          {card.error instanceof Error ? card.error.message : t`Could not load your card.`}
         </p>
       </section>
     );
@@ -58,21 +60,20 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
   return (
     <section className="desk-panel p-5">
       <div className="max-w-md"><TicketCard organisation={spaceName} title={row.printed_name} fields={[
-        { label: "Card number", value: <span className="tabular-nums">{row.card_number}</span> },
-        { label: "Status", value: <StatusPill label={row.is_active ? "Active" : "Revoked"} tone={row.is_active ? "success" : "danger"} /> },
-        { label: "Printed", value: `${row.print_count} ${row.print_count === 1 ? "time" : "times"}` },
-        { label: "Issued", value: new Date(row.issued_at).toLocaleDateString() },
-      ]} qr={scannable ? <img src={scannable} alt="Your member card QR code" /> : <div className="flex h-full items-center justify-center rounded-xl bg-surface"><Icon name="User" className="h-16 w-16 text-muted" /></div>}
-        caption={row.is_active ? "Your member card · ask the front desk to scan your printed card." : "This card is no longer valid."} /></div>
+        { label: t`Card number`, value: <span className="tabular-nums">{row.card_number}</span> },
+        { label: t`Status`, value: <StatusPill label={row.is_active ? t`Active` : t`Revoked`} tone={row.is_active ? "success" : "danger"} /> },
+        { label: t`Printed`, value: `${row.print_count} ${row.print_count === 1 ? "time" : "times"}` },
+        { label: t`Issued`, value: new Date(row.issued_at).toLocaleDateString(formatLocale()) },
+      ]} qr={scannable ? <img src={scannable} alt={t`Your member card QR code`} /> : <div className="flex h-full items-center justify-center rounded-xl bg-surface"><Icon name="User" className="h-16 w-16 text-muted" /></div>}
+        caption={row.is_active ? t`Your member card · ask the front desk to scan your printed card.` : t`This card is no longer valid.`} /></div>
       {scannable || compact ? <div className="mt-4 flex flex-wrap gap-3">
         {scannable ? <ScanQrView src={scannable} name={row.printed_name} /> : null}
-        {compact ? <a className="desk-button w-full sm:w-auto" href={cardHref}>View your member card</a> : null}
+        {compact ? <a className="desk-button w-full sm:w-auto" href={cardHref}>{t`View your member card`}</a> : null}
       </div> : null}
-      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead="This card was revoked." body="Ask staff for a new one." /></div> : null}
+      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead="This card was revoked." body={t`Ask staff for a new one.`} /></div> : null}
       {!compact ? <>
       <label className="mt-6 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
-        Name printed on the card
-      </label>
+        {t`Name printed on the card`}</label>
       <input
         id="member-card-printed-name"
         className="desk-input mt-1 w-full max-w-md"
@@ -91,7 +92,7 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
             rename.mutate(printedName.trim(), { onSuccess: () => setDirty(false) })
           }
         >
-          {rename.isPending ? "Saving…" : "Save name"}
+          {rename.isPending ? t`Saving…` : t`Save name`}
         </button>
         <button
           className="desk-button-ghost"
@@ -99,17 +100,17 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
           disabled={preview.isPending}
           onClick={() => preview.mutate()}
         >
-          {preview.isPending ? "Preparing…" : "Preview card (PDF)"}
+          {preview.isPending ? t`Preparing…` : t`Preview card (PDF)`}
         </button>
       </div>
       {rename.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
-          {rename.error instanceof Error ? rename.error.message : "Could not save that name."}
+          {rename.error instanceof Error ? rename.error.message : t`Could not save that name.`}
         </p>
       ) : null}
       {preview.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
-          {preview.error instanceof Error ? preview.error.message : "Could not open the preview."}
+          {preview.error instanceof Error ? preview.error.message : t`Could not open the preview.`}
         </p>
       ) : null}
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { StatusPill } from "../../components/ui";
 import { DEFAULT_PRESETS, usePresenceCurrent, usePresenceMutations } from "./api";
@@ -44,31 +45,31 @@ function PresencePanelBody({ slug, spaceName, member, claim, selfCheckIn, sheetO
 
   return <section aria-labelledby="presence-panel-title" className={`desk-panel ${live ? "border-success" : "border-brand"} p-5`}>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 id="presence-panel-title" className="title-panel">Presence</h2>
-      {live ? <StatusPill label="Checked in" tone="success" /> : null}
+      <h2 id="presence-panel-title" className="title-panel">{t`Presence`}</h2>
+      {live ? <StatusPill label={t`Checked in`} tone="success" /> : null}
     </div>
-    {current.isLoading ? <p role="status" className="mt-2 text-sm text-muted">Checking your presence…</p> : null}
+    {current.isLoading ? <p role="status" className="mt-2 text-sm text-muted">{t`Checking your presence…`}</p> : null}
     {current.isError ? <p role="alert" className="mt-2 text-sm text-danger">{presenceErrorText(current.error).text}</p> : null}
     {current.isSuccess && showSession ? <div className="mt-3 grid gap-4">
       <div className="grid gap-1">
         <p className="text-sm text-ink"><strong>{STATUS_LABELS[session.status]}</strong>
-          {session.status === "attending_event" ? <span className="text-muted"> · set by your event ticket check-in</span> : null}</p>
-        {live ? <p className="text-sm text-muted"><span className="tabular-nums">{timeLeftLabel(minutesLeft(session, now))}</span> · until <time className="tabular-nums" dateTime={session.expires_at}>{clockTime(session.expires_at)}</time></p> : null}
+          {session.status === "attending_event" ? <span className="text-muted"> {t` · set by your event ticket check-in`}</span> : null}</p>
+        {live ? <p className="text-sm text-muted"><span className="tabular-nums">{timeLeftLabel(minutesLeft(session, now))}</span> {t` · until `}<time className="tabular-nums" dateTime={session.expires_at}>{clockTime(session.expires_at)}</time></p> : null}
         <p className="text-sm text-muted">{displayDisclosure(session)}</p>
       </div>
       <PresenceRenewPrompt session={session} phase={phase} now={now} presets={presets} pending={renew.isPending} onRenew={(minutes) => renew.mutate(minutes)} />
-      {live && phase === "none" ? <div className="grid gap-2"><span className="text-sm font-semibold text-ink">Extend from now</span>
+      {live && phase === "none" ? <div className="grid gap-2"><span className="text-sm font-semibold text-ink">{t`Extend from now`}</span>
         <div className="flex flex-wrap gap-2">{presets.map((minutes) => <button key={minutes} type="button" className="desk-button" disabled={renew.isPending}
           onClick={() => renew.mutate(minutes)}>{presetLongLabel(minutes)}</button>)}</div></div> : null}
       <div className="flex flex-wrap gap-2">
-        {live ? <button type="button" className="desk-button" disabled={end.isPending} onClick={() => end.mutate()}>{end.isPending ? "Ending…" : "End check-in"}</button>
-          : <button type="button" className="desk-button" onClick={() => setOpen(true)}>Check in again</button>}
-        {live && permission === "default" ? <button type="button" className="desk-button" onClick={() => void requestWebNotify().then(setPermission)}>Notify me before it ends</button> : null}
+        {live ? <button type="button" className="desk-button" disabled={end.isPending} onClick={() => end.mutate()}>{end.isPending ? t`Ending…` : t`End check-in`}</button>
+          : <button type="button" className="desk-button" onClick={() => setOpen(true)}>{t`Check in again`}</button>}
+        {live && permission === "default" ? <button type="button" className="desk-button" onClick={() => void requestWebNotify().then(setPermission)}>{t`Notify me before it ends`}</button> : null}
       </div>
     </div> : null}
     {current.isSuccess && !showSession ? <div className="mt-2 grid gap-3">
-      <p className="text-sm text-muted">{session && phase === "gone" ? "Your last check-in has ended." : "You're not checked in."}</p>
-      <button type="button" className="desk-button-brand justify-self-start" onClick={() => setOpen(true)}>Check in</button>
+      <p className="text-sm text-muted">{session && phase === "gone" ? t`Your last check-in has ended.` : t`You're not checked in.`}</p>
+      <button type="button" className="desk-button-brand justify-self-start" onClick={() => setOpen(true)}>{t`Check in`}</button>
     </div> : null}
     {error ? <p role="alert" className="mt-3 text-sm text-danger">{presenceErrorText(error).text}</p> : null}
     {open ? <PresenceCheckInSheet open slug={slug} onClose={() => setOpen(false)} presets={presets} member={member} claim={claim}

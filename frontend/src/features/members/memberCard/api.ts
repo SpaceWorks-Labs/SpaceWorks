@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { memberRequest, memberRequestBlob } from "../../../lib/api";
@@ -59,13 +60,13 @@ export async function uploadCardPhoto(makerspaceId: number, file: File) {
       body: file,
       headers: presigned.headers,
     });
-    if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+    if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
   } else {
     const formData = new FormData();
     Object.entries(presigned.fields ?? {}).forEach(([key, value]) => formData.append(key, value));
     formData.append("file", file);
     const upload = await fetch(presigned.url, { method: "POST", body: formData });
-    if (!upload.ok) throw new Error(`Storage upload failed (${upload.status})`);
+    if (!upload.ok) throw new Error(t`Storage upload failed (${upload.status})`);
   }
 
   await memberRequest(`${cardPath(makerspaceId)}/photo`, {

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -41,16 +42,16 @@ export function PublicOrganizationPage({ profileSlug, profileOnly = false }: { p
     } catch { return <NotFoundPage />; }
   }
   return <div style={style}><PublicLayout makerspace={{ name, logo: legacy?.logo_url || undefined, slug: "", homeHref: "/" }}
-    nav={[{ label: "Directory", href: "/" }]} headerAction={{ label: "Sign in", href: "/member" }} liveStatus={<ThemeToggle />}
-    hero={page ? <PublicPageHero page={page} /> : <header className="mb-6"><p className="eyebrow">Organization</p><h1 className="title-page">{name}</h1>{ready ? <><p className="mt-3 text-muted">{legacy?.description}</p>{legacy?.website ? <a className="desk-button mt-3" href={legacy.website} rel="noopener noreferrer">Visit website</a> : null}</> : null}</header>}
-    state={error ? { status: "error", error: error instanceof Error ? error.message : "Couldn't load organization.", onRetry: () => { void projection.refetch(); void organization.refetch(); } } : ready ? { status: "ready" } : { status: "loading" }}
-    footer={{ credit: "Powered by Space Works", links: [{ label: "About", href: "/about" }, { label: "License", href: LICENSE_URL, external: true }, { label: "Staff sign-in", href: "/admin" }] }}>
+    nav={[{ label: t`Directory`, href: "/" }]} headerAction={{ label: t`Sign in`, href: "/member" }} liveStatus={<ThemeToggle />}
+    hero={page ? <PublicPageHero page={page} /> : <header className="mb-6"><p className="eyebrow">{t`Organization`}</p><h1 className="title-page">{name}</h1>{ready ? <><p className="mt-3 text-muted">{legacy?.description}</p>{legacy?.website ? <a className="desk-button mt-3" href={legacy.website} rel="noopener noreferrer">{t`Visit website`}</a> : null}</> : null}</header>}
+    state={error ? { status: "error", error: error instanceof Error ? error.message : t`Couldn't load organization.`, onRetry: () => { void projection.refetch(); void organization.refetch(); } } : ready ? { status: "ready" } : { status: "loading" }}
+    footer={{ credit: "Powered by Space Works", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }, { label: t`Staff sign-in`, href: "/admin" }] }}>
     <div className="grid gap-8">
       {ready ? <PageMetadata title={name} description={page?.description ?? legacy?.description ?? ""} path={page?.canonical_url ?? legacy?.canonical_url ?? `/o/${slug}`} image={page ? page.cover?.url : legacy?.logo_url} imageAlt={page?.cover?.alt} /> : null}
       {page ? <PublicPageSections sections={page.sections} token={page.publication_token} linkedMakerspaces={<OrganizationPublicSpaces slug={slug} token={page.publication_token} />}
         organizationCollections={<OrganizationPublicEvents slug={slug} token={page.publication_token} />}
         image={(url, alt) => <PageImage url={url} alt={alt} token={page.publication_token} />} />
-        : ready ? <><section aria-label="Linked makerspaces" className="grid gap-4"><h2 className="title-panel">Linked makerspaces</h2><OrganizationPublicSpaces slug={slug} /></section><section aria-label="Organization events" className="grid gap-4"><h2 className="title-panel">Organization events</h2><OrganizationPublicEvents slug={slug} /></section></> : null}
+        : ready ? <><section aria-label={t`Linked makerspaces`} className="grid gap-4"><h2 className="title-panel">{t`Linked makerspaces`}</h2><OrganizationPublicSpaces slug={slug} /></section><section aria-label={t`Organization events`} className="grid gap-4"><h2 className="title-panel">{t`Organization events`}</h2><OrganizationPublicEvents slug={slug} /></section></> : null}
       {page ? <PageShare title={page.title} description={page.description} canonicalUrl={page.canonical_url} image={page.cover ? <PageImage url={page.cover.url} alt={page.cover.alt} token={page.publication_token} /> : undefined} /> : null}
     </div>
   </PublicLayout></div>;

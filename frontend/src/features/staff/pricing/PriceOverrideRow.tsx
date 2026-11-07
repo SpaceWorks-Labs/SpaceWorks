@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId, useState } from "react";
 
 import { SegmentedControl } from "../../../components/ui";
@@ -7,13 +8,13 @@ import { sourceWords, UNIT_WORDS } from "./priceOverrideApi";
 type Mode = PriceOverrideComponent["mode"];
 
 const MODES: { value: Mode; label: string }[] = [
-  { value: "inherit", label: "Inherit" }, { value: "free", label: "Free" }, { value: "custom", label: "Custom" },
+  { value: "inherit", label: t`Inherit` }, { value: "free", label: t`Free` }, { value: "custom", label: t`Custom` },
 ];
 
 const validAmount = (value: string) => value.trim() !== "" && Number.isFinite(Number(value)) && Number(value) >= 0;
 
 export function effectiveText(row: PriceOverrideComponent, currency: string) {
-  return `Effective: ${currency.toUpperCase()} ${row.effective_amount} (${sourceWords(row.effective_source)})`;
+  return t`Effective: ${currency.toUpperCase()} ${row.effective_amount} (${sourceWords(row.effective_source)})`;
 }
 
 /** One price component of an item: Inherit / Free / Custom, with its effective price and source. */
@@ -39,32 +40,30 @@ export function PriceOverrideRow({ row, currency, editable, pending, onSave }: {
       {row.label}{unit ? <span className="font-normal text-muted"> · {unit}</span> : null}
     </legend>
     {editable ? <SegmentedControl label={`${row.label} price`} value={mode} options={MODES} onChange={value => setMode(value as Mode)} />
-      : <p className="text-sm text-ink">{mode === "custom" ? `Custom: ${code} ${row.amount ?? "0.00"}${row.cap ? ` (cap ${code} ${row.cap})` : ""}`
+      : <p className="text-sm text-ink">{mode === "custom" ? t`Custom: ${code} ${row.amount ?? "0.00"}${row.cap ? ` (cap ${code} ${row.cap})` : ""}`
         : MODES.find(option => option.value === mode)?.label}</p>}
     {editable && mode === "custom" ? <div className="grid gap-3 sm:grid-cols-2">
       <div className="grid gap-1">
-        <label className="grid gap-1 text-sm font-semibold text-ink">Custom amount ({code})
-          <input className="desk-input" type="number" inputMode="decimal" min="0" step="0.01" value={amount} required
+        <label className="grid gap-1 text-sm font-semibold text-ink">{t`Custom amount (${code})`}<input className="desk-input" type="number" inputMode="decimal" min="0" step="0.01" value={amount} required
             aria-invalid={!amountOk} aria-describedby={amountOk ? undefined : `${id}-amount-error`} onChange={event => setAmount(event.target.value)} />
         </label>
-        {amountOk ? null : <p id={`${id}-amount-error`} className="text-xs text-danger">Enter an amount of 0 or more.</p>}
+        {amountOk ? null : <p id={`${id}-amount-error`} className="text-xs text-danger">{t`Enter an amount of 0 or more.`}</p>}
       </div>
       {row.has_cap ? <div className="grid gap-1">
-        <label className="grid gap-1 text-sm font-semibold text-ink">Cap ({code}, optional)
-          <input className="desk-input" type="number" inputMode="decimal" min="0" step="0.01" value={cap}
+        <label className="grid gap-1 text-sm font-semibold text-ink">{t`Cap (${code}, optional)`}<input className="desk-input" type="number" inputMode="decimal" min="0" step="0.01" value={cap}
             aria-invalid={!capOk} aria-describedby={capOk ? undefined : `${id}-cap-error`} onChange={event => setCap(event.target.value)} />
         </label>
-        {capOk ? null : <p id={`${id}-cap-error`} className="text-xs text-danger">Enter a cap of 0 or more, or leave it empty.</p>}
+        {capOk ? null : <p id={`${id}-cap-error`} className="text-xs text-danger">{t`Enter a cap of 0 or more, or leave it empty.`}</p>}
       </div> : null}
     </div> : null}
-    {editable && mode === "inherit" ? <p className="text-xs text-muted">Follows the space default ({code} {row.default_amount}).</p> : null}
+    {editable && mode === "inherit" ? <p className="text-xs text-muted">{t`Follows the space default (${code} ${row.default_amount}).`}</p> : null}
     <p id={`${id}-effective`} className="text-sm tabular-nums text-muted">{effectiveText(row, currency)}</p>
     {editable && dirty ? <div className="flex flex-wrap gap-2">
       <button className="desk-button-primary" type="button" disabled={pending || !amountOk || !capOk} onClick={save}>
-        {pending ? "Saving…" : `Save ${row.label.toLowerCase()}`}
+        {pending ? t`Saving…` : t`Save ${row.label.toLowerCase()}`}
       </button>
       <button className="desk-button-ghost" type="button" disabled={pending}
-        onClick={() => { setMode(row.mode); setAmount(row.amount ?? ""); setCap(row.cap ?? ""); }}>Discard</button>
+        onClick={() => { setMode(row.mode); setAmount(row.amount ?? ""); setCap(row.cap ?? ""); }}>{t`Discard`}</button>
     </div> : null}
   </fieldset>;
 }

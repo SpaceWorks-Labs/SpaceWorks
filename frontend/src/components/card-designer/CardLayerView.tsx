@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState, type CSSProperties } from "react";
 
 import { staffRequestBlob } from "../../lib/api";
@@ -107,5 +108,5 @@ export function CardLayerView({ layer, px, values, designId, mono, live }: { lay
       : <div className="h-full w-full bg-surface" />;
   }
   return <div className="grid h-full w-full place-items-center rounded-control border border-dashed border-line text-[10px] text-muted"
-    style={{ background: layer.tile ? "#FFFFFF" : undefined }}>{layer.source === "symbol" ? "Symbol" : `${layer.source} logo`}</div>;
+    style={{ background: layer.tile ? "#FFFFFF" : undefined }}>{layer.source === "symbol" ? t`Symbol` : `${layer.source} logo`}</div>;
 }

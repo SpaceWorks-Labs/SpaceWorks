@@ -1,5 +1,6 @@
 """The sole track/prize/round-definition writer. Round config freezes at open."""
 
+from django.utils.translation import gettext
 from django.http import Http404
 from rest_framework.exceptions import ValidationError
 
@@ -39,7 +40,7 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
             if model is JudgingRound:
                 criteria = _validate_round(row, criteria, options)
             if model is HackathonTrack and HackathonTrack.objects.filter(event=event, name=row.name).exclude(pk=row.pk).exists():
-                raise ValidationError({"name": "A track already uses this name."})
+                raise ValidationError({"name": gettext("A track already uses this name.")})
             if object_id:
                 changed(event, actor, "definition_updated", row)
                 if previous_mode is not None and previous_mode != row.mode:
@@ -61,21 +62,21 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
 def _validate_round(row, criteria, options):
     """Mode rules. Returns the criteria to write ([] clears a rubric left over from another mode)."""
     if row.opens_at and row.closes_at and row.closes_at <= row.opens_at:
-        raise ValidationError({"closes_at": "The end must follow the start."})
+        raise ValidationError({"closes_at": gettext("The end must follow the start.")})
     if JudgingRound.objects.filter(event_id=row.event_id, key=row.key).exclude(pk=row.pk).exists():
-        raise ValidationError({"key": "This round key is already in use."})
+        raise ValidationError({"key": gettext("This round key is already in use.")})
     existing = list(row.criteria.all()) if row.pk else []
     if row.mode == "weighted_1_5" and not (criteria or existing):
-        raise ValidationError({"criteria": "Provide an anchored weighted rubric."})
+        raise ValidationError({"criteria": gettext("Provide an anchored weighted rubric.")})
     if row.mode in ("top3", "pairwise") and row.normalization != "none":
-        raise ValidationError({"normalization": "Z-score normalization is only available for weighted scoring."})
+        raise ValidationError({"normalization": gettext("Z-score normalization is only available for weighted scoring.")})
     if row.mode != "pairwise":
         if options:
             raise ValidationError({key: "This setting applies to pairwise rounds only." for key in options})
         row.configuration = {}
         return criteria
     if criteria:
-        raise ValidationError({"criteria": "Pairwise rounds compare projects directly and use no rubric."})
+        raise ValidationError({"criteria": gettext("Pairwise rounds compare projects directly and use no rubric.")})
     # Draft-only pairwise settings; opening the round freezes them with the CrowdBT parameters.
     draft = {"guidance": row.configuration.get("guidance", ""),
              "pairwise": {"exploration": row.configuration.get("pairwise", {}).get("exploration", 0.1)}}
@@ -103,4 +104,4 @@ def _references(event, payload):
             raise Http404
         track_id = payload.get("track_id")
         if track_id and track_id not in sponsor.track_ids:
-            raise ValidationError({"sponsor_id": "The sponsor must cover this prize's track."})
+            raise ValidationError({"sponsor_id": gettext("The sponsor must cover this prize's track.")})

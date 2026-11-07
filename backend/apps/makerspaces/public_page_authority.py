@@ -6,6 +6,7 @@ locks User at commit, so never hold User while waiting for its membership.
 Never lock nullable joined FKs with select_for_update.
 """
 
+from django.utils.translation import gettext
 from django.contrib.auth import get_user_model
 from rest_framework.exceptions import PermissionDenied, NotFound
 from django.shortcuts import get_object_or_404
@@ -27,7 +28,7 @@ def reject_platform(actor, *, tenant=False):
         return
     if (actor is None or not actor.is_authenticated or actor.is_superuser
             or actor.role == "superadmin" or is_platform(actor)):
-        raise PermissionDenied("Page editing requires an authorized owner account.")
+        raise PermissionDenied(gettext("Page editing requires an authorized owner account."))
 
 
 def _refuse_other_tenant_staff(actor, owner_id):
@@ -39,7 +40,7 @@ def _refuse_other_tenant_staff(actor, owner_id):
 def _platform_superadmin_space(space, actor):
     if (not actor.is_active or actor.access_status != "active" or actor.must_change_password
             or not is_servable(space)):
-        raise PermissionDenied("Only this makerspace's local Space Manager may edit its page.")
+        raise PermissionDenied(gettext("Only this makerspace's local Space Manager may edit its page."))
     return space, actor
 
 
@@ -85,7 +86,7 @@ def _require_local_manager(space, actor, membership, role):
             or membership is None or membership.status != "active"
             or role is None or role.slug != "space_manager" or role.makerspace_id != space.pk
             or not rbac.can(actor, rbac.Action.MANAGE_MAKERSPACE, space.pk)):
-        raise PermissionDenied("Only this makerspace's local Space Manager may edit its page.")
+        raise PermissionDenied(gettext("Only this makerspace's local Space Manager may edit its page."))
 
 
 def lock_organization_governor(owner_id, actor):

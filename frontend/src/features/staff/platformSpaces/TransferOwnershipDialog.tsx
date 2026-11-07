@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -23,35 +24,35 @@ export function TransferOwnershipDialog({ card, onClose }: { card: HealthCard; o
   const [roles, setRoles] = useState<string[]>([]);
   const mutation = useSpaceAction<TransferResult>(card.id, "transfer-ownership", result => {
     toast(result.status === "invited"
-      ? "Invitation sent. The previous manager stays until the new manager accepts; then run the transfer again."
-      : "Ownership transferred.");
+      ? t`Invitation sent. The previous manager stays until the new manager accepts; then run the transfer again.`
+      : t`Ownership transferred.`);
     onClose();
   });
   const needsRoles = previous !== null && outcome === "keep_staff";
   const canSubmit = /^\S+@\S+\.\S+$/.test(email.trim()) && (!needsRoles || roles.length > 0);
   const toggle = (slug: string) => setRoles(current => current.includes(slug) ? current.filter(item => item !== slug) : [...current, slug]);
-  return <ActionDialog title="Transfer ownership" confirmLabel="Transfer ownership" pending={mutation.isPending} error={mutation.error}
+  return <ActionDialog title={t`Transfer ownership`} confirmLabel={t`Transfer ownership`} pending={mutation.isPending} error={mutation.error}
     canSubmit={canSubmit} onCancel={onClose}
-    message={`The new Space Manager takes over ${card.name}. If the email has no account here yet, they are invited first.`}
+    message={t`The new Space Manager takes over ${card.name}. If the email has no account here yet, they are invited first.`}
     onSubmit={() => mutation.mutate({ email: email.trim(), previous_membership_id: previous,
       previous_outcome: outcome, previous_roles: needsRoles ? roles : [] } satisfies TransferBody)}>
-    <Field label="New manager's email">
+    <Field label={t`New manager's email`}>
       <input className="desk-input" type="email" autoComplete="off" value={email} onChange={event => setEmail(event.target.value)} />
     </Field>
-    <Field label="Current manager">
+    <Field label={t`Current manager`}>
       <select className="desk-input" value={previous ?? ""} onChange={event => setPrevious(event.target.value ? Number(event.target.value) : null)}>
-        <option value="">Nobody (add the new manager only)</option>
+        <option value="">{t`Nobody (add the new manager only)`}</option>
         {card.managers.map(manager => <option key={manager.membership_id} value={manager.membership_id}>{manager.name || manager.email} · {manager.email}</option>)}
       </select>
     </Field>
     {previous !== null ? <fieldset className="grid gap-2">
-      <legend className="mb-1 text-sm font-semibold text-ink">What happens to the current manager</legend>
+      <legend className="mb-1 text-sm font-semibold text-ink">{t`What happens to the current manager`}</legend>
       {OUTCOMES.map(([value, label]) => <label key={value} className="flex min-h-11 items-center gap-3 text-sm text-ink">
         <input type="radio" name="previous-outcome" value={value} checked={outcome === value} onChange={() => setOutcome(value)} />{label}
       </label>)}
     </fieldset> : null}
     {needsRoles ? <fieldset className="grid gap-1 sm:grid-cols-2">
-      <legend className="mb-1 text-sm font-semibold text-ink">Roles they keep</legend>
+      <legend className="mb-1 text-sm font-semibold text-ink">{t`Roles they keep`}</legend>
       {STAFF_ROLES.map(([slug, label]) => <label key={slug} className="flex min-h-11 items-center gap-3 text-sm text-ink">
         <input type="checkbox" checked={roles.includes(slug)} onChange={() => toggle(slug)} />{label}
       </label>)}

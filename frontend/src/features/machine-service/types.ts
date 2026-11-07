@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type {
   ConfidenceEnum,
   MachineQueueSummary,
@@ -24,25 +25,25 @@ export function normalizeServiceStatus(status: string): string {
 }
 
 export const SERVICE_STATUS_LABELS: Record<string, string> = {
-  pending: "Awaiting review",
-  accepted: "Approved",
-  in_progress: "In progress",
-  completed: "Ready to collect",
-  collected: "Collected",
-  rejected: "Not approved",
-  failed: "Failed",
-  cancelled: "Cancelled",
+  pending: t`Awaiting review`,
+  accepted: t`Approved`,
+  in_progress: t`In progress`,
+  completed: t`Ready to collect`,
+  collected: t`Collected`,
+  rejected: t`Not approved`,
+  failed: t`Failed`,
+  cancelled: t`Cancelled`,
   // L12 (#141) job flow: staff statuses, then the member labels the job endpoints send.
-  changes_requested: "Needs changes",
-  quoted: "Quote sent",
-  uncollected: "Not collected",
-  submitted: "Submitted",
-  needs_changes: "Needs changes",
-  quote_sent: "Quote sent",
-  awaiting_payment: "Awaiting payment",
-  in_queue: "In the queue",
-  ready_to_collect: "Ready to collect",
-  not_collected: "Not collected",
+  changes_requested: t`Needs changes`,
+  quoted: t`Quote sent`,
+  uncollected: t`Not collected`,
+  submitted: t`Submitted`,
+  needs_changes: t`Needs changes`,
+  quote_sent: t`Quote sent`,
+  awaiting_payment: t`Awaiting payment`,
+  in_queue: t`In the queue`,
+  ready_to_collect: t`Ready to collect`,
+  not_collected: t`Not collected`,
 };
 
 export function serviceStatusLabel(status: string): string {

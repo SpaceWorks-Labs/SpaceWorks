@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -44,7 +45,7 @@ class MFAStatusView(APIView):
         grant = getattr(request, "device_grant", None)
         if grant is not None and grant.authority in ("staff", "event"):
             # A native staff grant is only ever issued behind an enrolled factor.
-            raise PermissionDenied({"detail": "Staff enroll an authenticator during device sign-in.",
+            raise PermissionDenied({"detail": gettext("Staff enroll an authenticator during device sign-in."),
                                     "code": "native_staff_mfa_managed"})
         if grant is not None:
             # Starting invalidates this device's tokens; never strand it where confirm cannot re-issue.
@@ -55,7 +56,7 @@ class MFAStatusView(APIView):
             from apps.accounts.reauthentication import require_enrollment_proof
             require_enrollment_proof(request)
         elif not request.user.check_password(data["password"]):
-            raise AuthenticationFailed("Password verification failed.")
+            raise AuthenticationFailed(gettext("Password verification failed."))
         token = request.auth
         # A device enrollment re-issues tokens on this grant, never a new one.
         device = {"grant_id": str(grant.pk), "login_method": grant.login_method,
@@ -94,7 +95,7 @@ class MFAVerifyView(MFAEnrollmentView):
             result = mfa_challenges.finish(data["challenge"], data.get("code", ""), request, enrolling=self.enrolling,
                                            factor=data.get("factor"), webauthn=data.get("webauthn"))
         except AttestationUnavailable:
-            return Response({"detail": "Device attestation is unavailable.", "code": "attestation_unavailable"}, status=503)
+            return Response({"detail": gettext("Device attestation is unavailable."), "code": "attestation_unavailable"}, status=503)
         raw = result.pop("refresh") if "device_grant" not in result else None
         response = Response(result)
         if raw:

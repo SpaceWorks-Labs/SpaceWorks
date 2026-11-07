@@ -193,6 +193,7 @@ class MakerspaceDetailView(generics.RetrieveUpdateAPIView):
             before = settings_audit.snapshot(serializer.instance, requested)
             previous_features = list(serializer.instance.enabled_features)
             previous_domain = serializer.instance.frontend_domain
+            previous_locale = serializer.instance.default_locale
             previous_geofence = {
                 "enabled": serializer.instance.geofence_enabled,
                 "configured": serializer.instance.geofence_effective,
@@ -210,6 +211,11 @@ class MakerspaceDetailView(generics.RetrieveUpdateAPIView):
                     "fields": settings_audit.changed_fields(before, instance, requested)
                 },
             )
+            if previous_locale != instance.default_locale:
+                audit.record(
+                    self.request.user, "makerspace.default_locale_changed", makerspace=instance,
+                    target=instance, meta={"before": previous_locale, "after": instance.default_locale},
+                )
             if previous_domain != instance.frontend_domain:
                 record_domain_change(self.request.user, instance, previous_domain)
             if previous_features != instance.enabled_features:

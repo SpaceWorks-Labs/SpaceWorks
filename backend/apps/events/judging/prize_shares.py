@@ -9,6 +9,7 @@ With no shares the L21b default is unchanged: one payout, to the leader. Nothing
 each confirmed share is later paid by its own hand-recorded payout row.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.http import Http404
@@ -52,9 +53,9 @@ def _validate_rows(award, snapshot, rows):
     total = award_total(award)
     members = [row["member_id"] for row in rows]
     if len(set(members)) != len(members) or not set(members) <= set(snapshot.member_ids):
-        raise ValidationError({"shares": "Split the prize between members of the winning team, once each."})
+        raise ValidationError({"shares": gettext("Split the prize between members of the winning team, once each.")})
     if sum((Decimal(row["amount"]) for row in rows), Decimal("0")) > total:
-        raise ValidationError({"shares": f"The shares add up to more than the prize ({total})."})
+        raise ValidationError({"shares": gettext('The shares add up to more than the prize ({total}).').format(total=total)})
     if has_standing_payout(award):
         raise ProgrammeError("payout_exists", "A payout is already recorded for this prize; reverse it first.")
     from .models_prize_money import HackathonPrizeOutcome

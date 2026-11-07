@@ -6,6 +6,7 @@ that round then opens on the finalists alone. Results, awards and prizes come fr
 a round that advanced finalists can no longer be finalized into results.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -40,7 +41,7 @@ def _rounds(event_id, values, *, lock=False):
     if source is None or target is None:
         raise Http404
     if source.pk == target.pk:
-        raise ValidationError({"target_round_id": "Choose a different round for the finalists."})
+        raise ValidationError({"target_round_id": gettext("Choose a different round for the finalists.")})
     if source.state != "finalized":
         invalid("Finalize the source round before advancing finalists.")
     if target.state != "draft":
@@ -69,7 +70,7 @@ def select_ranked(rows, *, selection, top_n=None, snapshot_ids=()):
         chosen = [r for r in rows if r["rank"] <= cutoff]  # A tie at the cutoff takes every tied project.
         return chosen, len(chosen) > top_n
     if any(pk not in eligible for pk in snapshot_ids):
-        raise ValidationError({"snapshot_ids": "Pick only eligible, reviewed projects from the source round."})
+        raise ValidationError({"snapshot_ids": gettext("Pick only eligible, reviewed projects from the source round.")})
     return [eligible[pk] for pk in snapshot_ids], False
 
 

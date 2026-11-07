@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import secrets
 
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -30,9 +31,9 @@ class EventPromoCode(models.Model):
     def clean(self):
         super().clean()
         if self.event_id and self.event.makerspace_id != self.makerspace_id:
-            raise ValidationError({"event": "Event must belong to this makerspace."})
+            raise ValidationError({"event": gettext("Event must belong to this makerspace.")})
         if self.ticket_type_id and self.ticket_type.event_id != self.event_id:
-            raise ValidationError({"ticket_type": "Ticket type must belong to this event."})
+            raise ValidationError({"ticket_type": gettext("Ticket type must belong to this event.")})
 
     class Meta:
         constraints = [

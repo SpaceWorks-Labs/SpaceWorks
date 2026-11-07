@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -21,9 +22,9 @@ export function OrganizationEventAdmission({ event, makerspaceSlug, organisation
   const [checking, setChecking] = useState(false);
   // Event lists mount one admission per card. Only an explicit interaction starts requests.
   return checking ? <OrganizationAdmissionCheck event={event} makerspaceSlug={makerspaceSlug} organisation={organisation} /> :
-    <div className="grid gap-3">{!event.registration_open ? <p className={note}>Registration is closed.</p> : null}
+    <div className="grid gap-3">{!event.registration_open ? <p className={note}>{t`Registration is closed.`}</p> : null}
       <button className={`${event.registration_open ? "desk-button-brand" : "desk-button"} w-full`} type="button" onClick={() => setChecking(true)}>
-        {event.registration_open ? "Check registration eligibility" : "Review registration consent"}
+        {event.registration_open ? t`Check registration eligibility` : t`Review registration consent`}
       </button></div>;
 }
 
@@ -55,24 +56,24 @@ function OrganizationAdmissionCheck({ event, makerspaceSlug, organisation }: Adm
     retry: false, staleTime: 0, gcTime: 0, refetchOnMount: "always",
     refetchOnWindowFocus: false, refetchOnReconnect: false,
   });
-  if (restoring || account.isLoading || eligibility.isLoading) return <p role="status" className={note}>Checking organization eligibility…</p>;
+  if (restoring || account.isLoading || eligibility.isLoading) return <p role="status" className={note}>{t`Checking organization eligibility…`}</p>;
   const signIn = [account.error, eligibility.error].some(error => error instanceof StructuredApiError && error.status === 401);
-  if (signIn) return <MemberAuthPanel embedded context={<p className={note}>Sign in to check your membership in a participating organization.</p>} makerspaceSlug={makerspaceSlug} onAuthenticated={() => {
+  if (signIn) return <MemberAuthPanel embedded context={<p className={note}>{t`Sign in to check your membership in a participating organization.`}</p>} makerspaceSlug={makerspaceSlug} onAuthenticated={() => {
     void account.refetch();
     void queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility", makerspaceSlug, event.public_token] });
     void queryClient.invalidateQueries({ queryKey: ["public-event", makerspaceSlug] });
     void queryClient.invalidateQueries({ queryKey: ["public-events", makerspaceSlug] });
   }} />;
-  if (account.error || eligibility.error) return <ErrorText message="Unable to check organization eligibility."
+  if (account.error || eligibility.error) return <ErrorText message={t`Unable to check organization eligibility.`}
     onRetry={() => { void account.refetch(); void eligibility.refetch(); }} />;
   if (repaired) return <div role="status"><Callout size="inline" tone="success" lead="Your registration consent has been updated." /></div>;
   if (eligibility.data?.consent_repair_required && eligibility.data.host_waiver) return <EventConsentRepairForm
     makerspaceSlug={makerspaceSlug} publicToken={event.public_token} waiver={eligibility.data.host_waiver}
     onRepaired={() => setRepaired(true)} />;
-  if (eligibility.data?.reason === "registration_closed" || !event.registration_open) return <p className={note}>Registration is closed.</p>;
-  if (!eligibility.data?.eligible) return <p className={note}>{eligibility.data?.reason === "organization_audience_not_ready" ? "Staff must review this event’s local audience before registration opens." : "Registration requires active membership in a participating organization or one of its owned makerspaces."}</p>;
+  if (eligibility.data?.reason === "registration_closed" || !event.registration_open) return <p className={note}>{t`Registration is closed.`}</p>;
+  if (!eligibility.data?.eligible) return <p className={note}>{eligibility.data?.reason === "organization_audience_not_ready" ? t`Staff must review this event’s local audience before registration opens.` : t`Registration requires active membership in a participating organization or one of its owned makerspaces.`}</p>;
   return <div className="grid gap-4">
-    <button className={`${open ? "desk-button" : "desk-button-brand"} w-full`} type="button" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Close form" : event.registration_requires_approval ? "Apply" : event.availability === "Full" ? "Join waitlist" : "Register"}</button>
+    <button className={`${open ? "desk-button" : "desk-button-brand"} w-full`} type="button" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? t`Close form` : event.registration_requires_approval ? t`Apply` : event.availability === "Full" ? t`Join waitlist` : t`Register`}</button>
     {open ? <EventRegistrationForm makerspaceSlug={makerspaceSlug} publicToken={event.public_token}
       waitlist={event.availability === "Full"} approvalRequired={event.registration_requires_approval}
       customForm={event.custom_form} audience={event.registration_audience} tickets={event.ticket_types}

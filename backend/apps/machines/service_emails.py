@@ -1,5 +1,6 @@
 """Fail-safe notification seam for machine-service lifecycle events."""
 
+from django.utils.translation import gettext
 import logging
 
 from apps.notifications.emit import emit_notification
@@ -23,10 +24,9 @@ def notify_service_status(service_request, event):
         emit_notification(
             makerspace,
             event=f"machine_service.{event}",
-            title="Machine service request updated",
+            title=gettext("Machine service request updated"),
             body=(
-                f"Machine service request #{service_request.pk} {event}. "
-                f"Status: {service_request.status}."
+                gettext('Machine service request #{pk} {event}. Status: {status}.').format(pk=service_request.pk, event=event, status=service_request.status)
             ),
             url_path=f"/admin/machine-service/requests/{service_request.pk}",
         )

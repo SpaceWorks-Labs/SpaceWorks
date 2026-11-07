@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { ActionControl, Callout, DangerZone, DetailDrawer, PageHeader, Tabs } from "../ui";
 import type { Action, CalloutProps, DangerZoneProps, Identity, SecondaryAction, Tab } from "../ui";
@@ -34,7 +35,7 @@ export function DetailLayout(props: DetailLayoutProps) {
         {banner ? <Callout {...banner} /> : null}
         <div className={aside ? `sw-detail-columns ${asideSide === "start" ? "sw-detail-start" : ""}` : "min-w-0"}>
           <div className="min-w-0">{main}{danger.map(zone => <DangerZone key={zone.title} {...zone} />)}</div>
-          {aside ? <aside aria-label="At a glance" className="min-w-0">{aside}</aside> : null}
+          {aside ? <aside aria-label={t`At a glance`} className="min-w-0">{aside}</aside> : null}
         </div>
       </div>
       {presentation === "drawer" && footer ? <div className="sw-sticky-footer mt-6 flex flex-wrap justify-end gap-2 border-t border-line bg-panel pt-4">

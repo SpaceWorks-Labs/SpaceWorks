@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../lib/api";
 import { personalRecipientKey } from "./personalQueryKeys";
@@ -19,9 +20,9 @@ export function PreferenceCentre({ makerspaceId, digests = false }: { makerspace
   }, onSuccess: ({ data, recipientKey }) => client.setQueryData(recipientKey, data) });
   const error = preferences.error ?? save.error;
   return <section className="desk-panel p-5">
-    <h2 className="title-panel">Communication preferences</h2>
-    <p className="mt-2 text-sm text-muted">Choose optional messages for each family and personal channel. Safety and account recovery emails always remain enabled. Makerspace channel switches still apply.</p>
-    {preferences.isLoading ? <p className="mt-3 text-sm text-muted">Loading preferences...</p> : null}
+    <h2 className="title-panel">{t`Communication preferences`}</h2>
+    <p className="mt-2 text-sm text-muted">{t`Choose optional messages for each family and personal channel. Safety and account recovery emails always remain enabled. Makerspace channel switches still apply.`}</p>
+    {preferences.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading preferences...`}</p> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error.message}</p> : null}
     {/* Each card stacks its title over its switches at every width: a side-by-side
         label/control row inside a half-width card squeezed both to a sliver on tablets. */}
@@ -29,11 +30,10 @@ export function PreferenceCentre({ makerspaceId, digests = false }: { makerspace
       className="min-w-0 rounded-md border border-line p-3 text-sm">
       <legend className="title-section float-left mb-1 w-full break-words">{`${cell.feature.replace(/_/g, " ")} · ${cell.channel === "in_app" ? "Inbox" : cell.channel.replace(/_/g, " ")}`}</legend><label className="flex min-h-11 items-center gap-3"><input className="h-5 w-5 shrink-0" type="checkbox" aria-label={`${cell.feature} ${cell.channel} messages`} checked={cell.enabled} disabled={save.isPending || (!cell.available && !cell.enabled)}
         onChange={() => save.mutate(cell)} />
-      <span>Send me these messages
-        {!cell.available ? <span className="block text-xs text-muted">Disabled by makerspace</span> : null}
-        {cell.mandatory_events.length ? <span className="block text-xs text-muted">Safety emails stay enabled: {cell.mandatory_events.map((event) => event.replace(/_/g, " ")).join(", ")}</span> : null}
+      <span>{t`Send me these messages`}{!cell.available ? <span className="block text-xs text-muted">{t`Disabled by makerspace`}</span> : null}
+        {cell.mandatory_events.length ? <span className="block text-xs text-muted">{t`Safety emails stay enabled: ${cell.mandatory_events.map((event) => event.replace(/_/g, " ")).join(", ")}`}</span> : null}
       </span></label>
-      {digests && cell.channel === "email" ? <label className="flex min-h-11 items-center gap-3 text-sm"><input className="h-5 w-5 shrink-0" type="checkbox" aria-label={`${cell.feature} daily digest`} checked={cell.daily_digest ?? false} disabled={save.isPending || !cell.enabled || !cell.available} onChange={() => save.mutate({ ...cell, changeDigest: true })} /> Daily digest for optional emails</label> : null}
+      {digests && cell.channel === "email" ? <label className="flex min-h-11 items-center gap-3 text-sm"><input className="h-5 w-5 shrink-0" type="checkbox" aria-label={t`${cell.feature} daily digest`} checked={cell.daily_digest ?? false} disabled={save.isPending || !cell.enabled || !cell.available} onChange={() => save.mutate({ ...cell, changeDigest: true })} /> {t` Daily digest for optional emails`}</label> : null}
     </fieldset>)}</div>
   </section>;
 }

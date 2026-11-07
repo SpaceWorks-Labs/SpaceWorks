@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -38,12 +39,12 @@ export function EventStationSettings({ eventId }: { eventId: number }) {
   });
   const error = query.error || rotate.error || reveal.error || disable.error;
   return <section className="mt-3 rounded-lg border border-line bg-panel p-3" aria-labelledby="station-settings-title">
-    <h4 id="station-settings-title" className="font-semibold text-ink">PIN check-in station</h4>
-    <p className="mt-1 text-sm text-muted">The PIN is scoped to this event and check-in window. Rotation immediately invalidates old station sessions.</p>
-    {query.data?.configured ? <div className="mt-3 grid gap-2 text-sm"><p>Status: <strong>{query.data.enabled ? "enabled" : "disabled"}</strong> · version {query.data.version}</p>{query.data.station_url ? <div className="flex flex-wrap gap-2"><a className="desk-button" href={query.data.station_url} target="_blank" rel="noreferrer">Open station</a><button className="desk-button" type="button" onClick={() => navigator.clipboard.writeText(query.data?.station_url ?? "")}>Copy URL</button></div> : null}</div> : <p className="mt-2 text-sm text-muted">No station PIN has been created.</p>}
-    {pin ? <p className="mt-3 rounded-md border border-warn bg-warn-soft p-3 tabular-nums text-xl text-warn-ink" aria-live="polite">PIN: {pin}</p> : null}
-    <div className="mt-3 flex flex-wrap gap-2"><button className="desk-button-primary" type="button" disabled={rotate.isPending} onClick={() => rotate.mutate()}>{query.data?.configured ? "Rotate PIN" : "Create PIN"}</button>{query.data?.enabled ? <button className="desk-button-danger" type="button" disabled={disable.isPending} onClick={() => disable.mutate()}>Disable</button> : null}</div>
-    {query.data?.enabled ? <form className="mt-3 flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); reveal.mutate(); }}><label className="sr-only" htmlFor="station-current-password">Current password</label><input id="station-current-password" className="desk-input min-w-0 flex-1 basis-48" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Current password" /><button className="desk-button" type="submit" disabled={!password || reveal.isPending}>Reveal PIN</button></form> : null}
+    <h4 id="station-settings-title" className="font-semibold text-ink">{t`PIN check-in station`}</h4>
+    <p className="mt-1 text-sm text-muted">{t`The PIN is scoped to this event and check-in window. Rotation immediately invalidates old station sessions.`}</p>
+    {query.data?.configured ? <div className="mt-3 grid gap-2 text-sm"><p>{t`Status: `}<strong>{query.data.enabled ? "enabled" : "disabled"}</strong> {t` · version `}{query.data.version}</p>{query.data.station_url ? <div className="flex flex-wrap gap-2"><a className="desk-button" href={query.data.station_url} target="_blank" rel="noreferrer">{t`Open station`}</a><button className="desk-button" type="button" onClick={() => navigator.clipboard.writeText(query.data?.station_url ?? "")}>{t`Copy URL`}</button></div> : null}</div> : <p className="mt-2 text-sm text-muted">{t`No station PIN has been created.`}</p>}
+    {pin ? <p className="mt-3 rounded-md border border-warn bg-warn-soft p-3 tabular-nums text-xl text-warn-ink" aria-live="polite">{t`PIN: ${pin}`}</p> : null}
+    <div className="mt-3 flex flex-wrap gap-2"><button className="desk-button-primary" type="button" disabled={rotate.isPending} onClick={() => rotate.mutate()}>{query.data?.configured ? t`Rotate PIN` : t`Create PIN`}</button>{query.data?.enabled ? <button className="desk-button-danger" type="button" disabled={disable.isPending} onClick={() => disable.mutate()}>{t`Disable`}</button> : null}</div>
+    {query.data?.enabled ? <form className="mt-3 flex flex-wrap gap-2" onSubmit={(event) => { event.preventDefault(); reveal.mutate(); }}><label className="sr-only" htmlFor="station-current-password">{t`Current password`}</label><input id="station-current-password" className="desk-input min-w-0 flex-1 basis-48" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t`Current password`} /><button className="desk-button" type="submit" disabled={!password || reveal.isPending}>{t`Reveal PIN`}</button></form> : null}
     {error ? <p className="mt-2 text-sm text-danger" role="alert">{error.message}</p> : null}
   </section>;
 }

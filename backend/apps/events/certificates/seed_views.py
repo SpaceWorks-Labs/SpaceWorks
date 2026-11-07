@@ -1,4 +1,5 @@
 """Event/version-bound default artwork installation and server PDF previews."""
+from django.utils.translation import gettext
 from io import BytesIO
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -42,12 +43,12 @@ class SeedInstalledSerializer(serializers.Serializer):
 
 def resolve(values):
     if values["kind"] == "badge" and values["stock"] is None:
-        raise serializers.ValidationError({"stock": "Choose a badge stock."})
+        raise serializers.ValidationError({"stock": gettext("Choose a badge stock.")})
     rows = catalogue(kind=values["kind"], theme=values["theme"], stock=values["stock"])
     row = next((row for row in rows if row["seed_id"] == values["seed_id"]
                 and row["seed_version"] == values["seed_version"]), None)
     if row is None:
-        raise serializers.ValidationError({"seed_id": "Reload the current default designs."})
+        raise serializers.ValidationError({"seed_id": gettext("Reload the current default designs.")})
     return row
 
 
@@ -60,7 +61,7 @@ class SeedCatalogueView(APIView):
         kind, theme = request.query_params.get("kind", "certificate"), request.query_params.get("theme", "light")
         stock = request.query_params.get("stock")
         if kind not in ("certificate", "badge") or theme not in ("light", "dark") or (kind == "badge" and stock not in STOCKS):
-            raise serializers.ValidationError("Choose a supported kind, theme and badge stock.")
+            raise serializers.ValidationError(gettext("Choose a supported kind, theme and badge stock."))
         rows = catalogue(kind=kind, theme=theme, stock=stock)
         return private(Response({"count": len(rows), "next": None, "previous": None, "results": rows}))
 
@@ -79,9 +80,9 @@ class SeedInstallView(APIView):
         try:
             header = UUID(request.headers.get("Idempotency-Key", ""))
         except (ValueError, TypeError, AttributeError):
-            raise serializers.ValidationError({"operation_id": "Idempotency-Key must equal operation_id."})
+            raise serializers.ValidationError({"operation_id": gettext("Idempotency-Key must equal operation_id.")})
         if header != values["operation_id"]:
-            raise serializers.ValidationError({"operation_id": "Idempotency-Key must equal operation_id."})
+            raise serializers.ValidationError({"operation_id": gettext("Idempotency-Key must equal operation_id.")})
         resolve(values)
         row = install_to_event(pk, actor=request.user, **values)
         event = event_authority.get_event(request.user, pk, EDIT_DETAILS)

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -111,7 +112,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 export function useTenant() {
   const value = useContext(TenantContext);
   if (!value) {
-    throw new Error("useTenant must be used inside TenantProvider");
+    throw new Error(t`useTenant must be used inside TenantProvider`);
   }
   return value;
 }

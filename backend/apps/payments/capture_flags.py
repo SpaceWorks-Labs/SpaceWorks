@@ -6,6 +6,7 @@ issued. No function here moves money: `refund_case` opens an entitlement that a 
 member must still approve through `services_refund_decisions`.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db import transaction
@@ -113,7 +114,7 @@ def resolve_flag(*, actor, makerspace_id, flag_id, resolution, note="", amount=N
 
     flag = Flag.objects.filter(pk=flag_id, makerspace_id=makerspace_id).first()
     if flag is None:
-        raise NotFound("Capture flag not found.")
+        raise NotFound(gettext("Capture flag not found."))
     payment = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=flag.payment_id)
     flag = Flag.objects.select_for_update().get(pk=flag.pk)
     if not flag.is_open:

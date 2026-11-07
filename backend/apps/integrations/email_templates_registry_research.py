@@ -3,6 +3,7 @@
 Staff payment context deliberately omits amounts: chat uses the staff registry entry.
 Only the requester's own payment email receives amount/currency fields.
 """
+from django.utils.translation import gettext_noop
 
 from .email_templates_registry_helpers import EmailTemplateRegistryEntry, bag
 
@@ -41,23 +42,23 @@ SUBJECT_FIELDS = {
 }
 
 STAFF_TEXT = {
-    "payments": "Payment #{{ subject.id }}: {{ event_name }}. Status: {{ subject.status }}.",
-    "membership": "Membership #{{ subject.id }}: {{ event_name }}. Status: {{ subject.status }}.",
-    "stock": "Stock item #{{ subject.id }} ({{ subject.name }}): {{ event_name }}.",
-    "maintenance": "Maintenance schedule #{{ schedule.id }} for {{ machine.name }}: "
-                   "{{ event_name }}. Due: {{ schedule.next_due }}.",
-    "certifications": "Certification #{{ subject.id }} ({{ subject.name }}): "
-                      "{{ event_name }}. Expiry: {{ subject.expires_at }}.",
+    "payments": gettext_noop("Payment #{{ subject.id }}: {{ event_name }}. Status: {{ subject.status }}."),
+    "membership": gettext_noop("Membership #{{ subject.id }}: {{ event_name }}. Status: {{ subject.status }}."),
+    "stock": gettext_noop("Stock item #{{ subject.id }} ({{ subject.name }}): {{ event_name }}."),
+    "maintenance": gettext_noop("Maintenance schedule #{{ schedule.id }} for {{ machine.name }}: "
+                   "{{ event_name }}. Due: {{ schedule.next_due }}."),
+    "certifications": gettext_noop("Certification #{{ subject.id }} ({{ subject.name }}): "
+                      "{{ event_name }}. Expiry: {{ subject.expires_at }}."),
 }
 
 REQUESTER_TEXT = {
-    "payments": "Your payment #{{ subject.id }}: {{ event_name }}. "
+    "payments": gettext_noop("Your payment #{{ subject.id }}: {{ event_name }}. "
                 "Amount: {{ subject.amount }} {{ subject.currency }}. "
                 "{% if subject.due_date %}Due: {{ subject.due_date }}. {% endif %}"
-                "Review your payment history at {{ makerspace.name }}.",
-    "membership": "Your membership at {{ makerspace.name }}: {{ event_name }}.",
-    "certifications": "Your certification {{ subject.name }} at {{ makerspace.name }}: "
-                      "{{ event_name }}. Expiry: {{ subject.expires_at }}.",
+                "Review your payment history at {{ makerspace.name }}."),
+    "membership": gettext_noop("Your membership at {{ makerspace.name }}: {{ event_name }}."),
+    "certifications": gettext_noop("Your certification {{ subject.name }} at {{ makerspace.name }}: "
+                      "{{ event_name }}. Expiry: {{ subject.expires_at }}."),
 }
 
 

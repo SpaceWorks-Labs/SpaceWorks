@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 
 import { StructuredApiError } from "../../lib/api";
@@ -35,33 +37,31 @@ export function StaffBookingForm({ makerspaceId, space, recurringEnabled = false
   };
   return (
     <form className="mb-4 grid gap-3 rounded-lg border border-line p-3" onSubmit={submit}>
-      <h4 className="title-section">Book for a member</h4>
-      <p className="text-xs text-muted">Active membership and current waiver are required. Members can book ahead.</p>
+      <h4 className="title-section">{t`Book for a member`}</h4>
+      <p className="text-xs text-muted">{t`Active membership and current waiver are required. Members can book ahead.`}</p>
       <fieldset className="grid gap-3 sm:grid-cols-2" disabled={create.isPending}>
-        <label className="grid gap-1 text-sm sm:col-span-2">Member
-          <select className="desk-input" required value={memberId} onChange={(event) => { setMemberId(event.target.value); setAnswers({}); setErrors({}); setReason(""); }}>
-            <option value="">{members.isLoading ? "Loading members…" : "Select a member"}</option>
+        <label className="grid gap-1 text-sm sm:col-span-2">{t`Member`}<select className="desk-input" required value={memberId} onChange={(event) => { setMemberId(event.target.value); setAnswers({}); setErrors({}); setReason(""); }}>
+            <option value="">{members.isLoading ? t`Loading members…` : t`Select a member`}</option>
             {members.data?.results.map((member) => <option key={member.member_id} value={member.member_id}>{member.display_name}</option>)}
           </select>
         </label>
         <div className="flex flex-wrap gap-2 sm:col-span-2">
-          <button className="desk-button" type="button" disabled={!members.data?.previous} onClick={() => { setPage(page - 1); setMemberId(""); }}>Previous members</button>
-          <button className="desk-button" type="button" disabled={!members.data?.next} onClick={() => { setPage(page + 1); setMemberId(""); }}>Next members</button>
+          <button className="desk-button" type="button" disabled={!members.data?.previous} onClick={() => { setPage(page - 1); setMemberId(""); }}>{t`Previous members`}</button>
+          <button className="desk-button" type="button" disabled={!members.data?.next} onClick={() => { setPage(page + 1); setMemberId(""); }}>{t`Next members`}</button>
         </div>
-        <label className="grid gap-1 text-sm">Starts (your local time)<input className="desk-input w-full min-w-0" type="datetime-local" required value={start} onChange={(event) => setStart(event.target.value)} /></label>
-        <label className="grid gap-1 text-sm">Ends (your local time)<input className="desk-input w-full min-w-0" type="datetime-local" required value={end} onChange={(event) => setEnd(event.target.value)} /></label>
-        {recurringEnabled ? <div className="grid gap-2 sm:col-span-2"><label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={repeat} onChange={(event) => setRepeat(event.target.checked)} />Repeat weekly in makerspace local time</label>{repeat ? <><label className="grid gap-1 text-sm">Occurrences<input className="desk-input" type="number" min={2} max={52} value={count} onChange={(event) => setCount(Number(event.target.value))} /></label><label className="grid gap-1 text-sm">Weeks between bookings<input className="desk-input" type="number" min={1} max={12} value={intervalWeeks} onChange={(event) => setIntervalWeeks(Number(event.target.value))} /></label><p className="text-xs text-muted">Each occurrence is booked and charged separately. The result lists every conflict.</p></> : null}</div> : null}
-        <label className="grid gap-1 text-sm sm:col-span-2">Staff note<textarea className="desk-input" maxLength={5000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
-        {space.machine_type ? <label className="grid gap-1 text-sm sm:col-span-2">Certification override reason (optional)
-          <input className="desk-input" maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} />
-          <span className="text-xs text-muted">Only staff with authority over this machine type may override. Every override is audited.</span>
+        <label className="grid gap-1 text-sm">{t`Starts (your local time)`}<input className="desk-input w-full min-w-0" type="datetime-local" required value={start} onChange={(event) => setStart(event.target.value)} /></label>
+        <label className="grid gap-1 text-sm">{t`Ends (your local time)`}<input className="desk-input w-full min-w-0" type="datetime-local" required value={end} onChange={(event) => setEnd(event.target.value)} /></label>
+        {recurringEnabled ? <div className="grid gap-2 sm:col-span-2"><label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={repeat} onChange={(event) => setRepeat(event.target.checked)} />{t`Repeat weekly in makerspace local time`}</label>{repeat ? <><label className="grid gap-1 text-sm">{t`Occurrences`}<input className="desk-input" type="number" min={2} max={52} value={count} onChange={(event) => setCount(Number(event.target.value))} /></label><label className="grid gap-1 text-sm">{t`Weeks between bookings`}<input className="desk-input" type="number" min={1} max={12} value={intervalWeeks} onChange={(event) => setIntervalWeeks(Number(event.target.value))} /></label><p className="text-xs text-muted">{t`Each occurrence is booked and charged separately. The result lists every conflict.`}</p></> : null}</div> : null}
+        <label className="grid gap-1 text-sm sm:col-span-2">{t`Staff note`}<textarea className="desk-input" maxLength={5000} value={note} onChange={(event) => setNote(event.target.value)} /></label>
+        {space.machine_type ? <label className="grid gap-1 text-sm sm:col-span-2">{t`Certification override reason (optional)`}<input className="desk-input" maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} />
+          <span className="text-xs text-muted">{t`Only staff with authority over this machine type may override. Every override is audited.`}</span>
         </label> : null}
       </fieldset>
       <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} disabled={create.isPending} errors={{ ...errors, ...customAnswerErrors(create.error instanceof StructuredApiError ? create.error.body.custom_answers : undefined) }} />
       {members.error || create.error ? <p className="text-sm text-danger" role="alert">{(create.error ?? members.error)?.message}</p> : null}
       {/* The form scrolls inside its dialog; keep the submit pinned to the dialog's bottom edge. */}
-      <div className="sticky bottom-0 z-10 bg-panel py-2"><button className="desk-button-primary w-full sm:w-fit" type="submit" disabled={!memberId || create.isPending}>{create.isPending ? "Booking…" : "Create booking"}</button></div>
-      {create.data && "occurrences" in create.data ? <ul className="grid gap-2 text-sm" aria-label="Recurring booking results">{create.data.occurrences.map((row) => <li key={row.occurrence}>{row.occurrence}: {new Date(row.starts_at).toLocaleString()} — {row.booking_id ? row.status : `Conflict: ${row.detail}`}</li>)}</ul> : create.isSuccess ? <p className="text-sm text-success-ink" role="status">Booking created.</p> : null}
+      <div className="sticky bottom-0 z-10 bg-panel py-2"><button className="desk-button-primary w-full sm:w-fit" type="submit" disabled={!memberId || create.isPending}>{create.isPending ? t`Booking…` : t`Create booking`}</button></div>
+      {create.data && "occurrences" in create.data ? <ul className="grid gap-2 text-sm" aria-label={t`Recurring booking results`}>{create.data.occurrences.map((row) => <li key={row.occurrence}>{row.occurrence}: {new Date(row.starts_at).toLocaleString(formatLocale())} — {row.booking_id ? row.status : t`Conflict: ${row.detail}`}</li>)}</ul> : create.isSuccess ? <p className="text-sm text-success-ink" role="status">{t`Booking created.`}</p> : null}
     </form>
   );
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { KioskLayout } from "../../components/layouts";
 import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
@@ -27,18 +28,18 @@ export function PublicDeskKioskPage() {
   // Catalogue is this page; every other programme link is one tap away, as the old catalogue header had.
   const programme = publicPageChrome(makerspaceSlug, name, path, bootstrap).nav.slice(1);
   return <PublicInventoryPage embedded={({ body, request }) => <KioskLayout
-    context={{ identity: logo ? { kind: "image", src: logo } : undefined, title: name, subtitle: "Public desk · Browse the catalogue and request what you need." }}
+    context={{ identity: logo ? { kind: "image", src: logo } : undefined, title: name, subtitle: t`Public desk · Browse the catalogue and request what you need.` }}
     connection={{ online }} mode="work" state={{ status: "ready" }}
-    headerActions={[...programme, { label: "Open full catalogue", href: path() }]}
+    headerActions={[...programme, { label: t`Open full catalogue`, href: path() }]}
     work={{ capture: <div className="text-lg [&_button]:min-h-12 [&_a]:min-h-12">{body}</div>,
       panel: <div className="grid gap-6"><Card>{request}</Card>
         <Card className="grid gap-4">
-          <h2 className="title-panel">Need a hand?</h2>
+          <h2 className="title-panel">{t`Need a hand?`}</h2>
           <SupportContact branding={bootstrap?.branding} />
           <MakerspaceMapLink makerspace={bootstrap?.makerspace} />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <ThemeToggle />
-            <RouteLink className="text-sm text-muted underline hover:text-ink" href="/admin">Staff sign-in</RouteLink>
+            <RouteLink className="text-sm text-muted underline hover:text-ink" href="/admin">{t`Staff sign-in`}</RouteLink>
           </div>
         </Card>
       </div> }} />} />;

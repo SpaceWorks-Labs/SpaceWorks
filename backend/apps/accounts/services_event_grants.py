@@ -11,6 +11,7 @@ only that event's programme routes (``native_event_routes``). It lives only as l
   that fires no signal still cannot leave a usable grant behind.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -86,9 +87,9 @@ def event_authority_for_login(user, event_id):
     from apps.accounts.mfa_policy import VERIFIED, source_for
     from apps.accounts.models_devices import DeviceGrant
     if event_role_state(user, event_id) != ACTIVE:
-        raise AuthenticationFailed("An active event role is required for this event.")
+        raise AuthenticationFailed(gettext("An active event role is required for this event."))
     if source_for(user) != VERIFIED:
-        raise AuthenticationFailed("Native event sessions require a verified second factor.")
+        raise AuthenticationFailed(gettext("Native event sessions require a verified second factor."))
     return DeviceGrant.Authority.EVENT
 
 
@@ -97,7 +98,7 @@ def assert_registration_for_event(registration, event_id):
     from rest_framework.exceptions import AuthenticationFailed
     event = live_event(event_id)
     if event is None or registration.makerspace_id not in (None, event.makerspace_id):
-        raise AuthenticationFailed("Device registration is not approved for that event.")
+        raise AuthenticationFailed(gettext("Device registration is not approved for that event."))
 
 
 def revoke_if_event_role_lost(user, event_id, *, reason="event_role_ended"):

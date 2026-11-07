@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect } from "react";
 
 import type { PickerOption } from "./AsyncSearchPicker";
@@ -33,11 +34,10 @@ function HostPicker({ hostId, consoleId, onChange }: { hostId: number; consoleId
   const options = useHostOptions();
   const rows = options.data ?? [];
   if (rows.length < 2) return null;
-  return <label className="grid gap-1 text-sm font-semibold">Host makerspace
-    <select className="desk-input font-normal" value={hostId} onChange={event => { const id = Number(event.target.value); onChange(id === consoleId ? null : id); }}>
+  return <label className="grid gap-1 text-sm font-semibold">{t`Host makerspace`}<select className="desk-input font-normal" value={hostId} onChange={event => { const id = Number(event.target.value); onChange(id === consoleId ? null : id); }}>
       {rows.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
     </select>
-    <span className="font-normal text-muted">Only spaces where you run events are listed. Partners are invited separately below.</span>
+    <span className="font-normal text-muted">{t`Only spaces where you run events are listed. Partners are invited separately below.`}</span>
   </label>;
 }
 
@@ -57,8 +57,8 @@ export function EventPartnersSection({ values, setValues, hostId, audienceSelect
   }, [own.data, values.organizers]);
   return <section aria-labelledby="event-partners-title" className="mt-6 grid gap-5 border-t border-line pt-5">
     <div>
-      <h3 id="event-partners-title" className="title-section">Organizers & partners</h3>
-      <p className="mt-1 text-sm text-muted">The host space runs the event. Add who organizes it and which makerspaces partner on it. You can change these later under More › Team.</p>
+      <h3 id="event-partners-title" className="title-section">{t`Organizers & partners`}</h3>
+      <p className="mt-1 text-sm text-muted">{t`The host space runs the event. Add who organizes it and which makerspaces partner on it. You can change these later under More › Team.`}</p>
     </div>
     <HostPicker hostId={host} consoleId={hostId} onChange={(id) => setValues({ ...values, hostId: id, partners: values.partners.filter(row => row.id !== id) })} />
     <OrganizerPicker selected={values.organizers ?? []} onChange={(organizers) => setValues({ ...values, organizers })} />

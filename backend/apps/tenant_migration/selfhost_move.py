@@ -15,6 +15,7 @@
 Every step is audited (``selfhost_move.*``); the space's Space Managers are told of each
 status change and the superadmins of a new request.
 """
+from django.utils.translation import gettext
 from pathlib import Path
 
 from django.conf import settings
@@ -88,12 +89,12 @@ def canonical_one_shot_recipient(raw):
     try:
         value = canonical_recipient(raw)
     except DjangoValidationError:
-        raise ValidationError({"recipient": "Paste the target server's age public key (age1...)."},
+        raise ValidationError({"recipient": gettext("Paste the target server's age public key (age1...).")},
                               code="recipient_key_invalid") from None
     if not settings.BACKUP_AGE_RECIPIENT:
         raise MoveConflict("platform_key_missing", "BACKUP_AGE_RECIPIENT must be configured before a move export.")
     if value == str(settings.BACKUP_AGE_RECIPIENT).strip().lower():
-        raise ValidationError({"recipient": "Use the target server's own key, not the platform key."},
+        raise ValidationError({"recipient": gettext("Use the target server's own key, not the platform key.")},
                               code="recipient_key_invalid")
     return value, fingerprint_for(value)
 

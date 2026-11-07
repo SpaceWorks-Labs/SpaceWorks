@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { Tag } from "lucide-react";
 
@@ -17,12 +18,10 @@ function PricingNote({ domain, makerspaceId, className = "", children }: { domai
 /** Event forms do not know their space id; any staff space with price lists shows it. */
 export function EventPriceNote({ makerspaceId, settings = false }: { makerspaceId?: number; settings?: boolean }) {
   return <PricingNote domain="events" makerspaceId={makerspaceId} className={settings ? "py-3" : "sm:col-span-2"}>
-    Your space's default event price only prefills new events; this event keeps its own price.
-  </PricingNote>;
+    {t`Your space's default event price only prefills new events; this event keeps its own price.`}</PricingNote>;
 }
 
 export function PlanPriceNote({ makerspaceId }: { makerspaceId: number }) {
   return <PricingNote domain="membership" makerspaceId={makerspaceId} className="mb-3">
-    Plan prices are set here; member discounts are in Settings &gt; Pricing.
-  </PricingNote>;
+    {t`Plan prices are set here; member discounts are in Settings > Pricing.`}</PricingNote>;
 }

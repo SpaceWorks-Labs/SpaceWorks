@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { MembershipPlan } from "./membershipPlansApi";
 
 export type RenewalForm = { auto_renew: boolean; renewal_open_days: string; renewal_grace_days: string; renewal_retries: string; reminder_days_before: string; reminder_days_after: string };
@@ -21,9 +22,9 @@ export function validateRenewal(form: RenewalForm): string | null {
 }
 export function MembershipRenewalFields({ value, onChange }: { value: RenewalForm; onChange: (value: RenewalForm) => void }) {
   const labels = { renewal_open_days: "Open renewal days before expiry", renewal_grace_days: "Grace days", renewal_retries: "Checkout retries (maximum 3)", reminder_days_before: "Reminder days before expiry", reminder_days_after: "Reminder days after expiry" };
-  return <fieldset className="grid gap-3 sm:col-span-3 sm:grid-cols-3 border-t border-line pt-3"><legend className="font-semibold">Renewal automation</legend>
-    <label className="flex items-center gap-2 sm:col-span-3"><input type="checkbox" checked={value.auto_renew} onChange={(event) => onChange({ ...value, auto_renew: event.target.checked })} />Automatically open the next term after settlement</label>
-    <p className="text-sm text-muted sm:col-span-3">Enable Automatic membership renewal and Membership lifecycle mail in features. Renewals record dues first; paid, waived and free renewals extend coverage. Grace delays borrowing lapse without revoking membership.</p>
+  return <fieldset className="grid gap-3 sm:col-span-3 sm:grid-cols-3 border-t border-line pt-3"><legend className="font-semibold">{t`Renewal automation`}</legend>
+    <label className="flex items-center gap-2 sm:col-span-3"><input type="checkbox" checked={value.auto_renew} onChange={(event) => onChange({ ...value, auto_renew: event.target.checked })} />{t`Automatically open the next term after settlement`}</label>
+    <p className="text-sm text-muted sm:col-span-3">{t`Enable Automatic membership renewal and Membership lifecycle mail in features. Renewals record dues first; paid, waived and free renewals extend coverage. Grace delays borrowing lapse without revoking membership.`}</p>
     {(Object.keys(labels) as (keyof typeof labels)[]).map((key) => <label className="text-sm" key={key}>{labels[key]}<input className="desk-input mt-1" value={value[key]} inputMode={key.startsWith("reminder") ? "text" : "numeric"} onChange={(event) => onChange({ ...value, [key]: event.target.value })} /></label>)}
   </fieldset>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { Camera, CircleCheck, ImageUp } from "lucide-react";
 
@@ -61,7 +62,7 @@ export function PublicEvidenceUpload({
       onUploaded(presigned.evidence_id, presigned.evidence_grant);
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : t`Upload failed.`);
       onUploaded(null);
     }
   }
@@ -72,16 +73,16 @@ export function PublicEvidenceUpload({
   return (
     <div className="grid min-w-0 gap-2">
       <p className="text-sm font-semibold text-ink">{label}</p>
-      {needsEmail ? <p className="text-sm text-muted">Enter your email above before adding the photo.</p> : null}
+      {needsEmail ? <p className="text-sm text-muted">{t`Enter your email above before adding the photo.`}</p> : null}
       {cameraSupported ? (
-        <button className="desk-button w-full" type="button" aria-label={`Take ${label}`} disabled={busy} onClick={() => setCameraOpen(true)}>
+        <button className="desk-button w-full" type="button" aria-label={t`Take ${label}`} disabled={busy} onClick={() => setCameraOpen(true)}>
           <Camera aria-hidden="true" size={18} />
-          {status === "done" ? "Retake with camera" : "Take photo with camera"}
+          {status === "done" ? t`Retake with camera` : t`Take photo with camera`}
         </button>
       ) : null}
       <label className={`desk-button w-full cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${busy ? "pointer-events-none border-line bg-surface text-muted" : ""}`}>
         <ImageUp aria-hidden="true" size={18} />
-        <span className="min-w-0 truncate">{status === "done" ? "Choose another file" : cameraSupported ? "Choose a file instead" : "Choose file"}</span>
+        <span className="min-w-0 truncate">{status === "done" ? t`Choose another file` : cameraSupported ? t`Choose a file instead` : t`Choose file`}</span>
         <input
           aria-label={label}
           type="file"
@@ -104,9 +105,9 @@ export function PublicEvidenceUpload({
         className={`flex min-w-0 items-center gap-2 text-sm [overflow-wrap:anywhere] ${status === "error" ? "text-danger" : status === "done" ? "font-semibold text-success-ink" : "text-muted"}`}
       >
         {status === "uploading"
-          ? `Uploading ${fileName}...`
+          ? t`Uploading ${fileName}...`
           : status === "done"
-            ? <><CircleCheck aria-hidden="true" size={16} className="shrink-0" />Photo uploaded</>
+            ? <><CircleCheck aria-hidden="true" size={16} className="shrink-0" />{t`Photo uploaded`}</>
             : status === "error"
               ? error
               : ""}

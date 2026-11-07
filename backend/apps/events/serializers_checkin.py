@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -7,9 +8,9 @@ class EventCheckInResolveRequestSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if set(self.initial_data) - {"checkin_token", "credential"}:
-            raise serializers.ValidationError("Unknown check-in field.")
+            raise serializers.ValidationError(gettext("Unknown check-in field."))
         if ("checkin_token" in attrs) == ("credential" in attrs):
-            raise serializers.ValidationError("Provide exactly one checkin_token or credential.")
+            raise serializers.ValidationError(gettext("Provide exactly one checkin_token or credential."))
         return attrs
 
 

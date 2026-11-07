@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { DataState, LineChart, PerMakerspaceTables, ReportTable, typedRows, type ReportRows } from "./OperationsReportsParts";
 import { reportGrain, type ReportCatalogItem } from "./operationsReportsConfig";
@@ -10,7 +11,7 @@ export function OperationsReportsFinance(props: {
   startDate: string; endDate: string; grain: string; aggregate: boolean;
   makerspaceName: (id: number) => string;
 }) {
-  return <section className="contents" aria-label="Financial reports">
+  return <section className="contents" aria-label={t`Financial reports`}>
     {props.catalog.filter(report => FINANCE_KEYS.has(report.key)).map(report => <FinanceReport key={report.key} {...props} report={report} />)}
   </section>;
 }
@@ -27,7 +28,7 @@ function FinanceReport({ report, ...props }: Parameters<typeof OperationsReports
     <DataState loading={result.isLoading} error={result.error} onRetry={() => void result.refetch()} empty={!typedRows(result.data).length}>
       {props.aggregate ? <PerMakerspaceTables data={result.data} nameOf={props.makerspaceName} /> : <>
         {report.key === "revenue-over-time" ? <>
-          <p className="text-xs text-muted">Collected and refunded use the money date. Owed is currently pending debt grouped by its creation date. All dates use the space's timezone.</p>
+          <p className="text-xs text-muted">{t`Collected and refunded use the money date. Owed is currently pending debt grouped by its creation date. All dates use the space's timezone.`}</p>
           {currencies.map(currency => <section key={currency} aria-label={`${currency.toUpperCase()} revenue`}>
             <h4 className="eyebrow">{currency.toUpperCase()}</h4>
             {([ ["collected_amount", "Collected"], ["owed_amount", "Owed"], ["refunded_amount", "Refunded"] ] as const).map(([field, label]) => {

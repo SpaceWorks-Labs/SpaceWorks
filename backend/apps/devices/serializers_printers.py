@@ -1,4 +1,5 @@
 """Strict printer protocol: measurements only; no device-controlled money fields."""
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -9,7 +10,7 @@ from apps.devices.models import PrinterDeviceBinding, PrinterJob, PrinterJobCons
 class StrictSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict):
-            raise serializers.ValidationError("An object is required.")
+            raise serializers.ValidationError(gettext("An object is required."))
         unknown = set(data) - set(self.fields)
         if unknown:
             raise serializers.ValidationError({key: "Unknown field." for key in sorted(unknown)})
@@ -59,14 +60,14 @@ class ResultSerializer(StrictSerializer):
 
     def validate(self, attrs):
         if attrs["outcome"] == "failed" and (not attrs["failure_reason"].strip() or attrs["percent_complete"] is None):
-            raise serializers.ValidationError("Failure requires a reason and percent_complete.")
+            raise serializers.ValidationError(gettext("Failure requires a reason and percent_complete."))
         if attrs["outcome"] == "completed" and (attrs["failure_reason"] or attrs["percent_complete"] is not None):
-            raise serializers.ValidationError("Completed reports cannot contain failure fields.")
+            raise serializers.ValidationError(gettext("Completed reports cannot contain failure fields."))
         if attrs["actual_grams"] is not None and attrs["actual_quantity"] is not None:
-            raise serializers.ValidationError("Supply actual_grams or actual_quantity, not both.")
+            raise serializers.ValidationError(gettext("Supply actual_grams or actual_quantity, not both."))
         ids = [row["machine_consumable_id"] for row in attrs["consumptions"]]
         if len(ids) != len(set(ids)):
-            raise serializers.ValidationError("Each consumable may appear once.")
+            raise serializers.ValidationError(gettext("Each consumable may appear once."))
         return attrs
 
 

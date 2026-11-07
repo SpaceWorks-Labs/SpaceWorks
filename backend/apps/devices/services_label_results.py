@@ -1,4 +1,5 @@
 """Atomic result receipt + command update: a matching replay cannot queue twice."""
+from django.utils.translation import gettext
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -33,7 +34,7 @@ def report_result(principal, label_id, *, operation_id, outcome, result_code, no
                 raise LabelConflict("Operation ID has already been used for another payload.")
             # Key rotation/revocation must also invalidate cached result authority.
             if label.command.device_key_version != device.key_version:
-                raise PermissionDenied("Command belongs to a previous device key.")
+                raise PermissionDenied(gettext("Command belongs to a previous device key."))
             if label.command.status == DeviceCommand.Status.CANCELLED:
                 raise LabelConflict("Command has been cancelled.")
             return previous

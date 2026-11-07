@@ -1,5 +1,6 @@
 """Loan ladder source for F1. No addresses or payloads persist in schedule rows."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from itertools import islice
@@ -97,7 +98,7 @@ def build_reminder(makerspace, reminder, now, local_tz):
     title = "Overdue loan escalation" if reminder.kind == "escalation" else "Loan return reminder"
     return ReminderMessage(
         title=title, event="loan.overdue_escalated" if reminder.kind == "escalation" else "loan.return_reminder",
-        body=f"Request #{loan.pk} {'is overdue' if overdue else 'is due for return'}; return by {due}.",
+        body=gettext('Request #{pk} {value}; return by {due}.').format(pk=loan.pk, value='is overdue' if overdue else 'is due for return', due=due),
         level="warning" if overdue else "info",
     )
 

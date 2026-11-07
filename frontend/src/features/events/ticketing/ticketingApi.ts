@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { memberRequest, tenantPublicRequest } from "../../../lib/api";
 
 /** Release 2 L6: paid ticketing v2 -- the public shop, member orders, claims and transfers. */
@@ -86,7 +88,7 @@ export const acceptClaim = (kind: "claim" | "transfer", token: string) =>
 export function money(amount: string | number, currency: string) {
   const value = Number(amount);
   if (!value) return "Free";
-  try { return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(value); }
+  try { return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(value); }
   catch { return `${value.toFixed(2)} ${currency.toUpperCase()}`; }
 }
 
@@ -101,7 +103,7 @@ export function policyLine(policy: RefundPolicySummary) {
 }
 
 export const ORDER_STATUS: Record<TicketOrder["status"], { label: string; tone: "success" | "warn" | "neutral" | "danger" }> = {
-  pending: { label: "Awaiting payment", tone: "warn" }, paid: { label: "Paid", tone: "success" },
-  cancelled: { label: "Cancelled", tone: "neutral" }, expired: { label: "Checkout expired", tone: "neutral" },
-  unfulfilled: { label: "Could not be seated", tone: "danger" },
+  pending: { label: t`Awaiting payment`, tone: "warn" }, paid: { label: t`Paid`, tone: "success" },
+  cancelled: { label: t`Cancelled`, tone: "neutral" }, expired: { label: t`Checkout expired`, tone: "neutral" },
+  unfulfilled: { label: t`Could not be seated`, tone: "danger" },
 };

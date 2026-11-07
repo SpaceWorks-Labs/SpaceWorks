@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from 'react';
 import { GalleryCard } from './GalleryCard';
 import { galleryEntry } from './parsers';
@@ -20,7 +21,7 @@ export function ProgrammeSectionContent({ section, onDownload, renderMemberCard 
     }
     return <article key={index} className="rounded-xl border border-line bg-panel p-4">
       <h3 className="title-section">{section.kind === 'prizes' ? String(item.name ?? '') : String(item.prize ?? '')}</h3>
-      <p className="mt-2 whitespace-pre-wrap text-sm">{section.kind === 'prizes' ? String(item.description ?? '') : `${String(item.title ?? '')} · Rank ${String(item.rank ?? '')}`}</p>
+      <p className="mt-2 whitespace-pre-wrap text-sm">{section.kind === 'prizes' ? String(item.description ?? '') : t`${String(item.title ?? '')} · Rank ${String(item.rank ?? '')}`}</p>
     </article>;
   })}</div>;
 }

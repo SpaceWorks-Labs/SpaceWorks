@@ -5,6 +5,7 @@ These serializers describe and shape-check the request; the authoritative valida
 stays in `MakerspaceSerializer`, which `domain_settings.apply_domain_settings` reuses.
 """
 
+from django.utils.translation import gettext
 from collections.abc import Mapping
 
 from rest_framework import serializers
@@ -82,7 +83,7 @@ class DomainSettingsUpdateSerializer(serializers.Serializer):
         # DRF drops unknown keys silently; a misspelled or foreign setting (including
         # `enabled_modules`) must be refused instead, never read as "nothing changed".
         if not isinstance(data, Mapping):
-            raise serializers.ValidationError({"non_field_errors": ["Expected an object."]})
+            raise serializers.ValidationError({"non_field_errors": [gettext("Expected an object.")]})
         unknown = sorted(set(data) - set(self.fields))
         if unknown:
             raise serializers.ValidationError({key: _UNKNOWN for key in unknown})

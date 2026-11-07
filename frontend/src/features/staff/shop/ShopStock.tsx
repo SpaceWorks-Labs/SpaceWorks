@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -26,21 +27,21 @@ export function ShopStock({ makerspaceId, access }: { makerspaceId: number; acce
   const move = useMutation({ mutationFn: ({ id, body }: { id: number; body: StockMove }) => moveStock(id, body),
     onSuccess: () => { setDialog(null); void client.invalidateQueries({ queryKey: staffShopKeys.all(makerspaceId) }); } });
   return <>
-    <ListLayout header={{ eyebrow: "Shop", title: "Stock", subtitle: "Held stock is set aside for orders that are not collected yet." }}
+    <ListLayout header={{ eyebrow: t`Shop`, title: t`Stock`, subtitle: t`Held stock is set aside for orders that are not collected yet.` }}
       state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
         onRetry: () => { void query.refetch(); } } : { status: "ready" }}
-      filters={{ search: { label: "Find an item", placeholder: "Name or SKU", value: search, onChange: setSearch } }}
-      isEmpty={!shown.length} empty={{ message: "No products to stock yet." }} filteredEmpty={{ message: "No item matches." }}
+      filters={{ search: { label: t`Find an item`, placeholder: t`Name or SKU`, value: search, onChange: setSearch } }}
+      isEmpty={!shown.length} empty={{ message: t`No products to stock yet.` }} filteredEmpty={{ message: t`No item matches.` }}
       body={{ kind: "rows", rows: shown.map(row => {
         const low = row.reorder > 0 && row.available <= row.reorder;
         return <ListRow key={row.variantId} title={row.label}
-          meta={<span className="text-sm tabular-nums text-muted">{row.sku ? `${row.sku} · ` : ""}{row.onHand} on hand · {row.held} held · {row.available} available{row.reorder ? ` · reorder at ${row.reorder}` : ""}</span>}
+          meta={<span className="text-sm tabular-nums text-muted">{t`${row.sku ? `${row.sku} · ` : ""}${row.onHand} on hand · ${row.held} held · ${row.available} available`}{row.reorder ? t` · reorder at ${row.reorder}` : ""}</span>}
           right={<span className="flex flex-wrap items-center gap-2">
-            {row.available <= 0 ? <StatusPill label="Sold out" tone="danger" /> : low ? <StatusPill label="Low" tone="warn" /> : null}
-            <button type="button" className="desk-button min-h-11" aria-label={`Stock history for ${row.label}`} onClick={() => setHistory(row)}>History</button>
+            {row.available <= 0 ? <StatusPill label={t`Sold out`} tone="danger" /> : low ? <StatusPill label={t`Low`} tone="warn" /> : null}
+            <button type="button" className="desk-button min-h-11" aria-label={t`Stock history for ${row.label}`} onClick={() => setHistory(row)}>{t`History`}</button>
             {access.manage ? <>
-              <button type="button" className="desk-button min-h-11" aria-label={`Restock ${row.label}`} onClick={() => { move.reset(); setDialog({ target: row, mode: "restock" }); }}>Restock</button>
-              <button type="button" className="desk-button min-h-11" aria-label={`Adjust ${row.label}`} onClick={() => { move.reset(); setDialog({ target: row, mode: "adjust" }); }}>Adjust</button>
+              <button type="button" className="desk-button min-h-11" aria-label={t`Restock ${row.label}`} onClick={() => { move.reset(); setDialog({ target: row, mode: "restock" }); }}>{t`Restock`}</button>
+              <button type="button" className="desk-button min-h-11" aria-label={t`Adjust ${row.label}`} onClick={() => { move.reset(); setDialog({ target: row, mode: "adjust" }); }}>{t`Adjust`}</button>
             </> : null}
           </span>} />;
       }) }} />

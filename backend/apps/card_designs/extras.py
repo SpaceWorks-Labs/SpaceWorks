@@ -5,6 +5,7 @@ the design places them. They never appear in staff lists, exports (other than no
 reports, the public check, wallet passes or audit meta, and are deleted on revoke
 and erasure. Organisers see them only behind the per-event switch (events/id_cards_views_settings.py).
 """
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -32,9 +33,9 @@ def write(actor, kind, card, *, opted_in, blood_group="", emergency_contact_name
                          meta={"card_id": card.pk, "holder_kind": kind, "opted_in": False})
         return read(kind, card)
     if blood_group not in BLOOD_GROUPS:
-        raise ValidationError({"blood_group": "Choose a blood group from the list."})
+        raise ValidationError({"blood_group": gettext("Choose a blood group from the list.")})
     if len(emergency_contact_name) > 80 or len(emergency_contact_phone) > 32:
-        raise ValidationError({"emergency_contact": "Keep the contact to a short name and one phone number."})
+        raise ValidationError({"emergency_contact": gettext("Keep the contact to a short name and one phone number.")})
     CardHolderExtras.objects.update_or_create(
         **{kind: card}, defaults={"makerspace_id": card.makerspace_id, "blood_group": blood_group,
                                   "emergency_contact_name": emergency_contact_name.strip(),

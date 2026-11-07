@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -11,7 +12,7 @@ class MembershipRequestCreateSerializer(serializers.Serializer):
 
     def validate_website(self, value):
         if value:
-            raise serializers.ValidationError("Invalid request.")
+            raise serializers.ValidationError(gettext("Invalid request."))
         return value
 
 
@@ -88,5 +89,5 @@ class WaiverPublishSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if not attrs.get("clear") and (not attrs.get("body") or not attrs.get("version")):
-            raise serializers.ValidationError("Body and version are required unless clearing the waiver.")
+            raise serializers.ValidationError(gettext("Body and version are required unless clearing the waiver."))
         return attrs

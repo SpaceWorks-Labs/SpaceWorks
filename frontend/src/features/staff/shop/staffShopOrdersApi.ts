@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ShopCashSession, ShopQuote, ShopReceipt, ShopStaffOrder } from "../../../generated/api";
 import { staffRequest } from "../../../lib/api";
 import type { Paged } from "./staffShopApi";
@@ -19,8 +20,8 @@ const post = (body: unknown = {}): RequestInit => ({ method: "POST", body: JSON.
 const space = (ms: number) => `/admin/makerspaces/${ms}/shop`;
 const order = (id: number) => `/admin/shop/orders/${id}`;
 
-export const METHOD_LABELS: Record<string, string> = { cash: "Cash", upi: "UPI", card_machine: "Card machine", online: "Online" };
-export const CHANNEL_LABELS: Record<string, string> = { online: "Online", pos: "Desk sale" };
+export const METHOD_LABELS: Record<string, string> = { cash: t`Cash`, upi: "UPI", card_machine: t`Card machine`, online: t`Online` };
+export const CHANNEL_LABELS: Record<string, string> = { online: t`Online`, pos: t`Desk sale` };
 
 export function listOrders(ms: number, filters: { status?: string; channel?: string; code?: string; page: number }) {
   const query = new URLSearchParams({ page: String(filters.page) });

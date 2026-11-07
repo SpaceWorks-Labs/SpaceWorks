@@ -6,6 +6,7 @@ also rate-limited per device: a snapshot arriving within ``MIN_INTERVAL_SECONDS`
 last stored one is dropped (``throttled``). The heartbeat itself always succeeds; a
 device without the integration is told ``not_integrated`` and nothing is written.
 """
+from django.utils.translation import gettext
 from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 
@@ -30,7 +31,7 @@ def store_snapshot(principal, payload, *, now=None):
     now = now or timezone.now()
     observed = datetime.fromtimestamp(payload["observed_at"], tz=dt_timezone.utc)
     if observed > now + timedelta(seconds=MAX_FUTURE_SECONDS):
-        raise ValidationError({"status_snapshot": {"observed_at": "The observation time is in the future."}})
+        raise ValidationError({"status_snapshot": {"observed_at": gettext("The observation time is in the future.")}})
     with transaction.atomic():
         makerspace = lock_tenant(principal.makerspace_id)
         device = Device.objects.select_for_update().get(pk=principal.device_id, makerspace=makerspace)

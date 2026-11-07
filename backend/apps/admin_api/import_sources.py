@@ -9,6 +9,7 @@ default; while it is off a sheet request answers 404 and file uploads are unchan
 The preview returns the fetched sheet's SHA-256. When the apply sends it back, a sheet
 edited in between is refused with `sheet_changed`, so what is written is what staff saw.
 """
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
@@ -40,7 +41,7 @@ class ImportSourceSerializer(serializers.Serializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
         if attrs.get("source", sheets.SOURCE_FILE) == sheets.SOURCE_FILE and not attrs.get(self.upload_field):
-            raise serializers.ValidationError({self.upload_field: "Choose a file to import."})
+            raise serializers.ValidationError({self.upload_field: gettext("Choose a file to import.")})
         return attrs
 
 
@@ -50,7 +51,7 @@ def read_source(validated, makerspace, capability, *, max_bytes, max_rows):
         return None
     from apps.makerspaces.platform import feature_enabled
     if not feature_enabled(makerspace, capability):
-        raise NotFound("This feature is not available here.")
+        raise NotFound(gettext("This feature is not available here."))
     fetched = sheets.fetch_sheet(validated.get("url", ""), max_bytes=max_bytes, max_rows=max_rows)
     expected = validated.get("sheet_sha256")
     if expected and expected != fetched.sha256:

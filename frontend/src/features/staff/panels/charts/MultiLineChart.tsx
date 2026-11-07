@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ChartFrame, ChartLegend, type ChartProps } from "./ChartFrame";
 import { ink, panel, seriesColor, seriesDash, seriesIndex } from "./chartStyle";
 
@@ -13,7 +14,7 @@ export function MultiLineChart({ title, data }: ChartProps) {
   const ticks = [...new Set(times)].sort((a, b) => a - b);
   const labelledTicks = ticks.filter((_, index) => index === 0 || index === ticks.length - 1 || ticks.length <= 4);
   return <ChartFrame title={title} data={data}>
-    <svg viewBox="0 0 720 280" className="w-full min-w-[45rem]" role="img" aria-label={`${title}: time on horizontal axis; values on vertical axis. ${data.summary}`}>
+    <svg viewBox="0 0 720 280" className="w-full min-w-[45rem]" role="img" aria-label={t`${title}: time on horizontal axis; values on vertical axis. ${data.summary}`}>
       <path d={`M72 30 V220 M72 ${y(0)} H632`} stroke={ink} fill="none" />
       {[low, high].map((value, index) => <text key={index} x="64" y={y(value)} textAnchor="end" fill={ink} fontSize="12">{value}</text>)}
       {labelledTicks.map((time) => <text key={time} x={x(time)} y="244" textAnchor="middle" fill={ink} fontSize="12">{new Date(time).toISOString().slice(0, maxTime - minTime < 172800000 ? 16 : 10).replace("T", " ")}</text>)}

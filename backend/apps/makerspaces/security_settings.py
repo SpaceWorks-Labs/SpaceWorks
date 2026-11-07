@@ -10,6 +10,7 @@ request); this module holds the row lock, checks authority and the floor, writes
 records one makerspace-scoped audit row per change. No email is sent (Q11).
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -46,14 +47,14 @@ def editor_via(actor, space):
 def require_editor(actor, space, via=None):
     actual = editor_via(actor, space)
     if actual is None or (via is not None and via != actual):
-        raise PermissionDenied("Only this space's Space Manager or a platform superadmin can change "
-                               "security settings.")
+        raise PermissionDenied(gettext("Only this space's Space Manager or a platform superadmin can change "
+                               "security settings."))
     return actual
 
 
 def require_platform(actor, space):
     if not is_platform_superadmin(actor) or not is_servable(space):
-        raise PermissionDenied("Only a platform superadmin can lock or unlock security settings.")
+        raise PermissionDenied(gettext("Only a platform superadmin can lock or unlock security settings."))
 
 
 def effective(space):
@@ -127,7 +128,7 @@ def set_setting(actor, space, key, value, via=None):
 def set_settings(actor, space, values, via=None):
     """Apply several settings atomically, in registry order."""
     if not isinstance(values, dict) or not values:
-        raise ValidationError("Send at least one setting.", code="invalid_security_value")
+        raise ValidationError(gettext("Send at least one setting."), code="invalid_security_value")
     for key in values:
         registry.get(key)
     for setting in registry.REGISTRY:
@@ -143,7 +144,7 @@ def lock(actor, space, key, floor, note=""):
     floor = setting.normalize_floor(floor)
     note = (note or "").strip()
     if len(note) > 200:
-        raise ValidationError("Keep the note to 200 characters.", code="invalid_security_note")
+        raise ValidationError(gettext("Keep the note to 200 characters."), code="invalid_security_note")
     space = _locked_space(space)
     require_platform(actor, space)
     row, created = MakerspaceSecurityLock.objects.select_for_update().get_or_create(

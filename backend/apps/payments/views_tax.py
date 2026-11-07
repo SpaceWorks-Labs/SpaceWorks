@@ -1,5 +1,6 @@
 """Staff tax policy: read, change, check a GSTIN, preview a sample invoice, GSTR-1 JSON (lane L5)."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
@@ -142,14 +143,14 @@ class Gstr1JsonView(APIView):
         space = _space(request, makerspace_id)
         policy = _policy(space)
         if not feature_enabled(space, "billing.tax") or policy.mode != MakerspaceTaxSettings.Mode.GST_INDIA:
-            return Response({"detail": "India GST is not switched on for this space.", "code": "tax_not_enabled"},
+            return Response({"detail": gettext("India GST is not switched on for this space."), "code": "tax_not_enabled"},
                             status=status.HTTP_409_CONFLICT)
         raw = request.query_params.get("month") or ""
         today = local_now(space).date()
         try:
             first = date.fromisoformat(f"{raw}-01") if raw else (today.replace(day=1) - timedelta(days=1)).replace(day=1)
         except ValueError:
-            return Response({"detail": "Use YYYY-MM.", "code": "month_invalid"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": gettext("Use YYYY-MM."), "code": "month_invalid"}, status=status.HTTP_400_BAD_REQUEST)
         following = (first.replace(day=28) + timedelta(days=4)).replace(day=1)
         bounds = (local_day_bounds(space, first)[0], local_day_bounds(space, following)[0])
         tables = gstr1_tables(space, bounds)

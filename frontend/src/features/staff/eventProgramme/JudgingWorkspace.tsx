@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { staffRequest } from '../../../lib/api'
@@ -16,20 +17,20 @@ export function JudgingWorkspace({ scope, manager, judge, sponsor, timezone, gal
   const [sponsorId, setSponsorId] = useState(sponsorIds[0] ?? 0)
   const assignedSponsors = useQuery({ queryKey: ['assigned-event-sponsors', scope.eventId, ...sessionScope()], gcTime: 0,
     queryFn: () => staffRequest<{ results: { id: number; label: string }[] }>(`/admin/events/${scope.eventId}/assigned-sponsors/`), enabled: sponsor, retry: false })
-  const options = assignedSponsors.data?.results ?? sponsorIds.map(id => ({ id, label: `Sponsor ${id}` }))
-  return <Tabs label="Judging tools" activeKey={tab} onChange={setTab} tabs={[
-    ...(manager ? [{ key: 'manage', label: 'Rounds and results' }] : []), ...(judge ? [{ key: 'judge', label: 'My judging assignments' }] : []),
-    ...(sponsor ? [{ key: 'sponsor', label: 'Sponsor projects' }] : []),
+  const options = assignedSponsors.data?.results ?? sponsorIds.map(id => ({ id, label: t`Sponsor ${id}` }))
+  return <Tabs label={t`Judging tools`} activeKey={tab} onChange={setTab} tabs={[
+    ...(manager ? [{ key: 'manage', label: t`Rounds and results` }] : []), ...(judge ? [{ key: 'judge', label: t`My judging assignments` }] : []),
+    ...(sponsor ? [{ key: 'sponsor', label: t`Sponsor projects` }] : []),
   ]}>
     {tab === 'manage' && manager ? <JudgingPanel scope={scope} timezone={timezone} fullManager galleryEnabled={galleryEnabled} pairwiseEnabled={pairwiseEnabled} features={features} /> : null}
     {tab === 'judge' && judge ? <JudgeConsole scope={scope} pairwiseEnabled={pairwiseEnabled} renderAssets={ids => <StaffProjectFiles scope={scope} assetIds={ids} purpose="judge" />} /> : null}
-    {tab === 'sponsor' && sponsor ? <div className="grid gap-5"><Field label="Assigned sponsor"><select className="desk-input" value={sponsorId} onChange={event => setSponsorId(Number(event.target.value))}>
-      <option value={0}>Choose an assigned sponsor</option>{options.map(row => <option value={row.id} key={row.id}>{row.label}</option>)}</select></Field>
+    {tab === 'sponsor' && sponsor ? <div className="grid gap-5"><Field label={t`Assigned sponsor`}><select className="desk-input" value={sponsorId} onChange={event => setSponsorId(Number(event.target.value))}>
+      <option value={0}>{t`Choose an assigned sponsor`}</option>{options.map(row => <option value={row.id} key={row.id}>{row.label}</option>)}</select></Field>
       {assignedSponsors.error ? <p role="alert" className="text-danger">{assignedSponsors.error.message}</p> : null}
       {sponsorId && options.some(row => row.id === sponsorId) ? <SponsorConsole scope={scope} sponsorId={sponsorId} sponsorName="Your sponsor track"
         renderProjectFiles={(snapshotId, ids) => <StaffProjectFiles scope={scope} assetIds={ids} purpose="sponsor" snapshotId={snapshotId} />}
         downloadResume={id => downloadProgrammeFile(`/admin/events/${scope.eventId}/sponsors/${sponsorId}/resumes/${id}/`, 'consented-resume.pdf')} />
-        : <p className="text-sm text-muted">Your assigned sponsor references appear here when the organizer shares your event role.</p>}
+        : <p className="text-sm text-muted">{t`Your assigned sponsor references appear here when the organizer shares your event role.`}</p>}
     </div> : null}
   </Tabs>
 }

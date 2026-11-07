@@ -6,6 +6,7 @@ services.EVENT_FIELDS: it is owned by the dedicated image endpoints, so a generi
 event update can never set or clear it.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -39,7 +40,7 @@ def update_image(event, actor, object_key):
         object_key,
         event_id=locked.pk,
     ):
-        raise ValidationError({"object_key": "This image is already in use."})
+        raise ValidationError({"object_key": gettext("This image is already in use.")})
     limits.add_storage(locked.makerspace, new_size or 0)
     if old_key:
         public_image_storage.release_public_image_on_commit(

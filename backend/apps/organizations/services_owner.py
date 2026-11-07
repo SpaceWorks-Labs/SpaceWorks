@@ -1,5 +1,6 @@
 """Atomic owner assignment shared by makerspace creation entry points."""
 
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils.text import slugify
@@ -71,7 +72,7 @@ def _link_owner(actor, space, *, organization_id, new_name):
         organization_id = _create_organization(actor, new_name).pk
     organization = Organization.objects.select_for_update().filter(pk=organization_id).first()
     if organization is None or not organization.is_active:
-        raise serializers.ValidationError({"organization_id": "Choose an existing active organization."})
+        raise serializers.ValidationError({"organization_id": gettext("Choose an existing active organization.")})
     try:
         with transaction.atomic():
             row = OrganizationMakerspace.objects.create(

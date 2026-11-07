@@ -1,5 +1,6 @@
 """Strict, bounded v1 section payloads shared by typed owner adapters."""
 
+from django.utils.translation import gettext
 import math
 from urllib.parse import urlsplit
 from drf_spectacular.utils import extend_schema_serializer
@@ -10,7 +11,7 @@ from .public_page_markdown import public_url, validate_markdown
 class StrictSerializer(s.Serializer):
     def to_internal_value(self, data):
         if not isinstance(data, dict):
-            raise s.ValidationError("Expected an object.")
+            raise s.ValidationError(gettext("Expected an object."))
         unknown = set(data) - set(self.fields)
         if unknown:
             raise s.ValidationError({key: "Unknown field." for key in sorted(unknown)})
@@ -56,9 +57,9 @@ class TeamEntry(StrictSerializer):
     def validate(self, data):
         if data["kind"] == "member":
             if "profile_id" not in data or set(data) & {"display_name", "url"}:
-                raise s.ValidationError("Member entries require only profile_id, id and role.")
+                raise s.ValidationError(gettext("Member entries require only profile_id, id and role."))
         elif "display_name" not in data or "profile_id" in data:
-            raise s.ValidationError("Explicit entries require display_name and cannot contain profile_id.")
+            raise s.ValidationError(gettext("Explicit entries require display_name and cannot contain profile_id."))
         return data
 
 
@@ -91,7 +92,7 @@ class Link(StrictSerializer):
                  "youtube": ("youtube.com", "www.youtube.com", "youtu.be"),
                  "x": ("x.com", "www.x.com", "twitter.com", "www.twitter.com")}
         if data["platform"] in hosts and urlsplit(data["url"]).hostname not in hosts[data["platform"]]:
-            raise s.ValidationError({"url": "URL does not match this platform."})
+            raise s.ValidationError({"url": gettext("URL does not match this platform.")})
         return data
 
 
@@ -117,11 +118,11 @@ class Location(Titled):
     def validate(self, data):
         for key in ("latitude", "longitude"):
             if data.get(key) is not None and not math.isfinite(data[key]):
-                raise s.ValidationError({key: "Use a finite coordinate."})
+                raise s.ValidationError({key: gettext("Use a finite coordinate.")})
         if (data.get("latitude") is None) != (data.get("longitude") is None):
-            raise s.ValidationError("Provide both coordinates or neither.")
+            raise s.ValidationError(gettext("Provide both coordinates or neither."))
         if data["source"] == "makerspace_public" and set(data) - {"title", "source", "enabled_publicly"}:
-            raise s.ValidationError("Public makerspace location does not accept copied coordinates.")
+            raise s.ValidationError(gettext("Public makerspace location does not accept copied coordinates."))
         return data
 
 

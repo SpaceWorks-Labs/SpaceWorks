@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -29,12 +30,12 @@ export function SsoProviderForm() {
     if (!valid || create.isPending) return;
     const body = { ...form };
     for (const name of FIELDS) body[name] = form[name].trim();
-    create.mutate(body, { onSuccess: () => { toast("Provider added."); setForm(EMPTY); } });
+    create.mutate(body, { onSuccess: () => { toast(t`Provider added.`); setForm(EMPTY); } });
   };
   const text = (name: TextField, label: string, hint?: string, max = 255) => <Field label={label} hint={hint} error={errorFor(name)}>
     <input className="desk-input" value={form[name]} maxLength={max} spellCheck={false} onChange={event => set(name, event.target.value)} />
   </Field>;
-  return <form className="grid gap-4 p-3" aria-label="New sign-on provider" onSubmit={submit} noValidate>
+  return <form className="grid gap-4 p-3" aria-label={t`New sign-on provider`} onSubmit={submit} noValidate>
     <div className="grid gap-4 sm:grid-cols-2">
       {text("display_name", "Name on the sign-in button", undefined, 80)}
       {text("slug", "Short name", "Letters, digits, - and _ only. Linked sign-ins are stored under it.", 40)}
@@ -43,15 +44,13 @@ export function SsoProviderForm() {
       {text("client_id", "Client ID", "This deployment's client ID at the provider.")}
     </div>
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-      <input type="checkbox" checked={form.is_enabled} onChange={event => set("is_enabled", event.target.checked)} />Turn it on now
-    </label>
+      <input type="checkbox" checked={form.is_enabled} onChange={event => set("is_enabled", event.target.checked)} />{t`Turn it on now`}</label>
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
       <input type="checkbox" checked={form.allow_auto_link} onChange={event => set("allow_auto_link", event.target.checked)} />
-      Link a first sign-in to an existing account when both emails are verified
-    </label>
+      {t`Link a first sign-in to an existing account when both emails are verified`}</label>
     {general ? <p role="alert" className="text-sm text-danger">{general}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || create.isPending}>
-      {create.isPending ? "Adding…" : "Add provider"}
+      {create.isPending ? t`Adding…` : t`Add provider`}
     </button>
   </form>;
 }

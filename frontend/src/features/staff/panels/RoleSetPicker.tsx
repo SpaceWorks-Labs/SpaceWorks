@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useId } from "react";
 import type { StaffRole } from "./rolesApi";
 import { ROLE_DESCRIPTIONS } from "./roleSets";
@@ -5,7 +6,7 @@ import { ROLE_DESCRIPTIONS } from "./roleSets";
 export type RoleChoice = Pick<StaffRole, "id" | "slug" | "name" | "exclusive">;
 
 /** Checkbox cards for a membership's role set: Space Manager and Member replace the set, the rest combine. */
-export function RoleSetPicker({ roles, value, onChange, disabled = false, label = "Roles" }: {
+export function RoleSetPicker({ roles, value, onChange, disabled = false, label = t`Roles` }: {
   roles: RoleChoice[];
   value: number[];
   onChange: (ids: number[]) => void;
@@ -15,7 +16,7 @@ export function RoleSetPicker({ roles, value, onChange, disabled = false, label 
   const id = useId();
   return <fieldset disabled={disabled} aria-describedby={`${id}-rule`} className="grid min-w-0 gap-2">
     <legend className="text-sm font-semibold text-ink">{label}</legend>
-    <p id={`${id}-rule`} className="text-xs text-muted">Space Manager and Member must each be assigned alone. Other roles can be combined.</p>
+    <p id={`${id}-rule`} className="text-xs text-muted">{t`Space Manager and Member must each be assigned alone. Other roles can be combined.`}</p>
     <div className="@container"><div className="grid gap-2 @md:grid-cols-2">
       {roles.map((role) => {
         const description = ROLE_DESCRIPTIONS[role.slug];

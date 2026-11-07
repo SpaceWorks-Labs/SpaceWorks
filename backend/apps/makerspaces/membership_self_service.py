@@ -1,6 +1,7 @@
 """Voluntary departure and stopping future renewal, without changing a plan."""
 
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -57,7 +58,7 @@ def leave_makerspace(actor, makerspace_id, reason):
             user__access_status="active", user__is_tenant_dump_stub=False,
         )).exclude(pk=membership.pk).select_related("assigned_role").prefetch_related(additional_roles_prefetch())
         if not any(rbac.Action.MANAGE_MAKERSPACE in rbac.actions_for_membership(row) for row in others):
-            raise PermissionDenied("Assign another makerspace manager before leaving.")
+            raise PermissionDenied(gettext("Assign another makerspace manager before leaving."))
     membership.renewal_cancelled_at = membership.renewal_cancelled_at or timezone.now()
     from apps.makerspaces.membership_revocation import _revoke_locked
     return _revoke_locked(actor, membership, makerspace, reason, self_leave=True)

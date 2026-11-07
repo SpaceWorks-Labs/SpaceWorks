@@ -1,4 +1,5 @@
 """One atomic installer application, using ordinary module and settings writers."""
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
@@ -26,51 +27,51 @@ class SettingsCreatedDuringLock(Exception):
 
 def validate_answers(answers):
     if not isinstance(answers, dict) or set(answers) - {"areas", "settings", "request_access", "without", "configure_areas", "enable_area_features"}:
-        raise ValidationError("Use an object with areas, settings, request_access and optional without.")
+        raise ValidationError(gettext("Use an object with areas, settings, request_access and optional without."))
     if "enable_area_features" in answers and type(answers["enable_area_features"]) is not bool:
-        raise ValidationError({"enable_area_features": "Use a boolean."})
+        raise ValidationError({"enable_area_features": gettext("Use a boolean.")})
     areas = answers.get("areas")
     if not isinstance(areas, list) or any(not isinstance(key, str) or key not in AREAS for key in areas):
-        raise ValidationError({"areas": "Choose registered setup areas."})
+        raise ValidationError({"areas": gettext("Choose registered setup areas.")})
     if len(set(areas)) != len(areas):
-        raise ValidationError({"areas": "Areas must be unique."})
+        raise ValidationError({"areas": gettext("Areas must be unique.")})
     settings = answers.get("settings", {})
     if not isinstance(settings, dict) or set(settings) - {*SETTING_AREAS, "space", "notifications", "currency", "features"}:
-        raise ValidationError({"settings": "Unknown settings section."})
+        raise ValidationError({"settings": gettext("Unknown settings section.")})
     for key, area in SETTING_AREAS.items():
         if key in settings and area not in areas:
-            raise ValidationError({key: f"Enable the {area} area first."})
+            raise ValidationError({key: gettext('Enable the {area} area first.').format(area=area)})
     if any(not isinstance(value, dict) for key, value in settings.items() if key != "currency"):
-        raise ValidationError({"settings": "Settings sections must be objects."})
+        raise ValidationError({"settings": gettext("Settings sections must be objects.")})
     overrides = settings.get("features", {})
     # Staff MFA is a platform rule since release 2 (#62); the old switch is no setup answer.
     if any(key not in {"inventory.self_checkout", "inventory.kiosk", "machines.certifications"}
            or type(value) is not bool for key, value in overrides.items()):
-        raise ValidationError({"features": "Use supported boolean setup feature switches."})
+        raise ValidationError({"features": gettext("Use supported boolean setup feature switches.")})
     for key in overrides:
         area = "inventory" if key.startswith("inventory.") else "machines" if key.startswith("machines.") else None
         if area and area not in areas:
-            raise ValidationError({key: f"Enable the {area} area first."})
+            raise ValidationError({key: gettext('Enable the {area} area first.').format(area=area)})
     space_fields = {"event_default_registration_audience", "timezone"}
     if set(settings.get("space", {})) - space_fields:
-        raise ValidationError({"space": "Unknown setup space field."})
+        raise ValidationError({"space": gettext("Unknown setup space field.")})
     if "event_default_registration_audience" in settings.get("space", {}) and "events" not in areas:
-        raise ValidationError({"space": "Enable Events to set its default audience."})
+        raise ValidationError({"space": gettext("Enable Events to set its default audience.")})
     mode = answers.get("request_access")
     # Every borrow request needs an account (#75f); the answer only confirms which
     # accounts, and that follows from whether Membership is among the areas.
     if mode is not None and ("inventory" not in areas or mode not in ("members", "accounts")):
-        raise ValidationError({"request_access": "Choose members or accounts with Inventory enabled."})
+        raise ValidationError({"request_access": gettext("Choose members or accounts with Inventory enabled.")})
     if mode and ((mode == "members") != ("membership" in areas)):
-        raise ValidationError({"request_access": "Membership enabled requires members; otherwise choose accounts."})
+        raise ValidationError({"request_access": gettext("Membership enabled requires members; otherwise choose accounts.")})
     without = answers.get("without", [])
     if not isinstance(without, list) or any(not isinstance(key, str) or key not in BY_KEY or key in core_module_keys() for key in without):
-        raise ValidationError({"without": "Use optional module keys."})
+        raise ValidationError({"without": gettext("Use optional module keys.")})
     if "member_accounts" in without:
-        raise ValidationError({"without": "Personal accounts are always on in setup."})
+        raise ValidationError({"without": gettext("Personal accounts are always on in setup.")})
     configuring = answers.get("configure_areas", areas)
     if not isinstance(configuring, list) or any(key not in areas for key in configuring):
-        raise ValidationError({"configure_areas": "Choose a subset of enabled areas."})
+        raise ValidationError({"configure_areas": gettext("Choose a subset of enabled areas.")})
     return set(areas), settings, mode, set(without), set(configuring)
 
 
@@ -179,5 +180,5 @@ def apply_areas(actor, space, answers):
         for key, enabled in security.items():
             space = security_settings.set_setting(actor, space, key, enabled)
     if mode and effective_policy(space) != mode:
-        raise ValidationError({"request_access": f"The live policy is {effective_policy(space)}."})
+        raise ValidationError({"request_access": gettext('The live policy is {value}.').format(value=effective_policy(space))})
     return space

@@ -1,6 +1,8 @@
 // /verify/c/:token — the public card check (SPEC §7, the public-verify-card screens). Valid,
 // expired or revoked in a status band; the issuer and what the card is for; the holder's name
 // and photo only when they opted in. Never indexed, never sends a referrer.
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, CalendarX, SearchX, ShieldOff, type LucideIcon } from "lucide-react";
@@ -19,11 +21,11 @@ type Verification = {
 };
 
 const BANDS: Record<Verification["status"], { icon: LucideIcon; title: string; body: string; className: string }> = {
-  valid: { icon: BadgeCheck, title: "Valid card", body: "This card is genuine and in date.", className: "bg-success text-on-success" },
-  expired: { icon: CalendarX, title: "Expired card", body: "This card was genuine but is no longer in date.", className: "bg-warn-soft text-warn-ink" },
-  revoked: { icon: ShieldOff, title: "Revoked card", body: "This card has been cancelled by its issuer.", className: "bg-danger/10 text-danger" },
+  valid: { icon: BadgeCheck, title: t`Valid card`, body: t`This card is genuine and in date.`, className: "bg-success text-on-success" },
+  expired: { icon: CalendarX, title: t`Expired card`, body: t`This card was genuine but is no longer in date.`, className: "bg-warn-soft text-warn-ink" },
+  revoked: { icon: ShieldOff, title: t`Revoked card`, body: t`This card has been cancelled by its issuer.`, className: "bg-danger/10 text-danger" },
 };
-const LABELS = { space: "Plan", organisation: "Programme", event: "Event" } as const;
+const LABELS = { space: t`Plan`, organisation: t`Programme`, event: t`Event` } as const;
 
 function useNoIndex() {
   useEffect(() => {
@@ -42,9 +44,9 @@ export function checkedLine(data: Pick<Verification, "checked_at" | "timezone">)
   const zone = data.timezone || "UTC";
   let time: string;
   try {
-    time = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: zone }).format(new Date(data.checked_at));
+    time = new Intl.DateTimeFormat(formatLocale(), { dateStyle: "medium", timeStyle: "short", timeZone: zone }).format(new Date(data.checked_at));
   } catch {
-    time = new Date(data.checked_at).toLocaleString();
+    time = new Date(data.checked_at).toLocaleString(formatLocale());
   }
   return `Checked ${time} (${zone}).`;
 }
@@ -66,13 +68,13 @@ export function CardVerifyPage() {
   const limited = check.error instanceof StructuredApiError && check.error.status === 429;
   const data = check.data;
 
-  if (check.isLoading) return <Shell><p role="status" className="text-center text-muted">Checking the card…</p></Shell>;
+  if (check.isLoading) return <Shell><p role="status" className="text-center text-muted">{t`Checking the card…`}</p></Shell>;
   if (!data) return <Shell><section className="grid justify-items-center gap-3 rounded-card border border-line bg-panel p-8 text-center">
     <SearchX size={56} aria-hidden="true" className="text-muted" />
-    <h1 className="text-xl font-semibold">{limited ? "Too many checks" : "Card not found"}</h1>
-    <p className="text-sm text-muted">{limited ? "Too many checks. Try again in a minute."
-      : "We couldn't match this code to a card. Check the whole code was scanned, or ask to see the card again."}</p>
-    <button type="button" className="desk-button min-h-11" onClick={() => void check.refetch()}>Check again</button>
+    <h1 className="text-xl font-semibold">{limited ? t`Too many checks` : t`Card not found`}</h1>
+    <p className="text-sm text-muted">{limited ? t`Too many checks. Try again in a minute.`
+      : t`We couldn't match this code to a card. Check the whole code was scanned, or ask to see the card again.`}</p>
+    <button type="button" className="desk-button min-h-11" onClick={() => void check.refetch()}>{t`Check again`}</button>
   </section></Shell>;
 
   const band = BANDS[data.status];
@@ -104,8 +106,7 @@ export function CardVerifyPage() {
         {facts.map(([label, value]) => <div key={label} className="grid gap-0.5"><dt className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{label}</dt>
           <dd className="font-medium tabular-nums">{value}</dd></div>)}
       </dl> : null}
-      <p className="border-t border-line pt-4 text-xs text-muted">Space Works checks this card against {data.issuer.name}'s records and shows
-        only what is needed to confirm it. {checkedLine(data)}</p>
+      <p className="border-t border-line pt-4 text-xs text-muted">{t`Space Works checks this card against ${data.issuer.name}'s records and shows only what is needed to confirm it. ${checkedLine(data)}`}</p>
     </div>
   </section></Shell>;
 }

@@ -1,4 +1,5 @@
 """Capability normalization, dependencies and feature pruning."""
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from .module_registry import BY_KEY, core_module_keys, module_dependencies
 from .capability_definitions import FEATURE_DEFINITIONS, FEATURES, FEATURE_MODULES
@@ -91,7 +92,7 @@ def _canonical_modules(value):
     if not isinstance(value, (list, tuple)) or not all(
         isinstance(key, str) and key for key in value
     ):
-        raise ValidationError({"enabled_modules": "Enter a list of non-empty module keys."})
+        raise ValidationError({"enabled_modules": gettext("Enter a list of non-empty module keys.")})
     # Core modules are structural: the system is incoherent without them, so they are
     # added back rather than rejected. Rejecting would make every caller carry the core
     # set, and would fail otherwise-valid operations on a row that somehow lost one.
@@ -102,10 +103,10 @@ def _canonical_features(value):
     if not isinstance(value, (list, tuple)) or not all(
         isinstance(key, str) and key for key in value
     ):
-        raise ValidationError({"enabled_features": "Enter a list of non-empty feature keys."})
+        raise ValidationError({"enabled_features": gettext("Enter a list of non-empty feature keys.")})
     unknown = sorted(set(value) - FEATURES.keys())
     if unknown:
-        raise ValidationError({"enabled_features": f"Unknown feature keys: {', '.join(unknown)}."})
+        raise ValidationError({"enabled_features": gettext('Unknown feature keys: {value}.').format(value=', '.join(unknown))})
     if len(set(value)) != len(value):
-        raise ValidationError({"enabled_features": "Feature keys must not contain duplicates."})
+        raise ValidationError({"enabled_features": gettext("Feature keys must not contain duplicates.")})
     return [definition.key for definition in FEATURE_DEFINITIONS if definition.key in value]

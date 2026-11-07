@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -18,8 +20,8 @@ function PerkRow({ makerspaceId, perk, canRecord }: { makerspaceId: number; perk
       <span className={perk.fulfilled_at ? "text-muted line-through" : "text-ink"}>{perk.description}</span>
     </label>
     <span className={`text-xs ${overdue ? "text-danger" : "text-muted"}`}>
-      {perk.fulfilled_at ? `Done ${new Date(perk.fulfilled_at).toLocaleDateString()}${perk.fulfilled_by_name ? ` by ${perk.fulfilled_by_name}` : ""}`
-        : perk.due_on ? `${overdue ? "Overdue since" : "Due"} ${new Date(perk.due_on).toLocaleDateString()}` : "No due date"}</span>
+      {perk.fulfilled_at ? t`Done ${new Date(perk.fulfilled_at).toLocaleDateString(formatLocale())}${perk.fulfilled_by_name ? ` by ${perk.fulfilled_by_name}` : ""}`
+        : perk.due_on ? `${overdue ? "Overdue since" : "Due"} ${new Date(perk.due_on).toLocaleDateString(formatLocale())}` : t`No due date`}</span>
     {tick.error ? <span role="alert" className="text-xs text-danger">{financeError(tick.error)}</span> : null}
   </li>;
 }
@@ -34,16 +36,16 @@ export function SponsorPerks({ makerspaceId, sponsorId, canRecord }: { makerspac
     mutationFn: () => sponsorApi.createPerk(makerspaceId, { sponsor: sponsorId, description, due_on: due || null }),
     onSuccess: () => { setDescription(""); setDue(""); void client.invalidateQueries({ queryKey: ["staff-sponsor-perks", makerspaceId] }); },
   });
-  return <section className="grid gap-3" aria-label="Perks">
-    <h3 className="title-section">Perks</h3>
+  return <section className="grid gap-3" aria-label={t`Perks`}>
+    <h3 className="title-section">{t`Perks`}</h3>
     {perks.data?.length ? <ul>{perks.data.map(perk => <PerkRow key={perk.id} makerspaceId={makerspaceId} perk={perk}
-      canRecord={canRecord} />)}</ul> : <p className="text-sm text-muted">No perks yet.</p>}
+      canRecord={canRecord} />)}</ul> : <p className="text-sm text-muted">{t`No perks yet.`}</p>}
     {canRecord ? <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); add.mutate(); }}>
-      <label className="grid flex-1 gap-1 text-sm font-semibold text-ink">New perk<input className="desk-input" required maxLength={300}
+      <label className="grid flex-1 gap-1 text-sm font-semibold text-ink">{t`New perk`}<input className="desk-input" required maxLength={300}
         value={description} onChange={event => setDescription(event.target.value)} /></label>
-      <label className="grid gap-1 text-sm font-semibold text-ink">Due<input className="desk-input" type="date" value={due}
+      <label className="grid gap-1 text-sm font-semibold text-ink">{t`Due`}<input className="desk-input" type="date" value={due}
         onChange={event => setDue(event.target.value)} /></label>
-      <button type="submit" className="desk-button" disabled={add.isPending}>Add</button>
+      <button type="submit" className="desk-button" disabled={add.isPending}>{t`Add`}</button>
     </form> : null}
     {add.error ? <p role="alert" className="text-sm text-danger">{financeError(add.error)}</p> : null}
   </section>;

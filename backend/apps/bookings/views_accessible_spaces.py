@@ -1,5 +1,6 @@
 """Live authorized resources for mixed event/booking grant workspaces."""
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
@@ -28,7 +29,7 @@ class AccessibleSpaceListView(APIView):
         selected = request.query_params.get("makerspace_id")
         if selected:
             if not selected.isdecimal() or not 0 < int(selected) <= 9223372036854775807:
-                raise ValidationError({"makerspace_id": "Choose a valid makerspace."})
+                raise ValidationError({"makerspace_id": gettext("Choose a valid makerspace.")})
             rows = rows.filter(makerspace_id=int(selected))
         paginator = _SpacePagination()
         page = paginator.paginate_queryset(rows.order_by("name", "pk"), request, view=self)

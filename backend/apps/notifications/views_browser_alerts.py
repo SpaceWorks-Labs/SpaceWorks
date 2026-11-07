@@ -1,5 +1,6 @@
 """Browser-notification opt-in per person per space (X38). 404 while `notifications.web_push` is off."""
 
+from django.utils.translation import gettext
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -72,7 +73,7 @@ class BrowserAlertSubscriptionView(APIView):
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
         if not allowed_endpoint(data["endpoint"]) or "keys" not in data:
-            raise ValidationError({"endpoint": "Use a browser push subscription from a supported browser."})
+            raise ValidationError({"endpoint": gettext("Use a browser push subscription from a supported browser.")})
         with tenant_write(space.pk):
             row = BrowserAlertSubscription.objects.filter(makerspace=space, user=request.user,
                                                           endpoint_sha256=endpoint_hash(data["endpoint"])).first()

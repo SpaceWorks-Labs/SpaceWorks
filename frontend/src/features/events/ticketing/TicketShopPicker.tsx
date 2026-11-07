@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Minus, Plus, Ticket } from "lucide-react";
 import { money, type ShopAddon, type ShopTicket } from "./ticketingApi";
 
@@ -11,10 +12,10 @@ export const emptyBasket = (): Basket => ({ tickets: {}, amounts: {}, addons: {}
 
 function Stepper({ label, value, max, onChange }: { label: string; value: number; max: number; onChange: (next: number) => void }) {
   return <div className="flex items-center gap-2" role="group" aria-label={label}>
-    <button type="button" className="desk-button px-2" aria-label={`Fewer ${label}`} disabled={value <= 0}
+    <button type="button" className="desk-button px-2" aria-label={t`Fewer ${label}`} disabled={value <= 0}
       onClick={() => onChange(Math.max(value - 1, 0))}><Minus aria-hidden="true" size={16} /></button>
     <output className="w-8 text-center font-semibold tabular-nums" aria-live="polite">{value}</output>
-    <button type="button" className="desk-button px-2" aria-label={`More ${label}`} disabled={value >= max}
+    <button type="button" className="desk-button px-2" aria-label={t`More ${label}`} disabled={value >= max}
       onClick={() => onChange(Math.min(value + 1, max))}><Plus aria-hidden="true" size={16} /></button>
   </div>;
 }
@@ -35,42 +36,40 @@ export function TicketShopPicker({ tickets, addons, currency, orderMax, basket, 
   const setAddon = (id: number, patch: Partial<{ quantity: number; variantId: number | null }>) => onChange({
     ...basket, addons: { ...basket.addons, [id]: { ...(basket.addons[id] ?? { quantity: 0, variantId: null }), ...patch } } });
   return <div className="grid gap-4">
-    <ul className="grid gap-3" aria-label="Tickets">
+    <ul className="grid gap-3" aria-label={t`Tickets`}>
       {tickets.map(ticket => <li key={ticket.id} className="grid gap-2 rounded-card border border-line p-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid gap-0.5">
             <span className="flex items-center gap-2 font-semibold text-ink"><Ticket aria-hidden="true" size={18} />{ticket.name}</span>
             <span className="text-sm text-muted">
-              {ticket.pricing_mode === "pwyw" ? `Pay what you want, from ${money(ticket.min_amount, currency)}` : money(ticket.amount, currency)}
-              {ticket.seats_per_ticket > 1 ? ` · admits ${ticket.seats_per_ticket}` : ""}
-              {ticket.min_quantity > 1 ? ` · at least ${ticket.min_quantity}` : ""}
-              {ticket.spots_left != null && !ticket.sold_out ? ` · ${ticket.spots_left} left` : ""}
+              {ticket.pricing_mode === "pwyw" ? t`Pay what you want, from ${money(ticket.min_amount, currency)}` : money(ticket.amount, currency)}
+              {ticket.seats_per_ticket > 1 ? t` · admits ${ticket.seats_per_ticket}` : ""}
+              {ticket.min_quantity > 1 ? t` · at least ${ticket.min_quantity}` : ""}
+              {ticket.spots_left != null && !ticket.sold_out ? t` · ${ticket.spots_left} left` : ""}
             </span>
-            {ticket.next_tier ? <span className="text-xs text-muted">Next: {ticket.next_tier.name} at {money(ticket.next_tier.amount, currency)}</span> : null}
+            {ticket.next_tier ? <span className="text-xs text-muted">{t`Next: ${ticket.next_tier.name} at ${money(ticket.next_tier.amount, currency)}`}</span> : null}
           </div>
-          {ticket.sold_out ? <span className="text-sm font-semibold text-muted">Sold out</span>
+          {ticket.sold_out ? <span className="text-sm font-semibold text-muted">{t`Sold out`}</span>
             : <Stepper label={ticket.name} value={basket.tickets[ticket.id] ?? 0} max={ticketMax(ticket, orderMax)}
               onChange={next => setTicket(ticket.id, next)} />}
         </div>
         {ticket.pricing_mode === "pwyw" && (basket.tickets[ticket.id] ?? 0) > 0 ? <label className="grid gap-1 text-sm font-semibold">
-          Amount per ticket ({currency.toUpperCase()})
-          <input className="desk-input" inputMode="decimal" value={basket.amounts[ticket.id] ?? ticket.amount}
+          {t`Amount per ticket (${currency.toUpperCase()})`}<input className="desk-input" inputMode="decimal" value={basket.amounts[ticket.id] ?? ticket.amount}
             onChange={event => onChange({ ...basket, amounts: { ...basket.amounts, [ticket.id]: event.target.value } })} />
         </label> : null}
       </li>)}
     </ul>
     {addons.length ? <fieldset className="grid gap-3">
-      <legend className="eyebrow">Add-ons</legend>
+      <legend className="eyebrow">{t`Add-ons`}</legend>
       {addons.map(addon => {
         const current = basket.addons[addon.id] ?? { quantity: 0, variantId: null };
         return <div key={addon.id} className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line p-3">
           <span className="grid gap-0.5"><span className="font-semibold text-ink">{addon.name}</span>
             <span className="text-sm text-muted">{money(addon.amount, currency)}{addon.description ? ` · ${addon.description}` : ""}</span></span>
-          {addon.sold_out ? <span className="text-sm font-semibold text-muted">Sold out</span> : <div className="flex items-center gap-2">
-            {addon.variants.length ? <label className="text-sm">Option
-              <select className="desk-input ml-2" value={current.variantId ?? ""} onChange={event => setAddon(addon.id, { variantId: event.target.value ? Number(event.target.value) : null })}>
-                <option value="">Choose</option>
-                {addon.variants.map(variant => <option key={variant.id} value={variant.id} disabled={variant.sold_out}>{variant.label}{variant.sold_out ? " (sold out)" : ""}</option>)}
+          {addon.sold_out ? <span className="text-sm font-semibold text-muted">{t`Sold out`}</span> : <div className="flex items-center gap-2">
+            {addon.variants.length ? <label className="text-sm">{t`Option`}<select className="desk-input ml-2" value={current.variantId ?? ""} onChange={event => setAddon(addon.id, { variantId: event.target.value ? Number(event.target.value) : null })}>
+                <option value="">{t`Choose`}</option>
+                {addon.variants.map(variant => <option key={variant.id} value={variant.id} disabled={variant.sold_out}>{variant.label}{variant.sold_out ? t` (sold out)` : ""}</option>)}
               </select></label> : null}
             <Stepper label={addon.name} value={current.quantity} max={addon.per_order_limit || 10} onChange={next => setAddon(addon.id, { quantity: next })} />
           </div>}

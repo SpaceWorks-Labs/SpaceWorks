@@ -1,6 +1,7 @@
 """Validated delivery predicates and live, tenant-local staff recipient selectors."""
 
 
+from django.utils.translation import gettext
 from decimal import Decimal, InvalidOperation
 import operator
 
@@ -27,16 +28,16 @@ class ReportConditionSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         # Nested serializers receive raw data here, before DRF drops unknown keys.
         if isinstance(data, dict) and set(data) - set(self.fields):
-            raise serializers.ValidationError({"non_field_errors": ["Unknown condition key."]})
+            raise serializers.ValidationError({"non_field_errors": [gettext("Unknown condition key.")]})
         return super().to_internal_value(data)
 
     def validate(self, attrs):
         metric_keys = {"metric", "operator", "value"}
         present = metric_keys & attrs.keys()
         if present and present != metric_keys:
-            raise serializers.ValidationError("A threshold needs metric, operator and value.")
+            raise serializers.ValidationError(gettext("A threshold needs metric, operator and value."))
         if attrs.get("currency") and not present:
-            raise serializers.ValidationError("Currency requires a metric threshold.")
+            raise serializers.ValidationError(gettext("Currency requires a metric threshold."))
         return attrs
 
 
@@ -47,14 +48,14 @@ class ReportConditionField(serializers.DictField):
 
 def validate_condition(value, definition):
     if not isinstance(value, dict):
-        raise serializers.ValidationError("Condition must be an object.")
+        raise serializers.ValidationError(gettext("Condition must be an object."))
     payload = ReportConditionSerializer(data=value)
     payload.is_valid(raise_exception=True)
     result = payload.validated_data
     if result.get("metric") and result["metric"] not in condition_metrics(definition):
-        raise serializers.ValidationError("Metric must be a registered numeric report column.")
+        raise serializers.ValidationError(gettext("Metric must be a registered numeric report column."))
     if result.get("currency") and "currency" not in definition.fields:
-        raise serializers.ValidationError("This report has no currency dimension.")
+        raise serializers.ValidationError(gettext("This report has no currency dimension."))
     if "value" in result:
         result["value"] = str(result["value"])
     return result
@@ -94,7 +95,7 @@ def condition_matches(condition, rows):
 def validate_roles(actor, space, slugs, action):
     roles = rbac.scope_by_action(actor, action, MakerspaceRole.objects.all()).filter(makerspace=space, slug__in=BUILTIN_ROLE_SLUGS)
     if set(slugs) - set(roles.values_list("slug", flat=True)):
-        raise serializers.ValidationError("Unknown recipient role in this makerspace.")
+        raise serializers.ValidationError(gettext("Unknown recipient role in this makerspace."))
     return list(dict.fromkeys(slugs))
 
 

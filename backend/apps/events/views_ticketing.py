@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -87,7 +88,7 @@ class EventCategoryListView(APIView):
         serializer = CategoryInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if EventCategory.objects.filter(makerspace=space, slug=serializer.validated_data["slug"]).exists():
-            raise ValidationError({"slug": "Category already exists."})
+            raise ValidationError({"slug": gettext("Category already exists.")})
         category = EventCategory.objects.create(makerspace=space, **serializer.validated_data)
         record(request.user, "event.category_created", makerspace=space, target=category)
         return Response(CategorySerializer(category).data, status=201)

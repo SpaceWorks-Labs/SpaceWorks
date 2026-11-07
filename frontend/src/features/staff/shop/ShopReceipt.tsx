@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -23,25 +24,25 @@ export function ShopReceipt({ orderId, onBack }: { orderId: number; onBack: () =
   const query = useQuery({ queryKey: ["staff-shop-receipt", orderId], queryFn: () => fetchReceipt(orderId) });
   const send = useMutation({ mutationFn: () => emailReceipt(orderId, email.trim()) });
   const choose = (next: PaperFormat) => { setFormat(next); writeStorage(FORMAT_KEY, next); };
-  return <DetailLayout back={{ label: "Back to the order", onClick: onBack }} title={query.data?.document_title || "Receipt"}
+  return <DetailLayout back={{ label: t`Back to the order`, onClick: onBack }} title={query.data?.document_title || t`Receipt`}
     meta={[`Order #${orderId}`]}
     state={query.isPending ? { status: "loading" } : query.error ? { status: "error", error: staffShopError(query.error),
       onRetry: () => { void query.refetch(); } } : { status: "ready" }}
-    actions={{ primary: { label: format === "80mm" ? "Print 80 mm receipt" : "Print A4", icon: "Printer", onClick: () => window.print() } }}
+    actions={{ primary: { label: format === "80mm" ? t`Print 80 mm receipt` : t`Print A4`, icon: "Printer", onClick: () => window.print() } }}
     main={query.data ? <div className="grid gap-5">
       <style data-receipt-page={format}>{PAGE_RULES[format]}</style>
       <div className="shop-receipt-no-print grid gap-2">
-        <SegmentedControl label="Paper size" value={format} onChange={value => choose(value as PaperFormat)}
-          options={[{ value: "80mm", label: "80 mm till roll" }, { value: "a4", label: "A4 sheet" }]} />
+        <SegmentedControl label={t`Paper size`} value={format} onChange={value => choose(value as PaperFormat)}
+          options={[{ value: "80mm", label: t`80 mm till roll` }, { value: "a4", label: t`A4 sheet` }]} />
       </div>
       <ShopReceiptDocument receipt={query.data} format={format} />
     </div> : null}
     aside={query.data ? <form className="shop-receipt-no-print grid gap-3" onSubmit={event => { event.preventDefault(); send.mutate(); }}>
-      <h2 className="title-section">Email the receipt</h2>
-      <Field label="Email" hint="Leave empty to send it to the buyer's email on the order.">
+      <h2 className="title-section">{t`Email the receipt`}</h2>
+      <Field label={t`Email`} hint={t`Leave empty to send it to the buyer's email on the order.`}>
         <input className="desk-input min-h-11" type="email" value={email} onChange={event => { setEmail(event.target.value); send.reset(); }} /></Field>
-      <button type="submit" className="desk-button min-h-11 justify-self-start" disabled={send.isPending}>{send.isPending ? "Sending…" : "Send receipt"}</button>
-      <p role="status" className="text-sm text-muted">{send.isSuccess ? "Receipt sent." : ""}</p>
+      <button type="submit" className="desk-button min-h-11 justify-self-start" disabled={send.isPending}>{send.isPending ? t`Sending…` : t`Send receipt`}</button>
+      <p role="status" className="text-sm text-muted">{send.isSuccess ? t`Receipt sent.` : ""}</p>
       {send.error ? <p role="alert" className="text-sm text-danger">{staffShopError(send.error)}</p> : null}
     </form> : undefined} />;
 }

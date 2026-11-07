@@ -1,5 +1,6 @@
 """Resource projections reuse the canonical occupancy calculation."""
 
+from django.utils.translation import gettext
 from dataclasses import replace
 from rest_framework.exceptions import ValidationError
 
@@ -40,7 +41,7 @@ def build_resource_utilization(makerspace_id, *, subject_kind, subject_id, limit
 def require_bounded_period(date_range):
     start, end = date_range or (None, None)
     if start is None or end is None or end <= start:
-        raise ValidationError({"start": "Resource PDFs require a complete, positive start/end period."})
+        raise ValidationError({"start": gettext("Resource PDFs require a complete, positive start/end period.")})
 
 
 def build_resource_utilization_pdf(makerspace_id, *, subject_kind, subject_id, limit=None, date_range=None):

@@ -6,6 +6,7 @@ MFA floor against the proof captured at creation or consent, the deployment reco
 tenant-migration source gates -- and then narrows by the credential's scopes. The token
 grants nothing the person could not do themselves at this moment.
 """
+from django.utils.translation import gettext
 import hmac
 
 from django.core.cache import cache
@@ -33,13 +34,13 @@ def admit_person(request, user, mfa_claims, scopes, makerspace_id):
     from apps.accounts.surface_policy import PERSON_KIND, enforce_request, token_kind
     from apps.backup.recovery import assert_principal_allowed
     if token_kind(user) != PERSON_KIND or user.is_tenant_dump_stub or user.deletion_requested_at is not None:
-        raise AuthenticationFailed("This account cannot use access tokens.")
+        raise AuthenticationFailed(gettext("This account cannot use access tokens."))
     claims = {"kind": PERSON_KIND, "surface": "member", **(mfa_claims or {})}
     enforce_request(user, claims, request)
     assert_verified(user, claims)
     assert_principal_allowed(user)
     if user.self_registered_at is not None and user.email_verified_at is None:
-        raise AuthenticationFailed("Verify the account email first.")
+        raise AuthenticationFailed(gettext("Verify the account email first."))
     _assert_source_gate(request)
     person_scopes.admit(request, scopes, makerspace_id)
     request.session_authority = "member"
@@ -56,7 +57,7 @@ class PersonalAccessTokenAuthentication(BaseAuthentication):
         lookup = raw[len(PAT_PREFIX):].split("_", 1)[0]
         row = PersonalAccessToken.objects.select_related("user").filter(lookup=lookup).first()
         if row is None or not hmac.compare_digest(row.token_digest, digest(raw)) or not row.active:
-            raise AuthenticationFailed("Invalid or expired access token.")
+            raise AuthenticationFailed(gettext("Invalid or expired access token."))
         _throttle(f"pat:{row.pk}")
         admit_person(request, row.user, row.mfa_claims, row.scopes, row.makerspace_id)
         if row.last_used_at is None or (timezone.now() - row.last_used_at).total_seconds() > 60:
@@ -79,12 +80,12 @@ class OAuthPersonAuthentication(BaseAuthentication):
             return None
         result = OAuth2Authentication().authenticate(request)
         if result is None:
-            raise AuthenticationFailed("Invalid or expired access token.")
+            raise AuthenticationFailed(gettext("Invalid or expired access token."))
         user, token = result
         registration = getattr(token.application, "spaceworks_registration", None)
         consent = OAuthConsent.objects.filter(user=user, application=token.application).first()
         if registration is None or not registration.is_active or consent is None:
-            raise AuthenticationFailed("This app connection is no longer active.")
+            raise AuthenticationFailed(gettext("This app connection is no longer active."))
         _throttle(f"oauth:{token.pk}")
         scopes = set(token.scope.split()) & set(consent.scopes) & set(registration.allowed_scopes)
         admit_person(request, user, consent.mfa_claims, scopes, registration.makerspace_id)

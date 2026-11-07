@@ -6,6 +6,7 @@ one returns the same 404 as an unknown or retired code. Visits store one integer
 event per makerspace-local day and nothing about the visitor.
 """
 
+from django.utils.translation import gettext
 import logging
 import re
 import secrets
@@ -52,7 +53,7 @@ def _require(actor, event):
     if event.status != Event.Status.PUBLISHED:
         # Only a published event resolves; creating codes for drafts would hand out
         # addresses that cannot open and would block a draft occurrence's removal.
-        raise ValidationError({"event": "Publish the event before making a short link."})
+        raise ValidationError({"event": gettext("Publish the event before making a short link.")})
 
 
 def _insert(event, actor):
@@ -63,7 +64,7 @@ def _insert(event, actor):
                                                      code=new_code(), created_by=actor)
         except IntegrityError:
             continue  # A code collision (or a retired code) is never reissued; draw again.
-    raise ValidationError({"code": "Could not allocate a short link. Try again."})
+    raise ValidationError({"code": gettext("Could not allocate a short link. Try again.")})
 
 
 @event_write

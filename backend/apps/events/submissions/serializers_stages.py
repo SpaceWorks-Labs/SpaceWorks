@@ -1,4 +1,5 @@
 """Closed schemas for the submission-stage routes (#177-#180)."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from .links import KINDS
@@ -21,7 +22,7 @@ class StageCustomFieldInput(ClosedSerializer):
 
     def validate(self, data):
         if data["type"] == "choice" and (len(data["choices"]) < 2 or len(set(data["choices"])) != len(data["choices"])):
-            raise serializers.ValidationError({"choices": "A choice field needs at least two distinct choices."})
+            raise serializers.ValidationError({"choices": gettext("A choice field needs at least two distinct choices.")})
         if data["type"] != "choice":
             data["choices"] = []
         return data
@@ -57,7 +58,7 @@ class SubmissionStageInput(ClosedSerializer):
 
     def validate(self, data):
         if not set(data["required_link_kinds"]) <= KINDS:
-            raise serializers.ValidationError({"required_link_kinds": "Use known link kinds."})
+            raise serializers.ValidationError({"required_link_kinds": gettext("Use known link kinds.")})
         for key in ("required_link_kinds", "accepted_families", "video_hosts"):
             data[key] = sorted(set(data[key]))
         return data
@@ -128,7 +129,7 @@ class ShortlistPreviewInput(ClosedSerializer):
 
     def validate(self, data):
         if data["selection"] == "top_n" and (not data.get("top_n") or not data.get("source_round_id")):
-            raise serializers.ValidationError({"top_n": "Top N needs a number and a finalized round on this stage."})
+            raise serializers.ValidationError({"top_n": gettext("Top N needs a number and a finalized round on this stage.")})
         return data
 
 

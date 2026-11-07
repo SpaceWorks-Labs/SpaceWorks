@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -101,7 +102,7 @@ def _release_hold(service_request, actor, *, reason, consumed=None):
     held = service_request.run_consumable_pool_id and (grams > 0 or (quantity and quantity > 0))
     hold = (quantity if quantity is not None else grams) if held else Decimal("0")
     if consumed > hold:
-        raise ValidationError({"consumed_quantity": "Material used cannot exceed the material held for this job."})
+        raise ValidationError({"consumed_quantity": gettext("Material used cannot exceed the material held for this job.")})
     if not held:
         return None
     from apps.machines.models import MachineConsumablePool

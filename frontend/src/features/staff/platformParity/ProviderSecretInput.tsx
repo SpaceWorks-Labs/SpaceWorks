@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Field, RelativeTime, StatusPill } from "../../../components/ui";
 import type { SecretState } from "./providersApi";
 import type { SecretField } from "./providerSpecs";
@@ -13,14 +14,14 @@ export function ProviderSecretInput({ field, state, value, clear, error, onValue
     onChange: (event: { target: { value: string } }) => onValue(event.target.value) };
   return <div className="grid gap-2">
     <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-      <StatusPill label={state?.set ? "Set" : "Not set"} tone={state?.set ? "success" : "neutral"} />
+      <StatusPill label={state?.set ? t`Set` : t`Not set`} tone={state?.set ? "success" : "neutral"} />
       {stamp?.at ? <span>changed <RelativeTime date={stamp.at} exact />{stamp.by ? ` by ${stamp.by}` : ""}</span> : null}
     </div>
     <Field label={field.label} hint={hint} error={error}>
       {field.multiline ? <textarea {...common} className="desk-input min-h-28 font-mono" /> : <input {...common} type="password" />}
     </Field>
     {state?.set ? <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-      <input type="checkbox" checked={clear} onChange={event => onClear(event.target.checked)} />Remove the saved {field.label.toLowerCase()}
+      <input type="checkbox" checked={clear} onChange={event => onClear(event.target.checked)} />{t`Remove the saved ${field.label.toLowerCase()}`}
     </label> : null}
   </div>;
 }

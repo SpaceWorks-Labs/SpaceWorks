@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Field, Modal } from "../../components/ui";
@@ -13,7 +14,7 @@ export function NoteDialog({ title, label, required = false, confirmLabel, onCon
       <Field label={label}><textarea className="desk-input" rows={3} maxLength={300} required={required}
         value={note} onChange={event => setNote(event.target.value)} /></Field>
       <div className="flex justify-end gap-2">
-        <button type="button" className="desk-button-ghost" onClick={onClose}>Cancel</button>
+        <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
         <button type="submit" className="desk-button">{confirmLabel}</button>
       </div>
     </form>

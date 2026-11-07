@@ -1,4 +1,5 @@
 """The holder's "My cards" (SPEC §8): list, download, email me, check-link and extras opt-ins."""
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -134,7 +135,7 @@ class MyCardDownloadView(APIView):
         from .downloads import record_download
         spec, card = own_card(request.user, kind, card_id)
         if spec.standing(card) == "revoked":
-            raise PermissionDenied("This card was revoked.")
+            raise PermissionDenied(gettext("This card was revoked."))
         fmt, side = request.query_params.get("format", "pdf"), request.query_params.get("side", "front")
         data, content_type, filename = render(kind, card, fmt=fmt, side=side)
         record_download(request.user, kind, card, fmt, side)
@@ -159,7 +160,7 @@ class MyCardEmailView(APIView):
         data.is_valid(raise_exception=True)
         _remember_format(request.user, kind, card, data.validated_data.get("format"))
         if not send_card_email(kind, card, actor=request.user, explicit=True):
-            raise ValidationError({"detail": "Your card was emailed a few minutes ago. Try again later."})
+            raise ValidationError({"detail": gettext("Your card was emailed a few minutes ago. Try again later.")})
         return Response({"queued": True}, status=202)
 
 
@@ -216,7 +217,7 @@ class MyCardRotateLinkView(APIView):
     def post(self, request, kind, card_id):
         _spec, card = own_card(request.user, kind, card_id)
         if not public_verify_on(kind, card):
-            raise ValidationError({"detail": "The public check page is off for this card."})
+            raise ValidationError({"detail": gettext("The public check page is off for this card.")})
         token = tokens.rotate(kind, card)
         audit.record(request.user, "card.verify_link_rotated", makerspace=card.makerspace, target=card,
                      meta={"card_id": card.pk, "holder_kind": kind})

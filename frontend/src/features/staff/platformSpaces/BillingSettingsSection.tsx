@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 import { ErrorText, Field, Skeleton, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -23,32 +24,30 @@ function BillingForm({ data }: { data: BillingSettings }) {
     if (!valid || save.isPending) return;
     const typed = Object.fromEntries(Object.entries(secrets).filter(([, value]) => value.trim() !== ""));
     save.mutate({ auto_enforce_enabled: auto, grace_days: Number(grace), provider, razorpay_key_id: keyId.trim(), ...typed },
-      { onSuccess: () => { setSecrets({}); toast("Billing settings saved."); } });
+      { onSuccess: () => { setSecrets({}); toast(t`Billing settings saved.`); } });
   };
-  return <form className="grid gap-4" aria-label="Billing settings" onSubmit={submit} noValidate>
-    <p className="flex flex-wrap items-center gap-2 text-sm text-ink">Online billing switch (set on the server):
-      <StatusPill label={data.online_billing_switch ? "On" : "Off"} tone={data.online_billing_switch ? "success" : "neutral"} /></p>
+  return <form className="grid gap-4" aria-label={t`Billing settings`} onSubmit={submit} noValidate>
+    <p className="flex flex-wrap items-center gap-2 text-sm text-ink">{t`Online billing switch (set on the server):`}<StatusPill label={data.online_billing_switch ? t`On` : t`Off`} tone={data.online_billing_switch ? "success" : "neutral"} /></p>
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
-      <input type="checkbox" checked={auto} onChange={event => setAuto(event.target.checked)} />Make a space read-only when its trial ends or an invoice is overdue
-    </label>
-    <Field label="Grace days after the due date" className="max-w-xs">
+      <input type="checkbox" checked={auto} onChange={event => setAuto(event.target.checked)} />{t`Make a space read-only when its trial ends or an invoice is overdue`}</label>
+    <Field label={t`Grace days after the due date`} className="max-w-xs">
       <input className="desk-input" type="number" min={0} value={grace} onChange={event => setGrace(event.target.value)} />
     </Field>
-    <Field label="Payment provider" className="max-w-xs">
+    <Field label={t`Payment provider`} className="max-w-xs">
       <select className="desk-input" value={provider} onChange={event => setProvider(event.target.value as BillingSettings["provider"])}>
-        <option value="">None</option><option value="stripe">Stripe</option><option value="razorpay">Razorpay</option>
+        <option value="">{t`None`}</option><option value="stripe">{t`Stripe`}</option><option value="razorpay">{t`Razorpay`}</option>
       </select>
     </Field>
-    {provider === "razorpay" ? <Field label="Razorpay key ID" className="max-w-md">
+    {provider === "razorpay" ? <Field label={t`Razorpay key ID`} className="max-w-md">
       <input className="desk-input" autoComplete="off" value={keyId} onChange={event => setKeyId(event.target.value)} />
     </Field> : null}
     {SECRETS.filter(([, , owner]) => owner === provider).map(([key, label]) => <Field key={key} label={label} className="max-w-md"
-      hint={data[`${key}_set` as keyof BillingSettings] ? "Saved. Type a new value to replace it." : "Not set."}>
+      hint={data[`${key}_set` as keyof BillingSettings] ? t`Saved. Type a new value to replace it.` : t`Not set.`}>
       <input className="desk-input" type="password" autoComplete="new-password" value={secrets[key] ?? ""}
         onChange={event => setSecrets(current => ({ ...current, [key]: event.target.value }))} />
     </Field>)}
     {save.error ? <p role="alert" className="text-sm text-danger">{actionErrorText(save.error)}</p> : null}
-    <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || save.isPending}>{save.isPending ? "Saving…" : "Save billing settings"}</button>
+    <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!valid || save.isPending}>{save.isPending ? t`Saving…` : t`Save billing settings`}</button>
   </form>;
 }
 

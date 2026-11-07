@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { DetailLayout } from "../../../components/layouts";
 import { useEffect, useState } from "react";
 
@@ -95,30 +96,30 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
   const cancellable = item.status !== "received" && item.status !== "cancelled";
   return <>
     <ListRow title={`${item.name} ×${item.quantity}`} onClick={() => setOpen(true)} identity={{ kind: "icon", icon: "Circle", tone: "accent" }}
-      meta={<>{item.vendor_name || "No vendor yet"} · Est. {item.estimated_unit_cost ?? "—"} each · {item.purchaser_username || "Unassigned purchaser"} · {receiptCount === 1 ? "1 receipt" : `${receiptCount} receipts`}{item.source_pool ? <Badge tone="warn">Auto · low stock</Badge> : null}</>}
+      meta={<>{item.vendor_name || t`No vendor yet`} {t` · Est. ${item.estimated_unit_cost ?? "—"} each · `}{item.purchaser_username || t`Unassigned purchaser`} · {receiptCount === 1 ? t`1 receipt` : `${receiptCount} receipts`}{item.source_pool ? <Badge tone="warn">{t`Auto · low stock`}</Badge> : null}</>}
       right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={labelStatus(item.status)} tone={item.status === "received" ? "success" : "neutral"} />
-        {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={advance}>{updatePending ? "Saving…" : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>Move to inventory</button> : null}
-        <OverflowMenu label={`Actions for ${item.name}`} actions={[{ label: "Edit", onClick: () => setOpen(true) },
-          ...(onMarkBought && next ? [{ label: "Mark bought", onClick: onMarkBought }] : []),
-          ...(cancellable ? [{ label: "Cancel request", disabled: updatePending, onClick: () => onSave({ ...draftFromItem(item), status: "cancelled" as const }),
-            confirm: { title: `Cancel ${item.name}?`, message: "It moves to Cancelled. You can reopen it from the drawer by changing its status.", confirmLabel: "Cancel request" } }] : []),
-          { label: "Delete", confirms: true, tone: "danger", disabled: deletePending, onClick: () => setConfirmDelete(true) }]} />
+        {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={advance}>{updatePending ? t`Saving…` : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>{t`Move to inventory`}</button> : null}
+        <OverflowMenu label={t`Actions for ${item.name}`} actions={[{ label: t`Edit`, onClick: () => setOpen(true) },
+          ...(onMarkBought && next ? [{ label: t`Mark bought`, onClick: onMarkBought }] : []),
+          ...(cancellable ? [{ label: t`Cancel request`, disabled: updatePending, onClick: () => onSave({ ...draftFromItem(item), status: "cancelled" as const }),
+            confirm: { title: t`Cancel ${item.name}?`, message: t`It moves to Cancelled. You can reopen it from the drawer by changing its status.`, confirmLabel: t`Cancel request` } }] : []),
+          { label: t`Delete`, confirms: true, tone: "danger", disabled: deletePending, onClick: () => setConfirmDelete(true) }]} />
       </div>} />
     <DetailLayout presentation="drawer" open={open} onClose={() => setOpen(false)} title={item.name} status={<StatusPill label={labelStatus(item.status)} />} state={{ status: "ready" }}
       meta={[`${item.quantity} units · ${item.kind}`, item.machine_type_name ?? "Unassigned"]}
       main={<div className="grid gap-4"><ItemLink link={item.link} />
-        {draft.status === "received" && item.status !== "received" ? <p className="text-sm text-muted">Record the actual unit cost and attach the receipt, then save to mark it received.</p> : null}
-        <p className="text-sm text-muted">Estimated unit cost: {item.estimated_unit_cost ?? "—"} · Purchaser: {item.purchaser_username ?? "Unassigned"}</p>
-        {item.ordered_at ? <p>Ordered <RelativeTime date={item.ordered_at} /></p> : null}{item.received_at ? <p>Received <RelativeTime date={item.received_at} /></p> : null}
-        <Field label={`Vendor for ${item.name}`}><input className="desk-input" value={draft.vendor_name} onChange={event => setDraft({ ...draft, vendor_name: event.target.value })} /></Field>
-        <Field label={`Actual unit cost for ${item.name}`}><input className="desk-input" type="number" min={0} step="0.01" value={draft.actual_unit_cost} onChange={event => setDraft({ ...draft, actual_unit_cost: event.target.value })} /></Field>
-        <Field label={`Status for ${item.name}`}><select className="desk-input" value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as ToBuyStatus })}>{statusOptions.map(status => <option key={status} value={status}>{labelStatus(status)}</option>)}</select></Field>
+        {draft.status === "received" && item.status !== "received" ? <p className="text-sm text-muted">{t`Record the actual unit cost and attach the receipt, then save to mark it received.`}</p> : null}
+        <p className="text-sm text-muted">{t`Estimated unit cost: ${item.estimated_unit_cost ?? "—"} · Purchaser: `}{item.purchaser_username ?? t`Unassigned`}</p>
+        {item.ordered_at ? <p>{t`Ordered `}<RelativeTime date={item.ordered_at} /></p> : null}{item.received_at ? <p>{t`Received `}<RelativeTime date={item.received_at} /></p> : null}
+        <Field label={t`Vendor for ${item.name}`}><input className="desk-input" value={draft.vendor_name} onChange={event => setDraft({ ...draft, vendor_name: event.target.value })} /></Field>
+        <Field label={t`Actual unit cost for ${item.name}`}><input className="desk-input" type="number" min={0} step="0.01" value={draft.actual_unit_cost} onChange={event => setDraft({ ...draft, actual_unit_cost: event.target.value })} /></Field>
+        <Field label={t`Status for ${item.name}`}><select className="desk-input" value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as ToBuyStatus })}>{statusOptions.map(status => <option key={status} value={status}>{labelStatus(status)}</option>)}</select></Field>
         <MoveState item={item} makerspaceSlug={makerspaceSlug} />
         <ProcurementReceipts itemId={item.id} receipts={item.receipts ?? []} onChanged={onReceiptsChanged} />
         <ErrorText message={updateError} />
         {isDraftChanged(item, draft) ? <SettingsActions onDiscard={() => setDraft(draftFromItem(item))} onSave={() => onSave(draft)} pending={updatePending} /> : null}
       </div>} />
-    <ConfirmDialog open={confirmDelete} onCancel={() => setConfirmDelete(false)} onConfirm={onDelete} title={`Delete ${item.name}?`} message="This removes the item and its receipts from the shopping list." confirmLabel="Delete" tone="danger" pending={deletePending} />
+    <ConfirmDialog open={confirmDelete} onCancel={() => setConfirmDelete(false)} onConfirm={onDelete} title={t`Delete ${item.name}?`} message={t`This removes the item and its receipts from the shopping list.`} confirmLabel={t`Delete`} tone="danger" pending={deletePending} />
     <ErrorText message={deleteError || (!open ? updateError : undefined)} />
   </>;
 }
@@ -126,16 +127,16 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
 function MoveState({ item, makerspaceSlug }: { item: ToBuyItem; makerspaceSlug: string }) {
   if (!item.moved_to_inventory_at) return <>-</>;
   if (item.resulting_product) {
-    return <RouteLink className="text-accent-ink underline" href={`/m/${makerspaceSlug}/admin/inventory?item=${item.resulting_product}`}>Inventory #{item.resulting_product}</RouteLink>;
+    return <RouteLink className="text-accent-ink underline" href={`/m/${makerspaceSlug}/admin/inventory?item=${item.resulting_product}`}>{t`Inventory #${item.resulting_product}`}</RouteLink>;
   }
-  if (item.resulting_pool) return <>Pool #{item.resulting_pool}</>;
-  if (item.resulting_machine) return <>Machine #{item.resulting_machine}</>;
-  return <>Moved</>;
+  if (item.resulting_pool) return <>{t`Pool #${item.resulting_pool}`}</>;
+  if (item.resulting_machine) return <>{t`Machine #${item.resulting_machine}`}</>;
+  return <>{t`Moved`}</>;
 }
 
 function ItemLink({ link }: { link: string }) {
   const href = safeHref(link);
-  if (href) return <a className="text-accent-ink underline" href={href} target="_blank" rel="noreferrer">Open supplier link ↗</a>;
+  if (href) return <a className="text-accent-ink underline" href={href} target="_blank" rel="noreferrer">{t`Open supplier link ↗`}</a>;
   if (link) return <span className="block max-w-56 break-all text-muted" title={link}>{link}</span>;
   return <>-</>;
 }

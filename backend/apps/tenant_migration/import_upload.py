@@ -1,5 +1,6 @@
 """Stream import ciphertext straight into its private, persistent staging file."""
 
+from django.utils.translation import gettext
 import logging
 from pathlib import Path
 from uuid import uuid4
@@ -34,7 +35,7 @@ class ImportArchiveUploadHandler(FileUploadHandler):
         try:
             super().new_file(*args, **kwargs)
             if self.field_name != "archive" or self.archive_seen:
-                raise ValidationError({"archive": ["Upload exactly one archive file part."]})
+                raise ValidationError({"archive": [gettext("Upload exactly one archive file part.")]})
             self.archive_seen = True
             root = Path(settings.BACKUP_OPS_DIR, "tenant-imports")
             if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
@@ -53,7 +54,7 @@ class ImportArchiveUploadHandler(FileUploadHandler):
         try:
             self.total += len(raw_data)
             if self.total > import_staging.MAX_ARCHIVE_BYTES:
-                raise ValidationError({"archive": ["The encrypted migration archive is too large."]})
+                raise ValidationError({"archive": [gettext("The encrypted migration archive is too large.")]})
             self.output.write(raw_data)
         except Exception:
             self.cleanup()

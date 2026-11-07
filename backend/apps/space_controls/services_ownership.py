@@ -11,6 +11,7 @@ gets a Space Manager invitation by email and the previous manager is left untouc
 until the invitee accepts; the superadmin then runs the transfer again.
 """
 
+from django.utils.translation import gettext
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -37,10 +38,10 @@ def _clean(email, outcome, previous_roles):
     except DjangoValidationError as exc:
         raise ValidationError({"email": exc.messages}) from exc
     if outcome not in OUTCOMES:
-        raise ValidationError({"previous_outcome": f"Choose one of: {', '.join(OUTCOMES)}."})
+        raise ValidationError({"previous_outcome": gettext('Choose one of: {value}.').format(value=', '.join(OUTCOMES))})
     roles = list(previous_roles or [])
     if outcome == "keep_staff" and (not roles or SPACE_MANAGER in roles):
-        raise ValidationError({"previous_roles": "Choose the staff roles the previous manager keeps."})
+        raise ValidationError({"previous_roles": gettext("Choose the staff roles the previous manager keeps.")})
     return email, roles
 
 
@@ -51,7 +52,7 @@ def _previous(space, membership_id):
         pk=membership_id, makerspace=space, status="active", assigned_role__slug=SPACE_MANAGER,
     ).first()
     if row is None:
-        raise ValidationError({"previous_membership_id": "Choose an active Space Manager of this space."})
+        raise ValidationError({"previous_membership_id": gettext("Choose an active Space Manager of this space.")})
     return row
 
 
@@ -90,7 +91,7 @@ def transfer_ownership(actor, makerspace_id, *, email, previous_membership_id=No
         previous = _previous(space, previous_membership_id)
         person = User.objects.filter(person_q(), email__iexact=email).first()
         if person is not None and previous is not None and person.pk == previous.user_id:
-            raise ValidationError({"email": "This person is already the Space Manager you are replacing."})
+            raise ValidationError({"email": gettext("This person is already the Space Manager you are replacing.")})
         if person is None or not _promote(actor, space, person):
             if not onboarding_available(space):
                 raise SpaceControlConflict(

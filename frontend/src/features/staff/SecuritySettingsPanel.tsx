@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SettingsLayout } from "../../components/layouts";
@@ -32,15 +33,15 @@ export function SecuritySettingsPanel({ makerspace }: { makerspace: Makerspace }
   const error = update.error ?? lock.error ?? unlock.error;
 
   return <SettingsLayout
-    header={{ title: "Security", subtitle: `Sign-in rules for staff at ${makerspace.name}. Changes need a fresh identity check and are recorded in the audit log.` }}
+    header={{ title: t`Security`, subtitle: t`Sign-in rules for staff at ${makerspace.name}. Changes need a fresh identity check and are recorded in the audit log.` }}
     state={adminQueryState(query, "security settings")}
     sections={[
-      { id: "sign-in", title: "Sign-in requirements",
-        description: data?.can_lock ? "You can lock a setting so this space cannot loosen it: a switch is held at its stricter value, any other setting at its current value or stricter. Only a platform superadmin removes a lock."
-          : "A setting locked by the platform cannot be loosened here.",
+      { id: "sign-in", title: t`Sign-in requirements`,
+        description: data?.can_lock ? t`You can lock a setting so this space cannot loosen it: a switch is held at its stricter value, any other setting at its current value or stricter. Only a platform superadmin removes a lock.`
+          : t`A setting locked by the platform cannot be loosened here.`,
         rows: data ? <>
-          <SettingsRow label="Staff MFA" helper="Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it.">
-            <p className="text-sm text-ink">Required for every staff role (platform rule)</p>
+          <SettingsRow label={t`Staff MFA`} helper={t`Every staff role needs two-step sign-in (an authenticator app or a passkey). New staff get three days to set it up; member features never need it.`}>
+            <p className="text-sm text-ink">{t`Required for every staff role (platform rule)`}</p>
           </SettingsRow>
           {data.settings.map(setting => <SecurityRow key={setting.key} setting={setting} data={data} pending={pending}
             onChange={value => update.mutate({ setting: setting.key, value })}
@@ -48,8 +49,8 @@ export function SecuritySettingsPanel({ makerspace }: { makerspace: Makerspace }
             onUnlock={() => unlock.mutate(setting.key)} />)}
           {error ? <ErrorText message={error.message} /> : null}
         </> : null },
-      { id: "pii", title: "Platform access to personal data",
-        description: "Platform administrators see members' personal details masked unless they open a short, recorded window.",
+      { id: "pii", title: t`Platform access to personal data`,
+        description: t`Platform administrators see members' personal details masked unless they open a short, recorded window.`,
         rows: <PiiAccessBanner makerspaceId={makerspace.id} /> },
     ]} />;
 }

@@ -1,5 +1,6 @@
 """F1 payment reminders: member email with durable at-most-once claims."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -105,7 +106,7 @@ def build_payment_message(makerspace, reminder, now, local_tz):
         return None
     event = ("payment_due_soon" if reminder.offset_seconds < 0 else
              "payment_due_today" if reminder.offset_seconds == 0 else "payment_overdue")
-    return ReminderMessage(title="Payment reminder", event=event)
+    return ReminderMessage(title=gettext("Payment reminder"), event=event)
 
 
 @transaction.atomic

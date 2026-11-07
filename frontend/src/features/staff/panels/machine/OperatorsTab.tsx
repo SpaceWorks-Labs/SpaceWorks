@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ListRow, OverflowMenu } from "../../../../components/ui";
 import { MachineTabContent } from "./MachineTabContent";
 import { useState } from "react";
@@ -46,22 +47,21 @@ export function OperatorsTab({ machineId, canDelegate }: { machineId: number; ca
 
   return (
     <section>
-      <h3 className="title-section mb-3">Operators</h3>
-      <MachineTabContent query={operators} resource="operators" empty={!items.length} message="No operators assigned. Add the first operator.">
+      <h3 className="title-section mb-3">{t`Operators`}</h3>
+      <MachineTabContent query={operators} resource="operators" empty={!items.length} message={t`No operators assigned. Add the first operator.`}>
       <div className="grid gap-2">
         {items.map((operator) => (
           <ListRow key={operator.id} title={operator.username} identity={{ kind: "avatar", name: operator.username, seed: String(operator.user) }}
-            meta={operator.access_level} right={canDelegate ? <OverflowMenu actions={[{ label: "Remove", tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(operator.user) }]} /> : undefined} />
+            meta={operator.access_level} right={canDelegate ? <OverflowMenu actions={[{ label: t`Remove`, tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(operator.user) }]} /> : undefined} />
         ))}
       </div>
       </MachineTabContent>
       {canDelegate ? (
         <form className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
           onSubmit={(event) => { event.preventDefault(); add.mutate(); }}>
-          <label className="eyebrow grid gap-1">Member
-            <select className="desk-input" value={userId} disabled={candidates.isLoading}
+          <label className="eyebrow grid gap-1">{t`Member`}<select className="desk-input" value={userId} disabled={candidates.isLoading}
               onChange={(event) => setUserId(event.target.value)} required>
-              <option value="">{candidates.isLoading ? "Loading members..." : "Select a member"}</option>
+              <option value="">{candidates.isLoading ? t`Loading members...` : t`Select a member`}</option>
               {eligibleCandidates.map((candidate) => (
                 <option key={candidate.user_id} value={candidate.user_id}>
                   {candidate.display_name ? `${candidate.display_name} (${candidate.username})` : candidate.username}
@@ -69,16 +69,15 @@ export function OperatorsTab({ machineId, canDelegate }: { machineId: number; ca
               ))}
             </select>
           </label>
-          <label className="eyebrow grid gap-1">Access level
-            <select className="desk-input" value={accessLevel}
+          <label className="eyebrow grid gap-1">{t`Access level`}<select className="desk-input" value={accessLevel}
               onChange={(event) => setAccessLevel(event.target.value as MachineAccessLevel)}>
-              <option value="operate">Operate</option>
-              <option value="manage">Manage</option>
-              <option value="full">Full</option>
+              <option value="operate">{t`Operate`}</option>
+              <option value="manage">{t`Manage`}</option>
+              <option value="full">{t`Full`}</option>
             </select>
           </label>
           <button className="desk-button-primary" type="submit" disabled={add.isPending || !userId}>
-            {add.isPending ? "Adding..." : "Add"}
+            {add.isPending ? t`Adding...` : t`Add`}
           </button>
         </form>
       ) : null}

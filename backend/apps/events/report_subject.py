@@ -1,5 +1,6 @@
 """Event subject policy used by manual reports, saved views and every builder call."""
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -19,7 +20,7 @@ def resolve(space, pk):
 def authorize(actor, event, definition):
     event_authority.require(actor, event, None if definition.key.endswith("-pdf") else MANAGE_REGISTRATIONS)
     if definition.key.endswith("-pdf") and event.ends_at > timezone.now():
-        raise ValidationError("Post-event PDF is available after the event ends.")
+        raise ValidationError(gettext("Post-event PDF is available after the event ends."))
 
 
 def register_subject():

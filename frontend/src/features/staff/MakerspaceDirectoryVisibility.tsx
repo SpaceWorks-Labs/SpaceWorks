@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { SettingsRow } from "../../components/ui";
@@ -21,21 +22,19 @@ export function MakerspaceDirectoryVisibility({ makerspace, settings, loading }:
       void queryClient.invalidateQueries({ queryKey: ["staff", "makerspaces"] });
     },
   });
-  return <SettingsRow label="Hide from the platform"
-    helper="Leave this space out of the platform directory, Discover, cross-space search and the shared event listings.">
+  return <SettingsRow label={t`Hide from the platform`}
+    helper={t`Leave this space out of the platform directory, Discover, cross-space search and the shared event listings.`}>
     <div className="grid min-w-0 max-w-xl gap-2">
       <label className="flex min-h-11 items-start gap-3 text-sm text-ink">
         <input className="mt-1 h-4 w-4" type="checkbox" checked={hidden} disabled={loading || save.isPending}
           onChange={event => save.mutate(event.target.checked)} />
         <span>
-          <span className="font-semibold">Hide this space from the platform</span>
+          <span className="font-semibold">{t`Hide this space from the platform`}</span>
           <span className="block text-muted">
-            Its own address{makerspace.frontend_domain ? ` (${makerspace.frontend_domain})` : ` (/m/${makerspace.slug})`} keeps
-            working for members and visitors who have the link. The platform operator still sees it.
-          </span>
+            {t`Its own address`}{makerspace.frontend_domain ? ` (${makerspace.frontend_domain})` : t` (/m/${makerspace.slug})`} {t` keeps working for members and visitors who have the link. The platform operator still sees it.`}</span>
         </span>
       </label>
-      {save.isPending ? <p role="status" className="text-sm text-muted">Saving…</p> : null}
+      {save.isPending ? <p role="status" className="text-sm text-muted">{t`Saving…`}</p> : null}
       {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
     </div>
   </SettingsRow>;

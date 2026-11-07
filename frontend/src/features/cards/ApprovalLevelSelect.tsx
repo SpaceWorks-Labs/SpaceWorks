@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 // One level of the card-design approval switch (#136): on, off, or follow the broader level.
 // Levels from most to least specific: event, ID programme, organisation, space.
 
@@ -15,9 +16,9 @@ export function ApprovalLevelSelect({ label, value, inherited, inheritLabel, onC
     <span>{label}</span>
     <select className="desk-input min-h-11" value={toRaw(value)} disabled={disabled}
       onChange={(event) => onChange(toValue(event.target.value))}>
-      {allowInherit ? <option value="inherit">{`${inheritLabel} (now: ${approvalWord(inherited)})`}</option> : null}
-      <option value="on">Edits need a Space Manager's approval</option>
-      <option value="off">Edits publish straight away</option>
+      {allowInherit ? <option value="inherit">{t`${inheritLabel} (now: ${approvalWord(inherited)})`}</option> : null}
+      <option value="on">{t`Edits need a Space Manager's approval`}</option>
+      <option value="off">{t`Edits publish straight away`}</option>
     </select>
   </label>;
 }

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import Count, Q
 
 from apps.events.models import Event, EventOrganizer, EventRegistration
@@ -23,7 +24,7 @@ def build_event_attendance(makerspace_id, *, limit=None, date_range=None, subjec
     if subject_id is not None:
         if makerspace_id is None or subject_kind != "event":
             from rest_framework.exceptions import ValidationError
-            raise ValidationError("An event subject requires a single tenant.")
+            raise ValidationError(gettext("An event subject requires a single tenant."))
         queryset = queryset.filter(pk=subject_id)
     if date_range:
         start, end = date_range

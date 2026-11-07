@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
@@ -137,17 +138,17 @@ export function StaffWorkspace({
             closes the window (the Users tab already renders it, so it is not shown twice there). */}
         {isSuperadmin && activeMakerspace && actions.length > 0 ? <div className="mb-4 grid gap-3"><Callout size="inline" tone="warn"
           lead={`Working in ${activeMakerspace.name} as the platform superadmin.`}
-          body="Every change is audited in this space." />
+          body={t`Every change is audited in this space.`} />
           {activeTab !== "users" ? <PiiAccessBanner key={`pii:${activeMakerspace.id}`} makerspaceId={activeMakerspace.id} compact /> : null}</div> : null}
-        {routeTabDenied ? <PageHeader title="Page unavailable" /> : null}
+        {routeTabDenied ? <PageHeader title={t`Page unavailable`} /> : null}
         {routeTabDenied ? null : <StaffScreenHelp tab={activeTab} makerspace={activeMakerspace} singleTenant={singleTenantLocked} platform={isSuperadmin} />}
           {routeTabDenied ? (
             <EmptyState
-              title="Access denied"
-              description="You don't have permission to view this page, or it isn't enabled for this makerspace."
+              title={t`Access denied`}
+              description={t`You don't have permission to view this page, or it isn't enabled for this makerspace.`}
               action={
                 <Link className="desk-button-primary" to={consoleSessionHref(activeTabPath)}>
-                  Go to {TAB_LABELS[activeTab] ?? "your workspace"}
+                  {t`Go to `}{TAB_LABELS[activeTab] ?? t`your workspace`}
                 </Link>
               }
             />

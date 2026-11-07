@@ -1,5 +1,6 @@
 """Hack-money closed inputs and reads for prize splits, claims, outcomes and prize visibility."""
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -69,9 +70,9 @@ class RecoveryResolveInput(CommandInput):
 
     def validate(self, attrs):
         if attrs["outcome"] == "repaid" and not attrs.get("method"):
-            raise serializers.ValidationError({"method": "Say how the money came back."})
+            raise serializers.ValidationError({"method": gettext("Say how the money came back.")})
         if attrs["outcome"] == "waived" and not attrs.get("note", "").strip():
-            raise serializers.ValidationError({"note": "Say why the money is not being recovered."})
+            raise serializers.ValidationError({"note": gettext("Say why the money is not being recovered.")})
         return attrs
 
 

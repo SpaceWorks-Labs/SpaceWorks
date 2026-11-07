@@ -1,4 +1,5 @@
 """Shared quote, duplicate lookup and registration receipt writers."""
+from django.utils.translation import gettext
 from django.conf import settings
 from apps.events.models import EventRegistration
 
@@ -27,10 +28,10 @@ def _quote(event, member, ticket, invite_code, promo_code, *, actor, admission_l
             resolve_for_account = required("resolve_for_account_locked")
         from rest_framework.exceptions import NotFound, ValidationError
         if not member or not member.email_verified_at:
-            raise ValidationError({"detail": "Verify your email to use your invitation.", "code": "email_verification_required"})
+            raise ValidationError({"detail": gettext("Verify your email to use your invitation."), "code": "email_verification_required"})
         invite = resolve_for_account(event, member, actor=actor)
         if invite is None:
-            raise NotFound("Invitation not found.")
+            raise NotFound(gettext("Invitation not found."))
     if event.registration_audience == AUDIENCE and not invite_code and feature_enabled(event.makerspace, "events.invites"):
         from .invites import resolve_for_account
         if admission_locked:

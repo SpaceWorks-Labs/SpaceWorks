@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { StructuredApiError, staffRequest } from "../../../lib/api";
 import type {
   PriceDiscount, PricingCurrency, PricingDefault, PricingDefaultWrite, PricingDomainEnum, PricingImpact, RentalTiming,
@@ -8,11 +9,11 @@ export type PricingDomain = PricingDomainEnum;
 
 /** One tab per area; `module` is what must be installed (lending is core, so always shown). */
 export const PRICING_DOMAINS: { domain: PricingDomain; label: string; module: string | null }[] = [
-  { domain: "loans", label: "Lending", module: null },
-  { domain: "machines", label: "Machines", module: "machines" },
-  { domain: "bookings", label: "Bookings", module: "bookings" },
-  { domain: "events", label: "Events", module: "events" },
-  { domain: "membership", label: "Membership", module: "membership" },
+  { domain: "loans", label: t`Lending`, module: null },
+  { domain: "machines", label: t`Machines`, module: "machines" },
+  { domain: "bookings", label: t`Bookings`, module: "bookings" },
+  { domain: "events", label: t`Events`, module: "events" },
+  { domain: "membership", label: t`Membership`, module: "membership" },
 ];
 
 export function installedDomains(enabledModules: readonly string[]) {
@@ -100,8 +101,8 @@ export function pricingError(error: unknown) {
       return extra ? `${known} ${extra}` : known;
     }
     if (known) return known;
-    if (error.status === 403) return "You don't have permission to change this.";
+    if (error.status === 403) return t`You don't have permission to change this.`;
     return error.message;
   }
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }

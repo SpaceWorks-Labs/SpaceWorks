@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
@@ -12,7 +14,7 @@ function QuoteLines({ quote }: { quote: JobQuote }) {
     {quote.lines.map((line, index) => <div key={`${line.label}-${index}`} className="flex justify-between gap-4">
       <dt className="min-w-0 break-words text-muted">{line.label}</dt><dd className="tabular-nums text-ink">{money(line.net, quote.currency)}</dd></div>)}
     <div className="flex justify-between gap-4 border-t border-line pt-2 font-semibold">
-      <dt>Total</dt><dd className="tabular-nums">{money(quote.total, quote.currency)}</dd></div>
+      <dt>{t`Total`}</dt><dd className="tabular-nums">{money(quote.total, quote.currency)}</dd></div>
   </dl>;
 }
 
@@ -30,30 +32,30 @@ export function JobQuoteCard({ job, paymentsHref, onUpdated }: { job: MemberJob;
     onError: error => { const fresh = changedQuote(error); if (fresh) setShown(fresh); } });
   const decline = useMutation({ mutationFn: () => declineQuote(job.id), onSuccess: next => { setDeclining(false); onUpdated(next); } });
   if (job.awaiting_payment) return <section className="desk-panel grid gap-3 p-5" aria-labelledby="job-quote-title">
-    <h2 id="job-quote-title" className="title-panel">Awaiting payment</h2>
-    <p className="text-sm text-muted">You approved the quote. Your job joins the queue once it is paid.</p>
+    <h2 id="job-quote-title" className="title-panel">{t`Awaiting payment`}</h2>
+    <p className="text-sm text-muted">{t`You approved the quote. Your job joins the queue once it is paid.`}</p>
     {quote ? <QuoteLines quote={quote} /> : null}
-    <Link className="desk-button-brand justify-self-start" to={paymentsHref}>Pay now</Link>
+    <Link className="desk-button-brand justify-self-start" to={paymentsHref}>{t`Pay now`}</Link>
   </section>;
   if (job.label !== "quote_sent" || !quote) return null;
   const priceChanged = Boolean(shown);
   const expired = job.quote_expires_at ? new Date(job.quote_expires_at).getTime() <= Date.now() : false;
   return <section className="desk-panel grid gap-4 p-5" aria-labelledby="job-quote-title">
-    <div><h2 id="job-quote-title" className="title-panel">Your quote</h2>
-      <p className="mt-1 text-sm text-muted">Approve it and your job joins the queue{job.quote_expires_at ? <> · {expired ? "expired" : "valid until"} <time dateTime={job.quote_expires_at}>
-        {new Date(job.quote_expires_at).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></> : null}.</p></div>
-    {priceChanged ? <div role="alert"><Callout size="inline" tone="warn" lead="The price changed since you opened this page." body="Check the new quote below and approve it again if it suits you." /></div> : null}
+    <div><h2 id="job-quote-title" className="title-panel">{t`Your quote`}</h2>
+      <p className="mt-1 text-sm text-muted">{t`Approve it and your job joins the queue`}{job.quote_expires_at ? <> · {expired ? "expired" : t`valid until`} <time dateTime={job.quote_expires_at}>
+        {new Date(job.quote_expires_at).toLocaleString(formatLocale(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</time></> : null}.</p></div>
+    {priceChanged ? <div role="alert"><Callout size="inline" tone="warn" lead="The price changed since you opened this page." body={t`Check the new quote below and approve it again if it suits you.`} /></div> : null}
     <QuoteLines quote={quote} />
     {approve.isError && !priceChanged ? <p className="text-sm text-danger" role="alert">{jobErrorMessage(approve.error)}</p> : null}
     {decline.isError ? <p className="text-sm text-danger" role="alert">{jobErrorMessage(decline.error)}</p> : null}
     <div className="flex flex-wrap gap-3">
       <button type="button" className="desk-button-brand" disabled={approve.isPending || decline.isPending || expired} onClick={() => approve.mutate(quote.digest)}>
-        {approve.isPending ? "Approving…" : priceChanged ? "Approve new price" : "Approve quote"}</button>
-      <button type="button" className="desk-button" disabled={approve.isPending || decline.isPending} onClick={() => setDeclining(true)}>Decline</button>
+        {approve.isPending ? t`Approving…` : priceChanged ? t`Approve new price` : t`Approve quote`}</button>
+      <button type="button" className="desk-button" disabled={approve.isPending || decline.isPending} onClick={() => setDeclining(true)}>{t`Decline`}</button>
     </div>
-    {expired ? <p className="text-sm text-muted">This quote has expired. Ask staff for a new one.</p> : null}
-    <ConfirmDialog open={declining} title="Decline this quote?" tone="danger" pending={decline.isPending}
-      message={`Declining cancels "${job.title}". Nothing is charged.`} confirmLabel={decline.isPending ? "Declining…" : "Decline and cancel"}
-      cancelLabel="Keep the quote" onConfirm={() => decline.mutate()} onCancel={() => setDeclining(false)} />
+    {expired ? <p className="text-sm text-muted">{t`This quote has expired. Ask staff for a new one.`}</p> : null}
+    <ConfirmDialog open={declining} title={t`Decline this quote?`} tone="danger" pending={decline.isPending}
+      message={t`Declining cancels "${job.title}". Nothing is charged.`} confirmLabel={decline.isPending ? t`Declining…` : t`Decline and cancel`}
+      cancelLabel={t`Keep the quote`} onConfirm={() => decline.mutate()} onCancel={() => setDeclining(false)} />
   </section>;
 }

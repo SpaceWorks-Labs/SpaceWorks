@@ -4,6 +4,7 @@ Approving provisions the label and marks the request approved in one transaction
 decision is audited and the requester is told (a notification failure never undoes it).
 """
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -20,7 +21,7 @@ FIELDS = ["status", "decided_by", "decided_at", "updated_at"]
 def _pending(pk):
     locked = SubdomainRequest.objects.select_for_update().get(pk=pk)
     if locked.status != SubdomainRequest.Status.PENDING:
-        raise ValidationError("This web address request is already decided.")
+        raise ValidationError(gettext("This web address request is already decided."))
     return locked
 
 
@@ -43,7 +44,7 @@ def approve(actor, subdomain_request):
         suffix = str(settings.PLATFORM_DOMAIN_SUFFIX or "").strip().lower()
         current = (space.frontend_domain or "").lower()
         if suffix and current and current.endswith(suffix):
-            raise ValidationError("This makerspace already has a platform subdomain.")
+            raise ValidationError(gettext("This makerspace already has a platform subdomain."))
         space = provision_subdomain(space, locked.requested_label, actor)
         _decided(locked, actor, SubdomainRequest.Status.APPROVED)
     audit.record(actor, "makerspace.subdomain_request_approved", makerspace=space, target=locked,

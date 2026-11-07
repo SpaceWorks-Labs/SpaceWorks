@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui/Field";
@@ -35,21 +36,21 @@ export function AccountDeletionReauthentication({ methods, onVerified }: { metho
   const socialMethod = !["password", "totp", "phone"].includes(method);
   const passwordNeeded = !factor && (method === "password" || (method === "totp" && methods.includes("password")));
   const error = verify.error || phone.error || social.error;
-  if (!methods.length) return <p>There is no available sign-in method to confirm deletion. Contact your makerspace for help.</p>;
+  if (!methods.length) return <p>{t`There is no available sign-in method to confirm deletion. Contact your makerspace for help.`}</p>;
   return <div className="grid gap-3">
-    <p className="text-sm text-muted">Confirm your identity with a fresh sign-in. Verification lasts ten minutes.</p>
-    <Field label="Verification method"><select className="desk-input" value={method} disabled={pending} onChange={event => {
+    <p className="text-sm text-muted">{t`Confirm your identity with a fresh sign-in. Verification lasts ten minutes.`}</p>
+    <Field label={t`Verification method`}><select className="desk-input" value={method} disabled={pending} onChange={event => {
       setMethod(event.target.value); setPassword(""); setCode(""); setFactor(null); setPhoneToken("");
       verify.reset(); phone.reset(); social.reset();
-    }}>{methods.map(value => <option key={value} value={value}>{value === "totp" ? "Authenticator" : value === "phone" ? "Phone code" : value === "password" ? "Password" : value}</option>)}</select></Field>
-    {socialMethod && !factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => social.mutate(method)}>Confirm with {method}</button> : null}
-    {method === "phone" && !factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => phone.mutate()}>{phoneToken ? "Send a new phone verification code" : "Send phone verification code"}</button> : null}
-    {factor ? <p role="status">{factor.factor_required === "totp" ? "Enter your authenticator code." : `Enter the verification code sent to your ${factor.factor_required === "phone" ? "phone" : "email"}.`}</p> : null}
-    {factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => { setFactor(null); setCode(""); verify.reset(); social.reset(); }}>Restart provider verification</button> : null}
+    }}>{methods.map(value => <option key={value} value={value}>{value === "totp" ? t`Authenticator` : value === "phone" ? t`Phone code` : value === "password" ? t`Password` : value}</option>)}</select></Field>
+    {socialMethod && !factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => social.mutate(method)}>{t`Confirm with ${method}`}</button> : null}
+    {method === "phone" && !factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => phone.mutate()}>{phoneToken ? t`Send a new phone verification code` : t`Send phone verification code`}</button> : null}
+    {factor ? <p role="status">{factor.factor_required === "totp" ? t`Enter your authenticator code.` : t`Enter the verification code sent to your ${factor.factor_required === "phone" ? "phone" : "email"}.`}</p> : null}
+    {factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => { setFactor(null); setCode(""); verify.reset(); social.reset(); }}>{t`Restart provider verification`}</button> : null}
     {!socialMethod || factor ? <form className="grid gap-3" onSubmit={event => { event.preventDefault(); verify.mutate(); }}>
-      {passwordNeeded ? <Field label="Current password"><input className="desk-input" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></Field> : null}
-      {method === "password" || method === "totp" || phoneToken || factor ? <Field label={method === "password" ? "Authenticator code (if enabled)" : "Verification code"}><input className="desk-input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" required={method !== "password"} value={code} onChange={event => setCode(event.target.value)} /></Field> : null}
-      <button className="desk-button-primary" disabled={pending || (method === "phone" && !phoneToken)}>{pending ? "Verifying…" : "Verify identity for deletion"}</button>
+      {passwordNeeded ? <Field label={t`Current password`}><input className="desk-input" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></Field> : null}
+      {method === "password" || method === "totp" || phoneToken || factor ? <Field label={method === "password" ? t`Authenticator code (if enabled)` : t`Verification code`}><input className="desk-input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" required={method !== "password"} value={code} onChange={event => setCode(event.target.value)} /></Field> : null}
+      <button className="desk-button-primary" disabled={pending || (method === "phone" && !phoneToken)}>{pending ? t`Verifying…` : t`Verify identity for deletion`}</button>
     </form> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
   </div>;

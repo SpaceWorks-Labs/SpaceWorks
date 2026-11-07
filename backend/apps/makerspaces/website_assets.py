@@ -5,6 +5,7 @@ Event callers reserve durable object intents, then work outside transactions and
 attach in a separate locked commit. Bookings retains its existing clone boundary.
 """
 
+from django.utils.translation import gettext
 from io import BytesIO
 import warnings
 from uuid import uuid4
@@ -50,7 +51,7 @@ def owns(key, module, tenant_id, page_id, *, asset=None):
 
 def webp(data):
     if not data or len(data) > MAX_BYTES:
-        raise ValidationError({"file": "Use an image up to 5 MB."})
+        raise ValidationError({"file": gettext("Use an image up to 5 MB.")})
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
@@ -73,7 +74,7 @@ def webp(data):
                 return result
     except (OSError, ValueError, UnidentifiedImageError, Image.DecompressionBombError,
             Image.DecompressionBombWarning) as exc:
-        raise ValidationError({"file": "Use a single-frame JPEG, PNG or WebP up to 16 megapixels."}) from exc
+        raise ValidationError({"file": gettext("Use a single-frame JPEG, PNG or WebP up to 16 megapixels.")}) from exc
 
 
 def delete_object(key):
@@ -118,9 +119,9 @@ def upload(file, *, module, page, copies):
 def copy_asset(asset, destination, *, module, copies):
     import sys
     if not owns(asset.object_key, module, asset.page.makerspace_id, asset.page_id, asset=asset):
-        raise ValidationError("Image is not owned by the source page.")
+        raise ValidationError(gettext("Image is not owned by the source page."))
     if module != "events" and object_size(asset.object_key) != asset.size_bytes:
-        raise ValidationError("The source image metadata does not match its private bytes.")
+        raise ValidationError(gettext("The source image metadata does not match its private bytes."))
     return copies.copy_image(destination.makerspace, OwnedImage(
         asset.object_key, asset.object_key.rsplit("/", 1)[0] + "/",
         prefix(module, destination.makerspace_id, destination.pk), MAX_BYTES,

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useSyncExternalStore } from "react";
 import { currentTheme, subscribeTheme } from "../lib/theme";
 import { useDelight, useReducedMotion } from "./delight/DelightProvider";
@@ -15,7 +16,7 @@ export function ThemeToggle({ variant = "text" }: { variant?: "text" | "icon" })
   if (variant === "icon") {
     return (
       <IconButton
-        label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        label={theme === "dark" ? t`Switch to light mode` : t`Switch to dark mode`}
         onClick={event => toggle(event.currentTarget)}
       >
         {theme === "dark" ? <SunIcon /> : <MoonIcon />}
@@ -29,7 +30,7 @@ export function ThemeToggle({ variant = "text" }: { variant?: "text" | "icon" })
       type="button"
       onClick={event => toggle(event.currentTarget)}
     >
-      {theme === "dark" ? "Light" : "Dark"}
+      {theme === "dark" ? t`Light` : t`Dark`}
     </button>
   );
 }

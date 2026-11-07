@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { EmptyState, ListRow, StatusPill, RelativeTime } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,13 +15,13 @@ export function MemberAccountSessions({ makerspaceId, onSignedOut }: { makerspac
     else void client.invalidateQueries({ queryKey: [...accountKey(makerspaceId), "sessions"] });
   } });
   // A sub-part of the account page's Security settings section, so its heading sits one level below it.
-  return <section aria-labelledby="account-sessions-heading" className="grid min-w-0 gap-3"><h3 id="account-sessions-heading" className="title-section">Sessions and devices</h3>
-    {rows.isLoading ? <p role="status" className="text-sm text-muted">Loading sessions…</p> : null}
+  return <section aria-labelledby="account-sessions-heading" className="grid min-w-0 gap-3"><h3 id="account-sessions-heading" className="title-section">{t`Sessions and devices`}</h3>
+    {rows.isLoading ? <p role="status" className="text-sm text-muted">{t`Loading sessions…`}</p> : null}
     {rows.error || revoke.error ? <p role="alert" className="text-sm text-danger">{(rows.error || revoke.error)?.message}</p> : null}
-    {rows.data?.results.length === 0 ? <EmptyState message="No other devices are signed in." /> : null}
-    <div className="grid gap-3">{rows.data?.results.map(session => <ListRow key={session.id} title={session.kind === "device" ? "Native device" : "Browser session"}
-      identity={{ kind: "icon", icon: "User", tone: "info" }} meta={<>Started {new Date(session.created_at).toLocaleString()}{session.last_used_at ? <> · Last used <RelativeTime date={session.last_used_at} /></> : null}{session.id.startsWith("web-legacy:") ? <span className="block">This older session loses refresh access immediately; its current access token lasts until its original expiry.</span> : null}</>}
-      right={<div className="flex flex-wrap items-center gap-3">{session.current ? <StatusPill label="This device" tone="info" /> : null}<button type="button" className="desk-button" disabled={revoke.isPending} onClick={() => revoke.mutate(session)}>Revoke {session.current ? "this session" : session.kind === "device" ? "device" : "session"}</button></div>} />)}</div>
-    <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={!rows.data?.previous} onClick={() => setPage(page - 1)}>Previous sessions</button><button type="button" className="desk-button" disabled={!rows.data?.next} onClick={() => setPage(page + 1)}>Next sessions</button></div>
+    {rows.data?.results.length === 0 ? <EmptyState message={t`No other devices are signed in.`} /> : null}
+    <div className="grid gap-3">{rows.data?.results.map(session => <ListRow key={session.id} title={session.kind === "device" ? t`Native device` : t`Browser session`}
+      identity={{ kind: "icon", icon: "User", tone: "info" }} meta={<>{t`Started ${new Date(session.created_at).toLocaleString(formatLocale())}`}{session.last_used_at ? <> {t` · Last used `}<RelativeTime date={session.last_used_at} /></> : null}{session.id.startsWith("web-legacy:") ? <span className="block">{t`This older session loses refresh access immediately; its current access token lasts until its original expiry.`}</span> : null}</>}
+      right={<div className="flex flex-wrap items-center gap-3">{session.current ? <StatusPill label={t`This device`} tone="info" /> : null}<button type="button" className="desk-button" disabled={revoke.isPending} onClick={() => revoke.mutate(session)}>{t`Revoke `}{session.current ? t`this session` : session.kind === "device" ? "device" : "session"}</button></div>} />)}</div>
+    <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={!rows.data?.previous} onClick={() => setPage(page - 1)}>{t`Previous sessions`}</button><button type="button" className="desk-button" disabled={!rows.data?.next} onClick={() => setPage(page + 1)}>{t`Next sessions`}</button></div>
   </section>;
 }

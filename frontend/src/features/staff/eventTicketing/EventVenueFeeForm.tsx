@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { Card } from "../../../components/ui";
 import { ScreenHelp } from "../../help/HelpLink";
@@ -17,33 +18,31 @@ export function EventVenueFeeForm({ eventId, disabled = false }: { eventId: numb
   const set = <K extends keyof VenueFeeInput>(key: K, value: VenueFeeInput[K]) => setValues(current => ({ ...current, [key]: value }));
   const charged = fee.data && fee.data.status !== "configured";
   const error = save.error || charge.error;
-  return <Card><form className="grid gap-4" aria-label="Venue fee" onSubmit={event => { event.preventDefault();
+  return <Card><form className="grid gap-4" aria-label={t`Venue fee`} onSubmit={event => { event.preventDefault();
     save.mutate({ ...values, amount: values.mode === "custom" ? values.amount ?? "0.00" : null }); }}>
-    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="title-section">Venue fee for hosting</h3>
+    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="title-section">{t`Venue fee for hosting`}</h3>
       <ScreenHelp screen="events.venue-fees" className="" /></div>
     {fee.data ? <p className="text-sm text-muted">{fee.data.payer_name} pays {fee.data.quote_total}
-      {fee.data.status === "charged" ? " · charged" : fee.data.status === "free" ? " · nothing to charge" : " · charged when the event is published"}.</p> : null}
-    <label className={panelField}>Payer account number
-      <input className={panelInput} type="number" min="1" required value={values.payer_id || ""} disabled={disabled || Boolean(charged)}
+      {fee.data.status === "charged" ? t` · charged` : fee.data.status === "free" ? t` · nothing to charge` : t` · charged when the event is published`}.</p> : null}
+    <label className={panelField}>{t`Payer account number`}<input className={panelInput} type="number" min="1" required value={values.payer_id || ""} disabled={disabled || Boolean(charged)}
         onChange={event => set("payer_id", Number(event.target.value))} /></label>
-    <label className={panelField}>Room (optional, its venue price applies)
-      <input className={panelInput} type="number" min="1" value={values.room_id ?? ""} disabled={disabled || Boolean(charged)}
+    <label className={panelField}>{t`Room (optional, its venue price applies)`}<input className={panelInput} type="number" min="1" value={values.room_id ?? ""} disabled={disabled || Boolean(charged)}
         onChange={event => set("room_id", event.target.value ? Number(event.target.value) : null)} /></label>
-    <label className={panelField}>Price<select className={panelInput} value={values.mode} disabled={disabled || Boolean(charged)}
+    <label className={panelField}>{t`Price`}<select className={panelInput} value={values.mode} disabled={disabled || Boolean(charged)}
       onChange={event => set("mode", event.target.value as VenueFeeInput["mode"])}>
-      <option value="inherit">Room or space price</option><option value="free">Free</option><option value="custom">Custom</option></select></label>
+      <option value="inherit">{t`Room or space price`}</option><option value="free">{t`Free`}</option><option value="custom">{t`Custom`}</option></select></label>
     {values.mode === "custom" ? <>
-      <label className={panelField}>Amount<input className={panelInput} type="number" min="0" step="0.01" value={values.amount ?? ""}
+      <label className={panelField}>{t`Amount`}<input className={panelInput} type="number" min="0" step="0.01" value={values.amount ?? ""}
         disabled={disabled || Boolean(charged)} onChange={event => set("amount", event.target.value)} /></label>
-      <label className={panelField}>Charged<select className={panelInput} value={values.basis} disabled={disabled || Boolean(charged)}
+      <label className={panelField}>{t`Charged`}<select className={panelInput} value={values.basis} disabled={disabled || Boolean(charged)}
         onChange={event => set("basis", event.target.value as VenueFeeInput["basis"])}>
-        <option value="flat">Once</option><option value="per_hour">Per hour of the event</option></select></label>
+        <option value="flat">{t`Once`}</option><option value="per_hour">{t`Per hour of the event`}</option></select></label>
     </> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
     <div className="flex flex-wrap gap-2">
-      <button className="desk-button-primary" type="submit" disabled={disabled || Boolean(charged) || save.isPending}>Save venue fee</button>
+      <button className="desk-button-primary" type="submit" disabled={disabled || Boolean(charged) || save.isPending}>{t`Save venue fee`}</button>
       {fee.data?.status === "configured" ? <button className="desk-button" type="button" disabled={disabled || charge.isPending}
-        onClick={() => charge.mutate()}>Charge now</button> : null}
+        onClick={() => charge.mutate()}>{t`Charge now`}</button> : null}
     </div>
   </form></Card>;
 }

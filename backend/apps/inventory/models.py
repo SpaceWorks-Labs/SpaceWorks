@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.postgres.indexes import GinIndex
@@ -9,8 +10,8 @@ from apps.inventory.kit_validators import validate_kit_definition
 
 
 class PublicAvailabilityMode(models.TextChoices):
-    EXACT_COUNT = "exact_count", "Exact Count"
-    STATUS_ONLY = "status_only", "Status Only"
+    EXACT_COUNT = "exact_count", gettext_noop("Exact Count")
+    STATUS_ONLY = "status_only", gettext_noop("Status Only")
     HIDDEN = "hidden", "Hidden"
 
 
@@ -194,11 +195,11 @@ class InventoryProduct(models.Model):
         clean_model_price(self, "count")
         if self.box_id and self.box.makerspace_id != self.makerspace_id:
             raise ValidationError(
-                {"box": "Box must belong to the same makerspace as the product."}
+                {"box": gettext("Box must belong to the same makerspace as the product.")}
             )
         if self.category_id and self.category.makerspace_id != self.makerspace_id:
             raise ValidationError(
-                {"category": "Category must belong to the same makerspace."}
+                {"category": gettext("Category must belong to the same makerspace.")}
             )
 
 

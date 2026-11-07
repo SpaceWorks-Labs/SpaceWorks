@@ -7,6 +7,7 @@ price field (a room's price, an item's deposit) is its custom price; Free keeps 
 under a paid default; Inherit follows the space default.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -67,13 +68,13 @@ def card(actor, space, target_type, target):
 
 def _resolve(request, makerspace_id, target_type, target_id):
     if target_type not in registry.MODELS:
-        raise NotFound("Unknown item type.")
+        raise NotFound(gettext("Unknown item type."))
     space = space_for(request.user, makerspace_id, *ITEM_ACTIONS)
     require_pricing(space)
     require_domain(space, registry.DOMAINS[target_type])
     target = registry.load(target_type, target_id, space.pk)
     if target is None or not registry.can_view(request.user, target_type, target):
-        raise NotFound("Item not found.")
+        raise NotFound(gettext("Item not found."))
     return space, target
 
 

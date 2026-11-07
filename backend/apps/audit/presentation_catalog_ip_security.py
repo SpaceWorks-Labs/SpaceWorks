@@ -6,13 +6,14 @@
 rule's action and which fields changed, never an address.
 """
 
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("auth.ip_auto_blocked", "Address blocked automatically"),
-    P("auth.ip_unblocked", "Address unblocked"),
-    P("auth.captcha_failed", "CAPTCHA failed"),
-    P("auth.password_breach_rejected", "Breached password refused"),
-    P("platform.ip_rule_saved", "Platform IP rule saved", ("action", "changed_fields", "created", "via")),
-    P("platform.ip_rule_deleted", "Platform IP rule deleted", ("action", "via")),
+    P("auth.ip_auto_blocked", gettext_noop("Address blocked automatically")),
+    P("auth.ip_unblocked", gettext_noop("Address unblocked")),
+    P("auth.captcha_failed", gettext_noop("CAPTCHA failed")),
+    P("auth.password_breach_rejected", gettext_noop("Breached password refused")),
+    P("platform.ip_rule_saved", gettext_noop("Platform IP rule saved"), ("action", "changed_fields", "created", "via")),
+    P("platform.ip_rule_deleted", gettext_noop("Platform IP rule deleted"), ("action", "via")),
 )

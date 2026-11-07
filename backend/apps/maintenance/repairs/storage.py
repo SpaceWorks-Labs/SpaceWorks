@@ -5,6 +5,7 @@ its final key exactly once, then checks it really is a JPEG, PNG or WebP image u
 evidence size limit. Reads are short-lived signed URLs on the private bucket.
 """
 
+from django.utils.translation import gettext
 import sys
 import uuid
 
@@ -40,7 +41,7 @@ def max_bytes():
 
 def photo_key(makerspace_id, content_type):
     if content_type not in EXTENSIONS:
-        raise ValidationError({"content_type": "Upload a JPEG, PNG or WebP photo."})
+        raise ValidationError({"content_type": gettext("Upload a JPEG, PNG or WebP photo.")})
     return f"repairs/{makerspace_id}/{uuid.uuid4().hex}.{EXTENSIONS[content_type]}"
 
 
@@ -95,9 +96,9 @@ def validated_photo(object_key):
     """(size, content type) of a promoted photo, or a 400 naming what is wrong."""
     size = finalize(object_key)
     if size is None:
-        raise ValidationError({"photos": "A photo was not uploaded yet."})
+        raise ValidationError({"photos": gettext("A photo was not uploaded yet.")})
     if not 1 <= size <= max_bytes():
-        raise ValidationError({"photos": "A photo is empty or too large."})
+        raise ValidationError({"photos": gettext("A photo is empty or too large.")})
     try:
         body = _client().get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=object_key)["Body"].read(64)
     except (BotoCoreError, ClientError, OSError) as exc:
@@ -105,7 +106,7 @@ def validated_photo(object_key):
     from apps.maker_formats.legacy import sniff_pdf_or_image
     sniffed = sniff_pdf_or_image(body)
     if sniffed not in EXTENSIONS or EXTENSIONS[sniffed] != object_key.rsplit(".", 1)[-1]:
-        raise ValidationError({"photos": "A photo is not the image type it claimed to be."})
+        raise ValidationError({"photos": gettext("A photo is not the image type it claimed to be.")})
     return size, sniffed
 
 

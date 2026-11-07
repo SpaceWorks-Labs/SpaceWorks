@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -34,7 +35,7 @@ class DeploymentIdentityView(MigrationAPIView):
         if not identity["age_recipient"]:
             return Response(
                 {
-                    "detail": "The target migration age recipient is not configured.",
+                    "detail": gettext("The target migration age recipient is not configured."),
                     "code": "age_recipient_not_configured",
                 },
                 status=409,

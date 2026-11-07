@@ -5,6 +5,7 @@ the enumeration reasoning. The only status that distinguishes anything is 404 wh
 SMS is not configured at all, which is deployment state, not account state.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema, PolymorphicProxySerializer
 from apps.accounts.serializers_mfa import MFAChallengeResponseSerializer, MFACompletedSerializer
 from rest_framework import status
@@ -210,10 +211,10 @@ class PhoneLinkStartView(APIView):
             return Response(SMS_UNAVAILABLE, status=status.HTTP_404_NOT_FOUND)
         except ChallengeCooldown:
             return Response(
-                {"detail": "A code was just sent. Try again in a minute."},
+                {"detail": gettext("A code was just sent. Try again in a minute.")},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
-        return Response({"detail": "Verification code sent."})
+        return Response({"detail": gettext("Verification code sent.")})
 
 
 class PhoneLinkConfirmView(APIView):

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { DetailLayout } from "../../../components/layouts";
@@ -25,11 +26,11 @@ export function IssueDetail({ id, makerspaceId, onBack }: { id: number; makerspa
   const spec = open ? specs[open] : undefined;
   const actions = issue ? nextSteps(issue, manager, key => setOpen(key), () => step.mutate({ step: "start" }),
     () => step.mutate({ step: "assign", body: { myself: true } }), step.isPending) : { primary: undefined, overflow: [] };
-  return <DetailLayout title={issue?.title ?? "Issue"} back={{ label: manager ? "All repairs" : "My jobs", onClick: onBack }}
+  return <DetailLayout title={issue?.title ?? t`Issue`} back={{ label: manager ? t`All repairs` : t`My jobs`, onClick: onBack }}
     identity={{ kind: "icon", icon: "HardHat", tone: "accent" }} state={opsQueryState(query, "this issue")}
     status={issue ? <><StatusPill tone={stateTone(issue.state)} label={STATE_LABELS[issue.state]} />
       {issue.quote_state !== "none" ? <StatusPill tone={issue.quote_state === "approved" ? "success" : issue.quote_state === "declined" ? "danger" : "warn"}
-        label={`Quote ${issue.quote_state === "pending" ? "awaiting approval" : issue.quote_state}`} /> : null}</> : undefined}
+        label={t`Quote ${issue.quote_state === "pending" ? "awaiting approval" : issue.quote_state}`} /> : null}</> : undefined}
     meta={issue ? [`${AREA_LABELS[issue.area]}: ${issue.subject_label}`, issue.reporter_name ? `Reported by ${issue.reporter_name}` : "Opened by staff"] : undefined}
     actions={actions}
     main={issue ? <div className="grid gap-6">
@@ -49,11 +50,11 @@ function nextSteps(issue: Issue, manager: boolean, open: (key: string) => void, 
   const item = (key: string, label: string, extra: Partial<Action> = {}): Action => ({ label, onClick: () => open(key), ...extra });
   let primary: Action | undefined;
   if (manager && issue.state === "reported") primary = item("triage", "Triage");
-  else if (issue.state === "triaged" || issue.state === "assigned") primary = { label: "Start work", onClick: start, pending };
+  else if (issue.state === "triaged" || issue.state === "assigned") primary = { label: t`Start work`, onClick: start, pending };
   else if (issue.state === "in_progress") primary = item("fix", "Mark fixed", { icon: "Check" });
   else if (manager && issue.state === "fixed") primary = item("close", "Close");
   const overflow: Action[] = [];
-  if (manager && working) overflow.push(item("dispatch", "Send to technicians", { icon: "Send" }), { label: "Assign to me", onClick: self });
+  if (manager && working) overflow.push(item("dispatch", "Send to technicians", { icon: "Send" }), { label: t`Assign to me`, onClick: self });
   if (working) overflow.push(item("visit", "Log a visit"), item("remark", "Add a remark"), item("used", "Part used"),
     item("needed", "Part needed"), item("quote", "Record a quote"));
   if (manager && issue.quote_state === "pending") overflow.push(item("approve", "Approve quote"), item("decline", "Decline quote"));

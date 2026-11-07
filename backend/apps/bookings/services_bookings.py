@@ -1,5 +1,6 @@
 '''Audited mutation boundary for bookings and their lifecycle.'''
 
+from django.utils.translation import gettext
 from apps.accounts.account_kind_guards import require_member_account
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -31,7 +32,7 @@ def _validate(booking):
     for field in ('starts_at', 'ends_at'):
         value = getattr(booking, field)
         if value is not None and timezone.is_naive(value):
-            raise serializers.ValidationError({field: 'Datetime must include a timezone offset.'})
+            raise serializers.ValidationError({field: gettext('Datetime must include a timezone offset.')})
     try:
         booking.full_clean(validate_unique=False, validate_constraints=False)
     except DjangoValidationError as exc:
@@ -39,7 +40,7 @@ def _validate(booking):
         raise serializers.ValidationError(detail) from exc
     if booking.ends_at <= booking.starts_at:
         raise serializers.ValidationError(
-            {'ends_at': 'End time must be after start time.'}
+            {'ends_at': gettext('End time must be after start time.')}
         )
 
 
@@ -97,7 +98,7 @@ def create_booking(
             makerspace_id=locked_space.makerspace_id, user=member, status="active",
         ).exists():
             from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("Staff booking requires an active local member.")
+            raise PermissionDenied(gettext("Staff booking requires an active local member."))
         require_active_member(member, locked_space.makerspace)
     now = timezone.now()
     status = admission_status(locked_space)

@@ -1,5 +1,6 @@
 """Owned asset copies for domain clone adapters; never traverse relations implicitly."""
 
+from django.utils.translation import gettext
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
@@ -25,7 +26,7 @@ def copy_fields(source, fields):
 def bounded_children(queryset, *, maximum=100):
     rows = list(queryset[:maximum + 1])
     if len(rows) > maximum:
-        raise ValidationError("Too many children to duplicate in one operation.")
+        raise ValidationError(gettext("Too many children to duplicate in one operation."))
     return rows
 
 
@@ -60,19 +61,19 @@ class AssetCopies:
                 or not image.source_key.startswith(image.source_prefix)
                 or not storage.is_safe_object_key(image.source_key)
                 or not storage.is_safe_object_key(image.destination_prefix)):
-            raise ValidationError("Image is not owned by the source resource.")
+            raise ValidationError(gettext("Image is not owned by the source resource."))
         identity = (id(storage), image.source_key, image.source_prefix, image.destination_prefix, image.max_bytes)
         if not self.preparing and identity in self.prepared:
             key, size = self.prepared[identity]
             limits.add_storage(makerspace, size)
             return key
         if transaction.get_connection().in_atomic_block and self.prepared:
-            raise ValidationError("The source image changed. Retry resource preparation.")
+            raise ValidationError(gettext("The source image changed. Retry resource preparation."))
         size = storage.object_size(image.source_key)
         if size is None or not 0 < size <= image.max_bytes:
-            raise ValidationError("The source image is missing or too large.")
+            raise ValidationError(gettext("The source image is missing or too large."))
         if len(self.created) >= self.maximum or self.total_bytes + size > self.max_total_bytes:
-            raise ValidationError("The clone asset limit was exceeded.")
+            raise ValidationError(gettext("The clone asset limit was exceeded."))
         key = image.destination_prefix + uuid4().hex + PurePosixPath(image.source_key).suffix
         if not self.preparing:
             limits.add_storage(makerspace, size)

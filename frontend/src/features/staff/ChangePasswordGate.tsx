@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
@@ -28,9 +29,9 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
     currentPassword.length > 0 && newPassword.length > 0 && confirm === newPassword && !mismatch && !mutation.isPending;
   return (
     <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "Lock", tone: "accent" }}
-      eyebrow="Security" title="Set a new password" body={<p><strong>{username}</strong> is using a temporary password. Choose your own to continue.</p>}
-      primary={{ label: "Update password", pending: mutation.isPending, pendingLabel: "Updating…", disabled: !canSubmit, disabledReason: "Enter matching passwords to continue.", onClick: () => (document.getElementById("change-password-form") as HTMLFormElement)?.requestSubmit() }}
-      escape={{ label: "Sign out", onClick: onSignOut }} content={
+      eyebrow={t`Security`} title={t`Set a new password`} body={<p><strong>{username}</strong> {t` is using a temporary password. Choose your own to continue.`}</p>}
+      primary={{ label: t`Update password`, pending: mutation.isPending, pendingLabel: "Updating…", disabled: !canSubmit, disabledReason: "Enter matching passwords to continue.", onClick: () => (document.getElementById("change-password-form") as HTMLFormElement)?.requestSubmit() }}
+      escape={{ label: t`Sign out`, onClick: onSignOut }} content={
       <form
         id="change-password-form" className="grid gap-1"
         onSubmit={(event) => {
@@ -39,7 +40,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
         }}
       >
         <input
-          aria-label="Username"
+          aria-label={t`Username`}
           className="sr-only"
           type="text"
           autoComplete="username"
@@ -48,7 +49,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
           tabIndex={-1}
           aria-hidden="true"
         />
-        <label className="mt-5 block text-sm font-semibold" htmlFor="change-current-password">Current password</label>
+        <label className="mt-5 block text-sm font-semibold" htmlFor="change-current-password">{t`Current password`}</label>
         <input
           className="desk-input mt-1 w-full"
           type="password"
@@ -57,7 +58,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
         />
-        <label className="mt-3 block text-sm font-semibold" htmlFor="change-new-password">New password</label>
+        <label className="mt-3 block text-sm font-semibold" htmlFor="change-new-password">{t`New password`}</label>
         <input
           className="desk-input mt-1 w-full"
           type="password"
@@ -67,7 +68,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
           onChange={(e) => setNewPassword(e.target.value)}
         />
         <PasswordStrength password={newPassword} />
-        <label className="mt-3 block text-sm font-semibold" htmlFor="change-confirm-password">Confirm new password</label>
+        <label className="mt-3 block text-sm font-semibold" htmlFor="change-confirm-password">{t`Confirm new password`}</label>
         <input
           className="desk-input mt-1 w-full"
           type="password"
@@ -76,7 +77,7 @@ export function ChangePasswordGate({ username, onChanged, onSignOut }: ChangePas
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
-        {mismatch ? <p className="mt-3 text-sm text-danger">Passwords do not match.</p> : null}
+        {mismatch ? <p className="mt-3 text-sm text-danger">{t`Passwords do not match.`}</p> : null}
         {mutation.error ? (
           <p className="mt-3 text-sm text-danger">{(mutation.error as Error).message}</p>
         ) : null}

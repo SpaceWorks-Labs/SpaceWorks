@@ -5,6 +5,7 @@ the expense is in the ledger. The quantity is the To-Buy row's; the stock moves 
 availability module (`restock`), and `moved_to_inventory_at` is the idempotency marker.
 """
 
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -19,11 +20,11 @@ def restock_from_to_buy(actor, item):
 
     locked = ToBuyItem.objects.select_for_update().get(pk=item.pk)
     if locked.moved_to_inventory_at is not None:
-        raise ValidationError({"detail": "This item has already been put on the shelf."})
+        raise ValidationError({"detail": gettext("This item has already been put on the shelf.")})
     variant = ShopVariant.objects.filter(pk=locked.source_shop_variant_id,
                                          makerspace_id=locked.makerspace_id).first()
     if variant is None or variant.linked_product_id:
-        raise ValidationError({"detail": "The shop item this was raised for can no longer be restocked."})
+        raise ValidationError({"detail": gettext("The shop item this was raised for can no longer be restocked.")})
     row = restock_shop(variant, int(locked.quantity), actor=actor, reason=f"To-Buy #{locked.pk} bought")
     locked.moved_to_inventory_at = timezone.now()
     locked.save(update_fields=["moved_to_inventory_at", "updated_at"])

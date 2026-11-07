@@ -1,4 +1,5 @@
 """Settings, recusals and attention controls use the event command boundary."""
+from django.utils.translation import gettext
 from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -37,7 +38,7 @@ def save_profile(*, actor, event_id, assignment_id, payload):
         for window in row.availability:
             start, end = [datetime.fromisoformat(window[key].replace("Z", "+00:00")) for key in ("starts_at", "ends_at")]
             if not event.starts_at <= start < end <= event.ends_at:
-                raise ValidationError({"availability": "Choose intervals inside this event."})
+                raise ValidationError({"availability": gettext("Choose intervals inside this event.")})
         for booking in OfficeHoursBooking.objects.filter(mentor_assignment=role, state="booked",
                 slot__ends_at__gt=timezone.now()).select_related("slot"):
             if not policy.covers_interval(row.availability, booking.slot.starts_at, booking.slot.ends_at):
@@ -57,14 +58,14 @@ def save_profile(*, actor, event_id, assignment_id, payload):
 
 def save_help_type(*, actor, event_id, payload, type_id=None):
     if type_id is None and not all(key in payload for key in ("key", "label")):
-        raise ValidationError("A category needs a key and label.")
+        raise ValidationError(gettext("A category needs a key and label."))
 
     def mutate(event, locks):
         row = get_object_or_404(EventHelpType.objects.select_for_update(), event=event, pk=type_id) if type_id else EventHelpType(
             event=event, makerspace_id=event.makerspace_id)
         check_version(row, payload["expected_version"]) if type_id else _zero(payload)
         if type_id and "key" in payload and payload["key"] != row.key:
-            raise ValidationError({"key": "A category key cannot change."})
+            raise ValidationError({"key": gettext("A category key cannot change.")})
         for key, value in payload.items():
             if key not in ("operation_id", "expected_version"):
                 setattr(row, key, value)

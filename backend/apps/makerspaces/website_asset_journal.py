@@ -4,6 +4,7 @@ The FK-free journal survives reservation-pass rollback and process crashes.
 Pending debt counts against quota; attachment and counter charge commit together.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 import psycopg2
 from django.db import connections, router
@@ -63,11 +64,11 @@ def finalize(plan):
     if (not plan["ready"] or job.object_key != plan["key"] or job.attempts
             or job.owner_kind != "event" or job.owner_id != plan["page"].makerspace_id
             or job.page_id != plan["page"].pk):
-        raise ValidationError({"revision": "The image reservation expired. Retry the operation."})
+        raise ValidationError({"revision": gettext("The image reservation expired. Retry the operation.")})
     if job.storage_accounted or (_event_cover(job) and job.completed_at):
         return
     if job.completed_at or job.due_at <= timezone.now():
-        raise ValidationError({"revision": "The image reservation expired. Retry the operation."})
+        raise ValidationError({"revision": gettext("The image reservation expired. Retry the operation.")})
     # Remove this debt before add_storage includes all OTHER reservations. Both
     # this flag and the actual charge roll back if any graph finalization fails.
     job.storage_accounted = True
@@ -111,7 +112,7 @@ def schedule(asset):
     from .website_assets import owns
     from rest_framework.exceptions import ValidationError
     if not owns(asset.object_key, "events", asset.page.makerspace_id, asset.page_id, asset=asset):
-        raise ValidationError("Image is not owned by this event page.")
+        raise ValidationError(gettext("Image is not owned by this event page."))
     job, _ = Cleanup.objects.update_or_create(object_key=asset.object_key, defaults={
         "owner_kind": "event", "owner_id": asset.page.makerspace_id, "page_id": asset.page_id,
         "size_bytes": asset.size_bytes, "storage_accounted": True, "ownership_proven": True,

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { BookingResourceUtilizationReport } from "../../generated/api";
@@ -30,7 +31,7 @@ export function useBookingResourceReports(tenant: number, resource: number, star
       // only emits scalars; enforce that before passing cells to the report table.
       const rows: ReportCell[][] = result.rows.map((row) => row.map((cell) => {
         if (cell === null || ["string", "number", "boolean"].includes(typeof cell)) return cell as ReportCell;
-        throw new Error("Invalid resource report cell.");
+        throw new Error(t`Invalid resource report cell.`);
       }));
       return { ...result, rows };
     },

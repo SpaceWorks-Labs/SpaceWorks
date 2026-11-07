@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -20,7 +21,7 @@ class WindowSerializer(StrictSerializer):
 
     def validate(self, attrs):
         if attrs["ends_at"] <= attrs["starts_at"]:
-            raise serializers.ValidationError({"ends_at": "End must follow start."})
+            raise serializers.ValidationError({"ends_at": gettext("End must follow start.")})
         return {k: v.isoformat() for k, v in attrs.items()}
 
 

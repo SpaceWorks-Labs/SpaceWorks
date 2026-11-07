@@ -5,13 +5,14 @@ NAMES, the member-details switch and the dashboard number: never a URL, an embed
 password or a verifier.
 """
 
+from django.utils.translation import gettext_noop
 from .presentation_catalog_types import P
 
 ENTRIES = (
-    P("analytics.credentials_viewed", "Analytics credentials viewed", ("scope", "role")),
-    P("analytics.connection_updated", "Analytics connection changed", ("scope", "fields", "show_member_details")),
-    P("analytics.login_created", "Analytics database login created", ("scope", "role", "password_shown")),
-    P("analytics.login_rotated", "Analytics database login password rotated", ("scope", "role", "password_shown")),
-    P("analytics.login_revoked", "Analytics database login revoked", ("scope", "role")),
-    P("analytics.dashboard_viewed", "Analytics dashboard opened", ("scope", "dashboard")),
+    P("analytics.credentials_viewed", gettext_noop("Analytics credentials viewed"), ("scope", "role")),
+    P("analytics.connection_updated", gettext_noop("Analytics connection changed"), ("scope", "fields", "show_member_details")),
+    P("analytics.login_created", gettext_noop("Analytics database login created"), ("scope", "role", "password_shown")),
+    P("analytics.login_rotated", gettext_noop("Analytics database login password rotated"), ("scope", "role", "password_shown")),
+    P("analytics.login_revoked", gettext_noop("Analytics database login revoked"), ("scope", "role")),
+    P("analytics.dashboard_viewed", gettext_noop("Analytics dashboard opened"), ("scope", "dashboard")),
 )

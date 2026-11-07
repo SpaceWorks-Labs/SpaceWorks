@@ -1,5 +1,6 @@
 """Ticket templates belong to a series; sellable copies belong to occurrences."""
 
+from django.utils.translation import gettext, gettext_noop
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -8,8 +9,8 @@ from django.db.models import F, Q
 
 class EventTicketType(models.Model):
     class Audience(models.TextChoices):
-        MEMBER = "member", "Active members"
-        PUBLIC = "public", "All accounts"
+        MEMBER = "member", gettext_noop("Active members")
+        PUBLIC = "public", gettext_noop("All accounts")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.CASCADE, related_name="ticket_types")
@@ -46,13 +47,13 @@ class EventTicketType(models.Model):
         super().clean()
         if self.contributor_capacity_policy == "reserved_contributor_capacity" and (
                 self.purpose != "contributor" or self.capacity == 0):
-            raise ValidationError({"capacity": "A reserved contributor pool needs a finite positive capacity."})
+            raise ValidationError({"capacity": gettext("A reserved contributor pool needs a finite positive capacity.")})
         if bool(self.event_id) == bool(self.series_id):
-            raise ValidationError("Choose exactly one event or series owner.")
+            raise ValidationError(gettext("Choose exactly one event or series owner."))
         for field in ("event", "series"):
             owner = getattr(self, field)
             if owner and owner.makerspace_id != self.makerspace_id:
-                raise ValidationError({field: "Owner must belong to this makerspace."})
+                raise ValidationError({field: gettext("Owner must belong to this makerspace.")})
 
     class Meta:
         ordering = ["id"]

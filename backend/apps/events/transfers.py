@@ -11,6 +11,7 @@ certificate revoked. The money stays with whoever paid; nobody is registered wit
 an account.
 """
 
+from django.utils.translation import gettext
 import secrets
 from datetime import timedelta
 from uuid import uuid4
@@ -81,7 +82,7 @@ def send_offer(transfer, token):
             f"{accept_url(token)}\nThe offer ends on {timezone.localtime(transfer.expires_at):%d %b %Y}.\n")
     direct_mail_unless_routed(space=space, source_kind="events.ticket_transfer", row=transfer,
                               revision=transfer.token_digest[:16], event="ticket_transfer_received", owner=None,
-                              to_email=transfer.to_email, subject=f"A ticket to {event.title} for you", text=text,
+                              to_email=transfer.to_email, subject=gettext('A ticket to {title} for you').format(title=event.title), text=text,
                               stream="events", audience="requester", feature="", persist_body=False,
                               address_owner=False)
 

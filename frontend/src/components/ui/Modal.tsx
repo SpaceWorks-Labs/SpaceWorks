@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type React from "react";
 import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import {
@@ -119,7 +120,7 @@ export function Modal({
           onFocus={revealFieldAboveKeyboard}>{children}</div>
         {footer ? <div className="shrink-0 border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">{footer}</div> : null}
         {/* Phones get a visible close in the sheet's corner. Last in the DOM so the first field still takes initial focus. */}
-        <button type="button" aria-label="Close dialog" onClick={onClose}
+        <button type="button" aria-label={t`Close dialog`} onClick={onClose}
           className="desk-button-ghost absolute top-2.5 right-2.5 min-h-11 min-w-11 px-2 sm:hidden"><X aria-hidden="true" size={20} /></button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 """Fixed immutable programme maintenance; no general history-write bypass."""
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 from django.db import connection
 
@@ -24,7 +25,7 @@ def assert_immutable_maintenance(row, changed, operation_kind):
         return
     fields = fields_for(row)
     if not set(changed) <= {field.field_name for field in fields}:
-        raise ValidationError("Maintenance can change only fixed mapped PII columns.")
+        raise ValidationError(gettext("Maintenance can change only fixed mapped PII columns."))
     tenant_id = makerspace_id_for(row, fields[0])
     # Acquire the persistent global/tenant fences before checking the operation.
     assert_mapped_write_allowed(tenant_id)
@@ -37,7 +38,7 @@ def assert_immutable_maintenance(row, changed, operation_kind):
         fence is None or fence.state != "closed" or str(fence.operation_id) != operation
         or fence.operation_kind != operation_kind for fence in fences
     ):
-        raise ValidationError("Matching closed global and tenant maintenance fences are required.")
+        raise ValidationError(gettext("Matching closed global and tenant maintenance fences are required."))
 
 
 def encrypt_immutable(row):

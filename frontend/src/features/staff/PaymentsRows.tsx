@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { OverflowMenu, RelativeTime, StatusPill, type Action, type DataTableColumn } from "../../components/ui";
 import { PaymentDueBadge } from "./PaymentDueBadge";
 import { paymentAccess } from "./paymentAccess";
@@ -20,21 +21,21 @@ export function paymentColumns({ access, pending, amendPending, run, onAmend, on
     { key: "due_at", header: "Due", render: row => <PaymentDueBadge payment={row} /> },
     { key: "amount", header: "Amount", render: row => formatMoney(row.amount, row.currency), className: "font-semibold tabular-nums text-ink md:text-right" },
     { key: "refunded_amount", header: "Refunded", render: row => Number(row.refunded_amount) > 0 ? formatMoney(row.refunded_amount, row.currency) : "—", className: "text-muted tabular-nums" },
-    { key: "settlement", header: "Received", render: row => row.settlement ? <div className="grid justify-items-start gap-1"><span>{settlementLabel(row.settlement)}</span>{row.settlement.corrected ? <StatusPill label="Corrected" /> : null}</div> : "—" },
+    { key: "settlement", header: "Received", render: row => row.settlement ? <div className="grid justify-items-start gap-1"><span>{settlementLabel(row.settlement)}</span>{row.settlement.corrected ? <StatusPill label={t`Corrected`} /> : null}</div> : "—" },
     { key: "created_at", header: "Created", render: row => <RelativeTime date={row.created_at} /> },
     { key: "actions", header: "Actions", render: row => {
       const permissions = access(row);
       const actions: Action[] = [];
-      if (row.status === "pending" && permissions.waive) actions.push({ label: "Waive", disabled: pending, onClick: () => run("waive", [row.id], false) });
-      if (row.status === "paid_offline" && row.settlement && permissions.record) actions.push({ label: "Correct receipt", disabled: amendPending, onClick: () => onAmend(row) });
-      if ((row.status === "paid_online" || row.status === "paid_offline") && permissions.refund) actions.push({ label: row.subject_type === "loan_deposit" && row.status === "paid_offline" ? "Release deposit" : "Refund", onClick: () => onRefund(row) });
-      if (onPayLink && row.ledger_flags?.pay_link_available && permissions.record) actions.push({ label: "Pay link", onClick: () => onPayLink(row) });
+      if (row.status === "pending" && permissions.waive) actions.push({ label: t`Waive`, disabled: pending, onClick: () => run("waive", [row.id], false) });
+      if (row.status === "paid_offline" && row.settlement && permissions.record) actions.push({ label: t`Correct receipt`, disabled: amendPending, onClick: () => onAmend(row) });
+      if ((row.status === "paid_online" || row.status === "paid_offline") && permissions.refund) actions.push({ label: row.subject_type === "loan_deposit" && row.status === "paid_offline" ? t`Release deposit` : t`Refund`, onClick: () => onRefund(row) });
+      if (onPayLink && row.ledger_flags?.pay_link_available && permissions.record) actions.push({ label: t`Pay link`, onClick: () => onPayLink(row) });
       row.refunds?.filter(refund => refund.provider === "manual" && !refund.corrected).forEach(refund => {
-        if (permissions.refund) actions.push({ label: `Correct refund #${refund.id}`, onClick: () => onCorrectRefund(row.id, refund) });
+        if (permissions.refund) actions.push({ label: t`Correct refund #${refund.id}`, onClick: () => onCorrectRefund(row.id, refund) });
       });
       return <div className="flex flex-wrap items-center gap-2">
-        {row.status === "pending" && permissions.record ? <button className="desk-button" type="button" disabled={pending} onClick={() => run("mark-offline", [row.id], false)}>Mark paid</button> : null}
-        <OverflowMenu label={`Actions for ${row.subject_label}`} actions={actions} />
+        {row.status === "pending" && permissions.record ? <button className="desk-button" type="button" disabled={pending} onClick={() => run("mark-offline", [row.id], false)}>{t`Mark paid`}</button> : null}
+        <OverflowMenu label={t`Actions for ${row.subject_label}`} actions={actions} />
       </div>;
     } },
   ];

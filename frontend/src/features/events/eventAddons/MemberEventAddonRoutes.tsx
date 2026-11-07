@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { useTenant } from "../../../lib/tenant";
 import { useTenantBootstrap } from "../../inventory/usePublicInventory";
@@ -25,8 +26,8 @@ function EventAddonPage({ kind }: { kind: AddonKind }) {
   const navigate = useNavigate();
   const space = useMakerspace();
   const eventId = Number(params.eventId);
-  if (space.loading) return <p role="status">Loading…</p>;
-  if (!space.makerspaceId || !Number.isSafeInteger(eventId)) return <p role="alert">This event page is unavailable here.</p>;
+  if (space.loading) return <p role="status">{t`Loading…`}</p>;
+  if (!space.makerspaceId || !Number.isSafeInteger(eventId)) return <p role="alert">{t`This event page is unavailable here.`}</p>;
   const makerspaceId = space.makerspaceId;
   const go = (suffix: string) => navigate(memberEventAddonHref(space.slug, eventId, suffix));
   const payouts = `${space.slug ? `/m/${encodeURIComponent(space.slug)}` : ""}/member/event-payouts`;
@@ -56,9 +57,9 @@ function EventPayoutPage() {
 /** "My prizes" (hack-money G3/G4/G6): this space's prizes for the signed-in member. */
 function PrizesPage() {
   const space = useMakerspace();
-  if (space.loading) return <p role="status">Loading…</p>;
+  if (space.loading) return <p role="status">{t`Loading…`}</p>;
   const makerspaceId = space.makerspaceId;
-  if (!makerspaceId) return <p role="alert">Prizes are unavailable here.</p>;
+  if (!makerspaceId) return <p role="alert">{t`Prizes are unavailable here.`}</p>;
   return <ProgrammeAccess slug={space.slug}>{user => <MyPrizes scope={{ makerspaceId, actorId: user.id }} />}</ProgrammeAccess>;
 }
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ConfirmDialog, ErrorBlock, SettingsActions, SettingsRow, Skeleton } from "../../components/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,7 +69,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
 
   const upload = useMutation({
     mutationFn: async (files: File[]) => {
-      if (!warranty.data) throw new Error("Save warranty details first to attach documents.");
+      if (!warranty.data) throw new Error(t`Save warranty details first to attach documents.`);
       for (const file of files) {
         await uploadWarrantyDocument(warranty.data.id, file);
       }
@@ -78,7 +79,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
       if (inputRef.current) inputRef.current.value = "";
       invalidate();
     },
-    onError: (err) => setDocumentError(err instanceof Error ? err.message : "Upload failed."),
+    onError: (err) => setDocumentError(err instanceof Error ? err.message : t`Upload failed.`),
   });
 
   const remove = useMutation({
@@ -95,14 +96,14 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
       const { url } = await getWarrantyDocumentUrl(documentId);
       window.open(url, "_blank", "noopener");
     } catch (err) {
-      setDocumentError(err instanceof Error ? err.message : "Could not open document.");
+      setDocumentError(err instanceof Error ? err.message : t`Could not open document.`);
     }
   }
 
   return (
     <section className="min-w-0 rounded-md border border-line bg-bg p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="title-section">Warranty</h4>
+        <h4 className="title-section">{t`Warranty`}</h4>
         <WarrantyStatusBadge status={current?.status ?? "unknown"} />
       </div>
 
@@ -111,27 +112,27 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
 
       <div className="mt-3 divide-y divide-line">
         <WarrantyInput
-          label="Purchased"
+          label={t`Purchased`}
           type="date"
           value={form.purchased_on}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, purchased_on: value }))}
         />
         <WarrantyInput
-          label="Expires"
+          label={t`Expires`}
           type="date"
           value={form.warranty_expires_on}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, warranty_expires_on: value }))}
         />
         <WarrantyInput
-          label="Vendor"
+          label={t`Vendor`}
           value={form.vendor_name}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, vendor_name: value }))}
         />
         <WarrantyInput
-          label="Contact"
+          label={t`Contact`}
           value={form.vendor_contact}
           disabled={disabled || save.isPending}
           onChange={(value) => setForm((currentForm) => ({ ...currentForm, vendor_contact: value }))}
@@ -143,7 +144,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
       {save.error ? <ErrorBlock error={save.error} /> : null}
 
       <div className="mt-3 border-t border-line pt-3">
-        <h5 className="title-section">Documents</h5>
+        <h5 className="title-section">{t`Documents`}</h5>
         {documents.length ? (
           <div className="mt-2 grid gap-2">
             {documents.map((document) => (
@@ -151,8 +152,7 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
                 <span className="min-w-0 flex-1 break-words text-ink">{document.original_filename}</span>
                 <span className="tabular-nums text-muted">{formatBytes(document.size_bytes)}</span>
                 <button type="button" className="desk-button text-xs" onClick={() => openDocument(document.id)}>
-                  View
-                </button>
+                  {t`View`}</button>
                 {!disabled ? (
                   <button
                     type="button"
@@ -160,20 +160,19 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
                     disabled={remove.isPending}
                     onClick={() => setDeleteId(document.id)}
                   >
-                    Remove…
-                  </button>
+                    {t`Remove…`}</button>
                 ) : null}
               </div>
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-xs text-muted">No documents attached.</p>
+          <p className="mt-2 text-xs text-muted">{t`No documents attached.`}</p>
         )}
 
         {!disabled ? (
           current ? (
             <div className="mt-2">
-              <label htmlFor={inputId} className="sr-only">Add warranty documents</label>
+              <label htmlFor={inputId} className="sr-only">{t`Add warranty documents`}</label>
               <input
                 id={inputId}
                 ref={inputRef}
@@ -187,16 +186,16 @@ export function WarrantySection({ hostKind, hostId, disabled = false }: Warranty
                 }}
                 className="block min-h-11 w-full max-w-full min-w-0 text-xs text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-accent file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-on-accent"
               />
-              {upload.isPending ? <p className="mt-1 text-xs text-muted">Uploading…</p> : null}
+              {upload.isPending ? <p className="mt-1 text-xs text-muted">{t`Uploading…`}</p> : null}
             </div>
           ) : (
-            <p className="mt-2 text-xs text-muted">Save warranty details first to attach documents.</p>
+            <p className="mt-2 text-xs text-muted">{t`Save warranty details first to attach documents.`}</p>
           )
         ) : null}
         {documentError ? <p className="mt-2 text-xs text-danger">{documentError}</p> : null}
         {remove.error instanceof Error ? <p className="mt-2 text-xs text-danger">{remove.error.message}</p> : null}
       </div>
-      <ConfirmDialog open={deleteId !== null} title="Remove warranty document?" message="The file will no longer be attached to this warranty." confirmLabel="Remove" tone="danger" pending={remove.isPending} onCancel={() => setDeleteId(null)} onConfirm={() => { if (deleteId !== null) remove.mutate(deleteId); }} />
+      <ConfirmDialog open={deleteId !== null} title={t`Remove warranty document?`} message={t`The file will no longer be attached to this warranty.`} confirmLabel={t`Remove`} tone="danger" pending={remove.isPending} onCancel={() => setDeleteId(null)} onConfirm={() => { if (deleteId !== null) remove.mutate(deleteId); }} />
     </section>
   );
 }

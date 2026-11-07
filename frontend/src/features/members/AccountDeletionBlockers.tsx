@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { DeletionBlocker } from "./accountDeletionApi";
 
 const destinations: Record<string, [string, string]> = {
@@ -22,8 +23,8 @@ export function AccountDeletionBlockers({ blockers, slug }: { blockers: Deletion
       : row.code === "last_manager" ? base.replace(/\/member\/?$/, "/admin/members")
       : `${base}/${screen}`;
     return <li key={`${row.code}-${row.makerspace_id}-${index}`} className="rounded-xl border border-line p-3">
-      <p>{row.detail}{row.count > 1 ? ` (${row.count})` : ""}{row.makerspace_id ? ` — Makerspace ${row.makerspace_id}` : ""}</p>
-      <a className="desk-button mt-2 inline-flex" href={href}>{row.organization_id ? "Manage organization governors" : label}</a>
+      <p>{row.detail}{row.count > 1 ? ` (${row.count})` : ""}{row.makerspace_id ? t` — Makerspace ${row.makerspace_id}` : ""}</p>
+      <a className="desk-button mt-2 inline-flex" href={href}>{row.organization_id ? t`Manage organization governors` : label}</a>
     </li>;
   })}</ul>;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -151,7 +152,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
         }
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "QR scanner could not start.");
+        setError(err instanceof Error ? err.message : t`QR scanner could not start.`);
         stopScanner();
       } finally {
         isDetectingRef.current = false;
@@ -164,7 +165,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
       // opaque "Cannot read properties of undefined" instead of a clear message.
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error(
-          "Camera needs a secure connection (https:// or localhost). Open this site over HTTPS or on the same machine to scan."
+          t`Camera needs a secure connection (https:// or localhost). Open this site over HTTPS or on the same machine to scan.`
         );
       }
       try {
@@ -202,7 +203,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
         intervalRef.current = window.setInterval(detect, 400);
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Camera access was denied.");
+        setError(err instanceof Error ? err.message : t`Camera access was denied.`);
       }
     };
 
@@ -221,13 +222,12 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   return createPortal(
     <div ref={layerRef} inert={!amTop} className="sw-camera-layer fixed inset-0 z-[100] flex items-stretch justify-center bg-ink/70 sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
       <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="sw-camera-panel flex h-dvh w-full flex-col gap-3 overflow-y-auto overscroll-contain bg-panel pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] shadow-overlay outline-none sm:h-auto sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg sm:border sm:border-line sm:p-4">
-        <h2 id={titleId} className="sr-only">QR scanner</h2>
+        <h2 id={titleId} className="sr-only">{t`QR scanner`}</h2>
         {error ? (
           <div className="my-auto grid gap-3 sm:my-0">
             <p className="text-sm text-danger">{error}</p>
             <button className="desk-button w-full" type="button" onClick={close}>
-              Close
-            </button>
+              {t`Close`}</button>
           </div>
         ) : (
           <div className="sw-camera flex min-h-0 flex-1 flex-col gap-3 sm:grid sm:flex-none">
@@ -241,15 +241,14 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
                 playsInline
               />
               {!ready ? (
-                <p className="absolute inset-0 grid place-items-center text-sm text-ink">Starting camera...</p>
+                <p className="absolute inset-0 grid place-items-center text-sm text-ink">{t`Starting camera...`}</p>
               ) : null}
             </div>
-            <p className="text-center text-sm text-muted">Point the camera at a QR code</p>
+            <p className="text-center text-sm text-muted">{t`Point the camera at a QR code`}</p>
             <CameraTorch stream={streamRef} ready={ready} />
             {feedback}
             <button className="desk-button-primary w-full" type="button" onClick={close}>
-              Done
-            </button>
+              {t`Done`}</button>
           </div>
         )}
       </div>

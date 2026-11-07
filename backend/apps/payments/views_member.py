@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import Count, IntegerField, OuterRef, Q, Subquery
 from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from rest_framework import status
@@ -118,7 +119,7 @@ class MemberPaymentHistoryView(APIView):
     def get(self, request, makerspace_id):
         if not member_may_see_own_charges(request.user, makerspace_id):
             return Response(
-                {"detail": "An active membership or an existing charge is required."},
+                {"detail": gettext("An active membership or an existing charge is required.")},
                 status=403,
             )
         filters = PaymentListFilterSerializer(data=request.query_params)

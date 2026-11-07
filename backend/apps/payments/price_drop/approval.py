@@ -13,6 +13,7 @@ A member cancelling a prepaid job before it starts (#171 (2), `job_cancelled`) i
 ordinary cancellation: the job's Machine Manager decides it like a staff cancellation.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
@@ -44,7 +45,7 @@ def require_decider(actor, payment, case):
     """Raise unless `actor` may approve or decline `case` on `payment`."""
     if needs_finance_approval(case):
         if not is_finance_approver(actor, payment.makerspace_id):
-            raise PermissionDenied("A price-difference refund is approved by the Space Manager or a finance admin.")
+            raise PermissionDenied(gettext("A price-difference refund is approved by the Space Manager or a finance admin."))
         return
     from apps.payments.reconciliation_authority import _require_subject_authority
     _require_subject_authority(actor, [payment])

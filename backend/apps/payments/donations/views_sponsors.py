@@ -4,6 +4,7 @@ Finance staff only, like donations (#100): reading needs `view_finance`, every w
 `record_payment`. Contact fields are scoped PII, masked for a superadmin without a window.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
@@ -240,7 +241,7 @@ class EventLinkListView(APIView):
         event_sponsor = EventSponsor.objects.filter(pk=payload.validated_data["event_sponsor"],
                                                     makerspace_id=makerspace_id).first()
         if event_sponsor is None:
-            raise NotFound("Event sponsor not found.")
+            raise NotFound(gettext("Event sponsor not found."))
         with tenant_write(sponsor.makerspace_id):
             link = sponsors.link_event_sponsor(sponsor, event_sponsor, actor=request.user)
         return Response(s.EventLinkSerializer(link).data, status=201)

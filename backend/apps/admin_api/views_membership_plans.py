@@ -5,6 +5,7 @@ Plan reads and term assignment require `MANAGE_MEMBERS`; plan edits require
 so a manager of another makerspace sees 404, never 403, and every one of them is gated
 by the `membership` module -- plans are community-membership behaviour (A7).
 """
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -74,7 +75,7 @@ class MembershipPlanListCreateView(APIView):
                              target=row, meta={"plan_id": row.pk, "name": row.name})
                 sync_plan_features(makerspace)
         except IntegrityError as exc:
-            raise ValidationError({"name": "A plan with this name or slug already exists."}) from exc
+            raise ValidationError({"name": gettext("A plan with this name or slug already exists.")}) from exc
         return Response(MembershipPlanSerializer(row).data, status=status.HTTP_201_CREATED)
 
 
@@ -109,7 +110,7 @@ class MembershipPlanDetailView(APIView):
                     from apps.payments.price_drop.triggers import after_plan_price
                     after_plan_price(request.user, row)
         except IntegrityError as exc:
-            raise ValidationError({"name": "A plan with this name or slug already exists."}) from exc
+            raise ValidationError({"name": gettext("A plan with this name or slug already exists.")}) from exc
         return Response(MembershipPlanSerializer(row).data)
 
 

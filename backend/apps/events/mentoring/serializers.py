@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 from apps.events.contributions.serializers import AggregateSerializer, CommandSerializer, StrictSerializer
 
@@ -88,9 +89,9 @@ class AssignmentInputSerializer(CommandSerializer):
         ids = attrs["team_ids"]
         manual_ids = [row["team_id"] for row in attrs["manual"]]
         if len(ids) != len(set(ids)) or len(manual_ids) != len(set(manual_ids)):
-            raise serializers.ValidationError("Team IDs must be distinct.")
+            raise serializers.ValidationError(gettext("Team IDs must be distinct."))
         if set(manual_ids) - set(ids) or (attrs["mode"] == "manual" and set(manual_ids) != set(ids)):
-            raise serializers.ValidationError({"manual": "Map every selected team exactly once in manual mode."})
+            raise serializers.ValidationError({"manual": gettext("Map every selected team exactly once in manual mode.")})
         return attrs
 
 

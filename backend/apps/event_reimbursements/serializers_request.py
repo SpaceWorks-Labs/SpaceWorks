@@ -1,4 +1,5 @@
 """Closed application-time request block shared by both canonical submit bridges."""
+from django.utils.translation import gettext
 from decimal import Decimal
 from rest_framework import serializers
 from apps.payments.currencies import normalize_supported_currency
@@ -26,7 +27,7 @@ class Currency(serializers.CharField):
         try:
             return normalize_supported_currency(value)
         except ValueError:
-            raise serializers.ValidationError("Unsupported currency.") from None
+            raise serializers.ValidationError(gettext("Unsupported currency.")) from None
 
 
 class FormDescriptor(ClosedSerializer):

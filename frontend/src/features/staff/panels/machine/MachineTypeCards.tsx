@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { EmptyState, ListRow, Skeleton, StatusPill } from "../../../../components/ui";
 import type { Identity } from "../../../../components/ui/types";
 import type { Machine, MachineType, MachineStatus } from "../../machinesApi";
@@ -17,7 +18,7 @@ type Props = {
 // and "what is not usable".
 const HIGHLIGHT: { status: MachineStatus; label: string; tone: "success" | "warn" | "danger" }[] = [
   { status: "running", label: "running", tone: "success" },
-  { status: "maintenance", label: "in maintenance", tone: "warn" },
+  { status: "maintenance", label: t`in maintenance`, tone: "warn" },
   { status: "offline", label: "offline", tone: "danger" },
 ];
 
@@ -46,7 +47,7 @@ export function MachineTypeCards({
 }: Props) {
   if (typesLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Loading machine types">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label={t`Loading machine types`}>
         {[0, 1, 2].map((slot) => (
           <Skeleton key={slot} className="h-28 w-full" />
         ))}
@@ -59,7 +60,7 @@ export function MachineTypeCards({
   // operator their console is empty when it is merely broken.
   if (!typesFailed && !machineTypes.length) {
     return (
-      <EmptyState message="No machine types available. Ask your space manager to configure your machine access." />
+      <EmptyState message={t`No machine types available. Ask your space manager to configure your machine access.`} />
     );
   }
 
@@ -82,9 +83,9 @@ export function MachineTypeCards({
               {/* A count is stated as fact, so it must not be stated while the fleet is
                   still loading or after the request failed. */}
               {machinesLoading ? (
-                <span className="tabular-nums text-xs text-muted">counting…</span>
+                <span className="tabular-nums text-xs text-muted">{t`counting…`}</span>
               ) : machinesFailed ? (
-                <span className="tabular-nums text-xs text-muted">count unavailable</span>
+                <span className="tabular-nums text-xs text-muted">{t`count unavailable`}</span>
               ) : (
                 <span className="chip">{owned.length} {owned.length === 1 ? "machine" : "machines"}</span>
               )}

@@ -6,6 +6,7 @@
   the standing payouts of an award never add up to more than the prize amount.
 """
 
+from django.utils.translation import gettext
 from decimal import Decimal
 
 from django.db.models import Sum
@@ -27,7 +28,7 @@ def payout_amount(award, recipient, entered):
             raise ProgrammeError("payout_exists", "This award already has a recorded payout. Reverse it first.")
         amount = entered or award.prize.amount_per_winner
         if not amount:
-            raise ValidationError({"amount": "This prize has no amount; enter what was paid."})
+            raise ValidationError({"amount": gettext("This prize has no amount; enter what was paid.")})
         return Decimal(amount)
     share = shares.filter(member_id=recipient).first()
     if share is None or share.state != "confirmed":
@@ -38,7 +39,7 @@ def payout_amount(award, recipient, entered):
     ceiling = award.prize.amount_per_winner or shares.aggregate(total=Sum("amount"))["total"]
     paid = _standing(award).aggregate(total=Sum("amount"))["total"] or Decimal("0")
     if paid + amount > ceiling:
-        raise ValidationError({"amount": f"Payouts for this prize would exceed its amount ({ceiling})."})
+        raise ValidationError({"amount": gettext('Payouts for this prize would exceed its amount ({ceiling}).').format(ceiling=ceiling)})
     return amount
 
 

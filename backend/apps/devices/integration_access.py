@@ -9,6 +9,7 @@ binding names an active machine whose type carries an ENABLED `printer_agent` bi
 the same makerspace. That chain is resolved under the caller's locks every time.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.accounts import rbac
@@ -43,7 +44,7 @@ def authorize_type_staff(actor, makerspace_id, machine_type):
     if machine_type.makerspace_id not in (None, makerspace_id):
         raise NotFound()
     if not covers_type(actor, makerspace_id, machine_type):
-        raise PermissionDenied("Machine type is outside your management scope.")
+        raise PermissionDenied(gettext("Machine type is outside your management scope."))
 
 
 def device_binding(device, *, lock=False):

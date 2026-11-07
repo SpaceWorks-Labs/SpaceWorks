@@ -159,6 +159,8 @@ def feature_enabled(makerspace, key):
     return configuration_feature_enabled(makerspace, key)
 
 def bootstrap_payload(makerspace):
+    from config.locale_registry import locale_list_payload
+
     from apps.makerspaces.editions import current_edition
     from apps.integrations.messaging.resolver import resolve_sender
     from apps.payments.availability import charges_tracked
@@ -240,6 +242,9 @@ def bootstrap_payload(makerspace):
         "theme": theme,
         "branding": branding,
         "email_enabled": email_enabled(),
+        # Phase 8 i18n: the space's default language and what the switcher may offer.
+        "default_locale": makerspace.default_locale,
+        "supported_locales": locale_list_payload(),
         "messaging": {channel: module_enabled(makerspace, channel) and resolve_sender(makerspace, channel) is not None
                       for channel in ("sms", "whatsapp")},
         "public_api": {

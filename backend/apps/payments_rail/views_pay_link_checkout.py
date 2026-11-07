@@ -4,6 +4,7 @@ The checkout is the charge's ordinary hosted page; the return URL is the public 
 completion page, because an account-less payer has no member area to come back to.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -44,7 +45,7 @@ class PublicPayLinkCheckoutView(APIView):
             with tenant_write(payment.makerspace_id):
                 checkout_url = create_checkout_url(payment.pk, actor=link.created_by)
         except PaymentRailConflict:
-            return Response({"detail": "The charge already uses a different online rail.",
+            return Response({"detail": gettext("The charge already uses a different online rail."),
                              "code": "payment_rail_conflict"}, status=status.HTTP_409_CONFLICT)
         except Exception:  # noqa: BLE001 - provider failures answer a typed 503
             return Response(UNAVAILABLE, status=status.HTTP_503_SERVICE_UNAVAILABLE)

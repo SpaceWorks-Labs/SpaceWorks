@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ErrorText, Modal } from "../../../../components/ui";
@@ -24,13 +25,13 @@ export function StaffRoleFields({ policy, draft, onChange }: {
         onChange({ roles, machine_type_ids: roles.includes("machine_manager") ? draft.machine_type_ids : [] });
       }} />
     {draft.roles.includes("machine_manager") ? <fieldset className="grid gap-2">
-      <legend className="text-sm font-semibold text-ink">Assigned machine types</legend>
-      <p className="text-sm text-muted">No selected types means no machines. A type includes machines added to it later.</p>
+      <legend className="text-sm font-semibold text-ink">{t`Assigned machine types`}</legend>
+      <p className="text-sm text-muted">{t`No selected types means no machines. A type includes machines added to it later.`}</p>
       {policy.machine_types.length ? policy.machine_types.map(type => <label key={type.id} className="flex min-h-11 items-center gap-3 text-sm">
         <input type="checkbox" className="h-5 w-5 accent-accent" checked={draft.machine_type_ids.includes(type.id)} onChange={e => onChange({ ...draft,
           machine_type_ids: e.target.checked ? [...draft.machine_type_ids, type.id] : draft.machine_type_ids.filter(id => id !== type.id),
         })} />{type.name}
-      </label>) : <p className="text-sm text-muted">This makerspace has no machine types yet.</p>}
+      </label>) : <p className="text-sm text-muted">{t`This makerspace has no machine types yet.`}</p>}
     </fieldset> : null}
   </>;
 }
@@ -45,16 +46,16 @@ export function StaffRoleEditor({ space, policy, row, onClose, onSaved }: {
   });
   const valid = validRoleSet(policy, draft.roles);
   const name = row.display_name || row.username;
-  return <Modal open size="xl" title={`Roles for ${name}`} onClose={() => { if (!save.isPending) onClose(); }}>
+  return <Modal open size="xl" title={t`Roles for ${name}`} onClose={() => { if (!save.isPending) onClose(); }}>
     <form className="grid gap-4" onSubmit={e => { e.preventDefault(); if (valid && !save.isPending) save.mutate(); }}>
       <fieldset disabled={save.isPending} className="grid min-w-0 gap-4">
-        <legend className="sr-only">Staff roles for {name}</legend>
+        <legend className="sr-only">{t`Staff roles for ${name}`}</legend>
         <StaffRoleFields policy={policy} draft={draft} onChange={setDraft} />
       </fieldset>
       {save.error ? <ErrorText message={staffRoleErrorText(save.error)} /> : null}
       <div className="flex flex-wrap justify-end gap-2">
-        <button type="button" className="desk-button" disabled={save.isPending} onClick={onClose}>Cancel</button>
-        <button className="desk-button-primary" disabled={save.isPending || !valid}>{save.isPending ? "Saving…" : "Save roles"}</button>
+        <button type="button" className="desk-button" disabled={save.isPending} onClick={onClose}>{t`Cancel`}</button>
+        <button className="desk-button-primary" disabled={save.isPending || !valid}>{save.isPending ? t`Saving…` : t`Save roles`}</button>
       </div>
     </form>
   </Modal>;

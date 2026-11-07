@@ -1,8 +1,9 @@
+import { t } from "@lingui/core/macro";
 // Job-flow statuses whose backend word would read wrongly to staff (#141).
 const LABELS: Record<string, string> = {
-  changes_requested: "Needs changes",
-  quoted: "Quote sent",
-  uncollected: "Not collected",
+  changes_requested: t`Needs changes`,
+  quoted: t`Quote sent`,
+  uncollected: t`Not collected`,
 };
 
 /** Keep backend status words while following the product’s sentence-case voice. */

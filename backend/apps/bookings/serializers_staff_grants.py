@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from .booking_permissions import PERMISSIONS
@@ -25,7 +26,7 @@ class BookingStaffGrantPermissionsSerializer(serializers.Serializer):
 
     def validate_permissions(self, value):
         if len(value) != len(set(value)):
-            raise serializers.ValidationError("Permissions must be distinct.")
+            raise serializers.ValidationError(gettext("Permissions must be distinct."))
         return sorted(value)
 
 

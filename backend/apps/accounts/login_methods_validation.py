@@ -1,5 +1,6 @@
 """Validate the complete proposed policy, including simultaneous provider removals."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 from apps.accounts.models import User
@@ -62,7 +63,5 @@ def validate_login_methods(proposed, *, current=None, social_settings=None,
     stranded_users = len(users)
     if stranded_users:
         raise ValidationError(
-            f"This change would lock out {stranded_users} account(s) with no remaining "
-            "available credential. Set a usable password with password sign-in enabled, "
-            "or link a configured provider that will remain enabled first."
+            gettext('This change would lock out {stranded_users} account(s) with no remaining available credential. Set a usable password with password sign-in enabled, or link a configured provider that will remain enabled first.').format(stranded_users=stranded_users)
         )

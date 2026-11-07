@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from collections.abc import Mapping
 
 from rest_framework import serializers
@@ -16,5 +17,5 @@ class EventWebsitePublishInput(serializers.Serializer):
 
     def validate(self, data):
         if data["publish_website"] and "website_revision" not in data:
-            raise serializers.ValidationError({"website_revision": "Reload the saved website before publishing."})
+            raise serializers.ValidationError({"website_revision": gettext("Reload the saved website before publishing.")})
         return data

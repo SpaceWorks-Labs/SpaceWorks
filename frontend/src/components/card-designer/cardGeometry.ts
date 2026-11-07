@@ -1,4 +1,5 @@
 // Card stocks, snapping and the safe area. Mirrors apps/card_designs/stocks.py.
+import { t } from "@lingui/core/macro";
 import type { Layer, Side } from "./cardTypes";
 
 export const PT_TO_MM = 0.3528;
@@ -6,18 +7,18 @@ export const SAFE_AREA_MM = 3;
 export const GRID_SIZES_MM = [1, 2, 5, 10] as const;
 
 export const STOCKS: { key: string; label: string; width: number; height: number }[] = [
-  { key: "cr80-landscape", label: "ID card (CR80), landscape", width: 85.6, height: 53.98 },
-  { key: "cr80-portrait", label: "ID card (CR80), portrait", width: 53.98, height: 85.6 },
-  { key: "cr79-landscape", label: "Adhesive card (CR79), landscape", width: 83.9, height: 52.1 },
-  { key: "cr79-portrait", label: "Adhesive card (CR79), portrait", width: 52.1, height: 83.9 },
-  { key: "cr100-landscape", label: "Large ID (CR100), landscape", width: 98.5, height: 67 },
-  { key: "cr100-portrait", label: "Large ID (CR100), portrait", width: 67, height: 98.5 },
-  { key: "a6-portrait", label: "A6 badge, portrait", width: 105, height: 148 },
-  { key: "a6-landscape", label: "A6 badge, landscape", width: 148, height: 105 },
-  { key: "4x3", label: "4 × 3 in badge", width: 101.6, height: 76.2 },
-  { key: "3x4", label: "3 × 4 in badge", width: 76.2, height: 101.6 },
-  { key: "4x6", label: "4 × 6 in badge", width: 101.6, height: 152.4 },
-  { key: "custom", label: "Custom size", width: 85.6, height: 53.98 },
+  { key: "cr80-landscape", label: t`ID card (CR80), landscape`, width: 85.6, height: 53.98 },
+  { key: "cr80-portrait", label: t`ID card (CR80), portrait`, width: 53.98, height: 85.6 },
+  { key: "cr79-landscape", label: t`Adhesive card (CR79), landscape`, width: 83.9, height: 52.1 },
+  { key: "cr79-portrait", label: t`Adhesive card (CR79), portrait`, width: 52.1, height: 83.9 },
+  { key: "cr100-landscape", label: t`Large ID (CR100), landscape`, width: 98.5, height: 67 },
+  { key: "cr100-portrait", label: t`Large ID (CR100), portrait`, width: 67, height: 98.5 },
+  { key: "a6-portrait", label: t`A6 badge, portrait`, width: 105, height: 148 },
+  { key: "a6-landscape", label: t`A6 badge, landscape`, width: 148, height: 105 },
+  { key: "4x3", label: t`4 × 3 in badge`, width: 101.6, height: 76.2 },
+  { key: "3x4", label: t`3 × 4 in badge`, width: 76.2, height: 101.6 },
+  { key: "4x6", label: t`4 × 6 in badge`, width: 101.6, height: 152.4 },
+  { key: "custom", label: t`Custom size`, width: 85.6, height: 53.98 },
 ];
 
 export function stockSize(stock: string, width?: number, height?: number) {

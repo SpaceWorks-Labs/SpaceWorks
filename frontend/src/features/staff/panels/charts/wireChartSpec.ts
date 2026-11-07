@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReportChartSpec } from "../analyticsApi";
 import type { ChartRecord, ChartSpec } from "./chartSpec";
 
@@ -33,9 +34,9 @@ export function wireChartSpec(spec: ChartSpec | ReportChartSpec, hint?: string, 
 export function funnelInput(spec: ChartSpec, rows: readonly ChartRecord[]) {
   if (spec.kind !== "funnel" || spec.value_fields.length < 2) return { spec, rows };
   return {
-    spec: { ...spec, x: { field: "__chart_stage", kind: "category" as const, label: "Stage" },
+    spec: { ...spec, x: { field: "__chart_stage", kind: "category" as const, label: t`Stage` },
       series_fields: [...spec.series_fields, spec.x.field], truncation: undefined,
-      value_fields: [{ field: "__chart_value", unit: "values", label: "Stages", unit_field: "__chart_unit" }] },
+      value_fields: [{ field: "__chart_value", unit: "values", label: t`Stages`, unit_field: "__chart_unit" }] },
     rows: rows.flatMap(row => spec.value_fields.map(field => ({ ...row, __chart_stage: field.label ?? field.field,
       __chart_value: row[field.field], __chart_unit: field.unit_field ? row[field.unit_field] : field.unit }))),
   };

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { DetailLayout } from '../../../components/layouts'
@@ -25,31 +27,31 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
     command.mutate({ path: `${path}${action}/`, version: row.version, fields },
       { onSuccess: () => { if (['release', 'resolve'].includes(action) && surface === 'admin') onClose() } })
   }
-  return <DetailLayout title={row?.category ?? 'Help request'} back={{ label: 'Back to queue', onClick: onClose }}
+  return <DetailLayout title={row?.category ?? t`Help request`} back={{ label: t`Back to queue`, onClick: onClose }}
     status={row ? <StatusPill label={row.state} tone={row.state === 'resolved' ? 'success' : 'neutral'} /> : undefined}
     state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
     main={<div className="grid gap-4"><Card><p className="whitespace-pre-wrap break-words">{row?.summary}</p>
-      <p className="mt-3 text-sm text-muted">{row?.team_alias}{row?.zone?.table ? ` · Table ${row.zone.table}` : ''}</p>
-      {row?.claim_expires_at ? <p role="status" className="mt-3 text-sm text-muted">Claim expires {new Date(row.claim_expires_at).toLocaleTimeString()}</p> : null}
+      <p className="mt-3 text-sm text-muted">{row?.team_alias}{row?.zone?.table ? t` · Table ${row.zone.table}` : ''}</p>
+      {row?.claim_expires_at ? <p role="status" className="mt-3 text-sm text-muted">{t`Claim expires ${new Date(row.claim_expires_at).toLocaleTimeString(formatLocale())}`}</p> : null}
       {row?.organizer_contact_action ? <p className="mt-3 whitespace-pre-wrap text-sm">{row.organizer_contact_action}</p> : null}</Card>
       {command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
-      {row?.allowed_actions.some(x => ['resolve', 'reopen'].includes(x)) ? <Field label="Resolution or follow-up note">
+      {row?.allowed_actions.some(x => ['resolve', 'reopen'].includes(x)) ? <Field label={t`Resolution or follow-up note`}>
         <textarea className="desk-input min-h-24" maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></Field> : null}
       <div className="flex flex-wrap gap-2">{['release', 'resolve', 'reopen', 'cancel', 'renew'].filter(action => row?.allowed_actions.includes(action)).map(action =>
-        <ActionControl key={action} action={{ label: action === 'cancel' ? 'Cancel help request' : action.replace(/^./, x => x.toUpperCase()),
+        <ActionControl key={action} action={{ label: action === 'cancel' ? t`Cancel help request` : action.replace(/^./, x => x.toUpperCase()),
           pending: command.isPending, disabled: ['resolve', 'reopen'].includes(action) && !note.trim(),
           disabledReason: ['resolve', 'reopen'].includes(action) && !note.trim() ? 'Add a short note first.' : undefined,
-          confirm: action === 'cancel' ? { title: 'Cancel this help request?', message: 'A claimed mentor will be released. Your team stays together.' } : undefined,
+          confirm: action === 'cancel' ? { title: t`Cancel this help request?`, message: t`A claimed mentor will be released. Your team stays together.` } : undefined,
           onClick: () => perform(action) }} />)}</div>
-      <section aria-label="Comments" className="grid gap-3"><h2 className="title-section">Conversation</h2>
-        {comments.isPending ? <p role="status">Loading comments…</p> : null}
+      <section aria-label={t`Comments`} className="grid gap-3"><h2 className="title-section">{t`Conversation`}</h2>
+        {comments.isPending ? <p role="status">{t`Loading comments…`}</p> : null}
         {comments.error ? <p role="alert" className="text-danger">{errorText(comments.error)}</p> : null}
-        {comments.data?.results.map(item => <Card key={item.id}><p className="mb-2 text-xs text-muted">{item.origin === 'team' ? 'Team' : 'Mentor'} · {new Date(item.created_at).toLocaleString()}</p><p className="whitespace-pre-wrap break-words">{item.body}</p></Card>)}
+        {comments.data?.results.map(item => <Card key={item.id}><p className="mb-2 text-xs text-muted">{item.origin === 'team' ? t`Team` : t`Mentor`} · {new Date(item.created_at).toLocaleString(formatLocale())}</p><p className="whitespace-pre-wrap break-words">{item.body}</p></Card>)}
         <Pagination page={page} totalPages={Math.ceil((comments.data?.count ?? 0) / 24)} onChange={setPage} />
         {row?.allowed_actions.includes('comment') ? <form className="grid gap-3" onSubmit={event => {
           event.preventDefault()
           command.mutate({ path: `${path}comments/`, version: row.version, fields: { body } }, { onSuccess: () => setBody('') })
-        }}><Field label="Add a comment"><textarea className="desk-input min-h-24" maxLength={2000} required value={body} onChange={event => setBody(event.target.value)} /></Field>
-          <button className="desk-button min-h-11 justify-self-start" type="submit" disabled={command.isPending}>Send comment</button></form> : null}
+        }}><Field label={t`Add a comment`}><textarea className="desk-input min-h-24" maxLength={2000} required value={body} onChange={event => setBody(event.target.value)} /></Field>
+          <button className="desk-button min-h-11 justify-self-start" type="submit" disabled={command.isPending}>{t`Send comment`}</button></form> : null}
       </section></div>} />
 }

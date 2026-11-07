@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { MfaChallenge, MfaFactor } from "./mfaApi";
 
 /**
@@ -18,10 +19,10 @@ export function usableFactors(challenge: MfaChallenge, passkeysSupported: boolea
 }
 
 export const SWITCH_LABEL: Record<MfaFactor, string> = {
-  totp: "Use an authenticator code instead",
-  passkey: "Use a passkey instead",
-  recovery: "Use a recovery code instead",
-  email_code: "Email me a code instead",
+  totp: t`Use an authenticator code instead`,
+  passkey: t`Use a passkey instead`,
+  recovery: t`Use a recovery code instead`,
+  email_code: t`Email me a code instead`,
 };
 
 const RISK = "We don't recognise this device or network, so we need one more check.";
@@ -30,22 +31,22 @@ const RISK = "We don't recognise this device or network, so we need one more che
 export function stepCopy(challenge: MfaChallenge, factor: MfaFactor) {
   const risk = challenge.purpose === "risk" ? `${RISK} ` : "";
   if (challenge.enrollment_required) {
-    return { title: "Set up two-step sign-in", label: "Authenticator code",
-      body: "Add Space Works to your authenticator app to secure this account. Staff need two-step sign-in before the staff console opens. Once you're signed in you can also add a passkey from Account security." };
+    return { title: t`Set up two-step sign-in`, label: t`Authenticator code`,
+      body: t`Add Space Works to your authenticator app to secure this account. Staff need two-step sign-in before the staff console opens. Once you're signed in you can also add a passkey from Account security.` };
   }
   if (factor === "passkey") {
-    return { title: "Use your passkey", label: "",
-      body: `${risk}Confirm with the passkey on this device, or a phone or security key that holds it.` };
+    return { title: t`Use your passkey`, label: "",
+      body: t`${risk}Confirm with the passkey on this device, or a phone or security key that holds it.` };
   }
   if (factor === "recovery") {
-    return { title: "Use a recovery code", label: "Recovery code", body: `${risk}Enter one of the recovery codes you saved. Each code works once.` };
+    return { title: t`Use a recovery code`, label: t`Recovery code`, body: t`${risk}Enter one of the recovery codes you saved. Each code works once.` };
   }
   if (factor === "email_code") {
-    return { title: "Check your email", label: "Emailed code",
-      body: `${risk}We emailed you a 6-digit code. It works once and expires after 10 minutes.` };
+    return { title: t`Check your email`, label: t`Emailed code`,
+      body: t`${risk}We emailed you a 6-digit code. It works once and expires after 10 minutes.` };
   }
   const legacy = !challenge.factors;
-  return { title: "Enter your 6-digit code", label: legacy ? "Authenticator or recovery code" : "Authenticator code",
-    body: legacy ? "Enter the code from your authenticator app, or one of your recovery codes."
-      : `${risk}Enter the code from your authenticator app.` };
+  return { title: t`Enter your 6-digit code`, label: legacy ? t`Authenticator or recovery code` : t`Authenticator code`,
+    body: legacy ? t`Enter the code from your authenticator app, or one of your recovery codes.`
+      : t`${risk}Enter the code from your authenticator app.` };
 }

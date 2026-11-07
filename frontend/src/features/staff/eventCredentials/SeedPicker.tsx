@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { staffRequest, staffRequestBlob } from "../../../lib/api";
@@ -23,15 +24,15 @@ export function SeedPicker({ eventId, version, kind, stock, onInstall }: {
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
   const error = query.error || install.error || preview.error;
   return <fieldset className="grid gap-3 rounded-control border border-line p-3" disabled={install.isPending || preview.isPending}>
-    <legend className="font-semibold">Default designs</legend>
-    <label className="grid gap-1 text-sm">Theme<select className="desk-input" value={theme} onChange={(event) => setTheme(event.target.value)}><option value="light">Light</option><option value="dark">Dark</option></select></label>
-    {query.isPending ? <p role="status">Loading designs?</p> : null}
+    <legend className="font-semibold">{t`Default designs`}</legend>
+    <label className="grid gap-1 text-sm">{t`Theme`}<select className="desk-input" value={theme} onChange={(event) => setTheme(event.target.value)}><option value="light">{t`Light`}</option><option value="dark">{t`Dark`}</option></select></label>
+    {query.isPending ? <p role="status">{t`Loading designs?`}</p> : null}
     {query.data?.results.map((seed) => <div className="flex flex-wrap items-center gap-2" key={seed.seed_id}>
       <span className="text-sm">{seed.seed_id.replace(/-/g, " ")}</span>
-      <button className="desk-button" type="button" onClick={() => preview.mutate(seed)}>Preview sample</button>
-      <button className="desk-button" type="button" disabled={version === undefined} onClick={() => install.mutate(seed)}>Install design</button>
+      <button className="desk-button" type="button" onClick={() => preview.mutate(seed)}>{t`Preview sample`}</button>
+      <button className="desk-button" type="button" disabled={version === undefined} onClick={() => install.mutate(seed)}>{t`Install design`}</button>
     </div>)}
-    {url ? <><iframe className="h-80 w-full border border-line" src={url} title="Default design sample PDF" /><button className="desk-button" type="button" onClick={() => setUrl(null)}>Close sample</button></> : null}
+    {url ? <><iframe className="h-80 w-full border border-line" src={url} title={t`Default design sample PDF`} /><button className="desk-button" type="button" onClick={() => setUrl(null)}>{t`Close sample`}</button></> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}
   </fieldset>;
 }

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.settings import api_settings
@@ -44,5 +45,5 @@ class BookingBroadcastListSerializer(serializers.Serializer):
 class BookingBroadcastActionSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         if data:
-            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: ["This action accepts no fields."]})
+            raise serializers.ValidationError({api_settings.NON_FIELD_ERRORS_KEY: [gettext("This action accepts no fields.")]})
         return super().to_internal_value(data)

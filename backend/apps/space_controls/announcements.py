@@ -7,6 +7,7 @@ servable spaces, as platform mail. Creation and cancellation are superadmin-only
 audited at platform level (no tenant: one announcement can target every space).
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -46,11 +47,11 @@ def create(actor, data):
     ids = sorted(set(data.get("makerspace_ids") or []))
     selected = data["audience"] == A.Audience.SELECTED_SPACES
     if selected and not ids:
-        raise ValidationError({"makerspace_ids": "Choose at least one space."})
+        raise ValidationError({"makerspace_ids": gettext("Choose at least one space.")})
     with transaction.atomic():
         spaces = list(Makerspace.objects.filter(pk__in=ids)) if selected else []
         if len(spaces) != len(ids if selected else []):
-            raise ValidationError({"makerspace_ids": "Choose existing spaces."})
+            raise ValidationError({"makerspace_ids": gettext("Choose existing spaces.")})
         row = A.objects.create(
             title=data["title"], body=data["body"], severity=data["severity"], audience=data["audience"],
             starts_at=data.get("starts_at") or timezone.now(), ends_at=data.get("ends_at"),
@@ -105,7 +106,7 @@ def send_due_emails(now=None):
         count = 0
         for email in emails:
             try:
-                dispatch_email(to_email=email, subject=f"Space Works: {row.title}", text_body=row.body,
+                dispatch_email(to_email=email, subject=gettext('Space Works: {title}').format(title=row.title), text_body=row.body,
                                makerspace=None, connection="platform", stream="governance",
                                event="platform_announcement", audience="space_manager",
                                persist_body=False, sync=True)

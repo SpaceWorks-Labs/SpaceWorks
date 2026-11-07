@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.integrations.notification_cutover import guarded, sending_allowed
 import logging
 
@@ -160,8 +161,8 @@ def _deliver(log):
                 level="warning",
                 event="email.failed",
                 source_intent=email_failure_intent(log),
-                title="Email delivery failed",
-                body=f"Email log #{log.pk} delivery failed.",
+                title=gettext("Email delivery failed"),
+                body=gettext('Email log #{pk} delivery failed.').format(pk=log.pk),
             )
     else:
         log.status = EmailLog.Status.SENT

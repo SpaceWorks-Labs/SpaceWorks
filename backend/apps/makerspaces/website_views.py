@@ -1,5 +1,6 @@
 """Shared embed, share, crawler and discover serving; no domain imports."""
 
+from django.utils.translation import gettext
 from dataclasses import asdict
 from xml.sax.saxutils import escape
 
@@ -31,7 +32,7 @@ class DiscoveryFilters(serializers.Serializer):
 
     def validate(self, data):
         if data.get("date_from") and data.get("date_to") and data["date_from"] > data["date_to"]:
-            raise serializers.ValidationError("The end date must follow the start date.")
+            raise serializers.ValidationError(gettext("The end date must follow the start date."))
         return data
 
 

@@ -5,6 +5,7 @@ space's `finance.ledger` switch is off. Recording is always possible through
 `ledger_api` from other workflows; these routes are the staff screens.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -87,7 +88,7 @@ class LedgerEntryListView(APIView):
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
         if not view.may_record(data["domain"], data.get("machine_type_id")):
-            raise PermissionDenied("You cannot record money in this area.")
+            raise PermissionDenied(gettext("You cannot record money in this area."))
         event = None
         if data.get("event_id"):
             from apps.events.models import Event
@@ -119,7 +120,7 @@ class LedgerEntryVoidView(APIView):
         _space, view = finance_space(request, makerspace_id)
         entry = _entry(request, makerspace_id, entry_id, view)
         if not view.may_record(entry.domain, entry.machine_type_id):
-            raise PermissionDenied("You cannot void money in this area.")
+            raise PermissionDenied(gettext("You cannot void money in this area."))
         payload = VoidSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         return Response(LedgerEntrySerializer(ledger_api.void(entry, request.user,
@@ -141,7 +142,7 @@ class ReceiptUploadView(APIView):
 
         space, view = finance_space(request, makerspace_id)
         if not (view.record_everything or view.record_domains):
-            raise PermissionDenied("You cannot record money in this space.")
+            raise PermissionDenied(gettext("You cannot record money in this space."))
         payload = ReceiptUploadRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         try:
@@ -149,7 +150,7 @@ class ReceiptUploadView(APIView):
                                         content_type=payload.validated_data["content_type"],
                                         size_bytes=payload.validated_data.get("size_bytes"))
         except StorageUnavailable:
-            return Response({"detail": "File storage is unavailable.", "code": "storage_unavailable"}, status=503)
+            return Response({"detail": gettext("File storage is unavailable."), "code": "storage_unavailable"}, status=503)
         return Response(data, status=201)
 
 
@@ -164,11 +165,11 @@ class ReceiptUrlView(APIView):
         _space, view = finance_space(request, makerspace_id)
         entry = _entry(request, makerspace_id, entry_id, view)
         if entry.receipt_id is None:
-            return Response({"detail": "This entry has no receipt.", "code": "receipt_missing"}, status=404)
+            return Response({"detail": gettext("This entry has no receipt."), "code": "receipt_missing"}, status=404)
         try:
             return Response({"url": presigned_get_url(entry.receipt.object_key)})
         except StorageUnavailable:
-            return Response({"detail": "File storage is unavailable.", "code": "storage_unavailable"}, status=503)
+            return Response({"detail": gettext("File storage is unavailable."), "code": "storage_unavailable"}, status=503)
 
 
 class OpeningBalanceView(APIView):
@@ -181,7 +182,7 @@ class OpeningBalanceView(APIView):
     def get(self, request, makerspace_id):
         space, view = finance_space(request, makerspace_id)
         if not view.everything:
-            raise PermissionDenied("Opening balances are for finance staff.")
+            raise PermissionDenied(gettext("Opening balances are for finance staff."))
         on = OpeningBalanceSerializer().fields["fy_start"].to_internal_value(request.query_params["fy"]) \
             if request.query_params.get("fy") else local_now(space).date()
         rows = ledger_entries.opening_balances(space.pk, ledger_entries.fy_for(space, on))
@@ -194,7 +195,7 @@ class OpeningBalanceView(APIView):
     def put(self, request, makerspace_id):
         space, view = finance_space(request, makerspace_id)
         if not view.record_everything:
-            raise PermissionDenied("Opening balances are set by finance staff.")
+            raise PermissionDenied(gettext("Opening balances are set by finance staff."))
         payload = OpeningBalanceSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -23,7 +24,7 @@ export function EventCheckInStationPage() {
 
   async function submit(pin: string) { setPending(true); setError(null);
     try { await startStationSession(stationToken, pin); setActive(true); }
-    catch { setError("The station credential is invalid or outside its event window."); }
+    catch { setError(t`The station credential is invalid or outside its event window.`); }
     finally { setPending(false); }
   }
 
@@ -32,7 +33,7 @@ export function EventCheckInStationPage() {
       await wipeOfflineState(scope);
       try { await endStationSession(stationToken); } catch { /* cookie still expires server-bound */ }
       setActive(false); setPendingCount(null);
-    } catch { setPendingCount(null); setError("Couldn't wipe local check-ins. Keep this station open and try again."); }
+    } catch { setPendingCount(null); setError(t`Couldn't wipe local check-ins. Keep this station open and try again.`); }
   }
 
   async function requestExit() {
@@ -40,17 +41,17 @@ export function EventCheckInStationPage() {
       const stored = await loadOfflineState(scope);
       if (stored?.operations.length) setPendingCount(stored.operations.length);
       else await exit();
-    } catch { setError("Couldn't read local check-ins. Keep this station open and try again."); }
+    } catch { setError(t`Couldn't read local check-ins. Keep this station open and try again.`); }
   }
 
-  return <KioskLayout context={{ title: active ? "Event check-in station" : "Enter the station PIN", subtitle: "Door check-in · Station" }}
+  return <KioskLayout context={{ title: active ? t`Event check-in station` : t`Enter the station PIN`, subtitle: t`Door check-in · Station` }}
     connection={{ online }} state={{ status: "ready" }} mode={active ? "work" : "lock"}
-    lock={{ title: "Enter the station PIN", helper: "Ask an organiser for the 8-digit PIN. It unlocks check-in on this device only.",
+    lock={{ title: t`Enter the station PIN`, helper: t`Ask an organiser for the 8-digit PIN. It unlocks check-in on this device only.`,
       pending, error: error ?? undefined, disabledReason: !online ? "Reconnect to unlock this station." : undefined,
-      submitLabel: "Unlock station", pendingLabel: "Unlocking…", onSubmit: pin => { void submit(pin); } }}
-    headerActions={active ? [{ label: "Lock station", onClick: () => { void requestExit(); } }] : []}
-    confirmLock={pendingCount !== null ? { pendingCount, title: "Discard check-ins and lock?",
+      submitLabel: t`Unlock station`, pendingLabel: "Unlocking…", onSubmit: pin => { void submit(pin); } }}
+    headerActions={active ? [{ label: t`Lock station`, onClick: () => { void requestExit(); } }] : []}
+    confirmLock={pendingCount !== null ? { pendingCount, title: t`Discard check-ins and lock?`,
       consequence: `${pendingCount} unsynced check-ins will be permanently removed from this device before they reach the server.`, onDiscard: () => { void exit(); }, onKeep: () => setPendingCount(null) } : undefined}
     work={{ capture: <OfflineCheckInOperator scope={scope} autoDownload download={() => downloadStationRoster(stationToken)} synchronize={(roster, operations) => syncStationRoster(stationToken, roster, operations)} />,
-      panel: <div className="rounded-xl border border-line bg-panel p-6"><h2 className="title-panel">Welcome them in</h2>{active && error ? <p role="alert" className="mt-3 text-danger">{error}</p> : null}<p className="mt-3 text-muted">Find a guest by name, email or ticket code. Check-ins saved on this device sync when you reconnect.</p></div> }} />;
+      panel: <div className="rounded-xl border border-line bg-panel p-6"><h2 className="title-panel">{t`Welcome them in`}</h2>{active && error ? <p role="alert" className="mt-3 text-danger">{error}</p> : null}<p className="mt-3 text-muted">{t`Find a guest by name, email or ticket code. Check-ins saved on this device sync when you reconnect.`}</p></div> }} />;
 }

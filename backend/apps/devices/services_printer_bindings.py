@@ -1,4 +1,5 @@
 """Printer binding mutations are authorized and audited under the tenant/device locks."""
+from django.utils.translation import gettext
 from django.db import IntegrityError, transaction
 from rest_framework.exceptions import NotFound, ValidationError
 
@@ -14,7 +15,7 @@ from apps.machines.models import Machine
 
 def create_binding(actor, makerspace_id, *, device_id, machine_id, enabled=True, auto_apply_terminal=False):
     if type(enabled) is not bool or type(auto_apply_terminal) is not bool:
-        raise ValidationError("Binding policies must be boolean.")
+        raise ValidationError(gettext("Binding policies must be boolean."))
     try:
         with transaction.atomic():
             makerspace = lock_tenant(makerspace_id)
@@ -27,10 +28,10 @@ def create_binding(actor, makerspace_id, *, device_id, machine_id, enabled=True,
             device = Device.objects.select_for_update().filter(pk=device_id, makerspace=makerspace).first() if device_in_scope else None
             machine = Machine.objects.select_for_update().filter(pk=machine_id, makerspace=makerspace).first() if machine_in_scope else None
             if device is None or machine is None:
-                raise ValidationError("Device and machine must belong to this management scope.")
+                raise ValidationError(gettext("Device and machine must belong to this management scope."))
             authorize_staff(actor, makerspace_id, machine)
             if device.kind != Device.Kind.PRINTER or device.status != Device.Status.ACTIVE or not machine.is_active:
-                raise ValidationError("An active printer device and machine are required.")
+                raise ValidationError(gettext("An active printer device and machine are required."))
             binding = PrinterDeviceBinding.objects.create(makerspace=makerspace, device=device, machine=machine,
                 enabled=enabled, auto_apply_terminal=auto_apply_terminal, created_by=actor)
             record(makerspace, device, "printer_bound", actor=actor, machine=machine)
@@ -41,7 +42,7 @@ def create_binding(actor, makerspace_id, *, device_id, machine_id, enabled=True,
 
 def update_binding(actor, binding_id, changes):
     if set(changes) - {"enabled", "auto_apply_terminal"} or any(type(v) is not bool for v in changes.values()):
-        raise ValidationError("Only boolean binding policies may be changed.")
+        raise ValidationError(gettext("Only boolean binding policies may be changed."))
     identity = scope_printers(actor, PrinterDeviceBinding.objects.all()).filter(pk=binding_id).values("makerspace_id", "device_id").first()
     if identity is None:
         raise NotFound()
@@ -55,7 +56,7 @@ def update_binding(actor, binding_id, changes):
         if not scope_printers(actor, PrinterDeviceBinding.objects.all()).filter(pk=binding.pk).exists():
             raise NotFound()
         if changes.get("enabled") and (binding.machine is None or not binding.machine.is_active or device.status != "active"):
-            raise ValidationError("Binding has no active target.")
+            raise ValidationError(gettext("Binding has no active target."))
         for field, value in changes.items():
             setattr(binding, field, value)
         binding.save(update_fields=[*changes, "updated_at"])

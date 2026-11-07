@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,8 +57,8 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
   const send = member ? memberRequest : staffRequest;
   const mode = member ? "member" : "staff";
   const recipient = personalRecipientKey();
-  const tabs = useOpsTabs("inbox", [{ key: "unread", label: "Unread" }, { key: "all", label: "All" },
-    ...(snooze ? [{ key: "archived", label: "Archived" }] : [])], "all");
+  const tabs = useOpsTabs("inbox", [{ key: "unread", label: t`Unread` }, { key: "all", label: t`All` },
+    ...(snooze ? [{ key: "archived", label: t`Archived` }] : [])], "all");
   const unread = tabs.active === "unread";
   const archived = snooze && tabs.active === "archived";
   const [pageState, setPage] = useState({ page: 1, tab: tabs.active });
@@ -83,18 +84,18 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
   const state = opsQueryState({ isLoading: rows.isLoading || count.isLoading, error: rows.error ?? count.error,
     refetch: () => Promise.all([rows.refetch(), count.refetch()]) }, "notifications");
   let previousGroup = "";
-  return <section aria-label="Personal notifications" onClickCapture={tabs.onClickCapture}>
-    <ListLayout header={{ title: member ? "Your inbox" : "Notifications", subtitle: "Activity from your Space Works community.",
+  return <section aria-label={t`Personal notifications`} onClickCapture={tabs.onClickCapture}>
+    <ListLayout header={{ title: member ? t`Your inbox` : t`Notifications`, subtitle: t`Activity from your Space Works community.`,
       meta: <span aria-live="polite">({unreadCount} unread)</span>,
-      primary: { label: "Mark all read", onClick: () => readAll.mutate(), pending: readAll.isPending, pendingLabel: "Marking read…",
+      primary: { label: t`Mark all read`, onClick: () => readAll.mutate(), pending: readAll.isPending, pendingLabel: "Marking read…",
         disabled: !unreadCount, disabledReason: !unreadCount ? "You're all caught up." : undefined }, secondary: announcement, overflow }}
       tabs={tabs.tabs.map(tab => tab.key === "unread" ? { ...tab, count: unreadCount } : tab)} activeTab={tabs.active}
-      filters={{ controls: <label className="grid gap-1 text-sm">Family<select className="desk-input" value={feature}
+      filters={{ controls: <label className="grid gap-1 text-sm">{t`Family`}<select className="desk-input" value={feature}
         onChange={event => { setFeature(event.target.value); setPage({ page: 1, tab: tabs.active }); }}>
-        <option value="">All families</option>{Object.entries(families).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+        <option value="">{t`All families`}</option>{Object.entries(families).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </select></label> }} state={state} isEmpty={rows.data?.results.length === 0}
-      empty={{ message: unread ? "You're all caught up." : "No notifications yet. Activity from your space shows up here." }}
-      filtered={Boolean(feature)} filteredEmpty={{ message: "No notifications in this family. Try another family.", action: { label: "Clear filters", onClick: () => setFeature("") } }}
+      empty={{ message: unread ? t`You're all caught up.` : t`No notifications yet. Activity from your space shows up here.` }}
+      filtered={Boolean(feature)} filteredEmpty={{ message: t`No notifications in this family. Try another family.`, action: { label: t`Clear filters`, onClick: () => setFeature("") } }}
       body={{ kind: "rows", rows: rows.data?.results.map(row => {
         const link = inboxRoute(row.link, tenant?.mode ?? "central", linkSlug);
         const group = dateGroup(row.created_at);
@@ -106,15 +107,15 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
               onClick={!row.read_at ? () => read.mutate(row.id) : undefined}
               meta={<><span>{families[row.feature] ?? row.feature.replace(/_/g, " ")} · <RelativeTime date={row.created_at} /></span>
                 <span className="mt-1 block line-clamp-2 whitespace-pre-wrap break-words">{row.summary}</span></>}
-              right={<div className="flex flex-wrap items-center gap-2">{!row.read_at ? <StatusPill label="Unread" tone="accent" /> : null}
-                {isInboxLink(link) ? <RouteLink className="desk-button" href={link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>Open</RouteLink> : null}
-                {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>Mark read</button> : null}
+              right={<div className="flex flex-wrap items-center gap-2">{!row.read_at ? <StatusPill label={t`Unread`} tone="accent" /> : null}
+                {isInboxLink(link) ? <RouteLink className="desk-button" href={link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>{t`Open`}</RouteLink> : null}
+                {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>{t`Mark read`}</button> : null}
                 {snooze ? <InboxRowActions path={path} id={row.id} member={member} archived={archived} onChanged={refresh} /> : null}</div>} />
             {row.summary ? <div className="mx-4 mb-4">
               <button className="desk-button-ghost" aria-expanded={Boolean(expanded[row.id])}
                 onClick={() => { setExpanded(current => ({ ...current, [row.id]: !current[row.id] }));
                   if (!row.read_at && !read.isPending) read.mutate(row.id); }}>
-                {expanded[row.id] ? "Show less" : "Read message"}</button>
+                {expanded[row.id] ? t`Show less` : t`Read message`}</button>
               {expanded[row.id] ? <p className="whitespace-pre-wrap break-words text-sm">{row.summary}</p> : null}
             </div> : null}
           </div></div>;

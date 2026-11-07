@@ -5,6 +5,7 @@ Split out of `reconciliation.py` at the 300-line ceiling. Import through the
 from there, so the name must keep resolving at its old path.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
@@ -111,13 +112,13 @@ def _require_subject_authority(actor, payments):
             ).values_list("pk", flat=True)
         )
         if visible != set(ids):
-            raise PermissionDenied("Payment action is not permitted.")
+            raise PermissionDenied(gettext("Payment action is not permitted."))
         if subject_type == Payment.SubjectType.MACHINE_SERVICE_REQUEST:
             _require_machine_scope(actor, payments)
         if subject_type == Payment.SubjectType.MACHINE_SESSION:
             _require_session_scope(actor, payments)
     if any(payment.subject_type not in SUBJECT_ACTIONS for payment in payments):
-        raise PermissionDenied("Payment subject type is not supported.")
+        raise PermissionDenied(gettext("Payment subject type is not supported."))
 
 
 def _require_machine_scope(actor, payments):
@@ -147,7 +148,7 @@ def _require_machine_scope(actor, payments):
         ).values_list("pk", flat=True)
     )
     if covered != live_ids:
-        raise PermissionDenied("Payment action is not permitted.")
+        raise PermissionDenied(gettext("Payment action is not permitted."))
 
     # A charge whose service request was purged names no machine, type or team, so there is
     # nothing left for machine scoping to answer. Comparing against `subject_ids` here made
@@ -168,7 +169,7 @@ def _require_machine_scope(actor, payments):
     }
     scopes = manage_scopes_for(actor, orphan_makerspace_ids)
     if any(scopes.get(ms_id) is not EXEMPT for ms_id in orphan_makerspace_ids):
-        raise PermissionDenied("Payment action is not permitted.")
+        raise PermissionDenied(gettext("Payment action is not permitted."))
 
 
 def _require_session_scope(actor, payments):
@@ -191,6 +192,6 @@ def _require_session_scope(actor, payments):
         session = sessions.get(payment.subject_id)
         if session is None or session.makerspace_id != payment.makerspace_id:
             if scope is not EXEMPT:
-                raise PermissionDenied("Payment action is not permitted.")
+                raise PermissionDenied(gettext("Payment action is not permitted."))
         elif scope is None or not scope_covers_machine(scope, session.machine):
-            raise PermissionDenied("Payment action is not permitted.")
+            raise PermissionDenied(gettext("Payment action is not permitted."))

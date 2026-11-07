@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef, useState } from "react";
 
 export type PickerOption = { id: number; label: string; detail?: string };
@@ -9,7 +10,7 @@ export type PickerOption = { id: number; label: string; detail?: string };
  * until submit, and the Team tab, where each change is a mutation.
  */
 export function AsyncSearchPicker({ label, helper, placeholder, selected, options, loading = false, error,
-  onSearch, onChange, disabled = false, emptyText = "No matches." }: {
+  onSearch, onChange, disabled = false, emptyText = t`No matches.` }: {
   label: string; helper?: string; placeholder?: string; selected: PickerOption[]; options: PickerOption[];
   loading?: boolean; error?: string | null; onSearch: (term: string) => void;
   onChange: (next: PickerOption[]) => void; disabled?: boolean; emptyText?: string;
@@ -33,11 +34,11 @@ export function AsyncSearchPicker({ label, helper, placeholder, selected, option
   return <div className="grid min-w-0 gap-2">
     <label className="text-sm font-semibold text-ink" htmlFor={`${id}-input`}>{label}</label>
     {helper ? <p className="text-sm text-muted" id={`${id}-helper`}>{helper}</p> : null}
-    {selected.length ? <ul className="flex flex-wrap gap-2" aria-label={`Selected: ${label}`}>
+    {selected.length ? <ul className="flex flex-wrap gap-2" aria-label={t`Selected: ${label}`}>
       {selected.map((row) => <li key={row.id} className="flex min-h-9 items-center gap-1 rounded-full border border-line bg-surface py-1 pl-3 pr-1 text-sm text-ink">
         <span className="break-words">{row.label}</span>
         {!disabled ? <button type="button" className="grid size-7 place-items-center rounded-full text-muted hover:bg-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-focus"
-          aria-label={`Remove ${row.label}`} onClick={() => remove(row)}>×</button> : null}
+          aria-label={t`Remove ${row.label}`} onClick={() => remove(row)}>×</button> : null}
       </li>)}
     </ul> : null}
     <div className="relative">
@@ -56,7 +57,7 @@ export function AsyncSearchPicker({ label, helper, placeholder, selected, option
         }} />
       {expanded ? <ul id={`${id}-list`} role="listbox" aria-label={label}
         className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-line bg-panel p-1 shadow-lg">
-        {loading ? <li className="p-3 text-sm text-muted" role="presentation">Searching…</li>
+        {loading ? <li className="p-3 text-sm text-muted" role="presentation">{t`Searching…`}</li>
           : !choices.length ? <li className="p-3 text-sm text-muted" role="presentation">{emptyText}</li>
           : choices.map((row, index) => <li key={row.id} id={`${id}-option-${row.id}`} role="option" aria-selected={index === active}
             className={`flex min-h-11 cursor-pointer flex-col justify-center rounded-lg px-3 py-2 text-sm ${index === active ? "bg-hover" : ""}`}

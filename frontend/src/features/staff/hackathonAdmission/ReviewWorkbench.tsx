@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DetailLayout } from '../../../components/layouts'
@@ -20,11 +21,11 @@ export function ReviewWorkbench({ eventId, reviewId }: { eventId: number; review
       return client.invalidateQueries({ queryKey: ['staff-event-admission', eventId] })
     } })
   const current = review.data, editable = current?.allowed_actions.includes('submit')
-  return <DetailLayout title="Review an application" state={review.isLoading ? { status: 'loading' } : review.error
+  return <DetailLayout title={t`Review an application`} state={review.isLoading ? { status: 'loading' } : review.error
     ? { status: 'error', error: review.error.message, onRetry: () => { void review.refetch() } } : { status: 'ready' }}
     status={current ? <StatusBadge status={current.state} label={current.state} /> : undefined}
     main={<div className="grid gap-5">
-      {current?.state === 'recused' ? <p role="status" className="text-sm text-ink">Your recusal is recorded. This application has been removed from your review.</p> : null}
+      {current?.state === 'recused' ? <p role="status" className="text-sm text-ink">{t`Your recusal is recorded. This application has been removed from your review.`}</p> : null}
       {save.error ? <ErrorText message={save.error.message} /> : null}
       {current?.applications.map(application => <Card key={application.id}><h2 className="title-section">{application.alias}</h2>
         {application.blind_notice ? <p className="mt-2 text-sm text-muted">{application.blind_notice}</p> : null}
@@ -37,13 +38,12 @@ export function ReviewWorkbench({ eventId, reviewId }: { eventId: number; review
             <input type="radio" required name={criterion.key} checked={scores[criterion.key] === score} onChange={() => setScores({ ...scores, [criterion.key]: score })} />
             <span>{score} · {criterion.anchors[String(score)]}</span></label>)}
         </fieldset>)}
-        <label className="grid gap-1 text-sm text-ink">Private review notes<textarea maxLength={5000} className="desk-input" value={notes} onChange={event => setNotes(event.target.value)} /></label>
-        <button className="desk-button-primary justify-self-start" type="submit" disabled={save.isPending}>Submit review</button>
+        <label className="grid gap-1 text-sm text-ink">{t`Private review notes`}<textarea maxLength={5000} className="desk-input" value={notes} onChange={event => setNotes(event.target.value)} /></label>
+        <button className="desk-button-primary justify-self-start" type="submit" disabled={save.isPending}>{t`Submit review`}</button>
       </form> : null}
-      {editable ? <Card><div className="grid gap-3"><label className="grid gap-1 text-sm text-ink">Conflict
-        <select className="desk-input" value={recusal} onChange={event => setRecusal(event.target.value)}>
-          <option value="declared">Declared conflict</option><option value="self">My own application</option><option value="team">My team</option><option value="affiliation">Affiliation</option></select></label>
-        <button className="desk-button justify-self-start" type="button" disabled={save.isPending} onClick={() => save.mutate(true)}>Recuse from this application</button></div></Card> : null}
-      <p className="text-sm text-muted">Other reviewers' scores remain private until the round closes. Recuse whenever you have a conflict.</p>
+      {editable ? <Card><div className="grid gap-3"><label className="grid gap-1 text-sm text-ink">{t`Conflict`}<select className="desk-input" value={recusal} onChange={event => setRecusal(event.target.value)}>
+          <option value="declared">{t`Declared conflict`}</option><option value="self">{t`My own application`}</option><option value="team">{t`My team`}</option><option value="affiliation">{t`Affiliation`}</option></select></label>
+        <button className="desk-button justify-self-start" type="button" disabled={save.isPending} onClick={() => save.mutate(true)}>{t`Recuse from this application`}</button></div></Card> : null}
+      <p className="text-sm text-muted">{t`Other reviewers' scores remain private until the round closes. Recuse whenever you have a conflict.`}</p>
     </div>} />
 }

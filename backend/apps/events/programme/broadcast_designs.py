@@ -5,6 +5,7 @@ adds are the escaped organiser name (letter signature) and an escaped public cov
 (photo header); neither is a placeholder an author can type.
 """
 
+from django.utils.translation import gettext
 import html
 
 DESIGNS = ("classic", "bold", "minimal", "accent_band", "photo_header", "letter")
@@ -16,7 +17,7 @@ def require_design_allowed(makerspace, design):
     from rest_framework.exceptions import ValidationError
     from apps.makerspaces.platform import feature_enabled
     if design in TEMPLATE_DESIGNS and not feature_enabled(makerspace, "events.broadcast_templates"):
-        raise ValidationError({"design": "This design needs broadcast templates switched on."})
+        raise ValidationError({"design": gettext("This design needs broadcast templates switched on.")})
 
 # Brand colours (docs/brand/README.md): Deep Ink, Maker Teal, Workshop Orange, Citron,
 # Sky Blue and Warm Cream. Light/dark pairs keep the documented contrast pairs.

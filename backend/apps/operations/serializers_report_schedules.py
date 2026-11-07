@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -38,7 +39,7 @@ class ReportScheduleFiltersSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         # Nested serializers receive raw data here, before DRF drops unknown keys.
         if isinstance(data, dict) and set(data) - set(self.fields):
-            raise serializers.ValidationError({"non_field_errors": ["Unknown report filter."]})
+            raise serializers.ValidationError({"non_field_errors": [gettext("Unknown report filter.")]})
         return super().to_internal_value(data)
 
     def validate(self, attrs):
@@ -46,9 +47,9 @@ class ReportScheduleFiltersSerializer(serializers.Serializer):
         subject = SubjectFilterSerializer(data=attrs)
         subject.is_valid(raise_exception=True)
         if attrs.get("window_days") and (attrs.get("start") or attrs.get("end")):
-            raise serializers.ValidationError("Use either window_days or start/end, not both.")
+            raise serializers.ValidationError(gettext("Use either window_days or start/end, not both."))
         if attrs.get("start") and attrs.get("end") and attrs["start"] > attrs["end"]:
-            raise serializers.ValidationError({"end": "End date must be on or after start date."})
+            raise serializers.ValidationError({"end": gettext("End date must be on or after start date.")})
         return attrs
 
 
@@ -130,12 +131,12 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
             return None
         # One message for both "not yours" and "not a room": no cross-tenant id probing.
         if destination.makerspace_id != makerspace.id or destination.channel not in ChatNotificationChannel.values:
-            raise serializers.ValidationError("Unknown destination.")
+            raise serializers.ValidationError(gettext("Unknown destination."))
         # Same refusal as creating a room on that channel: every run would only SKIP.
         from apps.integrations.dispatch_channels import channel_module_blocks
 
         if channel_module_blocks(makerspace, destination.channel):
-            raise serializers.ValidationError(f"The {destination.channel} module is not installed.")
+            raise serializers.ValidationError(gettext('The {channel} module is not installed.').format(channel=destination.channel))
         return destination
 
     def validate_recipient_emails(self, emails):
@@ -150,7 +151,7 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
         known = {email.lower() for email in members.filter(makerspace=space).values_list("user__email", flat=True) if email}
         existing = {email.strip().lower() for email in getattr(self.instance, "recipient_emails", [])}
         if known & ({email.strip().lower() for email in emails} - existing):
-            raise serializers.ValidationError("Use a recipient role or action for makerspace staff.")
+            raise serializers.ValidationError(gettext("Use a recipient role or action for makerspace staff."))
         return emails
 
     def validate(self, attrs):
@@ -161,12 +162,12 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
             from .report_types import ReportNotFound
             raise ReportNotFound()
         if definition is None:
-            raise serializers.ValidationError({"report_key": "Report is unavailable on this deployment."})
+            raise serializers.ValidationError({"report_key": gettext("Report is unavailable on this deployment.")})
         filters = attrs.get("filters", getattr(current, "filters", {}))
         from .report_subjects import reject_aggregate
         reject_aggregate(filters)
         if set(filters) - (allowed_report_filters(report_key) | {"window_days"}):
-            raise serializers.ValidationError({"filters": "Unsupported filters for this report."})
+            raise serializers.ValidationError({"filters": gettext("Unsupported filters for this report.")})
         condition = attrs.get("condition", getattr(current, "condition", {}))
         try:
             validated = validate_condition(condition, definition)
@@ -181,7 +182,7 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
             except serializers.ValidationError as exc:
                 raise serializers.ValidationError({"recipient_roles": exc.detail}) from exc
         if not definition.exportable:
-            raise serializers.ValidationError({"report_key": "Report is not exportable."})
+            raise serializers.ValidationError({"report_key": gettext("Report is not exportable.")})
         # The manual export refuses a report whose source module is off; a schedule for it
         # could only ever skip, so it is refused with the same 400 naming the module.
         from .report_sources import require_source
@@ -190,22 +191,22 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
             require_source(self.context["makerspace"], module)
         if not definition.schedulable:
             # Email/chat delivery would broaden custody of this report's data.
-            raise serializers.ValidationError({"report_key": "Report cannot be scheduled."})
+            raise serializers.ValidationError({"report_key": gettext("Report cannot be scheduled.")})
         fmt = attrs.get("format", getattr(current, "format", "csv"))
         if fmt not in definition.allowed_formats:
-            raise serializers.ValidationError({"format": "Format not allowed for this report."})
+            raise serializers.ValidationError({"format": gettext("Format not allowed for this report.")})
         grain = attrs.get("grain", getattr(current, "grain", (definition.grains or ("day",))[0]))
         if current is None and "grain" not in attrs:
             attrs["grain"] = grain
         allowed = definition.grains or ("day",)
         if grain not in allowed:
-            raise serializers.ValidationError({"grain": f"Use one of: {', '.join(allowed)}."})
+            raise serializers.ValidationError({"grain": gettext('Use one of: {value}.').format(value=', '.join(allowed))})
         destination = attrs.get("destination", getattr(current, "destination", None))
         emails = attrs.get("recipient_emails", getattr(current, "recipient_emails", None) or [])
         actions = attrs.get("recipient_actions", getattr(current, "recipient_actions", []))
         if destination is None and not emails and not roles and not actions:
             raise serializers.ValidationError(
-                {"recipient_emails": "Choose a destination, email, role or action recipient."}
+                {"recipient_emails": gettext("Choose a destination, email, role or action recipient.")}
             )
         if current is None and not attrs.get("next_run_at"):
             attrs["next_run_at"] = timezone.now()

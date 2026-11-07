@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { memberRequest } from "../../../lib/api";
 import { teamBase } from "./api";
 import type { Asset, SubmissionScope, UploadDescriptor, UploadResult, UploadSpec } from "./types";
@@ -20,26 +21,26 @@ export async function fingerprint(file: File) {
 function allowedUploadUrl(url: string, allowedOrigins: readonly string[]) {
   const parsed = new URL(url);
   if (!allowedOrigins.includes(parsed.origin) || !["http:", "https:"].includes(parsed.protocol)
-    || parsed.username || parsed.password) throw new Error("The upload destination is unavailable.");
+    || parsed.username || parsed.password) throw new Error(t`The upload destination is unavailable.`);
   return url;
 }
 
 async function sendFile(file: File, descriptor: UploadDescriptor, record: Resume, scope: SubmissionScope,
   allowedOrigins: readonly string[], signal: AbortSignal, progress: (bytes: number) => void) {
   if (descriptor.method === "POST") {
-    if (!descriptor.url || !descriptor.fields) throw new Error("Invalid upload configuration.");
+    if (!descriptor.url || !descriptor.fields) throw new Error(t`Invalid upload configuration.`);
     const body = new FormData();
     for (const [name, value] of Object.entries(descriptor.fields)) body.append(name, value);
     body.append("file", file);
     const response = await fetch(allowedUploadUrl(descriptor.url, allowedOrigins), {
       method: "POST", body, signal, credentials: "omit", cache: "no-store", redirect: "error" });
-    if (!response.ok) throw new Error("Upload interrupted. Select the same file to retry.");
+    if (!response.ok) throw new Error(t`Upload interrupted. Select the same file to retry.`);
     progress(file.size);
     return;
   }
   if (typeof descriptor.part_size !== "number" || !Number.isSafeInteger(descriptor.part_size) || descriptor.part_size < 5 * 1024 ** 2
     || descriptor.part_count !== Math.ceil(file.size / descriptor.part_size) || descriptor.part_count > 10000) {
-    throw new Error("Invalid upload configuration.");
+    throw new Error(t`Invalid upload configuration.`);
   }
   for (let number = 1; number <= descriptor.part_count; number++) {
     signal.throwIfAborted();
@@ -50,10 +51,10 @@ async function sendFile(file: File, descriptor: UploadDescriptor, record: Resume
     const part = result.parts[0];
     const start = (number - 1) * descriptor.part_size;
     const body = file.slice(start, Math.min(start + descriptor.part_size, file.size));
-    if (result.parts.length !== 1 || part.part_number !== number || part.size_bytes !== body.size) throw new Error("Invalid upload part.");
+    if (result.parts.length !== 1 || part.part_number !== number || part.size_bytes !== body.size) throw new Error(t`Invalid upload part.`);
     const response = await fetch(allowedUploadUrl(part.url, allowedOrigins), {
       method: "PUT", body, signal, credentials: "omit", cache: "no-store", redirect: "error" });
-    if (!response.ok) throw new Error("Upload interrupted. Select the same file to resume.");
+    if (!response.ok) throw new Error(t`Upload interrupted. Select the same file to resume.`);
     progress(Math.min(number * descriptor.part_size, file.size));
   }
 }
@@ -62,10 +63,10 @@ export async function uploadProjectFile({ file, spec, scope, allowedOrigins, sig
   file: File; spec: UploadSpec; scope: SubmissionScope; allowedOrigins: readonly string[];
   signal: AbortSignal; progress: (bytes: number) => void;
 }): Promise<Asset> {
-  if (!file.size || file.size > 2 * 1024 ** 3) throw new Error("Choose a nonempty file within the upload limit.");
+  if (!file.size || file.size > 2 * 1024 ** 3) throw new Error(t`Choose a nonempty file within the upload limit.`);
   const hash = await fingerprint(file);
   const previous = sessions.get(key(scope)) ?? null;
-  if (previous && previous.fingerprint !== hash) throw new Error("Select the original file to resume this upload.");
+  if (previous && previous.fingerprint !== hash) throw new Error(t`Select the original file to resume this upload.`);
   let record: Resume;
   let descriptor: UploadDescriptor;
   if (previous && previous.assetId) {
@@ -76,7 +77,7 @@ export async function uploadProjectFile({ file, spec, scope, allowedOrigins, sig
         sessions.delete(key(scope));
         return status;
       }
-      throw new Error("This upload has ended. Remove it from your draft before starting a replacement.");
+      throw new Error(t`This upload has ended. Remove it from your draft before starting a replacement.`);
     }
     descriptor = await memberRequest<UploadDescriptor>(`${teamBase(scope)}assets/${record.assetId}/resume/`, {
       method: "POST", signal, body: JSON.stringify({ operation_id: crypto.randomUUID(),
@@ -88,7 +89,7 @@ export async function uploadProjectFile({ file, spec, scope, allowedOrigins, sig
     const result = await memberRequest<UploadResult>(`${teamBase(scope)}assets/`, { method: "POST", signal,
       headers: { "Idempotency-Key": operationId }, body: JSON.stringify({ filename: file.name,
         mime: file.type || "application/octet-stream", bytes: file.size, ...spec }) });
-    if (!result.upload) throw new Error("The upload could not be started.");
+    if (!result.upload) throw new Error(t`The upload could not be started.`);
     descriptor = result.upload;
     record = { ...record, assetId: result.asset_id, version: result.version, generation: result.generation };
     sessions.set(key(scope), record);

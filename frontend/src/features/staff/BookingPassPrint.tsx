@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { usePrintBookingPass } from "./bookingPassApi";
 
 export function BookingPassPrint({ spaceId, bookingId, disabled = false }: {
@@ -6,7 +7,7 @@ export function BookingPassPrint({ spaceId, bookingId, disabled = false }: {
   const print = usePrintBookingPass(spaceId, bookingId);
   return <div className="grid gap-2">
     <button type="button" className="desk-button w-fit" disabled={disabled || print.isPending} onClick={() => print.mutate()}>
-      {print.isPending ? "Rendering pass..." : "Print booking pass"}
+      {print.isPending ? t`Rendering pass...` : t`Print booking pass`}
     </button>
     {print.error ? <p role="alert" className="text-danger">{print.error.message}</p> : null}
   </div>;

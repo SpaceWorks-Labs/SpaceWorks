@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { Callout, EmptyState, Skeleton } from "../../../components/ui";
@@ -33,19 +34,19 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
         <h1 className="title-panel" id="analytics-title">{title}</h1>
         {data.can_manage ? (
           <button className="desk-button" type="button" aria-expanded={managing} onClick={() => setManaging((open) => !open)}>
-            {managing ? "Close connection settings" : "Connection settings"}
+            {managing ? t`Close connection settings` : t`Connection settings`}
           </button>
         ) : null}
       </div>
       {managing && data.can_manage ? <AnalyticsSettings scope={scope} /> : null}
       {!data.configured || dashboards.length === 0 ? (
         <EmptyState message={data.can_manage
-          ? "Connect Metabase and list the dashboards to show here. Open Connection settings to start."
-          : "No dashboards yet. Ask your Space Manager to connect Metabase."} />
+          ? t`Connect Metabase and list the dashboards to show here. Open Connection settings to start.`
+          : t`No dashboards yet. Ask your Space Manager to connect Metabase.`} />
       ) : (
         <>
           {dashboards.length > 1 ? (
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Dashboards">
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label={t`Dashboards`}>
               {dashboards.map((entry) => (
                 <button key={entry.id} type="button" role="tab" aria-selected={entry.id === selected}
                   className={entry.id === selected ? "desk-button-primary" : "desk-button"}
@@ -59,11 +60,10 @@ export function AnalyticsPanel({ scope }: { scope: AnalyticsScope }) {
           ) : !embed.data ? <Skeleton className="h-96 w-full" /> : (
             <div className="grid gap-2">
               <iframe className="h-[70vh] min-h-96 w-full rounded-xl border border-line bg-bg" src={embed.data.url}
-                title={dashboards.find((entry) => entry.id === selected)?.title ?? "Dashboard"}
+                title={dashboards.find((entry) => entry.id === selected)?.title ?? t`Dashboard`}
                 referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-downloads" />
               <a className="text-sm text-muted underline" href={embed.data.url} target="_blank" rel="noreferrer noopener">
-                Open this dashboard in a new tab
-              </a>
+                {t`Open this dashboard in a new tab`}</a>
             </div>
           )}
         </>

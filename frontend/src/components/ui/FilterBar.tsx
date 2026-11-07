@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { useId } from "react";
 import { Search } from "lucide-react";
@@ -17,7 +18,7 @@ export type FilterBarProps = {
 export function FilterBar({
   value,
   onChange,
-  placeholder = "Search",
+  placeholder = t`Search`,
   searchLabel = "Search table",
   children,
   actions,

@@ -1,5 +1,6 @@
 // Event ID cards and ticket design, for every organiser who can edit the event. Cards go to
 // confirmed registrants automatically once the card design is published (and every 15 min).
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -23,23 +24,23 @@ export function EventCardsPanel({ eventId, features }: { eventId: number; featur
   const [view, setView] = useState<"cards" | "design" | "ticket">(cardsOn ? "cards" : "ticket");
   if (designs.isLoading) return <Skeleton className="h-40 w-full" />;
   if (designs.isError || !designs.data) return <ErrorBlock error={designs.error} resource="event card designs" />;
-  const options = [...(designs.data.event_card ? [{ value: "cards", label: "ID cards" }, { value: "design", label: "Card design" }] : []),
-    ...(designs.data.event_ticket ? [{ value: "ticket", label: "Ticket design" }] : [])];
+  const options = [...(designs.data.event_card ? [{ value: "cards", label: t`ID cards` }, { value: "design", label: t`Card design` }] : []),
+    ...(designs.data.event_ticket ? [{ value: "ticket", label: t`Ticket design` }] : [])];
   if (!options.length) return null;
   const card = designs.data.event_card;
   const ticket = designs.data.event_ticket;
-  return <section className="grid gap-4" aria-label="Event cards and tickets">
-    <h3 className="text-lg font-semibold text-ink">Cards and tickets</h3>
-    <SegmentedControl label="Cards and tickets" value={view} options={options} onChange={(value) => setView(value as typeof view)} />
+  return <section className="grid gap-4" aria-label={t`Event cards and tickets`}>
+    <h3 className="text-lg font-semibold text-ink">{t`Cards and tickets`}</h3>
+    <SegmentedControl label={t`Cards and tickets`} value={view} options={options} onChange={(value) => setView(value as typeof view)} />
     {view === "cards" && card ? <EventCardList eventId={eventId} published={Boolean(card.published_at)} /> : null}
     {view === "design" && card ? <>
       <EventCardApproval eventId={eventId} />
-      <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title="Event card design" />
+      <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title={t`Event card design`} />
     </> : null}
     {view === "ticket" && ticket ? <>
       <EventCardApproval eventId={eventId} />
-      <p className="text-sm text-muted">The published ticket is attached as a PDF to each confirmation email.</p>
-      <CardDesigner key={ticket.id} designId={ticket.id} canEdit={ticket.can_edit} title="Ticket design" />
+      <p className="text-sm text-muted">{t`The published ticket is attached as a PDF to each confirmation email.`}</p>
+      <CardDesigner key={ticket.id} designId={ticket.id} canEdit={ticket.can_edit} title={t`Ticket design`} />
     </> : null}
   </section>;
 }
@@ -71,21 +72,21 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
   };
   const rows = cards.data ?? [];
   return <div className="grid gap-3">
-    {!published ? <p className="text-sm text-warn-ink">Publish the card design to start issuing cards.</p> : null}
+    {!published ? <p className="text-sm text-warn-ink">{t`Publish the card design to start issuing cards.`}</p> : null}
     <div className="flex flex-wrap items-end gap-2">
-      <label className="grid gap-1 text-xs font-semibold text-muted"><span>Print for</span>
+      <label className="grid gap-1 text-xs font-semibold text-muted"><span>{t`Print for`}</span>
         <select className="desk-input min-h-11" value={printRole} onChange={(event) => setPrintRole(event.target.value)}>
-          <option value="">Every role</option>
+          <option value="">{t`Every role`}</option>
           {ROLES.map((value) => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}s</option>)}
         </select></label>
-      <label className="grid gap-1 text-xs font-semibold text-muted"><span>Check-in</span>
+      <label className="grid gap-1 text-xs font-semibold text-muted"><span>{t`Check-in`}</span>
         <select className="desk-input min-h-11" value={printCheckIn} onChange={(event) => setPrintCheckIn(event.target.value as typeof printCheckIn)}>
-          <option value="">Everyone</option><option value="in">Checked in</option><option value="out">Not checked in yet</option>
+          <option value="">{t`Everyone`}</option><option value="in">{t`Checked in`}</option><option value="out">{t`Not checked in yet`}</option>
         </select></label>
     </div>
     <div className="flex flex-wrap gap-2">
       <button type="button" className="desk-button-primary min-h-11" disabled={!published || issue.isPending} onClick={() => issue.mutate()}>
-        {issue.isPending ? "Issuing…" : "Issue cards now"}</button>
+        {issue.isPending ? t`Issuing…` : t`Issue cards now`}</button>
       <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => setPreviewing(true)}>
         {JOB_LABELS.bulk_sheet}…</button>
       <button type="button" className="desk-button min-h-11" disabled={!rows.length} onClick={() => startJob.mutate({ kind: "zip", ...printFilter })}>
@@ -95,28 +96,28 @@ function EventCardList({ eventId, published }: { eventId: number; published: boo
     {[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean) ? <ErrorBlock error={[issue.error, revoke.error, role.error, startJob.error, cards.error].find(Boolean)} /> : null}
     <CardJobList listPath={jobsPath} />
     <SheetPreviewDialog open={previewing} onClose={() => setPreviewing(false)} filter={printFilter} jobsPath={jobsPath}
-      previewPath={`${jobsPath}/preview`} title={printRole || printCheckIn ? "Print sheet: the chosen event cards" : "Print sheet: all active event cards"} />
+      previewPath={`${jobsPath}/preview`} title={printRole || printCheckIn ? t`Print sheet: the chosen event cards` : t`Print sheet: all active event cards`} />
     <StaffPhotoDialog holderName={photoFor?.printed_name ?? null} photoPath={`/admin/event-id-cards/${photoFor?.id}/photo`}
       onClose={() => setPhotoFor(null)} onSaved={() => { setPhotoFor(null); void refresh(); }} />
     {revoking ? <form className="flex flex-wrap items-end gap-2" onSubmit={(event) => { event.preventDefault();
       revoke.mutate({ id: revoking.id, reason: reason.trim() }, { onSuccess: () => { setRevoking(null); setReason(""); } }); }}>
-      <label className="grid flex-1 gap-1 text-xs font-semibold text-muted"><span>Why revoke {revoking.printed_name}'s card?</span>
+      <label className="grid flex-1 gap-1 text-xs font-semibold text-muted"><span>{t`Why revoke ${revoking.printed_name}'s card?`}</span>
         <input className="desk-input min-h-11" value={reason} maxLength={300} onChange={(event) => setReason(event.target.value)} /></label>
-      <button type="submit" className="desk-button-danger min-h-11" disabled={reason.trim().length < 3 || revoke.isPending}>Revoke card</button>
-      <button type="button" className="desk-button min-h-11" onClick={() => setRevoking(null)}>Cancel</button>
+      <button type="submit" className="desk-button-danger min-h-11" disabled={reason.trim().length < 3 || revoke.isPending}>{t`Revoke card`}</button>
+      <button type="button" className="desk-button min-h-11" onClick={() => setRevoking(null)}>{t`Cancel`}</button>
     </form> : null}
     <ul className="grid gap-2">
-      {!rows.length && !cards.isLoading ? <li className="text-sm text-muted">No cards yet.</li> : null}
+      {!rows.length && !cards.isLoading ? <li className="text-sm text-muted">{t`No cards yet.`}</li> : null}
       {rows.map((row) => <li key={row.id} className="flex flex-wrap items-center gap-3 rounded-control border border-line bg-panel p-3">
         <span className="min-w-0 flex-1 text-sm text-ink">{row.printed_name}</span>
-        <select className="desk-input min-h-11" aria-label={`Role for ${row.printed_name}`} value={row.role} disabled={row.status !== "active"}
+        <select className="desk-input min-h-11" aria-label={t`Role for ${row.printed_name}`} value={row.role} disabled={row.status !== "active"}
           onChange={(event) => role.mutate({ id: row.id, value: event.target.value })}>
           {ROLES.map((value) => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select>
-        <Badge tone={row.status === "active" ? "success" : "danger"}>{row.status === "active" ? "Active" : "Revoked"}</Badge>
-        {row.status === "active" ? <OverflowMenu label={`Actions for ${row.printed_name}`} actions={[
-          { label: "Download PDF", onClick: () => void download(row) },
-          { label: row.photo_set ? "Replace photo" : "Take or upload photo", confirms: true, onClick: () => setPhotoFor(row) },
-          { label: "Revoke", confirms: true, tone: "danger", onClick: () => { setReason(""); setRevoking(row); } }]} /> : null}
+        <Badge tone={row.status === "active" ? "success" : "danger"}>{row.status === "active" ? t`Active` : t`Revoked`}</Badge>
+        {row.status === "active" ? <OverflowMenu label={t`Actions for ${row.printed_name}`} actions={[
+          { label: t`Download PDF`, onClick: () => void download(row) },
+          { label: row.photo_set ? t`Replace photo` : t`Take or upload photo`, confirms: true, onClick: () => setPhotoFor(row) },
+          { label: t`Revoke`, confirms: true, tone: "danger", onClick: () => { setReason(""); setRevoking(row); } }]} /> : null}
       </li>)}
     </ul>
   </div>;

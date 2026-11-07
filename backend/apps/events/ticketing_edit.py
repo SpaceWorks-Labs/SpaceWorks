@@ -7,6 +7,7 @@ audience are likewise frozen once anybody registered with it. A category used by
 refused for the same reason: SET_NULL would quietly uncategorise them.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import APIException, ValidationError
 
@@ -52,12 +53,12 @@ def update_ticket(ticket, *, actor, **values):
                                  "Deactivate it and create a new ticket type instead.", "ticket_type_referenced")
     capacity = values.get("capacity", row.capacity)
     if "capacity" in changed and capacity and capacity < used.filter(status__in=CONFIRMED_STATUSES).count():
-        raise ValidationError({"capacity": "Capacity cannot be lower than the registered and attended seats on this ticket."})
+        raise ValidationError({"capacity": gettext("Capacity cannot be lower than the registered and attended seats on this ticket.")})
     for field in changed:
         setattr(row, field, values[field])
     _validate(row)
     if row.sales_start_at and row.sales_end_at and row.sales_end_at <= row.sales_start_at:
-        raise ValidationError({"sales_end_at": "Sales end must be after sales start."})
+        raise ValidationError({"sales_end_at": gettext("Sales end must be after sales start.")})
     if changed:
         row.save(update_fields=changed)
         record(actor, "event.ticket_updated", makerspace=event.makerspace, target=row, meta={"fields": changed})
@@ -102,7 +103,7 @@ def update_category(category, *, actor, **values):
     space, row = _locked_category(category)
     changed = sorted(field for field in ("name", "slug") if field in values and values[field] != getattr(row, field))
     if "slug" in changed and EventCategory.objects.filter(makerspace=space, slug=values["slug"]).exclude(pk=row.pk).exists():
-        raise ValidationError({"slug": "Category already exists."})
+        raise ValidationError({"slug": gettext("Category already exists.")})
     for field in changed:
         setattr(row, field, values[field])
     if changed:

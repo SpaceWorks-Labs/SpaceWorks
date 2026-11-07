@@ -7,6 +7,7 @@ dozen copies of the same view. Authorization is never here: each service re-chec
 may do that step (manager in their area, or the assigned Technician).
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
@@ -136,7 +137,7 @@ def _assign(request, issue, data):
         contact = TechnicianContact.objects.filter(makerspace_id=issue.makerspace_id, pk=data["contact_id"]).first()
         if contact is None:
             from rest_framework.exceptions import ValidationError
-            raise ValidationError({"contact_id": "Choose a technician of this makerspace."})
+            raise ValidationError({"contact_id": gettext("Choose a technician of this makerspace.")})
     svc.assign(request.user, issue, contact=contact, myself=data["myself"])
 
 

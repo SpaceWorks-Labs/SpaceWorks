@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -20,7 +21,7 @@ def _lock_spaces(space_ids):
         pk__in=expected
     ).order_by("pk"))
     if {space.pk for space in spaces} != expected:
-        raise NotFound("A series makerspace no longer exists.")
+        raise NotFound(gettext("A series makerspace no longer exists."))
     for space in spaces:
         require_module_locked(space, "events")
     return {space.pk: space for space in spaces}
@@ -58,7 +59,7 @@ def invite_collaborators(series, *, actor, slugs):
     if locked.makerspace.slug in normalized:
         invalid.append(locked.makerspace.slug)
     if invalid:
-        raise serializers.ValidationError({"slugs": f"Unknown or host slug(s): {', '.join(invalid)}."})
+        raise serializers.ValidationError({"slugs": gettext('Unknown or host slug(s): {value}.').format(value=', '.join(invalid))})
     _lock_spaces({locked.makerspace_id, *(space.pk for space in spaces)})
     requested_ids = {space.pk for space in spaces}
     removed = list(EventSeriesCollaborator.objects.filter(series=locked).exclude(
@@ -86,19 +87,19 @@ def remove_collaborator(collaborator_id, *, actor):
         "series_id", flat=True
     ).first()
     if series_id is None:
-        raise NotFound("This series collaboration no longer exists.")
+        raise NotFound(gettext("This series collaboration no longer exists."))
     series = EventSeries.objects.select_for_update().get(pk=series_id)
     collaborator_space_id = EventSeriesCollaborator.objects.filter(
         pk=collaborator_id, series=series
     ).values_list("makerspace_id", flat=True).first()
     if collaborator_space_id is None:
-        raise NotFound("This series collaboration no longer exists.")
+        raise NotFound(gettext("This series collaboration no longer exists."))
     _lock_spaces((series.makerspace_id, collaborator_space_id))
     row = EventSeriesCollaborator.objects.select_for_update().filter(
         pk=collaborator_id, series=series
     ).first()
     if row is None:
-        raise NotFound("This series collaboration no longer exists.")
+        raise NotFound(gettext("This series collaboration no longer exists."))
     slug = row.makerspace.slug
     EventCollaborator.objects.filter(source_series_collaboration=row).delete()
     row.delete()
@@ -117,7 +118,7 @@ def respond(collaborator, *, actor, accept):
         pk=collaborator.pk, series=series
     ).first()
     if row is None:
-        raise NotFound("This series collaboration invitation no longer exists.")
+        raise NotFound(gettext("This series collaboration invitation no longer exists."))
     row.status = (
         EventSeriesCollaborator.Status.ACCEPTED
         if accept else EventSeriesCollaborator.Status.DECLINED

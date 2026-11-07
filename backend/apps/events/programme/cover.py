@@ -1,5 +1,6 @@
 """Bounded cover canonicalization for G's existing image-attach transport."""
 
+from django.utils.translation import gettext
 from io import BytesIO
 import warnings
 
@@ -18,7 +19,7 @@ def canonical_cover(data):
     workflow; authored page covers still use revision-owned private assets.
     """
     if not isinstance(data, bytes) or not data or len(data) > MAX_BYTES:
-        raise ValidationError({"image": "Use an image of at most 5 MiB."})
+        raise ValidationError({"image": gettext("Use an image of at most 5 MiB.")})
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
@@ -37,8 +38,8 @@ def canonical_cover(data):
                 clean.save(output, format="PNG", optimize=True)
     except (ValueError, OSError, UnidentifiedImageError, Image.DecompressionBombError,
             Image.DecompressionBombWarning) as exc:
-        raise ValidationError({"image": "Use a valid, single-frame image of at most 16 megapixels."}) from exc
+        raise ValidationError({"image": gettext("Use a valid, single-frame image of at most 16 megapixels.")}) from exc
     result = output.getvalue()
     if len(result) > MAX_BYTES:
-        raise ValidationError({"image": "The normalized image exceeds 5 MiB."})
+        raise ValidationError({"image": gettext("The normalized image exceeds 5 MiB.")})
     return result

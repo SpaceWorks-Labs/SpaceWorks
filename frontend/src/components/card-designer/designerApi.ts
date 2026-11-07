@@ -1,5 +1,6 @@
 // Server state for one card design (TanStack Query). Saves are compare-and-swap on
 // `revision`: a 409 means someone else saved, and the designer offers to reload.
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest, staffRequestBlob } from "../../lib/api";
@@ -76,13 +77,13 @@ export async function uploadAsset(id: number, kind: "background" | "watermark" |
   });
   if (presign.method === "PUT") {
     const upload = await fetch(presign.url, { method: "PUT", body: file, headers: presign.headers });
-    if (!upload.ok) throw new Error(`Upload failed (${upload.status})`);
+    if (!upload.ok) throw new Error(t`Upload failed (${upload.status})`);
   } else {
     const form = new FormData();
     Object.entries(presign.fields ?? {}).forEach(([key, value]) => form.append(key, value));
     form.append("file", file);
     const upload = await fetch(presign.url, { method: "POST", body: form });
-    if (!upload.ok) throw new Error(`Upload failed (${upload.status})`);
+    if (!upload.ok) throw new Error(t`Upload failed (${upload.status})`);
   }
   return staffRequest<{ asset_id: string; mean_colour: string; width_px: number; height_px: number }>(
     `${base(id)}/assets/finalize`, { method: "POST", body: JSON.stringify({ asset_id: presign.asset_id }) });

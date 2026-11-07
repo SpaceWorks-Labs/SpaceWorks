@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field } from "../../components/ui";
@@ -41,7 +42,7 @@ function OwnerResumeVault({ actorId, saved }: { actorId: number; saved?: SavedFi
     attempt.asset = next; setAsset(next); client.setQueryData(statusKey(next.asset_id), next);
   };
   const upload = useMutation({ mutationFn: async () => {
-    if (!file || file.size < 1 || file.size > 10 * 1024 ** 2 || !file.name.toLowerCase().endsWith(".pdf")) throw new Error("Choose a PDF of at most 10 MiB.");
+    if (!file || file.size < 1 || file.size > 10 * 1024 ** 2 || !file.name.toLowerCase().endsWith(".pdf")) throw new Error(t`Choose a PDF of at most 10 MiB.`);
     const attempt: Attempt = work.current ?? { file, epoch: epoch.current, session: getSessionGeneration("person"), createId: crypto.randomUUID(), completeId: crypto.randomUUID(), uploaded: false, abort: new AbortController() };
     work.current = attempt;
     guard(attempt);
@@ -64,7 +65,7 @@ function OwnerResumeVault({ actorId, saved }: { actorId: number; saved?: SavedFi
     await refresh();
   } });
   const save = useMutation({ mutationFn: async () => {
-    if (current?.state !== "ready" || !consent) throw new Error("Wait for the PDF check and choose whether to save it.");
+    if (current?.state !== "ready" || !consent) throw new Error(t`Wait for the PDF check and choose whether to save it.`);
     if (!saveCommand.current || saveCommand.current.assetId !== current.asset_id) saveCommand.current = { assetId: current.asset_id, command: { operation_id: crypto.randomUUID(), expected_version: saved?.version || 0 } };
     return saveDetail("resume", { asset_id: current.asset_id, sha256: current.sha256 }, saveCommand.current.command);
   }, onSuccess: () => { if (mounted.current) { saveCommand.current = null; return refresh(); } } });
@@ -99,20 +100,20 @@ function OwnerResumeVault({ actorId, saved }: { actorId: number; saved?: SavedFi
   const error = upload.error || status.error || save.error || remove.error || download.error;
   const changing = upload.isPending || save.isPending || remove.isPending;
   return <div className="grid gap-3 rounded-card border border-line p-4">
-    <Field label="Private résumé" hint="PDF only, up to 10 MiB. Uploading does not opt you in to saving or sponsor sharing.">
+    <Field label={t`Private résumé`} hint={t`PDF only, up to 10 MiB. Uploading does not opt you in to saving or sponsor sharing.`}>
       <input className="desk-input" type="file" accept="application/pdf,.pdf" disabled={save.isPending || remove.isPending} onChange={e => chooseFile(e.target.files?.[0] || null)} />
     </Field>
-    <button className="desk-button" disabled={!file || changing} onClick={() => upload.mutate()}>{work.current?.uploaded ? "Check or finish PDF upload" : "Upload PDF"}</button>
-    {current ? <p role="status">{file && !asset ? "Previously saved résumé" : "Résumé"}: {current.state === "validating" ? "checking file safety" : current.state}</p> : null}
-    {current?.state === "ready" && (!file || asset) ? <><label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={consent} disabled={changing} onChange={e => setConsent(e.target.checked)} />Save this résumé to my private details</label>
-      <div className="flex flex-wrap gap-2"><button className="desk-button-primary" disabled={!consent || changing} onClick={() => save.mutate()}>Save résumé</button>
-        <button className="desk-button" disabled={download.isPending || changing} onClick={() => download.mutate()}>Download PDF</button></div></> : null}
-    {current && !["deleted", "deleting"].includes(current.state) ? <button className="desk-button-danger-outline" disabled={changing} onClick={() => remove.mutate(current)}>Delete uploaded résumé</button> : null}
+    <button className="desk-button" disabled={!file || changing} onClick={() => upload.mutate()}>{work.current?.uploaded ? t`Check or finish PDF upload` : t`Upload PDF`}</button>
+    {current ? <p role="status">{file && !asset ? t`Previously saved résumé` : t`Résumé`}: {current.state === "validating" ? t`checking file safety` : current.state}</p> : null}
+    {current?.state === "ready" && (!file || asset) ? <><label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={consent} disabled={changing} onChange={e => setConsent(e.target.checked)} />{t`Save this résumé to my private details`}</label>
+      <div className="flex flex-wrap gap-2"><button className="desk-button-primary" disabled={!consent || changing} onClick={() => save.mutate()}>{t`Save résumé`}</button>
+        <button className="desk-button" disabled={download.isPending || changing} onClick={() => download.mutate()}>{t`Download PDF`}</button></div></> : null}
+    {current && !["deleted", "deleting"].includes(current.state) ? <button className="desk-button-danger-outline" disabled={changing} onClick={() => remove.mutate(current)}>{t`Delete uploaded résumé`}</button> : null}
     {retired.filter(item => item.asset_id !== assetId && item.asset_id !== savedId).map(item => <div key={item.asset_id} className="flex flex-wrap items-center gap-2">
-      <p className="text-sm text-muted">Previous unsaved PDF: {item.filename}</p><button className="desk-button-danger-outline" disabled={changing} onClick={() => remove.mutate(item)}>Delete previous PDF {item.filename}</button>
+      <p className="text-sm text-muted">{t`Previous unsaved PDF: ${item.filename}`}</p><button className="desk-button-danger-outline" disabled={changing} onClick={() => remove.mutate(item)}>{t`Delete previous PDF ${item.filename}`}</button>
     </div>)}
-    <p className="text-sm text-muted">An event receives its own copy when you submit a résumé. Deleting this private copy does not delete already-submitted evidence.</p>
+    <p className="text-sm text-muted">{t`An event receives its own copy when you submit a résumé. Deleting this private copy does not delete already-submitted evidence.`}</p>
     {error && error.name !== "AbortError" ? <p role="alert" className="text-danger">{error.message}</p> : null}
-    {save.isSuccess ? <p role="status">Résumé saved privately.</p> : null}
+    {save.isSuccess ? <p role="status">{t`Résumé saved privately.`}</p> : null}
   </div>;
 }

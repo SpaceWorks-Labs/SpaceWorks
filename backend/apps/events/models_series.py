@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.conf import settings
@@ -136,7 +137,7 @@ class EventSeriesCollaborator(models.Model):
         super().clean()
         if self.series_id and self.makerspace_id == self.series.makerspace_id:
             raise ValidationError(
-                {"makerspace": "A series host cannot also be its collaborator."}
+                {"makerspace": gettext("A series host cannot also be its collaborator.")}
             )
 
 

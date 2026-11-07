@@ -11,6 +11,7 @@ A fresh host with no surviving database uses `manage.py fetch_offsite_archive` a
 existing `scripts/import-backup.sh` instead.
 """
 
+from django.utils.translation import gettext
 import logging
 import os
 import tempfile
@@ -33,28 +34,28 @@ def validate_rehydration(archive, destination):
     if archive.status != BackupArchive.Status.AVAILABLE or (
         archive.expires_at is None or archive.expires_at <= timezone.now()
     ):
-        raise ValidationError("Only an available, unexpired archive can be rehydrated.")
+        raise ValidationError(gettext("Only an available, unexpired archive can be rehydrated."))
     if destination.retired_at is not None:
-        raise ValidationError("A retired destination cannot be read.")
+        raise ValidationError(gettext("A retired destination cannot be read."))
     upload = BackupDestinationUpload.objects.filter(
         destination=destination,
         archive_id_snapshot=archive.pk,
         state=BackupDestinationUpload.State.BYTES_VERIFIED,
     ).first()
     if upload is None:
-        raise ValidationError("This destination holds no verified copy of the archive.")
+        raise ValidationError(gettext("This destination holds no verified copy of the archive."))
     try:
         size, sha256, _source = expected_facts(archive)
     except OffsiteIntegrityError as exc:
         raise ValidationError(str(exc)) from exc
     if size != upload.expected_size_bytes or sha256 != upload.expected_sha256:
-        raise ValidationError("The offsite journal disagrees with the archive ledger.")
+        raise ValidationError(gettext("The offsite journal disagrees with the archive ledger."))
     try:
         present = storage.object_exists(archive.object_key)
     except storage.BackupStorageError as exc:
-        raise ValidationError("The primary archive store could not be inspected.") from exc
+        raise ValidationError(gettext("The primary archive store could not be inspected.")) from exc
     if present:
-        raise ValidationError("The primary copy is present; there is nothing to rehydrate.")
+        raise ValidationError(gettext("The primary copy is present; there is nothing to rehydrate."))
     return upload
 
 

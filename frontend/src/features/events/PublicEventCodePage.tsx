@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -28,8 +29,8 @@ export function PublicEventCodePage() {
     },
   });
   if (!(isUuid || isShort) || query.isSuccess && !query.data || query.error instanceof StructuredApiError && query.error.status === 404) return <NotFoundPage />;
-  if (query.error) return <CenteredCardLayout state={{ status: "error", error: "Couldn't load this event.", onRetry: () => { void query.refetch(); } }} title="Event" body="" primary={{ label: "Try again", onClick: () => { void query.refetch(); } }} />;
-  if (!query.data) return <CenteredCardLayout state={{ status: "loading" }} title="Opening event…" body="" primary={{ label: "Loading", disabled: true }} />;
+  if (query.error) return <CenteredCardLayout state={{ status: "error", error: t`Couldn't load this event.`, onRetry: () => { void query.refetch(); } }} title={t`Event`} body="" primary={{ label: t`Try again`, onClick: () => { void query.refetch(); } }} />;
+  if (!query.data) return <CenteredCardLayout state={{ status: "loading" }} title={t`Opening event…`} body="" primary={{ label: t`Loading`, disabled: true }} />;
   let match: RegExpExecArray | null;
   try { match = /^\/public\/([^/]+)\/events\/([^/]+)\/$/.exec(pageApiPath(query.data.content_url)); } catch { return <NotFoundPage />; }
   // A UUID address must name the event it resolved to; a short code resolves server-side.

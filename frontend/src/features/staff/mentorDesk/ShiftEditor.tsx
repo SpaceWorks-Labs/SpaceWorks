@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { Card, Field } from '../../../components/ui'
 import { errorText, useProgrammeCommand } from '../../events/contributions/api'
@@ -31,12 +32,12 @@ export function ShiftEditor({ scope, initial, onSaved }: { scope: EventScope; in
   const [cancel, setCancel] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<unknown>(null)
-  return <Card><h2 className="title-section">{initial ? 'Edit shift or office hours' : 'Create shift or office hours'}</h2>
+  return <Card><h2 className="title-section">{initial ? t`Edit shift or office hours` : t`Create shift or office hours`}</h2>
     <form className="mt-4 grid gap-4" onSubmit={event => {
       event.preventDefault(); setError(null)
       try {
         const postingId = ids(posting)
-        if (postingId.length !== 1) throw new Error('Choose one posting ID.')
+        if (postingId.length !== 1) throw new Error(t`Choose one posting ID.`)
         command.mutate({ path: initial ? `/shifts/${initial.id}/` : '/shifts/', method: initial ? 'PATCH' : 'POST', version: initial?.version ?? 0,
           fields: edited(initial, { posting_id: postingId[0], kind, mentor_assignment_id: kind === 'office_hours' ? Number(mentor) : null,
             task, zone, starts_at: iso(start), ends_at: iso(end), signup_deadline: iso(deadline), capacity: Number(capacity), grace_minutes: Number(grace),
@@ -45,23 +46,23 @@ export function ShiftEditor({ scope, initial, onSaved }: { scope: EventScope; in
             ...(initial && kind === 'office_hours' && cancel ? { cancel_bookings: true, reason } : {}) }) }, { onSuccess: onSaved })
       } catch (cause) { setError(cause) }
     }}>
-      <SetupText label="Posting ID" type="number" value={posting} onChange={setPosting} required />
-      <Field label="Shift kind"><select className="desk-input min-h-11" value={kind} onChange={event => setKind(event.target.value as typeof kind)}><option value="volunteer">Volunteer duty</option><option value="office_hours">Office hours · one place per team</option></select></Field>
-      {kind === 'office_hours' ? <SetupText label="Mentor role assignment ID" type="number" value={mentor} onChange={setMentor} required /> : null}
-      <SetupText label="Task" value={task} onChange={setTask} required /><SetupText label="Zone" value={zone} onChange={setZone} />
-      <SetupText label="Shift starts (your local time)" type="datetime-local" value={start} onChange={setStart} required />
-      <SetupText label="Shift ends (your local time)" type="datetime-local" value={end} onChange={setEnd} required />
-      <SetupText label="Signup deadline (your local time)" type="datetime-local" value={deadline} onChange={setDeadline} required />
-      <SetupText label="Capacity (0 is unlimited)" type="number" value={capacity} onChange={setCapacity} />
-      <SetupText label="Grace minutes (0–60)" type="number" value={grace} onChange={setGrace} />
-      <Toggle checked={waitlist} onChange={setWaitlist}>Enable waitlist</Toggle><Toggle checked={approval} onChange={setApproval}>Approve signups individually</Toggle>
-      <Toggle checked={waiver} onChange={setWaiver}>Host waiver required</Toggle>
-      <SetupText label="Required training IDs" value={training} onChange={setTraining} /><SetupText label="Required briefing IDs" value={briefing} onChange={setBriefing} />
-      <SetupText label="Duty permissions, separated by commas" value={permissions} onChange={setPermissions} />
-      <Field label="Shift state"><select className="desk-input min-h-11" value={state} onChange={event => setState(event.target.value)}><option value="open">Open</option><option value="closed">Closed</option></select></Field>
-      {initial && kind === 'office_hours' ? <><Toggle checked={cancel} onChange={setCancel}>Cancel existing team bookings and notify teams before rescheduling</Toggle>
-        {cancel ? <Field label="Reschedule reason"><textarea className="desk-input" required maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field> : null}</> : null}
+      <SetupText label={t`Posting ID`} type="number" value={posting} onChange={setPosting} required />
+      <Field label={t`Shift kind`}><select className="desk-input min-h-11" value={kind} onChange={event => setKind(event.target.value as typeof kind)}><option value="volunteer">{t`Volunteer duty`}</option><option value="office_hours">{t`Office hours · one place per team`}</option></select></Field>
+      {kind === 'office_hours' ? <SetupText label={t`Mentor role assignment ID`} type="number" value={mentor} onChange={setMentor} required /> : null}
+      <SetupText label={t`Task`} value={task} onChange={setTask} required /><SetupText label={t`Zone`} value={zone} onChange={setZone} />
+      <SetupText label={t`Shift starts (your local time)`} type="datetime-local" value={start} onChange={setStart} required />
+      <SetupText label={t`Shift ends (your local time)`} type="datetime-local" value={end} onChange={setEnd} required />
+      <SetupText label={t`Signup deadline (your local time)`} type="datetime-local" value={deadline} onChange={setDeadline} required />
+      <SetupText label={t`Capacity (0 is unlimited)`} type="number" value={capacity} onChange={setCapacity} />
+      <SetupText label={t`Grace minutes (0–60)`} type="number" value={grace} onChange={setGrace} />
+      <Toggle checked={waitlist} onChange={setWaitlist}>{t`Enable waitlist`}</Toggle><Toggle checked={approval} onChange={setApproval}>{t`Approve signups individually`}</Toggle>
+      <Toggle checked={waiver} onChange={setWaiver}>{t`Host waiver required`}</Toggle>
+      <SetupText label={t`Required training IDs`} value={training} onChange={setTraining} /><SetupText label={t`Required briefing IDs`} value={briefing} onChange={setBriefing} />
+      <SetupText label={t`Duty permissions, separated by commas`} value={permissions} onChange={setPermissions} />
+      <Field label={t`Shift state`}><select className="desk-input min-h-11" value={state} onChange={event => setState(event.target.value)}><option value="open">{t`Open`}</option><option value="closed">{t`Closed`}</option></select></Field>
+      {initial && kind === 'office_hours' ? <><Toggle checked={cancel} onChange={setCancel}>{t`Cancel existing team bookings and notify teams before rescheduling`}</Toggle>
+        {cancel ? <Field label={t`Reschedule reason`}><textarea className="desk-input" required maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field> : null}</> : null}
       {error || command.error ? <p role="alert" className="text-danger">{errorText(error ?? command.error)}</p> : null}
-      <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending}>{command.isPending ? 'Saving…' : 'Save shift'}</button>
+      <button type="submit" className="desk-button-primary min-h-11" disabled={command.isPending}>{command.isPending ? t`Saving…` : t`Save shift`}</button>
     </form></Card>
 }

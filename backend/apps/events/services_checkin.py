@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.db import transaction
@@ -73,7 +74,7 @@ def mark_attended_locked(event, locked, *, actor, source=EventCheckInEvent.Sourc
     if source == EventCheckInEvent.Source.VENUE_STATION:
         credential = credential_for_event(event, lock=True, enabled=True)
         if credential is None or credential.version != station_version:
-            raise PermissionDenied("Invalid station session.")
+            raise PermissionDenied(gettext("Invalid station session."))
     operation_id = operation_id or uuid4()
     if EventCheckInEvent.objects.filter(
         makerspace_id=event.makerspace_id,

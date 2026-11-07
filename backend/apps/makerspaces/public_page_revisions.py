@@ -1,6 +1,7 @@
 """Append complete immutable documents with typed asset/member reference sets."""
 
 
+from django.utils.translation import gettext
 from apps.accounts.staff_identity import is_person
 from copy import deepcopy
 from rest_framework.exceptions import ValidationError
@@ -14,9 +15,9 @@ def append_revision(adapter, page, document, actor, *, request=None):
     assets, members = reference_slots(document)
     owned_assets = set(page.assets.filter(pk__in=assets.values()).values_list("pk", flat=True))
     if owned_assets != set(assets.values()):
-        raise ValidationError({"document": "Images must belong to this page."})
+        raise ValidationError({"document": gettext("Images must belong to this page.")})
     if any(not text.strip() for text in page.assets.filter(pk__in=assets.values()).values_list("alt_text", flat=True)):
-        raise ValidationError({"document": "Referenced images require descriptive alt text."})
+        raise ValidationError({"document": gettext("Referenced images require descriptive alt text.")})
     profiles = {row.pk: row for row in MemberProfile.objects.filter(pk__in=members.values()).select_related(
         "membership__user", "membership__makerspace")}
     from .public_profile_access import _request_tenant_ids
@@ -25,7 +26,7 @@ def append_revision(adapter, page, document, actor, *, request=None):
         profile = profiles.get(pk)
         if (not profile_is_public(profile) or any(scope != profile.membership.makerspace_id for scope in scopes)
                 or not is_person(profile.membership.user)):
-            raise ValidationError({"document": "Choose a currently public member profile in the permitted scope."})
+            raise ValidationError({"document": gettext("Choose a currently public member profile in the permitted scope.")})
     stored = deepcopy(document)
     for section in stored["sections"]:
         if section["type"] == "team":

@@ -1,5 +1,6 @@
 """Counts-only event funnel and bounded local-date signup timeline."""
 
+from django.utils.translation import gettext
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -103,7 +104,7 @@ def project_funnel(event, *, actor=None, now=None):
 def build_event_programme(makerspace_id, *, limit=None, date_range=None, subject_kind=None, subject_id=None):
     """Tenant/event-only report adapter; G registers it with existing subject authorization."""
     if makerspace_id is None or subject_kind != "event" or subject_id is None:
-        raise ValidationError("An event funnel requires one tenant and an event subject.")
+        raise ValidationError(gettext("An event funnel requires one tenant and an event subject."))
     event = Event.objects.filter(makerspace_id__in=scoped_ids(makerspace_id, "events"), pk=subject_id).first()
     if event is None:
         from rest_framework.exceptions import NotFound

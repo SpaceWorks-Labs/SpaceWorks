@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -26,35 +27,35 @@ export function LedgerEntryForm({ makerspaceId, access, onClose }: {
     onSuccess: () => { invalidateFinance(client, makerspaceId); onClose(); },
   });
   const set = (name: keyof typeof form) => (event: { target: { value: string } }) => setForm({ ...form, [name]: event.target.value });
-  return <Modal open onClose={onClose} title={kind === "expense" ? "Record an expense" : "Record other income"}>
+  return <Modal open onClose={onClose} title={kind === "expense" ? t`Record an expense` : t`Record other income`}>
     <form className="grid gap-3" onSubmit={event => { event.preventDefault(); save.mutate(); }}>
-      <fieldset className="flex gap-4"><legend className="text-sm font-semibold">Money</legend>
+      <fieldset className="flex gap-4"><legend className="text-sm font-semibold">{t`Money`}</legend>
         {(["expense", "receipt"] as const).map(value => <label key={value} className="flex min-h-11 items-center gap-2">
           <input type="radio" name="kind" checked={kind === value} onChange={() => {
             setKind(value); setForm({ ...form, category: value === "expense" ? "to_buy" : "donation" });
-          }} />{value === "expense" ? "Paid out" : "Received"}</label>)}
+          }} />{value === "expense" ? t`Paid out` : t`Received`}</label>)}
       </fieldset>
-      <Field label="Area"><select className="desk-input" value={form.domain} onChange={set("domain")}>
+      <Field label={t`Area`}><select className="desk-input" value={form.domain} onChange={set("domain")}>
         {domains.map(domain => <option key={domain} value={domain}>{DOMAIN_LABELS[domain] ?? domain}</option>)}</select></Field>
-      <Field label="Category"><select className="desk-input" value={form.category} onChange={set("category")}>
+      <Field label={t`Category`}><select className="desk-input" value={form.category} onChange={set("category")}>
         {categories.map(category => <option key={category} value={category}>{words(category)}</option>)}</select></Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Amount"><input className="desk-input" inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,2})?" value={form.amount} onChange={set("amount")} /></Field>
-        <Field label="Currency"><input className="desk-input" required maxLength={3} value={form.currency} onChange={set("currency")} /></Field>
-        <Field label="Method"><select className="desk-input" value={form.method} onChange={set("method")}>
+        <Field label={t`Amount`}><input className="desk-input" inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,2})?" value={form.amount} onChange={set("amount")} /></Field>
+        <Field label={t`Currency`}><input className="desk-input" required maxLength={3} value={form.currency} onChange={set("currency")} /></Field>
+        <Field label={t`Method`}><select className="desk-input" value={form.method} onChange={set("method")}>
           {METHODS.map(method => <option key={method} value={method}>{words(method)}</option>)}</select></Field>
-        <Field label="Date"><input type="date" className="desk-input" required value={form.entry_date} onChange={set("entry_date")} /></Field>
+        <Field label={t`Date`}><input type="date" className="desk-input" required value={form.entry_date} onChange={set("entry_date")} /></Field>
       </div>
-      <Field label="What it was for"><input className="desk-input" required maxLength={300} value={form.description} onChange={set("description")} /></Field>
-      <Field label={kind === "expense" ? "Paid to (supplier)" : "Received from"}><input className="desk-input" maxLength={150} value={form.counterparty} onChange={set("counterparty")} /></Field>
-      <Field label="Reference (bill or transaction number)"><input className="desk-input" maxLength={64} value={form.reference} onChange={set("reference")} /></Field>
-      <Field label="Receipt photo or PDF (optional)" hint="JPEG, PNG, WebP or PDF, up to 10 MB."><input type="file"
+      <Field label={t`What it was for`}><input className="desk-input" required maxLength={300} value={form.description} onChange={set("description")} /></Field>
+      <Field label={kind === "expense" ? t`Paid to (supplier)` : t`Received from`}><input className="desk-input" maxLength={150} value={form.counterparty} onChange={set("counterparty")} /></Field>
+      <Field label={t`Reference (bill or transaction number)`}><input className="desk-input" maxLength={64} value={form.reference} onChange={set("reference")} /></Field>
+      <Field label={t`Receipt photo or PDF (optional)`} hint={t`JPEG, PNG, WebP or PDF, up to 10 MB.`}><input type="file"
         accept="image/jpeg,image/png,image/webp,application/pdf" className="desk-input"
         onChange={event => setFile(event.target.files?.[0] ?? null)} /></Field>
       {save.error ? <p role="alert" className="text-sm text-danger">{financeError(save.error)}</p> : null}
       <div className="flex flex-wrap justify-end gap-2">
-        <button type="button" className="desk-button-ghost" onClick={onClose}>Cancel</button>
-        <button type="submit" className="desk-button" disabled={save.isPending}>{save.isPending ? "Saving…" : "Record"}</button>
+        <button type="button" className="desk-button-ghost" onClick={onClose}>{t`Cancel`}</button>
+        <button type="submit" className="desk-button" disabled={save.isPending}>{save.isPending ? t`Saving…` : t`Record`}</button>
       </div>
     </form>
   </Modal>;

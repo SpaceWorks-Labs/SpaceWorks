@@ -1,5 +1,8 @@
+from django.utils.translation import gettext_noop
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from config.locale_registry import validate_supported_locale
 from .managers import UserManager
 from .account_constraints import user_constraints
 from .account_kind_guards import guard_account_identity
@@ -16,7 +19,7 @@ class User(AbstractUser):
     # Staff authority is a staff-TRACK membership on a person, never an account kind.
     class AccountKind(models.TextChoices):
         MEMBER = "member", "Person"
-        STAFF = "staff", "Inert shell"
+        STAFF = "staff", gettext_noop("Inert shell")
         PLATFORM = "platform", "Platform"
 
     objects = UserManager()
@@ -42,8 +45,8 @@ class User(AbstractUser):
     deletion_username = models.CharField(max_length=150, blank=True, default="")
 
     class Role(models.TextChoices):
-        SUPERADMIN = "superadmin", "Super Admin"
-        SPACE_MANAGER = "space_manager", "Space Manager"
+        SUPERADMIN = "superadmin", gettext_noop("Super Admin")
+        SPACE_MANAGER = "space_manager", gettext_noop("Space Manager")
         REQUESTER = "requester", "Requester"
 
     class AccessStatus(models.TextChoices):
@@ -62,6 +65,11 @@ class User(AbstractUser):
     phone_e164 = models.CharField(max_length=20, blank=True)
     phone_verified_at = models.DateTimeField(null=True, blank=True)
     display_name = models.CharField(max_length=200, blank=True)
+    # Phase 8 i18n: the account's own language; null means "use the makerspace default".
+    # Platform account data, changed only by its owner through PATCH /auth/me.
+    preferred_locale = models.CharField(
+        max_length=16, null=True, blank=True, default=None, validators=[validate_supported_locale],
+    )
     email_verified_at = models.DateTimeField(null=True, blank=True)
     # Provenance matters for login: only accounts created by the anonymous signup
     # flow must remain verification-only until they prove ownership of their email.

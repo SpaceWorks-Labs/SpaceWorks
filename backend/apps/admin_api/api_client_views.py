@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 import secrets
 from datetime import timedelta
@@ -256,7 +257,7 @@ class ApiClientRotateSecretView(RecentReauthenticationMixin, generics.GenericAPI
                 and not actor_may_grant_privileged_scopes(request.user)
             ):
                 raise PermissionDenied(
-                    "Only a global superadmin may rotate a client with privileged scopes."
+                    gettext("Only a global superadmin may rotate a client with privileged scopes.")
                 )
             current_secret = client.get_secret()
             raw_secret = secrets.token_urlsafe(32)

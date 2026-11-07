@@ -36,6 +36,11 @@ errors, webhooks, rate limits and versioning).
 * **Errors:** `{"detail": "...", "code": "..."}` with the HTTP status; validation errors
   map each field to its messages.
 * **Rate limits:** `429` with `Retry-After`. API clients are limited per client by tier.
+* **Language:** send `X-SpaceWorks-Locale: <code>` only for a deliberate in-app choice; it
+  outranks the account preference, the makerspace default and `Accept-Language`, in that
+  order. `Accept-Language` is the ambient fallback. Unsupported values are ignored. Responses
+  carry `Content-Language` and vary on both headers. Codes, keys and enum values are never
+  translated; only human-readable text is.
 """
 
 SECURITY_SCHEMES = {

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -7,10 +8,10 @@ export const AUTHORITY_MODULES = ["events", "bookings", "machines", "inventory"]
 export type AuthorityModule = typeof AUTHORITY_MODULES[number];
 
 export const MODULE_MANAGER_LABELS: Record<AuthorityModule, string> = {
-  events: "Event settings · Event Managers",
-  bookings: "Booking settings · Booking Managers",
-  machines: "Machine settings · Machine Managers",
-  inventory: "Lending settings · Inventory Managers",
+  events: t`Event settings · Event Managers`,
+  bookings: t`Booking settings · Booking Managers`,
+  machines: t`Machine settings · Machine Managers`,
+  inventory: t`Lending settings · Inventory Managers`,
 };
 
 export type SettingsGrant = { id: number; module: AuthorityModule; grantee: number | null; grantee_name: string;

@@ -5,6 +5,7 @@ deduplicated notice one day before the payment deadline, with live owner/status
 checks at discovery, build and dispatch. Expiry/activation remains a domain service.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.db import transaction
@@ -64,7 +65,7 @@ def build_payment_message(makerspace, reminder, now, local_tz):
     if request is None:
         return None
     return ReminderMessage(
-        title="Membership payment due", event="membership.payment_due",
+        title=gettext("Membership payment due"), event="membership.payment_due",
     )
 
 

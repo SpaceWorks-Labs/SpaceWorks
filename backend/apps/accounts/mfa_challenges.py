@@ -5,6 +5,7 @@ unusual-sign-in check: an emailed code, ``mfa_source=email_code``, never VERIFIE
 other purpose -- a re-authentication intent -- never completes a sign-in here.
 """
 
+from django.utils.translation import gettext
 import hashlib
 import secrets
 from datetime import timedelta
@@ -97,21 +98,21 @@ def _kept_grant(challenge, user):
     grant = DeviceGrant.objects.filter(pk=device["grant_id"], user=user,
                                        status=DeviceGrant.Status.ACTIVE).first()
     if grant is None:
-        raise AuthenticationFailed("Device authorization is no longer active.")
+        raise AuthenticationFailed(gettext("Device authorization is no longer active."))
     return grant
 
 
 def _locked(raw, request):
     candidate = MFAChallenge.objects.filter(token_digest=digest(raw)).values("pk", "user_id").first()
     if candidate is None:
-        raise AuthenticationFailed("Invalid or expired MFA challenge.")
+        raise AuthenticationFailed(gettext("Invalid or expired MFA challenge."))
     # Use the same User -> credential -> challenge lock order as management/recovery.
     user = User.objects.select_for_update().get(pk=candidate["user_id"])
     row = UserMFA.objects.select_for_update().get(user=user)
     challenge = MFAChallenge.objects.select_for_update().filter(pk=candidate["pk"]).first()
     if challenge is None or challenge.context.get("purpose") not in LOGIN_PURPOSES:
         # A re-authentication intent's challenge never completes a sign-in.
-        raise AuthenticationFailed("Invalid or expired MFA challenge.")
+        raise AuthenticationFailed(gettext("Invalid or expired MFA challenge."))
     active(user)
     from apps.accounts.surface_policy import assert_surface, validate_account_token
     validate_account_token(user, challenge.context)
@@ -120,7 +121,7 @@ def _locked(raw, request):
     origin = request_origin(request)
     if challenge.context.get("surface") == "control":
         if request.path != "/mfa/control/" or request.user.pk != user.pk:
-            raise AuthenticationFailed("Invalid or expired MFA challenge.")
+            raise AuthenticationFailed(gettext("Invalid or expired MFA challenge."))
         from urllib.parse import urlsplit
         origin = urlsplit(request.build_absolute_uri("/")).geturl().rstrip("/")
     valid = (challenge.consumed_at is None and challenge.expires_at > timezone.now()
@@ -132,7 +133,7 @@ def _locked(raw, request):
              and challenge.context.get("origin", "") == origin
              and _same_settings_device(challenge, request))
     if not valid:
-        raise AuthenticationFailed("Invalid or expired MFA challenge.")
+        raise AuthenticationFailed(gettext("Invalid or expired MFA challenge."))
     return challenge, user, row
 
 
@@ -141,9 +142,9 @@ def enroll(raw, request):
     challenge, user, row = _locked(raw, request)
     assert_available(user)
     if challenge.context.get("purpose") == PURPOSE_RISK:
-        raise AuthenticationFailed("Invalid or expired MFA challenge.")
+        raise AuthenticationFailed(gettext("Invalid or expired MFA challenge."))
     if row.enabled_at:
-        raise AuthenticationFailed("MFA is already enrolled.")
+        raise AuthenticationFailed(gettext("MFA is already enrolled."))
     if not challenge.pending_secret:
         challenge.pending_secret = encrypt_value(new_secret())
         challenge.save(update_fields=["pending_secret"])
@@ -190,10 +191,10 @@ def _verify(challenge, user, row, request, *, code, enrolling, factor, webauthn)
 def _refusal(challenge, factor):
     from rest_framework.exceptions import ValidationError
     if challenge.context.get("purpose") == PURPOSE_RISK:
-        return ValidationError({"detail": "That code is not right or has expired.", "code": LOGIN_CODE_INVALID})
+        return ValidationError({"detail": gettext("That code is not right or has expired."), "code": LOGIN_CODE_INVALID})
     if factor == FACTOR_PASSKEY:
-        return ValidationError({"detail": "The passkey could not be verified. Try again.", "code": PASSKEY_FAILED})
-    return AuthenticationFailed("Invalid or expired MFA challenge.")
+        return ValidationError({"detail": gettext("The passkey could not be verified. Try again."), "code": PASSKEY_FAILED})
+    return AuthenticationFailed(gettext("Invalid or expired MFA challenge."))
 
 
 def _finish(raw, code, request, *, enrolling, factor=None, webauthn=None):

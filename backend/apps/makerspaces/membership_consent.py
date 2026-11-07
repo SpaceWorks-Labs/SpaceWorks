@@ -7,6 +7,7 @@ stamped with the current notice version) and may withdraw it at any time (the ro
 are never edited otherwise and never deleted outside a purge. No guardian or minor
 fields exist (owner decision 3). Audited as `membership.consent_given|withdrawn`.
 """
+from django.utils.translation import gettext
 import re
 
 from django.db import transaction
@@ -23,14 +24,14 @@ MAX_PURPOSES = 20
 
 def validate_purposes(value):
     if not isinstance(value, list) or len(value) > MAX_PURPOSES:
-        raise ValidationError({"consent_purposes": f"Use a list of at most {MAX_PURPOSES} purposes."})
+        raise ValidationError({"consent_purposes": gettext('Use a list of at most {MAX_PURPOSES} purposes.').format(MAX_PURPOSES=MAX_PURPOSES)})
     seen, cleaned = set(), []
     for item in value:
         if not isinstance(item, dict) or not _KEY.match(str(item.get("key", ""))) or item["key"] in seen:
-            raise ValidationError({"consent_purposes": "Each purpose needs a unique lowercase key."})
+            raise ValidationError({"consent_purposes": gettext("Each purpose needs a unique lowercase key.")})
         label = str(item.get("label", "")).strip()[:120]
         if not label:
-            raise ValidationError({"consent_purposes": "Each purpose needs a label."})
+            raise ValidationError({"consent_purposes": gettext("Each purpose needs a label.")})
         seen.add(item["key"])
         cleaned.append({"key": item["key"], "label": label, "description": str(item.get("description", "")).strip()[:500]})
     return cleaned
@@ -59,10 +60,10 @@ def give(member, membership, purpose, *, source=MembershipConsent.Source.MEMBER)
     with transaction.atomic():
         space, membership = _lock(membership)
         if membership.user_id != member.pk or membership.status != "active":
-            raise NotFound("Membership not found.")
+            raise NotFound(gettext("Membership not found."))
         purposes, version = published(space)
         if purpose not in {item["key"] for item in purposes}:
-            raise ValidationError({"purpose": "This space does not ask for that consent."})
+            raise ValidationError({"purpose": gettext("This space does not ask for that consent.")})
         row = MembershipConsent.objects.filter(membership=membership, purpose=purpose, withdrawn_at__isnull=True).first()
         if row is not None:
             return row
@@ -78,11 +79,11 @@ def withdraw(member, membership, purpose):
     with transaction.atomic():
         space, membership = _lock(membership)
         if membership.user_id != member.pk:
-            raise NotFound("Membership not found.")
+            raise NotFound(gettext("Membership not found."))
         row = MembershipConsent.objects.select_for_update().filter(
             membership=membership, purpose=purpose, withdrawn_at__isnull=True).first()
         if row is None:
-            raise NotFound("No consent to withdraw.")
+            raise NotFound(gettext("No consent to withdraw."))
         row.withdrawn_at = timezone.now()
         row.save(update_fields=["withdrawn_at"])
         audit.record(member, "membership.consent_withdrawn", makerspace=space, target=membership,

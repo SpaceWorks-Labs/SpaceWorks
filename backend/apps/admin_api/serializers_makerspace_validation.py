@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -108,13 +109,13 @@ class MakerspaceValidationMixin:
 
     def validate_default_loan_days(self, value):
         if value < 1:
-            raise serializers.ValidationError("Default loan days must be at least 1.")
+            raise serializers.ValidationError(gettext("Default loan days must be at least 1."))
         return value
 
     def validate_filament_low_stock_threshold_grams(self, value):
         if value < 0:
             raise serializers.ValidationError(
-                "Filament low-stock threshold cannot be negative."
+                gettext("Filament low-stock threshold cannot be negative.")
             )
         return value
 
@@ -127,7 +128,7 @@ class MakerspaceValidationMixin:
     def to_internal_value(self, data):
         request = self.context.get("request")
         if request is not None and "enabled_modules" in data:
-            raise PermissionDenied("Capabilities can only be changed in /control/.")
+            raise PermissionDenied(gettext("Capabilities can only be changed in /control/."))
         return super().to_internal_value(data)
 
     def validate(self, attrs):
@@ -147,7 +148,7 @@ class MakerspaceValidationMixin:
             raise serializers.ValidationError(
                 {
                     "geofence_enabled": (
-                        "Set both latitude and longitude before enabling the geofence."
+                        gettext("Set both latitude and longitude before enabling the geofence.")
                     )
                 }
             )
@@ -178,7 +179,7 @@ class MakerspaceValidationMixin:
                 raise serializers.ValidationError(
                     {
                         "resource_limit_overrides": (
-                            "Only a superadmin can set per-space resource limits."
+                            gettext("Only a superadmin can set per-space resource limits.")
                         )
                     }
                 )

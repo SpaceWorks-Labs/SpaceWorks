@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -77,7 +78,7 @@ class ClosureApprovalCreateSerializer(serializers.Serializer):
     def validate_decisions(self, values):
         ids = [item["user_id"] for item in values]
         if len(ids) != len(set(ids)):
-            raise serializers.ValidationError("Each closure identity may appear only once.")
+            raise serializers.ValidationError(gettext("Each closure identity may appear only once."))
         return values
 
 
@@ -132,7 +133,7 @@ class ImportCreateSerializer(serializers.Serializer):
 
     def validate_archive(self, value):
         if value.size <= 0:
-            raise serializers.ValidationError("The encrypted archive is empty.")
+            raise serializers.ValidationError(gettext("The encrypted archive is empty."))
         return value
 
 
@@ -191,11 +192,11 @@ class ImportIdentityDecisionSerializer(serializers.Serializer):
         linked = attrs["identity_resolution"] == "link_existing"
         if linked != (target is not None):
             raise serializers.ValidationError(
-                {"target_user_id": "Required only for link_existing decisions."}
+                {"target_user_id": gettext("Required only for link_existing decisions.")}
             )
         if attrs.get("grant_staff_roles") and not linked:
             raise serializers.ValidationError(
-                {"grant_staff_roles": "Only a linked person's staff roles take an explicit grant."}
+                {"grant_staff_roles": gettext("Only a linked person's staff roles take an explicit grant.")}
             )
         return attrs
 
@@ -207,14 +208,14 @@ class ImportDecisionListSerializer(serializers.Serializer):
         source_ids = [item["source_user_id"] for item in values]
         targets = [item["target_user_id"] for item in values if item.get("target_user_id")]
         if len(source_ids) != len(set(source_ids)):
-            raise serializers.ValidationError("Each source identity may appear only once.")
+            raise serializers.ValidationError(gettext("Each source identity may appear only once."))
         if len(targets) != len(set(targets)):
-            raise serializers.ValidationError("A target account may be linked only once.")
+            raise serializers.ValidationError(gettext("A target account may be linked only once."))
         from apps.accounts.models import User
 
         existing = set(User.objects.filter(pk__in=targets).values_list("pk", flat=True))
         if existing != set(targets):
-            raise serializers.ValidationError("A linked target account does not exist.")
+            raise serializers.ValidationError(gettext("A linked target account does not exist."))
         return values
 
 
@@ -223,7 +224,7 @@ class ImportRunSerializer(serializers.Serializer):
 
     def validate_target_identity(self, value):
         if set(value) - {"name", "slug"}:
-            raise serializers.ValidationError("Only name and slug may be overridden.")
+            raise serializers.ValidationError(gettext("Only name and slug may be overridden."))
         return value
 
 

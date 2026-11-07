@@ -1,4 +1,5 @@
 """Durable claim precedes any workflow effect; identical reports share one claim."""
+from django.utils.translation import gettext
 import hashlib
 import json
 
@@ -26,17 +27,17 @@ def validate_measurements(request, machine, payload):
         # The workflow supports one pool reconciliation plus separate MachineConsumable inputs.
         weight = request.metering_unit == "weight"
         if (grams is None if weight else quantity is None) or (quantity is not None if weight else grams is not None):
-            raise ValidationError("Supply the actual measurement matching the reserved pool's metering unit.")
+            raise ValidationError(gettext("Supply the actual measurement matching the reserved pool's metering unit."))
     elif grams is not None or quantity is not None:
-        raise ValidationError("This request has no reserved consumable pool to reconcile.")
+        raise ValidationError(gettext("This request has no reserved consumable pool to reconcile."))
     ids = [row["machine_consumable_id"] for row in payload["consumptions"]]
     consumables = {row.pk: row for row in MachineConsumable.objects.select_for_update().filter(pk__in=ids, machine=machine).order_by("pk")}
     if set(consumables) != set(ids):
-        raise ValidationError("Every consumption must belong to the assigned machine.")
+        raise ValidationError(gettext("Every consumption must belong to the assigned machine."))
     for item in payload["consumptions"]:
         row = consumables[item["machine_consumable_id"]]
         if row.measurement == "count" and item["quantity"] != item["quantity"].to_integral_value():
-            raise ValidationError("Count consumption must be a whole number.")
+            raise ValidationError(gettext("Count consumption must be a whole number."))
     return consumables
 
 

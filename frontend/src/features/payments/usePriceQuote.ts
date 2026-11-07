@@ -1,3 +1,4 @@
+import { formatLocale } from "../../lib/format";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { PricingPublicQuote, PricingQuoteRequest } from "../../generated/api";
@@ -46,7 +47,7 @@ export function quoteErrorStatus(error: unknown) {
 
 export function money(amount: string | number, currency: string) {
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
+    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
   } catch {
     return `${currency.toUpperCase()} ${amount}`;
   }

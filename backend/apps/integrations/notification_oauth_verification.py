@@ -1,4 +1,5 @@
 """Browser OAuth proofs require the actor and challenge from the authenticated URL."""
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -21,11 +22,11 @@ def oauth_return(space, user, state):
         challenge = policy_rows(NotificationEndpointChallenge, space).select_related("configuration").get(
             pk=value["challenge"], user=user)
     except (signing.BadSignature, KeyError, TypeError, ValueError, NotificationEndpointChallenge.DoesNotExist):
-        raise ValidationError({"proof": "Invalid or expired OAuth state."}) from None
+        raise ValidationError({"proof": gettext("Invalid or expired OAuth state.")}) from None
     config = challenge.configuration
     if (config.channel not in OAUTH_CHANNELS or not config.enabled or not config.personal_enabled
             or channel_module_blocks(space, config.channel)):
-        raise ValidationError({"proof": "This connection is no longer available."})
+        raise ValidationError({"proof": gettext("This connection is no longer available.")})
     read_state(config, state, user_id=user.pk, challenge_id=challenge.pk)
     return {"challenge_id": challenge.pk, "expires_at": challenge.expires_at}
 
@@ -42,7 +43,7 @@ def verify_oauth(challenge, request):
         )
         state = request.data.get("state")
         if not state or not request.data.get("code"):
-            raise ValidationError({"proof": "OAuth code and state are required."})
+            raise ValidationError({"proof": gettext("OAuth code and state are required.")})
         read_state(config, state, user_id=request.user.pk, challenge_id=locked.pk)
         try:
             endpoint = verified_callback(config, request, expected_user_id=request.user.pk,

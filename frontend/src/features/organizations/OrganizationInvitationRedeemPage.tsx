@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -58,18 +59,18 @@ export function OrganizationInvitationRedeemPage() {
   }
 
   return <CenteredCardLayout width={480} state={{ status: restoring || redeem.isPending ? "loading" : "ready" }}
-    media={{ banner: redeem.isSuccess ? "success" : "accent" }} eyebrow="Organization invitation"
-    title={redeem.isSuccess ? "You're in" : "Join an organization"}
-    body={redeem.isSuccess ? "Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces."
-      : redeem.isError ? redeem.error.message : "You've been invited to join. Sign in to bind this single-use invitation to your account. This link works once."}
-    primary={redeem.isSuccess ? { label: "Open organizations", href: "/admin/organizations" }
-      : redeem.isError ? { label: "Return to directory", href: "/" } : {
-        label: "Sign in and continue", pending: login.isPending,
+    media={{ banner: redeem.isSuccess ? "success" : "accent" }} eyebrow={t`Organization invitation`}
+    title={redeem.isSuccess ? t`You're in` : t`Join an organization`}
+    body={redeem.isSuccess ? t`Your organization access is active. Makerspace actions remain scoped to the organization's linked makerspaces.`
+      : redeem.isError ? redeem.error.message : t`You've been invited to join. Sign in to bind this single-use invitation to your account. This link works once.`}
+    primary={redeem.isSuccess ? { label: t`Open organizations`, href: "/admin/organizations" }
+      : redeem.isError ? { label: t`Return to directory`, href: "/" } : {
+        label: t`Sign in and continue`, pending: login.isPending,
         onClick: () => (document.getElementById("organization-invite-form") as HTMLFormElement)?.requestSubmit(),
       }}
     content={!restoring && !user ? <form id="organization-invite-form" className="grid gap-4" onSubmit={submit}>
-      <label className="grid gap-2 text-sm font-semibold">Username or email<input className="desk-input" autoComplete="username" required value={credentials.username} onChange={(event) => setCredentials({ ...credentials, username: event.target.value })} /></label>
-      <label className="grid gap-2 text-sm font-semibold">Password<input className="desk-input" type="password" autoComplete="current-password" required value={credentials.password} onChange={(event) => setCredentials({ ...credentials, password: event.target.value })} /></label>
+      <label className="grid gap-2 text-sm font-semibold">{t`Username or email`}<input className="desk-input" autoComplete="username" required value={credentials.username} onChange={(event) => setCredentials({ ...credentials, username: event.target.value })} /></label>
+      <label className="grid gap-2 text-sm font-semibold">{t`Password`}<input className="desk-input" type="password" autoComplete="current-password" required value={credentials.password} onChange={(event) => setCredentials({ ...credentials, password: event.target.value })} /></label>
       {login.error ? <p className="text-sm text-danger" role="alert">{login.error.message}</p> : null}
     <button type="submit" disabled={login.isPending} hidden aria-hidden="true" tabIndex={-1} />
     </form> : undefined} />;

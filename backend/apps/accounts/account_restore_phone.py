@@ -1,5 +1,6 @@
 """Phone recovery consumes the existing login-start OTP and exact app proof."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -15,7 +16,7 @@ from apps.accounts.services_phone import _confirm
 def confirm_phone(data):
     phone = normalize_or_none(data["phone"])
     if phone is None:
-        raise ValidationError({"detail": "Invalid or expired restore proof."})
+        raise ValidationError({"detail": gettext("Invalid or expired restore proof.")})
     # Attempts and successful consumption must survive a failed attestation or restore.
     with transaction.atomic():
         otp = _confirm(PhoneVerificationChallenge.objects.filter(
@@ -26,7 +27,7 @@ def confirm_phone(data):
         if otp is not None:
             audit_events.record_auth_event(None, "auth.account_restore_attempted", target=otp)
     if otp is None:
-        raise ValidationError({"detail": "Invalid or expired restore proof."})
+        raise ValidationError({"detail": gettext("Invalid or expired restore proof.")})
     if data["delivery"] == "device":
         from apps.accounts.attestation import (consume_attestation_challenge, verify_attestation,
                                                AttestationRejected, AttestationUnavailable)
@@ -44,5 +45,5 @@ def confirm_phone(data):
         user = User.objects.select_for_update(no_key=True).filter(pk=otp.user_id).first()
         if (otp.expires_at <= timezone.now() or not matches(user, otp.credential_fingerprint)
                 or user.email or user.phone_e164 != phone):
-            raise ValidationError({"detail": "Invalid or expired restore proof."})
+            raise ValidationError({"detail": gettext("Invalid or expired restore proof.")})
         return restore_locked(user, fingerprint=otp.credential_fingerprint, new_password=data["new_password"])

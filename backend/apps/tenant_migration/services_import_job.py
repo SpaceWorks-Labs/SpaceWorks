@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from collections import Counter
 
 from django.core.exceptions import ValidationError
@@ -35,7 +36,7 @@ def submit_identity_decisions(*, actor, job, decisions):
             for row in portable.rows("accounts.User")
         }
         if {str(item["source_user_id"]) for item in decisions} != set(source_rows):
-            raise ValidationError({"detail": "A decision is required for every archived identity."})
+            raise ValidationError({"detail": gettext("A decision is required for every archived identity.")})
         from .identity_decision_validation import validate_membership_dispositions
 
         validate_membership_dispositions(portable, decisions)
@@ -45,7 +46,7 @@ def submit_identity_decisions(*, actor, job, decisions):
             TenantImportJob.Status.AWAITING_IDENTITY,
             TenantImportJob.Status.READY,
         }:
-            raise ValidationError({"detail": "This import no longer accepts identity decisions."})
+            raise ValidationError({"detail": gettext("This import no longer accepts identity decisions.")})
         locked.identity_decisions.all().delete()
         rows = []
         for item in decisions:
@@ -112,7 +113,7 @@ def _require_superadmin(actor):
         and not getattr(actor, "is_tenant_dump_stub", False)
         and getattr(actor, "retired_at", None) is None
     ):
-        raise ValidationError({"detail": "Superadmin access is required."})
+        raise ValidationError({"detail": gettext("Superadmin access is required.")})
 
 
 @transaction.atomic
@@ -120,7 +121,7 @@ def scrub_terminal_job(job):
     """Discard per-person provenance while preserving a PII-free aggregate result."""
     locked = TenantImportJob.objects.select_for_update().get(pk=job.pk)
     if locked.status not in TenantImportJob.TERMINAL_STATUSES:
-        raise ValidationError("Only a terminal tenant import job can be scrubbed.")
+        raise ValidationError(gettext("Only a terminal tenant import job can be scrubbed."))
     if locked.scrubbed_at is not None:
         return locked
 

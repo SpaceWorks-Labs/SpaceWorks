@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getAccessToken, StructuredApiError } from "../../../lib/api";
@@ -24,6 +25,6 @@ export function useClearDeniedQuery(error: unknown, key: readonly unknown[]) {
 export function ProgrammeSessionBoundary({ children, error }: { children: ReactNode; error?: unknown }) {
   const [generation, setGeneration] = useState(0);
   useEffect(() => onSessionCleared(() => setGeneration(value => value + 1)), []);
-  if (isProtectedDenial(error)) return <p role="alert" className="text-sm text-danger">This content is no longer available for your access.</p>;
+  if (isProtectedDenial(error)) return <p role="alert" className="text-sm text-danger">{t`This content is no longer available for your access.`}</p>;
   return <Fragment key={JSON.stringify([generation, ...sessionScope()])}>{children}</Fragment>;
 }

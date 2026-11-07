@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { toneSurfaceClasses } from "../../components/ui/tones";
 import type { PresenceSession } from "./api";
 import { clockTime, minutesLeft, presetLongLabel } from "./presenceCopy";
@@ -14,9 +15,9 @@ export function PresenceRenewPrompt({ session, phase, now, presets, pending, onR
   const body = phase === "soon" ? "Still here? Renew from now." : `Still here? You can renew for ${RENEW_WINDOW_MINUTES} minutes after it ends.`;
   return <div role="alert" className={`grid gap-3 rounded-xl border p-4 ${toneSurfaceClasses[phase === "soon" ? "warn" : "danger"]}`}>
     <p className="text-sm"><strong>{lead}</strong> {body}</p>
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Renew for">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={t`Renew for`}>
       {presets.map((minutes) => <button key={minutes} type="button" className="desk-button-brand" disabled={pending} onClick={() => onRenew(minutes)}>
-        {pending ? "Renewing…" : `Renew ${presetLongLabel(minutes)}`}</button>)}
+        {pending ? t`Renewing…` : t`Renew ${presetLongLabel(minutes)}`}</button>)}
     </div>
   </div>;
 }

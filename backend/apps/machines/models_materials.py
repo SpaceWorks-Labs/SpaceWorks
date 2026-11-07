@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db import models
 from django.db.models.functions import Lower
 from django.core.exceptions import ValidationError
@@ -7,7 +8,7 @@ def validate_colours(value):
     if (not isinstance(value, list) or not value or len(value) > 100
             or any(not isinstance(name, str) or not name.strip() or len(name) > 100 for name in value)
             or len({name.casefold() for name in value}) != len(value)):
-        raise ValidationError("Colours must be a nonempty list of unique names (up to 100).")
+        raise ValidationError(gettext("Colours must be a nonempty list of unique names (up to 100)."))
 
 
 class MachineMaterial(models.Model):
@@ -23,4 +24,4 @@ class MachineMaterial(models.Model):
 
     def clean(self):
         if self.machine_type.makerspace_id not in (None, self.makerspace_id):
-            raise ValidationError("Machine type belongs to another makerspace.")
+            raise ValidationError(gettext("Machine type belongs to another makerspace."))

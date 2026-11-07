@@ -15,6 +15,7 @@ touches the stored credentials, so re-enabling needs no re-entry.
 these say which credentials the deployment accepts. Self sign-up needs both.
 """
 
+from django.utils.translation import gettext_lazy
 from django.db import models
 
 
@@ -22,47 +23,47 @@ class PlatformLoginMethods(models.Model):
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     password_enabled = models.BooleanField(
         default=True,
-        help_text="Username/email and password sign-in, for staff and members alike.",
+        help_text=gettext_lazy("Username/email and password sign-in, for staff and members alike."),
     )
     social_enabled = models.BooleanField(
         default=True,
         help_text=(
-            "Sign-in through an identity provider — the built-in Google, Apple and GitHub "
+            gettext_lazy("Sign-in through an identity provider — the built-in Google, Apple and GitHub "
             "providers and every configured OIDC provider. They share one endpoint, so "
-            "they share one switch."
+            "they share one switch.")
         ),
     )
     google_enabled = models.BooleanField(
-        default=True, help_text="Chosen at install; change with manage.py set_login_methods.",
+        default=True, help_text=gettext_lazy("Chosen at install; change with manage.py set_login_methods."),
     )
     apple_enabled = models.BooleanField(
-        default=True, help_text="Chosen at install; change with manage.py set_login_methods.",
+        default=True, help_text=gettext_lazy("Chosen at install; change with manage.py set_login_methods."),
     )
     github_enabled = models.BooleanField(
-        default=True, help_text="Chosen at install; change with manage.py set_login_methods.",
+        default=True, help_text=gettext_lazy("Chosen at install; change with manage.py set_login_methods."),
     )
     phone_enabled = models.BooleanField(
-        default=True, help_text="Sign-in with an SMS code to a verified number."
+        default=True, help_text=gettext_lazy("Sign-in with an SMS code to a verified number.")
     )
     self_registration_enabled = models.BooleanField(
         default=True,
         help_text=(
-            "Whether anyone may create their own member account. With this off, staff "
-            "add people from the console."
+            gettext_lazy("Whether anyone may create their own member account. With this off, staff "
+            "add people from the console.")
         ),
     )
     mfa_enabled = models.BooleanField(
         default=True,
         help_text=(
-            "Chosen at install; change with manage.py set_login_methods. Turning off overrides "
-            "staff-MFA-required makerspaces; enrolled authenticators are retained."
+            gettext_lazy("Chosen at install; change with manage.py set_login_methods. Turning off overrides "
+            "staff-MFA-required makerspaces; enrolled authenticators are retained.")
         ),
     )
     passkeys_enabled = models.BooleanField(
         default=True,
         help_text=(
-            "Whether people may add and use passkeys. Offered, never forced: switching it "
-            "off never removes a passkey, and nobody is ever required to have one."
+            gettext_lazy("Whether people may add and use passkeys. Offered, never forced: switching it "
+            "off never removes a passkey, and nobody is ever required to have one.")
         ),
     )
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from 'react'
 import { Card, Field } from '../../../components/ui'
 import type { Aggregate, EventScope } from '../../events/contributions/types'
@@ -33,7 +34,7 @@ export function PostingEditor({ scope, initial, renderFormBuilder, onSaved }: {
   const [schema, setSchema] = useState(initial?.form_schema ?? {})
   const [error, setError] = useState<unknown>(null)
   const available = role === 'mentor' ? ['mentor_queue'] : ['check_in', 'publish_schedule']
-  return <Card><h2 className="title-section">{initial ? 'Edit contributor posting' : 'Create contributor posting'}</h2>
+  return <Card><h2 className="title-section">{initial ? t`Edit contributor posting` : t`Create contributor posting`}</h2>
     <form className="mt-4 grid gap-4" onSubmit={event => {
       event.preventDefault(); setError(null)
       try {
@@ -43,22 +44,22 @@ export function PostingEditor({ scope, initial, renderFormBuilder, onSaved }: {
             state, permission_preset: permissions.filter(x => available.includes(x)), form_schema: schema }) }, { onSuccess: onSaved })
       } catch (cause) { setError(cause) }
     }}>
-      <SetupText label="Posting title" value={title} onChange={setTitle} required />
-      <Field label="Contributor role"><select className="desk-input min-h-11" value={role} disabled={!!initial} onChange={event => { setRole(event.target.value as typeof role); setPermissions([]) }}><option value="volunteer">Volunteer</option><option value="mentor">Mentor</option></select></Field>
-      <Field label="Description"><textarea className="desk-input" maxLength={10000} value={description} onChange={event => setDescription(event.target.value)} /></Field>
-      <Field label="Briefing"><textarea className="desk-input" maxLength={10000} value={briefing} onChange={event => setBriefing(event.target.value)} /></Field>
-      <SetupText label="Skills, separated by commas" value={skills} onChange={setSkills} />
-      <Field label="Visibility"><select className="desk-input min-h-11" value={visibility} onChange={event => setVisibility(event.target.value)}><option value="public">Public</option><option value="members">Members</option><option value="audience_organizations">Audience organizations</option></select></Field>
-      <SetupText label="Applications open (your local time)" type="datetime-local" value={opens} onChange={setOpens} required />
-      <SetupText label="Applications close (your local time)" type="datetime-local" value={closes} onChange={setCloses} required />
-      <Toggle checked={approval} onChange={setApproval}>Organizer approval required</Toggle>
-      <Toggle checked={waiver} onChange={setWaiver}>Host waiver required</Toggle>
-      <SetupText label="Required training IDs" value={training} onChange={setTraining} />
-      <SetupText label="Required briefing IDs" value={briefings} onChange={setBriefings} />
-      <fieldset><legend className="font-semibold">Permissions on approval</legend>{available.map(permission => <Toggle key={permission} checked={permissions.includes(permission)} onChange={checked => setPermissions(checked ? [...permissions, permission] : permissions.filter(x => x !== permission))}>{permission.replace(/_/g, ' ')}</Toggle>)}</fieldset>
+      <SetupText label={t`Posting title`} value={title} onChange={setTitle} required />
+      <Field label={t`Contributor role`}><select className="desk-input min-h-11" value={role} disabled={!!initial} onChange={event => { setRole(event.target.value as typeof role); setPermissions([]) }}><option value="volunteer">{t`Volunteer`}</option><option value="mentor">{t`Mentor`}</option></select></Field>
+      <Field label={t`Description`}><textarea className="desk-input" maxLength={10000} value={description} onChange={event => setDescription(event.target.value)} /></Field>
+      <Field label={t`Briefing`}><textarea className="desk-input" maxLength={10000} value={briefing} onChange={event => setBriefing(event.target.value)} /></Field>
+      <SetupText label={t`Skills, separated by commas`} value={skills} onChange={setSkills} />
+      <Field label={t`Visibility`}><select className="desk-input min-h-11" value={visibility} onChange={event => setVisibility(event.target.value)}><option value="public">{t`Public`}</option><option value="members">{t`Members`}</option><option value="audience_organizations">{t`Audience organizations`}</option></select></Field>
+      <SetupText label={t`Applications open (your local time)`} type="datetime-local" value={opens} onChange={setOpens} required />
+      <SetupText label={t`Applications close (your local time)`} type="datetime-local" value={closes} onChange={setCloses} required />
+      <Toggle checked={approval} onChange={setApproval}>{t`Organizer approval required`}</Toggle>
+      <Toggle checked={waiver} onChange={setWaiver}>{t`Host waiver required`}</Toggle>
+      <SetupText label={t`Required training IDs`} value={training} onChange={setTraining} />
+      <SetupText label={t`Required briefing IDs`} value={briefings} onChange={setBriefings} />
+      <fieldset><legend className="font-semibold">{t`Permissions on approval`}</legend>{available.map(permission => <Toggle key={permission} checked={permissions.includes(permission)} onChange={checked => setPermissions(checked ? [...permissions, permission] : permissions.filter(x => x !== permission))}>{permission.replace(/_/g, ' ')}</Toggle>)}</fieldset>
       {renderFormBuilder({ schema, onChange: setSchema, disabled: command.isPending })}
-      <Field label="Posting state"><select className="desk-input min-h-11" value={state} onChange={event => setState(event.target.value)}><option value="draft">Draft</option><option value="open">Open</option><option value="closed">Closed</option></select></Field>
+      <Field label={t`Posting state`}><select className="desk-input min-h-11" value={state} onChange={event => setState(event.target.value)}><option value="draft">{t`Draft`}</option><option value="open">{t`Open`}</option><option value="closed">{t`Closed`}</option></select></Field>
       {error || command.error ? <p role="alert" className="text-danger">{errorText(error ?? command.error)}</p> : null}
-      <button className="desk-button-primary min-h-11" disabled={command.isPending} type="submit">{command.isPending ? 'Saving…' : 'Save posting'}</button>
+      <button className="desk-button-primary min-h-11" disabled={command.isPending} type="submit">{command.isPending ? t`Saving…` : t`Save posting`}</button>
     </form></Card>
 }

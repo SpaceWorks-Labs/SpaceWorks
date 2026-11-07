@@ -6,6 +6,7 @@ refusal and the purge graph are exactly the /control/ ones. Purge additionally n
 space's slug typed back, as the /control/ purge confirmation does.
 """
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -82,7 +83,7 @@ class PurgeView(_ControlView):
 
         space = Makerspace.objects.get(pk=pk)
         if data["confirm_slug"] != space.slug:
-            raise ValidationError({"confirm_slug": "Type the space's slug exactly to confirm.", "code": "slug_mismatch"})
+            raise ValidationError({"confirm_slug": gettext("Type the space's slug exactly to confirm."), "code": "slug_mismatch"})
         if not is_archived(space):
             raise SpaceControlConflict("space_not_archived", "Only an archived space can be purged.")
         try:

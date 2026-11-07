@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { KeyboardEvent, PointerEvent } from "react";
 import { Image, Lock, PenLine, QrCode } from "lucide-react";
 import { mergeTags } from "../badgeStocks";
@@ -10,11 +11,11 @@ const CORNER_STYLE: Record<Corner, string> = { nw: "-left-2 -top-2 cursor-nwse-r
   sw: "-bottom-2 -left-2 cursor-nesw-resize", se: "-bottom-2 -right-2 cursor-nwse-resize" };
 
 export function layerLabel(layer: Layer) {
-  if (layer.type === "text") return layer.text?.trim() ? `Text "${layer.text.slice(0, 40)}"` : "Empty text";
-  if (layer.type === "signature") return `Signature ${layer.signature_slot ?? 1}`;
-  if (layer.type === "certificate_qr") return "Verification QR";
-  if (layer.type === "certificate_id") return "Certificate ID";
-  if (layer.type === "event_credential_qr") return "Check-in QR";
+  if (layer.type === "text") return layer.text?.trim() ? t`Text "${layer.text.slice(0, 40)}"` : t`Empty text`;
+  if (layer.type === "signature") return t`Signature ${layer.signature_slot ?? 1}`;
+  if (layer.type === "certificate_qr") return t`Verification QR`;
+  if (layer.type === "certificate_id") return t`Certificate ID`;
+  if (layer.type === "event_credential_qr") return t`Check-in QR`;
   return layer.type.replace(/_/g, " ").replace(/^\w/, (char) => char.toUpperCase());
 }
 
@@ -46,7 +47,7 @@ export function CanvasLayer({ layer, scale, selected, values, signature, onPoint
           ? <div className="flex h-full flex-col items-stretch justify-end" style={textStyle}>
             <PenLine aria-hidden="true" className="mx-auto mb-1 opacity-60" style={{ width: fontPx * 2, height: fontPx * 2, color: colour }} />
             <div style={{ borderTop: `1px solid ${colour}` }} />
-            <div className="truncate" style={{ fontWeight: layer.font_weight ?? 600 }}>{signature?.name ?? "Signatory"}</div>
+            <div className="truncate" style={{ fontWeight: layer.font_weight ?? 600 }}>{signature?.name ?? t`Signatory`}</div>
             <div className="truncate" style={{ fontWeight: 400, fontSize: fontPx * 0.8 }}>{signature?.title ?? ""}</div></div>
           : <div className="flex h-full w-full items-center justify-center bg-panel/70 text-xs font-semibold text-muted">
             {layer.type.endsWith("qr") ? <QrCode aria-hidden="true" size={Math.min(48, layer.width_mm * scale * 0.6)} />

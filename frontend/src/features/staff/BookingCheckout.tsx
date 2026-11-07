@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { StatusPill } from "../../components/ui";
@@ -17,10 +18,10 @@ export function BookingCheckout({ makerspaceId, spaceId, booking }: { makerspace
   if (!booking.decision_reason && !departures.length && !canRecord) return null;
   return (
     <div className="grid gap-2 rounded-lg border border-line p-3">
-      {booking.decision_reason ? <p className="text-sm"><span className="font-semibold">Reason given to the requester:</span> {booking.decision_reason}</p> : null}
+      {booking.decision_reason ? <p className="text-sm"><span className="font-semibold">{t`Reason given to the requester:`}</span> {booking.decision_reason}</p> : null}
       {departures.map(departure => <DepartureSummary key={departure.recorded_at} departure={departure} />)}
-      {booking.open_issue_id ? <StatusPill label="Issue open" tone="warn" /> : null}
-      {canRecord && !open ? <button type="button" className="desk-button w-fit min-h-11" onClick={() => setOpen(true)}>Record check-out</button> : null}
+      {booking.open_issue_id ? <StatusPill label={t`Issue open`} tone="warn" /> : null}
+      {canRecord && !open ? <button type="button" className="desk-button w-fit min-h-11" onClick={() => setOpen(true)}>{t`Record check-out`}</button> : null}
       {canRecord && open ? <StaffCheckoutForm makerspaceId={makerspaceId} spaceId={spaceId} bookingId={booking.id} onDone={() => setOpen(false)} /> : null}
     </div>
   );

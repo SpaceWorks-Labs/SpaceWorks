@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 import unicodedata
 
 from rest_framework.exceptions import ValidationError
@@ -10,7 +11,7 @@ def draw_text(canvas, text, layer, area_height_mm):
     from reportlab.lib.colors import HexColor
     from reportlab.lib.units import mm
     if len(text) > 1000:
-        raise ValidationError({"layout": "Merged text exceeds 1000 characters."})
+        raise ValidationError({"layout": gettext("Merged text exceeds 1000 characters.")})
     text = text.upper() if layer.get("uppercase") else text
     width, height = layer["width_mm"] * mm, layer["height_mm"] * mm
     size = layer["font_size_pt"]
@@ -20,7 +21,7 @@ def draw_text(canvas, text, layer, area_height_mm):
         if lines is not None and len(lines) * leading <= height:
             break
         if size <= 6 or not layer.get("shrink_to_fit", True):
-            raise ValidationError({"layout": "Text does not fit at a legible size. Enlarge its box."})
+            raise ValidationError({"layout": gettext("Text does not fit at a legible size. Enlarge its box.")})
         size = max(6, size - 0.5)
     canvas.setFillColor(HexColor(layer.get("colour") or COLOURS[layer.get("colour_token", "ink")]))
     y = (area_height_mm - layer["y_mm"]) * mm - size

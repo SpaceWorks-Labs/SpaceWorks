@@ -2,6 +2,7 @@
 // programme card's check link identifies the person; door staff then confirm, exactly like a
 // ticket. A scan never signs anyone in. One confirmable registration is checked in through
 // the card route (recorded as a card scan); several are listed for staff to pick from.
+import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../lib/api";
 import { opsStatusLabel } from "./opsPresentation";
 
@@ -20,19 +21,19 @@ export function cardMatchSummary(match: CardMatch) {
   if (match.rows.length === 1) {
     const [row] = match.rows;
     return { title: row.name, confirmable: row.confirmable,
-      note: row.confirmable ? "Found by their card." : `Found by their card, but this registration is ${opsStatusLabel(row.status).toLowerCase()}.` };
+      note: row.confirmable ? t`Found by their card.` : t`Found by their card, but this registration is ${opsStatusLabel(row.status).toLowerCase()}.` };
   }
-  return { title: `${match.rows.length} registrations for this card`, confirmable: false,
-    note: confirmable.length ? "Pick the one to check in." : "None of them can be checked in now." };
+  return { title: t`${match.rows.length} registrations for this card`, confirmable: false,
+    note: confirmable.length ? t`Pick the one to check in.` : t`None of them can be checked in now.` };
 }
 
 export function CardMatchList({ match, pending, onPick }: { match: CardMatch; pending: boolean; onPick: (row: CardScanRow) => void }) {
   if (match.rows.length < 2) return null;
-  return <ul className="grid gap-2" aria-label="Registrations found by this card">
+  return <ul className="grid gap-2" aria-label={t`Registrations found by this card`}>
     {match.rows.map((row) => <li key={row.registration_id} className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-line p-2">
       <span className="text-sm text-ink">{row.name} <span className="text-xs text-muted">· {opsStatusLabel(row.status)}</span></span>
       <button type="button" className="desk-button min-h-11" disabled={!row.confirmable || pending} onClick={() => onPick(row)}>
-        Check in {row.name}</button>
+        {t`Check in ${row.name}`}</button>
     </li>)}
   </ul>;
 }

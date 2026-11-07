@@ -10,6 +10,7 @@ device's own life. It is advisory telemetry and never changes ``Machine.status``
 request, consumption or money (those move only through the machine-service workflow).
 """
 
+from django.utils.translation import gettext_noop
 import uuid
 
 from django.conf import settings
@@ -20,7 +21,7 @@ from django.utils import timezone
 
 class MachineTypeIntegration(models.Model):
     class Kind(models.TextChoices):
-        PRINTER_AGENT = "printer_agent", "Printer agent"
+        PRINTER_AGENT = "printer_agent", gettext_noop("Printer agent")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE,

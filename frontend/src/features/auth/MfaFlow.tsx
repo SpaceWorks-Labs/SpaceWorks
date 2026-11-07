@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Fingerprint, KeyRound, MailCheck, Smartphone, type LucideIcon } from "lucide-react";
@@ -34,8 +35,8 @@ export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eye
   const [code, setCode] = useState("");
   const [copyNotice, setCopyNotice] = useState("");
   async function copy(value: string) {
-    try { await navigator.clipboard.writeText(value); setCopyNotice("Copied. Store it somewhere secure."); }
-    catch { setCopyNotice("Couldn't copy. Select the text and copy it manually."); }
+    try { await navigator.clipboard.writeText(value); setCopyNotice(t`Copied. Store it somewhere secure.`); }
+    catch { setCopyNotice(t`Couldn't copy. Select the text and copy it manually.`); }
   }
   const [enrollment, setEnrollment] = useState<Enrollment>();
   const [completed, setCompleted] = useState<MfaCompleted>();
@@ -61,18 +62,18 @@ export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eye
   return <AuthStepCard embedded={embedded} eyebrow={eyebrow} state={{ status: "ready" }}
     media={{ icon: challenge.purpose === "risk" ? "ShieldAlert" : "ShieldCheck", tone: "accent" }}
     title={copyText.title} body={copyText.body}
-    primary={usingPasskey ? { label: "Use your passkey", pending: passkey.isPending, pendingLabel: "Waiting for your passkey…", onClick: () => passkey.mutate() }
-      : canVerify ? { label: "Verify", pending: verify.isPending,
+    primary={usingPasskey ? { label: t`Use your passkey`, pending: passkey.isPending, pendingLabel: "Waiting for your passkey…", onClick: () => passkey.mutate() }
+      : canVerify ? { label: t`Verify`, pending: verify.isPending,
         onClick: () => (document.getElementById("mfa-verify-form") as HTMLFormElement)?.requestSubmit() }
-      : { label: "Show enrollment QR and key", pending: enroll.isPending, onClick: () => enroll.mutate() }}
-    escape={{ label: "Back to sign-in", onClick: onCancel }}
-    footer={<><p>{`This sign-in expires in ${Math.ceil(challenge.expires_in / 60)} minutes. Restart sign-in if it expires.`}</p>{extra ? <div className="mt-4">{extra}</div> : null}</>}
+      : { label: t`Show enrollment QR and key`, pending: enroll.isPending, onClick: () => enroll.mutate() }}
+    escape={{ label: t`Back to sign-in`, onClick: onCancel }}
+    footer={<><p>{t`This sign-in expires in ${Math.ceil(challenge.expires_in / 60)} minutes. Restart sign-in if it expires.`}</p>{extra ? <div className="mt-4">{extra}</div> : null}</>}
     content={<div className="grid gap-4">
       {enrollment ? <>
-        <img src={enrollment.qr_data_url} alt="Scan to add SpaceWorks to your authenticator" className="mx-auto w-56 rounded-xl bg-panel p-3" />
-        <details><summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Can't scan? Enter this key</summary>
+        <img src={enrollment.qr_data_url} alt={t`Scan to add SpaceWorks to your authenticator`} className="mx-auto w-56 rounded-xl bg-panel p-3" />
+        <details><summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t`Can't scan? Enter this key`}</summary>
           <p className="break-all select-all rounded-control border border-line p-3">{enrollment.secret}</p>
-          <button type="button" className="desk-button mt-2" onClick={() => void copy(enrollment.secret)}>Copy key</button>
+          <button type="button" className="desk-button mt-2" onClick={() => void copy(enrollment.secret)}>{t`Copy key`}</button>
         </details>
       </> : null}
       {canVerify && !usingPasskey ? <form id="mfa-verify-form" className="grid gap-3" onSubmit={(event) => { event.preventDefault(); if (!verify.isPending) verify.mutate(); }}>
@@ -82,7 +83,7 @@ export function MfaFlow({ challenge, onComplete, onCancel, embedded = false, eye
         <button type="submit" disabled={verify.isPending} hidden aria-hidden="true" tabIndex={-1} />
       </form> : null}
       {factor === "email_code" && !challenge.enrollment_required ? <MfaEmailCodeResend challenge={challenge.challenge} turnstileSiteKey={turnstileSiteKey} /> : null}
-      {!challenge.enrollment_required && factors.length > 1 ? <div className="grid gap-2" role="group" aria-label="Other ways to verify">
+      {!challenge.enrollment_required && factors.length > 1 ? <div className="grid gap-2" role="group" aria-label={t`Other ways to verify`}>
         {factors.filter(other => other !== factor).map(other => {
           const Glyph = FACTOR_ICONS[other];
           return <button key={other} type="button" className="desk-button-ghost min-h-11 justify-start gap-2" onClick={() => choose(other)}>

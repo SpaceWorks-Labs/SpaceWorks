@@ -1,5 +1,6 @@
 """Certification grant endpoints, split from type administration."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -80,7 +81,7 @@ class CertificationGrantListCreateView(APIView):
         if membership is None:
             # A membership in another makerspace is "unknown" here, never a 403 that
             # confirms it exists elsewhere.
-            raise ValidationError({"membership_id": "Unknown membership."})
+            raise ValidationError({"membership_id": gettext("Unknown membership.")})
         grant = issue_grant(row, membership, actor=request.user,
                             expires_at=data.get("expires_at"), notes=data.get("notes", ""))
         return Response(
@@ -122,7 +123,7 @@ class CertificationGrantRevokeView(APIView):
         ):
             raise PermissionDenied()
         if grant.revoked_at is not None:
-            raise ValidationError("This certification is already revoked.")
+            raise ValidationError(gettext("This certification is already revoked."))
         serializer = CertificationGrantRevokeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         grant.revoked_at = timezone.now()

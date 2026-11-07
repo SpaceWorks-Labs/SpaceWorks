@@ -1,5 +1,6 @@
 """Short, audited design transactions. Storage I/O happens between transactions."""
 
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.db import transaction
@@ -43,7 +44,7 @@ def _artwork(event, artwork_id):
     try:
         return EventCertificateArtwork.objects.get(event=event, pk=artwork_id, promoted_at__isnull=False)
     except EventCertificateArtwork.DoesNotExist as exc:
-        raise NotFound("Artwork was not found for this event.") from exc
+        raise NotFound(gettext("Artwork was not found for this event.")) from exc
 
 
 @transaction.atomic

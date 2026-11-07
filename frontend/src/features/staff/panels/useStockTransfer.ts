@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -161,10 +162,10 @@ export function useStockTransfer({
 
   const submit = () => {
     const invalidQuantity = lineRows.some((line) => !Number.isInteger(Number(line.quantity)) || Number(line.quantity) < 1);
-    if (!reason.trim()) setValidationError("Reason is required.");
-    else if (!lineRows.length) setValidationError("Add at least one transfer line.");
-    else if (lineRows.some((line) => !line.productId)) setValidationError("Choose a product for every line.");
-    else if (invalidQuantity) setValidationError("Quantities must be whole numbers of at least 1.");
+    if (!reason.trim()) setValidationError(t`Reason is required.`);
+    else if (!lineRows.length) setValidationError(t`Add at least one transfer line.`);
+    else if (lineRows.some((line) => !line.productId)) setValidationError(t`Choose a product for every line.`);
+    else if (invalidQuantity) setValidationError(t`Quantities must be whole numbers of at least 1.`);
     else {
       setValidationError("");
       create.mutate();

@@ -5,6 +5,7 @@ staging key, finalized and sniffed before it is attached, counted against the sp
 storage, and the old object released when replaced. Keys live under `shop/<space>/`.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -64,10 +65,10 @@ class ShopProductImageView(APIView):
         object_key = body.validated_data["object_key"]
         if not object_key.startswith(f"shop/{product.makerspace_id}/") or \
                 not public_image_storage.is_safe_object_key(object_key):
-            raise ValidationError({"object_key": "Image object key is outside this shop."})
+            raise ValidationError({"object_key": gettext("Image object key is outside this shop.")})
         if type(product).objects.filter(makerspace_id=product.makerspace_id, image_key=object_key).exclude(
                 pk=product.pk).exists():
-            raise ValidationError({"object_key": "This image is already in use."})
+            raise ValidationError({"object_key": gettext("This image is already in use.")})
         try:
             result = public_image_storage.finalize_upload(object_key)
             if result.status != "ok":

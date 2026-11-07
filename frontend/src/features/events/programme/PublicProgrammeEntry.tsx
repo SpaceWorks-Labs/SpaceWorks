@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { memberRequest } from '../../../lib/api'
@@ -13,10 +14,10 @@ export function PublicProgrammeEntry({ publicToken, slug, features, children, ve
   const context = useQuery({ queryKey: ['public-programme-entry', slug, publicToken, ...sessionScope()], enabled,
     queryFn: async () => parseProgrammeContext(await memberRequest(`/public/event-programmes/${encodeURIComponent(publicToken)}/context/`)),
     retry: false, staleTime: 0, gcTime: 0 })
-  if (!features) return <p role="status">Loading event options…</p>
+  if (!features) return <p role="status">{t`Loading event options…`}</p>
   if (!enabled || (context.data?.programme.kind === 'ordinary' && !versionedForm)) return children
-  return <div className="grid gap-3"><p className="text-sm text-muted">Review this event’s application and programme using your member account.</p>
-    <a className="desk-button-brand" href={programmeHref(publicToken, 'application', slug)}>Open application and programme</a>
-    {context.isPending ? <p role="status" className="text-sm">Checking the current programme…</p> : null}
+  return <div className="grid gap-3"><p className="text-sm text-muted">{t`Review this event’s application and programme using your member account.`}</p>
+    <a className="desk-button-brand" href={programmeHref(publicToken, 'application', slug)}>{t`Open application and programme`}</a>
+    {context.isPending ? <p role="status" className="text-sm">{t`Checking the current programme…`}</p> : null}
   </div>
 }

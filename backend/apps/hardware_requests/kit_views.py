@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -43,15 +44,15 @@ class KitPreviewInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs.get("request_id") and attrs.get("loan_id"):
-            raise serializers.ValidationError("Provide one request or loan reference.")
+            raise serializers.ValidationError(gettext("Provide one request or loan reference."))
         if attrs.get("loan_id") and attrs["phase"] != "return":
-            raise serializers.ValidationError("A loan reference is for return previews.")
+            raise serializers.ValidationError(gettext("A loan reference is for return previews."))
         if attrs["phase"] == "return" and not (attrs.get("request_id") or attrs.get("loan_id")):
-            raise serializers.ValidationError("A return preview requires a request or loan reference.")
+            raise serializers.ValidationError(gettext("A return preview requires a request or loan reference."))
         for field in ("rejects", "resolutions"):
             ids = [row["item_id"] for row in attrs.get(field, [])]
             if len(ids) != len(set(ids)):
-                raise serializers.ValidationError({field: "Item references must be unique."})
+                raise serializers.ValidationError({field: gettext("Item references must be unique.")})
         return attrs
 
 

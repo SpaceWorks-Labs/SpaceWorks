@@ -1,5 +1,6 @@
 """Booking window policy, evaluated while holding the bookable-space row lock."""
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from rest_framework import serializers
@@ -27,7 +28,7 @@ def enforce_opening_hours(space, starts_at, ends_at):
         interval = next_open_interval(space.makerspace, cursor)
         if interval is None or interval[0] > cursor:
             raise serializers.ValidationError({
-                'starts_at': 'Booking and cleanup buffers must fit within opening hours.',
+                'starts_at': gettext('Booking and cleanup buffers must fit within opening hours.'),
             })
         cursor = interval[1]
 
@@ -72,7 +73,7 @@ def validate_buffer_change(space, *, now):
         start, end = occupied_window(space, booking.starts_at, booking.ends_at)
         if previous_end is not None and start < previous_end:
             raise serializers.ValidationError({
-                'buffer_after_minutes': 'These buffers overlap existing confirmed bookings.',
+                'buffer_after_minutes': gettext('These buffers overlap existing confirmed bookings.'),
             })
         previous_end = end
 

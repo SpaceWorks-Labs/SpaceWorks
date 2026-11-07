@@ -11,6 +11,7 @@ reported -> triaged -> assigned -> in_progress -> fixed -> closed, or -> rejecte
 * A Technician works only the jobs assigned to them (`authority.works_issue`).
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -80,7 +81,7 @@ def open_issue(actor, space, *, subject_type, subject, title, description="", pr
     area = areas.SUBJECT_AREA[subject_type]
     areas.require(space, areas.REPAIRS[area])
     if subject.makerspace_id != space.pk:
-        raise ValidationError({"subject_id": "The subject must belong to this makerspace."})
+        raise ValidationError({"subject_id": gettext("The subject must belong to this makerspace.")})
     if not areas.manager_may(actor, space.pk, subject_type, subject):
         raise errors.out_of_scope()
     issue = IssueReport.objects.create(
@@ -138,7 +139,7 @@ def reject(actor, issue, *, reason):
     _expect(issue, S.REPORTED, S.TRIAGED, S.ASSIGNED, S.IN_PROGRESS)
     reason = str(reason or "").strip()
     if not reason:
-        raise ValidationError({"reason": "Say why the issue is rejected."})
+        raise ValidationError({"reason": gettext("Say why the issue is rejected.")})
     _move_order(actor, issue, "cancelled", reason)
     issue.state, issue.resolution, issue.closed_at = S.REJECTED, reason[:4000], timezone.now()
     issue.save(update_fields=["state", "resolution", "closed_at", "updated_at"])
@@ -155,9 +156,9 @@ def assign(actor, issue, *, contact=None, myself=False):
     S = _states()
     _expect(issue, S.TRIAGED, S.ASSIGNED, S.IN_PROGRESS)
     if (contact is None) == (not myself):
-        raise ValidationError({"contact_id": "Assign one technician, or yourself."})
+        raise ValidationError({"contact_id": gettext("Assign one technician, or yourself.")})
     if contact is not None and (contact.makerspace_id != issue.makerspace_id or contact.is_archived):
-        raise ValidationError({"contact_id": "Choose a technician of this makerspace."})
+        raise ValidationError({"contact_id": gettext("Choose a technician of this makerspace.")})
     row, created = IssueAssignment.objects.get_or_create(
         issue=issue, **({"contact": contact} if contact is not None else {"person": actor}))
     person = actor if myself else getattr(contact, "person", None)
@@ -190,7 +191,7 @@ def unassign(actor, issue, assignment_id):
     _require_manager(actor, issue)
     row = IssueAssignment.objects.filter(issue=issue, pk=assignment_id).first()
     if row is None:
-        raise ValidationError({"assignment_id": "That assignment is not on this issue."})
+        raise ValidationError({"assignment_id": gettext("That assignment is not on this issue.")})
     contact, row_id = row.contact, row.pk
     row.delete()
     history.step(issue, "unassigned", actor, "issue.unassigned", contact=contact,
@@ -220,7 +221,7 @@ def fix(actor, issue, *, resolution, photo_tokens=(), owner=None):
         _expect(issue, S.REPORTED, S.TRIAGED, S.ASSIGNED, S.IN_PROGRESS)
         resolution = str(resolution or "").strip()
         if not resolution:
-            raise ValidationError({"resolution": "Say what was fixed."})
+            raise ValidationError({"resolution": gettext("Say what was fixed.")})
         _move_order(actor, issue, "done", resolution)
         photos.attach(issue, validated, "fixed", actor)
         issue.state, issue.resolution, issue.fixed_at = S.FIXED, resolution[:4000], timezone.now()

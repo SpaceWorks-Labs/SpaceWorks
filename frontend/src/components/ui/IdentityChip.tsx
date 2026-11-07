@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Avatar } from "./Avatar";
 import { DateChip } from "./DateChip";
@@ -5,7 +6,7 @@ import { Icon } from "./icon";
 import { toneMarkClasses } from "./tones";
 import type { Identity } from "./types";
 export type IdentityChipProps = { identity: Identity; label?: string; draft?: boolean };
-export function IdentityChip({ identity, label = "Identity", draft = false }: IdentityChipProps) {
+export function IdentityChip({ identity, label = t`Identity`, draft = false }: IdentityChipProps) {
   const [failedSrc, setFailedSrc] = useState<string>();
   if (identity.kind === "date") return <DateChip date={identity.date} draft={draft} />;
   if (identity.kind === "avatar") return <Avatar name={identity.name} seed={identity.seed} size="lg" tone={draft ? "neutral" : undefined} />;

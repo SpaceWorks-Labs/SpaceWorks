@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useOptionalTenant } from "../../../lib/tenant";
 import { PageHelp } from "../../help/PageHelp";
 import { useTenantBootstrap } from "../../inventory/usePublicInventory";
@@ -24,21 +25,21 @@ export function useSpaceSwitches(slug: string) {
 export function MemberCalendarLinks({ makerspaceId, makerspaceSlug }: { makerspaceId: number; makerspaceSlug: string }) {
   const on = useSpaceSwitches(makerspaceSlug);
   const publicFeed = on("events.public_feed", "events");
-  return <div className="mt-3 grid gap-3" aria-label="Calendar links">
+  return <div className="mt-3 grid gap-3" aria-label={t`Calendar links`}>
     <PageHelp article="member/calendar-links" topic="calendar links" slug={makerspaceSlug} />
     {/* Before the switches are known, keep today's event calendar (the server still answers 404 when off). */}
     {!on.known || on("events.calendar_feed", "events") ? <MemberCalendarActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} /> : null}
-    {on("bookings.calendar_feed", "bookings") ? <CalendarFeedLink title="My bookings calendar" description="your bookings"
+    {on("bookings.calendar_feed", "bookings") ? <CalendarFeedLink title={t`My bookings calendar`} description={t`your bookings`}
       endpoint={bookingFeed(makerspaceSlug)} /> : null}
-    {on("events.shifts_feed", "events") ? <CalendarFeedLink title="My shifts calendar"
-      description="your approved volunteer and mentor shifts" endpoint={personalFeed(makerspaceId, "shifts")} /> : null}
-    {on("calendar.combined_feed") ? <CalendarFeedLink title="Everything in one calendar"
-      description="your bookings, event registrations and shifts" endpoint={personalFeed(makerspaceId, "combined")} /> : null}
+    {on("events.shifts_feed", "events") ? <CalendarFeedLink title={t`My shifts calendar`}
+      description={t`your approved volunteer and mentor shifts`} endpoint={personalFeed(makerspaceId, "shifts")} /> : null}
+    {on("calendar.combined_feed") ? <CalendarFeedLink title={t`Everything in one calendar`}
+      description={t`your bookings, event registrations and shifts`} endpoint={personalFeed(makerspaceId, "combined")} /> : null}
     {publicFeed ? <div className="rounded-md border border-line p-3 text-sm">
-      <p className="font-semibold text-ink">Public events calendar</p>
-      <p className="text-xs text-muted">Everyone can subscribe to this space's listed events.</p>
+      <p className="font-semibold text-ink">{t`Public events calendar`}</p>
+      <p className="text-xs text-muted">{t`Everyone can subscribe to this space's listed events.`}</p>
       <input className="desk-input code-text mt-2 w-full" readOnly value={publicEventsFeedUrl(makerspaceSlug)}
-        aria-label="Public events calendar link" onFocus={event => event.currentTarget.select()} />
+        aria-label={t`Public events calendar link`} onFocus={event => event.currentTarget.select()} />
     </div> : null}
   </div>;
 }

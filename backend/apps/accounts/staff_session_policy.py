@@ -14,6 +14,7 @@ grants keep their own lifecycle (attested, role-bound, revocable) and carry no
 one access-token lifetime.
 """
 
+from django.utils.translation import gettext
 import logging
 import time
 
@@ -85,5 +86,5 @@ def assert_staff_session(user, claims):
             return
         until = int(started) + limits(user)[0] * 3600
     if _now() >= int(until):
-        raise PermissionDenied({"detail": "Your staff session has ended. Sign in again to use staff screens.",
+        raise PermissionDenied({"detail": gettext("Your staff session has ended. Sign in again to use staff screens."),
                                 "code": STAFF_SESSION_EXPIRED})

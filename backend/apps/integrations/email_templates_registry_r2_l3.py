@@ -4,20 +4,21 @@ The producers in `card_designs/notifications.py` render their own bodies; these 
 give every catalogue event both audiences in the template editor and a valid staff chat
 body built only from staff-safe fields (never a check link or an extra).
 """
+from django.utils.translation import gettext_noop
 
 from .email_templates_registry_helpers import EmailTemplateRegistryEntry, bag
 
 TEXT = {
-    "card_issued": ("Your card from {{ makerspace.name }} is ready. Open My cards to see, save or download it.",
-                    "Card #{{ subject.id }} was issued."),
-    "event_card_issued": ("Your event ID card is ready in My cards.", "Event card #{{ subject.id }} was issued."),
-    "programme_card_decided": ("There is news about your ID card request. Open My cards for details.",
-                               "ID card request #{{ subject.id }}: {{ subject.status }}."),
-    "card_photo_requested": ("{{ makerspace.name }} asked for a new photo for your card. Your card stays valid.",
-                             "A new card photo was requested for card #{{ subject.id }}."),
-    "card_design_pending": ("A card design is waiting for approval.",
-                            "Card design #{{ subject.id }} is waiting for approval."),
-    "card_job_finished": ("Your card job finished.", "Card job #{{ subject.id }} finished: {{ subject.status }}."),
+    "card_issued": (gettext_noop("Your card from {{ makerspace.name }} is ready. Open My cards to see, save or download it."),
+                    gettext_noop("Card #{{ subject.id }} was issued.")),
+    "event_card_issued": (gettext_noop("Your event ID card is ready in My cards."), gettext_noop("Event card #{{ subject.id }} was issued.")),
+    "programme_card_decided": (gettext_noop("There is news about your ID card request. Open My cards for details."),
+                               gettext_noop("ID card request #{{ subject.id }}: {{ subject.status }}.")),
+    "card_photo_requested": (gettext_noop("{{ makerspace.name }} asked for a new photo for your card. Your card stays valid."),
+                             gettext_noop("A new card photo was requested for card #{{ subject.id }}.")),
+    "card_design_pending": (gettext_noop("A card design is waiting for approval."),
+                            gettext_noop("Card design #{{ subject.id }} is waiting for approval.")),
+    "card_job_finished": (gettext_noop("Your card job finished."), gettext_noop("Card job #{{ subject.id }} finished: {{ subject.status }}.")),
 }
 
 

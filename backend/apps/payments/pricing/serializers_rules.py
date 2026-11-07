@@ -1,5 +1,6 @@
 """API shapes for item overrides, discount rules, loan fee waivers and damage/lost charges."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
@@ -39,7 +40,7 @@ class PriceOverrideWriteSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["mode"] == PriceOverride.Mode.CUSTOM and attrs.get("amount") is None:
-            raise serializers.ValidationError({"amount": "Enter the custom price."})
+            raise serializers.ValidationError({"amount": gettext("Enter the custom price.")})
         return attrs
 
 
@@ -77,7 +78,7 @@ class PriceDiscountSerializer(PiiMaskingSerializerMixin, serializers.ModelSerial
 
     def validate(self, attrs):
         if attrs.get("percent_bps") is not None and attrs.get("amount_off") is not None:
-            raise serializers.ValidationError({"detail": "Choose a percentage or an amount, not both.",
+            raise serializers.ValidationError({"detail": gettext("Choose a percentage or an amount, not both."),
                                                "code": "discount_invalid"})
         return attrs
 

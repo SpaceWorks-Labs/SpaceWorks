@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { PersonalInbox } from "../../notifications/PersonalInbox";
 import { MyNotificationSettings } from "../../notifications/MyNotificationSettings";
 import { BrowserAlertsToggle } from "../../notifications/BrowserAlertsToggle";
@@ -11,17 +12,17 @@ export function NotificationInbox({ makerspace, canManageMembers = false }: { ma
   // Provider returns carry signed state; the server resolves its challenge.
   const [channels, setChannels] = useState(() => new URLSearchParams(window.location.search).has("state"));
   const canBroadcast = canManageMembers && makerspace.enabled_features?.includes("membership.broadcasts");
-  const myChannels: Action = { label: "My channels", icon: "Settings", onClick: () => setChannels(true) };
-  const announcement: Action | undefined = canBroadcast ? { label: "Send announcement", onClick: () => setCompose(true) } : undefined;
+  const myChannels: Action = { label: t`My channels`, icon: "Settings", onClick: () => setChannels(true) };
+  const announcement: Action | undefined = canBroadcast ? { label: t`Send announcement`, onClick: () => setCompose(true) } : undefined;
   return <>
     {makerspace.enabled_features?.includes("notifications.web_push") ? <BrowserAlertsToggle makerspaceId={makerspace.id} /> : null}
     <PersonalInbox makerspaceId={makerspace.id} makerspaceSlug={makerspace.slug} announcement={announcement ?? myChannels}
       overflow={announcement && myChannels ? [myChannels] : undefined}
       snooze={Boolean(makerspace.enabled_features?.includes("notifications.inbox_snooze"))} />
-    {canBroadcast ? <Modal open={compose} onClose={() => setCompose(false)} title="Send announcement">
+    {canBroadcast ? <Modal open={compose} onClose={() => setCompose(false)} title={t`Send announcement`}>
       {compose ? <BroadcastComposer makerspaceId={makerspace.id} /> : null}
     </Modal> : null}
-    <Modal open={channels} onClose={() => setChannels(false)} title="My notification channels" size="xl">
+    <Modal open={channels} onClose={() => setChannels(false)} title={t`My notification channels`} size="xl">
       {channels ? <MyNotificationSettings makerspaceId={makerspace.id} /> : null}
     </Modal>
   </>;

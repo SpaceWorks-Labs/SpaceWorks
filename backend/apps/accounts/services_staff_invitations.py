@@ -7,6 +7,7 @@ whose email must equal the invitation address and pass a fresh emailed code
 The link goes to the invitee only; it is never returned to the inviter.
 """
 
+from django.utils.translation import gettext
 import secrets
 from datetime import timedelta
 
@@ -33,8 +34,8 @@ def onboarding_available(space):
 
 def authority(actor, space, roles=None):
     if not onboarding_available(space):
-        raise ValidationError({"detail": "Email invitations are off for this makerspace. Grant the role to a "
-                                         "community member instead."})
+        raise ValidationError({"detail": gettext("Email invitations are off for this makerspace. Grant the role to a "
+                                         "community member instead.")})
     require_authority(actor, space, roles=roles)
 
 
@@ -54,7 +55,7 @@ def _normalize(email):
     except DjangoValidationError as exc:
         raise ValidationError({"email": exc.messages}) from exc
     if len(email) > 254:
-        raise ValidationError({"email": "Use at most 254 characters."})
+        raise ValidationError({"email": gettext("Use at most 254 characters.")})
     return email
 
 
@@ -64,7 +65,7 @@ def issue(actor, space_id, *, email, roles, machine_type_ids=(), expires_in_days
 
     email = _normalize(email)
     if type(expires_in_days) is not int or not 1 <= expires_in_days <= 30:
-        raise ValidationError({"expires_in_days": "Use 1 to 30 days."})
+        raise ValidationError({"expires_in_days": gettext("Use 1 to 30 days.")})
     with staff_write(space_id):
         space, actor = scoped_space(actor, space_id, lock=True)
         roles = resolve_roles(space, roles)
@@ -90,7 +91,7 @@ def _create(actor, space, email, roles, scopes, expires_in_days):
 def _open_row(actor, space, invitation_id):
     row = get_object_or_404(scoped(actor).select_for_update(), pk=invitation_id, makerspace=space)
     if row.accepted_at or row.revoked_at:
-        raise ValidationError({"detail": "This invitation is no longer open."})
+        raise ValidationError({"detail": gettext("This invitation is no longer open.")})
     return row
 
 

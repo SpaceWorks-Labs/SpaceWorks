@@ -1,4 +1,5 @@
 """Telegram contract provider: generation-bound personal DMs and existing staff rooms."""
+from django.utils.translation import gettext
 import logging
 import re
 
@@ -30,10 +31,10 @@ class TelegramProvider:
                 or challenge.integration_generation != config.generation
                 or challenge.integration_identity != config.integration_identity
                 or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", code)):
-            raise ValidationError({"channel": "Telegram verification is no longer current."})
+            raise ValidationError({"channel": gettext("Telegram verification is no longer current.")})
         token = self._token()
         if not token:
-            raise ValidationError({"channel": "Configure the Telegram bot token first."})
+            raise ValidationError({"channel": gettext("Configure the Telegram bot token first.")})
         fingerprint = salted_hmac("notification.telegram.bot.v1", token, algorithm="sha256").hexdigest()
         key = f"notification:telegram:bot:{config.pk}:{config.generation}:{fingerprint}"
         try:
@@ -41,20 +42,20 @@ class TelegramProvider:
             if username is None:
                 # Concurrent starts cannot amplify getMe calls for one installation.
                 if not cache.add(key + ":loading", True, timeout=15):
-                    raise ValidationError({"channel": "Telegram verification is temporarily unavailable."})
+                    raise ValidationError({"channel": gettext("Telegram verification is temporarily unavailable.")})
                 try:
                     result, bot = call(token, "getMe", {})
                     username = bot.get("username") if result.accepted else None
                     if (not isinstance(username, str) or not re.fullmatch(r"[A-Za-z0-9_]{5,32}", username)
                             or bot.get("is_bot") is not True or type(bot.get("id")) is not int):
-                        raise ValidationError({"channel": "Telegram bot lookup failed. Check the bot token and retry."})
+                        raise ValidationError({"channel": gettext("Telegram bot lookup failed. Check the bot token and retry.")})
                     cache.set(key, username, timeout=None)
                 finally:
                     cache.delete(key + ":loading")
         except ValidationError:
             raise
         except Exception:
-            raise ValidationError({"channel": "Telegram verification is temporarily unavailable."}) from None
+            raise ValidationError({"channel": gettext("Telegram verification is temporarily unavailable.")}) from None
         return {"connect_url": f"https://t.me/{username}?start={code}"}
 
     def verify_callback(self, request):

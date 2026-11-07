@@ -1,4 +1,5 @@
 """Two-transaction claim/application boundary; all effects use the existing workflow."""
+from django.utils.translation import gettext
 import logging
 
 from django.db import transaction
@@ -38,7 +39,7 @@ def _apply(principal, job_id, *, actor=None):
             return job
         rows = list(job.consumptions.select_related("machine_consumable").all())
         if any(row.machine_consumable is None or row.machine_consumable.machine_id != machine.pk for row in rows):
-            raise ValidationError("A claimed consumable target is no longer available.")
+            raise ValidationError(gettext("A claimed consumable target is no longer available."))
         consumptions = [{"machine_consumable_id": row.machine_consumable_id, "quantity": row.quantity} for row in rows]
         payload = {"operation_id": job.terminal_operation_id, "external_job_id": job.external_job_id,
                    "outcome": job.outcome, "actual_minutes": job.actual_minutes, "failure_reason": job.failure_reason,

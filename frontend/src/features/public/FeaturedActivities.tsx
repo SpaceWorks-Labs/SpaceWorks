@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { DateChip } from "../../components/ui/DateChip";
@@ -57,10 +58,10 @@ function FeaturedEventCard({ event, href, timeZone, showPrice }: { event: Public
         </div>
         <p className="text-sm font-semibold text-ink"><time dateTime={event.starts_at}>{eventWhen(event, timeZone)}</time></p>
         {event.location ? <p className="flex min-w-0 items-start gap-1.5 text-sm text-muted">
-          <MapPin aria-hidden="true" size={16} className="mt-0.5 shrink-0" /><span className="sr-only">Venue: </span>
+          <MapPin aria-hidden="true" size={16} className="mt-0.5 shrink-0" /><span className="sr-only">{t`Venue: `}</span>
           <span className="line-clamp-2 [overflow-wrap:anywhere]">{event.location}</span>
         </p> : null}
-        {chips(event).length ? <ul aria-label="Event tags" className="flex flex-wrap gap-2">
+        {chips(event).length ? <ul aria-label={t`Event tags`} className="flex flex-wrap gap-2">
           {chips(event).map((label) => <li key={label} className="rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-wide text-ink">{label}</li>)}
         </ul> : null}
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -85,16 +86,15 @@ export function FeaturedActivities({ slug, path, timeZone }: Props) {
   const events = useFeaturedEvents(slug, true);
   const showPrice = useChargesOn("events", slug); // #184
   if (events.isLoading) return null;
-  if (events.isError) return <MakerspaceSection id="featured" title="Featured activities">
-    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">Couldn't load upcoming events.
-      <button type="button" className="desk-button" onClick={() => void events.refetch()}>Try again</button></p>
+  if (events.isError) return <MakerspaceSection id="featured" title={t`Featured activities`}>
+    <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-muted">{t`Couldn't load upcoming events.`}<button type="button" className="desk-button" onClick={() => void events.refetch()}>{t`Try again`}</button></p>
   </MakerspaceSection>;
   const now = Date.now();
   const upcoming = (events.data ?? []).filter((event) => Date.parse(event.ends_at) > now)
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)).slice(0, FEATURED_LIMIT);
   if (!upcoming.length) return null;
-  return <MakerspaceSection id="featured" title="Featured activities" more={{ label: "All events", href: path("events") }}>
-    <ul aria-label="Upcoming events" className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] md:overflow-visible md:pb-0">
+  return <MakerspaceSection id="featured" title={t`Featured activities`} more={{ label: t`All events`, href: path("events") }}>
+    <ul aria-label={t`Upcoming events`} className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 max-sm:-mx-4 max-sm:scroll-px-4 max-sm:px-4 md:grid md:grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] md:overflow-visible md:pb-0">
       {upcoming.map((event) => <FeaturedEventCard key={event.public_token} event={event} href={path(`events/${event.public_token}`)} timeZone={timeZone} showPrice={showPrice} />)}
     </ul>
   </MakerspaceSection>;

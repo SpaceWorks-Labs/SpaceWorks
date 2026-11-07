@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { QuantityStepper } from "../QuantityStepper";
@@ -33,8 +34,8 @@ export function AcceptRequestModal({
   const canSubmit = total > 0 && !pending;
 
   return (
-    <RequestFlowDialog open={open} onClose={onClose} title={row ? `Accept request #${row.id}` : "Accept request"}
-      formId="accept-request-form" pending={pending} canSubmit={canSubmit} submitLabel="Accept">
+    <RequestFlowDialog open={open} onClose={onClose} title={row ? t`Accept request #${row.id}` : t`Accept request`}
+      formId="accept-request-form" pending={pending} canSubmit={canSubmit} submitLabel={t`Accept`}>
       <form
         id="accept-request-form"
         className="grid gap-3"
@@ -45,9 +46,7 @@ export function AcceptRequestModal({
         }}
       >
         <p className="text-sm text-muted">
-          Accept up to the requested quantity per item. Lower a line to approve a partial amount; set 0 to
-          decline that item (at least one unit must be accepted).
-        </p>
+          {t`Accept up to the requested quantity per item. Lower a line to approve a partial amount; set 0 to decline that item (at least one unit must be accepted).`}</p>
         <div className="grid gap-2">
           {row?.items.map((item) => (
             <label key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line p-3 text-sm">
@@ -70,7 +69,7 @@ export function AcceptRequestModal({
             </label>
           ))}
         </div>
-        {total === 0 ? <p className="text-xs text-warn-ink">Accept at least one unit, or reject the request instead.</p> : null}
+        {total === 0 ? <p className="text-xs text-warn-ink">{t`Accept at least one unit, or reject the request instead.`}</p> : null}
         {error ? <p className="rounded-md border border-danger-line bg-panel px-3 py-2 text-sm text-danger">{error}</p> : null}
       </form>
     </RequestFlowDialog>

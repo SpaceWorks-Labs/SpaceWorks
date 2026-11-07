@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from uuid import uuid4
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -23,7 +24,7 @@ class EventCertificateLibraryArtwork(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk and type(self).objects.get(pk=self.pk).promoted_at:
-            raise ValidationError("Promoted library artwork is immutable.")
+            raise ValidationError(gettext("Promoted library artwork is immutable."))
         return super().save(*args, **kwargs)
 
 
@@ -38,7 +39,7 @@ class EventCertificateLibraryRevision(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            raise ValidationError("Library revisions are immutable.")
+            raise ValidationError(gettext("Library revisions are immutable."))
         return super().save(*args, **kwargs)
 
 

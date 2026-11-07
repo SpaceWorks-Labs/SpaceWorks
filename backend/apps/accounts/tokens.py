@@ -1,5 +1,6 @@
 """Project-owned JWT classes bound to one deployment generation."""
 
+from django.utils.translation import gettext
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from django.db import transaction
 
@@ -15,7 +16,7 @@ def validate_auth_generation(token):
 
     if str(token.get("auth_generation") or "") != current_auth_generation():
         raise AuthenticationFailed(
-            "This session belongs to a different authentication generation.",
+            gettext("This session belongs to a different authentication generation."),
             code="auth_generation_mismatch",
         )
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { Stat } from "./types";
 import { ProgressBar } from "./ProgressBar";
 import { RouteLink } from "./RouteLink";
@@ -11,7 +12,7 @@ export function StatCard({ label, value, of, progress, tone = "neutral", href }:
       <p className="font-display text-heading font-semibold tabular-nums text-ink">{value}
         {of !== undefined ? <span className="ml-1 font-sans text-base font-semibold text-muted">/ {of}</span> : null}</p>
       {tone !== "neutral" ? <StatusPill tone={tone === "attention" ? "emphasis" : tone}
-        label={tone === "attention" ? "Needs attention" : tone === "danger" ? "Action needed" : "On track"} /> : null}
+        label={tone === "attention" ? t`Needs attention` : tone === "danger" ? t`Action needed` : t`On track`} /> : null}
     </div>
     {progress !== undefined ? <div className="mt-3"><ProgressBar value={progress} label={`${label} progress`} /></div> : null}
   </>;

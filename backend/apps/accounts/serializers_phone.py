@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.models_social import SocialClientPlatform, SocialDelivery
@@ -28,10 +29,10 @@ class PhoneLoginStartSerializer(PhoneStartSerializer):
     def validate(self, attrs):
         device = attrs["delivery"] == "device"
         if device == (attrs["client_platform"] == "web"):
-            raise serializers.ValidationError("Invalid phone delivery platform.")
+            raise serializers.ValidationError(gettext("Invalid phone delivery platform."))
         if device != bool(attrs.get("challenge")):
             raise serializers.ValidationError(
-                "Only device delivery requires an attestation challenge."
+                gettext("Only device delivery requires an attestation challenge.")
             )
         return attrs
 
@@ -45,9 +46,9 @@ class PhoneLoginConfirmSerializer(PhoneLoginStartSerializer, PhoneConfirmSeriali
         if attrs["delivery"] == "device":
             value = attrs.get("attestation")
             if not isinstance(value, dict) or not value or len(value) > 16:
-                raise serializers.ValidationError({"attestation": "Invalid attestation payload."})
+                raise serializers.ValidationError({"attestation": gettext("Invalid attestation payload.")})
         elif "attestation" in attrs:
-            raise serializers.ValidationError("Web phone login cannot use attestation.")
+            raise serializers.ValidationError(gettext("Web phone login cannot use attestation."))
         return attrs
 
 

@@ -5,12 +5,19 @@
   "scripts": {
     "dev": "vite",
     "generate:api": "node scripts/generate-api-client.mjs",
+    "generate:locales": "node scripts/generate-locales.mjs",
+    "i18n:extract": "lingui extract --clean",
+    "i18n:compile": "lingui compile --strict",
+    "i18n:check": "node scripts/check-i18n-literals.mjs",
     "test": "vitest run",
     "build": "tsc -b && vite build && node scripts/verify-pwa-build.mjs",
     "preview": "vite preview",
     "lint": "eslint ."
   },
   "dependencies": {
+    "@lingui/core": "6.10.1",
+    "@lingui/message-utils": "6.10.1",
+    "@lingui/react": "6.10.1",
     "@simplewebauthn/browser": "14.0.0",
     "@tanstack/react-query": "^5.101.2",
     "@tracespace/core": "5.0.0-alpha.0",
@@ -26,6 +33,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@lingui/cli": "6.10.1",
+    "@lingui/conf": "6.10.1",
+    "@lingui/format-po": "6.10.1",
+    "@lingui/vite-plugin": "6.10.1",
     "@tailwindcss/postcss": "^4.3.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

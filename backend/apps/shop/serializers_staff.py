@@ -4,6 +4,7 @@ Buyer names and emails on an order are scoped PII: a superadmin without an open 
 sees them masked (`PiiMaskingSerializerMixin`, #114.1).
 """
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
@@ -66,11 +67,11 @@ class ShopStockMoveSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["kind"] == "restock" and attrs["quantity"] <= 0:
-            raise serializers.ValidationError({"quantity": "A restock adds at least one unit."})
+            raise serializers.ValidationError({"quantity": gettext("A restock adds at least one unit.")})
         if attrs["kind"] != "restock" and not attrs.get("reason", "").strip():
-            raise serializers.ValidationError({"reason": "Say why the count changed."})
+            raise serializers.ValidationError({"reason": gettext("Say why the count changed.")})
         if attrs["quantity"] == 0:
-            raise serializers.ValidationError({"quantity": "Enter a change other than zero."})
+            raise serializers.ValidationError({"quantity": gettext("Enter a change other than zero.")})
         return attrs
 
 

@@ -228,3 +228,6 @@ from .catalog_r2_superadmin import FIELD_NAMES as R2_SUPERADMIN_FIELDS, EXTRA_FI
 FIRST_PARTY_FIELD_NAMES.update(R2_SUPERADMIN_FIELDS)
 for _label, _names in R2_SUPERADMIN_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_r2_l9 import EXTRA_FIELDS as R2_L9_EXTRA  # noqa: E402
+for _label, _names in R2_L9_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names

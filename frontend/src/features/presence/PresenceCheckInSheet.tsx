@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Callout, Field, Modal, SegmentedControl } from "../../components/ui";
@@ -57,24 +58,24 @@ export function PresenceCheckInSheet({ slug, open, onClose, presets, member, cla
   const busy = phase.kind === "locating" || start.isPending;
   const disabledReason = !selfCheckIn ? "Self check-in isn't set up here." : needsProject ? "Choose one of your projects." : undefined;
 
-  return <Modal open={open} onClose={close} title="Check in" footer={<div className="flex flex-wrap justify-end gap-3">
-    <button type="button" className="desk-button" onClick={close}>Cancel</button>
+  return <Modal open={open} onClose={close} title={t`Check in`} footer={<div className="flex flex-wrap justify-end gap-3">
+    <button type="button" className="desk-button" onClick={close}>{t`Cancel`}</button>
     <button type="button" className="desk-button-brand" disabled={busy || Boolean(disabledReason)} aria-describedby={disabledReason ? "presence-checkin-reason" : undefined} onClick={() => void submit()}>
-      {phase.kind === "locating" ? "Finding your location…" : start.isPending ? "Checking in…" : "Check in"}</button>
+      {phase.kind === "locating" ? t`Finding your location…` : start.isPending ? t`Checking in…` : t`Check in`}</button>
   </div>}>
     <div className="grid gap-5">
-      {!selfCheckIn ? <Callout size="inline" tone="warn" lead="Self check-in isn't set up here." body={STAFF_ALTERNATIVE} /> : <p className="text-sm text-muted">We use your location once to confirm you're inside the makerspace. It isn't stored.</p>}
-      <div className="grid gap-2"><span className="text-sm font-semibold text-ink">How long are you staying?</span>
-        <SegmentedControl fullWidth label="How long are you staying?" value={String(minutes)} onChange={(value) => setMinutes(Number(value))}
+      {!selfCheckIn ? <Callout size="inline" tone="warn" lead="Self check-in isn't set up here." body={STAFF_ALTERNATIVE} /> : <p className="text-sm text-muted">{t`We use your location once to confirm you're inside the makerspace. It isn't stored.`}</p>}
+      <div className="grid gap-2"><span className="text-sm font-semibold text-ink">{t`How long are you staying?`}</span>
+        <SegmentedControl fullWidth label={t`How long are you staying?`} value={String(minutes)} onChange={(value) => setMinutes(Number(value))}
           options={presets.map((value) => ({ value: String(value), label: presetLabel(value) }))} /></div>
-      {member ? <div className="grid gap-2"><span className="text-sm font-semibold text-ink">What are you here for?</span>
-        <SegmentedControl fullWidth label="What are you here for?" value={status} onChange={(value) => setStatus(value as "working" | "visiting")}
+      {member ? <div className="grid gap-2"><span className="text-sm font-semibold text-ink">{t`What are you here for?`}</span>
+        <SegmentedControl fullWidth label={t`What are you here for?`} value={status} onChange={(value) => setStatus(value as "working" | "visiting")}
           options={[{ value: "working", label: STATUS_LABELS.working }, { value: "visiting", label: STATUS_LABELS.visiting }]} /></div>
-        : <p className="text-sm text-muted">You'll check in as a <strong className="text-ink">guest</strong>.</p>}
+        : <p className="text-sm text-muted">{t`You'll check in as a `}<strong className="text-ink">guest</strong>.</p>}
       {member && status === "working" ? <ProjectPicker loading={projects.isLoading} error={projects.isError} rows={projectRows} value={projectId} onChange={setProjectId} /> : null}
-      {optOutAllowed === false ? <p className="text-sm text-muted">This space's “who's in” display shows names, and hiding yours isn't offered here.</p>
+      {optOutAllowed === false ? <p className="text-sm text-muted">{t`This space's “who's in” display shows names, and hiding yours isn't offered here.`}</p>
         : <label className="flex min-h-11 items-start gap-3 text-sm"><input type="checkbox" role="switch" className="mt-0.5 h-5 w-5 accent-accent" checked={hideValue} onChange={(event) => setHide(event.target.checked)} />
-          <span><span className="font-semibold text-ink">Hide me on the display</span><span className="block text-muted">{optOutAllowed ? "You'll appear as “A member” or “A guest”." : "Applies if this space lets people hide their name; you'll see the outcome after checking in."}</span></span></label>}
+          <span><span className="font-semibold text-ink">{t`Hide me on the display`}</span><span className="block text-muted">{optOutAllowed ? t`You'll appear as “A member” or “A guest”.` : t`Applies if this space lets people hide their name; you'll see the outcome after checking in.`}</span></span></label>}
       {disabledReason && selfCheckIn ? <p id="presence-checkin-reason" className="text-sm text-muted">{disabledReason}</p> : null}
       {failure ? <div role="alert"><Callout size="inline" tone="warn" lead={failure} body={STAFF_ALTERNATIVE} /></div> : null}
       {serverError ? <div role="alert"><Callout size="inline" tone="danger" lead={serverError.text} body={serverError.staffRoute ? STAFF_ALTERNATIVE : undefined} /></div> : null}
@@ -84,12 +85,12 @@ export function PresenceCheckInSheet({ slug, open, onClose, presets, member, cla
 
 function ProjectPicker({ loading, error, rows, value, onChange }: { loading: boolean; error: boolean;
   rows: { id: number; title: string; public_visible: boolean }[]; value: number | null; onChange: (id: number | null) => void }) {
-  if (loading) return <p role="status" className="text-sm text-muted">Loading your projects…</p>;
-  if (error) return <p role="alert" className="text-sm text-danger">Couldn't load your projects. Choose Visiting, or retry later.</p>;
-  if (!rows.length) return <p className="text-sm text-muted">You have no projects on your profile yet. Add one to your profile, or check in as Visiting.</p>;
-  return <Field label="Which project?" hint="Private projects are never named on the display.">
+  if (loading) return <p role="status" className="text-sm text-muted">{t`Loading your projects…`}</p>;
+  if (error) return <p role="alert" className="text-sm text-danger">{t`Couldn't load your projects. Choose Visiting, or retry later.`}</p>;
+  if (!rows.length) return <p className="text-sm text-muted">{t`You have no projects on your profile yet. Add one to your profile, or check in as Visiting.`}</p>;
+  return <Field label={t`Which project?`} hint={t`Private projects are never named on the display.`}>
     <select className="desk-input max-w-full" value={value ?? ""} onChange={(event) => onChange(event.target.value ? Number(event.target.value) : null)}>
-      <option value="">Choose a project</option>
+      <option value="">{t`Choose a project`}</option>
       {rows.map((row) => <option key={row.id} value={row.id}>{row.public_visible ? row.title : `${row.title} (private)`}</option>)}
     </select>
   </Field>;

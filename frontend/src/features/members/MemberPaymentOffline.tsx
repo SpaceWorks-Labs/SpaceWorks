@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Copy, QrCode } from "lucide-react";
@@ -14,9 +15,9 @@ export type OfflineCollection = {
 };
 
 const CLAIM_TEXT: Record<string, string> = {
-  submitted: "You told the space you paid. They'll confirm once it reaches their account.",
-  awaiting_confirmation: "Your payment is being confirmed by a second person.",
-  confirmed: "Your payment was confirmed.", rejected: "The space couldn't find this payment.",
+  submitted: t`You told the space you paid. They'll confirm once it reaches their account.`,
+  awaiting_confirmation: t`Your payment is being confirmed by a second person.`,
+  confirmed: t`Your payment was confirmed.`, rejected: t`The space couldn't find this payment.`,
 };
 
 /** A QR image for the exact UPI payment, drawn in the browser from the server-built intent. */
@@ -47,14 +48,14 @@ export function OfflinePayment({ offline, onClaim, pending, error }: {
   return <div className="mt-3 grid gap-3 rounded-lg border border-line p-3 text-ink">
     {offline.upi ? <div className="grid gap-2 sm:grid-cols-[10rem_1fr] sm:items-center">
       {qr ? <img src={qr} className="aspect-square w-40 rounded-md border border-line bg-white p-1"
-        alt={`UPI QR code to pay ${offline.upi.payee_name} ${offline.upi.amount} rupees`} /> : <QrCode aria-hidden="true" size={40} />}
+        alt={t`UPI QR code to pay ${offline.upi.payee_name} ${offline.upi.amount} rupees`} /> : <QrCode aria-hidden="true" size={40} />}
       <div className="grid gap-1 text-sm">
-        <p>Pay <strong>₹{offline.upi.amount}</strong> to <strong>{offline.upi.payee_name}</strong></p>
-        <p className="flex flex-wrap items-center gap-2">UPI ID <span className="font-mono">{offline.upi.vpa}</span>
+        <p>{t`Pay `}<strong>₹{offline.upi.amount}</strong> to <strong>{offline.upi.payee_name}</strong></p>
+        <p className="flex flex-wrap items-center gap-2">{t`UPI ID `}<span className="font-mono">{offline.upi.vpa}</span>
           <button type="button" className="desk-button-ghost" onClick={() => { void navigator.clipboard?.writeText(offline.upi!.vpa); setCopied(true); }}>
-            <Copy aria-hidden="true" size={14} />{copied ? "Copied" : "Copy"}</button></p>
-        <p className="text-muted">Add the note <span className="font-mono">{offline.upi.reference}</span> so the space can match it.</p>
-        <a className="desk-button justify-self-start sm:hidden" href={offline.upi.uri}>Open UPI app</a>
+            <Copy aria-hidden="true" size={14} />{copied ? t`Copied` : t`Copy`}</button></p>
+        <p className="text-muted">{t`Add the note `}<span className="font-mono">{offline.upi.reference}</span> {t` so the space can match it.`}</p>
+        <a className="desk-button justify-self-start sm:hidden" href={offline.upi.uri}>{t`Open UPI app`}</a>
       </div>
     </div> : null}
     {offline.instructions ? <p className="whitespace-pre-line text-sm text-muted">{offline.instructions}</p> : null}
@@ -62,10 +63,10 @@ export function OfflinePayment({ offline, onClaim, pending, error }: {
       {offline.claim.decision_note ? ` ${offline.claim.decision_note}` : ""}</p> : null}
     {offline.claimable ? <form className="grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-end"
       onSubmit={event => { event.preventDefault(); onClaim({ reference, paid_on: paidOn }); }}>
-      <Field label="Transaction reference (UTR)"><input className="desk-input font-mono" required minLength={6} maxLength={35}
+      <Field label={t`Transaction reference (UTR)`}><input className="desk-input font-mono" required minLength={6} maxLength={35}
         value={reference} onChange={event => setReference(event.target.value)} /></Field>
-      <Field label="Paid on"><input type="date" className="desk-input" required value={paidOn} onChange={event => setPaidOn(event.target.value)} /></Field>
-      <button type="submit" className="desk-button" disabled={pending}>I've paid</button>
+      <Field label={t`Paid on`}><input type="date" className="desk-input" required value={paidOn} onChange={event => setPaidOn(event.target.value)} /></Field>
+      <button type="submit" className="desk-button" disabled={pending}>{t`I've paid`}</button>
     </form> : null}
     {message ? <p role="alert" className="text-sm text-danger">{message}</p> : null}
   </div>;

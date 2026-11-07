@@ -6,6 +6,7 @@ crew section. Attendance confirmation is sent by staff only (never automatically
 is an `EventAttendanceRound`, at most one every 12 hours per event, and each registered
 person's answer is one `EventAttendanceReply` with an optional private note.
 """
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -56,14 +57,14 @@ class EventAttendanceRound(models.Model):
 
 class EventAttendanceReply(ScopedPiiModelMixin, models.Model):
     class Answer(models.TextChoices):
-        YES = "yes", "Still coming"
-        NO = "no", "Not coming"
+        YES = "yes", gettext_noop("Still coming")
+        NO = "no", gettext_noop("Not coming")
 
     class Effect(models.TextChoices):
-        NONE = "none", "No change"
-        RELEASED = "released", "Place released"
-        DUE_CASE = "due_case", "Cancelled; refund assessed under policy"
-        LEFT_TO_STAFF = "left_to_staff", "Left to staff"
+        NONE = "none", gettext_noop("No change")
+        RELEASED = "released", gettext_noop("Place released")
+        DUE_CASE = "due_case", gettext_noop("Cancelled; refund assessed under policy")
+        LEFT_TO_STAFF = "left_to_staff", gettext_noop("Left to staff")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="attendance_replies")

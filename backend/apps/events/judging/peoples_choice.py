@@ -6,6 +6,7 @@ whole surface is behind ``events.peoples_choice`` (which needs ``events.project_
 means 404 and the data is kept.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -87,12 +88,12 @@ def _changes(event, row, values):
     if "prize_id" in values and values["prize_id"] != row.prize_id:
         prize = values["prize_id"]
         if prize is not None and not HackathonPrize.objects.filter(event=event, pk=prize).exists():
-            raise ValidationError({"prize_id": "Choose a prize of this event."})
+            raise ValidationError({"prize_id": gettext("Choose a prize of this event.")})
         changes["prize_id"] = prize
     opens = changes.get("opens_at", row.opens_at)
     closes = changes.get("closes_at", row.closes_at)
     if opens and closes and closes <= opens:
-        raise ValidationError({"closes_at": "Voting must close after it opens."})
+        raise ValidationError({"closes_at": gettext("Voting must close after it opens.")})
     return changes
 
 

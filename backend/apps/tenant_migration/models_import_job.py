@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 import uuid
 
 from django.conf import settings
@@ -10,7 +11,7 @@ class TenantImportJob(models.Model):
     class Status(models.TextChoices):
         UPLOADING = "uploading", "Uploading"
         PENDING = "pending", "Pending"
-        AWAITING_IDENTITY = "awaiting_identity", "Awaiting identity decisions"
+        AWAITING_IDENTITY = "awaiting_identity", gettext_noop("Awaiting identity decisions")
         READY = "ready", "Ready"
         MATERIALIZING = "materializing", "Materializing"
         FINALIZING = "finalizing", "Finalizing"
@@ -73,12 +74,12 @@ class TenantImportJob(models.Model):
 
 class ImportIdentityDecision(models.Model):
     class IdentityResolution(models.TextChoices):
-        LINK_EXISTING = "link_existing", "Link existing account"
-        CREATE_WALK_IN = "create_walk_in", "Create walk-in account"
+        LINK_EXISTING = "link_existing", gettext_noop("Link existing account")
+        CREATE_WALK_IN = "create_walk_in", gettext_noop("Create walk-in account")
 
     class MembershipDisposition(models.TextChoices):
-        IMPORT_MEMBERSHIP = "import_membership", "Import membership"
-        NO_MEMBERSHIP = "no_membership", "Do not import membership"
+        IMPORT_MEMBERSHIP = "import_membership", gettext_noop("Import membership")
+        NO_MEMBERSHIP = "no_membership", gettext_noop("Do not import membership")
 
     job = models.ForeignKey(
         TenantImportJob, on_delete=models.CASCADE, related_name="identity_decisions"
@@ -137,9 +138,9 @@ class ImportIdentityDecision(models.Model):
             and self.target_user_id is not None
         ):
             raise ValidationError(
-                {"target_user": "A walk-in decision cannot name an existing account."}
+                {"target_user": gettext("A walk-in decision cannot name an existing account.")}
             )
         if self.grant_staff_roles and self.identity_resolution != self.IdentityResolution.LINK_EXISTING:
             raise ValidationError(
-                {"grant_staff_roles": "Only a linked person's staff roles need an explicit grant."}
+                {"grant_staff_roles": gettext("Only a linked person's staff roles need an explicit grant.")}
             )

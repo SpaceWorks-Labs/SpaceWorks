@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ChartFrame, ChartLegend, valueText, type ChartProps } from "./ChartFrame";
 import { ink, seriesColor } from "./chartStyle";
 
@@ -5,7 +6,7 @@ export function FunnelChart({ title, data }: ChartProps) {
   const rows = data.series.flatMap((series) => series.points.map((point) => ({ series, point })));
   const max = Math.max(1, ...rows.map(({ point }) => Math.abs(point.value)));
   return <ChartFrame title={title} data={data}>
-    <svg viewBox={`0 0 720 ${Math.max(80, rows.length * 64 + 24)}`} className="w-full min-w-[45rem]" role="img" aria-label={`${title}: funnel stages with signed values. Width shows magnitude.`}>
+    <svg viewBox={`0 0 720 ${Math.max(80, rows.length * 64 + 24)}`} className="w-full min-w-[45rem]" role="img" aria-label={t`${title}: funnel stages with signed values. Width shows magnitude.`}>
       {rows.map(({ series, point }, index) => {
         const width = Math.abs(point.value) / max * 300;
         const next = rows[index + 1];

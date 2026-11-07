@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ShoppingBag } from "lucide-react";
 
 import type * as Api from "../../generated/api";
@@ -18,9 +19,9 @@ export function PublicShopCards({ shop, slug }: { shop: Api.PublicShop; slug?: s
         : <div aria-hidden="true" className="grid aspect-[4/3] w-full place-items-center rounded-lg bg-surface text-muted"><ShoppingBag size={32} /></div>}
       <h3 className="title-section break-words">{base ? <RouteLink href={`${base.replace(/\/$/, "")}/${encodeURIComponent(product.slug)}`}
         className="inline-flex min-h-11 items-center text-brand-ink underline underline-offset-4">{product.name}</RouteLink> : product.name}</h3>
-      {selling && product.price_from ? <p className="font-semibold tabular-nums">From {product.price_from}</p> : null}
-      {product.sold_out ? <StatusPill label="Sold out" tone="danger" /> : null}
+      {selling && product.price_from ? <p className="font-semibold tabular-nums">{t`From ${product.price_from}`}</p> : null}
+      {product.sold_out ? <StatusPill label={t`Sold out`} tone="danger" /> : null}
     </li>)}</ul>
-    {base ? <RouteLink href={base} className="desk-button min-h-11 justify-self-start">Visit the shop</RouteLink> : null}
+    {base ? <RouteLink href={base} className="desk-button min-h-11 justify-self-start">{t`Visit the shop`}</RouteLink> : null}
   </div>;
 }

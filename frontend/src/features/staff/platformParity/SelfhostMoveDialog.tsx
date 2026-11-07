@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -6,13 +7,13 @@ import { useMoveAction, type MoveAction, type SelfhostMove } from "./selfhostMov
 
 type Copy = { title: string; confirm: string; done: string; danger?: boolean; message: (space: string) => string };
 const COPY: Record<MoveAction, Copy> = {
-  approve: { title: "Approve this move", confirm: "Approve move", done: "Move approved.",
+  approve: { title: t`Approve this move`, confirm: t`Approve move`, done: t`Move approved.`,
     message: space => `You can then export ${space} for its new server. Nothing leaves the platform until you export it.` },
-  reject: { title: "Decline this move", confirm: "Decline move", done: "Move declined.", danger: true,
+  reject: { title: t`Decline this move`, confirm: t`Decline move`, done: t`Move declined.`, danger: true,
     message: space => `The request from ${space} is closed and the space stays on this platform.` },
-  export: { title: "Export this space", confirm: "Start export", done: "Export started.",
+  export: { title: t`Export this space`, confirm: t`Start export`, done: t`Export started.`,
     message: space => `The data of ${space} is packed and encrypted to the key below. Only the server holding the matching private key can open it.` },
-  discard: { title: "Delete the export file", confirm: "Delete file", done: "Export file deleted.", danger: true,
+  discard: { title: t`Delete the export file`, confirm: t`Delete file`, done: t`Export file deleted.`, danger: true,
     message: space => `The encrypted export of ${space} is deleted from storage and can no longer be downloaded.` },
 };
 const NOTE_MAX = 500;
@@ -31,13 +32,13 @@ export function SelfhostMoveDialog({ move, action, onClose }: { move: SelfhostMo
     message={copy.message(move.makerspace_name)} pending={mutation.isPending} error={mutation.error} onCancel={onClose}
     canSubmit={action !== "export" || Boolean(key && !keyError)}
     onSubmit={() => mutation.mutate(body, { onSuccess: () => { toast(copy.done); onClose(); } })}>
-    {action === "approve" || action === "reject" ? <Field label="Note (optional)" hint={`${note.length}/${NOTE_MAX} characters.`}>
+    {action === "approve" || action === "reject" ? <Field label={t`Note (optional)`} hint={`${note.length}/${NOTE_MAX} characters.`}>
       <textarea className="desk-input min-h-20" value={note} maxLength={NOTE_MAX} onChange={event => setNote(event.target.value)} />
     </Field> : null}
-    {action === "export" ? <Field label="Target server's age public key" error={keyError}
-      hint="Paste the public key of the server the space is moving to. Never paste this platform's own key.">
+    {action === "export" ? <Field label={t`Target server's age public key`} error={keyError}
+      hint={t`Paste the public key of the server the space is moving to. Never paste this platform's own key.`}>
       <input className="desk-input font-mono" value={recipient} maxLength={200} spellCheck={false} autoComplete="off"
-        placeholder="age1…" onChange={event => setRecipient(event.target.value)} />
+        placeholder={t`age1…`} onChange={event => setRecipient(event.target.value)} />
     </Field> : null}
   </ActionDialog>;
 }

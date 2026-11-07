@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
@@ -48,15 +49,15 @@ export function PublicWebsiteDetailPage({ view }: { view: "schedule" | "session"
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const failed = !allowed || (page && !visible) || query.error;
   const state = query.isLoading && allowed ? { status: "loading" as const } : failed ? { status: "error" as const,
-    error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? "Unable to load this event website." : "Page not found.",
+    error: query.error && !(query.error instanceof StructuredApiError && query.error.status === 404) ? t`Unable to load this event website.` : t`Page not found.`,
     onRetry: query.error ? () => { void query.refetch(); } : undefined } : { status: "ready" as const };
   return <div style={brandStyle}>
     {visible && page ? <PageMetadata title={title} description={markdownExcerpt(speaker?.body ?? session?.body ?? "Event programme", markdownMode(speaker?.body_rendering ?? session?.body_rendering))} path={location.pathname} noindex={noindex} /> : null}
     <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} state={state} width="narrow"
-      breadcrumb={[{ label: "All events", href: path("events") }, { label: "Back to event", href: base }, { label: visible ? title : "Event website" }]}
-      header={{ eyebrow: view === "schedule" ? undefined : view === "speaker" ? "Speaker" : "Session", title: visible ? title : "Event website" }}>
+      breadcrumb={[{ label: t`All events`, href: path("events") }, { label: t`Back to event`, href: base }, { label: visible ? title : t`Event website` }]}
+      header={{ eyebrow: view === "schedule" ? undefined : view === "speaker" ? t`Speaker` : t`Session`, title: visible ? title : t`Event website` }}>
       {visible && page ? <div className="grid gap-8">
-        {view === "speaker" && speaker ? <><section aria-label="Speaker profile" className="grid gap-3"><h2 className="title-panel">Speaker profile</h2><WebsiteSectionCard row={speaker} image={image} /></section>{page.section_enabled?.SCHEDULE !== false && page.sessions.some((row) => (row.speakers ?? []).includes(speaker.slug)) ? <WebsiteProgramme website={page} links={links} sessions={page.sessions.filter((row) => (row.speakers ?? []).includes(speaker.slug))} /> : null}</> : <WebsiteProgramme website={page} links={links} sessions={view === "session" && session ? [session] : page.sessions} />}
+        {view === "speaker" && speaker ? <><section aria-label={t`Speaker profile`} className="grid gap-3"><h2 className="title-panel">{t`Speaker profile`}</h2><WebsiteSectionCard row={speaker} image={image} /></section>{page.section_enabled?.SCHEDULE !== false && page.sessions.some((row) => (row.speakers ?? []).includes(speaker.slug)) ? <WebsiteProgramme website={page} links={links} sessions={page.sessions.filter((row) => (row.speakers ?? []).includes(speaker.slug))} /> : null}</> : <WebsiteProgramme website={page} links={links} sessions={view === "session" && session ? [session] : page.sessions} />}
       </div> : null}
     </PublicLayout>
   </div>;

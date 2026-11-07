@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Field } from "../../components/ui";
 
@@ -44,20 +45,20 @@ export function PaymentCredentialFields({ provider, settings, draft, onChange, d
           <Field label={label}>
             <input className="desk-input" type="password" autoComplete="new-password"
               maxLength={255} value={draft[field] ?? ""} disabled={disabled || clearing}
-              placeholder={saved ? `${label} set` : "Not set"}
+              placeholder={saved ? `${label} set` : t`Not set`}
               onChange={(event) => change(field, event.target.value || undefined)} />
           </Field>
-          <p className="text-sm text-muted">{clearing ? "Will clear on save" : saved ? "Saved value set" : "No saved value"}</p>
+          <p className="text-sm text-muted">{clearing ? t`Will clear on save` : saved ? t`Saved value set` : t`No saved value`}</p>
           {saved ? <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={clearing} disabled={disabled}
               onChange={(event) => change(field, event.target.checked ? "" : undefined)} />
-            Clear saved {label}
+            {t`Clear saved ${label}`}
           </label> : null}
         </div>;
       })}
     </div>
-    <WebhookUrl label="Stripe webhook URL" url={settings?.stripe_webhook_url} />
-    <WebhookUrl label="Razorpay webhook URL" url={settings?.razorpay_webhook_url} />
+    <WebhookUrl label={t`Stripe webhook URL`} url={settings?.stripe_webhook_url} />
+    <WebhookUrl label={t`Razorpay webhook URL`} url={settings?.razorpay_webhook_url} />
   </>;
 }
 
@@ -68,7 +69,7 @@ function WebhookUrl({ label, url }: { label: string; url?: string }) {
     <button type="button" className="desk-button-secondary mt-2" disabled={!url} onClick={async () => {
       try { await navigator.clipboard.writeText(url!); setResult("Copied"); }
       catch { setResult("Copy failed. Select and copy the URL above."); }
-    }}>Copy {label}</button>
+    }}>{t`Copy ${label}`}</button>
     <span role="status" className="ml-2 text-sm text-muted">{result}</span>
   </div>;
 }

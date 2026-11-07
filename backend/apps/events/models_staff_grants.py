@@ -1,5 +1,6 @@
 """Revocable event credentials. These rows never travel in portable archives."""
 
+from django.utils.translation import gettext
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -37,10 +38,10 @@ class _EventStaffScope(models.Model):
         super().clean()
         validate_permissions(self.permissions)
         if bool(self.event_id) == bool(self.series_id):
-            raise ValidationError("Choose exactly one event or series.")
+            raise ValidationError(gettext("Choose exactly one event or series."))
         target = self.event if self.event_id else self.series
         if target.makerspace_id != self.makerspace_id:
-            raise ValidationError("The event or series must belong to this makerspace.")
+            raise ValidationError(gettext("The event or series must belong to this makerspace."))
 
 
 class EventStaffGrant(_EventStaffScope, ResourceStaffGrant):

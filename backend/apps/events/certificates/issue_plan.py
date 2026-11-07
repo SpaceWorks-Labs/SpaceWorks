@@ -1,6 +1,7 @@
 """Who would receive which certificate (C10): candidates from attendance, published results and
 roles, each checked by the same eligibility service issuance uses, with skip reasons. Nothing is
 written; staff confirm the returned subjects through the existing batch command."""
+from django.utils.translation import gettext
 from django.http import Http404
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 
@@ -83,7 +84,7 @@ def _reason(exc):
 def plan(event, *, actor, groups):
     from apps.events import event_authority
     if not groups or set(groups) - set(GROUPS):
-        raise ValidationError({"groups": "Choose attendance, participants, awards or roles."})
+        raise ValidationError({"groups": gettext("Choose attendance, participants, awards or roles.")})
     event_authority.require(actor, event, None)
     subjects = candidates(event, groups)
     if not subjects:

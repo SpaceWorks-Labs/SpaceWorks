@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from uuid import uuid4
 
 from django.conf import settings
@@ -23,7 +24,7 @@ class EventRegistration(PrivateDocumentMixin, models.Model):
     #: never part of an order or a team. Only `contributions/crew_workflow` sets it.
     is_crew = models.BooleanField(default=False, editable=False)
     class Status(models.TextChoices):
-        PENDING_APPROVAL = "pending_approval", "Pending approval"
+        PENDING_APPROVAL = "pending_approval", gettext_noop("Pending approval")
         REGISTERED = "registered", "Registered"
         WAITLISTED = "waitlisted", "Waitlisted"
         REJECTED = "rejected", "Rejected"
@@ -155,13 +156,13 @@ class EventRegistration(PrivateDocumentMixin, models.Model):
         for field in ("ticket_type", "invite", "promo_code"):
             value = getattr(self, field)
             if value and value.event_id != self.event_id:
-                raise ValidationError({field: "Must belong to this event."})
+                raise ValidationError({field: gettext("Must belong to this event.")})
         if (
             self.host_waiver_id and self.event_id
             and self.host_waiver.makerspace_id != self.event.makerspace_id
         ):
             raise ValidationError(
-                {"host_waiver": "Waiver must belong to the event's host makerspace."}
+                {"host_waiver": gettext("Waiver must belong to the event's host makerspace.")}
             )
 
     def save(self, *args, **kwargs):

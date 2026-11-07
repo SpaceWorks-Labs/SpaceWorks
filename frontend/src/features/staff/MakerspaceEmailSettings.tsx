@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ErrorBlock, SettingsRow } from "../../components/ui";
@@ -63,7 +64,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
 
   return <>
     <SettingsQueryState query={editor.settings} resource="email settings">
-      <SettingsRow label="Email delivery" helper="Select the sender used for tenant notifications.">
+      <SettingsRow label={t`Email delivery`} helper={t`Select the sender used for tenant notifications.`}>
         <div className="@container grid min-w-0 gap-4">
           <EmailTransportFields form={editor.form} onChange={editor.setForm} platform={false}
             disabled={!editor.settings.isSuccess || editor.save.isPending}
@@ -72,7 +73,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
           {editor.save.error ? <p className="text-sm text-danger" role="alert">{editor.save.error.message}</p> : null}
           <SettingsEditorActions dirty={editor.dirty} onDiscard={editor.discard} pending={editor.save.isPending}
             disabled={!editor.settings.isSuccess || !!editor.validation} onSave={() => editor.save.mutate()} />
-          {editor.form.provider === "smtp" ? <SettingsResetAction label="Clear SMTP password"
+          {editor.form.provider === "smtp" ? <SettingsResetAction label={t`Clear SMTP password`}
             consequence="Remove the saved SMTP password. Email delivery may stop until a replacement is saved."
             pending={editor.clearPassword.isPending} disabled={!editor.settings.data?.smtp_password_set || editor.save.isPending}
             onConfirm={() => editor.clearPassword.mutateAsync()} /> : null}
@@ -80,7 +81,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
         </div>
       </SettingsRow>
     </SettingsQueryState>
-      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label="Notification recipients" helper="Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace."><div className="@container grid min-w-0 gap-4">
+      <SettingsQueryState query={recipients} resource="notification recipients"><SettingsRow label={t`Notification recipients`} helper={t`Unchecked managers will not receive hardware/printing lifecycle emails for this makerspace.`}><div className="@container grid min-w-0 gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid max-w-2xl gap-2">
 
@@ -88,7 +89,7 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
           </div>
           <SettingsEditorActions dirty={recipientsDirty} onDiscard={() => { setRecipientChecks(Object.fromEntries((recipients.data ?? []).map(recipient => [recipient.id, recipient.receives_notifications]))); setRecipientsDirty(false); }} pending={saveRecipients.isPending} disabled={!recipients.isSuccess || !recipientsDirty || saveRecipients.isPending || !recipients.data?.length} onSave={() => saveRecipients.mutate()} />
         </div>
-        {recipients.isLoading ? <p className="mt-3 text-sm text-muted">Loading recipients…</p> : null}
+        {recipients.isLoading ? <p className="mt-3 text-sm text-muted">{t`Loading recipients…`}</p> : null}
         <div className="mt-4 grid gap-2">
           {recipients.data?.map((recipient) => (
             <label
@@ -117,9 +118,9 @@ function MakerspaceEmailEditor({ makerspace }: { makerspace: Makerspace }) {
           ))}
         </div>
         {!recipients.isLoading && recipients.data?.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">No managers to notify yet.</p>
+          <p className="mt-3 text-sm text-muted">{t`No managers to notify yet.`}</p>
         ) : null}
-        {recipients.error ? <ErrorBlock error={new Error("Couldn't load notification recipients. Try again.")} onRetry={() => { void recipients.refetch(); }} /> : null}
+        {recipients.error ? <ErrorBlock error={new Error(t`Couldn't load notification recipients. Try again.`)} onRetry={() => { void recipients.refetch(); }} /> : null}
         {saveRecipients.error ? (
           <p className="mt-3 text-sm text-danger">{saveRecipients.error.message}</p>
         ) : null}

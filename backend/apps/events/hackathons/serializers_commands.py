@@ -1,4 +1,5 @@
 """Closed action-specific payloads. No generic client action dispatcher."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 from .admission_inputs import CommandInput, LiteralBoolean, StrictSerializer
 
@@ -38,9 +39,9 @@ class DecisionSubjectInput(StrictSerializer):
 
     def validate(self, attrs):
         if ("application_id" in attrs) == ("cohort_id" in attrs):
-            raise serializers.ValidationError("Choose exactly one subject.")
+            raise serializers.ValidationError(gettext("Choose exactly one subject."))
         if attrs["outcome"] == "advance" and "stage_id" not in attrs:
-            raise serializers.ValidationError("Name the stage the application advances from.")
+            raise serializers.ValidationError(gettext("Name the stage the application advances from."))
         return attrs
 
 
@@ -64,7 +65,7 @@ class ReviewInput(CommandInput):
 
     def validate(self, attrs):
         if ("scores" in attrs) == ("recusal_code" in attrs):
-            raise serializers.ValidationError("Submit scores or recuse.")
+            raise serializers.ValidationError(gettext("Submit scores or recuse."))
         return attrs
 
 
@@ -87,7 +88,7 @@ class AcceptInput(CommandInput):
 
     def validate(self, attrs):
         if ("request_id" in attrs) == ("token" in attrs):
-            raise serializers.ValidationError("Choose a request or invitation.")
+            raise serializers.ValidationError(gettext("Choose a request or invitation."))
         return attrs
 
 

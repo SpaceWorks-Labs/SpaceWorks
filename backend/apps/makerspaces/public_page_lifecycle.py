@@ -4,6 +4,7 @@ The cleanup row's makerspace owner is the quota owner, also for event pages.
 Its page ID and key are inert provenance; there is deliberately no event FK.
 """
 
+from django.utils.translation import gettext
 from django.utils import timezone
 
 
@@ -22,7 +23,7 @@ def enqueue_tenant_pages(makerspace, *, events_only=False):
                 valid = owns(asset, "makerspace", makerspace.pk)
             if not valid:
                 from django.core.exceptions import ValidationError
-                raise ValidationError("Cannot purge a page image without typed byte ownership.")
+                raise ValidationError(gettext("Cannot purge a page image without typed byte ownership."))
             if model is EventPageAsset:
                 # Preserve the event owner and its checked import-key proof even
                 # when a raw purge bypasses the asset's ORM pre_delete receiver.

@@ -1,5 +1,6 @@
 """Fields/validation for I's existing platform and tenant settings serializers."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
@@ -39,7 +40,7 @@ def validate_provider_update(attrs, instance, *, tenant=False):
             raise serializers.ValidationError(exc.message_dict) from None
         raise serializers.ValidationError({"email_provider_config": exc.messages}) from None
     except Exception:
-        raise serializers.ValidationError({"email_provider_config": "Email credentials are unavailable."}) from None
+        raise serializers.ValidationError({"email_provider_config": gettext("Email credentials are unavailable.")}) from None
     return attrs
 
 

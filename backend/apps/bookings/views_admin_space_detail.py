@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -84,7 +85,7 @@ def _page_response(paginator, page, serializer, actor=None):
 def _require_active(space):
     if not space.is_active:
         raise ValidationError(
-            {'space': 'Inactive spaces cannot have images changed.'}
+            {'space': gettext('Inactive spaces cannot have images changed.')}
         )
 
 
@@ -206,7 +207,7 @@ class BookableSpaceImageFinalizeView(APIView):
         object_key = serializer.validated_data['object_key']
         services.validate_space_image_key(space, object_key)
         if storage.public_image_key_in_use(space.makerspace_id, object_key):
-            raise ValidationError({'object_key': 'This image is already in use.'})
+            raise ValidationError({'object_key': gettext('This image is already in use.')})
         try:
             result = storage.finalize_upload(object_key)
         except StorageUnavailable:
@@ -224,7 +225,7 @@ class BookableSpaceImageFinalizeView(APIView):
             return storage_unavailable_response()
         if not valid_image:
             _cleanup_new_upload(space, object_key)
-            raise ValidationError({'object_key': 'Uploaded file is not a valid image.'})
+            raise ValidationError({'object_key': gettext('Uploaded file is not a valid image.')})
         try:
             space = services.set_space_image(
                 space,

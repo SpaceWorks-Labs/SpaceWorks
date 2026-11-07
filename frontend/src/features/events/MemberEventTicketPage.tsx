@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { AppShell } from "../../components/shell";
 import { CalendarDays } from "lucide-react";
 import { saveCalendarBlob } from "./eventCalendar";
@@ -67,48 +69,48 @@ export function MemberEventTicketPage() {
     tenantBrand={space ? { name: spaceName, logo: space.branding?.logo_url || space.makerspace.logo_url || undefined } : undefined}
     onAuthenticated={() => { void identity.refetch(); }} />;
   const canDownload = Boolean(current?.ticket_png_available && confirmed(current.status));
-  const allEvents = { label: "All events", href: tenantPath("events") };
+  const allEvents = { label: t`All events`, href: tenantPath("events") };
   return <AppShell variant="member" compactNav="drawer" activeKey="ticket" nav={[{ key: 'events', items: [
-    { key: 'events', label: 'Events', href: tenantPath('events'), icon: CalendarDays },
-    { key: 'ticket', label: 'Tickets and certificates', href: tenantPath('member/events/history'), icon: CalendarDays },
-  ] }]} user={{ name: 'Your account', menu: [{ label: 'Account', href: tenantPath('member/account') }] }}><CenteredCardLayout standalone={false} width={480} eyebrow={spaceName} title="Your event ticket"
+    { key: 'events', label: t`Events`, href: tenantPath('events'), icon: CalendarDays },
+    { key: 'ticket', label: t`Tickets and certificates`, href: tenantPath('member/events/history'), icon: CalendarDays },
+  ] }]} user={{ name: 'Your account', menu: [{ label: t`Account`, href: tenantPath('member/account') }] }}><CenteredCardLayout standalone={false} width={480} eyebrow={spaceName} title={t`Your event ticket`}
     state={restoring || identity.isLoading || ticket.isLoading || bootstrap.isLoading ? { status: "loading" } : { status: "ready" }}
-    body={!current ? "This ticket is not available right now."
-      : canDownload ? "Download your ticket and bring it to event check-in." : "A ticket download is available once your registration is confirmed."}
+    body={!current ? t`This ticket is not available right now.`
+      : canDownload ? t`Download your ticket and bring it to event check-in.` : t`A ticket download is available once your registration is confirmed.`}
     content={<div className="grid gap-4">
-      {authError ? <ErrorText message={authError instanceof StructuredApiError && authError.status === 404 ? "Ticket not found." : authError.message} /> : null}
-      {bootstrap.error ? <ErrorText message="Unable to load this makerspace." /> : null}
+      {authError ? <ErrorText message={authError instanceof StructuredApiError && authError.status === 404 ? t`Ticket not found.` : authError.message} /> : null}
+      {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} /> : null}
       {current ? <>
         <LiveTicketState status={current.status} attendedAt={current.attended_at} />
         <TicketCard organisation={spaceName} title={current.event.title}
           fields={[
-            { label: "When", value: <time dateTime={current.event.starts_at}>{new Date(current.event.starts_at).toLocaleString()}</time> },
-            ...(current.event.location || current.map_url ? [{ label: "Where", value: <span className="grid gap-1">
+            { label: t`When`, value: <time dateTime={current.event.starts_at}>{new Date(current.event.starts_at).toLocaleString(formatLocale())}</time> },
+            ...(current.event.location || current.map_url ? [{ label: t`Where`, value: <span className="grid gap-1">
               {current.event.location ? <span>{current.event.location}</span> : null}
-              {current.map_url ? <a className="text-brand-ink underline" href={current.map_url} target="_blank" rel="noopener noreferrer">Open the map<span className="sr-only"> (opens in a new tab)</span></a> : null}
+              {current.map_url ? <a className="text-brand-ink underline" href={current.map_url} target="_blank" rel="noopener noreferrer">{t`Open the map`}<span className="sr-only"> {t` (opens in a new tab)`}</span></a> : null}
             </span> }] : []),
-            ...(current.join_url ? [{ label: "Join online", value: <a className="break-all text-brand-ink underline" href={current.join_url} target="_blank" rel="noopener noreferrer">{current.join_url}</a> }] : []),
-            { label: "Status", value: <StatusBadge status={current.status} /> },
-            { label: "Registration", value: `#${current.registration_id}` },
+            ...(current.join_url ? [{ label: t`Join online`, value: <a className="break-all text-brand-ink underline" href={current.join_url} target="_blank" rel="noopener noreferrer">{current.join_url}</a> }] : []),
+            { label: t`Status`, value: <StatusBadge status={current.status} /> },
+            { label: t`Registration`, value: `#${current.registration_id}` },
           ]}
           qr={<div className={`grid h-full place-items-center rounded-xl ${canDownload ? "bg-success-soft text-success-ink" : "bg-warn-soft text-warn-ink"}`}>
             <Icon name={canDownload ? "CheckCircle" : "Clock"} className="h-16 w-16" /></div>}
-          caption={canDownload ? "Your check-in code is on the downloadable ticket." : "Your check-in code appears once the makerspace confirms your place."} />
+          caption={canDownload ? t`Your check-in code is on the downloadable ticket.` : t`Your check-in code appears once the makerspace confirms your place.`} />
         <div className="flex flex-wrap gap-2">
-          {confirmed(current.status) && ["published", "completed"].includes(current.event.status) ? <a className="desk-button flex-1" href={googleCalendarUrl(current.event)} target="_blank" rel="noopener noreferrer">Add to Google Calendar</a> : null}
-          <button className="desk-button flex-1" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>Download registration calendar</button>
+          {confirmed(current.status) && ["published", "completed"].includes(current.event.status) ? <a className="desk-button flex-1" href={googleCalendarUrl(current.event)} target="_blank" rel="noopener noreferrer">{t`Add to Google Calendar`}</a> : null}
+          <button className="desk-button flex-1" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>{t`Download registration calendar`}</button>
         </div>
         {makerspaceId ? <TicketManageActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={current.registration_id} status={current.status} event={current.event} /> : null}
-        <RouteLink className="desk-button" href={tenantPath("member/events/history")}>Your event history</RouteLink>
+        <RouteLink className="desk-button" href={tenantPath("member/events/history")}>{t`Your event history`}</RouteLink>
         {/* Hack-money G9: a confirmed place on an approval event may buy add-ons alone. */}
         {confirmed(current.status) && makerspaceId && chargesOn(space, "events") && space?.features?.includes("events.accepted_addons") && space.features.includes("events.addons")
           ? <AddonOnlyShop makerspaceSlug={makerspaceSlug} makerspaceId={makerspaceId} publicToken={current.event.public_token}
             ordersHref={orderId => tenantPath(`member/orders/${orderId}`)} /> : null}
         {current.event.id && makerspaceId ? <PhotoChoice actorId={identity.data?.id} makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
-        {calendar.error ? <ErrorText message="Could not download this calendar." /> : null}
+        {calendar.error ? <ErrorText message={t`Could not download this calendar.`} /> : null}
         {download.error ? <ErrorText message={download.error.message} /> : null}
       </> : null}
     </div>}
-    primary={canDownload ? { label: "Download ticket PNG", pending: download.isPending, pendingLabel: "Preparing ticket...", onClick: () => download.mutate() } : allEvents}
+    primary={canDownload ? { label: t`Download ticket PNG`, pending: download.isPending, pendingLabel: "Preparing ticket...", onClick: () => download.mutate() } : allEvents}
     escape={canDownload ? allEvents : undefined} /></AppShell>;
 }

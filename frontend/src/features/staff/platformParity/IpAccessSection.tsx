@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, RelativeTime, Skeleton, StatusPill } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -10,16 +11,16 @@ const pages = (count = 0) => Math.max(1, Math.ceil(count / PAGE_SIZE));
 
 function DeleteRuleDialog({ rule, onClose }: { rule: IpRule; onClose: () => void }) {
   const remove = useDeleteIpRule();
-  return <ActionDialog title="Delete this rule" confirmLabel="Delete rule" tone="danger" pending={remove.isPending} error={remove.error}
-    onCancel={onClose} message={`The ${rule.action} rule for ${rule.cidr} stops applying right away.`}
-    onSubmit={() => remove.mutate(rule.id, { onSuccess: () => { toast("Rule deleted."); onClose(); } })} />;
+  return <ActionDialog title={t`Delete this rule`} confirmLabel={t`Delete rule`} tone="danger" pending={remove.isPending} error={remove.error}
+    onCancel={onClose} message={t`The ${rule.action} rule for ${rule.cidr} stops applying right away.`}
+    onSubmit={() => remove.mutate(rule.id, { onSuccess: () => { toast(t`Rule deleted.`); onClose(); } })} />;
 }
 
 function UnblockDialog({ block, onClose }: { block: IpBlock; onClose: () => void }) {
   const unblock = useUnblock();
-  return <ActionDialog title="Lift this block" confirmLabel="Lift block" pending={unblock.isPending} error={unblock.error}
-    onCancel={onClose} message={`Requests from ${block.network} are accepted again right away. Failed sign-ins against many accounts can block it again.`}
-    onSubmit={() => unblock.mutate(block.id, { onSuccess: () => { toast("Block lifted."); onClose(); } })} />;
+  return <ActionDialog title={t`Lift this block`} confirmLabel={t`Lift block`} pending={unblock.isPending} error={unblock.error}
+    onCancel={onClose} message={t`Requests from ${block.network} are accepted again right away. Failed sign-ins against many accounts can block it again.`}
+    onSubmit={() => unblock.mutate(block.id, { onSuccess: () => { toast(t`Block lifted.`); onClose(); } })} />;
 }
 
 function RulesList() {
@@ -29,19 +30,19 @@ function RulesList() {
   const list = useIpRules(page);
   const rows = list.data?.results ?? [];
   return <section className="grid gap-3" aria-labelledby="ip-rules-heading">
-    <h3 id="ip-rules-heading" className="title-section">Rules</h3>
-    <CollapsibleSection title="New rule" open={adding} onToggle={() => setAdding(!adding)}><IpRuleForm /></CollapsibleSection>
+    <h3 id="ip-rules-heading" className="title-section">{t`Rules`}</h3>
+    <CollapsibleSection title={t`New rule`} open={adding} onToggle={() => setAdding(!adding)}><IpRuleForm /></CollapsibleSection>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
       : list.isError ? <ErrorText resource="IP rules" onRetry={() => { void list.refetch(); }} />
-      : !rows.length ? <EmptyState message="No rules. Every address is allowed unless it is blocked automatically." />
+      : !rows.length ? <EmptyState message={t`No rules. Every address is allowed unless it is blocked automatically.`} />
       : <div className="grid gap-3">{rows.map(rule => <ListRow key={rule.id} title={rule.cidr}
-        meta={<>{rule.note ? `${rule.note} · ` : ""}{rule.expires_at ? <>expires <RelativeTime date={rule.expires_at} exact /></> : "no expiry"}
-          {" · added "}<RelativeTime date={rule.created_at} exact />{rule.created_by ? ` by ${rule.created_by}` : ""}</>}
+        meta={<>{rule.note ? `${rule.note} · ` : ""}{rule.expires_at ? <>expires <RelativeTime date={rule.expires_at} exact /></> : t`no expiry`}
+          {t` · added `}<RelativeTime date={rule.created_at} exact />{rule.created_by ? ` by ${rule.created_by}` : ""}</>}
         right={<div className="flex flex-wrap items-center gap-2">
-          <StatusPill label={rule.action === "allow" ? "Allow" : "Deny"} tone={rule.action === "allow" ? "success" : "danger"} />
-          {rule.active ? null : <StatusPill label="Not in force" />}
-          <button type="button" className="desk-button-danger-outline" aria-label={`Delete the rule for ${rule.cidr}`}
-            onClick={() => setDeleting(rule)}>Delete…</button>
+          <StatusPill label={rule.action === "allow" ? t`Allow` : t`Deny`} tone={rule.action === "allow" ? "success" : "danger"} />
+          {rule.active ? null : <StatusPill label={t`Not in force`} />}
+          <button type="button" className="desk-button-danger-outline" aria-label={t`Delete the rule for ${rule.cidr}`}
+            onClick={() => setDeleting(rule)}>{t`Delete…`}</button>
         </div>} />)}</div>}
     <Pagination page={page} totalPages={pages(list.data?.count)} onChange={setPage} count={list.data?.count} pageSize={PAGE_SIZE} disabled={list.isFetching} />
     {deleting ? <DeleteRuleDialog rule={deleting} onClose={() => setDeleting(null)} /> : null}
@@ -54,18 +55,18 @@ function BlocksList() {
   const list = useIpBlocks(page);
   const rows = list.data?.results ?? [];
   return <section className="grid gap-3" aria-labelledby="ip-blocks-heading">
-    <h3 id="ip-blocks-heading" className="title-section">Automatic blocks</h3>
-    <p className="text-sm text-muted">Networks blocked after failed sign-ins against many different accounts. Each block lifts on its own when its time runs out.</p>
+    <h3 id="ip-blocks-heading" className="title-section">{t`Automatic blocks`}</h3>
+    <p className="text-sm text-muted">{t`Networks blocked after failed sign-ins against many different accounts. Each block lifts on its own when its time runs out.`}</p>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
       : list.isError ? <ErrorText resource="automatic blocks" onRetry={() => { void list.refetch(); }} />
-      : !rows.length ? <EmptyState message="Nothing has been blocked." />
+      : !rows.length ? <EmptyState message={t`Nothing has been blocked.`} />
       : <div className="grid gap-3">{rows.map(block => <ListRow key={block.id} title={block.network}
-        meta={<>{block.active ? "blocked until " : "ended "}<RelativeTime date={block.blocked_until} exact />
-          {" · started "}<RelativeTime date={block.created_at} exact /></>}
+        meta={<>{block.active ? t`blocked until ` : "ended "}<RelativeTime date={block.blocked_until} exact />
+          {t` · started `}<RelativeTime date={block.created_at} exact /></>}
         right={<div className="flex flex-wrap items-center gap-2">
-          <StatusPill label={block.active ? "Blocked" : "Ended"} tone={block.active ? "warn" : "neutral"} />
-          {block.active ? <button type="button" className="desk-button" aria-label={`Lift the block on ${block.network}`}
-            onClick={() => setLifting(block)}>Lift now…</button> : null}
+          <StatusPill label={block.active ? t`Blocked` : t`Ended`} tone={block.active ? "warn" : "neutral"} />
+          {block.active ? <button type="button" className="desk-button" aria-label={t`Lift the block on ${block.network}`}
+            onClick={() => setLifting(block)}>{t`Lift now…`}</button> : null}
         </div>} />)}</div>}
     <Pagination page={page} totalPages={pages(list.data?.count)} onChange={setPage} count={list.data?.count} pageSize={PAGE_SIZE} disabled={list.isFetching} />
     {lifting ? <UnblockDialog block={lifting} onClose={() => setLifting(null)} /> : null}
@@ -76,8 +77,7 @@ function BlocksList() {
 export function IpAccessSection() {
   return <div className="grid gap-6">
     <p className="text-sm text-muted">
-      An allow rule beats every deny rule and every automatic block. A deny rule always applies. A rule that would lock you out is refused.
-    </p>
+      {t`An allow rule beats every deny rule and every automatic block. A deny rule always applies. A rule that would lock you out is refused.`}</p>
     <RulesList />
     <BlocksList />
   </div>;

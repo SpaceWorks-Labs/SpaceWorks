@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
@@ -27,7 +28,7 @@ export function ProviderForm({ spec, saved }: { spec: ProviderSpec; saved: Provi
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!dirty || save.isPending) return;
-    save.mutate(body, { onSuccess: () => toast(`${spec.title} settings saved.`) });
+    save.mutate(body, { onSuccess: () => toast(t`${spec.title} settings saved.`) });
   };
   return <form className="grid gap-4" aria-label={`${spec.title} settings`} onSubmit={submit} noValidate>
     <div className="grid gap-4 sm:grid-cols-2">
@@ -52,7 +53,7 @@ export function ProviderForm({ spec, saved }: { spec: ProviderSpec; saved: Provi
     {fieldError(save.error, "non_field_errors") ? <p role="alert" className="text-sm text-danger">{fieldError(save.error, "non_field_errors")}</p> : null}
     {general ? <p role="alert" className="text-sm text-danger">{general}</p> : null}
     <button type="submit" className="desk-button-primary w-full sm:w-fit" disabled={!dirty || save.isPending}>
-      {save.isPending ? "Saving…" : "Save"}
+      {save.isPending ? t`Saving…` : t`Save`}
     </button>
   </form>;
 }

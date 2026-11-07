@@ -1,5 +1,6 @@
 """Atomic user-requested retries; transport remains at-least-once after provider acceptance."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
@@ -18,7 +19,7 @@ def retry_delivery(actor, log, *, expected_generation=None):
     ):
         raise PermissionDenied()
     if log.makerspace_id is None:
-        raise ValidationError({"makerspace": "Use the platform email controls for platform mail."})
+        raise ValidationError({"makerspace": gettext("Use the platform email controls for platform mail.")})
     enqueue = _enqueue if isinstance(log, EmailLog) else _enqueue_notification
     with tenant_write(log.makerspace_id):
         if isinstance(log, EmailLog):
@@ -28,13 +29,13 @@ def retry_delivery(actor, log, *, expected_generation=None):
             actor, rbac.Action.MANAGE_MAKERSPACE, type(log).objects.all(),
         ).select_for_update().filter(pk=log.pk, makerspace_id=log.makerspace_id).first()
         if locked is None:
-            raise NotFound("This delivery was removed by retention.")
+            raise NotFound(gettext("This delivery was removed by retention."))
         if expected_generation is not None and expected_generation != locked.retry_generation:
             return locked
         if locked.status in ("pending", "sending", "sent"):
             return locked
         if locked.status != "failed":
-            raise ValidationError({"status": "Only failed deliveries may be retried."})
+            raise ValidationError({"status": gettext("Only failed deliveries may be retried.")})
         from apps.integrations.dispatch import email_module_blocks
         from apps.integrations.dispatch_channels import channel_module_blocks
 
@@ -42,14 +43,14 @@ def retry_delivery(actor, log, *, expected_generation=None):
             locked, EmailLog,
         ) else channel_module_blocks(locked.makerspace, locked.channel)
         if blocked:
-            raise ValidationError({"module": "This delivery channel is disabled."})
+            raise ValidationError({"module": gettext("This delivery channel is disabled.")})
         if isinstance(log, EmailLog) and not has_retry_content(locked):
-            raise ValidationError({"detail": "This email has no stored content to retry."})
+            raise ValidationError({"detail": gettext("This email has no stored content to retry.")})
         if isinstance(log, EmailLog):
             from .mail_providers.outbox import claim_due
             from .mail_retry_policy import unresolved_acceptance, rearm_rejected_configuration
             if unresolved_acceptance(locked) or (not claim_due(locked) and not rearm_rejected_configuration(locked)):
-                raise ValidationError({"detail": "Delivery is deferred or requires acceptance reconciliation."})
+                raise ValidationError({"detail": gettext("Delivery is deferred or requires acceptance reconciliation.")})
             retry(locked, actor)
         locked.status = "pending"
         locked.error = ""

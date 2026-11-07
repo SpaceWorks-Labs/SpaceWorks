@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -22,8 +23,8 @@ export function ShopProductForm({ makerspaceId, productId, access, onDone }: {
   const query = useQuery({ queryKey: staffShopKeys.product(makerspaceId, productId ?? 0), queryFn: () => fetchProduct(productId!),
     enabled: productId !== null });
   return productId !== null && !query.data
-    ? <FormPageLayout header={{ title: "Product" }} back={{ label: "Catalogue", onClick: onDone }} form={null}
-      submit={{ label: "Save", disabled: true, disabledReason: "Loading the product." }}
+    ? <FormPageLayout header={{ title: t`Product` }} back={{ label: t`Catalogue`, onClick: onDone }} form={null}
+      submit={{ label: t`Save`, disabled: true, disabledReason: "Loading the product." }}
       state={query.error ? { status: "error", error: staffShopError(query.error), onRetry: () => { void query.refetch(); } } : { status: "loading" }} />
     : <ProductEditor key={productId ?? "new"} makerspaceId={makerspaceId} product={query.data} access={access} onDone={onDone}
       onSaved={saved => { client.setQueryData(staffShopKeys.product(makerspaceId, saved.id), saved); void client.invalidateQueries({ queryKey: staffShopKeys.all(makerspaceId) }); }} />;
@@ -53,17 +54,17 @@ function ProductEditor({ makerspaceId, product, access, onDone, onSaved }: {
   } });
   const problem = formProblem(form);
   return <>
-    <FormPageLayout state={{ status: "ready" }} back={{ label: "Catalogue", onClick: onDone }}
-      header={{ eyebrow: "Shop", title: product ? product.name : "New product", subtitle: product ? undefined : "You can add a photo after the first save." }}
-      submit={{ label: product ? "Save changes" : "Create product", pending: save.isPending, pendingLabel: "Saving…",
+    <FormPageLayout state={{ status: "ready" }} back={{ label: t`Catalogue`, onClick: onDone }}
+      header={{ eyebrow: t`Shop`, title: product ? product.name : t`New product`, subtitle: product ? undefined : t`You can add a photo after the first save.` }}
+      submit={{ label: product ? t`Save changes` : t`Create product`, pending: save.isPending, pendingLabel: "Saving…",
         onClick: () => { setTried(true); if (!problem) save.mutate(); } }}
-      cancel={{ label: "Cancel", onClick: onDone }}
+      cancel={{ label: t`Cancel`, onClick: onDone }}
       form={<div className="grid gap-8">
         {tried && problem ? <p role="alert" className="text-sm text-danger">{problem}</p> : null}
         {save.error ? <p role="alert" className="text-sm text-danger">{staffShopError(save.error)}</p> : null}
-        {save.isSuccess && product ? <p role="status" className="text-sm text-muted">Saved.</p> : null}
+        {save.isSuccess && product ? <p role="status" className="text-sm text-muted">{t`Saved.`}</p> : null}
         <ShopProductFields form={form} onChange={patch} access={access} />
-        {product ? <ImageUploader endpoint={productImageEndpoint(product.id)} currentUrl={product.image_url || null} label="Product photo"
+        {product ? <ImageUploader endpoint={productImageEndpoint(product.id)} currentUrl={product.image_url || null} label={t`Product photo`}
           onChanged={() => { void fetchProductAgain(); }} /> : null}
         <ShopVariantsEditor rows={form.variants} onChange={variants => patch({ variants })} linkConsumables={access.features.consumableLink}
           showReorder={access.features.reorder} onArchive={row => row.id !== undefined ? setArchiving(row) : patch({ variants: form.variants.filter(v => v.key !== row.key) })} />
@@ -71,8 +72,8 @@ function ProductEditor({ makerspaceId, product, access, onDone, onSaved }: {
           onBundleMode={bundle_mode => patch({ bundle_mode })} onChange={next => patch({ parts: next })} /> : null}
         {archive.error ? <p role="alert" className="text-sm text-danger">{staffShopError(archive.error)}</p> : null}
       </div>} />
-    <ConfirmDialog open={archiving !== null} title="Archive this variant?" tone="danger" pending={archive.isPending}
-      message="It leaves the shop and the till. Past orders and stock history keep it." confirmLabel="Archive variant"
+    <ConfirmDialog open={archiving !== null} title={t`Archive this variant?`} tone="danger" pending={archive.isPending}
+      message={t`It leaves the shop and the till. Past orders and stock history keep it.`} confirmLabel={t`Archive variant`}
       onCancel={() => setArchiving(null)} onConfirm={() => { if (archiving) archive.mutate(archiving); }} />
   </>;
 

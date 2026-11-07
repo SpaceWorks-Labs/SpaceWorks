@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from .notification_cutover import guarded, sending_allowed, CutoverClosed
 import logging
 
@@ -61,7 +62,7 @@ class TelegramWebhookView(APIView):
     )
     def post(self, request, *args, **kwargs):
         if not _webhook_secret_ok(request):
-            return Response({"detail": "Invalid webhook secret."}, status=403)
+            return Response({"detail": gettext("Invalid webhook secret.")}, status=403)
         serializer = TelegramWebhookSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if "callback_query" in request.data:
@@ -123,8 +124,8 @@ class TelegramTestAlertView(APIView):
                 {
                     "delivered": False,
                     "detail": (
-                        "Telegram rejected the message. Check the bot token is correct "
-                        "and the bot has been added to the group chat."
+                        gettext("Telegram rejected the message. Check the bot token is correct "
+                        "and the bot has been added to the group chat.")
                     ),
                 }
             )
@@ -132,7 +133,7 @@ class TelegramTestAlertView(APIView):
             return Response(
                 {
                     "delivered": False,
-                    "detail": "Telegram is not configured — save a bot token and group chat ID first.",
+                    "detail": gettext("Telegram is not configured — save a bot token and group chat ID first."),
                 }
             )
         return Response({"delivered": True})

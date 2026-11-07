@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useId, useRef } from "react";
 import { Receipt } from "lucide-react";
 
@@ -31,17 +32,17 @@ export function PricePreview({ makerspaceSlug, request, onDigest, className = ""
   if (!quote.ready) return null;
   if (quote.error) {
     return quoteErrorStatus(quote.error) === 429
-      ? <p role="status" className={`text-sm text-muted ${className}`}>Price preview unavailable right now</p> : null;
+      ? <p role="status" className={`text-sm text-muted ${className}`}>{t`Price preview unavailable right now`}</p> : null;
   }
   if (!data) return null;
   const free = Number(data.quote.total) <= 0 && !data.deposit;
   return <section aria-labelledby={id} aria-busy={quote.isFetching} className={`grid gap-3 rounded-xl border border-line bg-panel p-4 text-sm ${className}`}>
     <div className="flex items-center justify-between gap-2">
-      <h3 id={id} className="title-section flex items-center gap-2"><Receipt aria-hidden="true" className="h-4 w-4 text-muted" />Price</h3>
-      {quote.isFetching ? <span className="text-xs text-muted">Updating…</span> : null}
+      <h3 id={id} className="title-section flex items-center gap-2"><Receipt aria-hidden="true" className="h-4 w-4 text-muted" />{t`Price`}</h3>
+      {quote.isFetching ? <span className="text-xs text-muted">{t`Updating…`}</span> : null}
     </div>
     <div aria-live="polite" aria-atomic="true" className="grid gap-3">
-      {free ? <p className="font-semibold text-ink">Free</p> : <><QuoteLines data={data} /><QuoteTotals data={data} /></>}
+      {free ? <p className="font-semibold text-ink">{t`Free`}</p> : <><QuoteLines data={data} /><QuoteTotals data={data} /></>}
       {free ? null : <QuoteExtras data={data} />}
     </div>
     {free && (data.policy || data.refund_summary) ? <QuoteExtras data={{ ...data, members_total: null }} /> : null}

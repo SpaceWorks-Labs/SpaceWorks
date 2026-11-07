@@ -1,3 +1,4 @@
+import { formatLocale } from "../../lib/format";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Check, Clock } from "lucide-react";
 import { useDelight, useReducedMotion } from "./DelightProvider";
@@ -27,7 +28,7 @@ export function PassState({ value, title, children, haptics = false, accent = tr
     <div key={identity} className={`flex items-center gap-3 border-t border-dashed border-line p-5 ${completed && enabled && !reduced && changed ? "sw-delight-pass" : ""}`}>
       {completed ? <Check aria-hidden="true" size={20} /> : <Clock aria-hidden="true" size={20} />}
       <div><p className={accent ? "font-accent text-lg font-medium" : "font-medium"} aria-live="polite" aria-atomic="true">{value.label}</p>
-        {completed ? <time className="text-sm text-muted" dateTime={value.completedAt}>{new Date(value.completedAt).toLocaleString()}</time> : null}</div>
+        {completed ? <time className="text-sm text-muted" dateTime={value.completedAt}>{new Date(value.completedAt).toLocaleString(formatLocale())}</time> : null}</div>
     </div>
   </section>;
 }

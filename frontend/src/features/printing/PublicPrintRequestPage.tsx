@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useParams } from "react-router-dom";
 import { PublicDetailLayout, PublicLayout } from "../../components/layouts";
 import { Callout, EmptyState } from "../../components/ui";
@@ -60,19 +61,19 @@ export function PublicPrintRequestPage() {
   if (activeStatusToken) trackingUrl.searchParams.set("token", activeStatusToken);
   const loading = bootstrapQuery.isLoading || (moduleEnabled && queuesQuery.isLoading);
   const failed = bootstrapQuery.isError || queuesQuery.isError;
-  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: "Couldn't reach the print service. Try again.", onRetry: () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } } : { status: "ready" as const };
+  const state = loading ? { status: "loading" as const } : failed ? { status: "error" as const, error: t`Couldn't reach the print service. Try again.`, onRetry: () => { void bootstrapQuery.refetch(); void queuesQuery.refetch(); } } : { status: "ready" as const };
   return <div style={brandStyle}><PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)} state={state}>
-    <PublicDetailLayout state={state} title={`Send a print job to ${displayName}`}
-      chips={[{ label: "3D printing", tone: "accent" }]} sections={[{ id: "your-print", label: "Your print", content:
-        submitted ? <Callout size="panel" tone="success" lead="Request sent." body="We'll update this page as it moves." action={{ label: "Send another request", onClick: () => setSubmitted(false) }} />
+    <PublicDetailLayout state={state} title={t`Send a print job to ${displayName}`}
+      chips={[{ label: t`3D printing`, tone: "accent" }]} sections={[{ id: "your-print", label: t`Your print`, content:
+        submitted ? <Callout size="panel" tone="success" lead="Request sent." body={t`We'll update this page as it moves.`} action={{ label: t`Send another request`, onClick: () => setSubmitted(false) }} />
           : enabled ? <><PrintDetailsForm catalogue={catalogueQuery.data} form={form} updateField={updateField} poolsQuery={poolsQuery}
             modelFiles={modelFiles} setModelFiles={setModelFiles} screenshotFiles={screenshotFiles} setScreenshotFiles={setScreenshotFiles}
             submitPending={submitMutation.isPending} submitError={submitMutation.error} uploadProgress={uploadProgress} website={website} onWebsiteChange={setWebsite}
             onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (form.title.trim()) submitMutation.mutate(); }} />
             <PricePreview className="mt-4" makerspaceSlug={makerspaceSlug} request={{ domain: "machines", machine_type_id: queuesQuery.data?.[0]?.machine_type_id, pool_id: form.consumablePoolId ? Number(form.consumablePoolId) : undefined, quantity: Number(form.estimatedFilamentGrams) > 0 ? form.estimatedFilamentGrams.trim() : undefined }} /></>
-          : <EmptyState message="3D printing isn't open for requests right now." action={{ label: "Back to catalogue", href: tenantPath() }} /> } ]}
-      actionCard={{ title: "Track your job", state: "open", summary: !activeStatusToken ? "After you send it, you'll get a private link to follow progress here." : undefined,
+          : <EmptyState message={t`3D printing isn't open for requests right now.`} action={{ label: t`Back to catalogue`, href: tenantPath() }} /> } ]}
+      actionCard={{ title: t`Track your job`, state: "open", summary: !activeStatusToken ? t`After you send it, you'll get a private link to follow progress here.` : undefined,
         form: <div ref={trackerRef} id="print-tracker"><PrintStatusPanel submitted={submitted} tokenStatus={statusQuery.data} tokenStatusPending={Boolean(activeStatusToken) && statusQuery.isPending} tokenStatusError={statusQuery.error} trackingHref={activeStatusToken ? trackingUrl.href : undefined} onRetry={() => { void statusQuery.refetch(); }} publicToken={activeStatusToken || undefined} makerspaceSlug={makerspaceSlug} /></div>,
-        mobileBar: { summary: submitted ? "Request sent" : "Follow your print", label: "Track your job" } }} />
+        mobileBar: { summary: submitted ? t`Request sent` : t`Follow your print`, label: t`Track your job` } }} />
   </PublicLayout></div>;
 }

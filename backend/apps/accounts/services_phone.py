@@ -16,6 +16,7 @@ so an SMS code is a weaker factor than a password:
   cannot be used to test which numbers have accounts.
 """
 
+from django.utils.translation import gettext
 import hashlib
 import hmac
 import logging
@@ -119,8 +120,7 @@ def _issue(user, phone_e164, purpose, *, attestation_challenge=None):
         # and the challenge must survive a vendor failure so the generic ack is honest.
         sent = send_sms(
             to=phone_e164,
-            body=f"Your {_platform_name()} {'account restore' if purpose == PhoneChallengePurpose.RESTORE else 'verification'} code is {code}. "
-            f"It expires in {int(CHALLENGE_TTL.total_seconds() // 60)} minutes.",
+            body=gettext('Your {value} {value2} code is {code}. It expires in {value3} minutes.').format(value=_platform_name(), value2='account restore' if purpose == PhoneChallengePurpose.RESTORE else 'verification', code=code, value3=int(CHALLENGE_TTL.total_seconds() // 60)),
         )
     return challenge, sent
 

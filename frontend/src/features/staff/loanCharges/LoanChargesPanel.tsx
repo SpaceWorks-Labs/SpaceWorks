@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { HandCoins, Receipt } from "lucide-react";
@@ -42,8 +43,8 @@ function ChargeLine({ charge }: { charge: LoanCharge }) {
 
 /** What a save that raised nothing means: staff chose no charge, or a waiver already covers it. */
 export function freeNotice(reason: string | null) {
-  if (reason === "waived") return "Saved. A fee waiver on this loan brings it to zero, so nothing was charged.";
-  if (reason === "no_charge") return "No charge (decided).";
+  if (reason === "waived") return t`Saved. A fee waiver on this loan brings it to zero, so nothing was charged.`;
+  if (reason === "no_charge") return t`No charge (decided).`;
   return "";
 }
 
@@ -51,7 +52,7 @@ export function freeNotice(reason: string | null) {
 export function LoanChargesDisclosure({ makerspaceId, requestId }: { makerspaceId: number; requestId: number }) {
   const [open, setOpen] = useState(false);
   return <details className="rounded-xl border border-line p-3" onToggle={event => setOpen(event.currentTarget.open)}>
-    <summary className="min-h-11 cursor-pointer content-center rounded-control text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">Charges</summary>
+    <summary className="min-h-11 cursor-pointer content-center rounded-control text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">{t`Charges`}</summary>
     {open ? <div className="mt-3"><LoanChargesSection makerspaceId={makerspaceId} requestId={requestId} inDisclosure /></div> : null}
   </details>;
 }
@@ -64,30 +65,30 @@ function LoanChargesSection({ makerspaceId, requestId, inDisclosure = false }: {
   const [revoking, setRevoking] = useState<LoanFeeWaiver | null>(null);
   const [openRow, setOpenRow] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
-  if (query.isLoading) return <p className="text-sm text-muted" role="status">Loading charges…</p>;
+  if (query.isLoading) return <p className="text-sm text-muted" role="status">{t`Loading charges…`}</p>;
   if (query.error) {
-    if (isHiddenError(query.error)) return inDisclosure ? <p className="text-sm text-muted">Charges are not available to you for this loan.</p> : null;
-    return <p className="text-sm text-danger" role="alert">Couldn't load this loan's charges.{" "}
-      <button className="desk-button-ghost underline" type="button" onClick={() => void query.refetch()}>Try again</button></p>;
+    if (isHiddenError(query.error)) return inDisclosure ? <p className="text-sm text-muted">{t`Charges are not available to you for this loan.`}</p> : null;
+    return <p className="text-sm text-danger" role="alert">{t`Couldn't load this loan's charges.${" "}`}
+      <button className="desk-button-ghost underline" type="button" onClick={() => void query.refetch()}>{t`Try again`}</button></p>;
   }
   const data = query.data as LoanCharges | undefined;
   if (!data || !Array.isArray(data.charges)) return null;
   // #184: with loan charges off nothing new can be raised; charges raised before the switch still list.
   const chargesOn = loanChargesOn(data);
-  if (!chargesOn && !data.charges.length) return inDisclosure ? <p className="text-sm text-muted">Loan charges are off in this space.</p> : null;
+  if (!chargesOn && !data.charges.length) return inDisclosure ? <p className="text-sm text-muted">{t`Loan charges are off in this space.`}</p> : null;
   const rows = data.pricing_enabled && chargesOn ? data.accountability : [];
   const waivers = data.waivers_enabled ? data.waivers : [];
 
-  return <section aria-label="Charges" className="grid gap-4">
+  return <section aria-label={t`Charges`} className="grid gap-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      {inDisclosure ? <span /> : <h2 className="title-panel flex items-center gap-2"><Receipt aria-hidden="true" size={18} />Charges</h2>}
+      {inDisclosure ? <span /> : <h2 className="title-panel flex items-center gap-2"><Receipt aria-hidden="true" size={18} />{t`Charges`}</h2>}
       {data.can_waive ? <button className="desk-button inline-flex items-center gap-2" type="button" onClick={() => setWaiving(true)}>
-        <HandCoins aria-hidden="true" size={16} />Waive fees</button> : null}
+        <HandCoins aria-hidden="true" size={16} />{t`Waive fees`}</button> : null}
     </div>
     {data.charges.length ? <ul className="grid gap-2">{data.charges.map(charge => <ChargeLine key={charge.id} charge={charge} />)}</ul>
-      : <p className="text-sm text-muted">No charges on this loan.</p>}
-    {rows.length ? <section aria-label="Damaged and lost items" className="grid gap-2">
-      <h3 className="text-sm font-semibold text-ink">Damaged and lost items</h3>
+      : <p className="text-sm text-muted">{t`No charges on this loan.`}</p>}
+    {rows.length ? <section aria-label={t`Damaged and lost items`} className="grid gap-2">
+      <h3 className="text-sm font-semibold text-ink">{t`Damaged and lost items`}</h3>
       <ul className="grid gap-2">{rows.map(row => <li key={row.id} className="grid gap-2">
         {row.charge ? <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line p-3 text-sm">
           <span className="text-ink">{rowTitle(row)}</span>
@@ -97,9 +98,9 @@ function LoanChargesSection({ makerspaceId, requestId, inDisclosure = false }: {
           ? <AccountabilityChargeForm makerspaceId={makerspaceId} requestId={requestId} currency={data.currency} row={row}
             onDone={result => { setOpenRow(null); setNotice(result.free_reason === "waived" ? freeNotice("waived") : ""); }} />
           : <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line p-3 text-sm">
-            <span className="text-ink">{rowTitle(row)} · <span className="text-muted">{row.no_charge_decided ? "No charge (decided)" : "no charge set"}</span></span>
-            <button className="desk-button" type="button" aria-label={`Set charge for ${rowTitle(row)}`}
-              onClick={() => setOpenRow(row.id)}>Set charge</button>
+            <span className="text-ink">{rowTitle(row)} · <span className="text-muted">{row.no_charge_decided ? t`No charge (decided)` : t`no charge set`}</span></span>
+            <button className="desk-button" type="button" aria-label={t`Set charge for ${rowTitle(row)}`}
+              onClick={() => setOpenRow(row.id)}>{t`Set charge`}</button>
           </div>}
       </li>)}</ul>
       {notice ? <p className="text-sm text-muted" role="status">{notice}</p> : null}

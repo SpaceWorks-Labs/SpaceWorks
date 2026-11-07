@@ -1,4 +1,5 @@
-﻿import { Field } from "../../../components/ui";
+import { t } from "@lingui/core/macro";
+import { Field } from "../../../components/ui";
 import type { ReportCatalogItem } from "./operationsReportsConfig";
 
 import { reportAreaGroups as grouped } from "./reportAreas";
@@ -10,7 +11,7 @@ export const liveReports = (reports: ReportCatalogItem[]) => reports.filter(repo
 export function OperationsReportPicker({ reports, selected, onSelect }: {
   reports: ReportCatalogItem[]; selected: string; onSelect: (key: string) => void;
 }) {
-  return <div className="mb-5 xl:hidden"><Field label="Report"><select className="desk-input w-full" value={selected} onChange={event => onSelect(event.target.value)}>
+  return <div className="mb-5 xl:hidden"><Field label={t`Report`}><select className="desk-input w-full" value={selected} onChange={event => onSelect(event.target.value)}>
     {[...grouped(liveReports(reports))].map(([group, entries]) => <optgroup key={group} label={group}>{entries.map(report =>
       <option key={report.key} value={report.key}>{report.title}</option>)}</optgroup>)}
   </select></Field></div>;
@@ -19,7 +20,7 @@ export function OperationsReportPicker({ reports, selected, onSelect }: {
 export function OperationsReportNavigation({ reports, selected, onSelect }: {
   reports: ReportCatalogItem[]; selected: string; onSelect: (key: string) => void;
 }) {
-  return <nav aria-label="Reports" className="hidden min-w-0 xl:block">
+  return <nav aria-label={t`Reports`} className="hidden min-w-0 xl:block">
     <div className="space-y-5">{[...grouped(liveReports(reports))].map(([group, entries]) => <section key={group}>
       <h2 className="eyebrow mb-2">{group}</h2>
       <div className="grid gap-1">{entries.map(report => <button key={report.key} type="button"

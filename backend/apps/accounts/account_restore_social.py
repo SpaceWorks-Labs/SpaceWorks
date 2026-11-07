@@ -1,5 +1,6 @@
 """Fresh, already-linked provider proof for accounts without email or phone."""
 
+from django.utils.translation import gettext
 import base64
 import hashlib
 import hmac
@@ -32,16 +33,16 @@ def start_social(request, *, username, provider, redirect_uri="", delivery="web"
     anchor = None
     if delivery == "web":
         if not member_origin_is_registered(origin) or not _valid_redirect(redirect_uri, origin):
-            raise PermissionDenied("Use a registered member site to restore your account.")
+            raise PermissionDenied(gettext("Use a registered member site to restore your account."))
     else:
         from apps.accounts.attestation import live_approved_challenge
         anchor = live_approved_challenge(challenge)
         if (anchor is None or provider not in {"apple", "google"}
                 or client_platform != ("ios" if anchor.platform == "apple" else "android")):
-            raise PermissionDenied("Use an approved application challenge to restore your account.")
+            raise PermissionDenied(gettext("Use an approved application challenge to restore your account."))
         origin = ""
     if provider == "github":
-        raise PermissionDenied("This provider cannot prove fresh authentication without a second factor.")
+        raise PermissionDenied(gettext("This provider cannot prove fresh authentication without a second factor."))
     try:
         _, endpoint, audience = _provider(provider)
     except OidcProviderUnavailable as exc:
@@ -84,7 +85,7 @@ def start_social(request, *, username, provider, redirect_uri="", delivery="web"
 
 
 def complete_social(request, *, state, nonce, id_token="", code="", challenge="", attestation=None):
-    failure = AuthenticationFailed("Invalid or expired restore proof.")
+    failure = AuthenticationFailed(gettext("Invalid or expired restore proof."))
     with transaction.atomic():
         row = AccountRestoreIntent.objects.select_for_update().filter(token_digest=_digest(state)).first()
         valid = bool(row and not row.consumed_at and row.expires_at > timezone.now()

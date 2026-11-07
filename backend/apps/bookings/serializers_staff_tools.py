@@ -1,5 +1,6 @@
 """Strict inputs for edits, moves and resource duplication."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 
@@ -16,7 +17,7 @@ class BookingDetailsInputSerializer(StrictInputSerializer):
 
     def validate(self, attrs):
         if not attrs:
-            raise serializers.ValidationError("Provide a note or custom answers.")
+            raise serializers.ValidationError(gettext("Provide a note or custom answers."))
         return attrs
 
 
@@ -26,7 +27,7 @@ class BookingTimeInputSerializer(StrictInputSerializer):
 
     def validate(self, attrs):
         if attrs["ends_at"] <= attrs["starts_at"]:
-            raise serializers.ValidationError({"ends_at": "End time must be after start time."})
+            raise serializers.ValidationError({"ends_at": gettext("End time must be after start time.")})
         return attrs
 
 

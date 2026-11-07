@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { currentSessionContext, type SessionContext } from "./sessionContext";
 import { API_URL, API_V1_URL, authHeaders, publicHeaders, staffFetch } from "./client";
 import { apiError, messageForStatus } from "./errors";
@@ -89,7 +90,7 @@ export async function staffRequest<T>(
 ): Promise<T> {
   const method = (options.method ?? "GET").toUpperCase();
   if (staffWriteGuard && !["GET", "HEAD", "OPTIONS"].includes(method) && !staffWriteGuard(path, method)) {
-    throw apiError(409, { detail: "Cancelled. Nothing was changed.", code: "superadmin_write_cancelled" });
+    throw apiError(409, { detail: t`Cancelled. Nothing was changed.`, code: "superadmin_write_cancelled" });
   }
   const response = await staffFetch(path, options, false, context);
 
@@ -127,7 +128,7 @@ export async function downloadStaffFile(path: string, filename: string) {
     headers: authHeaders(),
   });
   if (!response.ok) {
-    throw new Error(`Download failed (${response.status})`);
+    throw new Error(t`Download failed (${response.status})`);
   }
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);

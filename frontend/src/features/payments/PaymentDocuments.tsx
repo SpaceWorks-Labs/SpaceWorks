@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ListRow, RelativeTime } from "../../components/ui";
@@ -39,28 +40,27 @@ export function PaymentDocuments({ makerspaceId, audience, initiallyExpanded = f
       URL.revokeObjectURL(url);
     },
   });
-  return <section className="grid gap-4" aria-label="Payment documents">
+  return <section className="grid gap-4" aria-label={t`Payment documents`}>
     {!initiallyExpanded ? <div className="flex flex-wrap items-center justify-between gap-3">
-      <h3 className="title-panel">Bills, receipts and credit notes</h3>
-      <button className="desk-button" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide documents" : "Show documents"}</button>
+      <h3 className="title-panel">{t`Bills, receipts and credit notes`}</h3>
+      <button className="desk-button" type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? t`Hide documents` : t`Show documents`}</button>
     </div> : null}
-    {expanded ? <><label className="grid gap-1 text-sm">Document kind
-      <select className="desk-input" value={kind} onChange={event => { setKind(event.target.value); setPage(1); }}>
-        <option value="">All documents</option><option value="bill">Bills</option>
-        <option value="receipt">Receipts</option><option value="credit_note">Credit notes</option>
+    {expanded ? <><label className="grid gap-1 text-sm">{t`Document kind`}<select className="desk-input" value={kind} onChange={event => { setKind(event.target.value); setPage(1); }}>
+        <option value="">{t`All documents`}</option><option value="bill">{t`Bills`}</option>
+        <option value="receipt">{t`Receipts`}</option><option value="credit_note">{t`Credit notes`}</option>
       </select>
     </label><QueryContent state={documents.isLoading ? { status: "loading" } : documents.error
-      ? { status: "error", error: "Couldn't load documents. Try again.", onRetry: () => { void documents.refetch(); } } : { status: "ready" }}
-      isEmpty={documents.data?.count === 0} empty={{ message: "No issued documents match this filter." }}>
+      ? { status: "error", error: t`Couldn't load documents. Try again.`, onRetry: () => { void documents.refetch(); } } : { status: "ready" }}
+      isEmpty={documents.data?.count === 0} empty={{ message: t`No issued documents match this filter.` }}>
       <div className="grid gap-3">{documents.data?.results.map(document => <ListRow key={document.id}
         title={`${{ receipt: "Receipt", credit_note: "Credit note", bill: "Bill" }[document.kind]} ${document.number}`}
         identity={{ kind: "date", date: document.issued_at }}
         meta={<><span className="tabular-nums">{document.currency.toUpperCase()} {document.amount}</span>{document.status ? <span>{document.status}</span> : null}<span aria-hidden="true"> · </span><RelativeTime date={document.issued_at} /></>}
-        right={<button className="desk-button" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>Download PDF</button>} />)}</div>
+        right={<button className="desk-button" type="button" disabled={download.isPending} onClick={() => download.mutate(document)}>{t`Download PDF`}</button>} />)}</div>
       {documents.data && documents.data.count > 24 ? <div className="flex flex-wrap items-center gap-3">
-        <button className="desk-button" type="button" disabled={!documents.data.previous} onClick={() => setPage(page - 1)}>Previous</button>
-        <span className="text-sm text-muted">Page {page}</span>
-        <button className="desk-button" type="button" disabled={!documents.data.next} onClick={() => setPage(page + 1)}>Next</button>
+        <button className="desk-button" type="button" disabled={!documents.data.previous} onClick={() => setPage(page - 1)}>{t`Previous`}</button>
+        <span className="text-sm text-muted">{t`Page ${page}`}</span>
+        <button className="desk-button" type="button" disabled={!documents.data.next} onClick={() => setPage(page + 1)}>{t`Next`}</button>
       </div> : null}
     </QueryContent></> : null}
     {download.error ? <p role="alert" className="text-sm text-danger">{download.error.message}</p> : null}

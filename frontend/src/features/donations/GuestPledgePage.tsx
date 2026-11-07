@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 
@@ -18,17 +19,17 @@ export function GuestPledgePage() {
     onSuccess: result => client.setQueryData(donationKeys.pledge(token), result),
   });
   if (pledge.error instanceof StructuredApiError && pledge.error.status === 404) {
-    return <DonationShell title="Your pledge" state={{ status: "ready" }}>
-      <Card><p className="text-sm">This link isn't valid any more. Check the latest email from the space.</p></Card>
+    return <DonationShell title={t`Your pledge`} state={{ status: "ready" }}>
+      <Card><p className="text-sm">{t`This link isn't valid any more. Check the latest email from the space.`}</p></Card>
     </DonationShell>;
   }
   const state = pledge.isLoading ? { status: "loading" as const } : pledge.error ? { status: "error" as const,
-    error: "Couldn't load your pledge.", onRetry: () => { void pledge.refetch(); } } : { status: "ready" as const };
-  return <DonationShell title="Your pledge" state={state}>
+    error: t`Couldn't load your pledge.`, onRetry: () => { void pledge.refetch(); } } : { status: "ready" as const };
+  return <DonationShell title={t`Your pledge`} state={state}>
     {pledge.data ? <div className="grid gap-3">
       <PledgeCard key={`${pledge.data.amount}-${pledge.data.interval}`} pledge={pledge.data}
         onAction={body => change.mutate(body)} pending={change.isPending} error={change.error} />
-      <p className="text-xs text-muted">Keep this link private: anyone with it can change this pledge.</p>
+      <p className="text-xs text-muted">{t`Keep this link private: anyone with it can change this pledge.`}</p>
     </div> : null}
   </DonationShell>;
 }

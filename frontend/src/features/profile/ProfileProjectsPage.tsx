@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ErrorBlock, Pagination, Skeleton } from "../../components/ui";
 import { ProfileProjectsTab } from "./ProfileSectionTabs";
@@ -11,8 +12,8 @@ export function ProfileProjectsPage({ handle, preview, projects, visible, addHre
   const query = usePublicProfileProjects(handle, page, !preview && visible);
   if (preview || !visible) return <ProfileProjectsTab projects={projects} addHref={addHref} />;
   return <div className="grid gap-4">
-    {query.isLoading ? <Skeleton aria-label="Loading projects" className="h-48" /> : null}
-    {query.error ? <ErrorBlock error={new Error("Couldn't load projects. Try again.")}
+    {query.isLoading ? <Skeleton aria-label={t`Loading projects`} className="h-48" /> : null}
+    {query.error ? <ErrorBlock error={new Error(t`Couldn't load projects. Try again.`)}
       onRetry={() => { void query.refetch(); }} /> : null}
     {query.data ? <>
       <ProfileProjectsTab projects={query.data.results} addHref={addHref} />

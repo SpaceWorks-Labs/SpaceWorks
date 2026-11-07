@@ -1,3 +1,4 @@
+from django.utils.translation import gettext, gettext_noop
 from django.db import connection, models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
@@ -16,8 +17,8 @@ class EncryptionKeyManager(models.Manager.from_queryset(EncryptionKeyQuerySet)):
 
 class MakerspaceEncryptionKey(models.Model):
     class BrokerBackend(models.TextChoices):
-        LOCAL = "local", "Local master key"
-        AWS_KMS = "aws_kms", "AWS KMS"
+        LOCAL = "local", gettext_noop("Local master key")
+        AWS_KMS = "aws_kms", gettext_noop("AWS KMS")
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -117,11 +118,11 @@ class PiiBlindIndex(models.Model):
         }
         kind = allowed.get((self.model_label, self.field_name))
         if kind is None or len(bytes(self.bloom_bits or b"")) != 256:
-            raise ValidationError("Invalid scoped PII blind-index row.")
+            raise ValidationError(gettext("Invalid scoped PII blind-index row."))
         if (kind == "bloom_exact") != (self.exact_hash is not None):
-            raise ValidationError("Invalid scoped PII exact-hash shape.")
+            raise ValidationError(gettext("Invalid scoped PII exact-hash shape."))
         if self.exact_hash is not None and len(bytes(self.exact_hash)) != 32:
-            raise ValidationError("Invalid scoped PII exact-hash shape.")
+            raise ValidationError(gettext("Invalid scoped PII exact-hash shape."))
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -141,10 +142,10 @@ class _FenceModel(models.Model):
         CLOSED = "closed", "Closed"
 
     class OperationKind(models.TextChoices):
-        ENABLE_TRANSITION = "enable_transition", "Enable transition"
-        DECRYPT_ROLLBACK = "decrypt_rollback", "Decrypt rollback"
-        SEARCH_ROTATION = "search_rotation", "Search rotation"
-        TENANT_IMPORT = "tenant_import", "Tenant import"
+        ENABLE_TRANSITION = "enable_transition", gettext_noop("Enable transition")
+        DECRYPT_ROLLBACK = "decrypt_rollback", gettext_noop("Decrypt rollback")
+        SEARCH_ROTATION = "search_rotation", gettext_noop("Search rotation")
+        TENANT_IMPORT = "tenant_import", gettext_noop("Tenant import")
 
     state = models.CharField(max_length=8, choices=State.choices, default=State.OPEN)
     operation_id = models.UUIDField(null=True, blank=True)

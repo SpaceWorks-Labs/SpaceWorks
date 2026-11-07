@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ListRow, OverflowMenu } from "../../../../components/ui";
 import { MachineTabContent } from "./MachineTabContent";
 import { useRef, useState } from "react";
@@ -24,7 +25,7 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
   const items = collectionResults(documents.data);
   const upload = useMutation({
     mutationFn: () => {
-      if (!file) throw new Error("Choose a document to upload");
+      if (!file) throw new Error(t`Choose a document to upload`);
       return uploadMachineDocument(machineId, file, docType.trim());
     },
     onSuccess: async () => {
@@ -45,14 +46,14 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
 
   return (
     <section>
-      <h3 className="title-section mb-3">Documents</h3>
-      <MachineTabContent query={documents} resource="documents" empty={!items.length} message="No machine documents uploaded. Upload the first document.">
+      <h3 className="title-section mb-3">{t`Documents`}</h3>
+      <MachineTabContent query={documents} resource="documents" empty={!items.length} message={t`No machine documents uploaded. Upload the first document.`}>
       <div className="grid gap-2">
         {items.map((document) => (
           <ListRow key={document.id} title={document.original_filename} identity={{ kind: "icon", icon: "Wrench", tone: "neutral" }}
             meta={`${document.doc_type} · ${formatBytes(document.size_bytes)}`} right={<div className="flex flex-wrap gap-2">
-              <button className="desk-button" type="button" disabled={view.isPending} onClick={() => view.mutate(document.id)}>View</button>
-              {canEdit ? <OverflowMenu actions={[{ label: "Delete", tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(document.id) }]} /> : null}
+              <button className="desk-button" type="button" disabled={view.isPending} onClick={() => view.mutate(document.id)}>{t`View`}</button>
+              {canEdit ? <OverflowMenu actions={[{ label: t`Delete`, tone: "danger", disabled: remove.isPending, disabledReason: "Wait for the current change to finish.", onClick: () => remove.mutate(document.id) }]} /> : null}
             </div>} />
         ))}
       </div>
@@ -60,18 +61,16 @@ export function DocumentsTab({ machineId, canEdit }: { machineId: number; canEdi
       {canEdit ? (
         <form className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_auto] sm:items-end"
           onSubmit={(event) => { event.preventDefault(); upload.mutate(); }}>
-          <label className="eyebrow grid gap-1">File
-            <input ref={fileInput} className="desk-input" type="file"
+          <label className="eyebrow grid gap-1">{t`File`}<input ref={fileInput} className="desk-input" type="file"
               accept=".pdf,.jpg,.jpeg,.png,.webp,.stl,.3mf,.step,.stp,.obj,.amf,.ply,.gcode,.gco,.iges,.igs,.dxf"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)} required />
           </label>
-          <label className="eyebrow grid gap-1">Document type
-            <input className="desk-input" maxLength={16} value={docType}
+          <label className="eyebrow grid gap-1">{t`Document type`}<input className="desk-input" maxLength={16} value={docType}
               onChange={(event) => setDocType(event.target.value)} required />
           </label>
           <button className="desk-button-primary" type="submit"
             disabled={upload.isPending || !file || !docType.trim()}>
-            {upload.isPending ? "Uploading..." : "Upload"}
+            {upload.isPending ? t`Uploading...` : t`Upload`}
           </button>
         </form>
       ) : null}

@@ -6,6 +6,7 @@ Only internal code passes a ValidatedRegistrationForm to the future service
 bridge; HTTP serializers must never accept a snapshot or a validated flag.
 """
 
+from django.utils.translation import gettext
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Callable, Mapping, Protocol
@@ -66,7 +67,7 @@ _FACTORY = object()
 
 def _conflict(field):
     raise ValidationError({
-        "code": "answer_field_conflict", "fields": {field: ["Use one raw answer map."]},
+        "code": "answer_field_conflict", "fields": {field: [gettext("Use one raw answer map.")]},
     })
 
 
@@ -84,12 +85,12 @@ def normalize_registration_input(
     if schema_version not in (1, 2) or (
         schema_version == 1 and "answers" in payload and not application
     ):
-        raise ValidationError({field_name: ["Use the matching form schema version."]})
+        raise ValidationError({field_name: [gettext("Use the matching form schema version.")]})
     if raw is not None and not isinstance(raw, dict):
-        raise ValidationError({field_name: ["Expected a question-ID map."]})
+        raise ValidationError({field_name: [gettext("Expected a question-ID map.")]})
     if (isinstance(raw, dict) and isinstance(raw.get("answers"), list)
             and {"version", "form_id", "form_revision", "answers"} <= raw.keys()):
-        raise ValidationError({field_name: ["Canonical snapshots are server-owned."]})
+        raise ValidationError({field_name: [gettext("Canonical snapshots are server-owned.")]})
     data["answers"] = raw
     return NormalizedRegistrationInput(field_name, data)
 

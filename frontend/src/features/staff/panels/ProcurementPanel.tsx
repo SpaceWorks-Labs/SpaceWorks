@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -140,51 +142,50 @@ export function ProcurementPanel({
   const openBudget = rows.filter((item) => !["received", "cancelled"].includes(item.status)).reduce((sum, item) => sum + itemTotal(item, "estimated"), 0);
   const receivedTotal = rows.filter((item) => item.status === "received").reduce((sum, item) => sum + itemTotal(item, "actual"), 0);
 
-  const add = { label: "Add item", onClick: () => setAddOpen(true) };
+  const add = { label: t`Add item`, onClick: () => setAddOpen(true) };
   const tabHref = (status: string) => { const next = new URLSearchParams(params); next.set("status", status); return `?${next}`; };
   const showView = (view: string) => setParams(current => { const next = new URLSearchParams(current); if (view) next.set("view", view); else next.delete("view"); return next; });
   if (vendorsEnabled && params.get("view") === "vendors") return <VendorsPanel makerspaceId={makerspace.id} onBack={() => showView("")} />;
-  return <ListLayout header={{ title: "To buy", subtitle: "What the space needs, from request to shelf.", primary: add,
-    secondary: vendorsEnabled ? { label: "Vendors", onClick: () => showView("vendors") } : undefined,
-    overflow: [{ label: "Export CSV", pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("csv") }, { label: "Export Excel", pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("xlsx") }] }}
-    callout={rows.some(item => item.status === "received" && !item.moved_to_inventory_at) ? { size: "banner", tone: "warn", lead: "Received items aren't in inventory yet.", body: "Move a purchase onto the shelves when it's ready.", action: { label: "Move them", onClick: () => setMoveTarget(rows.find(item => item.status === "received" && !item.moved_to_inventory_at)!) } } : undefined}
+  return <ListLayout header={{ title: t`To buy`, subtitle: t`What the space needs, from request to shelf.`, primary: add,
+    secondary: vendorsEnabled ? { label: t`Vendors`, onClick: () => showView("vendors") } : undefined,
+    overflow: [{ label: t`Export CSV`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("csv") }, { label: t`Export Excel`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("xlsx") }] }}
+    callout={rows.some(item => item.status === "received" && !item.moved_to_inventory_at) ? { size: "banner", tone: "warn", lead: "Received items aren't in inventory yet.", body: t`Move a purchase onto the shelves when it's ready.`, action: { label: t`Move them`, onClick: () => setMoveTarget(rows.find(item => item.status === "received" && !item.moved_to_inventory_at)!) } } : undefined}
     state={inventoryQueryState(items, "the list")} isEmpty={!rows.length} filtered={statusFilter !== "all"}
-    empty={{ message: "Nothing on the list yet. Add the first thing your space needs.", action: add }}
-    filteredEmpty={{ message: "Nothing in this stage yet. Add an item or view all stages.", action: { label: "View all", href: tabHref("all") } }}
-    stats={[{ label: "Estimated total (visible)", value: formatAmount(visibleEstimatedTotal) }, { label: "Open budget", value: formatAmount(openBudget) }, { label: "Spent (received)", value: formatAmount(receivedTotal) }]}
-    tabs={[...statusOptions, "all"].map(status => ({ key: status, label: status === "all" ? "All" : labelStatus(status as ToBuyStatus), href: tabHref(status) }))} activeTab={statusFilter}
+    empty={{ message: t`Nothing on the list yet. Add the first thing your space needs.`, action: add }}
+    filteredEmpty={{ message: t`Nothing in this stage yet. Add an item or view all stages.`, action: { label: t`View all`, href: tabHref("all") } }}
+    stats={[{ label: t`Estimated total (visible)`, value: formatAmount(visibleEstimatedTotal) }, { label: t`Open budget`, value: formatAmount(openBudget) }, { label: t`Spent (received)`, value: formatAmount(receivedTotal) }]}
+    tabs={[...statusOptions, "all"].map(status => ({ key: status, label: status === "all" ? t`All` : labelStatus(status as ToBuyStatus), href: tabHref(status) }))} activeTab={statusFilter}
     body={{ kind: "rows", rows: groupProcurementRows(rows).map(group => <section key={group.key} className="grid gap-3"><h2 className="title-section">{group.label}</h2>
       {group.rows.map(item => <ProcurementRow key={item.id} item={item} makerspaceSlug={makerspace.slug} updatePending={update.isPending && update.variables?.id === item.id} deletePending={remove.isPending && remove.variables === item.id}
         onSave={draft => update.mutate({ id: item.id, payload: { status: draft.status, vendor_name: draft.vendor_name, actual_unit_cost: draft.actual_unit_cost ? Number(draft.actual_unit_cost) : null } })}
         onDelete={() => remove.mutate(item.id)} onMove={() => setMoveTarget(item)} onReceiptsChanged={invalidate} onMarkBought={() => setBoughtTarget(item)}
         updateError={update.variables?.id === item.id ? update.error?.message : undefined} deleteError={remove.variables === item.id ? remove.error?.message : undefined} />)}</section>) }}
-    detail={<>{inventoryTabAvailable ? <ReorderSuggestions makerspaceId={makerspace.id} canProcure /> : null}<Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add item">
+    detail={<>{inventoryTabAvailable ? <ReorderSuggestions makerspaceId={makerspace.id} canProcure /> : null}<Modal open={addOpen} onClose={() => setAddOpen(false)} title={t`Add item`}>
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); if (form.name.trim() && (!requiresMachineType || form.machine_type)) create.mutate(); }}>
-        <Field label="Item name" className="sm:col-span-2"><input className="desk-input sm:col-span-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-        <Field label="Quantity"><input className="desk-input" type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>
-        <Field label="Link (optional)"><input className="desk-input" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} /></Field>
-        <Field label="Estimated unit cost"><input className="desk-input" type="number" min={0} step="0.01" value={form.estimated_unit_cost} onChange={(e) => setForm({ ...form, estimated_unit_cost: e.target.value })} /></Field>
-        <Field label="Vendor"><input className="desk-input" value={form.vendor_name} onChange={(e) => setForm({ ...form, vendor_name: e.target.value })} /></Field>
-        <Field label="Actual unit cost"><input className="desk-input" type="number" min={0} step="0.01" value={form.actual_unit_cost} onChange={(e) => setForm({ ...form, actual_unit_cost: e.target.value })} /></Field>
+        <Field label={t`Item name`} className="sm:col-span-2"><input className="desk-input sm:col-span-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+        <Field label={t`Quantity`}><input className="desk-input" type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>
+        <Field label={t`Link (optional)`}><input className="desk-input" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} /></Field>
+        <Field label={t`Estimated unit cost`}><input className="desk-input" type="number" min={0} step="0.01" value={form.estimated_unit_cost} onChange={(e) => setForm({ ...form, estimated_unit_cost: e.target.value })} /></Field>
+        <Field label={t`Vendor`}><input className="desk-input" value={form.vendor_name} onChange={(e) => setForm({ ...form, vendor_name: e.target.value })} /></Field>
+        <Field label={t`Actual unit cost`}><input className="desk-input" type="number" min={0} step="0.01" value={form.actual_unit_cost} onChange={(e) => setForm({ ...form, actual_unit_cost: e.target.value })} /></Field>
         <label className="eyebrow grid gap-1">
-          Machine type
-          <select
+          {t`Machine type`}<select
             className="desk-input"
             value={form.machine_type}
             onChange={(event) => setForm({ ...form, machine_type: event.target.value })}
             required={requiresMachineType}
           >
-            <option value="">{requiresMachineType ? "Select a type" : "Unassigned"}</option>
+            <option value="">{requiresMachineType ? t`Select a type` : t`Unassigned`}</option>
             {typeOptions.map((machineType) => (
               <option key={machineType.id} value={machineType.id}>{machineType.name}</option>
             ))}
           </select>
           {requiresMachineType && !machineTypes.isLoading && !typeOptions.length ? (
-            <span className="normal-case tracking-normal text-danger">No machine types are linked to your role.</span>
+            <span className="normal-case tracking-normal text-danger">{t`No machine types are linked to your role.`}</span>
           ) : null}
         </label>
-        {canChooseKind ? <KindSelect value={form.kind} onChange={(kind) => setForm({ ...form, kind })} /> : <AddButton disabled={create.isPending || !form.name.trim() || (requiresMachineType && !form.machine_type)} label={create.isPending ? "Adding…" : "Add"} />}
-        {canChooseKind ? <AddButton disabled={create.isPending || !form.name.trim() || (requiresMachineType && !form.machine_type)} label={create.isPending ? "Adding…" : "Add item"} className="sm:col-span-2" /> : null}
+        {canChooseKind ? <KindSelect value={form.kind} onChange={(kind) => setForm({ ...form, kind })} /> : <AddButton disabled={create.isPending || !form.name.trim() || (requiresMachineType && !form.machine_type)} label={create.isPending ? t`Adding…` : t`Add`} />}
+        {canChooseKind ? <AddButton disabled={create.isPending || !form.name.trim() || (requiresMachineType && !form.machine_type)} label={create.isPending ? t`Adding…` : t`Add item`} className="sm:col-span-2" /> : null}
       </form>
         <ErrorText message={create.error?.message || machineTypes.error?.message} />
       </Modal><ErrorText message={exportToBuy.error?.message} />
@@ -195,9 +196,9 @@ export function ProcurementPanel({
     </>} />;
 }
 function KindSelect({ value, onChange }: { value: Kind; onChange: (kind: Kind) => void }) {
- return <Field label="Kind"><select className="desk-input" value={value} onChange={e => onChange(e.target.value as Kind)}><option value="hardware">Hardware</option><option value="printing">Printing</option></select></Field>;
+ return <Field label={t`Kind`}><select className="desk-input" value={value} onChange={e => onChange(e.target.value as Kind)}><option value="hardware">{t`Hardware`}</option><option value="printing">{t`Printing`}</option></select></Field>;
 }
 function AddButton({ disabled, label, className = "" }: { disabled: boolean; label: string; className?: string }) {
  return <button className={`desk-button-primary ${className}`} type="submit" disabled={disabled}>{label}</button>;
 }
-function formatAmount(value: number) { return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function formatAmount(value: number) { return value.toLocaleString(formatLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }

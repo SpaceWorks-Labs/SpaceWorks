@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConfirmDialog, SettingsActions, StatusPill } from "../../../components/ui";
@@ -148,32 +149,29 @@ export function EmailTemplateEditor({
   const dirty = Boolean(detail.data && JSON.stringify(draft) !== JSON.stringify(detailToDraft(detail.data)));
   const edit = <div className="grid gap-4">
     {detail.data ? <TemplateHeader detail={detail.data} active={draft.is_active} typeOverride={Boolean(selected.machineType)} onActive={is_active => setDraft({ ...draft, is_active })} /> : null}
-    <label className="grid gap-2 text-sm font-semibold">Subject
-      <input ref={subjectRef} className="desk-input" value={draft.subject} onFocus={() => setLastFocused("subject")} onChange={event => setDraft({ ...draft, subject: event.target.value })} /></label>
-    <label className="grid gap-2 text-sm font-semibold">Plain text body
-      <textarea ref={textRef} className="desk-input min-h-48 text-base md:text-sm" value={draft.text_body} onFocus={() => setLastFocused("text_body")} onChange={event => setDraft({ ...draft, text_body: event.target.value })} /></label>
-    <label className="grid gap-2 text-sm font-semibold">HTML body
-      <textarea ref={htmlRef} className="desk-input min-h-56 text-base md:text-sm" value={draft.html_body} onFocus={() => setLastFocused("html_body")} onChange={event => setDraft({ ...draft, html_body: event.target.value })} /></label>
+    <label className="grid gap-2 text-sm font-semibold">{t`Subject`}<input ref={subjectRef} className="desk-input" value={draft.subject} onFocus={() => setLastFocused("subject")} onChange={event => setDraft({ ...draft, subject: event.target.value })} /></label>
+    <label className="grid gap-2 text-sm font-semibold">{t`Plain text body`}<textarea ref={textRef} className="desk-input min-h-48 text-base md:text-sm" value={draft.text_body} onFocus={() => setLastFocused("text_body")} onChange={event => setDraft({ ...draft, text_body: event.target.value })} /></label>
+    <label className="grid gap-2 text-sm font-semibold">{t`HTML body`}<textarea ref={htmlRef} className="desk-input min-h-56 text-base md:text-sm" value={draft.html_body} onFocus={() => setLastFocused("html_body")} onChange={event => setDraft({ ...draft, html_body: event.target.value })} /></label>
   </div>;
   return <>
-    <DetailLayout title={detail.data?.label ?? "Email template"} back={onBack ? { label: "All templates", onClick: onBack } : undefined}
-      status={<StatusPill label={detail.data?.is_overridden ? "Edited" : "Default"} tone={detail.data?.is_overridden ? "warn" : "neutral"} />}
+    <DetailLayout title={detail.data?.label ?? t`Email template`} back={onBack ? { label: t`All templates`, onClick: onBack } : undefined}
+      status={<StatusPill label={detail.data?.is_overridden ? t`Edited` : t`Default`} tone={detail.data?.is_overridden ? "warn" : "neutral"} />}
       meta={[`${selected.stream} · to ${selected.audience}`]}
-      state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: "Couldn't load the template. Try again.", onRetry: () => { void detail.refetch(); } }}
-      actions={{ primary: { label: "Save", pending: save.isPending, onClick: () => save.mutate(),
+      state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: t`Couldn't load the template. Try again.`, onRetry: () => { void detail.refetch(); } }}
+      actions={{ primary: { label: t`Save`, pending: save.isPending, onClick: () => save.mutate(),
         // Never save before the template has loaded: an empty draft would overwrite it.
         disabled: !detail.data, disabledReason: !detail.data ? "Wait for the template to load." : undefined },
-        secondary: { label: "Preview", onClick: () => setTab("preview") },
-        overflow: [{ label: selected.machineType ? "Fall back to space default" : "Reset to built-in default", onClick: () => setResetDialogOpen(true), confirms: true, disabled: reset.isPending }] }}
+        secondary: { label: t`Preview`, onClick: () => setTab("preview") },
+        overflow: [{ label: selected.machineType ? t`Fall back to space default` : t`Reset to built-in default`, onClick: () => setResetDialogOpen(true), confirms: true, disabled: reset.isPending }] }}
       tabs={["edit", "preview", "default"].map(value => { const next = new URLSearchParams(search); next.set("template_view", value); return { key: value, label: value[0].toUpperCase() + value.slice(1), href: `?${next}` }; })} activeTab={tab}
       main={<div className="grid gap-6">
         <EmailTemplateTypeSelector canEditSpaceDefault={selected.canEditSpaceDefault} types={selected.overridableTypes} selectedTypeId={selected.machineType?.id ?? null} onSelect={onSelectMachineType} />
         {tab === "edit" ? edit : tab === "preview" ? <PreviewPane preview={preview.data} loading={preview.isFetching} error={preview.error} onRetry={() => { void preview.refetch(); }} /> : detail.data ? <DefaultReference detail={detail.data} typeOverride={Boolean(selected.machineType)} /> : null}
         {save.error || reset.error ? <p className="text-sm text-danger" role="alert">{(save.error ?? reset.error)?.message}</p> : null}
-        {dirty && detail.data ? <><p className="text-sm text-muted">Unsaved changes</p><SettingsActions pending={save.isPending} onSave={() => save.mutate()} onDiscard={() => { if (detail.data) setDraft(detailToDraft(detail.data)); }} /></> : null}
+        {dirty && detail.data ? <><p className="text-sm text-muted">{t`Unsaved changes`}</p><SettingsActions pending={save.isPending} onSave={() => save.mutate()} onDiscard={() => { if (detail.data) setDraft(detailToDraft(detail.data)); }} /></> : null}
       </div>} aside={detail.data && tab === "edit" ? <MergeFields detail={detail.data} onInsert={insertField} /> : undefined} />
-    <ConfirmDialog open={resetDialogOpen} title="Reset email template?" message={selected.machineType ? "Reset this override to the space default?" : "Reset this email template to the built-in default?"}
-      confirmLabel="Reset template" tone="danger" pending={reset.isPending} onConfirm={() => reset.mutate()} onCancel={() => setResetDialogOpen(false)} />
+    <ConfirmDialog open={resetDialogOpen} title={t`Reset email template?`} message={selected.machineType ? t`Reset this override to the space default?` : t`Reset this email template to the built-in default?`}
+      confirmLabel={t`Reset template`} tone="danger" pending={reset.isPending} onConfirm={() => reset.mutate()} onCancel={() => setResetDialogOpen(false)} />
   </>;
 }
 

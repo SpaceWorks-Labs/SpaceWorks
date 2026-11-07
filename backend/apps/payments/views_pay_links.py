@@ -6,6 +6,7 @@ unknown, expired, revoked or settled link, and while the space's `billing.pay_li
 switch is off. Paying online lives in `apps.payments_rail.views_pay_link_checkout`.
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
@@ -74,7 +75,7 @@ class StaffPayLinkView(APIView):
 def live_link(token):
     link = pay_links.resolve(token)
     if link is None or not feature_enabled(link.payment.makerspace, "billing.pay_links"):
-        raise NotFound({"detail": "This payment link is not valid.", "code": "pay_link_invalid"})
+        raise NotFound({"detail": gettext("This payment link is not valid."), "code": "pay_link_invalid"})
     return link
 
 
@@ -125,7 +126,7 @@ class PublicPayLinkClaimView(APIView):
 
         link = live_link(token)
         if not feature_enabled(link.payment.makerspace, "billing.offline_claims"):
-            raise NotFound({"detail": "Offline claims are turned off here.", "code": "feature_disabled"})
+            raise NotFound({"detail": gettext("Offline claims are turned off here."), "code": "feature_disabled"})
         payload = ClaimSubmitSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         with tenant_write(link.payment.makerspace_id):

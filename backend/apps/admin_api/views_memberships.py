@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from apps.accounts.staff_identity import person_q
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from django.db import transaction
@@ -70,7 +71,7 @@ class MembershipListCreateView(RecentReauthenticationMixin, APIView):
         roles = resolve_role_set(makerspace, data)
         if any(role.slug != "member" for role in roles):
             from rest_framework.exceptions import ValidationError
-            raise ValidationError({"roles": "Use the staff-accounts lifecycle API to create staff."})
+            raise ValidationError({"roles": gettext("Use the staff-accounts lifecycle API to create staff.")})
         with transaction.atomic():
             # Authority checks lock the actor membership; acquire its makerspace
             # first, matching assignment and lifecycle writers' lock order.

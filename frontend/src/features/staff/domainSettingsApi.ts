@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -40,10 +41,10 @@ export type DomainSettings = {
 export type DomainSettingsPatch = { features?: Record<string, boolean>; settings?: DomainSettingValues };
 
 export const DOMAIN_TITLES: Record<SettingsDomain, string> = {
-  events: "Event settings",
-  bookings: "Booking settings",
-  machines: "Machine settings",
-  inventory: "Lending settings",
+  events: t`Event settings`,
+  bookings: t`Booking settings`,
+  machines: t`Machine settings`,
+  inventory: t`Lending settings`,
 };
 
 export const domainSettingsKey = (makerspaceId: number, domain: SettingsDomain) =>

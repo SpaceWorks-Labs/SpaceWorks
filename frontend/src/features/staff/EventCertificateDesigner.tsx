@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useMemo, useState } from "react";
 import { Card, Skeleton } from "../../components/ui";
 import { eventErrorText } from "./eventUi";
@@ -36,25 +37,25 @@ export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspace
   const pending = save.isPending || preview.isPending || upload.isPending;
   const error = query.error || save.error || preview.error || upload.error;
   const edit = (next: DesignInput) => { setDirty(true); setDraft(next); };
-  return <section className="grid gap-4" aria-label="Certificate designer">
-    <p className="text-sm text-muted">Each save creates a new revision; certificates already issued keep the design they were issued with. Public verification shows only what the certificate's verification settings allow.</p>
-    <KindPicker value={kind} onChange={(value) => { if (!dirty || window.confirm("Discard unsaved changes to this design?")) setKind(value); }}
+  return <section className="grid gap-4" aria-label={t`Certificate designer`}>
+    <p className="text-sm text-muted">{t`Each save creates a new revision; certificates already issued keep the design they were issued with. Public verification shows only what the certificate's verification settings allow.`}</p>
+    <KindPicker value={kind} onChange={(value) => { if (!dirty || window.confirm(t`Discard unsaved changes to this design?`)) setKind(value); }}
       ownDesigns={query.data?.own_designs ?? []} usesDefault={Boolean(query.data?.uses_default)} />
-    {query.isLoading ? <div role="status"><span className="sr-only">Loading the certificate design…</span><Skeleton className="h-48 w-full" /></div> : null}
-    {query.isError ? <button className="desk-button" type="button" onClick={() => { void query.refetch(); }}>Retry loading the design</button> : null}
+    {query.isLoading ? <div role="status"><span className="sr-only">{t`Loading the certificate design…`}</span><Skeleton className="h-48 w-full" /></div> : null}
+    {query.isError ? <button className="desk-button" type="button" onClick={() => { void query.refetch(); }}>{t`Retry loading the design`}</button> : null}
     <SeedPicker eventId={eventId} version={query.data?.event_version} kind="certificate" onInstall={(value) => {
       setDraft({ parameters: value.document, artwork_id: null }); setDirty(false);
       void client.invalidateQueries({ queryKey: ["events", "credentials", eventId] });
     }} />
     {draft ? <Card><div className="grid gap-5">
-      <p className="text-sm text-muted">{query.data?.uses_default ? "Starting from the default design." : query.data?.id ? `Saved revision ${query.data.id}.` : "Starter layout."} The preview prints a sample recipient.</p>
+      <p className="text-sm text-muted">{query.data?.uses_default ? t`Starting from the default design.` : query.data?.id ? t`Saved revision ${query.data.id}.` : t`Starter layout.`} {t` The preview prints a sample recipient.`}</p>
       <PageSizeFields document={draft.parameters} onChange={(parameters) => edit({ ...draft, parameters })} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm">Background or logo artwork (PNG or JPEG, up to 10 MB)<input className="desk-input" type="file" accept="image/png,image/jpeg" disabled={pending} onChange={(event) => {
+        <label className="grid gap-1 text-sm">{t`Background or logo artwork (PNG or JPEG, up to 10 MB)`}<input className="desk-input" type="file" accept="image/png,image/jpeg" disabled={pending} onChange={(event) => {
           const file = event.target.files?.[0]; event.target.value = "";
           if (file) upload.mutate(file, { onSuccess: (artwork) => { setDirty(true); setDraft((current) => current ? { ...current, artwork_id: artwork.id } : current); } });
         }} /></label>
-        <label className="grid gap-1 text-sm">Add a picture layer<input className="desk-input" type="file" accept="image/png,image/jpeg" disabled={pending || draft.parameters.layers.length >= 20} onChange={(event) => {
+        <label className="grid gap-1 text-sm">{t`Add a picture layer`}<input className="desk-input" type="file" accept="image/png,image/jpeg" disabled={pending || draft.parameters.layers.length >= 20} onChange={(event) => {
           const file = event.target.files?.[0]; event.target.value = "";
           if (file) upload.mutate(file, { onSuccess: (artwork) => {
             const resource = artwork as { id: number; resource_id: string };
@@ -64,22 +65,22 @@ export function EventCertificateDesigner({ makerspaceId, eventId }: { makerspace
           } });
         }} /></label>
       </div>
-      {draft.artwork_id ? <button className="desk-button justify-self-start" type="button" onClick={() => edit({ ...draft, artwork_id: null })}>Remove artwork from this design</button> : null}
+      {draft.artwork_id ? <button className="desk-button justify-self-start" type="button" onClick={() => edit({ ...draft, artwork_id: null })}>{t`Remove artwork from this design`}</button> : null}
       <SampleName value={sampleName} onChange={setSampleName} />
       <LayerEditor document={draft.parameters} disabled={pending} values={certificateSampleValues(sampleName || "Priya Raman", kind)}
         signatures={signatures} onChange={(parameters) => edit({ ...draft, parameters })} />
       <div className="flex flex-wrap gap-2 border-t border-line pt-4">
         <button className="desk-button" type="button" disabled={pending} onClick={() => preview.mutate({ ...draft, sample_name: sampleName },
-          { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>{preview.isPending ? "Rendering preview…" : "Preview exact PDF"}</button>
+          { onSuccess: (blob) => setPreviewUrl(URL.createObjectURL(blob)) })}>{preview.isPending ? t`Rendering preview…` : t`Preview exact PDF`}</button>
         <button className="desk-button-primary" type="button" disabled={pending} onClick={() => save.mutate(draft, { onSuccess: () => setDirty(false) })}>
-          {kind ? "Save this kind's design" : "Save the default design"}</button>
+          {kind ? t`Save this kind's design` : t`Save the default design`}</button>
       </div>
-      {dirty ? <p role="status" className="text-sm text-warn-ink">Unsaved changes. A failed save keeps this draft.</p> : null}
-      {save.isSuccess && !dirty ? <p role="status" className="text-sm text-success-ink">Design saved.</p> : null}
+      {dirty ? <p role="status" className="text-sm text-warn-ink">{t`Unsaved changes. A failed save keeps this draft.`}</p> : null}
+      {save.isSuccess && !dirty ? <p role="status" className="text-sm text-success-ink">{t`Design saved.`}</p> : null}
       <CertificateLibrary makerspaceId={makerspaceId} eventId={eventId} document={draft.parameters} eventVersion={query.data?.event_version} eventRevisionId={query.data?.id} />
     </div></Card> : null}
-    {previewUrl ? <div className="grid gap-2"><iframe className="h-[32rem] w-full rounded-control border border-line" src={previewUrl} title="Certificate PDF preview" />
-      <button type="button" className="desk-button justify-self-start" onClick={() => setPreviewUrl(null)}>Close the preview</button></div> : null}
+    {previewUrl ? <div className="grid gap-2"><iframe className="h-[32rem] w-full rounded-control border border-line" src={previewUrl} title={t`Certificate PDF preview`} />
+      <button type="button" className="desk-button justify-self-start" onClick={() => setPreviewUrl(null)}>{t`Close the preview`}</button></div> : null}
     {error ? <p role="alert" className="text-sm text-danger">{eventErrorText(error)}</p> : null}
     <SignatoriesPanel eventId={eventId} />
     <BulkCertificates eventId={eventId} />

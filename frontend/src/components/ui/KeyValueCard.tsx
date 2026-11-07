@@ -1,6 +1,7 @@
+import { t } from "@lingui/core/macro";
 import { useId, type ReactNode } from "react";
 export type KeyValueCardProps = { title?: string; items: { label: string; value: ReactNode }[] };
-export function KeyValueCard({ title = "At a glance", items }: KeyValueCardProps) {
+export function KeyValueCard({ title = t`At a glance`, items }: KeyValueCardProps) {
   const id = useId();
   return <section aria-labelledby={id} className="min-w-0 rounded-xl border border-line bg-panel p-4">
     <h2 id={id} className="title-panel">{title}</h2>

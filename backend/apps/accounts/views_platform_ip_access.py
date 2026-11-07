@@ -6,6 +6,7 @@ behind the re-authentication step-up, the same lock-out guard, and the same audi
 Lifting a block deletes it, exactly like the /control/ action; blocks are never added here.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -50,7 +51,7 @@ class IPAccessRuleSerializer(serializers.ModelSerializer):
         try:
             return ip_rules.canonical_cidr(value)
         except ValueError:
-            raise serializers.ValidationError("Enter an IP address or a network in CIDR form.") from None
+            raise serializers.ValidationError(gettext("Enter an IP address or a network in CIDR form.")) from None
 
     def validate(self, attrs):
         cidr = attrs.get("cidr", getattr(self.instance, "cidr", None))

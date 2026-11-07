@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -13,11 +15,11 @@ const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resol
 
 function validateFile(job: ImportJob, file: File) {
   if (file.size !== job.upload_total_bytes) {
-    throw new Error("Choose the original archive: its size must match this upload session.");
+    throw new Error(t`Choose the original archive: its size must match this upload session.`);
   }
   if (!Number.isSafeInteger(job.upload_received_bytes)
     || job.upload_received_bytes < 0 || job.upload_received_bytes > file.size) {
-    throw new Error("The server returned an invalid upload offset. Refresh the import job.");
+    throw new Error(t`The server returned an invalid upload offset. Refresh the import job.`);
   }
 }
 
@@ -35,7 +37,7 @@ export async function uploadArchive(
     } catch (error) {
       if (error instanceof StructuredApiError && error.status === 413) {
         // Retrying cannot help: the proxy in front of the API caps request bodies.
-        throw new Error("The web server refused an 8 MiB upload chunk (HTTP 413). Raise its /api/ request-body limit (nginx client_max_body_size) to at least 10m, then resume this upload.");
+        throw new Error(t`The web server refused an 8 MiB upload chunk (HTTP 413). Raise its /api/ request-body limit (nginx client_max_body_size) to at least 10m, then resume this upload.`);
       }
       // A lost 200 may mean the bytes already committed. Always ask the server
       // before retrying; another tab can also have advanced or completed the job.
@@ -109,22 +111,21 @@ export function ImportUploadResume({ job, driving }: { job: ImportJob; driving: 
   const [file, setFile] = useState<File | null>(null);
   const { upload } = useImportArchiveUpload();
   const active = driving || upload.isPending;
-  const received = job.upload_received_bytes.toLocaleString();
-  const total = job.upload_total_bytes?.toLocaleString() ?? "unknown";
+  const received = job.upload_received_bytes.toLocaleString(formatLocale());
+  const total = job.upload_total_bytes?.toLocaleString(formatLocale()) ?? "unknown";
   return (
     <div className="mt-3 rounded-md border border-line bg-bg p-3">
       <p className="text-sm text-ink" aria-live="polite">
-        {active ? `Uploaded ${received} of ${total} bytes` : `Upload interrupted at ${received} of ${total} bytes — choose the same file to resume.`}
+        {active ? t`Uploaded ${received} of ${total} bytes` : t`Upload interrupted at ${received} of ${total} bytes — choose the same file to resume.`}
       </p>
-      <progress className="mt-2 w-full" aria-label="Archive upload progress" value={job.upload_received_bytes} max={job.upload_total_bytes ?? 1} />
+      <progress className="mt-2 w-full" aria-label={t`Archive upload progress`} value={job.upload_received_bytes} max={job.upload_total_bytes ?? 1} />
       {!active ? <>
-        <label className="mt-2 block text-sm text-ink">Original encrypted archive
-          <input className="desk-input mt-1 w-full" type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+        <label className="mt-2 block text-sm text-ink">{t`Original encrypted archive`}<input className="desk-input mt-1 w-full" type="file" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
         </label>
-        {file && file.size !== job.upload_total_bytes ? <p className="mt-2 text-sm text-danger" role="alert">The file size differs from the original archive.</p> : null}
+        {file && file.size !== job.upload_total_bytes ? <p className="mt-2 text-sm text-danger" role="alert">{t`The file size differs from the original archive.`}</p> : null}
         <button className="desk-button-primary mt-3" type="button" disabled={!file || file.size !== job.upload_total_bytes} onClick={() => {
           if (file) upload.mutate({ job, file });
-        }}>Resume upload</button>
+        }}>{t`Resume upload`}</button>
       </> : null}
       <ErrorText error={upload.error} />
     </div>

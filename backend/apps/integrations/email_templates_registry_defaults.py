@@ -1,91 +1,92 @@
+from django.utils.translation import gettext_noop
 HARDWARE_REQUESTER_DEFAULTS = {
     "request_received": {
-        "subject": "{{ makerspace.name }} request received",
+        "subject": gettext_noop("{{ makerspace.name }} request received"),
         "text": (
-            "Your makerspace request #{{ request.id }} was received.\n\n"
+            gettext_noop("Your makerspace request #{{ request.id }} was received.\n\n"
             "Status: {{ request.status }}\n"
-            "Use your email or phone on the public request page to check status."
+            "Use your email or phone on the public request page to check status.")
         ),
     },
     "request_accepted": {
-        "subject": "{{ makerspace.name }} request approved",
+        "subject": gettext_noop("{{ makerspace.name }} request approved"),
         "text": (
-            "Your makerspace request #{{ request.id }} has been approved."
-            "{% if request.return_due_at %}\n\nReturn by: {{ request.return_due_at }}{% endif %}"
+            gettext_noop("Your makerspace request #{{ request.id }} has been approved."
+            "{% if request.return_due_at %}\n\nReturn by: {{ request.return_due_at }}{% endif %}")
         ),
     },
     "request_rejected": {
-        "subject": "{{ makerspace.name }} request rejected",
+        "subject": gettext_noop("{{ makerspace.name }} request rejected"),
         "text": (
-            "Your makerspace request #{{ request.id }} was rejected."
-            "{% if request.rejection_reason %}\n\nReason: {{ request.rejection_reason }}{% endif %}"
+            gettext_noop("Your makerspace request #{{ request.id }} was rejected."
+            "{% if request.rejection_reason %}\n\nReason: {{ request.rejection_reason }}{% endif %}")
         ),
     },
     "request_issued": {
-        "subject": "{{ makerspace.name }} request issued",
+        "subject": gettext_noop("{{ makerspace.name }} request issued"),
         "text": (
-            "Your approved makerspace request #{{ request.id }} has been handed out."
-            "{% if request.return_due_at %}\n\nReturn by: {{ request.return_due_at }}{% endif %}"
+            gettext_noop("Your approved makerspace request #{{ request.id }} has been handed out."
+            "{% if request.return_due_at %}\n\nReturn by: {{ request.return_due_at }}{% endif %}")
         ),
     },
     "request_returned": {
-        "subject": "{{ makerspace.name }} request returned",
-        "text": "Your makerspace request #{{ request.id }} has been returned and closed.",
+        "subject": gettext_noop("{{ makerspace.name }} request returned"),
+        "text": gettext_noop("Your makerspace request #{{ request.id }} has been returned and closed."),
     },
     "return_reminder": {
-        "subject": "{{ makerspace.name }} return reminder",
+        "subject": gettext_noop("{{ makerspace.name }} return reminder"),
         "text": (
-            "Your makerspace request #{{ request.id }} is due for return."
-            "{% if request.return_due_at %}\n\nReturn due: {{ request.return_due_at }}{% endif %}"
+            gettext_noop("Your makerspace request #{{ request.id }} is due for return."
+            "{% if request.return_due_at %}\n\nReturn due: {{ request.return_due_at }}{% endif %}")
         ),
     },
 }
 
 HARDWARE_STAFF_DEFAULTS = {
     "submitted": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} submitted",
-        "text": "A new hardware request needs review.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} submitted"),
+        "text": gettext_noop("A new hardware request needs review.\n\n{{ staff_summary }}"),
     },
     "accepted": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} accepted",
-        "text": "Hardware request #{{ request.id }} was accepted.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} accepted"),
+        "text": gettext_noop("Hardware request #{{ request.id }} was accepted.\n\n{{ staff_summary }}"),
     },
     "rejected": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} rejected",
-        "text": "Hardware request #{{ request.id }} was rejected.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} rejected"),
+        "text": gettext_noop("Hardware request #{{ request.id }} was rejected.\n\n{{ staff_summary }}"),
     },
     "issued": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} issued",
-        "text": "Hardware request #{{ request.id }} was issued.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} issued"),
+        "text": gettext_noop("Hardware request #{{ request.id }} was issued.\n\n{{ staff_summary }}"),
     },
     "partially_returned": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} partially returned",
-        "text": "Hardware request #{{ request.id }} was partially returned.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} partially returned"),
+        "text": gettext_noop("Hardware request #{{ request.id }} was partially returned.\n\n{{ staff_summary }}"),
     },
     "returned": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} returned",
-        "text": "Hardware request #{{ request.id }} was fully returned and closed.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} returned"),
+        "text": gettext_noop("Hardware request #{{ request.id }} was fully returned and closed.\n\n{{ staff_summary }}"),
     },
     "closed_with_issue": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} closed with issue",
-        "text": "Hardware request #{{ request.id }} was closed with damaged or missing items.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} closed with issue"),
+        "text": gettext_noop("Hardware request #{{ request.id }} was closed with damaged or missing items.\n\n{{ staff_summary }}"),
     },
     "return_reminder": {
-        "subject": "{{ makerspace.name }} hardware request #{{ request.id }} return reminder",
-        "text": "Hardware request #{{ request.id }} is due for return.\n\n{{ staff_summary }}",
+        "subject": gettext_noop("{{ makerspace.name }} hardware request #{{ request.id }} return reminder"),
+        "text": gettext_noop("Hardware request #{{ request.id }} is due for return.\n\n{{ staff_summary }}"),
     },
 }
 
 PRINTING_REQUESTER_SUBJECTS = {
-    "submitted": "We received your makerspace print request",
-    "accepted": "Your makerspace print request was accepted",
-    "started": "Your makerspace print request is now printing",
-    "rejected": "Your makerspace print request was rejected",
-    "completed": "Your makerspace print request is ready to collect",
+    "submitted": gettext_noop("We received your makerspace print request"),
+    "accepted": gettext_noop("Your makerspace print request was accepted"),
+    "started": gettext_noop("Your makerspace print request is now printing"),
+    "rejected": gettext_noop("Your makerspace print request was rejected"),
+    "completed": gettext_noop("Your makerspace print request is ready to collect"),
 }
 
 PRINTING_REQUESTER_TEXT = {
-    "submitted": """Hello,
+    "submitted": gettext_noop("""Hello,
 
 We've received your print request "{{ print_request.title }}".
 
@@ -97,8 +98,8 @@ We'll email you again when its status changes. You can also track it with your r
 Track your request: {{ status_url }}
 {% endif %}
 Tracking token: {{ public_token }}
-""",
-    "accepted": """Hello {{ print_request.requester.username }},
+"""),
+    "accepted": gettext_noop("""Hello {{ print_request.requester.username }},
 
 Your print request "{{ print_request.title }}" has been accepted.
 
@@ -108,8 +109,8 @@ Makerspace: {{ print_request.bucket.makerspace.name }}
 Track your request: {{ status_url }}
 {% endif %}
 Tracking token: {{ public_token }}
-""",
-    "started": """Hello,
+"""),
+    "started": gettext_noop("""Hello,
 
 Your print request "{{ print_request.title }}" is now printing.
 
@@ -121,8 +122,8 @@ We'll let you know when it's ready to collect.
 Track your request: {{ status_url }}
 {% endif %}
 Tracking token: {{ public_token }}
-""",
-    "rejected": """Hello {{ print_request.requester.username }},
+"""),
+    "rejected": gettext_noop("""Hello {{ print_request.requester.username }},
 
 Your print request "{{ print_request.title }}" has been rejected.
 
@@ -134,8 +135,8 @@ Makerspace: {{ print_request.bucket.makerspace.name }}
 Track your request: {{ status_url }}
 {% endif %}
 Tracking token: {{ public_token }}
-""",
-    "completed": """Hello {{ print_request.requester.username }},
+"""),
+    "completed": gettext_noop("""Hello {{ print_request.requester.username }},
 
 Your print request "{{ print_request.title }}" is complete.
 
@@ -145,11 +146,11 @@ Makerspace: {{ print_request.bucket.makerspace.name }}
 Track your request: {{ status_url }}
 {% endif %}
 Tracking token: {{ public_token }}
-""",
+"""),
 }
 
 PRINTING_REQUESTER_HTML = {
-    "submitted": """{% extends "email/base.html" %}
+    "submitted": gettext_noop("""{% extends "email/base.html" %}
 
 {% block body %}
   <p>Hello,</p>
@@ -162,8 +163,8 @@ PRINTING_REQUESTER_HTML = {
   {% endif %}
   <p>Tracking token: <strong>{{ public_token }}</strong></p>
 {% endblock %}
-""",
-    "accepted": """{% extends "email/base.html" %}
+"""),
+    "accepted": gettext_noop("""{% extends "email/base.html" %}
 
 {% block body %}
   <p>Hello {{ print_request.requester.username }},</p>
@@ -175,8 +176,8 @@ PRINTING_REQUESTER_HTML = {
   {% endif %}
   <p>Tracking token: <strong>{{ public_token }}</strong></p>
 {% endblock %}
-""",
-    "started": """{% extends "email/base.html" %}
+"""),
+    "started": gettext_noop("""{% extends "email/base.html" %}
 
 {% block body %}
   <p>Hello,</p>
@@ -189,8 +190,8 @@ PRINTING_REQUESTER_HTML = {
   {% endif %}
   <p>Tracking token: <strong>{{ public_token }}</strong></p>
 {% endblock %}
-""",
-    "rejected": """{% extends "email/base.html" %}
+"""),
+    "rejected": gettext_noop("""{% extends "email/base.html" %}
 
 {% block body %}
   <p>Hello {{ print_request.requester.username }},</p>
@@ -203,8 +204,8 @@ PRINTING_REQUESTER_HTML = {
   {% endif %}
   <p>Tracking token: <strong>{{ public_token }}</strong></p>
 {% endblock %}
-""",
-    "completed": """{% extends "email/base.html" %}
+"""),
+    "completed": gettext_noop("""{% extends "email/base.html" %}
 
 {% block body %}
   <p>Hello {{ print_request.requester.username }},</p>
@@ -216,21 +217,21 @@ PRINTING_REQUESTER_HTML = {
   {% endif %}
   <p>Tracking token: <strong>{{ public_token }}</strong></p>
 {% endblock %}
-""",
+"""),
 }
 
 PRINTING_STAFF_SUBJECTS = {
-    "submitted": "{{ makerspace.name }} print request #{{ print_request.id }} submitted",
-    "accepted": "{{ makerspace.name }} print request #{{ print_request.id }} accepted",
-    "started": "{{ makerspace.name }} print request #{{ print_request.id }} started",
-    "completed": "{{ makerspace.name }} print request #{{ print_request.id }} completed",
-    "rejected": "{{ makerspace.name }} print request #{{ print_request.id }} rejected",
-    "failed": "{{ makerspace.name }} print request #{{ print_request.id }} failed",
-    "collected": "{{ makerspace.name }} print request #{{ print_request.id }} collected",
-    "reprinted": "{{ makerspace.name }} reprint request #{{ print_request.id }} accepted",
+    "submitted": gettext_noop("{{ makerspace.name }} print request #{{ print_request.id }} submitted"),
+    "accepted": gettext_noop("{{ makerspace.name }} print request #{{ print_request.id }} accepted"),
+    "started": gettext_noop("{{ makerspace.name }} print request #{{ print_request.id }} started"),
+    "completed": gettext_noop("{{ makerspace.name }} print request #{{ print_request.id }} completed"),
+    "rejected": gettext_noop("{{ makerspace.name }} print request #{{ print_request.id }} rejected"),
+    "failed": gettext_noop("{{ makerspace.name }} print request #{{ print_request.id }} failed"),
+    "collected": gettext_noop("{{ makerspace.name }} print request #{{ print_request.id }} collected"),
+    "reprinted": gettext_noop("{{ makerspace.name }} reprint request #{{ print_request.id }} accepted"),
 }
 
-PRINTING_STAFF_TEXT = """Print request #{{ print_request.id }} {{ event }}.
+PRINTING_STAFF_TEXT = gettext_noop("""Print request #{{ print_request.id }} {{ event }}.
 
 Status: {{ print_request.status }}
 Title: {{ print_request.title }}
@@ -242,4 +243,4 @@ Material: {{ print_request.material }}{% endif %}{% if print_request.color %}
 Color: {{ print_request.color }}{% endif %}
 Quantity: {{ print_request.quantity }}{% if print_request.reason %}
 Reason: {{ print_request.reason }}{% endif %}{% if print_request.reprint_of_id %}
-Reprint of: #{{ print_request.reprint_of_id }}{% endif %}"""
+Reprint of: #{{ print_request.reprint_of_id }}{% endif %}""")

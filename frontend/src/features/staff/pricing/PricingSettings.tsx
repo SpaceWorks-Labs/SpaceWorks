@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -27,11 +28,11 @@ export function PricingSettings({ makerspace, canManageMakerspace }: { makerspac
   if (!capabilityOn(makerspace, "charges.pricing")) return null;
   return <div className="grid min-w-0 gap-6 py-5">
     <PricingCurrency makerspaceId={makerspace.id} canEdit={canManageMakerspace} />
-    <Tabs label="Pricing areas" tabs={domains.map(entry => ({ key: entry.domain, label: entry.label }))} activeKey={active}
+    <Tabs label={t`Pricing areas`} tabs={domains.map(entry => ({ key: entry.domain, label: entry.label }))} activeKey={active}
       onChange={setActive}>
       {/* #184: a domain whose charges are off is free, so its rate card gives way to one line (the switches stay in feature settings). */}
       {staffChargesOn(makerspace, active as PricingDomain) ? <PricingDomainCard key={active} makerspaceId={makerspace.id} domain={active} />
-        : <p className="text-sm text-muted">{domains.find(entry => entry.domain === active)?.label ?? "This area"} charges are off in this space, so it is free.</p>}
+        : <p className="text-sm text-muted">{domains.find(entry => entry.domain === active)?.label ?? t`This area`} {t` charges are off in this space, so it is free.`}</p>}
     </Tabs>
     {discountsOn ? <DiscountsPanel makerspaceId={makerspace.id}
       currency={code} domains={domains.map(entry => entry.domain)}

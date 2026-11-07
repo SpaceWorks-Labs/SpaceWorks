@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -24,21 +25,21 @@ export function SetupChecklist({ makerspace, owner, allowedTabs, guestOnly, sing
     <div className="flex flex-wrap items-start gap-3">
       <Icon name="TriangleAlert" />
       <div className="min-w-0 flex-1">
-        <h2 id="setup-heading" className="text-sm font-semibold">Finish setting up {makerspace.name}{steps.length ? ` — ${done} of ${steps.length} done` : ""}</h2>
-        <p className="mt-1 text-sm">Progress comes from your makerspace records.</p>
+        <h2 id="setup-heading" className="text-sm font-semibold">{t`Finish setting up ${makerspace.name}`}{steps.length ? t` — ${done} of ${steps.length} done` : ""}</h2>
+        <p className="mt-1 text-sm">{t`Progress comes from your makerspace records.`}</p>
       </div>
-      <button className="desk-button-ghost" type="button" aria-label="Dismiss setup checklist" onClick={() => { writeStorage(key, "true"); setDismissed(true); }}>Hide</button>
+      <button className="desk-button-ghost" type="button" aria-label={t`Dismiss setup checklist`} onClick={() => { writeStorage(key, "true"); setDismissed(true); }}>{t`Hide`}</button>
     </div>
-    {query.isLoading ? <p role="status" className="mt-3 text-sm">Checking setup…</p> : null}
-    {query.error ? <p role="alert" className="mt-3 text-sm text-danger">Could not check setup: {query.error.message}</p> : null}
+    {query.isLoading ? <p role="status" className="mt-3 text-sm">{t`Checking setup…`}</p> : null}
+    {query.error ? <p role="alert" className="mt-3 text-sm text-danger">{t`Could not check setup: ${query.error.message}`}</p> : null}
     {steps.length ? <div className="mt-4 grid gap-3">
-      <ProgressBar label="Makerspace setup" value={done / steps.length} />
+      <ProgressBar label={t`Makerspace setup`} value={done / steps.length} />
       {next ? <Link className="w-fit rounded-control text-sm underline focus-visible:outline-2 focus-visible:outline-focus" to={href(next.tab)}>{next.label} →</Link> : null}
       <div>
-        <button type="button" aria-expanded={expanded} aria-controls="setup-steps" onClick={() => setExpanded(value => !value)} className="min-h-11 cursor-pointer rounded-control py-2 text-sm focus-visible:outline-2 focus-visible:outline-focus">All setup steps</button>
+        <button type="button" aria-expanded={expanded} aria-controls="setup-steps" onClick={() => setExpanded(value => !value)} className="min-h-11 cursor-pointer rounded-control py-2 text-sm focus-visible:outline-2 focus-visible:outline-focus">{t`All setup steps`}</button>
         {expanded ? <ul id="setup-steps" className="grid gap-2">{steps.map(step => <li key={step.key} className="flex items-center gap-3 text-sm">
-          <span>{step.complete ? "Done" : "To do"}</span>
-          {allowedTabs.includes(step.tab) ? <Link className="rounded-control underline focus-visible:outline-2 focus-visible:outline-focus" to={href(step.tab)}>{step.label}</Link> : <span>{step.label} · ask an administrator</span>}
+          <span>{step.complete ? t`Done` : t`To do`}</span>
+          {allowedTabs.includes(step.tab) ? <Link className="rounded-control underline focus-visible:outline-2 focus-visible:outline-focus" to={href(step.tab)}>{step.label}</Link> : <span>{t`${step.label} · ask an administrator`}</span>}
         </li>)}</ul> : null}
       </div>
     </div> : null}

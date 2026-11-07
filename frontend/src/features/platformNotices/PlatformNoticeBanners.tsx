@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { Icon } from "../../components/ui";
@@ -47,12 +48,12 @@ export function PlatformNoticeBanners({ data, space, surface = "staff" }: {
   const readOnly = space ? spaceNotice(data, space) : undefined;
   const announcements = applicableAnnouncements(data, space?.id, surface).filter(row => !ids.includes(row.id));
   if (!announcements.length && readOnly?.state !== "read_only") return null;
-  return <div className="mb-4 grid gap-3" aria-label="Platform notices" role="region">
+  return <div className="mb-4 grid gap-3" aria-label={t`Platform notices`} role="region">
     {readOnly?.state === "read_only" ? <Banner tone="warn">
       <p><strong>{READ_ONLY_LEAD}</strong>{readOnly.reason ? <> {readOnly.reason}</> : null}</p>
     </Banner> : null}
     {announcements.map(row => <Banner key={row.id} tone={TONES[row.severity] ?? "info"} onDismiss={() => dismiss(row.id)} dismissLabel={`Dismiss announcement: ${row.title}`}>
-      <p><span className="sr-only">{LEADS[row.severity] ?? "Announcement"}: </span><strong>{row.title}</strong></p>
+      <p><span className="sr-only">{LEADS[row.severity] ?? t`Announcement`}: </span><strong>{row.title}</strong></p>
       <p className="mt-1 whitespace-pre-line">{row.body}</p>
     </Banner>)}
   </div>;

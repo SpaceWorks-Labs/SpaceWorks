@@ -1,4 +1,5 @@
 """Chat OAuth callbacks and signed, acknowledge-only inbound endpoints."""
+from django.utils.translation import gettext
 import json
 
 from django.shortcuts import get_object_or_404
@@ -45,7 +46,7 @@ def configuration(makerspace_id, channel):
 
 
 def provider_error():
-    return Response({"detail": "Provider operation failed. Restart the connection.",
+    return Response({"detail": gettext("Provider operation failed. Restart the connection."),
                      "code": "provider_error"}, status=400)
 
 
@@ -72,7 +73,7 @@ class ChatOAuthCallbackView(APIView):
         if (not hasattr(data, "get") or not isinstance(data.get("code"), str)
                 or not isinstance(data.get("state"), str)
                 or not 1 <= len(data["code"]) <= 2048 or not 1 <= len(data["state"]) <= 512):
-            raise ValidationError({"proof": "OAuth code and state are required."})
+            raise ValidationError({"proof": gettext("OAuth code and state are required.")})
         try:
             if self.channel == "slack":
                 from .notification_slack_oauth import SALT
@@ -83,11 +84,11 @@ class ChatOAuthCallbackView(APIView):
                     from .notification_slack import complete_install
                     complete_install(config, data)
                     return self.success()
-            raise ValidationError({"proof": "Complete personal linking through the authenticated challenge verify route."})
+            raise ValidationError({"proof": gettext("Complete personal linking through the authenticated challenge verify route.")})
         except (ProviderFailure, KeyError, TypeError, ValueError, AttributeError):
             return provider_error()
         except signing.BadSignature:
-            raise ValidationError({"proof": "Invalid or expired OAuth state."}) from None
+            raise ValidationError({"proof": gettext("Invalid or expired OAuth state.")}) from None
         return self.success()
 
     def success(self):
@@ -159,7 +160,7 @@ class SlackInstallStartView(APIView):
         except Exception:
             return provider_error()
         if not all(creds.get(key) for key in ("client_id", "client_secret", "signing_secret")):
-            raise ValidationError({"channel": "Configure Slack app credentials first."})
+            raise ValidationError({"channel": gettext("Configure Slack app credentials first.")})
         from .notification_slack_oauth import install_challenge, redirect_uri
         from .notification_slack import install_url
         redirect_uri("slack", config.makerspace_id, 1)

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 
@@ -17,7 +18,7 @@ class EmailTemplate(models.Model):
         MEMBERSHIP = "membership", "Membership"
         DEVICES = "devices", "Devices"
         PAYMENTS = "payments", "Payments"
-        STOCK = "stock", "Stock and procurement"
+        STOCK = "stock", gettext_noop("Stock and procurement")
         CERTIFICATIONS = "certifications", "Certifications"
 
     class Audience(models.TextChoices):

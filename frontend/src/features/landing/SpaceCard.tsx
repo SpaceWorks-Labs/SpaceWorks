@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Link } from "react-router-dom";
 import { BrandFacets } from "../../components/BrandFacets";
 import { MakerspaceBrand } from "../../components/MakerspaceBrand";
@@ -30,21 +31,21 @@ export function SpaceCard({ space }: { space: Makerspace }) {
           <div className="grid h-full place-items-center text-5xl font-bold leading-none sm:text-[64px]" aria-hidden="true">{space.name.charAt(0)}</div>
           <BrandFacets size="sm" tone={tone === "accent" ? "orange" : "teal"} className="absolute -right-6 -top-8 h-auto w-[128px]" />
         </>}
-      <div className="absolute left-4 top-4"><StatusPill label="Public catalogue" tone="neutral" /></div>
+      <div className="absolute left-4 top-4"><StatusPill label={t`Public catalogue`} tone="neutral" /></div>
     </div>
     <div className="flex flex-1 flex-col gap-3 p-5 sm:p-6">
       <MakerspaceBrand name={space.name} logoUrl={space.logo_url} size="md" />
       <MakerspaceMapLink makerspace={space} className="relative z-10" locationClassName="break-words text-sm text-muted" />
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
         <span className="code-text text-sm text-muted">{space.public_code}</span>
-        <Link className="desk-button-ghost after:absolute after:inset-0 after:rounded-2xl after:content-['']" to={`/m/${space.slug}`} aria-label={`Open ${space.name} catalog`}>Open catalogue →</Link>
+        <Link className="desk-button-ghost after:absolute after:inset-0 after:rounded-2xl after:content-['']" to={`/m/${space.slug}`} aria-label={t`Open ${space.name} catalog`}>{t`Open catalogue →`}</Link>
       </div>
     </div>
   </article>;
 }
 
 export function SpaceCardSkeletons() {
-  return <div role="status" aria-label="Loading spaces" className="sw-space-grid">
+  return <div role="status" aria-label={t`Loading spaces`} className="sw-space-grid">
     {[0, 1, 2].map(index => <div key={index} className="overflow-hidden rounded-2xl border border-line bg-panel" aria-hidden="true">
       <Skeleton className="aspect-[1.8] w-full rounded-none" />
       <div className="grid gap-3 p-6"><Skeleton className="h-6 w-2/3" /><Skeleton className="h-4 w-1/2" /></div>

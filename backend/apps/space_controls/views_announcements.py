@@ -1,5 +1,6 @@
 """Announcements (superadmin), the signed-in notices feed and the public paused check."""
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -56,7 +57,7 @@ class PlatformAnnouncementCreateSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs.get("ends_at") and attrs.get("starts_at") and attrs["ends_at"] <= attrs["starts_at"]:
-            raise serializers.ValidationError({"ends_at": "End after the start."})
+            raise serializers.ValidationError({"ends_at": gettext("End after the start.")})
         return attrs
 
 

@@ -1,5 +1,6 @@
 """Borrow-limit quantity math, kept in the Inventory Availability module."""
 
+from django.utils.translation import gettext
 from django.db.models import F, Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -42,7 +43,7 @@ def enforce_borrow_limits(makerspace, borrower, incoming_quantity, *, contact_ke
     if contact_key:
         active = active.filter(anonymous_payload_fingerprint=contact_key)
     if max_active and active.count() >= max_active:
-        raise ValidationError({"code": "loan_limit", "detail": "The borrower has reached the active-loan limit."})
+        raise ValidationError({"code": "loan_limit", "detail": gettext("The borrower has reached the active-loan limit.")})
     items = rbac.scope_by_borrower(
         borrower, HardwareRequestItem.objects.all(), makerspace=makerspace,
         field="request__makerspace_id", owner_field="request__requester",
@@ -51,7 +52,7 @@ def enforce_borrow_limits(makerspace, borrower, incoming_quantity, *, contact_ke
         F("issued_quantity") - F("returned_quantity") - F("damaged_quantity") - F("missing_quantity"),
     ))["total"] or 0
     if max_items and outstanding + incoming_quantity > max_items:
-        raise ValidationError({"code": "item_limit", "detail": "This handover exceeds the borrower item limit."})
+        raise ValidationError({"code": "item_limit", "detail": gettext("This handover exceeds the borrower item limit.")})
 
 
 def enforce_request_borrow_limits(request, rejects_by_item=None):

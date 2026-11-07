@@ -1,5 +1,6 @@
 """Request bodies for the repairs routes (validated at the boundary, typed in OpenAPI)."""
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.payments.models_ledger_entries import LedgerEntry
@@ -36,7 +37,7 @@ class IssueReportCreateSerializer(serializers.Serializer):
     def validate(self, attrs):
         sources = [name for name in ("loan_id", "booking_id", "booking_token", "machine_job_id") if attrs.get(name)]
         if len(sources) != 1:
-            raise serializers.ValidationError({"source": "Report from one loan, booking or machine job."})
+            raise serializers.ValidationError({"source": gettext("Report from one loan, booking or machine job.")})
         return attrs
 
 
@@ -48,7 +49,7 @@ class PublicIssueReportCreateSerializer(IssueReportCreateSerializer):
 
     def validate(self, attrs):
         if len([name for name in ("loan_id", "booking_id", "booking_token") if attrs.get(name)]) != 1:
-            raise serializers.ValidationError({"source": "Report from one loan or booking."})
+            raise serializers.ValidationError({"source": gettext("Report from one loan or booking.")})
         return attrs
 
 

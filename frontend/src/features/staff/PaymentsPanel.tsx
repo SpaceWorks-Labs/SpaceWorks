@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -107,8 +108,8 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     return { key: value || "all", label, href: `${location.pathname}?${params}`, count: status === value ? payments.data?.count : undefined };
   });
   const bulkActions: Action[] = [];
-  if (selected.length && selected.every(id => payments.data?.results.some(row => row.id === id && row.status === "pending" && access(row).record))) bulkActions.push({ label: "Mark paid in person", pending: mutation.isPending, onClick: () => run("mark-offline", selected, true) });
-  if (selected.length && selected.every(id => payments.data?.results.some(row => row.id === id && row.status === "pending" && access(row).waive))) bulkActions.push({ label: "Waive", pending: mutation.isPending, onClick: () => run("waive", selected, true) });
+  if (selected.length && selected.every(id => payments.data?.results.some(row => row.id === id && row.status === "pending" && access(row).record))) bulkActions.push({ label: t`Mark paid in person`, pending: mutation.isPending, onClick: () => run("mark-offline", selected, true) });
+  if (selected.length && selected.every(id => payments.data?.results.some(row => row.id === id && row.status === "pending" && access(row).waive))) bulkActions.push({ label: t`Waive`, pending: mutation.isPending, onClick: () => run("waive", selected, true) });
   return <div onClickCapture={event => {
     const anchor = (event.target as HTMLElement).closest('nav[aria-label="Page sections"] a');
     if (!anchor || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -116,22 +117,22 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
     const destination = new URL((anchor as HTMLAnchorElement).href);
     navigate(destination.pathname + destination.search);
   }}><ListLayout
-    header={{ title: "Payments", subtitle: eventOnly ? `Event registration fees owed to ${makerspaceName ?? "your makerspace"}, and how they were paid.` : `Money owed to ${makerspaceName ?? "your makerspace"}, and how it was paid.`,
-      secondary: !forRecording && !eventOnly ? { label: "Billing documents", onClick: () => setDocumentsOpen(true) } : undefined }}
+    header={{ title: t`Payments`, subtitle: eventOnly ? t`Event registration fees owed to ${makerspaceName ?? "your makerspace"}, and how they were paid.` : t`Money owed to ${makerspaceName ?? "your makerspace"}, and how it was paid.`,
+      secondary: !forRecording && !eventOnly ? { label: t`Billing documents`, onClick: () => setDocumentsOpen(true) } : undefined }}
     state={payments.isLoading ? { status: "loading" } : payments.error && !payments.data
-      ? { status: "error", error: "Couldn't load payments. Try again.", onRetry: () => { void payments.refetch(); } } : { status: "ready" }}
+      ? { status: "error", error: t`Couldn't load payments. Try again.`, onRetry: () => { void payments.refetch(); } } : { status: "ready" }}
     isEmpty={payments.data?.count === 0}
-    empty={{ message: status === "pending" ? "Nothing to collect. Every charge here is paid or waived." : "No payments yet. Charges appear here when someone books, registers or borrows." }}
-    filtered={Boolean(list.values.subject_type || dueState)} filteredEmpty={{ message: "No matching payments. Try another filter.", action: { label: "Clear filters", onClick: () => list.update({ subject_type: "", due_state: "" }) } }}
+    empty={{ message: status === "pending" ? t`Nothing to collect. Every charge here is paid or waived.` : t`No payments yet. Charges appear here when someone books, registers or borrows.` }}
+    filtered={Boolean(list.values.subject_type || dueState)} filteredEmpty={{ message: t`No matching payments. Try another filter.`, action: { label: t`Clear filters`, onClick: () => list.update({ subject_type: "", due_state: "" }) } }}
     tabs={tabs} activeTab={status || "all"}
     filters={{ toolbar: <PaymentsFilters list={list} makerspaceId={makerspaceId} eventOnly={eventOnly} /> }}
     bulkBar={{ count: selected.length, actions: bulkActions, onClear: () => setSelected([]) }}
     pagination={{ page: list.page, count: payments.data?.count ?? 0, pageSize: 24, onChange: list.setPage }}
     body={{ kind: "table", table: <DataTable listState={list} columns={columns} data={payments.data?.results ?? []}
-      selectedIds={selected} onSelectionChange={ids => setSelected(ids.map(Number))} emptyTitle="No matching payments" /> }}
+      selectedIds={selected} onSelectionChange={ids => setSelected(ids.map(Number))} emptyTitle={t`No matching payments`} /> }}
     detail={<>
       {!forRecording && !eventOnly && documentsOpen ? <DetailLayout presentation="drawer" open onClose={() => setDocumentsOpen(false)}
-        title="Billing documents" state={{ status: "ready" }}
+        title={t`Billing documents`} state={{ status: "ready" }}
         main={<PaymentDocuments key={makerspaceId} makerspaceId={makerspaceId} audience="staff" initiallyExpanded />} /> : null}
       {settling ? (
         <SettlementDialog
@@ -154,7 +155,7 @@ export function PaymentsPanel({ makerspaceId, makerspaceName, actorActions = [],
           count={1}
           pending={amend.isPending}
           error={amend.error?.message}
-          title="Correct the receipt"
+          title={t`Correct the receipt`}
           onCancel={() => { setAmending(null); amend.reset(); }}
           onConfirm={(settlement) => amend.mutate({ id: amending.id, settlement })}
         />

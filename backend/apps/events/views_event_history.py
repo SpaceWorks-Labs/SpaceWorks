@@ -7,6 +7,7 @@ an account-only borrower to their own debt. If a membership exists its status de
 REVOKED member is still refused.
 """
 
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import NotFound, PermissionDenied
@@ -51,7 +52,7 @@ class MemberEventHistoryView(APIView):
         makerspace = get_object_or_404(servable_queryset(Makerspace.objects.all()), pk=makerspace_id)
         require_module(makerspace, "events")
         if not member_may_see_own_event_history(request.user, makerspace):
-            raise PermissionDenied("No event history is available for this account here.")
+            raise PermissionDenied(gettext("No event history is available for this account here."))
         return Response(EventHistorySerializer(history_for_space(makerspace, request.user)).data)
 
 
@@ -71,5 +72,5 @@ class StaffMemberEventHistoryView(APIView):
         user = User.objects.filter(pk=user_id).first()
         if user is None or not (MakerspaceMembership.objects.filter(makerspace=makerspace, user=user).exists()
                                 or _owns_history(makerspace, user)):
-            raise NotFound("No such person in this makerspace.")
+            raise NotFound(gettext("No such person in this makerspace."))
         return Response(EventHistorySerializer(history_for_space(makerspace, user)).data)

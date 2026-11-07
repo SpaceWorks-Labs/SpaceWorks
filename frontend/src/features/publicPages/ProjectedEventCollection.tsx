@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ErrorBlock, Pagination } from "../../components/ui";
@@ -23,7 +24,7 @@ export function ProjectedEventCollection({ collection, token, slug }: {
   });
   const data = page === 1 ? collection : query.error ? undefined : query.data;
   return <div className="grid gap-4">
-    {page > 1 && query.isLoading ? <p role="status">Loading public events…</p> : query.error && page > 1 ? <ErrorBlock error={query.error} onRetry={() => { void query.refetch(); }} /> : data ? <PublicEventCards rows={data.results} showPrice={showPrice} /> : null}
+    {page > 1 && query.isLoading ? <p role="status">{t`Loading public events…`}</p> : query.error && page > 1 ? <ErrorBlock error={query.error} onRetry={() => { void query.refetch(); }} /> : data ? <PublicEventCards rows={data.results} showPrice={showPrice} /> : null}
     <Pagination page={page} pageSize={24} count={data?.count ?? collection.count} totalPages={Math.ceil((data?.count ?? collection.count) / 24)} onChange={setPage} />
   </div>;
 }

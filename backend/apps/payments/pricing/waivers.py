@@ -14,6 +14,7 @@ scoped through rbac. The waiver's existence is never gated on a switch once writ
 turning `loans.fee_waivers` off hides the tools, it does not start charging waived loans.
 """
 
+from django.utils.translation import gettext
 from dataclasses import replace
 
 from django.db import transaction
@@ -83,7 +84,7 @@ def loan_charges(request, subject_types):
 
 def _authorize(actor, request):
     if not rbac.can(actor, rbac.Action.RETURN_REQUEST, request.makerspace_id):
-        raise PermissionDenied("Waiving loan fees needs the return permission in this space.")
+        raise PermissionDenied(gettext("Waiving loan fees needs the return permission in this space."))
 
 
 @transaction.atomic

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../../../lib/api";
 import { StructuredApiError } from "../../../../lib/api/errors";
 import type { StaffRole } from "../rolesApi";
@@ -48,24 +49,24 @@ export const revokeStaffInvitation = (space: number, id: number) => post<StaffIn
 export const listSpaceRoles = (space: number) => staffRequest<StaffRole[]>(`/admin/makerspaces/${space}/roles`);
 
 const ERROR_COPY: Record<string, string> = {
-  last_manager: "A makerspace keeps at least one active Space Manager.",
-  self_change: "You can't change your own staff roles.",
-  not_community_member: "Only community members of this space can be granted a role here. Invite them by email instead.",
-  already_staff: "This person already has a staff row here. Change or restore it.",
-  quota_exceeded: "This makerspace has reached its staff limit.",
-  tenant_gated: "This makerspace is temporarily read-only.",
-  space_manager_superadmin_only: "Only the platform administrator manages Space Managers.",
-  mfa_reset_not_allowed: "You can't reset this person's authenticator. Ask the platform administrator.",
+  last_manager: t`A makerspace keeps at least one active Space Manager.`,
+  self_change: t`You can't change your own staff roles.`,
+  not_community_member: t`Only community members of this space can be granted a role here. Invite them by email instead.`,
+  already_staff: t`This person already has a staff row here. Change or restore it.`,
+  quota_exceeded: t`This makerspace has reached its staff limit.`,
+  tenant_gated: t`This makerspace is temporarily read-only.`,
+  space_manager_superadmin_only: t`Only the platform administrator manages Space Managers.`,
+  mfa_reset_not_allowed: t`You can't reset this person's authenticator. Ask the platform administrator.`,
 };
 
 /** Friendly copy for the refusal codes the staff-roles API returns; the server message otherwise. */
 export function staffRoleErrorText(error: unknown) {
   if (error instanceof StructuredApiError && error.code && ERROR_COPY[error.code]) return ERROR_COPY[error.code];
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }
 
 export const deliveryText = (status: string | null | undefined) => status === "sent"
-  ? "Invitation email sent." : "The email could not be sent; ask them to check the address and resend.";
+  ? t`Invitation email sent.` : t`The email could not be sent; ask them to check the address and resend.`;
 
 const humanize = (slug: string) => slug.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 export const roleNames = (policy: StaffRolesPolicy | undefined, slugs: string[]) =>

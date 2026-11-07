@@ -5,6 +5,7 @@ is refused by the platform context). The export is audited at platform level; re
 are not, like every other analytics read.
 """
 
+from django.utils.translation import gettext
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -45,12 +46,12 @@ def _flag(raw, field):
         return False
     if raw in ("1", "true"):
         return True
-    raise ValidationError({field: "Use true or false."})
+    raise ValidationError({field: gettext("Use true or false.")})
 
 
 def _request_args(request, allowed):
     if set(request.query_params) - allowed:
-        raise ValidationError({"detail": "Unknown query parameter."})
+        raise ValidationError({"detail": gettext("Unknown query parameter.")})
     params = request.query_params
     window = resolve_window(params.get("period") or "this_month", params.get("start"), params.get("end"))
     return window, _flag(params.get("include_excluded"), "include_excluded")
@@ -60,7 +61,7 @@ def _pending(data):
     if data["status"] == "computing":
         return Response({"status": "computing", "retry_after_seconds": RETRY_AFTER_SECONDS}, status=202,
                         headers={**NO_STORE, "Retry-After": str(RETRY_AFTER_SECONDS)})
-    return Response({"detail": "The platform overview could not be computed. Try again shortly.",
+    return Response({"detail": gettext("The platform overview could not be computed. Try again shortly."),
                      "code": "overview_failed"}, status=503, headers=NO_STORE)
 
 

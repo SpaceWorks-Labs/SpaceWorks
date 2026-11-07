@@ -1,4 +1,5 @@
 """Provider fetch; possession never bypasses the live document-owner policy."""
+from django.utils.translation import gettext
 import logging
 
 from django.http import HttpResponse
@@ -51,7 +52,7 @@ class NotificationMediaView(APIView):
             logger.warning("notification_media_fetch_failed", extra={"failure_type": type(exc).__name__})
             result = None
         if result is None:
-            return Response({"detail": "Document unavailable.", "code": "not_found"}, status=404)
+            return Response({"detail": gettext("Document unavailable."), "code": "not_found"}, status=404)
         filename, pdf = result
         response = HttpResponse(pdf, content_type="application/pdf")
         response["Content-Disposition"] = content_disposition_header(True, filename)

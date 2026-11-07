@@ -13,6 +13,7 @@ too. Each (intent, room) pair is posted at most once, recorded in the audit log 
 the destination KIND only.
 """
 
+from django.utils.translation import gettext
 import logging
 
 from django.utils import timezone
@@ -88,7 +89,7 @@ def set_routes(event, actor, destination_ids):
     rooms = set(NotificationDestination.objects.filter(
         pk__in=wanted, makerspace_id=event.makerspace_id, channel__in=ROOM_CHANNELS).values_list("pk", flat=True))
     if set(wanted) - rooms:
-        raise ValidationError({"destination_ids": "Choose chat rooms of this makerspace."})
+        raise ValidationError({"destination_ids": gettext("Choose chat rooms of this makerspace.")})
     with write_boundary(event, actor=actor):
         MentorAlertRoute.objects.filter(event=event).exclude(destination_id__in=wanted).delete()
         for pk in wanted:

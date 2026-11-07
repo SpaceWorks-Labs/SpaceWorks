@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { QueryClient } from "@tanstack/react-query";
 
 import type {
@@ -99,16 +100,16 @@ const ERRORS: Record<string, string> = {
 export function chargeErrorMessage(error: unknown) {
   if (error instanceof StructuredApiError) {
     if (error.code && ERRORS[error.code]) return ERRORS[error.code];
-    if (error.status === 404) return "This is switched off for the space, or you cannot change this loan's charges.";
+    if (error.status === 404) return t`This is switched off for the space, or you cannot change this loan's charges.`;
   }
-  return error instanceof Error ? error.message : "That did not work. Try again.";
+  return error instanceof Error ? error.message : t`That did not work. Try again.`;
 }
 
 /** "Suggested from the price list": where the prefilled damage/lost amount came from. */
 export function suggestionHint(source: string) {
-  if (source === "unit_cost") return "Suggested from the item's unit cost.";
-  if (source === "none") return "No suggestion is set for this item. Enter the amount.";
-  return "Suggested from the price list.";
+  if (source === "unit_cost") return t`Suggested from the item's unit cost.`;
+  if (source === "none") return t`No suggestion is set for this item. Enter the amount.`;
+  return t`Suggested from the price list.`;
 }
 
 /** Rows a return recorded that still need a decision: no charge raised and "No charge" not decided. */

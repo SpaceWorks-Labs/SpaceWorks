@@ -1,4 +1,5 @@
 """Payloads and response shapes for lane L21a's participation routes (switches, attendance, crew, lists)."""
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from .hackathons.admission_inputs import LiteralBoolean, StrictSerializer
@@ -157,7 +158,7 @@ class CheckInListScanInput(StrictSerializer):
 
     def validate(self, attrs):
         if ("registration_id" in attrs) == ("token" in attrs):
-            raise serializers.ValidationError("Choose a registration or a ticket code.")
+            raise serializers.ValidationError(gettext("Choose a registration or a ticket code."))
         return attrs
 
 

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -24,15 +25,15 @@ export function EventRegistrationAnswers({ row, schema, makerspaceId, eventId }:
       const allowedIds = new Set(schema.map((question) => question.id));
       setAnswers(Object.fromEntries((row.custom_answers?.answers ?? []).filter((answer) => allowedIds.has(answer.id)).map((answer) => [answer.id, answer.value])));
       setOpen(true);
-    }}>Edit answers</button>
-    {createPortal(<Modal open={open} title={`Edit answers: ${row.name}`} onClose={() => { if (!edit.isPending) setOpen(false); }}>
+    }}>{t`Edit answers`}</button>
+    {createPortal(<Modal open={open} title={t`Edit answers: ${row.name}`} onClose={() => { if (!edit.isPending) setOpen(false); }}>
       <form className="grid gap-4" noValidate onSubmit={(e) => {
         e.preventDefault(); const nextErrors = validateCustomAnswers(schema, answers); setErrors(nextErrors);
         if (!Object.keys(nextErrors).length) edit.mutate({ registrationId: row.id, answers }, { onSuccess: () => setOpen(false) });
       }}>
         <CustomFormFields schema={schema} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...errors }} disabled={edit.isPending} />
         {edit.error ? <p className="text-sm text-danger" role="alert">{eventErrorText(edit.error)}</p> : null}
-        <div className="flex justify-end"><button className="desk-button-primary" type="submit" disabled={edit.isPending}>{edit.isPending ? "Saving…" : "Save answers"}</button></div>
+        <div className="flex justify-end"><button className="desk-button-primary" type="submit" disabled={edit.isPending}>{edit.isPending ? t`Saving…` : t`Save answers`}</button></div>
       </form>
     </Modal>, document.body)}
   </>;

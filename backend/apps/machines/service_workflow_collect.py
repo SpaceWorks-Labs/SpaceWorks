@@ -1,5 +1,6 @@
 """Collection of a completed machine-service job, with a locked reach re-check."""
 
+from django.utils.translation import gettext
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -55,7 +56,7 @@ def _check_handover(locked, pickup_code):
     from apps.machines import job_charges, job_pickup, job_policy
     from apps.makerspaces.platform import feature_enabled
     if pickup_code and not job_pickup.matches(locked, pickup_code):
-        raise ValidationError({"pickup_code": "That pickup code does not match this job.", "code": "pickup_code"})
+        raise ValidationError({"pickup_code": gettext("That pickup code does not match this job."), "code": "pickup_code"})
     if feature_enabled(locked.makerspace, job_policy.PAY_BEFORE_PICKUP):
         payment = job_charges.prepaid_payment(locked) if locked.prepay else job_charges.payment_for(locked)
         if payment is not None and payment.status == payment.Status.PENDING:

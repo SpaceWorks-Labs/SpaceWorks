@@ -1,5 +1,6 @@
 """Destination lifecycle shared by the API and the control-plane admin."""
 
+from django.utils.translation import gettext
 import uuid
 
 from django.db import transaction
@@ -15,7 +16,7 @@ from apps.backup.models import BackupDestination
 def retire_destination(destination_id, actor):
     destination = BackupDestination.objects.select_for_update().get(pk=destination_id)
     if destination.retired_at is not None:
-        raise ValidationError("The destination is already retired.")
+        raise ValidationError(gettext("The destination is already retired."))
     destination.enabled = False
     destination.retired_at = timezone.now()
     destination.set_access_key_id("")
@@ -30,7 +31,7 @@ def retire_destination(destination_id, actor):
 
 def probe_destination(destination, actor):
     if destination.retired_at is not None:
-        raise ValidationError("A retired destination cannot be tested.")
+        raise ValidationError(gettext("A retired destination cannot be tested."))
     error_code = ""
     try:
         offsite_client.probe(destination, nonce=uuid.uuid4().hex)

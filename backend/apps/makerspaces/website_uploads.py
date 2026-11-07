@@ -1,5 +1,6 @@
 """Bound multipart input before Django spools a file or the serializer sees it."""
 
+from django.utils.translation import gettext
 from django.core.files.uploadhandler import FileUploadHandler
 from rest_framework.exceptions import ParseError
 
@@ -13,12 +14,12 @@ class WebsiteUploadLimit(FileUploadHandler):
 
     def handle_raw_input(self, input_data, META, content_length, boundary, encoding=None):
         if content_length and content_length > MAX_BYTES + 65536:
-            raise ParseError("Website image requests must fit the 5 MB image limit.")
+            raise ParseError(gettext("Website image requests must fit the 5 MB image limit."))
 
     def receive_data_chunk(self, raw_data, start):
         self.received += len(raw_data)
         if self.received > MAX_BYTES:
-            raise ParseError("Website images must not exceed 5 MB in total.")
+            raise ParseError(gettext("Website images must not exceed 5 MB in total."))
         return raw_data
 
     def file_complete(self, file_size):

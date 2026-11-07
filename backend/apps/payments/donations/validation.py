@@ -1,5 +1,6 @@
 """`Payment.clean()` for the lane L18 subjects: the subject is this space's, the payer its giver."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 
@@ -15,6 +16,6 @@ def validate_gift_subject(payment, identity_unchanged):
             "pk").first()
         owner = None
     if row is None and not identity_unchanged:
-        raise ValidationError({"subject_id": "Payment subject must belong to the payment makerspace."})
+        raise ValidationError({"subject_id": gettext("Payment subject must belong to the payment makerspace.")})
     if row is not None and payment.member_id != owner:
-        raise ValidationError({"member": "Payment member must be the giver."})
+        raise ValidationError({"member": gettext("Payment member must be the giver.")})

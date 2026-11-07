@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import {
   useCollaborationInbox,
   useRespondToCollaboration,
@@ -25,19 +27,16 @@ export function CollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
       className="mb-5 rounded-xl border border-line bg-bg p-4"
     >
       <h3 id="collaboration-inbox-title" className="mb-1 font-semibold text-ink">
-        Invitations from other makerspaces
-      </h3>
+        {t`Invitations from other makerspaces`}</h3>
       <p className="mb-3 text-sm text-muted">
-        Accepting lets your members register for that makerspace&apos;s event. The host still
-        owns and runs the event.
-      </p>
+        {t`Accepting lets your members register for that makerspace's event. The host still owns and runs the event.`}</p>
       <ul className="space-y-3 text-sm">
         {rows.map((row) => (
           <li key={row.id} className="flex flex-wrap items-center justify-between gap-2">
             <span>
               <span className="font-medium text-ink">{row.event_title}</span>
               <span className="block text-muted">
-                Hosted by {row.host_name} · {new Date(row.starts_at).toLocaleString()}
+                {t`Hosted by ${row.host_name} · ${new Date(row.starts_at).toLocaleString(formatLocale())}`}
               </span>
             </span>
             {row.status === "invited" ? (
@@ -48,16 +47,14 @@ export function CollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
                   disabled={respond.isPending}
                   onClick={() => respond.mutate({ id: row.id, accept: true })}
                 >
-                  Accept
-                </button>
+                  {t`Accept`}</button>
                 <button
                   type="button"
                   className={`desk-button ${FOCUS}`}
                   disabled={respond.isPending}
                   onClick={() => respond.mutate({ id: row.id, accept: false })}
                 >
-                  Decline
-                </button>
+                  {t`Decline`}</button>
               </span>
             ) : (
               <span className="text-muted">{row.status}</span>
@@ -67,7 +64,7 @@ export function CollaborationInbox({ makerspaceId }: { makerspaceId: number }) {
       </ul>
       {respond.error ? (
         <p className="mt-2 text-sm text-danger" role="alert">
-          {respond.error instanceof Error ? respond.error.message : "Could not respond."}
+          {respond.error instanceof Error ? respond.error.message : t`Could not respond.`}
         </p>
       ) : null}
     </section>

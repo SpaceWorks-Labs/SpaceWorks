@@ -1,5 +1,6 @@
 """Keep account-credit anchors stable while replacing the working document."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 from .models_website import EventPageSection
 
@@ -19,7 +20,7 @@ def reconcile_sections(page, rows):
         section = existing.get(values["slug"])
         if section is not None:
             if values["kind"] != section.kind and section.speaker_identities.exists():
-                raise ValidationError({"sections": "An account-linked speaker slug cannot change kind."})
+                raise ValidationError({"sections": gettext("An account-linked speaker slug cannot change kind.")})
             for key, value in values.items():
                 setattr(section, key, value)
             section.is_working = True

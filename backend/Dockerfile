@@ -2,7 +2,7 @@
 FROM python:3.12-slim AS application
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates age fonts-noto-core fonts-noto-extra fonts-dejavu-core \
+    && apt-get install -y --no-install-recommends ca-certificates age gettext fonts-noto-core fonts-noto-extra fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 10001 app \
     && useradd --system --create-home --uid 10001 --gid app app
@@ -12,6 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=app:app . .
 RUN python -m scripts.bundle_cjk_fonts \
     && python -m scripts.verify_printable_runtime --bundle
+# Phase 8 i18n: compile the committed catalogues (backend/locale/*/LC_MESSAGES/django.po)
+# into the image only; .mo files are never committed.
+RUN DJANGO_SETTINGS_MODULE=config.settings_build python manage.py compilemessages
 # Static files belong to each serving image, never a release container filesystem.
 RUN DJANGO_SETTINGS_MODULE=config.settings_build python manage.py collectstatic --noinput \
     && mkdir -p /var/lib/celery /var/lib/spaceworks/ops /var/lib/spaceworks/models /run/spaceworks-host \

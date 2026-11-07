@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { NextUpEvents, type NextUpEvent } from "../eventProgramme/NextUpEvents";
 import type { ReactNode } from "react";
 import { consoleSessionHref } from "../../../lib/api/sessionContext";
@@ -61,18 +63,18 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
   const layout = (rail?: DashboardLayoutProps["rail"], main: DashboardLayoutProps["main"] = []) => (
     <DashboardQuickAdd {...routing} actions={actions} allowedTabs={allowedTabs} isSuperadmin={isSuperadmin}>
       {primary => <DashboardLayout
-        header={{ title: "Dashboard", eyebrow: new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }),
-          subtitle: `What's happening at ${makerspace.name}.`, primary }}
+        header={{ title: t`Dashboard`, eyebrow: new Date().toLocaleDateString(formatLocale(), { weekday: "long", day: "numeric", month: "long" }),
+          subtitle: t`What's happening at ${makerspace.name}.`, primary }}
         state={{ status: dashboard.isLoading ? "loading" : dashboard.error ? "error" : "ready",
-          error: "Couldn't load dashboard. Try again.", onRetry: () => { void dashboard.refetch(); } }}
+          error: t`Couldn't load dashboard. Try again.`, onRetry: () => { void dashboard.refetch(); } }}
         progress={<><LateShiftLine />{progress}{dashboard.data?.next_up_events ? <NextUpEvents events={dashboard.data.next_up_events} /> : null}</>}
         stats={ranked.map(tile => ({ label: tile.label, value: dashboard.data?.[tile.key] ?? 0,
           // Overdue, problems, out of stock, failed email and overdue maintenance keep their danger signal.
           tone: tile.actionNeeded && (dashboard.data?.[tile.key] ?? 0) > 0 ? tile.tone === "danger" ? "danger" : "attention" : "neutral",
           href: href(tile.key) }))}
         callout={alert ? { size: "banner", tone: "warn", lead: alertLead[alert.key],
-          action: { label: "Review", href: href(alert.key) } } : undefined}
-        main={[...main, ...(dashboard.data?.widgets ? [{ title: "Analytics", empty: { message: "No analytics widgets available." },
+          action: { label: t`Review`, href: href(alert.key) } } : undefined}
+        main={[...main, ...(dashboard.data?.widgets ? [{ title: t`Analytics`, empty: { message: t`No analytics widgets available.` },
           content: <DashboardAnalyticsWidgets widgets={dashboard.data.widgets.filter(widget => widget.required_modules.every(module =>
             makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes(module)))} makerspaceId={makerspace.id}
             reportsHref={consoleSessionHref(staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked))} /> }] : [])]} rail={rail}

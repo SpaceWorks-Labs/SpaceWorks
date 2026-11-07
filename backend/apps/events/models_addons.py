@@ -5,6 +5,7 @@ sold down by paid and held order lines. An add-on never touches hardware invento
 that really comes from inventory must go through `inventory/availability.py` (not here).
 """
 
+from django.utils.translation import gettext_noop
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
@@ -15,7 +16,7 @@ class EventAddon(models.Model):
         KIT = "kit", "Kit"
         MEAL = "meal", "Meal"
         MERCH = "merch", "Merchandise"
-        SESSION = "session", "Session seat"
+        SESSION = "session", gettext_noop("Session seat")
         OTHER = "other", "Other"
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")

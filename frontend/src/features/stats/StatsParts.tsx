@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import type { ReactNode } from "react";
 import { Card, EmptyState, ListRow, ProgressBar, StatCard } from "../../components/ui";
 
@@ -15,15 +17,15 @@ export function CompactList({ rows, empty }: { rows: { label: string; value: str
 }
 export function BarChart({ rows, valueLabel }: { rows: ChartRow[]; valueLabel: string }) {
   const maximum = Math.max(...rows.map(row => row.value), 0);
-  if (!rows.length || maximum <= 0) return <EmptyState message="No chart data yet. Activity will appear as jobs are recorded." />;
+  if (!rows.length || maximum <= 0) return <EmptyState message={t`No chart data yet. Activity will appear as jobs are recorded.`} />;
   // The bars are decoration for sighted readers; the table is the accessible fallback (a11y floor).
   return <div className="grid gap-4"><div aria-hidden="true" className="grid gap-4">{rows.map(row => <div key={row.label} className="grid gap-2">
     <div className="flex justify-between gap-3 text-sm"><span className="min-w-0 break-words">{row.label}</span><span className="shrink-0 tabular-nums text-muted">{formatNumber(row.value)} {valueLabel}</span></div>
     <ProgressBar value={row.value / maximum} label={`${row.label}: ${formatNumber(row.value)} ${valueLabel}`} />
   </div>)}</div>
-    <table className="sr-only"><thead><tr><th scope="col">Period</th><th scope="col">Amount ({valueLabel})</th></tr></thead>
+    <table className="sr-only"><thead><tr><th scope="col">{t`Period`}</th><th scope="col">{t`Amount (${valueLabel})`}</th></tr></thead>
       <tbody>{rows.map(row => <tr key={row.label}><th scope="row">{row.label}</th><td>{formatNumber(row.value)}</td></tr>)}</tbody></table>
   </div>;
 }
-export function formatNumber(value: number) { return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value); }
-export function formatDate(value: string) { return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); }
+export function formatNumber(value: number) { return new Intl.NumberFormat(formatLocale(), { maximumFractionDigits: 1 }).format(value); }
+export function formatDate(value: string) { return new Date(value).toLocaleDateString(formatLocale(), { month: "short", day: "numeric", year: "numeric" }); }

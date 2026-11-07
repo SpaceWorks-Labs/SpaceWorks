@@ -1,4 +1,5 @@
 """Download-token and retained-byte lifecycle for completed archives."""
+from django.utils.translation import gettext
 from apps.operations.cloud_jobs import bounded
 
 
@@ -30,7 +31,7 @@ def issue_download_token(archive, actor):
         or locked.expires_at is None
         or locked.expires_at <= timezone.now()
     ):
-        raise ValidationError("This backup archive is not available for download.")
+        raise ValidationError(gettext("This backup archive is not available for download."))
     raw = secrets.token_urlsafe(32)
     locked.download_token_digest = hashlib.sha256(raw.encode()).hexdigest()
     locked.download_token_expires_at = timezone.now() + timedelta(

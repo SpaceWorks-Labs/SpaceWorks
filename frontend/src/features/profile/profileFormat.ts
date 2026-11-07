@@ -1,10 +1,12 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import {
   AtSign, Bot, BrainCircuit, Code, Cpu, FolderGit2, Globe, Hash, HeartHandshake, Link2, Palette, Printer,
   Sparkles, Wrench, type LucideIcon,
 } from "lucide-react";
 
-const day = (value: Date) => value.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-const time = (value: Date) => value.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+const day = (value: Date) => value.toLocaleDateString(formatLocale(), { day: "numeric", month: "short" });
+const time = (value: Date) => value.toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit" });
 
 /** "9 Sep · 8:00 PM – 9:30 PM", or both dates when the event runs past midnight. */
 export function eventRange(startsAt: string, endsAt: string) {
@@ -19,7 +21,7 @@ export function eventRange(startsAt: string, endsAt: string) {
 
 const monthYear = (value: string) => {
   const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(formatLocale(), { month: "short", year: "numeric" });
 };
 
 /** Timeline dates are calendar dates (no time zone); an open end reads "Present". */
@@ -36,7 +38,7 @@ export function linkPresentation(link: { kind: string; url: string }): { label: 
   const Icon = /github|gitlab|codeberg/.test(key) ? FolderGit2
     : /twitter|x\.com|\bx\b|mastodon|bsky|threads|instagram|linkedin/.test(key) ? AtSign
       : /site|web|portfolio|blog/.test(key) ? Globe : Link2;
-  return { label: kind || host || "Link", Icon };
+  return { label: kind || host || t`Link`, Icon };
 }
 
 const DOMAIN_ICONS: [RegExp, LucideIcon][] = [

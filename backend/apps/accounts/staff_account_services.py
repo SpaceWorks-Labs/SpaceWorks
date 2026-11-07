@@ -7,6 +7,7 @@ and machine scopes. Revoke and restore live in ``staff_account_lifecycle``.
 Every writer runs inside ``staff_write`` (tenant gate) and is audited.
 """
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User
@@ -25,10 +26,10 @@ def resolve_roles(space, keys):
     if (not isinstance(keys, (list, tuple)) or not keys
             or any(not isinstance(key, str) or key == "member" or key not in BUILTIN_ROLE_SLUGS for key in keys)
             or len(keys) != len(set(keys))):
-        raise ValidationError({"roles": "Choose distinct built-in staff roles."})
+        raise ValidationError({"roles": gettext("Choose distinct built-in staff roles.")})
     roles = list(space.roles.filter(slug__in=keys))
     if len(roles) != len(keys):
-        raise ValidationError({"roles": "Choose built-in staff roles in this makerspace."})
+        raise ValidationError({"roles": gettext("Choose built-in staff roles in this makerspace.")})
     return roles
 
 
@@ -37,11 +38,11 @@ def resolve_machine_types(space, roles, machine_type_ids):
 
     ids = list(machine_type_ids or ())
     if any(type(value) is not int or value <= 0 for value in ids) or len(set(ids)) != len(ids):
-        raise ValidationError({"machine_type_ids": "Use distinct positive integer ids."})
+        raise ValidationError({"machine_type_ids": gettext("Use distinct positive integer ids.")})
     if ids and MACHINE_MANAGER not in {role.slug for role in roles}:
-        raise ValidationError({"machine_type_ids": "Machine scopes require the Machine Manager role."})
+        raise ValidationError({"machine_type_ids": gettext("Machine scopes require the Machine Manager role.")})
     if len(set(assignable_machine_types(space).filter(pk__in=ids).values_list("pk", flat=True))) != len(ids):
-        raise ValidationError({"machine_type_ids": "Choose machine types of this makerspace."})
+        raise ValidationError({"machine_type_ids": gettext("Choose machine types of this makerspace.")})
     return sorted(ids)
 
 
@@ -90,7 +91,7 @@ def change(actor, space_id, membership_id, *, roles=None, machine_type_ids=None)
         new_roles = resolve_roles(space, roles) if roles is not None else None
         require_authority(actor, space, target=row.user, roles=new_roles)
         if row.status != "active":
-            raise ValidationError({"detail": "Restore this staff row before changing it."})
+            raise ValidationError({"detail": gettext("Restore this staff row before changing it.")})
         roles_before, scopes_before = role_keys(row), current_scope(row)
         before_actions = set(actions_for_membership(row))
         if new_roles is not None:

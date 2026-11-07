@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from django.http import Http404
@@ -105,7 +106,7 @@ class CreateToolQrView(QrPermissionMixin, APIView):
         else:
             target = get_object_or_404(InventoryProduct, pk=data["product_id"], makerspace=makerspace)
             if target.tracking_mode == TrackingMode.INDIVIDUAL:
-                raise ValidationError("Individual-tracked inventory requires unit QR codes.")
+                raise ValidationError(gettext("Individual-tracked inventory requires unit QR codes."))
             target_type = QrCode.TargetType.PRODUCT
         qr, created = QrCode.objects.get_or_create(
             makerspace=makerspace,
@@ -148,7 +149,7 @@ class QrScanView(QrPermissionMixin, APIView):
             if not HardwareRequest.objects.filter(
                 pk=request_id, makerspace_id=qr.makerspace_id
             ).exists():
-                raise ValidationError({"request_id": "Request belongs to a different makerspace."})
+                raise ValidationError({"request_id": gettext("Request belongs to a different makerspace.")})
         scan = QrScanEvent.objects.create(
             makerspace=qr.makerspace,
             qr_code=qr,

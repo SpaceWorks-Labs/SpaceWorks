@@ -2,6 +2,7 @@
 
 Cover and website images are planned and journalled by ``event_asset_transaction``.
 """
+from django.utils.translation import gettext
 from contextlib import ExitStack, contextmanager
 from django.db import connection
 from rest_framework.exceptions import ValidationError
@@ -71,10 +72,10 @@ def revalidate(event, copies):
     from apps.events.programme_locks import event_scopes
     tenants, accounts = event_scopes(event_id=event.pk, account_ids=copies.account_ids)
     if not set(tenants) <= set(copies.tenant_ids) or not set(accounts) <= set(copies.account_ids):
-        raise ValidationError({"revision": "The source scope changed. Retry the copy."})
+        raise ValidationError({"revision": gettext("The source scope changed. Retry the copy.")})
     image = cover_image(event)
     if copies.event_source != (event.pk, event.version, event.series_id, image.source_key):
-        raise ValidationError({"revision": "The source event changed. Retry the copy."})
+        raise ValidationError({"revision": gettext("The source event changed. Retry the copy.")})
     if copies.page_source != page_identity(effective_page(event)):
-        raise ValidationError({"revision": "The source website changed. Retry the copy."})
+        raise ValidationError({"revision": gettext("The source website changed. Retry the copy.")})
 

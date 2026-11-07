@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -59,38 +60,36 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
   const error = problem ?? (mutation.error ? caseErrorMessage(mutation.error) : null);
 
   return <FlowLayout presentation="dialog" open onCancel={() => { if (!mutation.isPending) onClose(); }}
-    state={{ status: "ready" }} title={`Refund for ${refundCase.payment.member_name || "a member"}`}
-    steps={[{ key: "decide", label: "Decision", state: "current" }]} current="decide"
+    state={{ status: "ready" }} title={t`Refund for ${refundCase.payment.member_name || "a member"}`}
+    steps={[{ key: "decide", label: t`Decision`, state: "current" }]} current="decide"
     footer={{ next: { label, pending: mutation.isPending, pendingLabel: "Saving decision…", onClick: submit,
       disabled: mode === "approve" && balance <= 0 } }}
     work={<div className="grid gap-4">
       <KeyValueCard title={refundCase.payment.subject_label} items={[
-        { label: "Paid", value: `${money(refundCase.payment.amount)} · ${offline ? "in person" : "online"}` },
-        { label: "Policy says", value: money(refundCase.due_amount) },
-        { label: "Left to refund", value: money(refundCase.refundable_balance) },
-        { label: "Why", value: REASON_LABELS[refundCase.reason_code] },
+        { label: t`Paid`, value: `${money(refundCase.payment.amount)} · ${offline ? "in person" : "online"}` },
+        { label: t`Policy says`, value: money(refundCase.due_amount) },
+        { label: t`Left to refund`, value: money(refundCase.refundable_balance) },
+        { label: t`Why`, value: REASON_LABELS[refundCase.reason_code] },
       ]} />
       <PolicySnapshotLine snapshot={refundCase.policy_snapshot} />
-      {refundCase.needs_finance_approval ? <p className="text-sm text-muted">A price difference: only the Space Manager or a
-        finance admin (view finance and record payments) can approve or decline it.</p> : null}
+      {refundCase.needs_finance_approval ? <p className="text-sm text-muted">{t`A price difference: only the Space Manager or a finance admin (view finance and record payments) can approve or decline it.`}</p> : null}
       {refundCase.member_reason ? <blockquote className="border-l-2 border-line pl-3 text-sm text-ink">
         “{refundCase.member_reason}”</blockquote> : null}
-      <SegmentedControl label="Decision" value={mode} fullWidth onChange={(value) => { setMode(value as Mode); setProblem(null); }}
-        options={[{ value: "approve", label: "Approve" }, { value: "decline", label: "Decline" }]} />
+      <SegmentedControl label={t`Decision`} value={mode} fullWidth onChange={(value) => { setMode(value as Mode); setProblem(null); }}
+        options={[{ value: "approve", label: t`Approve` }, { value: "decline", label: t`Decline` }]} />
       {mode === "approve" ? <>
-        <Field label="Amount to refund">
+        <Field label={t`Amount to refund`}>
           <input className="desk-input" inputMode="decimal" value={amount}
             onChange={(event) => { setAmount(event.target.value); setProblem(null); }} />
         </Field>
         {membership ? <MembershipRefundExtras makerspaceId={makerspaceId} caseId={refundCase.id}
           keepMembership={keepMembership} onKeepMembership={setKeepMembership} /> : null}
         {offline ? <>
-          <p className="text-sm text-muted">This charge was paid in person, so the money goes back the same way.
-            Record how it was returned; the receipt is permanent.</p>
+          <p className="text-sm text-muted">{t`This charge was paid in person, so the money goes back the same way. Record how it was returned; the receipt is permanent.`}</p>
           <RefundReceiptFields state={receipt} onEdit={() => setProblem(null)} />
-        </> : <p className="text-sm text-muted">The refund goes back through the provider that took the payment.</p>}
+        </> : <p className="text-sm text-muted">{t`The refund goes back through the provider that took the payment.`}</p>}
       </> : null}
-      <Field label={mode === "decline" ? "Note to the member" : "Note to the member (optional)"}>
+      <Field label={mode === "decline" ? t`Note to the member` : t`Note to the member (optional)`}>
         <textarea className="desk-input min-h-20" maxLength={500} value={note}
           onChange={(event) => { setNote(event.target.value); setProblem(null); }} />
       </Field>

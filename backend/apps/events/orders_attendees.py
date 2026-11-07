@@ -10,6 +10,7 @@ chase an attendee who has not claimed yet. Unclaimed seats stay visible to the b
 and to the organiser.
 """
 
+from django.utils.translation import gettext
 import hashlib
 import secrets
 from datetime import timedelta
@@ -78,7 +79,7 @@ def send_invite(seat, *, actor=None, chase=False):
     direct_mail_unless_routed(space=space, source_kind="events.ticket_claim", row=seat,
                               revision=seat.claim_token_digest[:16], event="ticket_claim_invite",
                               owner=None, to_email=seat.attendee_email,
-                              subject=f"Your ticket to {event.title}", text=text, stream="events",
+                              subject=gettext('Your ticket to {title}').format(title=event.title), text=text, stream="events",
                               audience="requester", feature="", persist_body=False, address_owner=False)
     record(actor, "event.seat_invited", makerspace=space, target=seat.order,
            meta={"order_id": seat.order_id, "seat_id": seat.pk, "reminder": chase})
@@ -89,7 +90,7 @@ def _locked_order(order_id, member):
     order = EventOrder.objects.select_for_update().filter(pk=order_id, buyer=member).first()
     if order is None:
         from rest_framework.exceptions import NotFound
-        raise NotFound("Order not found.")
+        raise NotFound(gettext("Order not found."))
     return order
 
 

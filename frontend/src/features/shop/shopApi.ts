@@ -1,3 +1,5 @@
+import { formatLocale } from "../../lib/format";
+import { t } from "@lingui/core/macro";
 import type {
   ShopBuyerOrder, ShopLineInput, ShopOrderCreate, ShopOrderPlaced, ShopPublicProduct, ShopPublicVariant, ShopQuote,
   ShopSummary,
@@ -56,7 +58,7 @@ export const cancelMemberShopOrder = (orderId: number) =>
 /** Money exactly as the server computed it: the browser never re-prices. */
 export function shopMoney(amount: string | number | null | undefined, currency: string) {
   const value = Number(amount ?? 0);
-  try { return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase() }).format(value); }
+  try { return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(value); }
   catch { return `${value.toFixed(2)} ${currency.toUpperCase()}`; }
 }
 
@@ -71,10 +73,10 @@ export function priceRange(product: Pick<ShopPublicProduct, "price_from" | "pric
 type Tone = "success" | "warn" | "danger" | "neutral" | "info";
 /** "In stock / Low / Sold out"; an exact count only when the product opted in and the server sent one. */
 export function stockLabel(variant: Pick<ShopPublicVariant, "sold_out" | "stock_label" | "stock_count">): { label: string; tone: Tone } | null {
-  if (variant.sold_out || variant.stock_label === "sold_out") return { label: "Sold out", tone: "danger" };
+  if (variant.sold_out || variant.stock_label === "sold_out") return { label: t`Sold out`, tone: "danger" };
   const count = variant.stock_count !== null && variant.stock_count !== undefined ? ` · ${variant.stock_count} left` : "";
-  if (variant.stock_label === "low") return { label: `Low${count}`, tone: "warn" };
-  if (variant.stock_label === "in_stock") return { label: `In stock${count}`, tone: "success" };
+  if (variant.stock_label === "low") return { label: t`Low${count}`, tone: "warn" };
+  if (variant.stock_label === "in_stock") return { label: t`In stock${count}`, tone: "success" };
   return null;
 }
 
@@ -83,32 +85,32 @@ export function variantLabel(product: Pick<ShopPublicProduct, "name" | "variants
 }
 
 export const ORDER_STATUS: Record<string, { label: string; tone: Tone }> = {
-  held: { label: "Held for you", tone: "warn" }, awaiting_payment: { label: "Awaiting payment", tone: "warn" },
-  paid: { label: "Paid", tone: "info" }, ready: { label: "Ready to collect", tone: "success" },
-  collected: { label: "Collected", tone: "success" }, cancelled: { label: "Cancelled", tone: "neutral" },
-  unfulfilled: { label: "Could not be filled", tone: "danger" }, refunded: { label: "Refunded", tone: "neutral" },
+  held: { label: t`Held for you`, tone: "warn" }, awaiting_payment: { label: t`Awaiting payment`, tone: "warn" },
+  paid: { label: t`Paid`, tone: "info" }, ready: { label: t`Ready to collect`, tone: "success" },
+  collected: { label: t`Collected`, tone: "success" }, cancelled: { label: t`Cancelled`, tone: "neutral" },
+  unfulfilled: { label: t`Could not be filled`, tone: "danger" }, refunded: { label: t`Refunded`, tone: "neutral" },
 };
 export const orderStatus = (status: string) => ORDER_STATUS[status] ?? { label: status, tone: "neutral" as Tone };
 export const isUnpaid = (status: string) => status === "held" || status === "awaiting_payment";
 
 const MESSAGES: Record<string, string> = {
-  price_changed: "Prices changed since you looked. Check the new total and confirm again.",
-  per_order_limit: "That is more than one order may take of this item.",
-  member_only: "Some of these items are for members only. Sign in with your membership to buy them.",
-  shop_closed: "The shop is closed right now.",
-  feature_off: "The shop is closed right now.",
-  hold_expired: "Your hold ran out. Review the order and place it again.",
-  item_unavailable: "One of these items is no longer on sale.",
-  pickup_event_invalid: "That event is no longer open for pickups. Choose another.",
+  price_changed: t`Prices changed since you looked. Check the new total and confirm again.`,
+  per_order_limit: t`That is more than one order may take of this item.`,
+  member_only: t`Some of these items are for members only. Sign in with your membership to buy them.`,
+  shop_closed: t`The shop is closed right now.`,
+  feature_off: t`The shop is closed right now.`,
+  hold_expired: t`Your hold ran out. Review the order and place it again.`,
+  item_unavailable: t`One of these items is no longer on sale.`,
+  pickup_event_invalid: t`That event is no longer open for pickups. Choose another.`,
 };
 
 export function shopErrorMessage(error: unknown, labelFor?: (variantId: number) => string) {
   if (!error) return "";
-  if (!(error instanceof StructuredApiError)) return "Something went wrong. Try again.";
+  if (!(error instanceof StructuredApiError)) return t`Something went wrong. Try again.`;
   if (error.code === "out_of_stock") {
     const available = Number(error.body.available ?? 0);
     const name = labelFor?.(Number(error.body.variant_id)) || "One item";
-    return available > 0 ? `${name}: only ${available} left. Lower the quantity and try again.` : `${name} has just sold out.`;
+    return available > 0 ? t`${name}: only ${available} left. Lower the quantity and try again.` : t`${name} has just sold out.`;
   }
   return (error.code && MESSAGES[error.code]) || error.detail || error.message;
 }

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useSyncExternalStore } from "react";
 import { CheckCircle, CircleMinus, ShieldAlert } from "lucide-react";
 import { useDelight, useReducedMotion } from "./DelightProvider";
@@ -11,7 +12,7 @@ export function DoorSoundControl() {
   if (!enabled) return null;
   return <button className="desk-button" type="button" aria-pressed={on} onClick={() => {
     setDoorSounds(!on);
-  }}>Door sounds: {on ? "on" : "off"}</button>;
+  }}>{t`Door sounds: ${on ? "on" : "off"}`}</button>;
 }
 
 export function SuccessCard({ kind, name, message, resultId, accent = true }: {
@@ -26,6 +27,6 @@ export function SuccessCard({ kind, name, message, resultId, accent = true }: {
       <h2 className={accent ? "font-accent text-lg font-medium" : "title-section"}>{name}</h2><MoodGlyph mood={kind === "success" ? "success" : kind === "blocked" ? "error" : "waiting"} /></div>
     <p role="status">{message}</p>
     {enabled ? <div className="flex flex-wrap gap-3"><DoorSoundControl /><button type="button" className="desk-button" disabled={!soundOn}
-      onClick={() => { void playDoorSound(kind); }}>Play result sound</button></div> : null}
+      onClick={() => { void playDoorSound(kind); }}>{t`Play result sound`}</button></div> : null}
   </section>;
 }

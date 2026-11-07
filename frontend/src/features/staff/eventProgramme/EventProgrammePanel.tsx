@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { IssueRoleCertificate } from '../eventCredentials/IssueRoleCertificate'
 import { useQuery } from '@tanstack/react-query'
 import { staffRequest } from '../../../lib/api'
@@ -33,7 +34,7 @@ export function EventProgrammePanel({ event, makerspaceId, section, access, feat
   const account = useQuery({ queryKey: ['event-programme-actor', ...sessionScope()], queryFn: () => staffRequest<AuthUserPayload>('/auth/me'), gcTime: 0, retry: false, enabled: programmeSection })
   if (!programmeSection) return null
   if (account.error) return <ErrorBlock error={account.error} />
-  if (!account.data) return <p role="status">Loading your programme access…</p>
+  if (!account.data) return <p role="status">{t`Loading your programme access…`}</p>
   const scope = { makerspaceId, eventId: event.id, accountId: account.data.id }
   if (section === 'programme-setup') return <div className="grid gap-8"><HackathonConfigPanel eventId={event.id} FormEditor={ProgrammeDraftForm} mlhPresets={[]} />
     {access.hackathon ? <StageEditorPanel eventId={event.id} /> : null}

@@ -1,5 +1,6 @@
 """Short-lived replay coordination; payloads, QR bytes and PII are never stored."""
 
+from django.utils.translation import gettext
 from uuid import uuid4
 
 from django.conf import settings
@@ -111,18 +112,18 @@ class ReplayCommand(models.Model):
     def clean(self):
         super().clean()
         if self.station_id and self.makerspace_id != self.station.makerspace_id:
-            raise ValidationError("Replay and Station must belong to the same makerspace.")
+            raise ValidationError(gettext("Replay and Station must belong to the same makerspace."))
         for field in ("subject_request", "subject_loan", "evidence", "result_request", "result_loan", "result_return_event"):
             if getattr(self, f"{field}_id") and getattr(self, field).makerspace_id != self.makerspace_id:
-                raise ValidationError("Replay references must belong to the same makerspace.")
+                raise ValidationError(gettext("Replay references must belong to the same makerspace."))
         if self.predecessor_id:
             previous = self.predecessor
             if (previous.station_id != self.station_id or previous.station_session_id != self.station_session_id
                     or previous.aggregate_id != self.aggregate_id or previous.sequence != self.sequence - 1
                     or previous.actor_id != self.actor_id or previous.operator_lease_id != self.operator_lease_id):
-                raise ValidationError("Replay predecessor must be the immediate owned stream position.")
+                raise ValidationError(gettext("Replay predecessor must be the immediate owned stream position."))
         elif self.sequence != 1:
-            raise ValidationError("Later stream positions require a predecessor.")
+            raise ValidationError(gettext("Later stream positions require a predecessor."))
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -132,7 +133,7 @@ class ReplayCommand(models.Model):
                          "operation_version", "aggregate_id", "sequence", "predecessor_id", "client_created_at", "expires_at")
             original = type(self).objects.filter(pk=self.pk).values(*immutable).first()
             if original and any(original[key] != getattr(self, key) for key in immutable):
-                raise ValidationError("Replay ownership and canonical identity are immutable.")
+                raise ValidationError(gettext("Replay ownership and canonical identity are immutable."))
             terminal = ("state", "payload_fingerprint", "evidence_id", "failure_code", "failure_detail",
                         "created_at", "updated_at", "completed_at", "subject_request_id", "subject_loan_id",
                         "result_request_id", "result_loan_id", "result_return_event_id")
@@ -140,9 +141,9 @@ class ReplayCommand(models.Model):
             persisted = type(self).objects.filter(pk=self.pk).values(*terminal, *review).first()
             if persisted and persisted["state"] in ("failed", "succeeded"):
                 if any(persisted[key] != getattr(self, key) for key in terminal):
-                    raise ValidationError("A terminal replay attempt is immutable.")
+                    raise ValidationError(gettext("A terminal replay attempt is immutable."))
                 if persisted["resolution_code"] and any(persisted[key] != getattr(self, key) for key in review):
-                    raise ValidationError("Replay review metadata is immutable.")
+                    raise ValidationError(gettext("Replay review metadata is immutable."))
                 # Preserve auto_now even when a caller performs an ordinary save.
                 kwargs["update_fields"] = review
         return super().save(*args, **kwargs)

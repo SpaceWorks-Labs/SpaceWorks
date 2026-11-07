@@ -15,6 +15,7 @@ from apps.accounts.org_payload import (
 from apps.accounts.payload_tracks import mfa_enrolment_due, mfa_grace_ends_at, session_rows, staff_role_entries
 from apps.accounts.staff_identity import has_elevated_authority, has_staff_role, is_person, is_platform
 from apps.accounts.surface_policy import token_kind
+from config.locale_registry import locale_list_payload
 
 
 VERIFICATION_ONLY_SURFACE = "verification_only"
@@ -116,7 +117,20 @@ def user_payload(user, request=None, *, session_authority=None):
         "mfa_grace_ends_at": mfa_grace_ends_at(user),
         "merge_suggested": person and claim_context is None and _merge_suggested(user),
         "mfa_enrolment_due": mfa_enrolment_due(user),
+        # Phase 8 i18n: the stored preference (null follows the makerspace default), what this
+        # request resolved to, and every locale the switcher may offer.
+        "preferred_locale": user.preferred_locale,
+        "effective_locale": _effective_locale(user, request),
+        "supported_locales": locale_list_payload(),
     }
+
+
+def _effective_locale(user, request):
+    from config.locale_resolution import ambient_from_request, explicit_from_request, resolve
+
+    if request is None:
+        return resolve(user=user)[0]
+    return resolve(explicit=explicit_from_request(request), user=user, ambient=ambient_from_request(request))[0]
 
 
 def _merge_suggested(user):

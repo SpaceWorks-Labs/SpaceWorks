@@ -1,4 +1,5 @@
 // Pure edits of a CardDocument: every change returns a new document so undo can keep the old one.
+import { t } from "@lingui/core/macro";
 import type { CardDocument, Layer, LayerKind, Side, SideName } from "./cardTypes";
 import { newLayerId, qrMinimum, round1, stockSize } from "./cardGeometry";
 
@@ -70,8 +71,8 @@ export function applyStock(document: CardDocument, stock: string, width?: number
 }
 
 const NAMES: Record<LayerKind, string> = {
-  text: "Text", data_field: "Data field", image: "Image", logo: "Logo", photo: "Photo", desk_qr: "Desk QR",
-  verify_qr: "Check QR", barcode: "Barcode", shape: "Shape", band: "Band", perforation: "Perforation",
+  text: t`Text`, data_field: t`Data field`, image: t`Image`, logo: t`Logo`, photo: t`Photo`, desk_qr: t`Desk QR`,
+  verify_qr: t`Check QR`, barcode: t`Barcode`, shape: t`Shape`, band: t`Band`, perforation: t`Perforation`,
 };
 
 export function layerName(layer: Layer) {
@@ -87,7 +88,7 @@ export function newLayer(kind: LayerKind, side: Side, stock: string, extra: Part
   const text = { font_family: "Gilroy", font_weight: 600, font_size_pt: 10, align: "left" as const,
     valign: "top" as const, colour: "#142C2A", uppercase: false, tracking_pt: 0, line_height: 1.2, shrink_to_fit: true };
   switch (kind) {
-    case "text": return { ...base, ...at(width * 0.5, 7), ...text, text: "Your text", ...extra };
+    case "text": return { ...base, ...at(width * 0.5, 7), ...text, text: t`Your text`, ...extra };
     case "data_field": {
       const field = extra.field ?? "name";
       return { ...base, ...at(width * 0.5, 7), ...text, field, text: `{{${field}}}`, ...extra };

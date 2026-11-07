@@ -1,9 +1,10 @@
+import { t } from "@lingui/core/macro";
 import { useReportColumns } from "./OperationsReportSelection";
 import { DataTable, EmptyState } from "../../../components/ui";
 import { STICKY_FIRST_COLUMN } from "../matrixColumns";
 import { formatReportCell, reportHeaders, reportRows, type ReportCell, type ReportRows } from "./OperationsReportState";
 
-export function PerMakerspaceTables({ data, nameOf, emptyLabel = "No activity in this period. Try a longer range." }: {
+export function PerMakerspaceTables({ data, nameOf, emptyLabel = t`No activity in this period. Try a longer range.` }: {
   data?: ReportRows; nameOf: (id: number) => string; emptyLabel?: string;
 }) {
   if (!data?.rows?.length) return <EmptyState message={emptyLabel} />;
@@ -29,7 +30,7 @@ export function ReportTable({ data }: { data?: ReportRows }) {
   const headers = indexes.length ? indexes.map(index => allHeaders[index]) : allHeaders;
   const rows = reportRows(data).map((cells, id) => ({ id, cells: indexes.length ? indexes.map(index => cells[index]) : cells }));
   return <div className="mt-4 min-w-0"><DataTable<{ id: number; cells: ReportCell[] }> data={rows}
-    emptyTitle="No activity in this period. Try a longer range."
+    emptyTitle={t`No activity in this period. Try a longer range.`}
     columns={headers.map((header, index) => ({ key: `${header}-${index}`, header: header.replace(/_/g, " "),
       className: `${index === 0 ? STICKY_FIRST_COLUMN : ""} ${rows.some(row => typeof row.cells[index] === "number") ? "tabular-nums md:text-right" : ""}`,
       render: row => formatReportCell(row.cells[index]) }))} /></div>;

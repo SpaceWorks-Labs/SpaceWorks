@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.integrations.models import NotificationChannel, NotificationFeature
@@ -54,7 +55,7 @@ class NotificationRuleChangeSerializer(serializers.Serializer):
 class StrictBooleanField(serializers.BooleanField):
     def to_internal_value(self, data):
         if type(data) is not bool:
-            raise serializers.ValidationError("Must be a valid boolean.")
+            raise serializers.ValidationError(gettext("Must be a valid boolean."))
         return data
 
 
@@ -71,6 +72,6 @@ class NotificationRulesPatchSerializer(serializers.Serializer):
     def validate(self, attrs):
         if not attrs.get("changes") and not attrs.get("preferences"):
             raise serializers.ValidationError(
-                "At least one non-empty changes or preferences list is required."
+                gettext("At least one non-empty changes or preferences list is required.")
             )
         return attrs

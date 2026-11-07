@@ -9,6 +9,7 @@ scheduled them, re-validated at run time: if that account is no longer a live pl
 superadmin the step is held and audited once, never run as nobody.
 """
 
+from django.utils.translation import gettext
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -37,10 +38,10 @@ def is_archived(space):
 
 def _clean(grace_days, note):
     if type(grace_days) is not int or not 1 <= grace_days <= 3650:
-        raise ValidationError({"purge_grace_days": "Use 1 to 3650 days."})
+        raise ValidationError({"purge_grace_days": gettext("Use 1 to 3650 days.")})
     note = str(note or "").strip()
     if len(note) > 500:
-        raise ValidationError({"note": "Use at most 500 characters."})
+        raise ValidationError({"note": gettext("Use at most 500 characters.")})
     return note
 
 
@@ -55,11 +56,11 @@ def schedule(actor, makerspace_id, *, archive_on=None, purge_grace_days=90, note
             raise SpaceControlConflict("schedule_exists", "This space already has a schedule. Cancel it first.")
         if is_archived(space):
             if archive_on is not None:
-                raise ValidationError({"archive_on": "This space is already archived; only its purge can be scheduled."})
+                raise ValidationError({"archive_on": gettext("This space is already archived; only its purge can be scheduled.")})
             state.archive_on, state.purge_due_at = None, now + timedelta(days=purge_grace_days)
         elif is_servable(space) or space.lifecycle_state == SUSPENDED:
             if archive_on is None or archive_on <= now:
-                raise ValidationError({"archive_on": "Choose a future date and time for the archive."})
+                raise ValidationError({"archive_on": gettext("Choose a future date and time for the archive.")})
             state.archive_on, state.purge_due_at = archive_on, None
         else:
             raise SpaceControlConflict("space_not_active", "This space is being imported and cannot be scheduled.")

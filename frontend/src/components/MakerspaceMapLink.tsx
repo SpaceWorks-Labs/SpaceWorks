@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { MapPin } from "lucide-react";
 
 type MakerspaceLocation = {
@@ -38,8 +39,7 @@ export function MakerspaceMapLink({
           rel="noopener noreferrer"
         >
           <MapPin aria-hidden="true" size={16} className="shrink-0" />
-          Open in Google Maps
-        </a>
+          {t`Open in Google Maps`}</a>
       ) : null}
     </div>
   );

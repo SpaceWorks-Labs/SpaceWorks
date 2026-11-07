@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from django.db.models import OuterRef, Subquery
 from django.db import transaction
 from django.core.exceptions import ValidationError as ModelValidationError
@@ -66,7 +67,7 @@ class ContainerListCreateView(generics.ListCreateAPIView):
         if serializer.validated_data.get("kit_components"):
             require_feature(space, "loans.kit_checklist")
         if parent and parent.makerspace_id != makerspace_id:
-            raise ValidationError({"parent": "Parent belongs to a different makerspace."})
+            raise ValidationError({"parent": gettext("Parent belongs to a different makerspace.")})
         box = serializer.save(makerspace_id=makerspace_id)
         QrCode.objects.get_or_create(
             makerspace_id=makerspace_id,
@@ -101,7 +102,7 @@ class ContainerDetailView(generics.RetrieveUpdateAPIView):
         require_module(serializer.instance.makerspace, "containers")
         parent = serializer.validated_data.get("parent")
         if parent and parent.makerspace_id != serializer.instance.makerspace_id:
-            raise ValidationError({"parent": "Parent belongs to a different makerspace."})
+            raise ValidationError({"parent": gettext("Parent belongs to a different makerspace.")})
         box = serializer.save()
         audit.record(self.request.user, "container.moved", makerspace=box.makerspace, target=box)
 

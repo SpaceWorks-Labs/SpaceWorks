@@ -10,6 +10,7 @@ shares the same gate, queue, quote rule, files and timeline:
 * files checked against the type's `maker_formats` groups before they attach.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import NotFound, ValidationError
 
@@ -23,10 +24,10 @@ ACKNOWLEDGEMENTS = ("pickup_policy", "failure_policy", "own_content")
 def require_member_job_gate(makerspace, user, machine_type):
     from apps.machines.views_public_service import require_public_machine_requester
     if not feature_enabled(makerspace, job_policy.JOB_REQUESTS):
-        raise NotFound({"detail": "Job requests are switched off here.", "code": "capability_disabled"})
+        raise NotFound({"detail": gettext("Job requests are switched off here."), "code": "capability_disabled"})
     require_public_machine_requester(user, makerspace)
     if not job_policy.accepts_jobs(makerspace, machine_type):
-        raise ValidationError({"queue_id": "This machine type is not taking job requests.", "code": "type_closed"})
+        raise ValidationError({"queue_id": gettext("This machine type is not taking job requests."), "code": "type_closed"})
 
 
 def job_queues(makerspace):
@@ -40,7 +41,7 @@ def job_queues(makerspace):
 def resolve_queue(makerspace, queue_id):
     queue = next((row for row in job_queues(makerspace) if row.pk == queue_id), None)
     if queue is None:
-        raise ValidationError({"queue_id": "Choose a machine type that is taking job requests."})
+        raise ValidationError({"queue_id": gettext("Choose a machine type that is taking job requests.")})
     return queue
 
 
@@ -53,10 +54,10 @@ def submit_job(makerspace, member, data):
     require_member_job_gate(makerspace, member, queue.machine_type)
     acknowledged = data.get("acknowledgements") or {}
     if not all(acknowledged.get(key) is True for key in ACKNOWLEDGEMENTS):
-        raise ValidationError({"acknowledgements": "Confirm the pickup, failure and ownership terms."})
+        raise ValidationError({"acknowledgements": gettext("Confirm the pickup, failure and ownership terms.")})
     file_ids = list(dict.fromkeys(data.get("file_ids") or ()))
     if not file_ids:
-        raise ValidationError({"file_ids": "Add at least one file for this job."})
+        raise ValidationError({"file_ids": gettext("Add at least one file for this job.")})
     payload = _payload(queue, data)
     with transaction.atomic():
         # Same lock order as `submit`: the makerspace first, so the limit count is stable.
@@ -80,7 +81,7 @@ def submit_job(makerspace, member, data):
         for file_id in file_ids:
             attach_job_file(row, file_id=file_id, actor=member)
         if not row.files.exclude(kind="screenshot").exists():
-            raise ValidationError({"file_ids": "Add at least one design file, not only screenshots."})
+            raise ValidationError({"file_ids": gettext("Add at least one design file, not only screenshots.")})
         return row
 
 

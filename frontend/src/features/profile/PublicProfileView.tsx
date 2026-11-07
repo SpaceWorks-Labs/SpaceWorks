@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { Tabs } from "../../components/ui";
 import type { Tab } from "../../components/ui/types";
 import { ProfileEventsTab } from "./ProfileEventsTab";
@@ -14,9 +15,9 @@ const TIMELINE_KINDS: TimelineKind[] = ["experience", "education", "volunteering
  * disabled). The owner also gets the empty ones, each with its own way to add content.
  */
 export function profileTabs(profile: PublicProfile, owner: boolean): Tab[] {
-  const tabs: Tab[] = [{ key: "profile", label: "Profile" }];
-  if (profile.show_events || profile.show_speaking) tabs.push({ key: "activities", label: "Activities" });
-  if (profile.show_projects || owner) tabs.push({ key: "projects", label: "Projects" });
+  const tabs: Tab[] = [{ key: "profile", label: t`Profile` }];
+  if (profile.show_events || profile.show_speaking) tabs.push({ key: "activities", label: t`Activities` });
+  if (profile.show_projects || owner) tabs.push({ key: "projects", label: t`Projects` });
   for (const kind of TIMELINE_KINDS) {
     if (owner || profile.timeline.some(entry => entry.kind === kind)) tabs.push({ key: kind, label: TIMELINE_COPY[kind].title });
   }
@@ -30,7 +31,7 @@ export function PublicProfileView({ profile, tab, onTab, editHref, preview = fal
   const active = tabs.some(row => row.key === tab) ? tab : "profile";
   return <div className="grid min-w-0 gap-8">
     <ProfileHeader profile={profile} editHref={editHref} preview={preview} />
-    <Tabs label="Profile sections" tabs={tabs} activeKey={active} onChange={onTab}>
+    <Tabs label={t`Profile sections`} tabs={tabs} activeKey={active} onChange={onTab}>
       {active === "profile" ? <ProfileOverviewTab profile={profile} preview={preview} /> : null}
       {active === "activities" ? <ProfileEventsTab handle={profile.handle} preview={preview} /> : null}
       {active === "projects" ? <ProfileProjectsPage handle={profile.handle} preview={preview}

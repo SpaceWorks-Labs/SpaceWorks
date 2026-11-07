@@ -1,5 +1,6 @@
 """Model validation for makerspace control forms."""
 
+from django.utils.translation import gettext
 from django.core.exceptions import ValidationError
 
 from apps.makerspaces.capabilities import prune_features, validate_capabilities
@@ -37,4 +38,4 @@ def clean_makerspace(self):
         self.enabled_modules or [], kept
     )
     if self.geofence_enabled and not self.geofence_effective:
-        raise ValidationError({"geofence_enabled": "Set both latitude and longitude before enabling the geofence."})
+        raise ValidationError({"geofence_enabled": gettext("Set both latitude and longitude before enabling the geofence.")})

@@ -5,6 +5,7 @@ switch-gated: it only ever holds rows proposed while `billing.maker_checker` was
 those must still be decidable after the switch is turned off (data kept, #95).
 """
 
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework.permissions import IsAuthenticated
@@ -48,7 +49,7 @@ class MemberPaidClaimView(APIView):
     def post(self, request, makerspace_id, payment_id):
         payment = member_payment_queryset(request.user, makerspace_id).filter(pk=payment_id).first()
         if payment is None:
-            return Response({"detail": "Not found."}, status=404)
+            return Response({"detail": gettext("Not found.")}, status=404)
         from apps.payments.l5_gates import require_capability
         require_capability(payment.makerspace, "billing.offline_claims")
         payload = ClaimSubmitSerializer(data=request.data)

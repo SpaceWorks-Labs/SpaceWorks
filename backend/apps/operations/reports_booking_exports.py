@@ -1,5 +1,6 @@
 """Explicit export projections read PII through Booking's model accessors."""
 
+from django.utils.translation import gettext
 import json
 
 from apps.bookings.models import Booking
@@ -10,7 +11,7 @@ from .report_types import ReportResult
 
 def _reservations(makerspace_id, subject_kind, subject_id, date_range, limit):
     if makerspace_id is None or subject_kind != "bookable_space" or subject_id is None:
-        raise ValidationError("Reservation exports require a tenant-local bookable_space subject.")
+        raise ValidationError(gettext("Reservation exports require a tenant-local bookable_space subject."))
     # Load the encryption tenant path in one query; values()/raw __dict__ bypass
     # ScopedPiiModelMixin and could export ciphertext or cause a query per row.
     rows = Booking.objects.filter(space__makerspace_id=makerspace_id, space_id=subject_id).select_related("space")

@@ -1,3 +1,5 @@
+import { formatLocale } from "../../../lib/format";
+import { t } from "@lingui/core/macro";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
@@ -25,18 +27,18 @@ export function MemberShopOrdersPage() {
   }
   if (orderId && /^\d+$/.test(orderId)) return <MemberShopOrderDetail orderId={Number(orderId)} backHref={tenantPath("member/shop-orders")} />;
   const rows = orders.data?.results ?? [];
-  return <ListLayout header={{ eyebrow: "Shop", title: "My shop orders" }}
+  return <ListLayout header={{ eyebrow: t`Shop`, title: t`My shop orders` }}
     state={space.loading || orders.isPending ? { status: "loading" } : orders.error ? { status: "error", error: orders.error.message,
       onRetry: () => { void orders.refetch(); } } : { status: "ready" }}
-    isEmpty={!rows.length} empty={{ message: "You have no shop orders yet.", action: { label: "Visit the shop", href: tenantPath("shop") } }}
+    isEmpty={!rows.length} empty={{ message: t`You have no shop orders yet.`, action: { label: t`Visit the shop`, href: tenantPath("shop") } }}
     pagination={{ page, pageSize: 24, count: orders.data?.count ?? 0, onChange: setPage }}
     body={{ kind: "rows", rows: rows.map(order => {
       const status = orderStatus(order.status);
       const items = order.lines.reduce((sum, line) => sum + line.quantity, 0);
       return <RouteLink key={order.id} href={tenantPath(`member/shop-orders/${order.id}`)}
         className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line p-4 hover:border-ink focus-visible:outline-2 focus-visible:outline-focus">
-        <span className="grid gap-0.5"><span className="font-semibold text-ink">Order #{order.id}</span>
-          <span className="text-sm text-muted">{items} {items === 1 ? "item" : "items"} · {shopMoney(order.total, order.currency)} · {new Date(order.created_at).toLocaleDateString()}</span></span>
+        <span className="grid gap-0.5"><span className="font-semibold text-ink">{t`Order #${order.id}`}</span>
+          <span className="text-sm text-muted">{items} {items === 1 ? "item" : "items"} · {shopMoney(order.total, order.currency)} · {new Date(order.created_at).toLocaleDateString(formatLocale())}</span></span>
         <StatusPill label={status.label} tone={status.tone} />
       </RouteLink>;
     }) }} />;

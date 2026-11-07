@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { memberRequest, staffRequest, StructuredApiError } from "../../lib/api";
 
 /** Lane L23 (#158): metered machine sessions. Server values only; no money is computed here. */
@@ -90,5 +91,5 @@ export function refusalText(refusal: SessionRefusal | null | undefined) {
 
 export function sessionErrorMessage(error: unknown) {
   if (error instanceof StructuredApiError && error.code && REFUSALS[error.code]) return REFUSALS[error.code];
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
 }

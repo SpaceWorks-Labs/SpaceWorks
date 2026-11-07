@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from collections.abc import Mapping
 
 from rest_framework import serializers
@@ -82,7 +83,7 @@ class EventWriteSerializer(EventPublicSurfaceInput, serializers.Serializer):
         ends_at = attrs.get('ends_at', getattr(self.instance, 'ends_at', None))
         if starts_at is not None and ends_at is not None and ends_at < starts_at:
             raise serializers.ValidationError(
-                {'ends_at': 'End time must be at or after start time.'}
+                {'ends_at': gettext('End time must be at or after start time.')}
             )
         cutoff_at = attrs.get(
             'registration_cutoff_at',
@@ -95,16 +96,16 @@ class EventWriteSerializer(EventPublicSurfaceInput, serializers.Serializer):
         if cutoff_at is not None and lead_minutes is not None:
             raise serializers.ValidationError({
                 'registration_cutoff_at': (
-                    'Clear lead minutes before setting an absolute cutoff.'
+                    gettext('Clear lead minutes before setting an absolute cutoff.')
                 ),
                 'registration_cutoff_lead_minutes': (
-                    'Clear the absolute cutoff before setting lead minutes.'
+                    gettext('Clear the absolute cutoff before setting lead minutes.')
                 ),
             })
         if cutoff_at is not None and starts_at is not None and cutoff_at > starts_at:
             raise serializers.ValidationError({
                 'registration_cutoff_at': (
-                    'Registration cutoff cannot be after the event starts.'
+                    gettext('Registration cutoff cannot be after the event starts.')
                 )
             })
         return attrs
@@ -135,7 +136,7 @@ class EventCreateSerializer(EventWriteSerializer):
         attrs = super().validate(attrs)
         for key in ("organization_ids", "audience_organization_ids", "collaborator_slugs"):
             if len(attrs.get(key, ())) != len(set(attrs.get(key, ()))):
-                raise serializers.ValidationError({key: "Values must be unique."})
+                raise serializers.ValidationError({key: gettext("Values must be unique.")})
         return attrs
 
 

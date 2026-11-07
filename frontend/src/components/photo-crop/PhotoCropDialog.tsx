@@ -1,6 +1,7 @@
 // Crop a card photo to the design's photo frame before it is uploaded (SPEC §6, #132f).
 // Drag (or use the arrow keys) to move the picture, the slider (or + and -) to zoom. The
 // result is drawn on a canvas in the browser, so the original file is never uploaded.
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import { Modal } from "../ui/Modal";
@@ -19,7 +20,7 @@ function useLoadedImage(file: Blob | null) {
     const element = new Image();
     let live = true;
     element.onload = () => { if (live) setImage({ source: element, width: element.naturalWidth, height: element.naturalHeight, url }); };
-    element.onerror = () => { if (live) setError("That file couldn't be opened as a picture. Try a JPEG or PNG."); };
+    element.onerror = () => { if (live) setError(t`That file couldn't be opened as a picture. Try a JPEG or PNG.`); };
     element.src = url;
     setError(null);
     return () => { live = false; URL.revokeObjectURL(url); };
@@ -27,7 +28,7 @@ function useLoadedImage(file: Blob | null) {
   return { image, error };
 }
 
-export function PhotoCropDialog({ file, aspect, onCancel, onDone, title = "Crop the photo" }: {
+export function PhotoCropDialog({ file, aspect, onCancel, onDone, title = t`Crop the photo` }: {
   file: Blob | null; aspect: number; onCancel: () => void; onDone: (cropped: Blob) => void; title?: string;
 }) {
   const { image, error } = useLoadedImage(file);
@@ -74,14 +75,14 @@ export function PhotoCropDialog({ file, aspect, onCancel, onDone, title = "Crop 
 
   return <Modal open={Boolean(file)} onClose={onCancel} title={title}
     footer={<div className="flex flex-wrap justify-end gap-2">
-      <button type="button" className="desk-button min-h-11" onClick={onCancel}>Cancel</button>
+      <button type="button" className="desk-button min-h-11" onClick={onCancel}>{t`Cancel`}</button>
       <button type="button" className="desk-button-primary min-h-11" disabled={!image || busy} onClick={() => void finish()}>
-        {busy ? "Preparing…" : "Use this photo"}</button>
+        {busy ? t`Preparing…` : t`Use this photo`}</button>
     </div>}>
     <div className="grid justify-items-center gap-3">
       {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
-      <canvas ref={canvas} width={PREVIEW_WIDTH} height={height} tabIndex={0} role="application" aria-roledescription="photo crop"
-        aria-label="Photo crop. Drag or use the arrow keys to move the picture; plus and minus zoom."
+      <canvas ref={canvas} width={PREVIEW_WIDTH} height={height} tabIndex={0} role="application" aria-roledescription={t`photo crop`}
+        aria-label={t`Photo crop. Drag or use the arrow keys to move the picture; plus and minus zoom.`}
         className="max-w-full cursor-move touch-none rounded-control border border-line bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
         onKeyDown={onKey}
         onPointerDown={(event: PointerEvent<HTMLCanvasElement>) => {
@@ -96,11 +97,11 @@ export function PhotoCropDialog({ file, aspect, onCancel, onDone, title = "Crop 
         }}
         onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }} />
       <label className="grid w-full max-w-xs gap-1 text-xs font-semibold text-muted">
-        <span>Zoom</span>
+        <span>{t`Zoom`}</span>
         <input type="range" min={MIN_ZOOM} max={MAX_ZOOM} step={0.05} value={view.zoom} disabled={!image}
           onChange={(event) => zoom(Number(event.target.value))} />
       </label>
-      <p className="text-center text-xs text-muted">The frame matches the photo spot on the card. Only the cropped part is uploaded.</p>
+      <p className="text-center text-xs text-muted">{t`The frame matches the photo spot on the card. Only the cropped part is uploaded.`}</p>
     </div>
   </Modal>;
 }

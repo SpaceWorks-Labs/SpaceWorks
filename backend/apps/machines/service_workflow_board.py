@@ -5,6 +5,7 @@ queue writer, and re-evaluates the once-only "You're next" notice because the he
 the queue may have changed.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -48,7 +49,7 @@ def reorder(service_request, actor, *, position):
 def pin_urgent(service_request, actor, *, urgent, reason=""):
     reason = str(reason or "").strip()[:200]
     if urgent and not reason:
-        raise ValidationError({"reason": "Say why this job is urgent."})
+        raise ValidationError({"reason": gettext("Say why this job is urgent.")})
     with transaction.atomic():
         locked = _open(service_request, statuses=QUEUED)
         locked.urgent, locked.urgent_reason = bool(urgent), reason if urgent else ""
@@ -70,7 +71,7 @@ def assign_machine(service_request, actor, *, machine_id):
             machine = Machine.objects.filter(scope, pk=machine_id, makerspace_id=locked.makerspace_id,
                                              machine_type_id=machine_type_id, is_active=True).first()
             if machine is None:
-                raise ValidationError({"machine_id": "Choose an active compatible machine you manage."})
+                raise ValidationError({"machine_id": gettext("Choose an active compatible machine you manage.")})
         locked.preassigned_machine = machine
         locked.save(update_fields=["preassigned_machine", "updated_at"])
         _audit_transition(actor, locked, "machine_preassigned", extra={"machine_id": machine_id})

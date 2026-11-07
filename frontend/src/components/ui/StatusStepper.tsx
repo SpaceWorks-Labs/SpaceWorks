@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 const STAGES = ["Requested", "Approved", "Collected", "Returned"] as const;
 
 function statusStageIndex(status: string): number {
@@ -19,7 +20,7 @@ function statusStageIndex(status: string): number {
 }
 
 export function statusStageLabel(status: string): string {
-  if (status === "rejected") return "Rejected";
+  if (status === "rejected") return t`Rejected`;
   return STAGES[statusStageIndex(status)] ?? STAGES[0];
 }
 
@@ -54,7 +55,7 @@ function StepBox({
 }
 
 function RejectedBadge() {
-  return <span className="status-box status-box-danger">Rejected</span>;
+  return <span className="status-box status-box-danger">{t`Rejected`}</span>;
 }
 
 export function StatusStepper({ status }: { status: string }) {
@@ -68,7 +69,7 @@ export function StatusStepper({ status }: { status: string }) {
 
   return (
     <nav
-      aria-label={`Request status: ${statusStageLabel(status)}`}
+      aria-label={t`Request status: ${statusStageLabel(status)}`}
       className="w-full"
     >
       <ol className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-start gap-2">

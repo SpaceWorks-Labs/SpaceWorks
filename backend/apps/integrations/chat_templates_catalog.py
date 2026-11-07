@@ -75,7 +75,7 @@ def chat_only_entry(feature, event):
         fields=[{"name": name, "description": "Event snapshot."}
                 for name in names] + [{"name": "makerspace.name", "description": "Makerspace name."}],
         default_subject=event.replace("_", " ").capitalize(),
-        default_text="{{ makerspace.name }}: " + event.replace("_", " ") + ".",
+        default_text="{{ makerspace.name }}: " + event.replace("_", " ") + ".",  # i18n-ignore: composed from the event key, not authored copy
         default_html="",
         sample_context={"makerspace": bag(name="Demo workshop"), "problem_report_id": 12,
                         "request": bag(id=12, status="pending"),

@@ -1,5 +1,6 @@
 """Atomic adoption of preserved memberships after target-side email proof."""
 
+from django.utils.translation import gettext
 import logging
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -38,7 +39,7 @@ def _member_role(makerspace):
         .first()
     )
     if role is None or role.makerspace_id != makerspace.pk:
-        raise ValidationError({"detail": "This makerspace has no valid Member role."})
+        raise ValidationError({"detail": gettext("This makerspace has no valid Member role.")})
     return role
 
 
@@ -51,17 +52,17 @@ def _validate_address_proof(user, pending):
         or not current.email
         or current.email.casefold() != pending.email.casefold()
     ):
-        raise ValidationError({"detail": "A verified matching email is required."})
+        raise ValidationError({"detail": gettext("A verified matching email is required.")})
     return current
 
 
 def _validate_tenant_edges(pending, makerspace, member_role):
     if member_role.makerspace_id != makerspace.pk:
-        raise ValidationError({"detail": "Member role belongs to another makerspace."})
+        raise ValidationError({"detail": gettext("Member role belongs to another makerspace.")})
     for field in ("accepted_waiver", "witnessed_waiver"):
         waiver_id = getattr(pending, f"{field}_id")
         if waiver_id and getattr(pending, field).makerspace_id != makerspace.pk:
-            raise ValidationError({field: "Waiver belongs to another makerspace."})
+            raise ValidationError({field: gettext("Waiver belongs to another makerspace.")})
 
 
 def _actor(snapshot, makerspace):
@@ -147,7 +148,7 @@ def adopt_pending_membership(user, pending):
         user = _validate_address_proof(user, pending)
         if pending.adopted_membership_id:
             if pending.adopted_membership.user_id != user.pk:
-                raise ValidationError({"detail": "Pending import was adopted by another account."})
+                raise ValidationError({"detail": gettext("Pending import was adopted by another account.")})
             return pending.adopted_membership
 
         existing = MakerspaceMembership.objects.select_for_update().filter(

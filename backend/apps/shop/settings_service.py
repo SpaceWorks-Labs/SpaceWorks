@@ -5,6 +5,7 @@ before anything is written (the Space Manager, or the Shop Manager by its fixed 
 #137; an SM lock still binds the Shop Manager) and audited as `settings.changed`.
 """
 
+from django.utils.translation import gettext
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
@@ -26,7 +27,7 @@ def update_settings(space, row, values, *, actor):
     for name, value in changed.items():
         setattr(row, name, value)
     if row.second_reminder_days <= row.first_reminder_days:
-        raise ValidationError({"second_reminder_days": "The second reminder comes after the first."})
+        raise ValidationError({"second_reminder_days": gettext("The second reminder comes after the first.")})
     row.updated_by = actor
     row.save()
     for name in changed:

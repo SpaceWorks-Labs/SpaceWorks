@@ -4,6 +4,7 @@ The twelve ARTWORK assets use rectangles and straight M/L/H/V/Z paths. Keeping
 that closed vocabulary avoids an SVG engine with network/font/resource access.
 """
 
+from django.utils.translation import gettext
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
@@ -24,7 +25,7 @@ def packaged_resource(resource_id):
         resource = artwork_resource(item["template_id"], item["theme"])
         if resource["id"] == str(resource_id):
             return resource
-    raise ValidationError({"resource_id": "Choose a packaged artwork resource."})
+    raise ValidationError({"resource_id": gettext("Choose a packaged artwork resource.")})
 
 
 def _paths(value):
@@ -66,12 +67,12 @@ def render_packaged(resource_id, *, width_mm, height_mm):
     resource = packaged_resource(resource_id)
     content = (ROOT / resource["path"]).read_bytes()
     if sha256(content).hexdigest() != resource["sha256"]:
-        raise ValidationError({"resource_id": "Packaged artwork checksum changed."})
+        raise ValidationError({"resource_id": gettext("Packaged artwork checksum changed.")})
     root = ElementTree.fromstring(content)
     left, top, width, height = map(float, root.attrib["viewBox"].split())
     size = (round(width_mm * 300 / 25.4), round(height_mm * 300 / 25.4))
     if min(size) < 1 or size[0]*size[1] > 16_000_000:
-        raise ValidationError({"resource_id": "Artwork dimensions exceed the print limit."})
+        raise ValidationError({"resource_id": gettext("Artwork dimensions exceed the print limit.")})
     sx, sy = size[0]/width, size[1]/height
     with Image.new("RGBA", size) as image:
         draw = ImageDraw.Draw(image)

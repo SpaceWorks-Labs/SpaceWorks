@@ -1,5 +1,6 @@
 """Publishing questions wrap the existing event/page workflows, never raw status writes."""
 
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
@@ -35,9 +36,9 @@ def save_publishing(event, *, actor, data):
         before = event_version(locked)
         requested = data.get("status", locked.status)
         if requested == "draft" and locked.status != "draft":
-            raise ValidationError({"status": "A published event cannot return to draft."})
+            raise ValidationError({"status": gettext("A published event cannot return to draft.")})
         if "listing" in data and not data.get("is_public", locked.is_public):
-            raise ValidationError({"listing": "A private event is never listed; make it visible first."})
+            raise ValidationError({"listing": gettext("A private event is never listed; make it visible first.")})
         changes = {key: data[key] for key in PUBLISHING_FIELDS if key in data}
         if changes:
             previous = _answers(locked)

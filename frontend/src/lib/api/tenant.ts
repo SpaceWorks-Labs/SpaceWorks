@@ -7,7 +7,7 @@ import {
 } from "./client";
 import { apiError } from "./errors";
 import { withOptionalSession } from "./optionalSession";
-import { memberRequest, publicV1Request } from "./requests";
+import { memberRequest, publicAnonymousRequest, publicV1Request } from "./requests";
 import type { TenantBootstrap } from "./types";
 
 /** Discovery may cache a tenant's key without changing the current page's ambient tenant. */
@@ -15,9 +15,7 @@ export async function bootstrapTenant(params: { tenant?: string; slug?: string }
   const search = new URLSearchParams();
   if (params.tenant) search.set("tenant", params.tenant);
   if (params.slug) search.set("slug", params.slug);
-  const bootstrap = await publicV1Request<TenantBootstrap>(
-    `/bootstrap?${search.toString()}`,
-  );
+  const bootstrap = await publicAnonymousRequest<TenantBootstrap>(`/bootstrap?${search.toString()}`);
   cacheTenantPublishableKey(
     bootstrap.makerspace.slug,
     bootstrap.public_api.publishable_key,

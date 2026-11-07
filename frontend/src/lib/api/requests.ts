@@ -37,6 +37,12 @@ export async function publicV1Request<T>(
   return publicV1Json<T>(path, options, publishableKey);
 }
 
+/** Anonymous public GET for reads that never depend on identity (the tenant bootstrap).
+ * Sending a member's bearer there only earns a staff-route 403 and an anonymous retry. */
+export async function publicAnonymousRequest<T>(path: string, publishableKey?: string): Promise<T> {
+  return publicV1Json<T>(path, { headers: { Authorization: "" } }, publishableKey);
+}
+
 async function publicV1Json<T>(path: string, options: RequestInit, publishableKey?: string): Promise<T> {
   const response = await fetch(`${API_V1_URL}${path}`, {
     ...options,

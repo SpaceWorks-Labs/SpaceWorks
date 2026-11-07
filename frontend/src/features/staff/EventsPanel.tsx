@@ -34,8 +34,8 @@ function dateRange(event: StaffEvent) {
   return `${new Date(event.starts_at).toLocaleString(formatLocale())} – ${new Date(event.ends_at).toLocaleString(formatLocale())}`;
 }
 
-export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules = [] }: {
-  makerspaceId: number; enabledFeatures?: string[]; enabledModules?: string[];
+export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules = [], publicSiteEnabled = false }: {
+  makerspaceId: number; enabledFeatures?: string[]; enabledModules?: string[]; publicSiteEnabled?: boolean;
 }) {
   const list = useUrlListState({ q: "", status: "", ordering: "starts_at", page: "1" });
   const { page, setPage } = list;
@@ -67,7 +67,7 @@ export function EventsPanel({ makerspaceId, enabledFeatures = [], enabledModules
   useQuickCreate("event", () => { setCreationMode("single"); setCreating(true); });
   // The Event Manager owns the events.* switches and event defaults (domain-settings API).
   // L1: the event report switches (DY-61) and the embed allow-list sit below the switches.
-  const eventSettings = useDomainSettingsDialog(makerspaceId, "events", true, <EventSurfaceSettings makerspaceId={makerspaceId} />, enabledModules.includes("public_site"));
+  const eventSettings = useDomainSettingsDialog(makerspaceId, "events", true, <EventSurfaceSettings makerspaceId={makerspaceId} />, publicSiteEnabled);
 
   function submit() {
     // Unknown default and untouched field: let the server apply the space's default audience.

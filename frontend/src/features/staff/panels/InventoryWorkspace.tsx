@@ -60,7 +60,7 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   const domainSettings = useDomainSettingsDialog(makerspace.id, "inventory", canEditInventory,
     (makerspace.enabled_modules ?? []).includes("request_workflow") ? <><MakerspaceLoanPolicySettings makerspaceId={makerspace.id} enabledFeatures={makerspace.enabled_features ?? []} />
       {["loans.pickup_windows", "loans.reservations", "loans.waitlist"].some(key => capabilityOn(makerspace, key)) ? <LoanReservationPolicySettings makerspaceId={makerspace.id} /> : null}</> : undefined,
-    (makerspace.enabled_modules ?? []).includes("public_site"));
+    makerspace.public_site_enabled ?? false);
   useQuickCreate("item", () => { setForm(emptyForm); setAddOpen(true); });
   const [fixTarget, setFixTarget] = useState<AdminProduct | null>(null);
   const [assetFixTarget, setAssetFixTarget] = useState<AdminProduct | null>(null);

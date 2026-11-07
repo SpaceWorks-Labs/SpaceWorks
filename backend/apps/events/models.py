@@ -58,7 +58,7 @@ __all__ = [
 
 from . import models_programme  # noqa: E402,F401 - explicit retained model discovery
 from .models_programme import (
-    EventBroadcastPreview, EventCommandReceipt, EventAnswerDerivation, EventCertificateLibraryTemplate,
+    EventCommandReceipt, EventAnswerDerivation, EventCertificateLibraryTemplate,
     EventCertificateLibraryArtwork, EventCertificateLibraryRevision, EventCertificateLibraryCommand, EventCertificatePublicationPolicy,
     CertificateIssueBatch, CertificateIssueBatchItem, EventBadgeTemplateRevision, BadgePrintJob,
     BadgePrintResource, EventContributorAdmission, EventContributorNotice, EventRoleAnswerRevision,

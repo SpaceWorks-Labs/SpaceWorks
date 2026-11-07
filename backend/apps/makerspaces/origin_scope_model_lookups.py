@@ -161,7 +161,6 @@ BASE_MODEL_LOOKUPS = {
     'admin-machine-retire': ('machines.Machine', 'makerspace_id'),
     'admin-machine-unretire': ('machines.Machine', 'makerspace_id'),
     'admin-machine-usage': ('machines.Machine', 'makerspace_id'),
-    'admin-machine-usage-candidates': ('machines.Machine', 'makerspace_id'),
     'admin-machine-consumables': ('machines.Machine', 'makerspace_id'),
     'admin-machine-consumable-detail': ('machines.Machine', 'makerspace_id'),
     'admin-machine-consumption-log': ('machines.Machine', 'makerspace_id'),

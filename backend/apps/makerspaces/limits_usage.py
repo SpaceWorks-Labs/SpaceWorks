@@ -176,7 +176,6 @@ def add_storage(makerspace, size_bytes) -> None:
     limit = limits.resource_limit(makerspace, "storage")
     if limit is None:
         return
-    from django.db import transaction
     from django.db.models import F
 
     from apps.makerspaces.models import Makerspace

@@ -14,7 +14,7 @@ from statistics import mean, pstdev
 from django.http import Http404
 from django.utils import timezone
 
-from .boundary import command, mutation, notice, owned
+from .boundary import audit, command, mutation, notice, owned
 from .calculations import Criterion, weighted_value
 from .conflicts import eligible
 from .errors import invalid
@@ -151,6 +151,9 @@ def next_project(event_id, round_id, *, actor, data):
                     judge_role_assignment_id=judge.role_assignment_id, submission_snapshot_id=snapshot_id,
                     track_id=min(set(snapshot.track_ids) & set(judge.track_ids or snapshot.track_ids), default=None))
                 notice(event, "judge_assigned", assignment.pk, assignment.version)
+                # A pulled project is an assignment like a planned one, so it is audited too.
+                audit(event, actor, "judge_pulled_project", assignment, round_id=round.pk,
+                      snapshot_id=snapshot_id)
             return _pick(assignment, "fewest_reviews")
         return command(event, actor, values, path=f"judging-rounds/{round_id}/next-project", run=run)
 

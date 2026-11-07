@@ -46,11 +46,19 @@ def receipt_payload(order):
     }
 
 
-def email_receipt(order, address=""):
+def email_receipt(order, address="", *, actor=None):
     """Email the receipt to the buyer (their account email, or a guest/desk address given)."""
     from .notices import buyer_notice
 
     if address and not order.buyer_id and not order.guest_email:
         order.guest_email = address[:254]  # scoped PII: saved through the encrypting model, never .update()
         order.save(update_fields=["guest_email"])
+        saved = True
+    else:
+        saved = False
+    from apps.audit import services as audit
+
+    # Counts only: the address itself is PII and stays on the encrypted order row.
+    audit.record(actor, "shop.receipt_emailed", makerspace=order.makerspace, target=order,
+                 meta={"guest_email_saved": saved})
     return buyer_notice(order, "shop_order_receipt", marker=f"receipt-{order.pk}-{order.status}")

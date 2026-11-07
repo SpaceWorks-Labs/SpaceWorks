@@ -133,7 +133,7 @@ makerspace; leave one out and nothing else changes.
 
 ## Modules
 
-A makerspace only carries the parts it uses. Space Works ships **35 modules**: **6 core** modules that
+A makerspace only carries the parts it uses. Space Works ships **37 modules**: **6 core** modules that
 are always on (the public catalogue, request workflow, staff admin, evidence uploads, QR management and
 the scanner), because the handover rules depend on them, and the rest are **opt-in**. The console groups
 them into areas:

@@ -84,6 +84,10 @@ export function StaffApp({ guestOnly = false }: { guestOnly?: boolean }) {
     return <MakerspacePicker makerspaces={consoleMakerspaces} loading={makerspaces.isLoading} username={user.username}
       person={!isSuperadmin} onSelect={session.chooseMakerspace} onSignOut={session.signOut} />;
   }
+  // #183B: the front-desk console is the `guest_handover` surface; off means it is not there.
+  if (guestOnly && activeMakerspace && !(activeMakerspace.enabled_modules ?? []).includes("guest_handover")) {
+    return <StaffLoading message="The front desk is turned off for this makerspace." />;
+  }
   const activeMembership = user.makerspaces.find((item) => item.id === selected);
   // A superadmin holds every action in the space they chose (#115), and none before choosing one.
   const activeActions = isSuperadmin ? (activeMakerspace ? user.superadmin_actions ?? [] : []) : activeMembership?.actions ?? [];

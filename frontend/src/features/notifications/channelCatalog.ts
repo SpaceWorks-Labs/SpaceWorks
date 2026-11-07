@@ -57,7 +57,7 @@ export const CHANNEL_SPECS: readonly ChannelSpec[] = [
           secret("access_token", "Permanent access token"),
           secret("webhook_verify_token", "Webhook verify token")] }] },
   { key: "native_push", label: t`App push`, description: t`Notifications on people's phones through the Space Works app. Needs the mobile push feature.`,
-    rooms: false, personal: true, module: null, providers: [{ key: "builtin", label: t`Space Works app`, credentials: [] }] },
+    rooms: false, personal: true, module: "mobile", providers: [{ key: "builtin", label: t`Space Works app`, credentials: [] }] },
 ];
 
 export const CHANNEL_LABELS: Readonly<Record<string, string>> = {

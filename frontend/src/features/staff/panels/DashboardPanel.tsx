@@ -77,7 +77,7 @@ export function DashboardPanel({ makerspace, canManageMakerspace, allowedTabs, a
         main={[...main, ...(dashboard.data?.widgets ? [{ title: t`Analytics`, empty: { message: t`No analytics widgets available.` },
           content: <DashboardAnalyticsWidgets widgets={dashboard.data.widgets.filter(widget => widget.required_modules.every(module =>
             makerspace.enabled_modules === undefined || makerspace.enabled_modules.includes(module)))} makerspaceId={makerspace.id}
-            reportsHref={consoleSessionHref(staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked))} /> }] : [])]} rail={rail}
+            reportsHref={allowedTabs?.includes("reports") ? consoleSessionHref(staffTabPath("reports", guestOnly, makerspace.slug, singleTenantLocked)) : undefined} /> }] : [])]} rail={rail}
         railContent={archiveStatus}
       />}
     </DashboardQuickAdd>

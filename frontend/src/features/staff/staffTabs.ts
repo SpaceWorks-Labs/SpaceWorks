@@ -57,7 +57,7 @@ const TAB_FEATURES: Record<string, string[]> = {
   warranty: ["inventory.warranty", "machines.warranty"],
   // Lane L5: the finance tab holds the ledger and the money queues, each with its own switch.
   finance: ["finance.ledger", "billing.offline_claims", "billing.maker_checker", "billing.capture_flags",
-    "billing.disputes"],
+    "billing.disputes", "finance.donations", "finance.sponsors"],
   // Lane L12 (MI-40): the merged consumables list.
   consumables: ["inventory.consumables"],
   // Lane L16: repairs, issue reporting and item/room maintenance, under each parent.

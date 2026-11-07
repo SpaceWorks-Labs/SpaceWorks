@@ -10,8 +10,16 @@ import { PaymentCredentialFields, type CredentialDraft, type PaymentSettings, ty
 import { SettingsEditorActions } from "./SettingsEditorActions";
 import { SettingsQueryState } from "./SettingsQueryState";
 import { type Makerspace, useStaffGet } from "./StaffPanels";
+import { staffChargesOn } from "./useStaffChargesOn";
 
 export function MakerspacePaymentSettings({ makerspace }: { makerspace: Makerspace }) {
+  // #95: the provider and its credentials are the online rail, so without the `payments`
+  // module only the loan rules show (the backend refuses rail writes with 404). Unknown
+  // modules (an older payload) fail open, like the rest of the console.
+  if (makerspace.enabled_modules !== undefined && !makerspace.enabled_modules.includes("payments")) {
+    return staffChargesOn(makerspace, "loans")
+      ? <MakerspaceLoanSettings makerspaceId={makerspace.id} pricingOn={capabilityOn(makerspace, "charges.pricing")} /> : null;
+  }
   return <PaymentSettingsEditor key={makerspace.id} makerspace={makerspace} />;
 }
 

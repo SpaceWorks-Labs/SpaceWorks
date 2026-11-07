@@ -195,7 +195,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
           </button>
           {editing ? <button className="desk-button" type="button" onClick={cancelEdit}>{t`Cancel`}</button> : null}
         </div>
-        <MembershipRenewalFields value={renewal} onChange={(value) => { setRenewal(value); setProblem(null); }} />
+        <MembershipRenewalFields value={renewal} chargesOn={chargesOn} onChange={(value) => { setRenewal(value); setProblem(null); }} />
         <MembershipPlanRulesFields value={rules} onChange={(value) => { setRules(value); setProblem(null); }} planRulesOn={planRulesOn} publicPlansOn={publicPlansOn} chargesOn={chargesOn} />
       </form>
       {error ? <p className="mt-2 text-sm text-danger" role="alert">{error}</p> : null}

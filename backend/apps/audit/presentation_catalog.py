@@ -5,6 +5,8 @@ size ceiling. Duplicates are refused at import: two fragments disagreeing about 
 action would make the disclosure policy depend on import order.
 """
 
+from django.utils.translation import gettext_noop
+
 from .presentation_catalog_accounts import ENTRIES as _ACCOUNTS
 from .presentation_catalog_community import ENTRIES as _COMMUNITY
 from .presentation_catalog_dynamic import (
@@ -51,7 +53,7 @@ from .presentation_catalog_r2_submit_content import ENTRIES as _R2_SUBMIT_CONTEN
 # needs a real route and query-level tenant authorization, which no generic one has.
 LINK_RESOLVERS = {}
 
-UNRECOGNIZED_LABEL = "Unrecognized audit action"
+UNRECOGNIZED_LABEL = gettext_noop("Unrecognized audit action")
 
 
 def _compose(*fragments):
@@ -88,6 +90,7 @@ from .presentation_catalog_r2_control import ENTRIES as _R2_CONTROL
 from .presentation_catalog_r2_parity import ENTRIES as _R2_PARITY
 from .presentation_catalog_r2_certificates import ENTRIES as _R2_CERTIFICATES
 from .presentation_catalog_r2_l9 import ENTRIES as _R2_L9
+from .presentation_catalog_r4_audit import ENTRIES as _R4_AUDIT
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -123,6 +126,7 @@ PRESENTATION_CATALOG = _compose(
     _R2_PARITY,
     _R2_CERTIFICATES,
     _R2_L9,
+    _R4_AUDIT,
 )
 
 

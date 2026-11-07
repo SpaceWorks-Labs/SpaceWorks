@@ -11,6 +11,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.audit import services as audit
 from apps.accounts.models import User
 from apps.integrations.serializers import (
     TelegramTestAlertSerializer,
@@ -117,6 +118,8 @@ class TelegramTestAlertView(APIView):
         # gets a clear {delivered:false, detail} instead of an opaque 500 — the test
         # alert is a diagnostic, so a delivery failure is an expected outcome, not a
         # server error.
+        # A test send reaches a real group chat, so it is audited like DeliveryTestView's.
+        audit.record(request.user, "telegram.test_sent", makerspace=makerspace, target=makerspace)
         try:
             delivered = send_message(makerspace, serializer.validated_data["message"])
         except TelegramDeliveryError:

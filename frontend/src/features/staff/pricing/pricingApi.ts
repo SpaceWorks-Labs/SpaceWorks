@@ -20,7 +20,9 @@ export function installedDomains(enabledModules: readonly string[]) {
   return PRICING_DOMAINS.filter(entry => entry.module === null || enabledModules.includes(entry.module));
 }
 
-export const domainLabel = (domain: string) => PRICING_DOMAINS.find(entry => entry.domain === domain)?.label ?? domain;
+// The shop prices each product itself, so it has no tab above, but a discount can still name it.
+const EXTRA_LABELS: Record<string, string> = { shop: "Shop" };
+export const domainLabel = (domain: string) => PRICING_DOMAINS.find(entry => entry.domain === domain)?.label ?? EXTRA_LABELS[domain] ?? domain;
 
 /** Mirrors `apps/payments/pricing/components.py` (labels for discount scoping and the impact list). */
 export const COMPONENT_LABELS: Record<PricingDomain, [string, string][]> = {

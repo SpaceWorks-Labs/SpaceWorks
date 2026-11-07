@@ -33,11 +33,14 @@ export const DELIVERY_SETTINGS_KEY = (makerspaceId: number) => [
   "delivery",
 ];
 
-export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspace }) {
+export function MakerspaceWebhookSettings({ makerspace, enabledModules }: { makerspace: Makerspace; enabledModules?: string[] }) {
+  // #183B: each chat channel is its own module; an off channel shows no card (undefined = all, for old callers).
+  const shows = (key: string) => !enabledModules || enabledModules.includes(key);
   const settings = useStaffGet<ApiSettings>(
     DELIVERY_SETTINGS_KEY(makerspace.id),
     `/admin/makerspace/${makerspace.id}/api-settings`,
   );
+  if (!["slack", "mattermost", "discord"].some(shows)) return null;
 
   return (
     <SettingsQueryState query={settings} resource="webhook"><SettingsRow label={t`Chat webhooks`} helper={t`Add incoming webhook URLs for Slack, Mattermost or Discord. Saving a webhook configures the destination; enable delivery separately in the notification channel matrix under Notifications. Each channel is also its own module, so a space ships only the ones it uses.`}><div className="@container grid min-w-0 gap-4">
@@ -46,24 +49,24 @@ export function MakerspaceWebhookSettings({ makerspace }: { makerspace: Makerspa
 
       </div>
       <div className="mt-4 grid gap-3 @3xl:grid-cols-3">
-        <ProviderCard
+        {shows("slack") ? <ProviderCard
           configured={settings.data?.slack_webhook_url_set ?? false}
           label={t`Slack`}
           makerspaceId={makerspace.id}
           provider="slack"
-        />
-        <ProviderCard
+        /> : null}
+        {shows("mattermost") ? <ProviderCard
           configured={settings.data?.mattermost_webhook_url_set ?? false}
           label={t`Mattermost`}
           makerspaceId={makerspace.id}
           provider="mattermost"
-        />
-        <ProviderCard
+        /> : null}
+        {shows("discord") ? <ProviderCard
           configured={settings.data?.discord_webhook_url_set ?? false}
           label={t`Discord`}
           makerspaceId={makerspace.id}
           provider="discord"
-        />
+        /> : null}
       </div>
       {settings.isLoading ? (
         <p className="mt-3 text-sm text-muted">{t`Loading webhook settings…`}</p>

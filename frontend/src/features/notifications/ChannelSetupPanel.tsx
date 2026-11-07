@@ -29,7 +29,8 @@ export function ChannelSetupPanel({ makerspaceId, enabledModules }: { makerspace
     onRetry={() => { void channels.refetch(); }} />;
   const rows = new Map((channels.data?.results ?? []).map(row => [row.channel, row]));
   return <ul className="grid min-w-0 gap-3 py-4" aria-label={t`Notification channels`}>
-    {CHANNEL_SPECS.map(spec => {
+    {/* #183B: a channel whose module is off is not offered at all. */}
+    {CHANNEL_SPECS.filter(spec => !spec.module || enabledModules.includes(spec.module)).map(spec => {
       const row = rows.get(spec.key);
       const state = summary(spec, row);
       const expanded = open === spec.key;

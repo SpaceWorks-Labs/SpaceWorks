@@ -16,6 +16,7 @@ import requests
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from apps.audit import services as audit
 from apps.space_controls.errors import SpaceControlConflict
 
 from .availability import public_base_url, require_online_billing
@@ -30,7 +31,7 @@ class ProviderUnavailable(SpaceControlConflict):
         super().__init__("online_billing_unavailable", detail)
 
 
-def start_checkout(makerspace_id, invoice_id):
+def start_checkout(makerspace_id, invoice_id, *, actor=None):
     require_online_billing()
     settings_row = PlatformHostingBillingSettings.load()
     with transaction.atomic():
@@ -46,6 +47,8 @@ def start_checkout(makerspace_id, invoice_id):
     else:
         raise ProviderUnavailable()
     HostingInvoice.objects.filter(pk=invoice.pk).update(provider=settings_row.provider, provider_session_id=session_id)
+    audit.record(actor, "managed_hosting.invoice_checkout_started", makerspace=invoice.makerspace, target=invoice,
+                 meta={"provider": settings_row.provider})
     return url
 
 

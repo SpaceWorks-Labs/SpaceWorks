@@ -156,7 +156,7 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       {canManageMakerspace ? <MakerspaceProfileSettings makerspaceId={makerspace.id} /> : null}
     </> },
     { id: "branding", title: t`Branding & public site`, rows: <>
-      <MakerspaceBrandingSettings {...shared} />{printRecovery}
+      <MakerspaceBrandingSettings {...shared} />{enabledModules.includes("printing") || enabledModules.includes("machine_service") ? printRecovery : null}
       {settings.data?.platform_hosting === true ? <MakerspaceSubdomainSettings makerspace={makerspace} settings={settings.data} /> : null}
       <MakerspaceCustomDomainSettings {...shared} />
       {canManageMakerspace ? <MakerspaceDirectoryVisibility {...shared} /> : null}
@@ -171,13 +171,14 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
       {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("packs.import")
         ? <SpacePacksPanel key={makerspace.id} makerspaceId={makerspace.id} isSuperadmin={isSuperadmin} /> : null}
     </> },
-    { id: "lending", title: t`Lending`, rows: <>
+    // #183B: lending settings follow the `loans.enabled` master, like the lending tabs.
+    ...(capabilityOn(settings.data ?? makerspace, "loans.enabled") ? [{ id: "lending", title: t`Lending`, rows: <>
       {canManageMakerspace && (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes("loans.enabled") ? <BorrowRequestAccessSettings makerspaceId={makerspace.id} /> : null}
       {enabledModules.includes("request_workflow") ? <MakerspaceLoanPolicySettings makerspaceId={makerspace.id} /> : null}
       {enabledModules.includes("request_workflow") && ["loans.pickup_windows", "loans.reservations", "loans.waitlist"].some(key => (settings.data?.enabled_features ?? makerspace.enabled_features ?? []).includes(key)) ? <LoanReservationPolicySettings makerspaceId={makerspace.id} /> : null}
       <MakerspaceReminderSettings {...shared} />
       {canManageMakerspace && (settings.data?.enabled_features ?? []).includes("inventory.kiosk") ? <KioskStationSettings makerspace={makerspace} /> : null}
-    </> },
+    </> }] : []),
     // #183B: a section for a module that is off is not shown at all, not shown empty.
     ...(enabledModules.includes("membership") || enabledModules.includes("presence") ? [{ id: "membership", title: t`Membership`, rows: <>
       {enabledModules.includes("membership") ? <MakerspaceMembershipSettings {...shared} /> : null}<MakerspaceGeofenceSettings {...shared} />
@@ -213,8 +214,9 @@ export function MakerspaceSettingsPanel({ makerspace, isSuperadmin, canManageMak
     ...(canManageMakerspace && hostingAvailable ? [{ id: "hosting", title: t`Invite a makerspace`,
       rows: <div className="py-4"><HostingInvitations key={makerspace.id} scope={{ makerspaceId: makerspace.id }} /></div> }] : []),
     { id: "integrations", title: t`Email & integrations`, rows: <>
-      <MakerspaceEmailSettings makerspace={makerspace} /><MakerspaceWebhookSettings makerspace={makerspace} />
-      {isSuperadmin ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
+      {enabledModules.includes("email") ? <MakerspaceEmailSettings makerspace={makerspace} /> : null}
+      <MakerspaceWebhookSettings makerspace={makerspace} enabledModules={enabledModules} />
+      {isSuperadmin && enabledModules.includes("telegram") ? <ApiClientsTelegramSettings makerspace={makerspace} /> : null}
       <IntegrationHealthPanel makerspace={makerspace} isSuperadmin={isSuperadmin} />
     </> },
     ...(canManageMakerspace ? [{ id: "privacy", title: t`Privacy & evidence`,

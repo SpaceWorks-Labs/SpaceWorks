@@ -46,8 +46,12 @@ def _space(user, makerspace_id):
     makerspace = get_object_or_404(Makerspace, pk=makerspace_id)
     scope = rbac.resolve_scope(user)
     visible = scope is rbac.ALL or makerspace.pk in scope or rbac.can(user, rbac.Action.VIEW_ANALYTICS, makerspace.pk)
-    if not visible or not module_enabled(makerspace, "analytics"):
+    if not visible:
         raise Http404
+    if not module_enabled(makerspace, "analytics"):
+        # #183B: a space the caller can see answers the typed SurfaceOff body when the module is off.
+        from apps.makerspaces.guards import module_off
+        raise module_off("analytics")
     return makerspace
 
 

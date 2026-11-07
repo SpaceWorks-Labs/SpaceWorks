@@ -63,7 +63,7 @@ class SpaceInvoiceCheckoutView(APIView):
         space = _space(request, makerspace_id)
         require_online_billing()
         get_object_or_404(HostingInvoice, pk=invoice_id, makerspace=space)
-        return Response(s.HostingCheckoutSerializer({"url": online.start_checkout(space.pk, invoice_id)}).data)
+        return Response(s.HostingCheckoutSerializer({"url": online.start_checkout(space.pk, invoice_id, actor=request.user)}).data)
 
 
 class _ProviderCallbackView(APIView):

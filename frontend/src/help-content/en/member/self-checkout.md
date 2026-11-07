@@ -9,7 +9,7 @@ Some tools carry their own QR label. Where the space allows it, you check them o
 
 ## Borrow
 
-1. Open **Borrow or return a tool** (`/checkout`), or **Scan a tool** in the catalogue.
+1. Open **Borrow or return a tool** (`/checkout`), or **Scan a tool** on the Inventory page.
 2. Choose **Borrow**.
 3. Take a photo of the tool.
 4. Press **Scan QR** and scan its label.

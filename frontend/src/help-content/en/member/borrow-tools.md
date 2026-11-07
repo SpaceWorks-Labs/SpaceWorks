@@ -1,11 +1,11 @@
 ---
-title: Borrow tools from the catalogue
+title: Borrow tools from Inventory
 summary: Find a tool, ask to borrow it, collect it, renew it, or wait for it.
 order: 50
 keywords: borrow, loan, request, catalogue, item, pickup, collect, waitlist, notify, withdraw, renew, due date
 modules: request_workflow
 ---
-The catalogue lists everything the space lends, with live availability.
+The space's **Inventory** page lists everything it lends, with live availability.
 
 ## Ask to borrow
 
@@ -15,7 +15,7 @@ The catalogue lists everything the space lends, with live availability.
 4. If the space asks, choose **When will you collect?**
 5. Press **Submit request**. You see **Request submitted**.
 
-![Screenshot: the catalogue with the Your request card](screenshot:member-borrow-request)
+![Screenshot: the Inventory page with the Your request card](screenshot:member-borrow-request)
 
 Staff review each request. When it's accepted, collect it at the desk: staff scan the box and take a photo as they hand it over. Some spaces let an uncollected request expire after its pickup window.
 

@@ -63,8 +63,8 @@ export function shopMoney(amount: string | number | null | undefined, currency: 
 }
 
 export function priceRange(product: Pick<ShopPublicProduct, "price_from" | "price_to">, currency: string) {
-  if (!product.price_from) return "";
-  if (product.price_to && product.price_to !== product.price_from) {
+  if (product.price_from === null || product.price_from === undefined) return "";
+  if (product.price_to !== null && product.price_to !== undefined && product.price_to !== product.price_from) {
     return `${shopMoney(product.price_from, currency)} – ${shopMoney(product.price_to, currency)}`;
   }
   return shopMoney(product.price_from, currency);

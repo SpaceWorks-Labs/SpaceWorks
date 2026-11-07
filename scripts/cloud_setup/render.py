@@ -43,8 +43,8 @@ def render(directory, values, answers):
     spec = {
         "version": 1, "deployment_mode": "managed", "profile": answers["profile"],
         "backend_image": answers["backend_image"],
-        "image_variant": "free" if answers["profile"] == "free" else "managed",
-        "image_build": {"target": "free" if answers["profile"] == "free" else "managed", "context": "backend", "named_context": "cloud_tooling=.", "verification": "Require same-build digest and variant proof before deployment."},
+        "image_variant": "full",
+        "image_build": {"target": "release", "context": "backend", "named_context": "cloud_tooling=.", "verification": "Require the published release target and same-build immutable digest before deployment."},
         "scheduler": values["CLOUD_SCHEDULER"],
         "roles": [{"name": role, "argv": command(role), "replicas": 1} for role in roles],
         "release": {"argv": command("release"), "finite": True, "environment": "release.environment.json"},

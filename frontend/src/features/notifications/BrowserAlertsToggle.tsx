@@ -22,8 +22,12 @@ export function BrowserAlertsToggle({ makerspaceId }: { makerspaceId: number }) 
   useEffect(() => {
     if (!supported) return;
     let live = true;
-    void Promise.all([staffRequest<Key>("/notifications/browser-alerts/key"), staffRequest<{ subscribed_browsers: number }>(path)])
-      .then(async ([value]) => {
+    // Ask for the per-space state only when the deployment has a push key: without one the
+    // state endpoint can only answer 404, which would surface as a console error on every visit.
+    void staffRequest<Key>("/notifications/browser-alerts/key")
+      .then(async (value) => {
+        if (!value.configured) { if (live) setKey(value); return; }
+        await staffRequest<{ subscribed_browsers: number }>(path);
         const registration = await navigator.serviceWorker.getRegistration(SCOPE);
         const existing = await registration?.pushManager.getSubscription();
         if (live) { setKey(value); setSubscribed(Boolean(existing)); }

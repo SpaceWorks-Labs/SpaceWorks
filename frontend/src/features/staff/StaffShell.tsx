@@ -2,7 +2,6 @@ import { t } from "@lingui/core/macro";
 import { consoleSessionHref, currentSessionContext } from "../../lib/api/sessionContext";
 import { useEffect, useState, type ReactNode } from "react";
 import { setDelightSpaceFeatures } from "../../components/delight/spaceDelight";
-import { skipToken, useQuery } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
 import { Cog } from "lucide-react";
 import { AppShell, JobTrayPill, type ShellWorkspace } from "../../components/shell";
@@ -18,6 +17,7 @@ import { PlatformNoticeBanners } from "../platformNotices/PlatformNoticeBanners"
 import { PausedSpacePage } from "../platformNotices/PausedSpacePage";
 import { SuperadminSpaceGuard } from "../platformNotices/SuperadminSpaceGuard";
 import { spaceNotice, usePlatformNotices } from "../platformNotices/platformNoticesApi";
+import { useCachedQueryData } from "../../lib/useCachedQueryData";
 
 type Props = { activeMakerspace?: Makerspace; allowedTabs: readonly string[]; activeTab: string;
   guestOnly: boolean; singleTenantLocked: boolean; handoutOnly: boolean; grantOnly?: boolean; user: StaffAuthUser;
@@ -36,10 +36,8 @@ export function StaffShell(props: Props) {
     return () => setDelightSpaceFeatures(null);
   }, [spaceFeatures]);
   // Subscribe to existing server-state caches; shell rendering must never issue dashboard/type requests.
-  const dashboard = useQuery<{ pending_requests?: number; awaiting_issue?: number }>({
-    queryKey: ["dashboard", space?.id], queryFn: skipToken, enabled: false,
-  });
-  const types = useQuery<MachineCollection<MachineType>>({ queryKey: machineKeys.types(space?.id ?? -1), queryFn: skipToken, enabled: false });
+  const dashboard = useCachedQueryData<{ pending_requests?: number; awaiting_issue?: number }>(["dashboard", space?.id]);
+  const types = useCachedQueryData<MachineCollection<MachineType>>(machineKeys.types(space?.id ?? -1));
   const notices = usePlatformNotices(true, props.isSuperadmin ? "platform" : currentSessionContext());
   // A paused space is unservable, so it is missing from the account's spaces: match the route's
   // /m/<slug>/admin, or a person whose only staff spaces are paused, to show the paused page.
@@ -63,11 +61,11 @@ export function StaffShell(props: Props) {
   let activeKey = activeTab;
   for (const section of nav) for (const item of [...section.items, ...section.more ?? []]) {
     if (item.key === "notifications") { item.badge = unread; item.badgeLabel = "unread"; }
-    if (item.key === "requests" && allowedTabs.includes("dashboard") && dashboard.isSuccess) {
-      item.badge = (dashboard.data.pending_requests ?? 0) + (dashboard.data.awaiting_issue ?? 0);
+    if (item.key === "requests" && allowedTabs.includes("dashboard") && dashboard) {
+      item.badge = (dashboard.pending_requests ?? 0) + (dashboard.awaiting_issue ?? 0);
     }
     if (item.key === "machines" && activeTab === "machines") {
-      const rows = collectionResults(types.data);
+      const rows = collectionResults(types);
       item.children = rows.slice(0, 8).map(type => ({ key: `machines:${type.id}`, label: type.name,
         href: path("machines", machineTypeSegment(type)), icon: Cog, onSelect: () => props.setTab("machines") }));
       if (rows.length > 8) item.children.push({ key: "machines:all", label: t`All types →`, href: path("machines"), icon: Cog });

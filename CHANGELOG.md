@@ -99,6 +99,16 @@ carries the design rule each change introduced.
   new image's `python manage.py preview_fixed_roles` before `migrate`, and fix all “must fix before
   upgrading” notification rules. Follow the [upgrade procedure](docs/update-recovery.md#fixed-role-upgrade-2026-10-16).
 
+## 0.9.3 (2026-11-08)
+
+- **Fresh Docker installations complete backup capability initialization** - the root installer no longer
+  imports Django models through a shared backup exception. It needs only the public verification key,
+  allowing setup to continue to initial admin and makerspace creation.
+- **Installer and deployment defaults follow SpaceWorks-Labs** - repository URLs and GHCR image defaults
+  use the current organization, including Compose, updates, examples and setup documentation.
+- **Published backend images receive an installer smoke check** - release verification runs the producer
+  capability helper with `--help` as root after pulling the image, without application settings or secrets.
+
 ## 0.9.2 (2026-10-14)
 
 - **Deploys run on a self-hosted GitHub Actions runner** - after the release workflow publishes a main

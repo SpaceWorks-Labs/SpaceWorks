@@ -1,12 +1,12 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.png" />
   <source media="(prefers-color-scheme: light)" srcset="docs/readme/banner.png" />
-  <img src="docs/readme/banner.png" width="100%" alt="Space Works: open-source makerspace management. Run the space, not the spreadsheet. Tools, machines, members and events. Every handover accounted for. Patch, the Space Works mascot, peeks in from the corner." />
+  <img src="docs/readme/banner.png" width="100%" alt="Space Works: open-source makerspace management. Bring your makerspace together. Tools, machines, people and events in one place. Modular by design." />
 </picture>
 
 <div align="center">
 
-<h3>Run the space, not the spreadsheet.</h3>
+<h3>Bring your makerspace together.</h3>
 
 <p>Open-source makerspace management: tools, machines, members, events, bookings and money in one place, with a trail behind every handover.</p>
 
@@ -21,12 +21,12 @@
 </p>
 
 <p>
-  <a href="docs/README.md">Docs</a> ·
-  <a href="docs/install-and-update.md">Install</a> ·
-  <a href="docs/MODULES.md">Modules</a> ·
-  <a href="#integrations">Integrations</a> ·
-  <a href="#api">API</a> ·
-  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="docs/README.md">Docs</a> Â·
+  <a href="docs/install-and-update.md">Install</a> Â·
+  <a href="docs/MODULES.md">Modules</a> Â·
+  <a href="#integrations">Integrations</a> Â·
+  <a href="#api">API</a> Â·
+  <a href="CHANGELOG.md">Changelog</a> Â·
   <a href=".github/SECURITY.md">Security</a>
 </p>
 
@@ -42,7 +42,7 @@ Space Works started in the **TinkerSpace Kochi** community; run it for yours, fo
 to the way your workshop works.
 
 <!--
-  SCREENSHOT GALLERY PLACEHOLDER — filled in the final phase of release 2.
+  SCREENSHOT GALLERY PLACEHOLDER â€” filled in the final phase of release 2.
   Add "## A look around" with a two-column <table> of docs/readme/screens/*.webp images, each with
   alt text and a one-line bold caption (public catalogue, staff dashboard, handover with evidence,
   machine queue, events, bookings, member area, dark mode). No image tags until the files exist.
@@ -221,13 +221,13 @@ explains every module and capability, retained data and re-enabling.
 
 ```mermaid
 flowchart LR
-  browser([Browser or app]) --> web["Website<br/>React 19 · Vite"]
-  web --> api["API<br/>Django 6 · DRF"]
+  browser([Browser or app]) --> web["Website<br/>React 19 Â· Vite"]
+  web --> api["API<br/>Django 6 Â· DRF"]
   api --> db[("PostgreSQL 16")]
   api --> redis[("Redis")]
   api --> s3[("Silo / S3<br/>private evidence")]
   worker["Celery worker + beat"] --> db
-  worker --> out["Email · chat · push · webhooks"]
+  worker --> out["Email Â· chat Â· push Â· webhooks"]
   redis --> worker
 
   classDef core fill:#006E63,stroke:#142C2A,color:#FFF4E8
@@ -241,8 +241,8 @@ The website is a thin client over an API built from deep modules. Two rules hold
 quantity math**, so stock can never go below zero and every handover is audited the same way. Every
 query for staff is scoped to a makerspace through the access-control module.
 
-**Stack:** Django 6 + DRF · React 19 + Vite 8 + Tailwind CSS 4 + TypeScript (TanStack Query v5) ·
-PostgreSQL 16 · Celery + Redis · Silo (S3-compatible MinIO fork) · django-unfold admin ·
+**Stack:** Django 6 + DRF Â· React 19 + Vite 8 + Tailwind CSS 4 + TypeScript (TanStack Query v5) Â·
+PostgreSQL 16 Â· Celery + Redis Â· Silo (S3-compatible MinIO fork) Â· django-unfold admin Â·
 drf-spectacular / OpenAPI. Delivered as two Docker images (`spaceworks-backend`, `spaceworks-frontend`);
 everything else is official upstream images. Read [ARCHITECTURE.md](ARCHITECTURE.md) for request flows,
 tenancy and the module map.

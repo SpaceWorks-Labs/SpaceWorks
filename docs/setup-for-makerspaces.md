@@ -37,14 +37,14 @@ Docker Desktop installation on Windows/macOS:
 On Linux, paste:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
 ```
 
 It installs into `/opt/spaceworks` by default. To choose another directory, export it for the `bash`
 side of the pipe:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash
 ```
 
 Use the second form in Windows Git Bash. The installer downloads the newest **tagged GitHub release**
@@ -75,7 +75,7 @@ The script will ask you a few simple questions (press Enter to accept the sugges
 | Admin password | type one, or leave blank and it makes a strong one for you |
 | Who can submit borrow requests? | members, signed-in accounts (default), or anyone |
 | Optional integrations | Google Web client ID; Stripe secret/webhook keys and currency |
-| GitHub repository | `SpaceWorks-HQ/SpaceWorks`, or your fork as `Owner/Repo` (asked before download by curl) |
+| GitHub repository | `SpaceWorks-Labs/SpaceWorks`, or your fork as `Owner/Repo` (asked before download by curl) |
 | Automatic deploys | optional GitHub Actions runner; press Enter for No. Linux with systemd only; setup prints the GitHub steps |
 
 The summary lists the selected services and whether the runner will be installed, and explains:

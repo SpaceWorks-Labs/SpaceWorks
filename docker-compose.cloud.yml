@@ -80,7 +80,7 @@ x-app-env: &app-env
   BACKUP_PRODUCER_PRIVILEGED_SCRIPTS_DIR: /run/spaceworks-privileged-scripts
 services:
   orchestration-init:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     user: "0:0"
     entrypoint: ["python", "/app/scripts/bootstrap_host_orchestration.py"]
     environment:
@@ -92,7 +92,7 @@ services:
     volumes:
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/host-state
   migrate:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     environment:
       <<: *app-env
       DATABASE_URL: ${SPACEWORKS_MAINTENANCE_DATABASE_URL:?set SPACEWORKS_MAINTENANCE_DATABASE_URL}
@@ -106,7 +106,7 @@ services:
       orchestration-init:
         condition: service_completed_successfully
   orchestration-ready:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     user: "0:0"
     entrypoint: ["python", "/app/scripts/bootstrap_host_orchestration.py"]
     environment:
@@ -121,7 +121,7 @@ services:
       migrate:
         condition: service_completed_successfully
   backend:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     logging: *default-logging
     environment: *app-env
@@ -143,7 +143,7 @@ services:
       orchestration-ready:
         condition: service_completed_successfully
   cron:
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     logging: *default-logging
     environment: *app-env
@@ -158,7 +158,7 @@ services:
         condition: service_completed_successfully
   candidate-backend:
     profiles: [host-recovery]
-    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-backend}:${MAKERSPACE_IMAGE_TAG:-latest}
     environment: *app-env
     command: ["--role", "backend", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "1", "--access-logfile", "-", "--error-logfile", "-"]
     healthcheck:
@@ -171,7 +171,7 @@ services:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
       - ${SPACEWORKS_HOST_STATE_DIR:-/var/lib/spaceworks/host}/public:/run/spaceworks-host:ro
   frontend:
-    image: ${MAKERSPACE_FRONTEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-frontend}:${MAKERSPACE_IMAGE_TAG:-latest}
+    image: ${MAKERSPACE_FRONTEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-frontend}:${MAKERSPACE_IMAGE_TAG:-latest}
     restart: *default-restart
     logging: *default-logging
     ports:

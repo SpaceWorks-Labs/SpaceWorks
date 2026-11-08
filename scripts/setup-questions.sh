@@ -128,7 +128,7 @@ ask_setup_questions() {
   if [[ "${SPACEWORKS_INSTALL_REPOSITORY_PINNED:-0}" == 1 ]]; then
     echo "GitHub repository to follow [$SPACEWORKS_REPOSITORY] (selected before download)."
   else
-    question SPACEWORKS_REPOSITORY 'GitHub repository to follow' "${SPACEWORKS_REPOSITORY:-SpaceWorks-HQ/SpaceWorks}" repository || return 1
+    question SPACEWORKS_REPOSITORY 'GitHub repository to follow' "${SPACEWORKS_REPOSITORY:-SpaceWorks-Labs/SpaceWorks}" repository || return 1
   fi
   INSTALL_RUNNER=N
   if [[ "$(uname -s)" == Linux ]] && command -v systemctl >/dev/null 2>&1 \

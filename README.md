@@ -12,7 +12,7 @@
 
 <p>
   <a href="LICENSE"><img alt="License: AGPL-3.0-or-later" src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg"></a>
-  <a href="https://github.com/SpaceWorks-HQ/SpaceWorks/actions/workflows/release.yml"><img alt="Release" src="https://github.com/SpaceWorks-HQ/SpaceWorks/actions/workflows/release.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/release.yml"><img alt="Release" src="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/release.yml/badge.svg?branch=main"></a>
   <img alt="Stack" src="https://img.shields.io/badge/stack-Django%206%20%C2%B7%20React%2019-0b7285.svg">
   <a href=".github/CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
 </p>
@@ -90,7 +90,7 @@ Telegram group, QR namespace, and audit scope — fully isolated from the others
 On a 64-bit Linux server (or macOS / Windows with Docker Desktop running), as a user with `sudo`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
 ```
 
 It asks every question first, shows a summary, and changes nothing until you confirm. Run the same
@@ -130,7 +130,7 @@ All deployment decisions come first, in this order:
    edition, initial module profile, and who may submit borrow requests.
 7. **Admin:** username, your email, and password (blank generates one).
 8. **Optional integrations:** Google Web client ID, Stripe secret/webhook keys and currency.
-9. **GitHub repository to follow** (`SpaceWorks-HQ/SpaceWorks`, or your fork) and
+9. **GitHub repository to follow** (`SpaceWorks-Labs/SpaceWorks`, or your fork) and
    **Install a GitHub Actions runner on this server for automatic deploys? [y/N]** No by default.
    Automatic deploys require Linux with systemd and the GitHub settings below.
    The curl installer asks the repository before downloading its questionnaire.
@@ -144,7 +144,7 @@ It's required." It shows whether the runner will be installed. Production create
 makerspace, with no demo/example data.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
 ```
 
 **One command for everyone, forks included.** The installer's first question is which GitHub repository
@@ -152,7 +152,7 @@ to install and update from: press Enter for the main project, or type your fork 
 the question (for example in a script), pass the fork up front:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash -s -- --repo YourName/SpaceWorks
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash -s -- --repo YourName/SpaceWorks
 ```
 
 `SPACEWORKS_REPOSITORY=YourName/SpaceWorks` on the `bash` side of the pipe does the same. The choice is
@@ -202,8 +202,8 @@ bash scripts/init-host-orchestration.sh   # one-time root-owned pointer/key/conf
 scripts/spaceworks-compose.sh bundled up -d
 ```
 
-With the default repository this pulls **`ghcr.io/spaceworks-hq/spaceworks-backend`** +
-**`ghcr.io/spaceworks-hq/spaceworks-frontend`** and brings up the full stack automatically.
+With the default repository this pulls **`ghcr.io/spaceworks-labs/spaceworks-backend`** +
+**`ghcr.io/spaceworks-labs/spaceworks-frontend`** and brings up the full stack automatically.
 
 ### Updating
 
@@ -670,8 +670,8 @@ module registry, and the registry only carries modules with real enforcement beh
   being invited or applying to join.
 
 Current work and shipped changes are tracked in
-[GitHub issues](https://github.com/SpaceWorks-HQ/SpaceWorks/issues),
-[pull requests](https://github.com/SpaceWorks-HQ/SpaceWorks/pulls), and the release notes. The running
+[GitHub issues](https://github.com/SpaceWorks-Labs/SpaceWorks/issues),
+[pull requests](https://github.com/SpaceWorks-Labs/SpaceWorks/pulls), and the release notes. The running
 product intentionally does not expose a separate roadmap page.
 
 ## Roles & access
@@ -713,9 +713,9 @@ corresponding source code of your modified version under the same license.
 
 Thanks to **everyone** who has contributed to Space Works — code, docs, bug reports, or running it at their
 space. The wall below is pulled live from this repository's
-[GitHub contributor graph](https://github.com/SpaceWorks-HQ/SpaceWorks/graphs/contributors) and
+[GitHub contributor graph](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors) and
 shows **all** contributors — bots and automation included, no filtering:
 
-[![Contributors](https://contrib.rocks/image?repo=SpaceWorks-HQ/SpaceWorks&max=100)](https://github.com/SpaceWorks-HQ/SpaceWorks/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=SpaceWorks-Labs/SpaceWorks&max=100)](https://github.com/SpaceWorks-Labs/SpaceWorks/graphs/contributors)
 
 <sub>Contributor image by [contrib.rocks](https://contrib.rocks).</sub>

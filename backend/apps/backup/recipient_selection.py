@@ -2,14 +2,11 @@
 
 from django.conf import settings
 
+from .errors import BackupBuildError
 from .models import BackupArchive, MakerspaceArchiveRecipient
 
 
 PLATFORM_RECIPIENT_LABEL = "Platform backup recipient"
-
-
-class BackupBuildError(RuntimeError):
-    pass
 
 
 def selection_for(archive) -> list[dict]:

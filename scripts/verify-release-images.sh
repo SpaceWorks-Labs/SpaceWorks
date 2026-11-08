@@ -20,6 +20,12 @@ for package in spaceworks-backend spaceworks-frontend spaceworks-allinone; do
   if ! docker pull "$image"; then
     echo "::error::Published release image cannot be pulled: ${image}" >&2
     failed=1
+  elif [[ "$package" == spaceworks-backend ]]; then
+    if ! docker run --rm --user 0:0 --entrypoint python "$image" \
+      /app/scripts/install_producer_capability.py --help; then
+      echo "::error::Published backend installer smoke check failed: ${image}" >&2
+      failed=1
+    fi
   fi
 done
 

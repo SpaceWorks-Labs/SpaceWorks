@@ -7,13 +7,13 @@ This project is Docker-first for operators who do not want to build Django or Vi
 The supported fresh-install path needs no Git clone:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
 ```
 
 The installer defaults to `/opt/spaceworks`; override it on the `bash` process with, for example,
-`curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash`.
+`curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | SPACEWORKS_DIR="$HOME/SpaceWorks" bash`.
 It resolves the latest published, non-draft, non-prerelease GitHub release built from `main`,
-from `SPACEWORKS_REPOSITORY` (default `SpaceWorks-HQ/SpaceWorks`), downloads that tag's archive, and pins the published backend/frontend images to its immutable version.
+from `SPACEWORKS_REPOSITORY` (default `SpaceWorks-Labs/SpaceWorks`), downloads that tag's archive, and pins the published backend/frontend images to its immutable version.
 The accepted version format is `X.Y.Z-main.<run>.<12-hex sha>`; there is no release channel choice.
 Before mutating the host it checks x86_64/aarch64 support, distribution/dependency handling, Docker,
 8 GiB of free disk, release availability, and existing state. Linux dependency
@@ -139,8 +139,8 @@ MAKERSPACE_IMAGE_TAG=latest
 Optional image overrides:
 
 ```env
-MAKERSPACE_BACKEND_IMAGE=ghcr.io/spaceworks-hq/spaceworks-backend
-MAKERSPACE_FRONTEND_IMAGE=ghcr.io/spaceworks-hq/spaceworks-frontend
+MAKERSPACE_BACKEND_IMAGE=ghcr.io/spaceworks-labs/spaceworks-backend
+MAKERSPACE_FRONTEND_IMAGE=ghcr.io/spaceworks-labs/spaceworks-frontend
 ```
 
 ### Build from source (explicit opt-in)
@@ -308,7 +308,7 @@ apply all the security settings above. No upstream runner or setting is shared w
 For example:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks/main/install.sh | \
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | \
   SPACEWORKS_REPOSITORY=YourOwner/YourFork bash
 ```
 

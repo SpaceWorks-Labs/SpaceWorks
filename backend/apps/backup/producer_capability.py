@@ -18,9 +18,9 @@ from apps.backup.compound_protocol import (
     SUPPORTED_PROTOCOL_MAXIMUM,
     SUPPORTED_PROTOCOL_MINIMUM,
 )
+from apps.backup.errors import BackupBuildError
 from apps.backup.host_marker import MarkerError, _assert_trusted_file
 from apps.backup.host_marker_file import write_json_fsynced
-from apps.backup.recipient_selection import BackupBuildError
 from apps.ed25519 import Ed25519Error, decode_key, fingerprint_public_key
 
 

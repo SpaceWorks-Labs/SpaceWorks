@@ -38,7 +38,7 @@ if [[ "$mode" == remove && ! -f "$RUNNER_DIR/.runner" ]]; then
   exit 0
 fi
 repository="${SPACEWORKS_REPOSITORY:-$(repository_env_value SPACEWORKS_REPOSITORY)}"
-repository="${repository:-SpaceWorks-HQ/SpaceWorks}"
+repository="${repository:-SpaceWorks-Labs/SpaceWorks}"
 SPACEWORKS_REPOSITORY="$repository"
 configure_release_repository || die 'Invalid GitHub repository.'
 read_token() {

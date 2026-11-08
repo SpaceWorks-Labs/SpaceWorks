@@ -9,7 +9,7 @@ bundles everything, so these only matter when you run the backend/frontend direc
 ## 0. Get the code
 
 ```bash
-git clone https://github.com/SpaceWorks-HQ/SpaceWorks.git
+git clone https://github.com/SpaceWorks-Labs/SpaceWorks.git
 cd SpaceWorks
 ```
 

@@ -101,12 +101,12 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
         const group = dateGroup(row.created_at);
         const showGroup = previousGroup !== group;
         previousGroup = group;
-        return <div key={row.id} className="grid gap-3">{showGroup ? <h2 className="eyebrow mt-3">{group}</h2> : null}
-          <div className={row.read_at ? "" : "rounded-xl border-l-4 border-accent"}>
+        return <div key={row.id} className="grid min-w-0 gap-3">{showGroup ? <h2 className="eyebrow mt-3">{group}</h2> : null}
+          <div className={row.read_at ? "min-w-0" : "min-w-0 rounded-xl border-l-4 border-accent"}>
             <ListRow title={row.title} identity={{ kind: "icon", icon: familyIcons[row.feature] ?? "Info", tone: "neutral" }}
               onClick={!row.read_at ? () => read.mutate(row.id) : undefined}
               meta={<><span>{families[row.feature] ?? row.feature.replace(/_/g, " ")} · <RelativeTime date={row.created_at} /></span>
-                <span className="mt-1 block line-clamp-2 whitespace-pre-wrap break-words">{row.summary}</span></>}
+                <span className="mt-1 block line-clamp-2 whitespace-pre-wrap [overflow-wrap:anywhere]">{row.summary}</span></>}
               right={<div className="flex flex-wrap items-center gap-2">{!row.read_at ? <StatusPill label={t`Unread`} tone="accent" /> : null}
                 {isInboxLink(link) ? <RouteLink className="desk-button" href={link} onClick={() => { if (!row.read_at) read.mutate(row.id); }}>{t`Open`}</RouteLink> : null}
                 {!row.read_at ? <button className="desk-button" disabled={read.isPending} onClick={() => read.mutate(row.id)}>{t`Mark read`}</button> : null}
@@ -116,7 +116,7 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
                 onClick={() => { setExpanded(current => ({ ...current, [row.id]: !current[row.id] }));
                   if (!row.read_at && !read.isPending) read.mutate(row.id); }}>
                 {expanded[row.id] ? t`Show less` : t`Read message`}</button>
-              {expanded[row.id] ? <p className="whitespace-pre-wrap break-words text-sm">{row.summary}</p> : null}
+              {expanded[row.id] ? <p className="whitespace-pre-wrap text-sm [overflow-wrap:anywhere]">{row.summary}</p> : null}
             </div> : null}
           </div></div>;
       }) }} pagination={rows.data ? { page, pageSize: serverPageSize(rows.data, page), count: rows.data.count,

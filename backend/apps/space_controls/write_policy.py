@@ -29,7 +29,7 @@ _permits = ContextVar("space_controls_permits", default=frozenset())
 CONTROL_ROUTES = frozenset("""
 admin-space-suspend admin-space-unsuspend admin-space-read-only admin-space-read-only-lift
 admin-space-schedule admin-space-schedule-cancel admin-space-archive admin-space-unarchive
-admin-space-purge admin-space-transfer-ownership admin-space-plan
+admin-space-purge admin-space-transfer-ownership admin-space-plan admin-platform-space-plan-bulk
 """.split())
 # Money a payer already sent settles in every state (the archived-money invariant).
 SETTLEMENT_ROUTES = frozenset("""
@@ -43,7 +43,7 @@ one-click-unsubscribe email-bounce-webhook email-provider-webhook telegram-webho
 data-export-list-create data-export-detail data-export-download-url member-subject-export-list
 member-subject-export-detail member-saved-details-export-create admin-makerspace-pii-access
 admin-inventory-export to-buy-export report-export ledger-export finance-event-payout-export
-admin-card-design-export member-admission-export events-programme-member-role-application-export
+admin-card-design-export admin-card-design-badge-export member-admission-export events-programme-member-role-application-export
 """.split())
 
 SETTLEMENT_OPERATIONS = frozenset({

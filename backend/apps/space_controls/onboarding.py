@@ -20,6 +20,7 @@ from apps.hosting_requests.exceptions import HostingRequestConflict
 from apps.hosting_requests.models import HostingRequest
 from apps.hosting_requests.prefill import join_organization
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.space_kind import apply_kind_defaults
 
 from .write_policy import control_context
 
@@ -40,7 +41,7 @@ def _owner(row, organization_id, new_organization_name):
 
 
 def approve(actor, request_id, *, name="", slug="", organization_id=None, new_organization_name="",
-            invite_manager=True):
+            invite_manager=True, kind=""):
     """Returns ``(request, makerspace, invitation_status)``."""
     from apps.organizations.services_owner import assign_owner_organization
 
@@ -52,6 +53,8 @@ def approve(actor, request_id, *, name="", slug="", organization_id=None, new_or
             row = workflow.accept(actor, row.pk)
         elif row.status != S.ACCEPTED or row.created_makerspace_id is not None:
             raise HostingRequestConflict()
+        if kind and kind != row.requested_kind:
+            raise ValidationError({"kind": gettext("The space kind must match what the applicant requested.")})
         name = str(name or row.space_name).strip()[:200]
         slug = slugify(str(slug or row.proposed_slug or name))[:50]
         if not slug:
@@ -59,8 +62,11 @@ def approve(actor, request_id, *, name="", slug="", organization_id=None, new_or
         if Makerspace.objects.filter(slug=slug).exists():
             raise ValidationError({"slug": gettext("This web address name is already taken.")})
         owner_id, owner_name = _owner(row, organization_id, str(new_organization_name or "").strip())
-        space = Makerspace.objects.create(name=name, slug=slug, location=row.location, created_by=actor)
-        audit.record(actor, "makerspace.created", makerspace=space, target=space, meta={"via": "onboarding"})
+        space = Makerspace.objects.create(name=name, slug=slug, location=row.location,
+                                         kind=row.requested_kind, created_by=actor)
+        audit.record(actor, "makerspace.created", makerspace=space, target=space,
+                     meta={"via": "onboarding", "kind": space.kind})
+        space = apply_kind_defaults(actor, space)
         assign_owner_organization(actor, space.pk, organization_id=owner_id, new_name=owner_name)
         workflow.link_created_makerspace(actor, row.pk, space)
         if invite_manager and row.applicant_email:

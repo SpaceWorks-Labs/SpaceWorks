@@ -92,7 +92,7 @@ def problems(space):
             results.extend(check.evaluate(tenant_check_context(space, check.key), now))
         except Exception:
             results.append({"key": check.key, "status": "warn", "message": "This check could not be completed.",
-                            "fix_url": f"/m/{space.slug}/admin/settings", "makerspace_id": space.pk})
+                            "fix_url": f"/m/{space.slug}/admin/settings/health", "makerspace_id": space.pk})
     return [{key: row.get(key) for key in ("key", "status", "message", "fix_url")} for row in results]
 
 
@@ -105,6 +105,13 @@ def _managers(space, viewer):
         rows.append({"membership_id": row.pk, "user_id": row.user_id,
                      "name": _who(row.user) if shown else MASK, "email": row.user.email if shown else MASK})
     return rows
+
+
+def _hosting(space):
+    """Decision 236: own vs hosted (never raises; managed_hosting decides)."""
+    from apps.managed_hosting.hosting_type import is_hosted, stored_type
+
+    return {"hosting_type": stored_type(space), "hosted": is_hosted(space)}
 
 
 def card(space, *, detail=False, viewer=None):
@@ -125,6 +132,7 @@ def card(space, *, detail=False, viewer=None):
         "open_issues": sum(1 for row in issues if row["status"] != "ok"),
         "modules": sorted(space.enabled_modules or []),
         "managers": _managers(space, viewer),
+        **_hosting(space),
     }
     if control is not None:
         if control.suspended_at:

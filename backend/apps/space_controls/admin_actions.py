@@ -12,6 +12,7 @@ from django.template.response import TemplateResponse
 from rest_framework.exceptions import APIException
 
 from . import services_access, services_schedule
+from django.utils.translation import gettext_lazy
 
 TEMPLATE = "admin/space_controls/control_confirmation.html"
 
@@ -44,7 +45,7 @@ class MakerspaceSpaceControlsAdminMixin:
                 self.message_user(request, f"{done} {space.name}.", level=messages.SUCCESS)
         return None
 
-    @admin.action(description="Pause (suspend) selected spaces")
+    @admin.action(description=gettext_lazy("Pause (suspend) selected spaces"))
     def suspend_makerspaces(self, request, queryset):
         return self._run_control(
             request, queryset, run=services_access.suspend, done="Paused", action="suspend_makerspaces",
@@ -52,13 +53,13 @@ class MakerspaceSpaceControlsAdminMixin:
             explanation="Staff and members see a paused page, public pages go offline, scheduled jobs and "
                         "outbound messages stop. Nothing is deleted. Each Space Manager is emailed.")
 
-    @admin.action(description="Unblock selected paused spaces")
+    @admin.action(description=gettext_lazy("Unblock selected paused spaces"))
     def unsuspend_makerspaces(self, request, queryset):
         return self._run_control(request, queryset, run=lambda actor, pk, _reason: services_access.unsuspend(actor, pk),
                                  done="Unblocked", action="unsuspend_makerspaces", title="Unblock spaces",
                                  explanation="")
 
-    @admin.action(description="Make selected spaces read-only")
+    @admin.action(description=gettext_lazy("Make selected spaces read-only"))
     def read_only_makerspaces(self, request, queryset):
         return self._run_control(
             request, queryset, run=services_access.set_read_only, done="Made read-only",
@@ -66,14 +67,14 @@ class MakerspaceSpaceControlsAdminMixin:
             explanation="Everyone can view and export, but nothing new can be created. The reason is shown "
                         "in the space's banner and emailed to its Space Managers.")
 
-    @admin.action(description="End read-only mode for selected spaces")
+    @admin.action(description=gettext_lazy("End read-only mode for selected spaces"))
     def lift_read_only_makerspaces(self, request, queryset):
         return self._run_control(request, queryset,
                                  run=lambda actor, pk, _reason: services_access.lift_read_only(actor, pk),
                                  done="Ended read-only mode for", action="lift_read_only_makerspaces",
                                  title="End read-only mode", explanation="")
 
-    @admin.action(description="Cancel the scheduled archive or purge of selected spaces")
+    @admin.action(description=gettext_lazy("Cancel the scheduled archive or purge of selected spaces"))
     def cancel_makerspace_schedules(self, request, queryset):
         return self._run_control(request, queryset, run=lambda actor, pk, _reason: services_schedule.cancel(actor, pk),
                                  done="Cancelled the schedule of", action="cancel_makerspace_schedules",

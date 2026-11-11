@@ -12,6 +12,7 @@ from config.admin_access import SuperuserOnlyModelAdmin
 
 from . import announcements
 from .models import PlatformAnnouncement, SpaceControlState
+from django.utils.translation import gettext_lazy
 
 
 class _ReadOnly(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
@@ -42,7 +43,7 @@ class PlatformAnnouncementAdmin(_ReadOnly):
     readonly_fields = [field.name for field in PlatformAnnouncement._meta.concrete_fields]
     actions = ["cancel_announcements"]
 
-    @admin.action(description="Cancel selected announcements")
+    @admin.action(description=gettext_lazy("Cancel selected announcements"))
     def cancel_announcements(self, request, queryset):
         for row in queryset:
             try:

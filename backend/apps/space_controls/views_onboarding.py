@@ -5,7 +5,9 @@ transition goes through ``hosting_requests.workflow``; approval also provisions.
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
+from django.utils.translation import gettext
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,7 +30,7 @@ class HostingRequestRowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HostingRequest
-        fields = ("id", "status", "source", "space_name", "proposed_slug", "location", "expected_members",
+        fields = ("id", "status", "requested_kind", "source", "space_name", "proposed_slug", "location", "expected_members",
                   "applicant_name", "applicant_email", "applicant_phone", "space_website_url", "description",
                   "organization_choice", "new_organization_name", "inviter_summary", "created_at", "verified_at",
                   "decided_at", "changes_note", "created_makerspace")
@@ -67,6 +69,9 @@ class OnboardingApproveSerializer(serializers.Serializer):
     organization_id = serializers.IntegerField(required=False, allow_null=True, default=None)
     new_organization_name = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
     invite_manager = serializers.BooleanField(default=True)
+    kind = serializers.ChoiceField(
+        choices=HostingRequest.RequestedKind.choices, required=False, default="",
+        help_text="Optional; when given it must equal the request's `requested_kind` (the space is created as that kind).")
 
 
 class OnboardingSpaceRefSerializer(serializers.Serializer):
@@ -100,14 +105,20 @@ class HostingRequestListView(GenericAPIView):
     serializer_class = HostingRequestRowSerializer
 
     @extend_schema(tags=TAGS, summary="List hosting (onboarding) requests",
-                   parameters=[OpenApiParameter("status", str, enum=[value for value, _ in HostingRequest.Status.choices])],
-                   responses={200: HostingRequestRowSerializer(many=True), **errors(401, 403, 404)})
+                   parameters=[OpenApiParameter("status", str, enum=[value for value, _ in HostingRequest.Status.choices]),
+                               OpenApiParameter("requested_kind", str, enum=[value for value, _ in HostingRequest.RequestedKind.choices])],
+                   responses={200: HostingRequestRowSerializer(many=True), **errors(400, 401, 403, 404)})
     def get(self, request):
         _managed()
         rows = HostingRequest.objects.select_related("created_makerspace", "inviter_makerspace", "inviter_organization")
         wanted = request.query_params.get("status")
         if wanted:
             rows = rows.filter(status=wanted)
+        kind = request.query_params.get("requested_kind")
+        if kind:
+            if kind not in {value for value, _ in HostingRequest.RequestedKind.choices}:
+                raise ValidationError({"requested_kind": gettext("Choose makerspace or organization.")})
+            rows = rows.filter(requested_kind=kind)
         page = self.paginate_queryset(rows)
         return self.get_paginated_response(HostingRequestRowSerializer(page, many=True).data)
 

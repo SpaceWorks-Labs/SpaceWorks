@@ -94,6 +94,8 @@ class HealthCardSerializer(serializers.Serializer):
     open_issues = serializers.IntegerField()
     modules = serializers.ListField(child=serializers.CharField())
     managers = SpaceHealthManagerSerializer(many=True)
+    hosting_type = serializers.ChoiceField(choices=["own", "hosted"], help_text="Decision 236: the stored type.")
+    hosted = serializers.BooleanField(help_text="Limits, plans and hosting billing apply now (hosted and hosting on).")
     plan = SpaceHealthPlanSerializer(
         allow_null=True, required=False,
         help_text="Present only while MANAGED_PLANS_ENABLED is on (the managed-hosting limiter, #187A).")

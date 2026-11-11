@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
-import { CATEGORY_LABELS, CHANNEL_LABELS, CONNECTABLE } from "./channelCatalog";
+import { categoryLabel, channelLabel, CONNECTABLE } from "./channelCatalog";
 import { useSavePreferences, type ChannelKey, type Selection } from "./channelsApi";
 
 /**
@@ -32,7 +32,7 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
     })), { onSuccess: data => setDraft(data.preferences) });
   }}>
     {shown.map(row => {
-      const name = CATEGORY_LABELS[row.category] ?? row.category.replace(/_/g, " ");
+      const name = categoryLabel(row.category);
       return <fieldset key={row.category} className="grid min-w-0 gap-1 rounded-lg border border-line p-3">
         <legend className="px-1 text-sm font-semibold text-ink">{name}</legend>
         <div className="flex min-w-0 flex-wrap gap-x-4">
@@ -41,10 +41,10 @@ export function ChannelPreferences({ makerspaceId, preferences, connected, membe
             const checked = row.channels.includes(channel);
             return <label key={channel} className="flex min-h-11 items-center gap-2 text-sm">
               <input className="h-4 w-4" type="checkbox" checked={checked} disabled={save.isPending || (needsConnection && !checked)}
-                aria-label={`${name}: ${CHANNEL_LABELS[channel] ?? channel}`}
+                aria-label={`${name}: ${channelLabel(channel)}`}
                 onChange={event => update(row.category, { channels: event.target.checked
                   ? [...row.channels, channel] : row.channels.filter(item => item !== channel) })} />
-              <span>{CHANNEL_LABELS[channel] ?? channel}{needsConnection ? <span className="text-muted"> ({channel === "sms" ? t`allow SMS first` : t`connect first`})</span> : null}</span>
+              <span>{channelLabel(channel)}{needsConnection ? <span className="text-muted"> ({channel === "sms" ? t`allow SMS first` : t`connect first`})</span> : null}</span>
             </label>;
           })}
         </div>

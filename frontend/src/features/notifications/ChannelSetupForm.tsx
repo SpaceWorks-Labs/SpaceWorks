@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Callout, Field } from "../../components/ui";
-import { CHANNEL_LABELS, defaultChannel, providerSpec, type ChannelSpec } from "./channelCatalog";
+import { channelLabel, defaultChannel, providerSpec, type ChannelSpec } from "./channelCatalog";
 import { useSaveChannel, type Channel, type ChannelWrite, type ProviderKey, type Quotas, type WhatsAppTemplate } from "./channelsApi";
 import { WhatsAppTemplatesEditor } from "./WhatsAppTemplatesEditor";
 import { SlackInstallation } from "./SlackInstallation";
@@ -83,10 +83,10 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
       {spec.key === "email" ? toggle("email_fallback", "Email fallback", "Email a person when none of the channels they chose could deliver.") : null}
     </fieldset>
     {addressed ? <fieldset className="grid gap-2 rounded-lg border border-line p-3"><legend className="px-1 text-sm font-semibold">{t`Sender`}</legend>
-      <p className="text-sm text-muted">{t`Saved own credentials take precedence. Incomplete own settings refuse delivery; they never fall back to a platform sender.`}</p>
-      {spec.key === "sms" || draft.provider === "meta" ? <label className="flex min-h-11 items-center gap-2 text-sm">
+      <p className="text-sm text-muted">{t`This space's own credentials always come first and are never limited. Incomplete own settings refuse delivery; they never fall back to the platform's.`}</p>
+      <label className="flex min-h-11 items-center gap-2 text-sm">
         <input type="checkbox" checked={Boolean(draft.use_platform_sender)} disabled={save.isPending}
-          onChange={event => set({ use_platform_sender: event.target.checked })} />{t`Allow the operator's platform sender`}</label> : null}
+          onChange={event => set({ use_platform_sender: event.target.checked })} />{t`Use the platform's credentials when this space has none`}</label>
       {initial.credentials_set ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={clearCredentials} disabled={save.isPending || typed}
         onChange={event => setClearCredentials(event.target.checked)} />{t`Remove saved own credentials on save`}</label> : null}
       {initial.activation_hold ? <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={!draft.activation_hold} disabled={save.isPending}
@@ -121,7 +121,7 @@ export function ChannelSetupForm({ makerspaceId, spec, row, moduleInstalled }: P
       disabled={save.isPending || !row?.credentials_set || rotates || !sameTemplates(draft.templates, initial.templates)}
       onRefresh={templates => set({ templates })} /> : null}
     {rotates && row ? <Callout size="inline" tone="warn" lead="Saving reconnects this channel."
-      body={t`Changing the provider, ${provider.identityLabel?.toLowerCase() ?? "identity"} or credentials disconnects everyone's personal ${CHANNEL_LABELS[spec.key]} connection. They will need to connect again.`} /> : null}
+      body={provider.identityLabel ? t`Changing the provider, ${provider.identityLabel.toLowerCase()} or credentials disconnects everyone's personal ${channelLabel(spec.key)} connection. They will need to connect again.` : t`Changing the provider, identity or credentials disconnects everyone's personal ${channelLabel(spec.key)} connection. They will need to connect again.`} /> : null}
     {problem ? <p role="alert" className="text-sm text-danger">{problem}</p> : null}
     {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
     {save.isSuccess && !save.isPending ? <p role="status" className="text-sm text-muted">{t`${spec.label} settings saved.`}</p> : null}

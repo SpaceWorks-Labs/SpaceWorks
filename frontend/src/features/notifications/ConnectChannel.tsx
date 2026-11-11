@@ -2,7 +2,8 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Field } from "../../components/ui";
-import { CHANNEL_LABELS } from "./channelCatalog";
+import { formatTime } from "../../lib/format";
+import { channelLabel } from "./channelCatalog";
 import { CONSENT_VERSION, useStartChallenge, useVerifyChallenge, type Challenge, type ChannelKey } from "./channelsApi";
 
 const PHONE = /^\+[1-9][0-9]{6,14}$/;
@@ -15,7 +16,7 @@ const PHONE = /^\+[1-9][0-9]{6,14}$/;
 export function ConnectChannel({ makerspaceId, channel, member = false, onDone }: {
   makerspaceId: number; channel: ChannelKey; member?: boolean; onDone: () => void;
 }) {
-  const label = CHANNEL_LABELS[channel] ?? channel;
+  const label = channelLabel(channel);
   const whatsapp = channel === "whatsapp";
   const [consent, setConsent] = useState(false);
   const [phone, setPhone] = useState("");
@@ -46,12 +47,14 @@ export function ConnectChannel({ makerspaceId, channel, member = false, onDone }
     </div>
   </form>;
 
+  const expires = formatTime(challenge.expires_at);
   const finish = () => verify.mutate({ challengeId: challenge.challenge_id, ...(whatsapp ? { code: code.trim() } : {}) }, { onSuccess: onDone });
   return <div className="grid min-w-0 gap-3" role="group" aria-label={t`Finish connecting ${label}`}>
     {challenge.instructions ? <p className="text-sm text-ink">{challenge.instructions}</p> : null}
     {link ? <p className="text-sm"><a className="desk-button inline-flex" href={link} target={challenge.oauth_state ? "_self" : "_blank"} rel="noopener noreferrer">
       {t`Open ${label} to connect ↗`}</a></p> : null}
-    <p className="text-sm text-muted">{t`This ${whatsapp ? "code" : "link"} expires at ${new Date(challenge.expires_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`}{whatsapp ? t` Enter the code we sent to your WhatsApp.` : t` When ${label} says you are connected, come back and confirm.`}</p>
+    <p className="text-sm text-muted">{whatsapp ? t`This code expires at ${expires}. Enter the code we sent to your WhatsApp.`
+      : t`This link expires at ${expires}. When ${label} says you are connected, come back and confirm.`}</p>
     {whatsapp ? <Field label={t`Code`}><input className="desk-input" inputMode="numeric" autoComplete="one-time-code" value={code}
       onChange={event => setCode(event.target.value)} /></Field> : null}
     {verify.error ? <p role="alert" className="text-sm text-danger">{whatsapp ? verify.error.message

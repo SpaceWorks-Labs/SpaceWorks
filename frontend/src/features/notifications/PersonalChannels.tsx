@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { ErrorBlock, StatusPill } from "../../components/ui";
-import { CHANNEL_LABELS } from "./channelCatalog";
+import { channelLabel } from "./channelCatalog";
 import { useEndpoints, useRevokeEndpoint, type ChannelKey, type Endpoint } from "./channelsApi";
 import { ConnectChannel } from "./ConnectChannel";
 
@@ -22,7 +22,7 @@ export function PersonalChannels({ makerspaceId, channels, member = false }: {
   return <ul className="grid min-w-0 gap-3" aria-label={t`Your connected channels`}>
     {channels.map(channel => {
       const endpoint = live.get(channel);
-      const label = CHANNEL_LABELS[channel] ?? channel;
+      const label = channelLabel(channel);
       return <li key={channel} className="grid min-w-0 gap-3 rounded-lg border border-line p-3">
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <span className="min-w-0 flex-1 font-semibold text-ink">{label}</span>

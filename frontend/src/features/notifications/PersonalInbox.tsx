@@ -10,6 +10,7 @@ import { opsQueryState, useOpsTabs } from "../staff/opsPresentation";
 import { inboxUnreadKey, personalRecipientKey } from "./personalQueryKeys";
 import { useOptionalTenant } from "../../lib/tenant";
 import { inboxRoute, isInboxLink } from "./inboxLinks";
+import { NOTIFICATION_FAMILIES, familyLabel } from "./notificationFamilies";
 import { InboxRowActions } from "./InboxRowActions";
 export { inboxUnreadKey } from "./personalQueryKeys";
 export { isInboxLink } from "./inboxLinks";
@@ -19,9 +20,7 @@ export type InboxRow = {
   read_at: string | null; created_at: string;
 };
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };
-const families: Record<string, string> = { hardware_requests: "Hardware", printing: "Printing", events: "Events",
-  bookings: "Bookings", maintenance: "Maintenance", members: "Members", payments: "Payments", stock: "Stock",
-  certifications: "Certifications", devices: "Devices", api_access: "API access" };
+const families = NOTIFICATION_FAMILIES;
 
 const familyIcons: Record<string, IconName> = { hardware_requests: "Wrench", printing: "Settings", events: "Calendar",
   bookings: "Calendar", maintenance: "Wrench", members: "User", payments: "Info", stock: "Wrench",
@@ -31,13 +30,13 @@ function dateGroup(value: string) {
   const date = new Date(value);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (date >= today) return "Today";
+  if (date >= today) return t`Today`;
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (date >= yesterday) return "Yesterday";
+  if (date >= yesterday) return t`Yesterday`;
   const week = new Date(today);
   week.setDate(week.getDate() - 7);
-  return date >= week ? "Earlier this week" : "Older";
+  return date >= week ? t`Earlier this week` : t`Older`;
 }
 
 /** The server decides the page size: a page with a `next` link is full, and the last page's size follows from the count. */
@@ -72,6 +71,10 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
   if (archived) params.set("archived", "true");
   const rows = useQuery({ queryKey: ["notifications-inbox", makerspaceId, mode, recipient, page, unread, feature, archived],
     queryFn: () => send<Page<InboxRow>>(`${path}?${params}`), refetchInterval: 60_000 });
+  // NT1 (decision 248): only the families this person actually receives become filter chips.
+  const present = useQuery({ queryKey: ["notifications-inbox-families", makerspaceId, mode, recipient], retry: false,
+    queryFn: () => send<{ families: string[] }>(`${path}/families`) });
+  const familyKeys = present.data?.families ?? (present.isError ? Object.keys(families) : []);
   const count = useQuery({ queryKey: inboxUnreadKey(makerspaceId, mode),
     queryFn: () => send<{ count: number }>(`${path}/unread-count`), refetchInterval: 60_000 });
   const refresh = () => {
@@ -90,10 +93,11 @@ export function PersonalInbox({ makerspaceId, makerspaceSlug, member = false, an
       primary: { label: t`Mark all read`, onClick: () => readAll.mutate(), pending: readAll.isPending, pendingLabel: "Marking read…",
         disabled: !unreadCount, disabledReason: !unreadCount ? "You're all caught up." : undefined }, secondary: announcement, overflow }}
       tabs={tabs.tabs.map(tab => tab.key === "unread" ? { ...tab, count: unreadCount } : tab)} activeTab={tabs.active}
-      filters={{ controls: <label className="grid gap-1 text-sm">{t`Family`}<select className="desk-input" value={feature}
-        onChange={event => { setFeature(event.target.value); setPage({ page: 1, tab: tabs.active }); }}>
-        <option value="">{t`All families`}</option>{Object.entries(families).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-      </select></label> }} state={state} isEmpty={rows.data?.results.length === 0}
+      filters={{ controls: familyKeys.length > 1 || feature ? <div role="group" aria-label={t`Family`} className="flex flex-wrap gap-2">
+        {["", ...familyKeys].map(key => <button key={key || "all"} type="button" aria-pressed={feature === key}
+          className={`min-h-11 rounded-full border px-4 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${feature === key ? "border-outline bg-panel text-ink" : "border-line text-muted hover:text-ink"}`}
+          onClick={() => { setFeature(key); setPage({ page: 1, tab: tabs.active }); }}>{key ? familyLabel(key) : t`All families`}</button>)}
+      </div> : undefined }} state={state} isEmpty={rows.data?.results.length === 0}
       empty={{ message: unread ? t`You're all caught up.` : t`No notifications yet. Activity from your space shows up here.` }}
       filtered={Boolean(feature)} filteredEmpty={{ message: t`No notifications in this family. Try another family.`, action: { label: t`Clear filters`, onClick: () => setFeature("") } }}
       body={{ kind: "rows", rows: rows.data?.results.map(row => {

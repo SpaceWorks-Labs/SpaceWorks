@@ -50,6 +50,6 @@ export function SuppressionAdmin({ makerspaceId, embedded = false, dialogOpen, o
     <ConfirmDialog open={removing !== null} title={t`Remove suppression?`} message={t`Mail to this address can resume. Continue only after resolving the delivery problem.`}
       confirmLabel={t`Remove suppression`} onCancel={() => setRemoving(null)} onConfirm={() => { if (removing !== null) remove.mutate(removing); setRemoving(null); }} />
   </div>;
-  return embedded ? content : <ListLayout header={{ title: t`Email suppression`, subtitle: t`Keep confirmed delivery problems out of the queue.` }}
+  return embedded ? content : <ListLayout header={{ title: t`Suppressed addresses`, subtitle: t`Keep confirmed delivery problems out of the queue.` }}
     state={{ status: "ready" }} empty={{ message: t`No suppressed addresses.` }} body={{ kind: "rows", rows: content }} />;
 }

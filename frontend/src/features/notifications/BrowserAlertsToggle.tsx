@@ -56,8 +56,8 @@ export function BrowserAlertsToggle({ makerspaceId }: { makerspaceId: number }) 
     } finally { setBusy(false); }
   };
   return <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-panel p-3 text-sm">
-    <BellRing aria-hidden="true" className="size-4 text-brand" />
-    <span className="grow">{t`Browser notifications: `}{subscribed ? t`on in this browser` : "off"}</span>
+    <BellRing aria-hidden="true" className="size-4 text-brand-ink" />
+    <span className="grow">{subscribed ? t`Browser notifications: on in this browser` : t`Browser notifications: off`}</span>
     <button type="button" className="desk-button" disabled={busy} onClick={() => void toggle()}>{busy ? t`Working…` : subscribed ? t`Turn off` : t`Turn on`}</button>
     {message ? <p role="status" className="basis-full text-muted">{message}</p> : null}
   </div>;

@@ -4,6 +4,7 @@ import { Tabs } from "../../components/ui";
 import { useLiveUpdates } from "../../lib/useLiveUpdates";
 import { AnnouncementFeed } from "./AnnouncementFeed";
 import { MyNotificationSettings } from "./MyNotificationSettings";
+import { FirebaseAlertsSetupLink } from "./firebase/FirebaseAlertsSetupLink";
 import { PersonalInbox } from "./PersonalInbox";
 import { PreferenceCentre } from "./PreferenceCentre";
 
@@ -27,6 +28,7 @@ export function MemberNotifications({ makerspaceId, features }: { makerspaceId: 
     {active === "channels" ? <section aria-label={t`Notification channels`} className="desk-panel p-5">
       <h2 className="title-panel">{t`Where you get notified`}</h2>
       <p className="mt-2 mb-4 text-sm text-muted">{t`Connect the chat apps this space offers and choose which notifications go where. Account and safety emails always stay on email.`}</p>
+      {features.includes("notifications.web_push") ? <FirebaseAlertsSetupLink makerspaceId={makerspaceId} member /> : null}
       <MyNotificationSettings key={makerspaceId} makerspaceId={makerspaceId} member />
     </section> : null}
     {active === "preferences" && features.includes("notifications.member_preferences") ? <PreferenceCentre key={makerspaceId} makerspaceId={makerspaceId} digests={features.includes("notifications.digests")} /> : null}

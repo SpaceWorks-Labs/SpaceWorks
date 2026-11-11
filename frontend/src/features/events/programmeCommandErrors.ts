@@ -19,6 +19,16 @@ const MESSAGES = (): Record<string, string> => ({
   plan_changed: t`The assignment plan changed since the preview. Preview it again.`,
   not_published: t`These results are not published.`,
   results_in_use: t`Prizes were already claimed or paid for these results, so they stay published.`,
+  claim_not_verified: t`Verify the winner's payee details before recording the payout.`,
+  same_person_verified: t`A second finance person must record a payout you verified.`,
+  recovery_open: t`Close the open recovery for this payout before reversing it.`,
+  prize_locked: t`A payout exists for this prize, so its amount and kind are fixed.`,
+  payout_exists: t`This prize already has a recorded payout. Reverse it first.`,
+  already_settled: t`This prize is already settled.`,
+  claim_window_closed: t`The claim window for this prize has closed.`,
+  claim_window_open: t`A prize is forfeited only after its claim window closes.`,
+  share_not_confirmed: t`The winner must confirm their share first.`,
+  recent_reauth_required: t`Confirm it's you, then try again.`,
   stale_version: t`This changed since you opened it. Refresh and try again.`,
 });
 

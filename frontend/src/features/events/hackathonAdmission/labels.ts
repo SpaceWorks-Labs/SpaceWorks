@@ -1,5 +1,15 @@
 import { t } from "@lingui/core/macro";
 
+/** Translated wording for a hackathon team `state`. */
+export function teamStateLabel(state: string): string {
+  switch (state) {
+    case "forming": return t`Forming`;
+    case "locked": return t`Locked`;
+    case "disbanded": return t`Disbanded`;
+    default: return state.replace(/_/g, " ");
+  }
+}
+
 /** Translated wording for a hackathon application or cohort `state`. */
 export function applicationStateLabel(state: string): string {
   switch (state) {

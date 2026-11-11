@@ -41,7 +41,7 @@
    on the page canvas. The one Workshop Orange moment is the install button (Ink on Orange 5.51:1). */
 .sw-hub .sw-hub-hero-title { max-width: 14ch; font-family: "Gilroy", "Outfit", ui-sans-serif, system-ui, sans-serif; font-weight: 800;
   font-size: clamp(2.5rem, 1.35rem + 4.4vw, 5.25rem); line-height: 1.02; letter-spacing: -0.035em; color: rgb(var(--color-ink)); }
-.sw-hub-hero-lede { max-width: 40rem; font-size: 1.125rem; line-height: 1.65; color: rgb(var(--color-muted)); text-wrap: pretty; }
+.sw-hub-hero-lede { max-width: 44rem; font-size: 1.125rem; line-height: 1.65; color: rgb(var(--color-muted)); text-wrap: pretty; }
 @media (min-width: 768px) { .sw-hub-hero-lede { font-size: 1.25rem; } }
 .sw-hub-cta-primary, .sw-hub-cta-outline { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px;
   border-radius: 10px; font-weight: 600; border: 1px solid transparent; transition: background-color 120ms, color 120ms; }

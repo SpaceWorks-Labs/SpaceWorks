@@ -6,6 +6,7 @@ import { KioskLayout } from "../../components/layouts";
 import { useStationConnection } from "../kiosk/useStationConnection";
 import {
   downloadStationRoster,
+  fetchStationBadge,
   endStationSession,
   startStationSession,
   syncStationRoster,
@@ -52,6 +53,6 @@ export function EventCheckInStationPage() {
     headerActions={active ? [{ label: t`Lock station`, onClick: () => { void requestExit(); } }] : []}
     confirmLock={pendingCount !== null ? { pendingCount, title: t`Discard check-ins and lock?`,
       consequence: `${pendingCount} unsynced check-ins will be permanently removed from this device before they reach the server.`, onDiscard: () => { void exit(); }, onKeep: () => setPendingCount(null) } : undefined}
-    work={{ capture: <OfflineCheckInOperator scope={scope} autoDownload download={() => downloadStationRoster(stationToken)} synchronize={(roster, operations, receipts) => syncStationRoster(stationToken, roster, operations, receipts)} />,
+    work={{ capture: <OfflineCheckInOperator scope={scope} autoDownload fetchBadge={(registrationId) => fetchStationBadge(stationToken, registrationId)} download={() => downloadStationRoster(stationToken)} synchronize={(roster, operations, receipts) => syncStationRoster(stationToken, roster, operations, receipts)} />,
       panel: <div className="rounded-xl border border-line bg-panel p-6"><h2 className="title-panel">{t`Welcome them in`}</h2>{active && error ? <p role="alert" className="mt-3 text-danger">{error}</p> : null}<p className="mt-3 text-muted">{t`Find a guest by name, email or ticket code. Check-ins saved on this device sync when you reconnect.`}</p></div> }} />;
 }

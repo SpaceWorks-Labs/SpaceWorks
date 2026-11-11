@@ -5,6 +5,8 @@ Two channels, like a per-space restore outcome: a console notice in the space's 
 the outbox. Delivery failure never fails the re-key: the audit row is the durable record.
 """
 
+from django.utils.translation import gettext
+from config.locale_resolution import override_for
 from apps.accounts import rbac
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, staff_link
@@ -35,17 +37,20 @@ def content(job):
     space = job.makerspace
     link = staff_link(space, "security")
     if job.status == "running":
-        return body(f"{space.name}'s encryption key was replaced",
-                    f"The platform started an emergency re-key of {space.name}: new data is already protected "
-                    f"by key version {job.to_version}, and existing records are being re-encrypted in the background.",
+        return body(gettext("%(space)s's encryption key was replaced") % {"space": space.name},
+                    gettext("The platform started an emergency re-key of %(space)s: new data is already protected "
+                            "by key version %(version)s, and existing records are being re-encrypted in the "
+                            "background.") % {"space": space.name, "version": job.to_version},
                     link)
     if job.status == "completed":
-        return body(f"Emergency re-key of {space.name} finished",
-                    f"Every record of {space.name} that can be rewritten now uses key version {job.to_version}.",
+        return body(gettext("Emergency re-key of %(space)s finished") % {"space": space.name},
+                    gettext("Every record of %(space)s that can be rewritten now uses key version %(version)s.")
+                    % {"space": space.name, "version": job.to_version},
                     link)
-    return body(f"Emergency re-key of {space.name} needs attention",
-                f"New data uses key version {job.to_version}, but re-encrypting older records stopped "
-                f"({job.error_code}). The platform team has been told.", link)
+    return body(gettext("Emergency re-key of %(space)s needs attention") % {"space": space.name},
+                gettext("New data uses key version %(version)s, but re-encrypting older records stopped "
+                        "(%(code)s). The platform team has been told.")
+                % {"version": job.to_version, "code": job.error_code}, link)
 
 
 def render(envelope):
@@ -56,12 +61,13 @@ def render(envelope):
 def _email(job):
     return fanout(row=job, space=job.makerspace, feature="api_access", stream="makerspace",
                   event=EVENTS[job.status], source_kind=SOURCE, revision=source_revision(job),
-                  staff_body=content(job), rooms=False)
+                  staff_body=lambda: content(job), rooms=False)
 
 
 def notify(job):
     from apps.notifications.models import Notification
-    message = content(job)
+    with override_for(makerspace=job.makerspace):  # a makerspace-wide row has no recipient
+        message = content(job)
     Notification.objects.create(
         makerspace=job.makerspace, event=f"encryption.{EVENTS[job.status]}",
         level=Notification.Level.INFO if job.status == "completed" else Notification.Level.CRITICAL,

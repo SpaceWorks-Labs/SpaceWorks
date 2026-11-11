@@ -8,6 +8,8 @@ from .registry import fields_for, makerspace_id_for
 from .write_fence import assert_mapped_write_allowed
 
 IMMUTABLE_LABELS = frozenset({
+    "inventory.EquipmentProposalReceipt",
+    "inventory.EquipmentConsumableUseReceipt",
     "events.SubmissionSnapshot", "events.HackathonApplicationAnswerRevision",
     "events.ApplicationReview", "events.TeamComment", "events.EventContributionHoursEntry",
     "events.EventShiftAttendanceCorrection", "events.EventHelpAction", "events.EventHelpComment",

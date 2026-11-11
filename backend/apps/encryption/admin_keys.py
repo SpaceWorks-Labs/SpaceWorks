@@ -13,6 +13,7 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from apps.accounts.reauthentication import require_recent_reauth
+from django.utils.translation import gettext_lazy
 
 ACTIONS = ("rotate_dek", "emergency_rekey", "rotate_search_key", "rotate_publishable_key")
 
@@ -31,7 +32,7 @@ class MakerspaceKeysAdminMixin:
     def get_readonly_fields(self, request, obj=None):
         return (*super().get_readonly_fields(request, obj), "encryption_keys_summary")
 
-    @admin.display(description="Encryption keys")
+    @admin.display(description=gettext_lazy("Encryption keys"))
     def encryption_keys_summary(self, obj):
         if not obj or not obj.pk:
             return "Save this makerspace first."

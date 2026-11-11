@@ -14,4 +14,5 @@ def repairs_pii_fields(field):
         field("maintenance.TechnicianContact", "telegram_chat_id", "makerspace_id", 32, "source", "none"),
         field("maintenance.IssueReport", "reporter_name", "makerspace_id", 200, "source", "none"),
         field("maintenance.IssueReport", "reporter_email", "makerspace_id", 254, "source", "none"),
+        field("maintenance.Incident", "involved_note", "makerspace_id", 200, "source", "none"),
     )

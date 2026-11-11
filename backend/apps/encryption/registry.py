@@ -26,6 +26,7 @@ from .registry_p2_bookings import booking_departure_pii_fields
 from .registry_events_programme import programme_pii_fields
 from .registry_reimbursements import reimbursement_pii_fields
 from .registry_r2_l4 import membership_lifecycle_pii_fields
+from .registry_l3b import minors_pii_fields
 from .registry_r2_l16 import repairs_pii_fields
 from .registry_r2_l3 import id_card_pii_fields
 from .registry_r2_l6 import ticketing_pii_fields
@@ -35,12 +36,15 @@ from .registry_r2_l22 import shop_pii_fields
 from .registry_hackmoney import prize_claim_pii_fields
 
 SOURCE_FIELDS = (
+    PiiField("inventory.EquipmentProposalReceipt", "intent_snapshot", "makerspace_id", 16384, "source", "none", True),
+    PiiField("inventory.EquipmentConsumableUseReceipt", "intent_snapshot", "makerspace_id", 4096, "source", "none", True),
     *_fields("integrations.MessagingConsent", ("phone_e164",), "makerspace_id", "source", ((32,), ("none",))),
     *reimbursement_pii_fields(PiiField),
     *programme_pii_fields(PiiField),
     *printer_pii_fields(PiiField),
     *booking_departure_pii_fields(PiiField),
     *membership_lifecycle_pii_fields(PiiField),
+    *minors_pii_fields(PiiField),
     *repairs_pii_fields(PiiField),
     *id_card_pii_fields(PiiField),
     *ticketing_pii_fields(PiiField),

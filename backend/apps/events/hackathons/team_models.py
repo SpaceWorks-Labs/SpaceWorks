@@ -24,6 +24,9 @@ class HackathonTeam(models.Model):
     locked_at = models.DateTimeField(null=True, blank=True)
     eligibility_issue = models.BooleanField(default=False)
     roster_reopened_until = models.DateTimeField(null=True, blank=True)
+    #: Organiser delete with a short undo (E-B3): when it happened, and who was in the team then.
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_snapshot = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -35,7 +38,7 @@ class HackathonTeamMember(models.Model):
     team = models.ForeignKey(HackathonTeam, on_delete=models.CASCADE, related_name="memberships")
     application = models.ForeignKey("events.HackathonApplication", on_delete=models.PROTECT)
     member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="hackathon_team_memberships")
-    state = models.CharField(max_length=12, default="requested", choices=[(v, v) for v in ("invited", "requested", "active", "left", "removed")])
+    state = models.CharField(max_length=12, default="requested", choices=[(v, v) for v in ("invited", "requested", "active", "left", "removed", "declined")])
     joined_at = models.DateTimeField(null=True, blank=True)
     left_at = models.DateTimeField(null=True, blank=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")

@@ -8,6 +8,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.events.feature_gates import require_feature
 from apps.events.invites import code_digest
+from apps.payments.money import quantize_money
 from apps.events.models import EventPromoCode
 from apps.events.services import _audit, _locked_event
 from apps.makerspaces.guards import require_module_locked
@@ -57,7 +58,9 @@ def redeem_promo(event, code, amount):
     ):
         raise NotFound(gettext("Promo code not found."))
     discount = amount * Decimal(promo.percent_off) / 100 if promo.percent_off else promo.amount_off
-    discount = min(amount, discount).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    from apps.payments.pricing.rates import RateCard
+    currency = RateCard(event.makerspace, "events").currency
+    discount = quantize_money(min(amount, discount), currency, ROUND_HALF_UP)
     promo.uses += 1
     promo.save(update_fields=["uses"])
     return promo, discount

@@ -48,6 +48,28 @@ def eligibility_changed_locked(ctx, application):
     emit_team_locked(team=team, kind="team_eligibility_changed")
 
 
+MODERATION = "events.team_moderation"
+
+
+def require_moderation(event):
+    """Handover, removal and organiser moderation are one switch; off = 404 (decision 218)."""
+    from apps.makerspaces.platform import feature_enabled
+    if not feature_enabled(event.makerspace, MODERATION):
+        fail("not_found", "Not found.", status=404)
+
+
+def cancel_member_registration_locked(ctx, member_id):
+    """Leaving with `cancel_registration` also withdraws the member's application and place."""
+    from .admission_lifecycle import cancel_registration_locked
+    from .admission_models import HackathonApplication
+    app = HackathonApplication.objects.select_related("registration").filter(
+        event=ctx.event, member_id=member_id, registration__isnull=False).first()
+    if app is None or app.state in ("withdrawn", "declined", "rejected", "expired"):
+        return
+    cancel_registration_locked(event=ctx.event, registration=app.registration, actor=ctx.actor, member_cancel=True,
+                               locks=ctx.locks)
+
+
 def leave(*, event_id, team_id, actor, data, cancel=False):
     with command(event_id=event_id, actor=actor, data=data, action=f"teams.{'cancel' if cancel else 'leave'}:{team_id}", owner=True) as ctx:
         team = get_object_or_404(HackathonTeam.objects.select_for_update(), pk=team_id, event=ctx.event)
@@ -64,11 +86,20 @@ def leave(*, event_id, team_id, actor, data, cancel=False):
         invalidate_locked(ctx, team)
         selected = list(team.memberships.select_for_update().filter(state="active").order_by("pk")) if cancel else [member]
         notified = tuple(team.memberships.filter(state="active").values_list("member_id", flat=True))
+        was_leader = team.leader_id == actor.pk
         for row in selected:
             row.state, row.left_at = "left", timezone.now()
             row.save()
             record(ctx, "team_member_left", row, team_id=team.pk)
         elect_leader_locked(team)
+        if data.get("cancel_registration") and not cancel:
+            require_moderation(ctx.event)
+            cancel_member_registration_locked(ctx, actor.pk)
+            record(ctx, "team_leave_cancelled_registration", team, member_id=actor.pk)
+        if was_leader and not cancel and team.state != "disbanded":
+            record(ctx, "team_leadership_transferred", team, new_leader_id=team.leader_id, reason_code="leader_left")
+            from .team_notifications import emit_team_locked
+            emit_team_locked(team=team, kind="team_leadership_transferred", member_ids=[team.leader_id])
         if team.state == "disbanded":
             for invite in team.invites.filter(revoked_at__isnull=True, redeemed_at__isnull=True):
                 invite.revoked_at = timezone.now()
@@ -97,5 +128,55 @@ def lock(*, event_id, team_id, actor, data):
             from .team_workflow import lock_roster_locked
             lock_roster_locked(team_id=team.pk, locks=ctx.locks)
             team.refresh_from_db()
+        ctx.finish("team", team.pk)
+        return team
+
+
+def transfer_leadership(*, event_id, team_id, actor, data):
+    """The leader hands the team to another ACTIVE member; nobody outside the roster can lead."""
+    with command(event_id=event_id, actor=actor, data=data, action=f"teams.handover:{team_id}", owner=True) as ctx:
+        require_moderation(ctx.event)
+        team = get_object_or_404(HackathonTeam.objects.select_for_update(), pk=team_id, event=ctx.event)
+        require_leader(team, actor)
+        if ctx.reference:
+            return team
+        check_version(team, data["expected_version"])
+        if team.state == "disbanded":
+            fail("not_found", "Not found.", status=404)
+        target = data["new_leader_id"]
+        if target == actor.pk or not team.memberships.filter(state="active", member_id=target).exists():
+            fail("invalid_leader", "Choose another active member of this team.", status=400)
+        team.leader_id, team.version = target, team.version + 1
+        team.save()
+        record(ctx, "team_leadership_transferred", team, new_leader_id=target, version=team.version)
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_leadership_transferred", member_ids=[target])
+        ctx.finish("team", team.pk)
+        return team
+
+
+def remove_member(*, event_id, team_id, actor, data):
+    """The leader removes a member while the roster is open. The leader cannot be removed (hand over first)."""
+    with command(event_id=event_id, actor=actor, data=data, action=f"teams.remove:{team_id}", owner=True) as ctx:
+        require_moderation(ctx.event)
+        team = get_object_or_404(HackathonTeam.objects.select_for_update(), pk=team_id, event=ctx.event)
+        require_leader(team, actor)
+        if ctx.reference:
+            return team
+        check_version(team, data["expected_version"])
+        require_forming(ctx.config, team)
+        if data["member_id"] == team.leader_id:
+            fail("leader_cannot_be_removed", "Hand the team over first, or leave it.", status=400)
+        row = get_object_or_404(HackathonTeamMember.objects.select_for_update(), team=team,
+                                member_id=data["member_id"], state="active")
+        from .admission_cohorts import invalidate_locked
+        invalidate_locked(ctx, team)
+        row.state, row.left_at = "removed", timezone.now()
+        row.save()
+        team.version += 1
+        team.save()
+        record(ctx, "team_member_removed", row, team_id=team.pk, by="leader")
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_member_removed", member_ids=[row.member_id])
         ctx.finish("team", team.pk)
         return team

@@ -8,7 +8,9 @@ class IssueResultSerializer(serializers.Serializer):
 
 
 class CardRoleRequestSerializer(serializers.Serializer):
-    role = serializers.CharField(help_text="attendee, speaker, mentor, judge, volunteer or crew.")
+    role = serializers.CharField(required=False, help_text="attendee, speaker, mentor, judge, volunteer, crew or "
+                                                           "organiser. Setting a role locks it against detection.")
+    role_locked = serializers.BooleanField(required=False, help_text="false releases the lock and re-detects the role.")
 
 
 class CardScanRequestSerializer(serializers.Serializer):

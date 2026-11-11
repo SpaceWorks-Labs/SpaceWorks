@@ -27,23 +27,16 @@ def valid_until(event):
 
 def has_published_design(event):
     from apps.card_designs.models import CardDesign
-    return CardDesign.objects.filter(event=event, domain="event_card", published_document__isnull=False).exists() or \
+    # E-B2: a role variant alone never makes the event "ready"; the attendee design (card_role null) does.
+    return CardDesign.objects.filter(event=event, domain="event_card", published_document__isnull=False,
+                                     card_role__isnull=True, archived_at__isnull=True).exists() or \
         CardDesign.objects.filter(makerspace_id=event.makerspace_id, domain="event_card", event__isnull=True,
-                                  published_document__isnull=False).exists()
+                                  card_role__isnull=True, published_document__isnull=False).exists()
 
 
 def _role(event, registration):
-    from .contributions.crew_reads import crew_labels
-    crew = crew_labels(event, [registration.pk]).get(registration.pk)
-    if crew is not None:
-        return EventIdCard.Role.MENTOR if crew == "Mentor" else EventIdCard.Role.CREW
-    try:
-        from .speaker_identity_models import EventSpeaker
-        if registration.member_id and EventSpeaker.objects.filter(event=event, user_id=registration.member_id).exists():
-            return EventIdCard.Role.SPEAKER
-    except Exception:
-        pass
-    return EventIdCard.Role.ATTENDEE
+    from .id_cards_roles import detect_role
+    return detect_role(event, registration)
 
 
 @transaction.atomic
@@ -73,6 +66,8 @@ def reconcile_event(event_id, actor=None):
     for card in ended:
         _revoke_locked(actor, card, "Registration ended.")
         on_revoke("event_card", card)
+    from .id_cards_roles import redetect  # E-B2: a card keeps its place when its holder's role changes
+    redetect(event, actor)
     return issued, len(ended)
 
 
@@ -97,16 +92,9 @@ def revoke(actor, card, reason):
     return card
 
 
-@transaction.atomic
-def set_role(actor, card, role):
-    if role not in EventIdCard.Role.values:
-        raise ValidationError({"role": gettext("Choose attendee, speaker, mentor, judge, volunteer or crew.")})
-    if card.role != role:
-        card.role = role
-        card.save(update_fields=["role", "updated_at"])
-        audit.record(actor, "event_card.role_changed", makerspace=card.makerspace, target=card,
-                     meta={"card_id": card.pk, "event_id": card.event_id, "role": role})
-    return card
+def set_role(actor, card, role=None, locked=None):
+    from .id_cards_roles import set_role as _set_role
+    return _set_role(actor, card, role, locked)
 
 
 def reconcile_due(limit=50):
@@ -120,6 +108,6 @@ def reconcile_due(limit=50):
     spaces = CardDesign.objects.filter(domain="event_card", event__isnull=True, published_document__isnull=False) \
         .values_list("makerspace_id", flat=True)
     with_design = CardDesign.objects.filter(domain="event_card", published_document__isnull=False,
-                                            event__isnull=False).values_list("event_id", flat=True)
+                                            event__isnull=False, archived_at__isnull=True).values_list("event_id", flat=True)
     rows = events.filter(pk__in=with_design) | events.filter(makerspace_id__in=spaces)
     return list(rows.order_by("starts_at").values_list("pk", flat=True).distinct()[:limit])

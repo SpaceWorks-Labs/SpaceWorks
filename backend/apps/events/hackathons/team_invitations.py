@@ -84,6 +84,26 @@ def join_request(*, event_id, team_id, actor, data):
         return team
 
 
+def decline(*, event_id, team_id, actor, data):
+    """The leader says no to one join request; the requester is told and may ask another team."""
+    with command(event_id=event_id, actor=actor, data=data, action=f"teams.decline:{team_id}", owner=True) as ctx:
+        team = get_object_or_404(HackathonTeam.objects.select_for_update(), event=ctx.event, pk=team_id)
+        require_leader(team, actor)
+        if ctx.reference:
+            return team
+        check_version(team, data["expected_version"])
+        row = get_object_or_404(team.memberships.select_for_update(), pk=data["request_id"], state="requested")
+        row.state, row.left_at = "declined", timezone.now()
+        row.save()
+        team.version += 1
+        team.save()
+        record(ctx, "team_join_declined", row, team_id=team.pk)
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_join_declined", member_ids=[row.member_id], request_id=row.pk)
+        ctx.finish("team", team.pk)
+        return team
+
+
 def accept(*, event_id, team_id, actor, data):
     with command(event_id=event_id, actor=actor, data=data, action=f"teams.accept:{team_id}", owner=True) as ctx:
         team = get_object_or_404(HackathonTeam.objects.select_for_update(), event=ctx.event, pk=team_id)
@@ -106,7 +126,10 @@ def accept(*, event_id, team_id, actor, data):
                     invitation.email_digest, digest(actor.email.strip().lower(), purpose="email"))):
                 fail("not_found", "Not found.", status=404)
             member = actor
-        check_version(team, data["expected_version"])
+        if invitation is None:
+            check_version(team, data["expected_version"])
+        # An invitation link carries the version it was minted at; the team keeps changing (comments, other joins),
+        # so the token, its expiry and the forming/capacity checks authorise it, not that stale number (decision 296).
         require_forming(ctx.config, team)
         application = member_application(ctx, member)
         activate_locked(ctx, team, member, application)

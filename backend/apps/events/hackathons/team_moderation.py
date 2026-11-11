@@ -8,8 +8,8 @@ from apps.events import event_authority
 from .admission_cohorts import roster_hash
 from .admission_errors import check_version, fail
 from .admission_ports import ports
-from .admission_transactions import assert_locked, command
-from .team_models import HackathonTeam, HackathonTeamException
+from .admission_transactions import assert_locked, command, record as ctx_record
+from .team_models import HackathonTeam, HackathonTeamException, HackathonTeamMember
 
 
 def grant_exception_locked(*, team_id, actor, rule, member_id, reason_code, locks):
@@ -52,4 +52,126 @@ def reopen(*, event_id, team_id, actor, data):
         ctx.finish("team", team.pk)
         from .team_notifications import emit_team_locked
         emit_team_locked(team=team, kind="team_reopened")
+        return team
+
+
+UNDO_WINDOW = timedelta(minutes=5)
+
+
+def _staff_team(ctx, team_id):
+    from .team_lifecycle import require_moderation
+    require_moderation(ctx.event)
+    return get_object_or_404(HackathonTeam.objects.select_for_update(), pk=team_id, event=ctx.event)
+
+
+def rename(*, event_id, team_id, actor, data):
+    """Organiser rename: bypasses the leader and the forming rule, never the unique-name rule."""
+    from .team_workflow import normalized_name, require_available_name
+    with command(event_id=event_id, actor=actor, data=data, action=f"teams.staff_rename:{team_id}", permission="manage_team") as ctx:
+        team = _staff_team(ctx, team_id)
+        if ctx.reference:
+            return team
+        check_version(team, data["expected_version"])
+        if team.state == "disbanded":
+            fail("not_found", "Not found.", status=404)
+        team.name, team.normalized_name = normalized_name(data["name"])
+        require_available_name(ctx.event, team.normalized_name, team.pk)
+        team.version += 1
+        team.save()
+        ctx_record(ctx, "team_renamed_by_staff", team, version=team.version)
+        ctx.finish("team", team.pk)
+        return team
+
+
+def move_member(*, event_id, team_id, actor, data):
+    """Move one active member to another open team of the same event; honours the max and any sealed cohort."""
+    from .admission_cohorts import invalidate_locked
+    from .team_lifecycle import elect_leader_locked
+    with command(event_id=event_id, actor=actor, data=data, action=f"teams.staff_move:{team_id}", permission="manage_team") as ctx:
+        source = _staff_team(ctx, team_id)
+        if ctx.reference:
+            return source
+        check_version(source, data["expected_version"])
+        if data["to_team_id"] == source.pk:
+            fail("invalid_move", "Choose a different team.", status=400)
+        target = get_object_or_404(HackathonTeam.objects.select_for_update(), pk=data["to_team_id"], event=ctx.event)
+        if source.state == "disbanded" or target.state != "forming":
+            fail("team_locked", "Both teams must be open.")
+        row = get_object_or_404(HackathonTeamMember.objects.select_for_update(), team=source,
+                                member_id=data["member_id"], state="active")
+        if target.memberships.filter(state="active").count() >= ctx.config.team_max:
+            fail("capacity_full", "The team is at its maximum size.")
+        invalidate_locked(ctx, source)
+        invalidate_locked(ctx, target)
+        row.team, row.joined_at = target, timezone.now()
+        row.save()
+        elect_leader_locked(source)
+        target.version += 1
+        target.save()
+        ctx_record(ctx, "team_member_moved", row, from_team_id=source.pk, to_team_id=target.pk)
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=target, kind="team_membership_updated", member_ids=[row.member_id])
+        ctx.finish("team", source.pk)
+        return source
+
+
+def delete(*, event_id, team_id, actor, data):
+    """Soft delete with a five-minute undo: the roster is released and remembered in a snapshot."""
+    from .admission_cohorts import invalidate_locked
+    with command(event_id=event_id, actor=actor, data=data, action=f"teams.staff_delete:{team_id}", permission="manage_team") as ctx:
+        team = _staff_team(ctx, team_id)
+        if ctx.reference:
+            return team
+        check_version(team, data["expected_version"])
+        if team.state == "disbanded":
+            fail("not_found", "Not found.", status=404)
+        if ports().has_submission(team_id=team.pk):
+            fail("active_submission", "This team has a retained submission.")
+        invalidate_locked(ctx, team)
+        now = timezone.now()
+        rows = list(team.memberships.select_for_update().filter(state="active").order_by("pk"))
+        team.deleted_snapshot = {"leader_id": team.leader_id, "member_ids": [row.member_id for row in rows]}
+        for row in rows:
+            row.state, row.left_at = "removed", now
+            row.save()
+        for invite in team.invites.filter(revoked_at__isnull=True, redeemed_at__isnull=True):
+            invite.revoked_at = now
+            invite.save(update_fields=["revoked_at"])
+        team.state, team.deleted_at, team.seeking_members, team.version = "disbanded", now, False, team.version + 1
+        team.save()
+        ctx_record(ctx, "team_deleted", team, version=team.version, members=len(rows))
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_disbanded", member_ids=[row.member_id for row in rows])
+        ctx.finish("team", team.pk)
+        return team
+
+
+def restore(*, event_id, team_id, actor, data):
+    """Undo a delete inside the window; refuses if the name or any member has been taken meanwhile."""
+    from .team_workflow import require_available_name
+    with command(event_id=event_id, actor=actor, data=data, action=f"teams.staff_restore:{team_id}", permission="manage_team") as ctx:
+        team = _staff_team(ctx, team_id)
+        if ctx.reference:
+            return team
+        check_version(team, data["expected_version"])
+        if team.deleted_at is None:
+            fail("not_found", "Not found.", status=404)
+        if timezone.now() - team.deleted_at > UNDO_WINDOW:
+            fail("undo_expired", "The undo window has passed.")
+        require_available_name(ctx.event, team.normalized_name, team.pk)
+        member_ids = team.deleted_snapshot.get("member_ids", [])
+        if HackathonTeamMember.objects.filter(event=ctx.event, member_id__in=member_ids, state="active").exists():
+            fail("already_in_team", "A member has joined another team since the delete.")
+        rows = list(team.memberships.select_for_update().filter(state="removed", left_at=team.deleted_at))
+        for row in rows:
+            row.state, row.left_at = "active", None
+            row.save()
+        leader_id = team.deleted_snapshot.get("leader_id")
+        team.leader_id = leader_id if leader_id in {row.member_id for row in rows} else (rows[0].member_id if rows else team.leader_id)
+        team.state, team.deleted_at, team.deleted_snapshot, team.version = "forming", None, {}, team.version + 1
+        team.save()
+        ctx_record(ctx, "team_restored", team, version=team.version, members=len(rows))
+        from .team_notifications import emit_team_locked
+        emit_team_locked(team=team, kind="team_membership_updated", member_ids=[row.member_id for row in rows])
+        ctx.finish("team", team.pk)
         return team

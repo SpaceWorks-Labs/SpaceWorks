@@ -8,7 +8,13 @@ from rest_framework.views import APIView
 from apps.admin_api.permissions import IsActiveStaff
 from apps.events import event_authority
 from .admission_errors import fail
+from .admission_feature import hackathon_enabled
 from .admission_transactions import member_event, require_programme
+
+
+def require_hackathon(event):
+    if not hackathon_enabled(event.makerspace):
+        fail("not_found", "Not found.", status=404)
 
 
 class ProgrammeCommandThrottle(SimpleRateThrottle):
@@ -45,6 +51,12 @@ class ProgrammeView(APIView):
     def member_target(self, request, makerspace_id, pk):
         return member_event(request.user, pk, makerspace_id)
 
+    def team_target(self, request, makerspace_id, pk):
+        """Teams, the finder and submissions belong to hackathons alone: off = 404 everywhere (decision 218)."""
+        event, config = self.member_target(request, makerspace_id, pk)
+        require_hackathon(event)
+        return event, config
+
     def command_data(self, request, serializer_class, **context):
         serializer = serializer_class(data=request.data, context=context)
         serializer.is_valid(raise_exception=True)
@@ -69,6 +81,11 @@ class AdminView(ProgrammeView):
     def admin_target(self, request, pk):
         event = event_authority.get_event(request.user, pk, self.permission)
         return event, require_programme(event)
+
+    def team_admin_target(self, request, pk):
+        event, config = self.admin_target(request, pk)
+        require_hackathon(event)
+        return event, config
 
 
 class ProgrammePagination(PageNumberPagination):

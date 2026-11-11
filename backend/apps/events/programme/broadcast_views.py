@@ -26,7 +26,8 @@ def get_campaign(actor, pk, campaign_id):
     campaign = get_object_or_404(EventBroadcast, event=event, pk=campaign_id)
     campaign.event = event
     authorize(campaign, actor)
-    return campaign
+    from .broadcast_draft import require_visible
+    return require_visible(campaign, actor)
 
 
 class BroadcastDetailView(APIView):
@@ -38,6 +39,14 @@ class BroadcastDetailView(APIView):
         response = Response(EventBroadcastSerializer(get_campaign(request.user, pk, campaign_id)).data)
         response["Cache-Control"] = "private, no-store"
         return response
+
+    @extend_schema(tags=["Admin events"], request=None, responses={204: None, **ERRORS},
+        description="Delete your own draft. Drafts are private to their author: another person's draft is "
+                    "a 404, and a scheduled or sent campaign cannot be deleted (409).")
+    def delete(self, request, pk, campaign_id):
+        from .broadcast_draft import delete_draft
+        delete_draft(get_campaign(request.user, pk, campaign_id), request.user)
+        return Response(status=204)
 
     @extend_schema(tags=["Admin events"], request=BroadcastDraftSerializer,
         responses={200: EventBroadcastSerializer, **ERRORS},

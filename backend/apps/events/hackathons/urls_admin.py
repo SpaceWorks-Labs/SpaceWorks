@@ -4,11 +4,16 @@ from .views_config import ConfigView
 from .views_review import ApplicationListView, ReviewAssignView, ReviewView
 from .views_decisions import DecisionPreviewView, DecisionStageView, DecisionReleaseView, DecisionCancelView, DecisionDetailView, ExtendRsvpView, StaffRsvpView
 
-from .views_admin_teams import OrganizerTeamListView, OrganizerTeamDetailView
+from .views_admin_teams import (OrganizerTeamListView, OrganizerTeamDetailView, OrganizerTeamRenameView,
+    OrganizerTeamMoveView, OrganizerTeamDeleteView, OrganizerTeamRestoreView)
 
 urlpatterns = [
     path("events/<int:pk>/teams/", OrganizerTeamListView.as_view(), name="events-programme-admin-teams"),
     path("events/<int:pk>/teams/<int:team_id>/", OrganizerTeamDetailView.as_view(), name="events-programme-admin-team-detail"),
+    path("events/<int:pk>/teams/<int:team_id>/rename/", OrganizerTeamRenameView.as_view(), name="events-programme-admin-team-rename"),
+    path("events/<int:pk>/teams/<int:team_id>/move-member/", OrganizerTeamMoveView.as_view(), name="events-programme-admin-team-move-member"),
+    path("events/<int:pk>/teams/<int:team_id>/delete/", OrganizerTeamDeleteView.as_view(), name="events-programme-admin-team-delete"),
+    path("events/<int:pk>/teams/<int:team_id>/restore/", OrganizerTeamRestoreView.as_view(), name="events-programme-admin-team-restore"),
     path("events/<int:pk>/hackathon/", ConfigView.as_view(), name="events-programme-admin-hackathon"),
     path("events/<int:pk>/applications/", ApplicationListView.as_view(), name="events-programme-admin-applications"),
     path("events/<int:pk>/application-review/assign/", ReviewAssignView.as_view(), name="events-programme-admin-application-review-assign"),

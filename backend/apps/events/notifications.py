@@ -13,6 +13,8 @@ Two paths per notice, never mixed:
 
 import logging
 
+from apps.integrations.fanout_jobs import deferred_fanout
+
 from django.db import transaction
 
 from apps.events.models import Event, EventRegistration
@@ -78,6 +80,7 @@ def _organizer_spaces(event_id, venue_id):
     ).exclude(makerspace_id=venue_id).select_related("makerspace").order_by("makerspace_id").distinct())
 
 
+@deferred_fanout(feature="events")
 def notify_event_lifecycle(event_obj, event_name, registration_id=None, *, sync=False):
     event_id, venue = event_obj.pk, event_obj.makerspace
     intent = envelopes.new_intent()
@@ -113,6 +116,7 @@ def notify_event_lifecycle(event_obj, event_name, registration_id=None, *, sync=
     return venue_result
 
 
+@deferred_fanout(feature="events")
 def notify_series_lifecycle(series_obj, event_name, *, sync=False):
     """Send one bounded lifecycle message for a series, never one per occurrence."""
     occurrence = series_obj.occurrences.select_related("makerspace").order_by("starts_at", "pk").first()

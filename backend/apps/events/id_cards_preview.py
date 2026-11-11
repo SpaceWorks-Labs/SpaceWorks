@@ -1,5 +1,7 @@
 """Batch print preview for an event's active ID cards (the first sheet, before a job)."""
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -17,9 +19,25 @@ from .models import EventIdCard
 TAGS = ["Event ID cards"]
 
 
+def _status_set(rows, status_set, roles):
+    """E-B2 ready-made audiences. Cards exist only for confirmed registrations, so `all` is every live card."""
+    if status_set == "role" and not roles:
+        raise ValidationError({"roles": gettext("Choose at least one role.")})
+    if status_set == "attendees_without_crew":
+        return rows.filter(registration__is_crew=False)
+    if status_set == "crew":
+        return rows.filter(registration__is_crew=True)
+    if status_set in ("checked_in", "not_checked_in"):
+        attended = rows.filter(registration__status="attended")
+        return attended if status_set == "checked_in" else rows.exclude(pk__in=attended.values("pk"))
+    return rows
+
+
 def event_card_ids(event, values):
-    """The active cards a bulk job or its preview prints, narrowed by ids, roles and check-in."""
+    """The active cards a bulk job or its preview prints, narrowed by ids, a status set, roles and check-in."""
     rows = EventIdCard.objects.filter(event=event, status="active")
+    if values.get("status_set"):
+        rows = _status_set(rows, values["status_set"], values.get("roles"))
     if values.get("card_ids"):
         rows = rows.filter(pk__in=values["card_ids"])
     if values.get("roles"):

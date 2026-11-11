@@ -14,6 +14,7 @@ Only public event fields ride the invite and the links: never the online join li
 which stays in the confirmed registrant's message body (`online_delivery` rules).
 """
 
+from django.utils.translation import gettext
 from apps.makerspaces.calendar_invites import calendar_links, invite_ics
 
 CONFIRMED = frozenset({"registration_created", "registration_approved", "registration_promoted",
@@ -152,11 +153,12 @@ def update_envelope(registration):
     if not registration.member_id or not eligible_owner(space, registration.member_id):
         return None
     stamp = revision(registration)
-    rendered = with_links({"subject": f"Updated: {event.title}",
-                           "text": f"The details of {event.title} changed. The attached invite updates your "
-                                   "calendar entry.", "html": "",
-                           "link": local_link(space, "member", f"events/{registration.pk}/ticket")},
-                          "registration_updated", registration)
+    rendered = lambda: with_links(  # noqa: E731 - built in the recipient's language by emit()
+        {"subject": gettext("Updated: %(title)s") % {"title": event.title},
+         "text": gettext("The details of %(title)s changed. The attached invite updates your "
+                         "calendar entry.") % {"title": event.title}, "html": "",
+         "link": local_link(space, "member", f"events/{registration.pk}/ticket")},
+        "registration_updated", registration)
     return emit(makerspace=space, recipient=registration.member, feature="events", stream="events",
                 event="registration_updated", audience="requester",
                 dedup_key=f"ev:invite:{registration.pk}:{stamp}", source_kind=UPDATE_SOURCE,

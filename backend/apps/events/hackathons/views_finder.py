@@ -14,13 +14,13 @@ from .team_projection import profile, project_team, require_own_team
 class CommentsView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=None, responses={200: paginated_schema("ProgrammeCommentPage", CommentSerializer), **ERRORS})
     def get(self, request, makerspace_id, pk, team_id):
-        self.member_target(request, makerspace_id, pk)
+        self.team_target(request, makerspace_id, pk)
         team = require_own_team(event_id=pk, team_id=team_id, actor=request.user)
         return paginated(request, team.comments.order_by("created_at", "pk"), team_coordination.project_comment)
 
     @extend_schema(tags=["Event teams"], request=CommentInput, responses={201: CommentSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk, team_id):
-        self.member_target(request, makerspace_id, pk)
+        self.team_target(request, makerspace_id, pk)
         row = team_coordination.comment(event_id=pk, team_id=team_id, actor=request.user, data=self.command_data(request, CommentInput))
         return Response(team_coordination.project_comment(row), status=201)
 
@@ -29,7 +29,7 @@ class FinderView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=None,
                    responses={200: paginated_schema("TeamFinderPage", FinderCardSerializer), **ERRORS})
     def get(self, request, makerspace_id, pk):
-        event, config = self.member_target(request, makerspace_id, pk)
+        event, config = self.team_target(request, makerspace_id, pk)
         if not config.finder_enabled or config.team_mode != "individual_then_team":
             fail("not_found", "Not found.", status=404)
         skills = [v.strip() for v in request.query_params.get("skills", "").split(",") if v.strip()]
@@ -57,7 +57,7 @@ class FinderView(MemberCommandView):
 class FinderMeView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=None, responses={200: FinderSerializer, **ERRORS})
     def get(self, request, makerspace_id, pk):
-        event, config = self.member_target(request, makerspace_id, pk)
+        event, config = self.team_target(request, makerspace_id, pk)
         if not config.finder_enabled:
             fail("not_found", "Not found.", status=404)
         row = HackathonFinderProfile.objects.filter(event=event, member=request.user).first()
@@ -65,7 +65,7 @@ class FinderMeView(MemberCommandView):
 
     @extend_schema(tags=["Event teams"], request=FinderInput, responses={200: FinderSerializer, **ERRORS})
     def patch(self, request, makerspace_id, pk):
-        self.member_target(request, makerspace_id, pk)
+        self.team_target(request, makerspace_id, pk)
         row = team_coordination.finder_profile(event_id=pk, actor=request.user, data=self.command_data(request, FinderInput))
         return Response(team_coordination.project_finder_profile(row, event_id=pk))
 

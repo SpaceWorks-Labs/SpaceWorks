@@ -147,12 +147,25 @@ def register_event_sources():
     # Release 2 L6: ticket orders (confirmation, reminders, type changes, pass occurrences, venue fees).
     from .notices_r2_l6 import register as register_order_notices
     register_order_notices()
+    # Parity E-B5: the 24-hour pay window opening and running out.
+    from .notices_pay_window import register as register_pay_window_notices
+    register_pay_window_notices()
     # Release 2 L21a: stage advances, attendance confirmation and crew decisions.
     from .notices_r2_l21a import register as register_participation_notices
     register_participation_notices()
     # Release 2 L21b: a recorded prize payout tells its winner.
     from .judging.payout_notices import register as register_payout_notices
     register_payout_notices()
+    # Decision 301: the prize steps that told nobody (split proposed, details verified, forfeited, recovery opened).
+    from .judging.prize_notices import register as register_prize_step_notices
+    register_prize_step_notices()
     # r2-idcards-best C4: a signatory is asked to approve a certificate design that prints them.
     from .certificates.signatory_notifications import SOURCE as SIGNATURE_SOURCE, eligible as signature_eligible
     register_source(SIGNATURE_SOURCE, NotificationSource(signature_eligible))
+    # Decision 216: linked event/booking/loan change notices (review prompts; nothing is moved).
+    from .linked_booking_notices import register as register_linked_booking
+    from .linked_change_notices import register as register_linked_changes
+    register_linked_booking()
+    register_linked_changes()
+    from .linked_outage_notices import register as register_linked_outages
+    register_linked_outages()

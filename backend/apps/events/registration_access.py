@@ -29,6 +29,8 @@ def require_registration_access(event, member, *, staff=False, collaborative=Fal
             raise MemberPresenceRequired()
         return
     validate_event_audience(event)
+    from apps.makerspaces.minors_guard import require_minor_clearance  # decision 223 (k)
+    require_minor_clearance(member, event.makerspace, "event")  # the host space decides
     if collaborative:
         require_active_member(member, via or event.makerspace)
     elif event.registration_audience == "members":

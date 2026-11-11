@@ -1,4 +1,4 @@
-"""Bounded cover canonicalization for G's existing image-attach transport."""
+"""Bounded cover canonicalization (PNG for the legacy path, WebP for stored event and series covers)."""
 
 from django.utils.translation import gettext
 from io import BytesIO
@@ -12,13 +12,9 @@ MAX_BYTES = 5 * 1024 * 1024
 MAX_PIXELS = 16_000_000
 
 
-def canonical_cover(data):
-    """Sniff bytes, orient and re-encode without EXIF. Claimed MIME is not an input.
-
-    G applies this before promoting/attaching through the existing bounded upload
-    workflow; authored page covers still use revision-owned private assets.
-    """
-    if not isinstance(data, bytes) or not data or len(data) > MAX_BYTES:
+def _clean_pixels(data, max_bytes):
+    """Sniff bytes, orient, bound and return a pixel-only RGBA image (no EXIF/XMP/ICC)."""
+    if not isinstance(data, bytes) or not data or len(data) > max_bytes:
         raise ValidationError({"image": gettext("Use an image of at most 5 MiB.")})
     try:
         with warnings.catch_warnings():
@@ -34,12 +30,29 @@ def canonical_cover(data):
                 # New pixel-only image avoids copying source EXIF/XMP/ICC metadata.
                 clean = Image.new("RGBA", normalized.size)
                 clean.paste(normalized)
-                output = BytesIO()
-                clean.save(output, format="PNG", optimize=True)
+                return clean
     except (ValueError, OSError, UnidentifiedImageError, Image.DecompressionBombError,
             Image.DecompressionBombWarning) as exc:
         raise ValidationError({"image": gettext("Use a valid, single-frame image of at most 16 megapixels.")}) from exc
+
+
+def _encode(clean, **options):
+    output = BytesIO()
+    clean.save(output, **options)
     result = output.getvalue()
     if len(result) > MAX_BYTES:
         raise ValidationError({"image": gettext("The normalized image exceeds 5 MiB.")})
     return result
+
+
+def canonical_cover(data):
+    """PNG form of the cover. Claimed MIME is not an input."""
+    return _encode(_clean_pixels(data, MAX_BYTES), format="PNG", optimize=True)
+
+
+def canonical_cover_webp(data, *, max_bytes=MAX_BYTES):
+    """The stored form of an event or series cover: decoded, oriented, bounded, WebP, no metadata.
+
+    A fresh pixel-only image is encoded, so no EXIF (GPS, camera), XMP or ICC block survives.
+    """
+    return _encode(_clean_pixels(data, max_bytes), format="WEBP", quality=85, method=4)

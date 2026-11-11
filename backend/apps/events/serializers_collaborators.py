@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from django.utils import timezone
 
 from apps.events.capacity import (
@@ -96,7 +97,7 @@ class CollaborativeEventSerializer(OrganizationAudienceFields, EventTicketingPub
     show_registration_count = serializers.BooleanField(read_only=True)
     registration_count = serializers.SerializerMethodField()
     get_registration_count = PublicEventSerializer.get_registration_count
-    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    payment_amount = MoneyField(max_digits=13, decimal_places=3, read_only=True)
     currency = serializers.SerializerMethodField()
     get_currency = PublicEventSerializer.get_currency
     id = serializers.IntegerField(read_only=True)

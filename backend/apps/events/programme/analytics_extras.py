@@ -1,6 +1,7 @@
 """Per-event analytics extras (G8): counts only, never a person, never free text.
 
-* arrivals -- first check-in per registration, in 15-minute local windows;
+* arrivals -- first check-in per registration, in adaptive local windows (15 minutes to 8 hours);
+* sign-ups -- registrations per local day, and written-answer counts (see analytics_timeline);
 * check-in methods -- the same first check-ins split by source (QR, staff, station, ...);
 * answer charts -- feedback choice questions only, counted against the form's declared
   options; short text and paragraphs are never read into a chart;
@@ -16,8 +17,10 @@ from django.db.models import Count, Min, Q
 
 from apps.makerspaces.platform import feature_enabled
 
+from .analytics_timeline import arrival_windows, signups_by_day, written_answer_counts
+
 CHOICE_TYPES = frozenset({"single_choice", "dropdown", "multi_choice", "yes_no"})
-WINDOW_MINUTES = 15
+WINDOW_MINUTES = 15  # the minimum; the response carries the window actually used
 
 
 def arrivals(event):
@@ -27,15 +30,13 @@ def arrivals(event):
              .annotate(at=Min("attended_at")).values_list("registration_id", "at"))
     sources = dict(EventCheckInEvent.objects.filter(event=event).order_by("registration_id", "attended_at", "pk")
                    .distinct("registration_id").values_list("registration_id", "source"))
-    windows, methods = {}, {}
+    methods, instants = {}, []
     for registration_id, at in first:
-        local = at.astimezone(zone)
-        start = local.replace(minute=local.minute - local.minute % WINDOW_MINUTES, second=0, microsecond=0)
-        windows[start] = windows.get(start, 0) + 1
+        instants.append(at)
         source = sources.get(registration_id, "legacy")
         methods[source] = methods.get(source, 0) + 1
-    timeline = [{"window_start": start, "count": windows[start]} for start in sorted(windows)]
-    return timeline, [{"method": key, "count": value} for key, value in sorted(methods.items())]
+    timeline, window = arrival_windows(instants, zone)
+    return timeline, [{"method": key, "count": value} for key, value in sorted(methods.items())], window
 
 
 def _choice_values(answer, options):
@@ -109,13 +110,14 @@ def short_link_visits(event):
 
 
 def extras(event):
-    timeline, methods = arrivals(event)
+    timeline, methods, window = arrivals(event)
     return {"event_id": event.pk, "timezone_name": event.timezone_name, "arrivals": timeline,
             "checkin_methods": methods, "answers": answer_charts(event),
             "waitlist": waitlist_conversion(event), "series": series_turnout(event),
             "short_link_visits": short_link_visits(event),
             "submission_stages": _stage_funnel(event),
-            "window_minutes": WINDOW_MINUTES}
+            "window_minutes": window, "signups": signups_by_day(event),
+            "written_answers": written_answer_counts(event)}
 
 
 def _stage_funnel(event):

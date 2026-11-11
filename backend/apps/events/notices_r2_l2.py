@@ -16,7 +16,9 @@ from hashlib import sha256
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
+from apps.integrations.fanout_jobs import deferred_fanout
 from apps.integrations.notification_links import local_link
 from apps.integrations.notification_outbox import emit
 
@@ -46,10 +48,11 @@ def removal_envelope(event, registration, space):
         dedup_key=f"ev:removal:{registration.pk}:{sha256(stamp.encode()).hexdigest()[:32]}",
         source_kind=REMOVAL_SOURCE, source_id=f"r{registration.pk}", revision=stamp[:64], subject=registration,
         context={"event_id": event.pk, "registration_id": registration.pk, "cancelled_at": stamp},
-        rendered={"subject": f"Your place at {event.title} was removed",
-                  "text": f"The organisers removed your registration for {event.title}. "
-                          "If this looks wrong, reply to the organisers or contact the space.",
-                  "html": "", "link": local_link(space, "member", "events")},
+        rendered=lambda: {
+            "subject": gettext("Your place at %(title)s was removed") % {"title": event.title},
+            "text": gettext("The organisers removed your registration for %(title)s. "
+                            "If this looks wrong, reply to the organisers or contact the space.") % {"title": event.title},
+            "html": "", "link": local_link(space, "member", "events")},
         timing_policy="deferred", available_at=registration.cancelled_at + RESTORE_WINDOW,
     )
 
@@ -92,9 +95,9 @@ def with_join_url(rendered, event_name, registration):
         return rendered
     import html
     rendered = dict(rendered)
-    rendered["text"] = rendered.get("text", "").rstrip() + f"\n\nJoin online: {url}\n"
+    rendered["text"] = rendered.get("text", "").rstrip() + "\n\n" + gettext("Join online: %(url)s") % {"url": url} + "\n"
     if rendered.get("html"):
-        rendered["html"] += (f'<p>Join online: <a href="{html.escape(url, quote=True)}">'
+        rendered["html"] += ("<p>" + gettext("Join online:") + f' <a href="{html.escape(url, quote=True)}">'
                              f"{html.escape(url)}</a></p>")
     return rendered
 
@@ -110,6 +113,12 @@ def _upcoming(user):
         event__starts_at__gt=timezone.now()).select_related("event__makerspace", "registered_via_makerspace"))
 
 
+def _first_space(user):
+    first = _upcoming(user).first()
+    return (first.registered_via_makerspace or first.event.makerspace) if first else None
+
+
+@deferred_fanout(space=_first_space)
 def resend_tickets(user):
     from apps.integrations.recipients_owners import eligible_owner
     from apps.makerspaces.platform import module_enabled
@@ -128,10 +137,11 @@ def resend_tickets(user):
              audience="requester", dedup_key=f"ev:ticket-resend:{registration.pk}:{digest[:32]}",
              source_kind=TICKET_SOURCE, source_id=f"r{registration.pk}", revision=digest[:64], subject=registration,
              context={"event_id": event.pk, "registration_id": registration.pk, "address_sha256": digest},
-             rendered={"subject": f"Your ticket for {event.title}",
-                       "text": f"Your email address changed, so here is your ticket for {event.title} again. "
-                               "Show it at the door.",
-                       "html": "", "link": local_link(space, "member", f"events/{registration.pk}/ticket")})
+             rendered=lambda event=event, registration=registration, space=space: {
+                 "subject": gettext("Your ticket for %(title)s") % {"title": event.title},
+                 "text": gettext("Your email address changed, so here is your ticket for %(title)s again. "
+                                 "Show it at the door.") % {"title": event.title},
+                 "html": "", "link": local_link(space, "member", f"events/{registration.pk}/ticket")})
         sent += 1
     return sent
 

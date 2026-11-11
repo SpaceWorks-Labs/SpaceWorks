@@ -79,11 +79,14 @@ def join_url_for(registration):
 def map_url(event):
     """A venue map link for in-person and hybrid events; never for online-only events.
 
-    The host space's own map link wins (the event happens at that venue); otherwise a
-    map search for the event location within the space's town. None without either.
+    An external venue's own map link (`venue_map_url`) wins when set; then the host space's map
+    link (the event happens at that venue); otherwise a map search for the event location within
+    the space's town. None without any of them.
     """
     if enabled(event) and event.delivery_mode == Event.DeliveryMode.ONLINE:
         return None
+    if event.venue_map_url:
+        return event.venue_map_url
     space = event.makerspace
     if space.map_url:
         return space.map_url

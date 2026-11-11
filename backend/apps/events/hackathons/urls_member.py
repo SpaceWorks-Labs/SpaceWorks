@@ -2,7 +2,7 @@
 from django.urls import path
 from .views_application import ApplicationView, ApplicationSubmitView, ApplicationWithdrawView, ApplicationRsvpView, ApplicationDateReviewView
 from .views_teams import TeamListView, TeamDetailView
-from .views_team_commands import InviteView, JoinRequestView, AcceptView, LeaveView, LockView, CancelView
+from .views_team_commands import InviteView, JoinRequestView, AcceptView, DeclineRequestView, LeaveView, LockView, CancelView, HandoverView, RemoveMemberView
 from .views_finder import CommentsView, FinderView, FinderMeView
 
 urlpatterns = [
@@ -16,9 +16,12 @@ urlpatterns = [
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/invite/", InviteView.as_view(), name="events-programme-member-teams-invite"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/join-request/", JoinRequestView.as_view(), name="events-programme-member-teams-join-request"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/accept/", AcceptView.as_view(), name="events-programme-member-teams-accept"),
+    path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/decline-request/", DeclineRequestView.as_view(), name="events-programme-member-team-decline-request"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/leave/", LeaveView.as_view(), name="events-programme-member-teams-leave"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/lock/", LockView.as_view(), name="events-programme-member-teams-lock"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/cancel/", CancelView.as_view(), name="events-programme-member-team-cancel"),
+    path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/handover/", HandoverView.as_view(), name="events-programme-member-team-handover"),
+    path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/remove-member/", RemoveMemberView.as_view(), name="events-programme-member-team-remove-member"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/teams/<int:team_id>/comments/", CommentsView.as_view(), name="events-programme-member-team-comments"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/team-finder/", FinderView.as_view(), name="events-programme-member-team-finder"),
     path("makerspaces/<int:makerspace_id>/events/<int:pk>/team-finder/me/", FinderMeView.as_view(), name="events-programme-member-team-finder-me"),

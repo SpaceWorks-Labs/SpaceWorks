@@ -105,6 +105,8 @@ def place_pass_order(series, *, member, actor, pass_type_id, digest=None):
     occurrences = covered_occurrences(series)
     _require_room(pass_type, occurrences, member)
     quote = verify_digest(pass_quote(series, pass_type), digest)
+    from apps.managed_hosting.extra_quotas import check_extra_quota  # decision 284: one seat per covered date
+    check_extra_quota(series.makerspace, "event_registrations_monthly", adding=len(occurrences))
     order = EventOrder.objects.create(makerspace=series.makerspace, series=series, buyer=member,
                                       kind=EventOrder.Kind.PASS, currency=quote.currency, subtotal=quote.subtotal,
                                       total=quote.total, digest=quote.digest,

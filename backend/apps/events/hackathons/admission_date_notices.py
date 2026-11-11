@@ -2,6 +2,7 @@
 from apps.accounts.staff_identity import is_person
 from apps.events.contracts.subjects import SubjectKind
 from apps.events.answer_derivations.subjects import subject_model, require_event
+from apps.integrations.fanout_jobs import deferred_fanout
 
 SOURCE = "events.answer_date"
 
@@ -31,7 +32,9 @@ def register_date_notices():
     register_source(SOURCE, NotificationSource(eligible))
 
 
+@deferred_fanout()
 def enqueue_locked(*, event, row, kind):
+    from django.utils.translation import gettext
     from apps.integrations.notification_outbox import emit
     if row.member_id is None:
         return
@@ -40,5 +43,5 @@ def enqueue_locked(*, event, row, kind):
         revision=str(event.event_date_revision), subject=row,
         dedup_key=f"event-date:{event.pk}:{event.event_date_revision}:{kind.value}:{row.pk}",
         context={"event_id": event.pk, "subject_kind": kind.value},
-        rendered={"subject": "Review your event answers", "text":
-            "The event start date or timezone changed. Review your answers at the current event date."})
+        rendered=lambda: {"subject": gettext("Review your event answers"), "text":
+            gettext("The event start date or timezone changed. Review your answers at the current event date.")})

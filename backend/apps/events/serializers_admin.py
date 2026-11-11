@@ -2,9 +2,11 @@ from django.utils.translation import gettext
 from collections.abc import Mapping
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from .models import Event
 from apps.forms_schema.serializers import CustomFormSchemaField
 from .serializers_public_surface import EventPublicSurfaceInput
+from .venue import ADDRESS_MAX, validate_map_url
 
 from .serializers_registration_admin import (
     EventRegistrationAdminSerializer, EventStaffRegistrationSerializer, EventEligibleMemberSerializer,
@@ -32,11 +34,14 @@ class EventWriteSerializer(EventPublicSurfaceInput, serializers.Serializer):
         default=Event.LocationKind.OTHER,
         required=False,
     )
+    venue_address = serializers.CharField(allow_blank=True, max_length=ADDRESS_MAX, required=False)
+    venue_map_url = serializers.CharField(allow_blank=True, max_length=500, required=False,
+                                          validators=[validate_map_url])
     custom_form = CustomFormSchemaField(allow_null=True, required=False)
     capacity = serializers.IntegerField(default=0, min_value=0, required=False)
-    payment_amount = serializers.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    payment_amount = MoneyField(
+        max_digits=13,
+        decimal_places=3,
         min_value=0,
         default=0,
         required=False,
@@ -59,7 +64,7 @@ class EventWriteSerializer(EventPublicSurfaceInput, serializers.Serializer):
     inherit_fields = serializers.ListField(
         child=serializers.ChoiceField(choices=sorted((
             'title', 'description', 'starts_at', 'ends_at', 'location',
-            'location_kind', 'custom_form', 'capacity', 'is_public', 'payment_amount',
+            'location_kind', 'venue_address', 'venue_map_url', 'custom_form', 'capacity', 'is_public', 'payment_amount',
             'registration_requires_approval', 'registration_audience', 'registration_cutoff_at',
             'registration_cutoff_lead_minutes', 'cancellation_cutoff_hours',
             'image_key',

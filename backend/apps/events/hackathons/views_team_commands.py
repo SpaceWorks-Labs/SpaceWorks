@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from . import team_invitations, team_lifecycle
 from .api_base import MemberCommandView
 from .api_schema import AggregateSerializer, ERRORS, InviteSerializer, TeamSerializer
-from .serializers_commands import AcceptInput, InviteInput, WithdrawalInput
+from .serializers_commands import AcceptInput, DeclineRequestInput, HandoverInput, InviteInput, LeaveInput, RemoveMemberInput, WithdrawalInput
 from .admission_inputs import CommandInput
 from .team_projection import project_team
 
@@ -17,7 +17,7 @@ def summary(team):
 class InviteView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=InviteInput, responses={200: PolymorphicProxySerializer(component_name="ProgrammeInviteResult", serializers=[InviteSerializer, AggregateSerializer], resource_type_field_name=None), **ERRORS})
     def post(self, request, makerspace_id, pk, team_id):
-        self.member_target(request, makerspace_id, pk)
+        self.team_target(request, makerspace_id, pk)
         row, token = team_invitations.invite(event_id=pk, team_id=team_id, actor=request.user, data=self.command_data(request, InviteInput))
         if row is None:
             from .team_models import HackathonTeam
@@ -30,7 +30,7 @@ class InviteView(MemberCommandView):
 class JoinRequestView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=CommandInput, responses={200: AggregateSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk, team_id):
-        self.member_target(request, makerspace_id, pk)
+        self.team_target(request, makerspace_id, pk)
         team = team_invitations.join_request(event_id=pk, team_id=team_id, actor=request.user, data=self.command_data(request, CommandInput))
         return Response(summary(team))
 
@@ -38,23 +38,33 @@ class JoinRequestView(MemberCommandView):
 class AcceptView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=AcceptInput, responses={200: TeamSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk, team_id):
-        event, config = self.member_target(request, makerspace_id, pk)
+        event, config = self.team_target(request, makerspace_id, pk)
         team = team_invitations.accept(event_id=pk, team_id=team_id, actor=request.user, data=self.command_data(request, AcceptInput))
         return Response(project_team(team, actor=request.user, config=config))
 
 
-class LeaveView(MemberCommandView):
-    @extend_schema(tags=["Event teams"], request=CommandInput, responses={200: AggregateSerializer, **ERRORS})
+class DeclineRequestView(MemberCommandView):
+    @extend_schema(tags=["Event teams"], request=DeclineRequestInput, responses={200: TeamSerializer, **ERRORS},
+                   summary="The leader declines a request to join the team")
     def post(self, request, makerspace_id, pk, team_id):
-        self.member_target(request, makerspace_id, pk)
-        team = team_lifecycle.leave(event_id=pk, team_id=team_id, actor=request.user, data=self.command_data(request, CommandInput))
+        event, config = self.team_target(request, makerspace_id, pk)
+        team = team_invitations.decline(event_id=pk, team_id=team_id, actor=request.user,
+                                        data=self.command_data(request, DeclineRequestInput))
+        return Response(project_team(team, actor=request.user, config=config))
+
+
+class LeaveView(MemberCommandView):
+    @extend_schema(tags=["Event teams"], request=LeaveInput, responses={200: AggregateSerializer, **ERRORS})
+    def post(self, request, makerspace_id, pk, team_id):
+        self.team_target(request, makerspace_id, pk)
+        team = team_lifecycle.leave(event_id=pk, team_id=team_id, actor=request.user, data=self.command_data(request, LeaveInput))
         return Response(summary(team))
 
 
 class CancelView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=WithdrawalInput, responses={200: AggregateSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk, team_id):
-        self.member_target(request, makerspace_id, pk)
+        self.team_target(request, makerspace_id, pk)
         team = team_lifecycle.leave(event_id=pk, team_id=team_id, actor=request.user,
             data=self.command_data(request, WithdrawalInput), cancel=True)
         return Response(summary(team))
@@ -63,6 +73,26 @@ class CancelView(MemberCommandView):
 class LockView(MemberCommandView):
     @extend_schema(tags=["Event teams"], request=CommandInput, responses={200: TeamSerializer, **ERRORS})
     def post(self, request, makerspace_id, pk, team_id):
-        event, config = self.member_target(request, makerspace_id, pk)
+        event, config = self.team_target(request, makerspace_id, pk)
         team = team_lifecycle.lock(event_id=pk, team_id=team_id, actor=request.user, data=self.command_data(request, CommandInput))
+        return Response(project_team(team, actor=request.user, config=config))
+
+
+class HandoverView(MemberCommandView):
+    @extend_schema(tags=["Event teams"], request=HandoverInput, responses={200: TeamSerializer, **ERRORS},
+                   summary="The leader hands the team to another active member")
+    def post(self, request, makerspace_id, pk, team_id):
+        event, config = self.team_target(request, makerspace_id, pk)
+        team = team_lifecycle.transfer_leadership(event_id=pk, team_id=team_id, actor=request.user,
+                                                  data=self.command_data(request, HandoverInput))
+        return Response(project_team(team, actor=request.user, config=config))
+
+
+class RemoveMemberView(MemberCommandView):
+    @extend_schema(tags=["Event teams"], request=RemoveMemberInput, responses={200: TeamSerializer, **ERRORS},
+                   summary="The leader removes a member while the roster is open")
+    def post(self, request, makerspace_id, pk, team_id):
+        event, config = self.team_target(request, makerspace_id, pk)
+        team = team_lifecycle.remove_member(event_id=pk, team_id=team_id, actor=request.user,
+                                            data=self.command_data(request, RemoveMemberInput))
         return Response(project_team(team, actor=request.user, config=config))

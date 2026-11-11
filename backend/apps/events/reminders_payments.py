@@ -108,9 +108,10 @@ def remind(order_id):
 @shared_task
 def sweep_order_checkouts_task(limit=50):
     from .orders_settlement import settle_paid_order
+    from . import pay_window  # parity E-B5 (C22): a place whose 24-hour payment window ran out is released
     done = 0
     for label, ids, run in (("expire", due_expiries, expire), ("settle", missed_settlements, settle_paid_order),
-                            ("remind", due_reminders, remind)):
+                            ("remind", due_reminders, remind), ("pay_window", pay_window.due, pay_window.expire)):
         for order_id in bounded.items(ids(bounded.rows(limit))):
             try:
                 run(order_id)

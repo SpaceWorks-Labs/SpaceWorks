@@ -17,7 +17,7 @@ class EventAnalyticsExtrasView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=["Admin events"], responses={200: EventAnalyticsExtrasSerializer, **ERRORS},
-        description="Arrivals by 15-minute window, check-in method split, feedback choice counts "
+        description="Arrivals by adaptive window (15 minutes to 8 hours), sign-ups per day, written-answer counts, check-in method split, feedback choice counts "
                     "(free text is never charted), waitlist conversion, series turnout and short-link "
                     "visits (null while events.short_links is off). Counts only, no people.")
     def get(self, request, pk):

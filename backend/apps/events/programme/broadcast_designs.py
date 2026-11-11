@@ -71,9 +71,10 @@ def document(design, *, fonts, width, title_html, message_html, links_html, orga
         '<style>' + fonts + ':root{color-scheme:light dark;--paper:#FFF4E8;--ink:#142C2A;--accent:'
         + ACCENTS[design] + ';--on-accent:#FFF4E8;}'
         '@media(prefers-color-scheme:dark){:root{--paper:#142C2A;--ink:#FFF4E8;' + dark + '}}'
-        'body{margin:0;padding:24px;background:var(--paper);color:var(--ink);font:400 16px Gilroy;}'
+        'body{margin:0;padding:24px;background:var(--paper);color:var(--ink);'
+        'font:400 16px Outfit,Arial,sans-serif;font-synthesis:none;}'
         'main{max-width:' + str(width) + 'px;margin:auto;}'
-        'h1{font-weight:700;font-size:24px;}p{line-height:1.6;overflow-wrap:anywhere;}'
+        'h1{font-family:Gilroy,Outfit,Arial,sans-serif;font-weight:800;font-size:24px;}p{line-height:1.6;overflow-wrap:anywhere;}'
         'a{color:var(--ink);text-decoration:underline;font-weight:600;}'
         'header{font-weight:700;}' + FRAMES[design] + '</style></head><body><main>' + content
         + '</main></body></html>')

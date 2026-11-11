@@ -69,6 +69,18 @@ class AnswerChartSerializer(serializers.Serializer):
     total = serializers.IntegerField(min_value=0)
 
 
+class SignupDaySerializer(serializers.Serializer):
+    day = serializers.DateField(help_text="Local calendar day in the event timezone.")
+    count = serializers.IntegerField(min_value=0)
+
+
+class WrittenAnswerCountSerializer(serializers.Serializer):
+    question_id = serializers.CharField()
+    label = serializers.CharField(allow_blank=True)
+    type = serializers.ChoiceField(choices=("short_text", "paragraph"))
+    answered = serializers.IntegerField(min_value=0, help_text="People who wrote something; the text is never returned.")
+
+
 class WaitlistConversionSerializer(serializers.Serializer):
     ever_waitlisted = serializers.IntegerField(min_value=0)
     promoted = serializers.IntegerField(min_value=0)
@@ -101,7 +113,10 @@ class StageFunnelSerializer(serializers.Serializer):
 class EventAnalyticsExtrasSerializer(serializers.Serializer):
     event_id = serializers.IntegerField()
     timezone_name = serializers.CharField()
-    window_minutes = serializers.IntegerField()
+    window_minutes = serializers.IntegerField(
+        help_text="Arrival window actually used: 15 minutes to 8 hours, widened for long events.")
+    signups = SignupDaySerializer(many=True)
+    written_answers = WrittenAnswerCountSerializer(many=True)
     arrivals = ArrivalWindowSerializer(many=True)
     checkin_methods = CheckinMethodSerializer(many=True)
     answers = AnswerChartSerializer(many=True)

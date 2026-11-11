@@ -8,11 +8,13 @@ import logging
 
 from django.db import transaction
 
+from apps.integrations.fanout_jobs import deferred_fanout
 from apps.integrations.notification_catalog import FEATURE_EVENTS
 
 logger = logging.getLogger(__name__)
 
 
+@deferred_fanout(feature="events")
 def application_changed(event, application, name, *, stage=None):
     if name not in FEATURE_EVENTS.get("events", ()):
         return None

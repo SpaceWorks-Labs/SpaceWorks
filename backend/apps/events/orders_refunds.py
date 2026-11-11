@@ -20,11 +20,11 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.audit.services import record
+from apps.payments.money import quantize_money
 
 from .models import EventOrder, EventOrderDue, EventOrderSeat
 
 logger = logging.getLogger(__name__)
-CENT = Decimal("0.01")
 
 
 def open_order_due(order, *, amount, kind, actor, reason_code, seat=None, event=None, snapshot=None):
@@ -49,7 +49,7 @@ def seat_share(seat):
     """What one admission of a ticket line cost, after its discounts (fee excluded)."""
     line = seat.line
     seats = max(line.quantity * max(line.seats_per_unit, 1), 1)
-    return (line.line_total / seats).quantize(CENT, rounding=ROUND_DOWN)
+    return quantize_money(line.line_total / seats, line.order.currency, ROUND_DOWN)
 
 
 def policy_share(order, share, *, cancelled_at):
@@ -67,7 +67,7 @@ def policy_share(order, share, *, cancelled_at):
         band, gross = "partial", share * Decimal(policy.partial_percent) / 100
     else:
         band, gross = "none", Decimal("0")
-    due = max(gross - Decimal(policy.cancellation_fee), Decimal("0")).quantize(CENT, rounding=ROUND_DOWN)
+    due = quantize_money(max(gross - Decimal(policy.cancellation_fee), Decimal("0")), order.currency, ROUND_DOWN)
     return due, {"rule": "policy", "band": band, "minutes_before_start": minutes, "share": str(share)}
 
 

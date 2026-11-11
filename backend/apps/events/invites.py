@@ -84,6 +84,9 @@ def resolve_for_account_locked(event, member, *, actor):
         invite.uses += 1
         invite.save(update_fields=["uses"])
         _audit(event, actor, "event.invite_consumed", invite, {"uses": invite.uses})
+    if invite is None:
+        from .series_invites import allowlisted_locked
+        invite = allowlisted_locked(event, member)
     return invite
 
 

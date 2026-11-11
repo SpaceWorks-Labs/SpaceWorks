@@ -61,6 +61,8 @@ def _payment(order, actor):
     from apps.payments.services import create_payment
     if not charge_tracking_enabled(order.makerspace, "events"):
         raise OrderRefused("order_not_payable", "This space is not taking payments for events.")
+    from apps.managed_hosting.space_quotas import require_payment_capacity
+    require_payment_capacity(order.makerspace, order.total, order.currency)
     first = order.event or order.seats.select_related("event").order_by("event__starts_at").first().event
     return create_payment(
         makerspace=order.makerspace, subject_type=Payment.SubjectType.EVENT_ORDER, subject_id=order.pk,
@@ -107,6 +109,9 @@ def place_order(event, *, member, actor, request, digest=None):
     priced = build_quote(event, member, request, lock=True, addons_only=only_addons)
     verify_digest(priced.quote, digest)
     attendees = [str(email).strip().lower() for email in request.get("attendees") or () if str(email).strip()]
+    if not only_addons:  # decision 284: a ticket order is the START of registrations (add-on orders sell no seat)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(event.makerspace, "event_registrations_monthly", adding=priced.seats)
     order = EventOrder.objects.create(
         makerspace=event.makerspace, event=event, buyer=member, currency=priced.quote.currency,
         subtotal=priced.quote.subtotal, discount_total=priced.quote.discount_total,

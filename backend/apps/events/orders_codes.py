@@ -12,11 +12,11 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
+from apps.payments.money import quantize_money
+
 from .invites import code_digest
 from .models import EventPromoCode
 from .orders_errors import OrderRefused
-
-CENT = Decimal("0.01")
 
 
 def _live(event, code, *, lock=False):
@@ -52,12 +52,12 @@ def discount_promo(event, code, *, lock=False):
     return promo
 
 
-def _off(promo, amount):
+def _off(promo, amount, currency=None):
     value = amount * Decimal(promo.percent_off) / 100 if promo.percent_off else promo.amount_off
-    return min(amount, value).quantize(CENT, rounding=ROUND_HALF_UP)
+    return quantize_money(min(amount, value), currency, ROUND_HALF_UP)
 
 
-def apply_promo(promo, ticket_lines):
+def apply_promo(promo, ticket_lines, currency=None):
     """Per-line promo discounts `{index: amount}` and the uses spent.
 
     `ticket_lines` holds `(index, ticket, quantity, net)` for fixed-price ticket lines,
@@ -72,10 +72,10 @@ def apply_promo(promo, ticket_lines):
         return {}, 0
     if promo.applies_per == "order":
         subtotal = sum((row[3] for row in eligible), Decimal("0"))
-        total, discounts = _off(promo, subtotal), {}
+        total, discounts = _off(promo, subtotal, currency), {}
         left = total
         for position, (index, _ticket, _quantity, net) in enumerate(eligible):
-            share = left if position == len(eligible) - 1 else (total * net / subtotal).quantize(CENT)
+            share = left if position == len(eligible) - 1 else quantize_money(total * net / subtotal, currency)
             discounts[index], left = min(share, net), left - min(share, net)
         return discounts, 1
     remaining, discounts, used = promo.max_uses - promo.uses, {}, 0
@@ -83,8 +83,8 @@ def apply_promo(promo, ticket_lines):
         count = min(quantity, remaining - used)
         if count <= 0:
             break
-        unit = (net / quantity).quantize(CENT)
-        discounts[index] = min(net, _off(promo, unit) * count)
+        unit = quantize_money(net / quantity, currency)
+        discounts[index] = min(net, _off(promo, unit, currency) * count)
         used += count
     return discounts, used
 

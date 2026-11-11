@@ -92,6 +92,10 @@ class AcceptInput(CommandInput):
         return attrs
 
 
+class DeclineRequestInput(CommandInput):
+    request_id = serializers.IntegerField(min_value=1)
+
+
 class CommentInput(CommandInput):
     body = serializers.CharField(max_length=2000, trim_whitespace=True)
 
@@ -100,3 +104,25 @@ class FinderInput(CommandInput):
     opted_in = LiteralBoolean(required=False)
     intro = serializers.CharField(max_length=500, allow_blank=True, required=False)
     skills = serializers.ListField(child=serializers.CharField(max_length=40), max_length=20, required=False)
+
+
+class LeaveInput(CommandInput):
+    #: Also withdraw the leaver's application and registration (E-B3); needs `events.team_moderation`.
+    cancel_registration = LiteralBoolean(required=False, default=False)
+
+
+class HandoverInput(CommandInput):
+    new_leader_id = serializers.IntegerField(min_value=1)
+
+
+class RemoveMemberInput(CommandInput):
+    member_id = serializers.IntegerField(min_value=1)
+
+
+class TeamRenameInput(CommandInput):
+    name = serializers.CharField(max_length=100)
+
+
+class TeamMoveInput(CommandInput):
+    member_id = serializers.IntegerField(min_value=1)
+    to_team_id = serializers.IntegerField(min_value=1)

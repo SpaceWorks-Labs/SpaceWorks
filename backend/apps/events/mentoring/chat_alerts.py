@@ -13,10 +13,11 @@ too. Each (intent, room) pair is posted at most once, recorded in the audit log 
 the destination KIND only.
 """
 
-from django.utils.translation import gettext
 import logging
 
-from django.utils import timezone
+from django.conf import settings
+from django.utils import timezone, translation
+from django.utils.translation import gettext, ngettext
 
 from apps.audit.models import AuditLog
 from apps.audit.services import record
@@ -45,10 +46,16 @@ def _already_posted(intent, destination):
 
 def alert_text(event, payload, on_shift):
     from apps.integrations.notification_links import local_link
-    mentors = "1 mentor is" if on_shift == 1 else f"{on_shift} mentors are"
     link = local_link(event.makerspace, "admin", f"events/{event.pk}/mentor-desk")
-    return (f"Mentor help needed at {event.title}: {payload['category']} for {payload['team_alias']} "
-            f"(priority {payload['priority']}). {mentors} on shift. Open Mentor Desk: {link}")
+    # EP-43: a room is shared by everyone in it, so the text uses the deployment's default language, not
+    # the language of whichever request raised the alert.
+    with translation.override(settings.LANGUAGE_CODE):
+        mentors = ngettext("%(count)d mentor is", "%(count)d mentors are", on_shift) % {"count": on_shift}
+        return gettext(
+            "Mentor help needed at %(event)s: %(category)s for %(team)s (priority %(priority)s). "
+            "%(mentors)s on shift. Open Mentor Desk: %(link)s") % {
+            "event": event.title, "category": payload["category"], "team": payload["team_alias"],
+            "priority": payload["priority"], "mentors": mentors, "link": link}
 
 
 def post_help_alert(intent, event, payload, recipient_ids):

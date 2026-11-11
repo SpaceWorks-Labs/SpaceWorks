@@ -15,14 +15,14 @@ Order, the same for the preview and the placed order (A8: preview = charge):
 """
 
 from dataclasses import dataclass, field, replace
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
+from apps.payments.money import quantize_money
 from apps.payments.pricing.components import Component, component
 from apps.payments.pricing.quotes import Quote, line
 
 from .orders_errors import OrderRefused
 
-CENT = Decimal("0.01")
 PWYW = Component("pay_what_you_want", "Pay what you want", "ticket", "event_order", discountable=False)
 ADDON = Component("addon", "Add-on", "item", "event_order", discountable=False)
 FEE = Component("booking_fee", "Booking fee", "order", "event_order", discountable=False)
@@ -81,7 +81,8 @@ def _ticket(event, member, item, unlocked):
     unit = Decimal(ticket.amount)
     if ticket.pricing_mode == "pwyw":
         try:
-            unit = Decimal(str(item.get("amount", ticket.amount))).quantize(CENT, rounding=ROUND_HALF_UP)
+            from apps.payments.pricing.rates import RateCard
+            unit = quantize_money(Decimal(str(item.get("amount", ticket.amount))), RateCard(event.makerspace, "events").currency)
         except (ArithmeticError, TypeError, ValueError):
             raise OrderRefused("amount_below_minimum", "Enter the amount you want to pay.", ticket_type_id=pk)
         if unit < ticket.min_amount:
@@ -159,14 +160,14 @@ def build_quote(event, member, request, *, lock=False, addons_only=False):
     promo = discount_promo(event, request.get("promo_code"), lock=lock)
     discounts, uses = apply_promo(promo, [(index, ticket, quantity, priced.lines[index].net)
                                           for index, (ticket, quantity, _unit) in enumerate(tickets)
-                                          if ticket.pricing_mode == "fixed"])
+                                          if ticket.pricing_mode == "fixed"], currency)
     lines = [replace(row, discount=row.discount + discounts.get(index, Decimal("0")))
              for index, row in enumerate(priced.lines)]
     ticket_net = sum((row.net for row in lines[:len(tickets)]), Decimal("0"))
     fee = (Decimal(settings_row.booking_fee_fixed) + ticket_net * Decimal(settings_row.booking_fee_bps) / 10000
            if ticket_net > 0 else Decimal("0"))
     if fee > 0:
-        lines.append(line(FEE, currency=currency, quantity=1, unit_amount=fee.quantize(CENT, rounding=ROUND_HALF_UP),
+        lines.append(line(FEE, currency=currency, quantity=1, unit_amount=quantize_money(fee, currency),
                           rate_source="event", target=target))
     saving = sum(discounts.values(), Decimal("0"))
     priced = replace(priced, lines=tuple(lines),

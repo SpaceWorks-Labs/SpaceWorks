@@ -6,6 +6,9 @@ optimistic concurrency on `expected_version`, so two tabs never overwrite each o
 silently. Only a version-2 DRAFT changes; a scheduled or sent campaign never does.
 """
 
+from django.db import models, transaction
+from rest_framework.exceptions import NotFound
+
 from apps.audit.services import record
 from apps.events.broadcasts import authorize
 from apps.events.models_broadcasts import EventBroadcast
@@ -16,6 +19,35 @@ from .broadcast_preview import campaign_command
 from .commands import ProgrammeConflict
 
 FIELDS = ("subject", "body", "statuses", "attendance", "design", "ctas")
+
+
+def require_visible(campaign, actor):
+    """A draft belongs to the person who started it; anyone else (superadmin included) gets a 404."""
+    if campaign.status == EventBroadcast.Status.DRAFT and campaign.created_by_id != actor.pk:
+        raise NotFound()
+    return campaign
+
+
+def visible_to(queryset, actor):
+    """Sent and scheduled campaigns are shared staff history; drafts are private to their author."""
+    return queryset.exclude(~models.Q(created_by_id=actor.pk), status=EventBroadcast.Status.DRAFT)
+
+
+def own_draft(event, actor):
+    """The one open composer draft this person has on the event, if any."""
+    return (EventBroadcast.objects.filter(event=event, created_by=actor, render_schema_version=2,
+                                          status=EventBroadcast.Status.DRAFT).order_by("-created_at", "-pk").first())
+
+
+@transaction.atomic
+def delete_draft(campaign, actor):
+    """Discard the author's own draft. Only a draft can go; a scheduled or sent campaign is history."""
+    row = EventBroadcast.objects.select_for_update().get(pk=campaign.pk, event_id=campaign.event_id)
+    require_visible(row, actor)
+    if row.status != EventBroadcast.Status.DRAFT:
+        raise ProgrammeConflict("invalid_transition", "Only a draft can be deleted.")
+    record(actor, "event.broadcast_draft_deleted", makerspace=row.makerspace, target=row)
+    row.delete()
 
 
 def save_draft(campaign, actor, payload):

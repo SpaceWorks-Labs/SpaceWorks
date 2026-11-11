@@ -54,7 +54,7 @@ class EventIdCardSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializ
 
     class Meta:
         model = EventIdCard
-        fields = ("id", "event", "registration", "role", "printed_name", "status", "valid_until", "issued_at",
+        fields = ("id", "event", "registration", "role", "role_locked", "printed_name", "status", "valid_until", "issued_at",
                   "revoked_at", "last_emailed_at", "photo_set")
         read_only_fields = fields
 
@@ -120,10 +120,11 @@ class EventIdCardRevokeView(APIView):
 class EventIdCardDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="Change a card's role (attendee, speaker, mentor, judge, volunteer, crew)",
+    @extend_schema(tags=TAGS, summary="Set a card's role by hand (locks it), or release the lock to re-detect it",
                    request=CardRoleRequestSerializer, responses={200: EventIdCardSerializer, **errors(400, 401, 403, 404)})
     def patch(self, request, pk):
-        card = id_cards.set_role(request.user, organiser_card(request.user, pk), request.data.get("role"))
+        card = id_cards.set_role(request.user, organiser_card(request.user, pk), request.data.get("role"),
+                                  request.data.get("role_locked"))
         return Response(EventIdCardSerializer(card, context={"request": request}).data)
 
 
@@ -164,11 +165,18 @@ class EventCardJobView(APIView):
         data = CardJobCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         values = data.validated_data
+        from . import badge_prints
         from .id_cards_preview import event_card_ids
         params = {"explicit": False} if values["kind"] == "email" else job_params(values)
+        targets = event_card_ids(event, values)
+        prints = values["kind"] != "email"
+        if prints:  # E-B2: a bulk job is a print start; the monthly limit refuses it (409), never a reprint view
+            badge_prints.check_print_start(event, adding=len(targets))
         job, created = enqueue(request.user, event.makerspace, values["kind"], scope="event", scope_id=event.pk,
-                               targets=event_card_ids(event, values), params=params,
+                               targets=targets, params=params,
                                revision=list(event.card_designs.values_list("published_revision", flat=True)))
+        if prints and created:
+            badge_prints.record_bulk(event, request.user, targets)
         return Response(CardJobSerializer(job).data, status=201 if created else 200)
 
 

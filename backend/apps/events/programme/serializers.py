@@ -40,6 +40,8 @@ class PublishingInput(CommandSerializer):
     status = serializers.ChoiceField(choices=("draft", "published"), required=False)
     release_saved_website = serializers.BooleanField(default=False)
     website_revision = serializers.IntegerField(min_value=1, required=False)
+    publish_without_room = serializers.BooleanField(
+        default=False, help_text="Publish although the linked room booking is rejected, cancelled or missing (audited).")
 
     def validate(self, attrs):
         if attrs["release_saved_website"] and "website_revision" not in attrs:

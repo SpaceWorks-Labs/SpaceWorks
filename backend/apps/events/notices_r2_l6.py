@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from apps.integrations.notification_links import local_link
 from apps.integrations.notification_outbox import emit
+from apps.integrations.fanout_jobs import deferred_fanout
 
 SOURCE = "events.order"
 EVENTS = ("order_confirmed", "order_payment_reminder", "order_abandoned", "ticket_type_changed",
@@ -46,6 +47,7 @@ def _copy(order, event_name, extra):
     return (f"Update on your order for {title}", f"There is an update on your order #{order.pk}.")
 
 
+@deferred_fanout()
 def order_notice(order, event_name, **extra):
     from apps.integrations.recipients_owners import eligible_owner
     if event_name not in EVENTS or not eligible_owner(order.makerspace, order.buyer_id):

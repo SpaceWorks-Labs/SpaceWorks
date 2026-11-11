@@ -9,6 +9,15 @@ from .serializers_config import ConfigInput, validate_rubric
 CONFIG_FIELDS = tuple(key for key in ConfigInput().fields if key not in ("operation_id", "expected_version", "coc_body"))
 
 
+def largest_active_team(event):
+    """The most active members any live team of this event holds; the maximum may not go below it."""
+    from django.db.models import Count, Q
+    from .team_models import HackathonTeam
+    rows = HackathonTeam.objects.filter(event=event).exclude(state="disbanded").annotate(
+        size=Count("memberships", filter=Q(memberships__state="active")))
+    return max((row.size for row in rows), default=0)
+
+
 def update(*, event_id, actor, data):
     with command(event_id=event_id, actor=actor, data=data, action="config.edit", configuration=True) as ctx:
         config = ctx.config
@@ -48,6 +57,10 @@ def update(*, event_id, actor, data):
             fail("invalid_finder_mode", "Team finder is available for individual applications.", status=400)
         if config.team_min > config.team_max:
             fail("invalid_team_size", "Minimum team size exceeds maximum.", status=400)
+        largest = largest_active_team(ctx.event)
+        if config.team_mode != "solo" and config.team_max < largest:
+            fail("team_max_below_largest_team", "The maximum is below the largest existing team (%d members)." % largest,
+                 status=400, fields={"team_max": [str(largest)]})
         for start, end in ((config.application_opens_at, config.application_closes_at), (config.submission_opens_at, config.submission_deadline)):
             if start and end and start >= end:
                 fail("invalid_window", "The close time must follow the opening time.", status=400)

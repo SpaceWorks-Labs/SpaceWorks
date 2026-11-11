@@ -18,6 +18,16 @@ def profile(event_id, member_id):
     return {key: value[key] for key in ("display_name", "url", "photo_url") if key in value}
 
 
+def moderation_actions(team, *, leader, forming):
+    """E-F4: which `events.team_moderation` commands the screen may offer (the routes re-check everything)."""
+    from apps.makerspaces.platform import feature_enabled
+    from .team_lifecycle import MODERATION
+    if team.state == "disbanded" or not feature_enabled(team.event.makerspace, MODERATION):
+        return []
+    return (["handover"] if leader else []) + (["remove_member"] if leader and forming else []) \
+        + (["cancel_registration"] if forming else [])
+
+
 def project_team(team, *, actor, config, finder=False):
     members = list(team.memberships.filter(state="active").order_by("joined_at", "pk"))
     if finder:
@@ -30,7 +40,8 @@ def project_team(team, *, actor, config, finder=False):
     leader = team.leader_id == actor.pk
     actions = []
     if team.state == "forming":
-        actions = ["leave", "comment"] + (["edit", "invite", "accept", "lock", "cancel"] if leader else [])
+        actions = ["leave", "comment"] + (["edit", "invite", "accept", "decline", "lock", "cancel"] if leader else [])
+    actions += moderation_actions(team, leader=leader, forming="leave" in actions)
     return {"id": team.pk, "event_id": team.event_id, "version": team.version,
             "state": team.state, "name": team.name, "allowed_actions": actions,
             "leader_member_id": team.leader_id, "team_mode": config.team_mode,

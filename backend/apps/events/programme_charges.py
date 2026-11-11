@@ -76,7 +76,9 @@ def raise_charge(*, event, subject_type, subject_id, member, amount, actor, audi
 def settled_or_free(event, subject_type, subject_id):
     """True when no charge is owed or it is paid/waived: the gate a held project or team waits on."""
     payment = find_charge(event, subject_type, subject_id)
-    return payment is None or payment.status in (*PAID_OR_WAIVED, "cancelled")
+    # Payment.Status.CANCELED is spelled "canceled": the old "cancelled" never matched, so a voided
+    # charge (staff cancelled the debt) held its project or team forever with nothing left to pay.
+    return payment is None or payment.status in (*PAID_OR_WAIVED, "canceled")
 
 
 def _has_due_case(payment):

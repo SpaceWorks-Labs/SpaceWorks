@@ -13,11 +13,13 @@ from rest_framework.exceptions import ValidationError
 from apps.integrations.broadcasts_templates import render, validate_strings
 
 from .broadcast_designs import DESIGNS
+from .broadcast_markdown import markdown_html, plain_text, validate_markdown
 
 PLACEHOLDERS = ("name", "event_title", "event_date", "event_location", "ticket_url",
                 "event_url", "feedback_url", "schedule_url", "organization")
 NAVIGATION_TARGETS = ("event", "ticket")
-GILROY_FACES = ((400, "Regular"), (500, "Medium"), (600, "SemiBold"), (700, "Bold"))
+# (family, file, weight range): Outfit (OFL) carries text, free Gilroy ExtraBold the headings.
+EMAIL_FACES = (("Outfit", "Outfit-Variable", "400 700"), ("Gilroy", "Gilroy-ExtraBold", "800"))
 
 
 def font_faces(*, preview):
@@ -35,9 +37,9 @@ def font_faces(*, preview):
                 origin = f"{parsed.scheme}://{parsed.netloc}"
         except (TypeError, ValueError):
             pass
-    return "".join('@font-face{font-family:"Gilroy";src:url("' + origin + '/fonts/Gilroy-' + face
-        + '.woff2") format("woff2");font-style:normal;font-weight:' + str(weight)
-        + ';font-display:swap;}' for weight, face in GILROY_FACES)
+    return "".join('@font-face{font-family:"' + family + '";src:url("' + origin + '/fonts/' + face
+        + '.woff2") format("woff2");font-style:normal;font-weight:' + weight
+        + ';font-display:swap;}' for family, face, weight in EMAIL_FACES)
 
 
 def validate_ctas(ctas):
@@ -85,10 +87,9 @@ def pack(subject, body, *, ctas, design):
     validate_strings(subject, body, PLACEHOLDERS)
     if design not in DESIGNS:
         raise ValidationError({"design": gettext("Choose a Space Works design.")})
-    # RestrictedMarkdown: paragraphs, line breaks, bullets, emphasis. Links have
-    # their own typed control; scripts, HTML, images and embedded media refuse.
-    if re.search(r"<[^>]*>|!\[|\]\s*\(|^\s*\[[^]]+\]:", body, flags=re.MULTILINE):
-        raise ValidationError({"body": gettext("Use text and emphasis; add links as calls to action.")})
+    # Safe markdown subset (broadcast_markdown): headings, quotes, lists, emphasis and https/mailto
+    # links. Scripts, HTML, images and every other scheme refuse; buttons keep their typed CTA control.
+    validate_markdown(body)
     return json.dumps({"markdown": body, "ctas": validate_ctas(ctas)}, ensure_ascii=False, separators=(",", ":"))
 
 
@@ -105,30 +106,27 @@ def unpack(campaign):
         raise ValidationError({"body": gettext("This composer payload is invalid.")}) from None
 
 
-def markdown_html(value):
-    escaped = html.escape(value)
-    escaped = re.sub(r"\*\*([^*\n]+)\*\*", r"<strong>\1</strong>", escaped)
-    escaped = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<em>\1</em>", escaped)
-    paragraphs = []
-    for paragraph in escaped.split("\n\n"):
-        lines = paragraph.splitlines()
-        if lines and all(line.startswith("- ") for line in lines):
-            paragraphs.append("<ul>" + "".join("<li>" + line[2:] + "</li>" for line in lines) + "</ul>")
-        else:
-            paragraphs.append("<p>" + paragraph.replace("\n", "<br>") + "</p>")
-    return "".join(paragraphs)
+URL_PLACEHOLDERS = ("ticket_url", "event_url", "feedback_url", "schedule_url")
+
+
+def _link_safe(context):
+    """Free-text values (names, titles) cannot smuggle link syntax into a body; URL values pass through."""
+    return {key: value if key in URL_PLACEHOLDERS or not isinstance(value, str)
+            else value.replace("[", "(").replace("]", ")") for key, value in context.items()}
 
 
 def render_content(campaign, context, *, width=640, preview=False):
     payload = unpack(campaign)
     # Strings and context pass through the bounded, data-only placeholder engine.
-    values = render(campaign.subject, payload["markdown"], context)
+    values = render(campaign.subject, payload["markdown"], _link_safe(context))
     if campaign.render_schema_version == 2:
         # The established renderer escapes template values for HTML. Decode its
         # text projection once, then escape exactly once at the HTML boundary.
         values["subject"] = html.unescape(values["subject"])
         values["text_body"] = html.unescape(values["text_body"])
     message = values["text_body"]
+    if campaign.render_schema_version == 2:
+        values["text_body"] = plain_text(message)
     links = [{"label": item["label"], "url": item.get("url") or context[
         "ticket_url" if item["target"] == "ticket" else "event_url"]} for item in payload["ctas"]]
     values["text_body"] += "".join(f"\n\n{item['label']}: {item['url']}" for item in links)

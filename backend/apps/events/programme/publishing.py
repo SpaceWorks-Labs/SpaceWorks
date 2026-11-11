@@ -54,7 +54,8 @@ def save_publishing(event, *, actor, data):
         if publish:
             event_authority.require(locked_actor, locked, PUBLISH_SCHEDULE)
             locked = services.publish(locked, actor=locked_actor, publish_website=release,
-                                      website_revision=data.get("website_revision"))
+                                      website_revision=data.get("website_revision"),
+                                      publish_without_room=data.get("publish_without_room", False))
         elif release:
             from apps.events.services_website import set_release_locked
             set_release_locked(locked, actor=locked_actor, released=True, revision=data["website_revision"])

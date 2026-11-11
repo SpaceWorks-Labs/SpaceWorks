@@ -1,5 +1,6 @@
 """Concrete admission/bootstrap projections; only F-owned form internals are opaque."""
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 
 class ContactSerializer(serializers.Serializer):
@@ -9,8 +10,8 @@ class ContactSerializer(serializers.Serializer):
 
 
 class QuoteSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    discount_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
+    discount_amount = MoneyField(max_digits=13, decimal_places=3)
     currency = serializers.CharField()
 
 
@@ -32,7 +33,7 @@ class HostWaiverSerializer(serializers.Serializer):
 class TicketChoiceSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     audience = serializers.CharField()
     spots_left = serializers.IntegerField(allow_null=True)
 

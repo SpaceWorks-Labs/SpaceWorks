@@ -27,6 +27,7 @@ from apps.integrations.email_templates_fablab import events_context
 from apps.integrations.email_templates_registry_fablab_defaults import EVENTS_REQUESTER_BODIES
 from apps.integrations.notification_outbox import emit
 from apps.hardware_requests.notification_projection import addressed_context
+from apps.integrations.fanout_jobs import deferred_fanout
 
 logger = logging.getLogger(__name__)
 
@@ -198,6 +199,7 @@ def certificate_copy(certificate, event_name, title):
     return subject.format(noun=noun), text.format(noun=noun, title=title)
 
 
+@deferred_fanout()
 def certificate_envelope(certificate, event_name):
     """Navigation notice only: never the document, a bearer or another person's details."""
     from apps.integrations.recipients_owners import eligible_owner

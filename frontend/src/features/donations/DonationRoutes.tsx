@@ -9,9 +9,11 @@ import { GuestPledgePage } from "./GuestPledgePage";
 export function DonationRoutes() {
   return <Routes>
     <Route path="/donate" element={<DonatePage />} />
+    <Route path="/donate/campaign/:campaign" element={<DonatePage />} />
     <Route path="/donate/gift/:token" element={<GuestGiftPage />} />
     <Route path="/donate/pledge/:token" element={<GuestPledgePage />} />
     <Route path="/m/:slug/donate" element={<DonatePage />} />
+    <Route path="/m/:slug/donate/campaign/:campaign" element={<DonatePage />} />
     <Route path="/m/:slug/donate/gift/:token" element={<GuestGiftPage />} />
     <Route path="/m/:slug/donate/pledge/:token" element={<GuestPledgePage />} />
     <Route path="*" element={<NotFoundPage />} />

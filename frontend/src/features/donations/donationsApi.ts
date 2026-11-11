@@ -6,17 +6,26 @@ import { API_V1_URL, StructuredApiError, getAccessToken, memberRequest, tenantPu
 export type Campaign = {
   id: number; kind: "campaign" | "fund"; name: string; slug: string; description: string;
   goal_amount: string | null; raised_amount: string; currency: string; starts_at: string | null; ends_at: string | null;
+  /** Decision 242(m): every giver counts; only those who chose to be named are listed. */
+  supporter_count?: number; supporters?: string[];
+};
+/** Decision 242(m): the space's own legal identity, shown only for a non-profit. */
+export type Nonprofit = {
+  is_nonprofit: boolean; legal_name: string; registration_number: string;
+  exemptions: { scheme: string; label: string; number: string }[];
 };
 export type DonationPage = {
   makerspace: string; intro: string; currency: string; minimum_amount: string; suggested_amounts: string[];
   campaigns: Campaign[]; online_available: boolean; recurring_available: boolean; tax_receipts_available: boolean;
   tax_registration_number: string; guest_allowed: boolean;
+  tax_schemes?: string[]; tax_receipt_needs_pan?: boolean; receipt_note?: string; nonprofit?: Nonprofit;
 };
 export type Offline = { instructions: string; upi: { vpa?: string; payee_name?: string; uri?: string } | null; claimable: boolean };
 export type GiftStatus = {
   id: number; makerspace: string; campaign: string; amount: string; currency: string;
   status: "pending" | "paid" | "cancelled"; payment_status: string; created_at: string; paid_at: string | null;
   receipt_number: string; tax_receipt_number: string; donor_pan_masked: string; online_available: boolean;
+  receipt_note?: string;
   checkout_url: string; status_token: string; offline: Offline | null;
 };
 export type Interval = "monthly" | "quarterly" | "yearly";
@@ -30,7 +39,7 @@ export type GiverFields = {
   donor_name?: string; donor_email?: string; email_code?: string;
   wants_tax_receipt?: boolean; donor_pan?: string; donor_address?: string;
 };
-export type GiftInput = GiverFields & { amount: string; campaign?: number | null; note?: string };
+export type GiftInput = GiverFields & { amount: string; campaign?: number | null; note?: string; recognize_publicly?: boolean };
 export type PledgeInput = GiverFields & { amount: string; interval: Interval; campaign?: number | null };
 
 export const INTERVAL_LABELS: Record<Interval, string> = { monthly: t`Every month`, quarterly: t`Every quarter`, yearly: t`Every year` };
@@ -88,12 +97,13 @@ export const donationsApi = {
 export function giveError(error: unknown) {
   if (!(error instanceof StructuredApiError)) return error instanceof Error ? error.message : t`Something went wrong. Try again.`;
   const messages: Record<string, string> = {
-    donor_identity_required: "Sign in, or give your name, email and the code we emailed you.",
-    amount_below_minimum: "That amount is below the smallest gift here.",
-    campaign_closed: "That campaign isn't taking gifts right now.",
-    tax_receipts_unavailable: "This space doesn't issue tax-exempt receipts right now.",
-    pan_invalid: "Enter a valid 10-character PAN, like ABCDE1234F.",
-    feature_disabled: "Giving is turned off here.",
+    donor_identity_required: t`Sign in, or give your name, email and the code we emailed you.`,
+    amount_below_minimum: t`That amount is below the smallest gift here.`,
+    campaign_closed: t`That campaign isn't taking gifts right now.`,
+    tax_receipts_unavailable: t`This space doesn't issue tax receipts right now.`,
+    pan_invalid: t`Enter a valid 10-character PAN, like ABCDE1234F.`,
+    address_required: t`An 80G receipt needs your postal address.`,
+    feature_disabled: t`Giving is turned off here.`,
   };
   if (error.status === 429) return t`Too many tries. Wait a minute and try again.`;
   const code = errorCode(error);
@@ -105,8 +115,4 @@ export function errorCode(error: unknown) {
   if (!(error instanceof StructuredApiError)) return undefined;
   const raw = error.body.code;
   return error.code ?? (Array.isArray(raw) && typeof raw[0] === "string" ? raw[0] : undefined);
-}
-
-export function money(currency: string, amount: string) {
-  return `${currency.toUpperCase()} ${amount}`;
 }

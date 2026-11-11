@@ -1,11 +1,12 @@
 import { t } from "@lingui/core/macro";
+import { formatMoney } from "../../lib/money";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { ListRow, StatusPill } from "../../components/ui";
 import { memberRequestBlob } from "../../lib/api";
 import { useTenantPath } from "../../lib/tenant";
 import { useSpaceSwitches } from "../members/calendarFeeds/MemberCalendarLinks";
-import { donationKeys, donationsApi, giveError, money, type GiftStatus, type PledgeAction } from "./donationsApi";
+import { donationKeys, donationsApi, giveError, type GiftStatus, type PledgeAction } from "./donationsApi";
 import { PledgeCard } from "./PledgeCard";
 
 const STATUS = { paid: ["Received", "success"], pending: ["Waiting for payment", "warn"], cancelled: ["Cancelled", "neutral"] } as const;
@@ -17,12 +18,12 @@ function GiftRow({ makerspaceId, gift }: { makerspaceId: number; gift: GiftStatu
     link.href = url; link.download = `${gift.tax_receipt_number || `donation-${gift.id}`}.pdf`; link.click(); URL.revokeObjectURL(url);
   } });
   const [label, tone] = STATUS[gift.status];
-  return <ListRow title={money(gift.currency, gift.amount)} identity={{ kind: "date", date: gift.created_at }}
+  return <ListRow title={formatMoney(gift.amount, gift.currency)} identity={{ kind: "date", date: gift.created_at }}
     meta={[gift.campaign, gift.receipt_number ? `Receipt ${gift.receipt_number}` : "",
       gift.status === "pending" ? "Pay it from your payments" : ""].filter(Boolean).join(" · ")}
     right={<div className="grid justify-items-end gap-2"><StatusPill label={label} tone={tone} />
       {gift.tax_receipt_number ? <button type="button" className="desk-button-ghost" disabled={pdf.isPending}
-        onClick={() => pdf.mutate()}>{t`80G receipt`}</button> : null}
+        onClick={() => pdf.mutate()}>{t`Tax receipt`}</button> : null}
       {pdf.error ? <p role="alert" className="text-xs text-danger">{giveError(pdf.error)}</p> : null}</div>} />;
 }
 

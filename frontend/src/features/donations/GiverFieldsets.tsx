@@ -31,18 +31,22 @@ export function GuestIdentity({ slug, value, onChange }: { slug: string; value: 
   </fieldset>;
 }
 
-/** India 80G: shown only where the space issues them; the PAN is asked for only when wanted. */
-export function TaxReceiptFields({ registration, value, onChange }: {
-  registration: string; value: GiverFields; onChange: Change;
+/**
+ * A tax receipt (decision 242(m)): shown only where the space is a non-profit with a valid registration.
+ * India 80G asks for the giver's PAN and postal address once one is wanted; other schemes ask for nothing more.
+ */
+export function TaxReceiptFields({ registration, schemes = [], needsPan = true, value, onChange }: {
+  registration: string; schemes?: string[]; needsPan?: boolean; value: GiverFields; onChange: Change;
 }) {
+  const under = [schemes.join(", "), registration ? t`registration ${registration}` : ""].filter(Boolean).join(", ");
   return <fieldset className="grid gap-3">
-    <legend className="text-sm font-semibold text-ink">{t`Tax-exempt receipt`}</legend>
+    <legend className="text-sm font-semibold text-ink">{t`Tax receipt`}</legend>
     <label className="flex min-h-11 items-center gap-2 text-sm">
       <input type="checkbox" checked={Boolean(value.wants_tax_receipt)}
         onChange={event => onChange({ wants_tax_receipt: event.target.checked })} />
-      {t`I'd like an 80G receipt`}{registration ? t` (registration ${registration})` : ""}
+      {t`I'd like a tax receipt`}{under ? ` (${under})` : ""}
     </label>
-    {value.wants_tax_receipt ? <>
+    {value.wants_tax_receipt && needsPan ? <>
       <Field label="PAN" hint={t`Stored encrypted. Only the last four characters are ever shown back.`}>
         <input className="desk-input uppercase tabular-nums" required maxLength={12} autoComplete="off" spellCheck={false}
           value={value.donor_pan ?? ""} onChange={event => onChange({ donor_pan: event.target.value })} /></Field>

@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventTicketType(models.Model):
@@ -16,7 +17,7 @@ class EventTicketType(models.Model):
     event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.CASCADE, related_name="ticket_types")
     series = models.ForeignKey("events.EventSeries", null=True, blank=True, on_delete=models.CASCADE, related_name="ticket_types")
     name = models.CharField(max_length=100)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)])
     audience = models.CharField(max_length=8, choices=Audience.choices, default=Audience.PUBLIC)
     capacity = models.PositiveIntegerField(default=0)
     purpose = models.CharField(max_length=16, default="participant", choices=[
@@ -34,7 +35,7 @@ class EventTicketType(models.Model):
     pricing_mode = models.CharField(max_length=8, default="fixed", choices=[
         ("fixed", "Fixed price"), ("pwyw", "Pay what you want")])
     #: Pay-what-you-want only: the lowest amount accepted (`amount` is the suggestion).
-    min_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    min_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)])
     #: A group ticket admits this many people, each with their own registration.
     seats_per_ticket = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1)])
     #: Hidden tickets are sold only to a buyer holding an access code for this type.

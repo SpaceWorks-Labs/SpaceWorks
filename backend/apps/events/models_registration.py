@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.utils import timezone
 from apps.events.submissions.pii import PrivateDocumentMixin
 from apps.events.models_event import Event
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventRegistration(PrivateDocumentMixin, models.Model):
@@ -42,8 +43,8 @@ class EventRegistration(PrivateDocumentMixin, models.Model):
     invite = models.ForeignKey("events.EventInvite", on_delete=models.SET_NULL, null=True, blank=True)
     promo_code = models.ForeignKey("events.EventPromoCode", on_delete=models.SET_NULL, null=True, blank=True)
     # Null preserves legacy flat-price behavior; new registrations freeze their quote.
-    quoted_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quoted_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
+    discount_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     # editable=False keeps this out of ModelForms and admin. Do not re-read it in
     # save(): register() uses save(update_fields=...) on a hot path, and no application
     # code assigns the token after creation.
@@ -112,6 +113,9 @@ class EventRegistration(PrivateDocumentMixin, models.Model):
     status_before_cancel = models.CharField(max_length=20, blank=True, default="")
     # A tail restore must not rewrite the original registration creation time.
     waitlist_position_at = models.DateTimeField(null=True, blank=True)
+    # Parity E-B5 (C22): the deadline for paying an approved/promoted/re-accepted paid place. Past it the
+    # place is released; null means no pay window is running.
+    pay_by = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

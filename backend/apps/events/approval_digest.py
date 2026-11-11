@@ -8,6 +8,7 @@ staff (with the notification matrix's selections and mutes) plus per-event deleg
 holding `manage_registrations`; each recipient only counts events they can manage.
 """
 
+from django.utils.translation import gettext, ngettext
 import logging
 from datetime import timedelta
 
@@ -61,10 +62,12 @@ def _recipients(space, events):
 def _render(space, rows):
     from apps.operations.notifications_p2 import staff_link
     total = sum(row["count"] for row in rows)
-    lines = "\n".join(f"- {row['event__title']}: {row['count']} waiting" for row in rows[:20])
-    noun = "sign-up waits" if total == 1 else "sign-ups wait"
-    return {"subject": f"{total} {noun} for approval", "html": "",
-            "text": f"{total} {noun} for your approval.\n\n{lines}\n\nOpen Events to approve or decline.",
+    lines = "\n".join(gettext("- %(title)s: %(count)s waiting") % {"title": row["event__title"], "count": row["count"]}
+                      for row in rows[:20])
+    noun = ngettext("sign-up waits", "sign-ups wait", total)
+    return {"subject": gettext("%(total)s %(noun)s for approval") % {"total": total, "noun": noun}, "html": "",
+            "text": gettext("%(total)s %(noun)s for your approval.") % {"total": total, "noun": noun}
+                    + "\n\n" + lines + "\n\n" + gettext("Open Events to approve or decline."),
             "link": staff_link(space, "events")}
 
 
@@ -82,7 +85,7 @@ def send_for_space(space, now=None):
              audience=audience, dedup_key=f"ev:approval-digest:{space.pk}:{user.pk}:{window}",
              source_kind=SOURCE, source_id=str(space.pk), revision=window[:64],
              context={"window": window, "event_ids": [row["event_id"] for row in rows]},
-             rendered=_render(space, rows))
+             rendered=lambda: _render(space, rows))
         sent += 1
     if sent:
         record(None, "event.approval_digest_sent", makerspace=space, target=space,

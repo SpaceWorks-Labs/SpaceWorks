@@ -31,7 +31,7 @@ def draw_text(canvas, text, layer, area_height_mm):
         offset = {"left": 0, "center": (width-used)/2, "right": width-used}[layer.get("align", "left")]
         output = canvas.beginText(layer["x_mm"] * mm + offset, y)
         output.setCharSpace(layer.get("tracking_pt", 0))
-        for font, value in runs(line, layer.get("font_family", "Gilroy"), layer.get("font_weight", 400)):
+        for font, value in runs(line, layer.get("font_family", "Outfit"), layer.get("font_weight", 400)):
             output.setFont(font, size)
             output.textOut(value)
         canvas.drawText(output)
@@ -49,7 +49,7 @@ def visual(value):
 def text_width(value, layer, size):
     from reportlab.pdfbase.pdfmetrics import stringWidth
     return sum(stringWidth(text, font, size) for font, text in runs(
-        value, layer.get("font_family", "Gilroy"), layer.get("font_weight", 400),
+        value, layer.get("font_family", "Outfit"), layer.get("font_weight", 400),
     )) + max(0, len(value)-1) * layer.get("tracking_pt", 0)
 
 

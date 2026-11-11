@@ -9,6 +9,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.forms_schema.validation import validate_form_schema
+from .venue import validate_map_url
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventSeries(models.Model):
@@ -30,6 +32,8 @@ class EventSeries(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True)
+    venue_address = models.CharField(max_length=500, blank=True, default="")
+    venue_map_url = models.CharField(max_length=500, blank=True, default="", validators=[validate_map_url])
     location_kind = models.CharField(
         max_length=8, choices=(('indoor', 'Indoor'), ('outdoor', 'Outdoor'), ('other', 'Other')),
         default="other",
@@ -38,8 +42,8 @@ class EventSeries(models.Model):
         null=True, blank=True, default=None, validators=[validate_form_schema]
     )
     capacity = models.PositiveIntegerField(default=0)
-    payment_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    payment_amount = MoneyDecimalField(
+        max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)]
     )
     registration_requires_approval = models.BooleanField(default=False)
     cancellation_cutoff_hours = models.PositiveIntegerField(null=True, blank=True, validators=[MaxValueValidator(8760)])

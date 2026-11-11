@@ -1,6 +1,8 @@
 """Ask a signatory to approve a certificate design: a navigation notice, never the design itself."""
+from django.utils.translation import gettext
 from django.db import transaction
 
+from apps.integrations.fanout_jobs import deferred_fanout
 from apps.integrations.notification_links import local_link
 from apps.integrations.notification_outbox import emit
 
@@ -8,6 +10,13 @@ SOURCE = "events.certificate_signature"
 EVENT = "certificate_signature_requested"
 
 
+def _event_space(event_id):
+    from apps.events.models import Event
+    event = Event.objects.select_related("makerspace").filter(pk=event_id).first()
+    return event.makerspace if event else None
+
+
+@deferred_fanout(space=lambda event_id: _event_space(event_id))
 def notify(event_id):
     from apps.events.models import Event
     from apps.notifications.inbox import eligible_owner
@@ -32,10 +41,11 @@ def notify(event_id):
                      dedup_key=f"ev:cert-sign:{item['signatory_id']}:{item['template_revision_id']}",
                      context={"event_id": event.pk, "signatory_id": item["signatory_id"],
                               "template_revision_id": item["template_revision_id"]},
-                     rendered={"subject": "A certificate design needs your approval",
-                               "text": (f"Certificates for {event.title} print your signature. Review the design "
-                                        "and approve it so they can be issued."),
-                               "html": "", "link": local_link(space, "member")})
+                     rendered=lambda: {
+                         "subject": gettext("A certificate design needs your approval"),
+                         "text": gettext("Certificates for %(title)s print your signature. Review the design "
+                                         "and approve it so they can be issued.") % {"title": event.title},
+                         "html": "", "link": local_link(space, "member")})
 
 
 def eligible(envelope):

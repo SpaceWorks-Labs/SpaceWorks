@@ -5,6 +5,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import F, Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventPromoCode(models.Model):
@@ -12,7 +13,7 @@ class EventPromoCode(models.Model):
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="promo_codes")
     code_digest = models.CharField(max_length=64, editable=False, default=secrets.token_hex)
     percent_off = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(100)])
-    amount_off = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    amount_off = MoneyDecimalField(max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)])
     max_uses = models.PositiveIntegerField(default=1)
     uses = models.PositiveIntegerField(default=0)
     expires_at = models.DateTimeField(null=True, blank=True)

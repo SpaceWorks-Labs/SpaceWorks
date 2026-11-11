@@ -1,9 +1,11 @@
 """Source-backed submission status notices contain no project answers or files."""
+from django.utils.translation import gettext
 from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.events.submissions.models_projects import HackathonSubmission
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.integrations.notification_outbox import emit
+from apps.integrations.fanout_jobs import deferred_fanout
 
 SOURCE = "events.submission"
 STATES = {"submit": "submitted", "amend": "locked", "withdraw": "withdrawn", "lock": "locked"}
@@ -26,10 +28,12 @@ def eligible(envelope):
 
 def render(envelope):
     from apps.integrations.notification_links import local_link
-    return {"subject": "Your event project status changed", "text": "Open your event project to review its current submission status.",
+    return {"subject": gettext("Your event project status changed"),
+        "text": gettext("Open your event project to review its current submission status."),
         "link": local_link(envelope.makerspace, "member")}
 
 
+@deferred_fanout()
 def enqueue_locked(*, project, action):
     if action not in STATES:
         return

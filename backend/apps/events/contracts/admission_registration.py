@@ -65,11 +65,17 @@ def enqueue_notice(*, event_id, member_id, application_id, revision, kind):
     from apps.events.hackathons.admission_notifications import render_notice
     event = Event.objects.get(pk=event_id)
     app = HackathonApplication.objects.get(pk=application_id, event_id=event_id, member_id=member_id)
-    rendered = render_notice(kind=kind, application_url=f"/member/events/{event_id}/application")
+    from apps.integrations.notification_links import local_link
+    # The member's event history lists the application with its offer and RSVP (decision 296: a link that resolves).
+    link = local_link(event.makerspace, "member", "events/history")
+
+    def rendered():
+        value = render_notice(kind=kind, application_url=link)
+        return {"subject": value["title"], "text": value["body"], "html": "", "link": value["action_url"]}
     emit(makerspace=event.makerspace, recipient=app.member, feature="events", stream="events",
         event=kind, audience="member", source_kind="events.application", source_id=str(app.pk),
         revision=str(revision), subject=app, dedup_key=f"event-application:{app.pk}:{revision}:{kind}",
-        context={"event_id": event_id}, rendered={"subject": rendered["title"], "text": rendered["body"]})
+        context={"event_id": event_id}, rendered=rendered)
 
 
 def storage_budget_used(*, event_id):

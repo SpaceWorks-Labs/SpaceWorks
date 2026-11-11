@@ -1,6 +1,17 @@
 from rest_framework import serializers
 from apps.operations.printable_serializers import PrintInputSerializer
+from .fonts import BRAND_FAMILIES, canonical
 from .layout import COLOURS
+
+
+class FontFamilyField(serializers.ChoiceField):
+    """Outfit or Unbounded; a legacy "Gilroy" (the pre-decision-220 token) reads as Outfit."""
+
+    def __init__(self, **kwargs):
+        super().__init__(choices=BRAND_FAMILIES, **kwargs)
+
+    def to_internal_value(self, data):
+        return super().to_internal_value(canonical(data) if isinstance(data, str) else data)
 
 
 class CertificateLayerSerializer(PrintInputSerializer):
@@ -14,7 +25,7 @@ class CertificateLayerSerializer(PrintInputSerializer):
     height_mm = serializers.FloatField(min_value=0.1)
     rotation = serializers.FloatField(min_value=-360, max_value=360, default=0)
     text = serializers.CharField(max_length=500, allow_blank=True, required=False)
-    font_family = serializers.ChoiceField(choices=("Gilroy", "Unbounded"), required=False)
+    font_family = FontFamilyField(required=False)
     font_weight = serializers.ChoiceField(choices=(400, 500, 600, 700), required=False)
     font_size_pt = serializers.FloatField(min_value=6, max_value=96, required=False)
     align = serializers.ChoiceField(choices=("left", "center", "right"), required=False)

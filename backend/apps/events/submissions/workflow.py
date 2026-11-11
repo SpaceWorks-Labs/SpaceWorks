@@ -99,6 +99,12 @@ def command(*, actor, event_id, team_id, operation_id, expected_version, action,
                 result = _projection(project)
                 port.store_receipt(event_id=event_id, actor_id=actor.pk, operation_id=str(operation_id), digest=digest, result=result)
                 return result
+            # Decision 296: withdrawing pulls the whole team's work and settles its entry fee, so it is the
+            # leader's act, and it never overwrites an organiser's disqualification.
+            if actor.pk != context.leader_id:
+                raise SubmissionError("leader_required", 403)
+            if project.state == "disqualified":
+                raise SubmissionError("invalid_transition", 409)
             from .stage_runtime import current_snapshot_ids
             for snapshot_id in current_snapshot_ids(project):  # Every stage's current work leaves judging.
                 port.invalidate_snapshot(context=context, snapshot_id=snapshot_id)

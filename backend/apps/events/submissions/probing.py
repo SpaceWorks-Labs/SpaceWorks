@@ -32,7 +32,8 @@ def probe_video(path, *, sandbox_command, policy=VideoPolicy(), run=subprocess.r
     local = Path(path).resolve()
     if not local.is_file() or not sandbox_command:
         raise SubmissionError("video_probe_unavailable", 503)
-    command = [*sandbox_command, "-v", "error", "-protocol_whitelist", "file,pipe", "-show_entries",
+    command = [*sandbox_command, "-v", "error", "-protocol_whitelist", "file,pipe",
+               "-format_whitelist", "mov,matroska", "-show_entries",
                "format=duration,format_name:stream=codec_type,codec_name,width,height", "-of", "json", str(local)]
     try:
         with tempfile.TemporaryFile() as output:

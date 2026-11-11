@@ -37,7 +37,7 @@ def certificate_png(row):
     return pdf_page_to_png(stored_pdf(row), 0, dpi=300)
 
 
-def _text(text, box, size, *, colour, weight=500, family="Gilroy", align="left"):
+def _text(text, box, size, *, colour, weight=500, family="Outfit", align="left"):
     x, y, width, height = box
     return {"id": "00000000-0000-4000-8000-000000000000", "order": 0, "type": "text", "x_mm": x, "y_mm": y,
             "width_mm": width, "height_mm": height, "rotation": 0, "text": text, "font_family": family,
@@ -61,20 +61,20 @@ def share_image(row, *, status=None):
     canvas.setFillColor(COLOURS["citron"])
     canvas.rect(0, 0, 3 * mm, height * mm, fill=1, stroke=0)
     _seal(canvas, cx=width - 30, cy=height / 2, revoked=(status or row.status) == "revoked")
-    lines = [(row.issuer_name, (12, 10, 150, 8), 12, COLOURS["sky"], 600, "Gilroy"),
+    lines = [(row.issuer_name, (12, 10, 150, 8), 12, COLOURS["sky"], 600, "Outfit"),
              (kind_title(row.kind), (12, 22, 150, 16), 24, COLOURS["cream"], 600, "Unbounded")]
     top = 42
     if merge.get("award"):
-        lines.append((merge["award"], (12, top, 150, 9), 15, COLOURS["citron"], 600, "Gilroy"))
+        lines.append((merge["award"], (12, top, 150, 9), 15, COLOURS["citron"], 600, "Outfit"))
         top += 11
     # A revoked certificate no longer vouches for anyone, so it never names its holder (as verify).
     if getattr(row, "holder_name_public", False) and (status or row.status) == "active":
-        lines.append((row.recipient_name, (12, top, 150, 14), 26, COLOURS["cream"], 700, "Gilroy"))
+        lines.append((row.recipient_name, (12, top, 150, 14), 26, COLOURS["cream"], 700, "Outfit"))
         top += 16
-    lines.append((row.event_title, (12, top, 150, 10), 15, COLOURS["cream"], 500, "Gilroy"))
-    lines.append((merge_date(row), (12, top + 11, 150, 7), 11, COLOURS["cream"], 400, "Gilroy"))
+    lines.append((row.event_title, (12, top, 150, 10), 15, COLOURS["cream"], 500, "Outfit"))
+    lines.append((merge_date(row), (12, top + 11, 150, 7), 11, COLOURS["cream"], 400, "Outfit"))
     footer = "Revoked certificate" if (status or row.status) == "revoked" else "Verify this certificate"
-    lines.append((f"{footer} · ID {str(row.serial)[:8].upper()}", (12, height - 14, 150, 7), 10, COLOURS["sky"], 500, "Gilroy"))
+    lines.append((f"{footer} · ID {str(row.serial)[:8].upper()}", (12, height - 14, 150, 7), 10, COLOURS["sky"], 500, "Outfit"))
     for text, box, size, colour, weight, family in lines:
         if text:
             draw_text(canvas, text, _text(text, box, size, colour=colour, weight=weight, family=family), height)

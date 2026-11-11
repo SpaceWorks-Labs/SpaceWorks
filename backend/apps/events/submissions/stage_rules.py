@@ -15,6 +15,24 @@ def _refuse(index, reason):
     raise SubmissionError("invalid_stage", 400, stage=str(index + 1), reason=reason)
 
 
+LIMIT_KEY = "hackathon_stages"
+
+
+def stage_cap(makerspace):
+    """How many stages one event of this space may plan: the per-space limit, never above the ceiling."""
+    from apps.managed_hosting.space_quotas import quota_limit
+    limit = quota_limit(makerspace, LIMIT_KEY)
+    return MAX_STAGES if limit is None else max(0, min(int(limit), MAX_STAGES))
+
+
+def check_stage_quota(event, current, planned):
+    """Decision 284: the per-space limit refuses only ADDING stages (typed 409 hackathon_stages_quota_reached);
+    an event already above a lowered limit keeps, edits and shrinks its plan. Call under the event lock."""
+    if planned > current:
+        from apps.managed_hosting.extra_quotas import check_scoped_quota
+        check_scoped_quota(event.makerspace, LIMIT_KEY, current, adding=planned - current)
+
+
 def check_plan(event, stages):
     """Validate the ordered stage list as a whole. ``stages`` are serializer-validated dicts."""
     if not 1 <= len(stages) <= MAX_STAGES:

@@ -115,12 +115,14 @@ def _layer(value, width, height, badge):
 
 
 def _text_style(row, badge=False):
-    defaults = dict(font_family="Gilroy", font_weight=400, font_size_pt=12, align="left",
+    from .fonts import BRAND_FAMILIES, canonical
+    defaults = dict(font_family="Outfit", font_weight=400, font_size_pt=12, align="left",
                     shrink_to_fit=True, italic=False, uppercase=False, tracking_pt=0,
                     line_height=1.3, colour_token="ink", text="")
     for key, value in defaults.items():
         row.setdefault(key, value)
-    if (row["font_family"] not in ("Gilroy", "Unbounded")
+    row["font_family"] = canonical(row["font_family"])  # a legacy "Gilroy" layer saves as Outfit
+    if (row["font_family"] not in BRAND_FAMILIES
             or type(row["font_weight"]) is not int or row["font_weight"] not in (400, 500, 600, 700)
             or row["align"] not in ("left", "center", "right") or row["colour_token"] not in COLOURS):
         raise ValidationError({"layers": gettext("Use approved brand type and colour tokens.")})
@@ -130,7 +132,7 @@ def _text_style(row, badge=False):
         if type(row[key]) is not bool:
             raise ValidationError({"layers": gettext('{key} must be boolean.').format(key=key)})
     if row["italic"]:
-        # Neither bundled family (Gilroy, Unbounded) ships a true italic face; a slanted
+        # Neither bundled family (Outfit, Unbounded) ships a true italic face; a slanted
         # regular face is not italic, so it is refused rather than faked.
         raise ValidationError({"italic": gettext('{value} has no italic face in the approved font kit. Use weight or size for emphasis instead.').format(value=row['font_family'])})
     row["font_size_pt"] = number(row["font_size_pt"], 6, 96, "font_size_pt")
@@ -150,7 +152,7 @@ def upgrade_legacy(value, *, include_labels=True):
     box = value["name_box"]
     result = {"version": 2, "page_width_mm": value["page_width_mm"], "page_height_mm": value["page_height_mm"],
             "layers": [{"id": str(uuid5(NAMESPACE_URL, "spaceworks:certificate:legacy-name")), "order": 0,
-                        "type": "text", "rotation": 0, "text": "{{name}}", "font_family": "Gilroy",
+                        "type": "text", "rotation": 0, "text": "{{name}}", "font_family": "Outfit",
                         "font_weight": 700 if box["bold"] else 400, "align": box["align"],
                         "font_size_pt": box["font_size_pt"], "shrink_to_fit": True,
                         **{key: box[key] for key in ("x_mm", "y_mm", "width_mm", "height_mm")}}]}
@@ -163,6 +165,6 @@ def upgrade_legacy(value, *, include_labels=True):
             result["layers"].append({"id": str(uuid5(NAMESPACE_URL, f"spaceworks:certificate:legacy-label:{index}")),
                 "order": index+1, "type": "text", "rotation": 0, "text": text,
                 "x_mm": width*.075, "y_mm": y*height/210, "width_mm": width*.85, "height_mm": height*.07,
-                "font_family": "Gilroy", "font_weight": weight, "font_size_pt": size,
+                "font_family": "Outfit", "font_weight": weight, "font_size_pt": size,
                 "align": "center", "shrink_to_fit": True})
     return result

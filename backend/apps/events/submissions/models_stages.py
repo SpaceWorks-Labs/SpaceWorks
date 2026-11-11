@@ -15,7 +15,9 @@ CONTENT_MODES = ("files_and_links", "files_only", "links_only", "presentation")
 LATE_POLICIES = ("reject", "accept_flagged")
 RESUBMISSION = ("until_deadline", "once")
 TRIAGE = ("pending", "eligible", "ineligible", "hidden")
-MAX_STAGES = 10
+# Technical ceiling (decision 296 addendum [auto, 243]). The per-space limit key `hackathon_stages`
+# (decision 284: unset = no limit) can only LOWER it; see stage_rules.stage_cap.
+MAX_STAGES = 50
 
 
 class SubmissionStage(models.Model):

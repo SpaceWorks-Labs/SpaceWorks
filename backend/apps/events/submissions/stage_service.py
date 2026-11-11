@@ -15,7 +15,7 @@ from .errors import SubmissionError
 from .models_stages import SubmissionStage, SubmissionStageEntry, StageExtension, StageShortlist
 from .ports import boundary
 from .stage_presets import PRESET_KEYS
-from .stage_rules import check_plan
+from .stage_rules import check_plan, check_stage_quota
 from .stage_runtime import STAGE_FIELDS, stages_for
 from .workflow import canonical_digest
 
@@ -49,6 +49,7 @@ def replace(*, actor, event_id, data):
         if data.get("preset") and data["preset"] not in PRESET_KEYS:
             raise SubmissionError("invalid_stage", 400, reason="unknown_preset")
         check_plan(ctx.event, stages_in)
+        check_stage_quota(ctx.event, len(stored), len(stages_in))
         kept = {row["id"] for row in stages_in if row.get("id")}
         if not kept <= set(current):
             raise SubmissionError("not_found", 404)

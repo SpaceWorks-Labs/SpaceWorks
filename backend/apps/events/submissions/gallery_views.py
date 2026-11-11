@@ -141,7 +141,9 @@ class GalleryAsset(PublicGalleryBase):
 
 
 class PublicResults(PublicGalleryBase):
-    @schema(response=PublicResultsRead, public=True)
+    @extend_schema(tags=["Event programme judging"], auth=[], responses={200: PublicResultsRead, **ERRORS},
+                   parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY,
+                                                description="Keep awards and finalists whose project title or prize matches.")])
     def get(self, request, public_token):
         event = public_event(public_token=public_token, request_context=request)
-        return Response(PublicResultsRead(public_results(event)).data)
+        return Response(PublicResultsRead(public_results(event, (request.query_params.get("q") or "")[:100])).data)

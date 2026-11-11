@@ -111,7 +111,7 @@ def _initials(canvas, layer, values, x, y, width, box_height, page_height):
     side_mm = min(layer["width_mm"], layer["height_mm"])
     size = max(6, min(96, side_mm * 72 / 25.4 / 2.2))
     line_mm = size * 1.1 * 25.4 / 72
-    draw_text(canvas, initials, {**layer, "type": "text", "font_family": "Gilroy", "font_weight": 700,
+    draw_text(canvas, initials, {**layer, "type": "text", "font_family": "Outfit", "font_weight": 700,
                                  "font_size_pt": size, "align": "center", "colour_token": "ink", "colour": COLOURS["ink"],
                                  "line_height": 1.1, "tracking_pt": 0, "shrink_to_fit": True, "uppercase": False,
                                  "y_mm": layer["y_mm"] + max(0, (layer["height_mm"] - line_mm) / 2),

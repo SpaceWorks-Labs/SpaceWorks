@@ -124,4 +124,7 @@ def reply(registration, *, actor, answer, note=""):
     row.save()
     audit.record(actor, "event.attendance.replied", makerspace=event.makerspace, target=registration,
                  meta={"event_id": event.pk, "registration_id": registration.pk, "answer": answer, "effect": row.effect})
+    if answer == EventAttendanceReply.Answer.NO:
+        from .notices_r2_l21a import reply_notice
+        reply_notice(row)
     return row

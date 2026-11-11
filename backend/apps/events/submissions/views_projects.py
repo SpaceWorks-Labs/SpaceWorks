@@ -38,7 +38,7 @@ class ProjectView(PrivateSubmissionView):
                         actions.append("save")
                     if request.user.pk == ctx.leader_id:
                         actions.append("submit")
-                if project.state != "withdrawn":
+                if project.state not in {"withdrawn", "disqualified"} and request.user.pk == ctx.leader_id:
                     actions.append("withdraw")
             return Response({"id": project.pk, "event_id": pk, "version": project.version, "state": project.state,
                              "snapshot_id": project.current_snapshot_id, "project": document,

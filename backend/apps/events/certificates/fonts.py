@@ -1,9 +1,20 @@
-"""Static print faces converted losslessly from the repository's approved WOFF2 kit."""
+"""Static print faces converted losslessly from the repository's approved WOFF2 kit.
+
+The brand text face is Outfit (OFL). Designs stored before decision 220(c) name it
+"Gilroy" (only Gilroy's free Light/ExtraBold may ship and ReportLab cannot embed the
+CFF-outline ExtraBold, so that token always printed in Outfit); `LEGACY_FAMILIES` keeps
+reading it as Outfit. See fonts/README.md.
+"""
 
 from functools import lru_cache
 from pathlib import Path
 
-WEIGHTS = {400: "Regular", 500: "Medium", 600: "SemiBold", 700: "Bold"}
+BRAND_FAMILIES = ("Outfit", "Unbounded")
+LEGACY_FAMILIES = {"Gilroy": "Outfit"}
+
+
+def canonical(family):
+    return LEGACY_FAMILIES.get(family, family)
 
 
 @lru_cache(maxsize=8)
@@ -11,7 +22,7 @@ def face(family, weight):
     from fontTools.ttLib import TTFont as Font
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    filename = f"Gilroy-{WEIGHTS[weight]}.ttf" if family == "Gilroy" else f"Unbounded-{weight}.ttf"
+    filename = f"Outfit-{weight}.ttf" if canonical(family) == "Outfit" else f"Unbounded-{weight}.ttf"
     path = Path(__file__).with_suffix("") / filename
     name = "Event-" + path.stem
     if name not in pdfmetrics.getRegisteredFontNames():

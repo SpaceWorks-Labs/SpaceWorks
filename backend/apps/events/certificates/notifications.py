@@ -5,8 +5,10 @@ from apps.integrations.notification_links import local_link
 from apps.integrations.notification_outbox import emit
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import is_servable
+from apps.integrations.fanout_jobs import deferred_fanout
 
 
+@deferred_fanout()
 def certificate_envelope(certificate, event_name):
     from apps.events.notification_envelopes import certificate_copy
     from apps.notifications.inbox import eligible_owner

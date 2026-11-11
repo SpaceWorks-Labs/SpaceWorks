@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventVenueFee(models.Model):
@@ -40,7 +41,7 @@ class EventVenueFee(models.Model):
                              related_name="+")
     mode = models.CharField(max_length=8, choices=Mode.choices, default=Mode.INHERIT)
     basis = models.CharField(max_length=8, choices=Basis.choices, default=Basis.FLAT)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True,
                                  validators=[MinValueValidator(0)])
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.CONFIGURED)
     charged_at = models.DateTimeField(null=True, blank=True)

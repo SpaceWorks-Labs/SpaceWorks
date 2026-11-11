@@ -4,6 +4,7 @@ Both are per-event switches that start OFF (C-37): ``stage_reminder_email`` and 
 Recipients are recomputed live when each notice is delivered, so a team that submitted meanwhile, or
 a member who left, is not told.
 """
+from django.utils.translation import gettext
 import logging
 from datetime import timedelta
 
@@ -60,22 +61,22 @@ def render(envelope):
     from apps.integrations.notification_links import local_link
     link = local_link(envelope.makerspace, "member")
     if envelope.event == "stage_promoted":
-        return {"subject": "A place opened up: your team is through",
-                "text": "A shortlisted team withdrew and your team takes its place. Open the event for the next stage.",
+        return {"subject": gettext("A place opened up: your team is through"),
+                "text": gettext("A shortlisted team withdrew and your team takes its place. Open the event for the next stage."),
                 "link": link}
     if envelope.event == "judge_reminder":
-        return {"subject": "Judging is waiting for you",
-                "text": "You still have projects to review in an open judging round. Open the event to continue.",
+        return {"subject": gettext("Judging is waiting for you"),
+                "text": gettext("You still have projects to review in an open judging round. Open the event to continue."),
                 "link": link}
     if envelope.event == "stage_shortlisted":
-        return {"subject": "Your team made the shortlist",
-                "text": "Your team was shortlisted. Open the event to see the next stage and its deadline.", "link": link}
+        return {"subject": gettext("Your team made the shortlist"),
+                "text": gettext("Your team was shortlisted. Open the event to see the next stage and its deadline."), "link": link}
     if envelope.event == "stage_not_shortlisted":
-        return {"subject": "Shortlist results are out",
-                "text": "Your team was not shortlisted for the next stage this time. Your earlier submissions stay "
-                        "as you submitted them. Thank you for taking part.", "link": link}
-    return {"subject": "A submission deadline is coming up",
-            "text": "Your team has not submitted the current stage yet. Open the event to submit before the deadline.",
+        return {"subject": gettext("Shortlist results are out"),
+                "text": gettext("Your team was not shortlisted for the next stage this time. Your earlier submissions stay "
+                        "as you submitted them. Thank you for taking part."), "link": link}
+    return {"subject": gettext("A submission deadline is coming up"),
+            "text": gettext("Your team has not submitted the current stage yet. Open the event to submit before the deadline."),
             "link": link}
 
 

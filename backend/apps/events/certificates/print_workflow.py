@@ -1,4 +1,4 @@
-"""Reserve â†’ prepare outside locks â†’ bind â†’ render â†’ reauthorize publication."""
+"""Reserve → prepare outside locks → bind → render → reauthorize publication."""
 
 from django.utils.translation import gettext
 from datetime import timedelta

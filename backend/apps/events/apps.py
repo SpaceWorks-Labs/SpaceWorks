@@ -31,6 +31,10 @@ class EventsConfig(AppConfig):
             register_broadcasts()
             from .notification_sources import register_event_sources
             register_event_sources()
+            from .join_followup import register as register_join_followup
+            register_join_followup()
+            from .guest_pass_registration import connect_signals as connect_guest_pass_signals
+            connect_guest_pass_signals()
             from .programme_runtime import register_programme_runtime
             register_programme_runtime()
             register_invitations()

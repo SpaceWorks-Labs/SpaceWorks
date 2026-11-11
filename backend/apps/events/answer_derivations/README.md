@@ -1,4 +1,4 @@
-# Lane P DOB source provider
+# Date-of-birth answer source provider
 
 `models.EventAnswerDerivation` is tenant event evidence, independent of the
 account Saved details vault. `manifest.MODEL_MANIFEST` and `COORDINATING_FIELDS`
@@ -94,17 +94,11 @@ reason. Only the owner can subsequently supply an edited DOB.
   invokes `purge_event_sources_locked` before the three parent subject tables.
   Submitted/locked sources survive vault deletion and role withdrawal/revocation.
 
-## Verification / unfinished
+## Tests
 
-No Django/pytest or Docker run is permitted in this lane. All Python files were
-syntax-compiled; the integration suite is written under
-`backend/tests/events/programme/answer_derivations/`. G must run those files after
-the registered model/coordinating fields/migrations exist. These tests include
-all three subjects, role-only volunteer/mentor flow, owner/event splices,
-preparation/readiness/hashes/deadline, date-review/closure/frozen date, encrypted
-  reopen history, vault deletion independence, DB subject/unique constraints,
-  real shared-account/exclusive-erasure lock exclusion without key provisioning,
-  claimed-context refusal and saved-DOB prepare-then-erase refusal, and
-tenant/history AAD rebinding. Full lane-integrated form, CSV/template disclosure,
-account-erasure and tenant round-trip verification remains with F/A/C/G's actual
-providers and lifecycle registries before enabling the feature.
+The integration suite lives under `backend/tests/events/programme/answer_derivations/`. It covers
+all three subjects, the role-only volunteer/mentor flow, owner/event splices,
+preparation/readiness/hashes/deadline, date review/closure/frozen date, encrypted reopen
+history, vault deletion independence, DB subject/unique constraints, shared-account and
+exclusive-erasure lock exclusion, claimed-context refusal, saved-DOB prepare-then-erase
+refusal, and tenant/history AAD rebinding.

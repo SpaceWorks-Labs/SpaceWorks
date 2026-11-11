@@ -4,9 +4,9 @@ from zoneinfo import ZoneInfo
 from django.utils import timezone
 
 from .links import KINDS
-from .models_stages import MAX_STAGES, StageExtension, SubmissionStageEntry
+from .models_stages import StageExtension, SubmissionStageEntry
 from .stage_presets import PRESETS
-from .stage_rules import FAMILIES, FIELD_TYPES, FIELD_VISIBILITY, VIDEO_HOSTS
+from .stage_rules import FAMILIES, FIELD_TYPES, FIELD_VISIBILITY, VIDEO_HOSTS, stage_cap
 from . import stage_runtime as runtime
 from .stage_feedback import released_feedback
 
@@ -23,7 +23,7 @@ def editor_options(event):
     from .stage_rules import ANSWER_LIMITS
     return {"timezone": event.timezone_name, "event_ends_at": event.ends_at, "presets": list(PRESETS),
             "families": list(FAMILIES), "link_kinds": sorted(KINDS), "video_hosts": list(VIDEO_HOSTS),
-            "field_types": list(FIELD_TYPES), "field_visibility": list(FIELD_VISIBILITY), "max_stages": MAX_STAGES,
+            "field_types": list(FIELD_TYPES), "field_visibility": list(FIELD_VISIBILITY), "max_stages": stage_cap(event.makerspace),
             "answer_limits": ANSWER_LIMITS, "admission_enabled": _admission_on(event)}
 
 

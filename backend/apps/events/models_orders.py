@@ -18,7 +18,8 @@ from django.db.models import Q
 
 from apps.encryption.mappers import ScopedPiiModelMixin
 
-MONEY = {"max_digits": 12, "decimal_places": 2}
+from apps.payments.money import MONEY  # noqa: E402  (3 decimals: money.MONEY_DECIMAL_PLACES)
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventSalesSettings(models.Model):
@@ -26,7 +27,7 @@ class EventSalesSettings(models.Model):
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.OneToOneField("events.Event", on_delete=models.CASCADE, related_name="sales_settings")
-    booking_fee_fixed = models.DecimalField(**MONEY, default=0, validators=[MinValueValidator(0)])
+    booking_fee_fixed = MoneyDecimalField(**MONEY, default=0, validators=[MinValueValidator(0)])
     booking_fee_bps = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(10000)])
     max_tickets_per_order = models.PositiveSmallIntegerField(default=10, validators=[MinValueValidator(1)])
     transfers_allowed = models.BooleanField(default=False)
@@ -39,7 +40,7 @@ class EventSalesSettings(models.Model):
     full_before_minutes = models.PositiveIntegerField(default=0)
     partial_before_minutes = models.PositiveIntegerField(default=0)
     partial_percent = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(100)])
-    cancellation_fee = models.DecimalField(**MONEY, default=0, validators=[MinValueValidator(0)])
+    cancellation_fee = MoneyDecimalField(**MONEY, default=0, validators=[MinValueValidator(0)])
     #: Staff-authored, shown to buyers before payment. Never personal data.
     policy_text = models.TextField(blank=True, default="", max_length=2000)
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
@@ -78,10 +79,10 @@ class EventOrder(models.Model):
     kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.TICKETS)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
     currency = models.CharField(max_length=3)
-    subtotal = models.DecimalField(**MONEY, default=0)
-    discount_total = models.DecimalField(**MONEY, default=0)
-    fee_total = models.DecimalField(**MONEY, default=0)
-    total = models.DecimalField(**MONEY, default=0)
+    subtotal = MoneyDecimalField(**MONEY, default=0)
+    discount_total = MoneyDecimalField(**MONEY, default=0)
+    fee_total = MoneyDecimalField(**MONEY, default=0)
+    total = MoneyDecimalField(**MONEY, default=0)
     #: The frozen order quote (lines, promo, fee, digest). Insert-only, like `Payment.pricing_snapshot`.
     pricing_snapshot = models.JSONField(default=dict, blank=True)
     digest = models.CharField(max_length=64, blank=True, default="")
@@ -138,9 +139,9 @@ class EventOrderLine(models.Model):
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     seats_per_unit = models.PositiveSmallIntegerField(default=0)
     #: Frozen per-unit price (the pay-what-you-want amount chosen, for PWYW tickets).
-    unit_amount = models.DecimalField(**MONEY)
-    discount_amount = models.DecimalField(**MONEY, default=0)
-    line_total = models.DecimalField(**MONEY)
+    unit_amount = MoneyDecimalField(**MONEY)
+    discount_amount = MoneyDecimalField(**MONEY, default=0)
+    line_total = MoneyDecimalField(**MONEY)
 
     class Meta:
         ordering = ["order_id", "pk"]
@@ -199,7 +200,7 @@ class EventOrderDue(models.Model):
     kind = models.CharField(max_length=24, choices=Kind.choices)
     event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     seat = models.ForeignKey(EventOrderSeat, null=True, blank=True, on_delete=models.SET_NULL, related_name="dues")
-    amount = models.DecimalField(**MONEY)
+    amount = MoneyDecimalField(**MONEY)
     refund_case = models.ForeignKey("payments.RefundCase", null=True, blank=True, on_delete=models.PROTECT,
                                     related_name="event_order_dues")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT,

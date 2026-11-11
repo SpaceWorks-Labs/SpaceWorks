@@ -120,9 +120,13 @@ def asset_download(public_token, public_asset_id, *, request):
         actor_id=None, purpose=ReadPurpose.PUBLIC_GALLERY, request=request, reauthorize=authorize)
 
 
-def public_results(event):
+def public_results(event, q=""):
+    """The published awards and finalists; ``q`` (E-B4, D13) keeps those whose project title or prize matches."""
+    text = (q or "").strip().casefold()
     state = ResultPublicationState.objects.filter(event=event).select_related("current_announcement__result").first()
     finalists = public_finalists(event)
+    if finalists and text:
+        finalists = {**finalists, "finalists": [f for f in finalists["finalists"] if text in f["title"].casefold()]}
     if state is None or not state.current_announcement_id:
         if finalists is None:
             raise Http404
@@ -133,7 +137,8 @@ def public_results(event):
         snapshot = runtime().snapshot(award.submission_snapshot_id)
         consent = GalleryConsent.objects.filter(event=event, snapshot_id=snapshot.id, metadata_public=True).first()
         if snapshot.current and snapshot.eligible and snapshot.event_id == event.pk and consent:
-            awards.append({"prize": award.prize_name, "rank": award.rank, "title": snapshot.title})
+            if not text or text in snapshot.title.casefold() or text in award.prize_name.casefold():
+                awards.append({"prize": award.prize_name, "rank": award.rank, "title": snapshot.title})
     return {"event_id": event.pk, "version": announcement.result.version,
             "published_at": announcement.published_at, "awards": awards, **(finalists or {})}
 

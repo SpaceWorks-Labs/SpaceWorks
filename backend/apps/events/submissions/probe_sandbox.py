@@ -15,11 +15,18 @@ def main(arguments):
     if sys.platform != "linux" or not hasattr(os, "geteuid") or os.geteuid() == 0:
         return 78
     binary = shutil.which("ffprobe")
-    if not binary or not arguments or "-protocol_whitelist" not in arguments:
+    if not binary or not arguments:
         return 78
-    position = arguments.index("-protocol_whitelist")
-    if position + 1 >= len(arguments) or arguments[position + 1] != "file,pipe":
-        return 78
+    for option, expected in (("-protocol_whitelist", "file,pipe"),
+                             ("-format_whitelist", "mov,matroska")):
+        positions = [index for index, value in enumerate(arguments)
+                     if value.lstrip("-").split("=", 1)[0].split(":", 1)[0] == option[1:]]
+        if len(positions) != 1:
+            return 78
+        position = positions[0]
+        if (arguments[position] != option or position + 1 >= len(arguments) or
+                arguments[position + 1] != expected):
+            return 78
     local = Path(arguments[-1])
     if not local.is_absolute() or not local.is_file() or local.is_symlink():
         return 78

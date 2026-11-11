@@ -9,9 +9,14 @@ class PrivateSubmissionView(APIView):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         tenant_id, event_id = kwargs.get("makerspace_id"), kwargs.get("pk")
-        if tenant_id is not None:
+        if event_id is not None:
             from apps.events.models import Event
-            if not Event.objects.filter(pk=event_id, makerspace_id=tenant_id).exists():
+            from apps.makerspaces.platform import feature_enabled
+            event = Event.objects.select_related("makerspace").filter(pk=event_id).first()
+            if tenant_id is not None and (event is None or event.makerspace_id != tenant_id):
+                raise SubmissionError("not_found", 404)
+            # Submissions belong to hackathons alone: off = 404 everywhere (decision 218).
+            if event is not None and not feature_enabled(event.makerspace, "events.hackathons"):
                 raise SubmissionError("not_found", 404)
         if request.method in ("POST", "PATCH", "DELETE") and isinstance(request.data, Mapping) and "operation_id" in request.data:
             try:

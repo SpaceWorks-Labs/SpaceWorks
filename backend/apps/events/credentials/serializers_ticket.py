@@ -16,3 +16,5 @@ class ProgrammeTicketSerializer(MemberEventTicketSerializer):
                                             read_only=True)
     join_url = serializers.URLField(allow_null=True, read_only=True)
     map_url = serializers.URLField(allow_null=True, read_only=True)
+    # Parity E-B5/E-F3: pay by this time or the place is released (null without an open pay window).
+    pay_by = serializers.DateTimeField(allow_null=True, read_only=True)

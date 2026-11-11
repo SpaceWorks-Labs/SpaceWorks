@@ -9,17 +9,18 @@ which staff approve as a refund case. Per-occurrence tickets keep the full-amoun
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventPassType(models.Model):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     series = models.ForeignKey("events.EventSeries", on_delete=models.CASCADE, related_name="pass_types")
     name = models.CharField(max_length=100)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, validators=[MinValueValidator(0)])
     #: 0 = unlimited passes.
     capacity = models.PositiveIntegerField(default=0)
     #: Entered by the organiser: what a holder is owed when one occurrence is cancelled.
-    occurrence_refund_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+    occurrence_refund_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0,
                                                    validators=[MinValueValidator(0)])
     sales_end_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

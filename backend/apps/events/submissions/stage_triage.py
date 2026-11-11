@@ -32,6 +32,34 @@ def apply_locked(*, ctx, port, actor, project, entry, triage, reason):
            meta={"triage": triage, "version": project.version, "stage_id": entry.stage_id})
 
 
+def reinstate_locked(*, ctx, actor, project, entry, reason):
+    """E-B4 (D7): undo a disqualification under the event lock; the caller saves the project.
+
+    Only an ``ineligible`` entry can be reinstated. Its entry-fee case is voided while still open, and the
+    project's invalidated judging work comes back (see ``judging.reinstate``). Returns the counts."""
+    if entry is None or entry.triage != "ineligible" or not entry.current_snapshot_id or project.state == "withdrawn":
+        raise SubmissionError("not_disqualified", 409)
+    furthest = furthest_entry(project)
+    mirrors = furthest is not None and furthest.pk == entry.pk
+    voided = False
+    if mirrors:
+        from .entry_fees import on_reinstated
+        voided = on_reinstated(event=ctx.event, project=project, actor=actor)
+    entry.triage, entry.version = "eligible", entry.version + 1
+    entry.save(update_fields=["triage", "version"])
+    if mirrors:
+        project.triage, project.triage_reason = "eligible", reason
+    project.version += 1
+    from apps.events.judging.reinstate import reinstate_snapshot_locked
+    from apps.events.programme_locks import current_locks
+    counts = reinstate_snapshot_locked(event=ctx.event, snapshot_id=entry.current_snapshot_id,
+                                       locks=current_locks(ctx.event.pk), actor=actor)
+    record(actor, "event.submission_reinstated", makerspace=ctx.event.makerspace, target=project,
+           meta={"event_id": ctx.event.pk, "stage_id": entry.stage_id, "version": project.version,
+                 "fee_case_voided": voided, **counts})
+    return counts
+
+
 def entry_for(project, stage_id):
     rows = SubmissionStageEntry.objects.select_for_update().filter(submission=project)
     if stage_id is None:

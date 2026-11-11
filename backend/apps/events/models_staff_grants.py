@@ -56,6 +56,12 @@ class EventStaffGrant(_EventStaffScope, ResourceStaffGrant):
 
 
 class EventStaffGrantInvite(_EventStaffScope, ResourceStaffGrantInvite):
+    # Decision 221(i): a limited co-organizer's invite carries the same track/window limit, and
+    # redemption writes a manual entitlement with it. Empty/None means unlimited (managers only).
+    track_ids = models.JSONField(default=list, blank=True)
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         constraints = [
             models.CheckConstraint(condition=(Q(event__isnull=False, series__isnull=True) | Q(event__isnull=True, series__isnull=False)), name="event_staff_invite_one_target"),

@@ -7,6 +7,7 @@ the desk). Every route is team-scoped through the submission boundary, so anothe
 
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -20,7 +21,7 @@ ERRORS = {code: ErrorSerializer for code in (400, 401, 402, 403, 404, 409, 429, 
 
 class ProgrammeChargeReadSerializer(serializers.Serializer):
     required = serializers.BooleanField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    amount = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     payment_id = serializers.IntegerField(allow_null=True)
     status = serializers.CharField(help_text="not_required, not_raised, or the payment status.")
     currency = serializers.CharField(allow_blank=True)

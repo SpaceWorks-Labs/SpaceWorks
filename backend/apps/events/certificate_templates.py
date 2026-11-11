@@ -87,7 +87,7 @@ def _verification_slots(result):
         if kind == "certificate_qr":
             layer["resource_slot"] = "certificate_verification_qr"
         else:
-            layer.update(font_family="Gilroy", font_weight=400, font_size_pt=7, align="right", shrink_to_fit=True)
+            layer.update(font_family="Outfit", font_weight=400, font_size_pt=7, align="right", shrink_to_fit=True)
         result["layers"].append(layer)
     from .certificates.layout import normalize_document
     normalized = normalize_document({key: result[key] for key in ("version", "page_width_mm", "page_height_mm", "layers")})

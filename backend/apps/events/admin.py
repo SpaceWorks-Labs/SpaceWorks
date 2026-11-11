@@ -69,3 +69,14 @@ class EventSeriesOrganizerAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 if not app_is_tombstoned("events"):
     admin.site.register(EventOrganizer, EventOrganizerAdmin)
     admin.site.register(EventSeriesOrganizer, EventSeriesOrganizerAdmin)
+    # Read-only record lists (0.12.0, /control/ Events); writes stay in the web console.
+    from apps.events import admin_records as records
+    from apps.events.models_event import Event
+    from apps.events.models_orders import EventOrder
+    from apps.events.models_registration import EventRegistration
+    from apps.events.models_series import EventSeries
+
+    admin.site.register(Event, records.EventRecordAdmin)
+    admin.site.register(EventSeries, records.EventSeriesRecordAdmin)
+    admin.site.register(EventRegistration, records.EventRegistrationRecordAdmin)
+    admin.site.register(EventOrder, records.EventOrderRecordAdmin)

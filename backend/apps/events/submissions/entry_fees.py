@@ -86,6 +86,25 @@ def on_disqualified(*, event, project, actor):
     open_recoveries_locked(event=event, project=project, actor=actor)
 
 
+def on_reinstated(*, event, project, actor):
+    """E-B4 (D7), inside the reinstating transaction. Reinstating charges nothing, so a project whose fee
+    was already refunded (or whose refund staff approved) is refused: it would stand submitted unpaid. An
+    OPEN disqualification refund case is voided; a kept or waived fee needs nothing. True when voided."""
+    from apps.payments.models import Payment, RefundCase
+    from apps.payments.refund_policy import refundable_balance
+    from apps.payments.services_refund_cases import SETTLED, _lock_payment, void_reversed_due_case
+    payment = Payment.objects.filter(makerspace=event.makerspace, subject_type="submission_fee",
+                                     subject_id=project.pk).first()
+    if payment is None or payment.status not in SETTLED:
+        return False
+    locked = _lock_payment(payment.pk)
+    if refundable_balance(locked) < locked.amount or RefundCase.objects.filter(
+            payment=locked, status__in=(RefundCase.Status.APPROVED, RefundCase.Status.APPROVAL_FAILED)).exists():
+        raise SubmissionError("fee_refunded", 409)
+    return void_reversed_due_case(locked, reason_code="submission_disqualified", actor=actor,
+                                  reason="project_reinstated") is not None
+
+
 def on_withdrawn(*, event, project, actor):
     """Hack-money G2, inside the withdrawing transaction: void a pending fee; a paid one opens a DUE
     case only with the event's "refund on withdrawal" switch on."""

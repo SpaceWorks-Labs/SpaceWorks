@@ -1,4 +1,5 @@
 """Explicit minimal roster/finder shapes; no account/contact/answer serializer."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from .admission_errors import fail
 from .admission_ports import ports
@@ -36,7 +37,7 @@ def project_team(team, *, actor, config, finder=False):
                 "slots": max(0, config.team_max - len(members)),
                 "profiles": [p for member in members if (p := profile(team.event_id, member.member_id)) is not None]}
     if actor.pk not in {m.member_id for m in members}:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     leader = team.leader_id == actor.pk
     actions = []
     if team.state == "forming":

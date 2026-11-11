@@ -1,4 +1,5 @@
 """Single-use fragment invitations: only keyed digests are persisted."""
+from django.utils.translation import gettext
 import hashlib
 import hmac
 from datetime import timedelta
@@ -32,7 +33,7 @@ def invite(*, event_id, team_id, actor, data):
                 return None, None
             row = get_object_or_404(HackathonTeamInvite, team=team, pk=ctx.reference["id"])
             if row.revoked_at or row.redeemed_at or row.expires_at <= timezone.now():
-                fail("invitation_expired", "This invitation is no longer usable.", status=410)
+                fail("invitation_expired", gettext("This invitation is no longer usable."), status=410)
             return row, token
         check_version(team, data["expected_version"])
         if data.get("rotate") or data.get("revoke_only"):
@@ -66,14 +67,14 @@ def join_request(*, event_id, team_id, actor, data):
         if ctx.reference:
             return team
         if not ctx.config.finder_enabled or not team.seeking_members:
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         check_version(team, data["expected_version"])
         require_forming(ctx.config, team)
         application = member_application(ctx, actor)
         if HackathonTeamMember.objects.filter(event=ctx.event, member=actor, state="active").exists():
-            fail("already_in_team", "You already belong to a team.")
+            fail("already_in_team", gettext("You already belong to a team."))
         if team.memberships.filter(member=actor, state__in=("requested", "invited")).exists():
-            fail("request_exists", "Your request is already waiting.")
+            fail("request_exists", gettext("Your request is already waiting."))
         row = HackathonTeamMember.objects.create(event=ctx.event, team=team, application=application, member=actor, creator=actor, state="requested")
         team.version += 1
         team.save()
@@ -109,7 +110,7 @@ def accept(*, event_id, team_id, actor, data):
         team = get_object_or_404(HackathonTeam.objects.select_for_update(), event=ctx.event, pk=team_id)
         if ctx.reference:
             if not team.memberships.filter(member=actor, state="active").exists():
-                fail("not_found", "Not found.", status=404)
+                fail("not_found", gettext("Not found."), status=404)
             return team
         invitation = None
         if "request_id" in data:
@@ -121,10 +122,10 @@ def accept(*, event_id, team_id, actor, data):
         else:
             invitation = team.invites.select_for_update().filter(token_digest=digest(data["token"], purpose="token")).first()
             if not invitation or invitation.revoked_at or invitation.redeemed_at or invitation.expires_at <= timezone.now():
-                fail("not_found", "Not found.", status=404)
+                fail("not_found", gettext("Not found."), status=404)
             if invitation.email_digest and (not actor.email_verified_at or not actor.email or not hmac.compare_digest(
                     invitation.email_digest, digest(actor.email.strip().lower(), purpose="email"))):
-                fail("not_found", "Not found.", status=404)
+                fail("not_found", gettext("Not found."), status=404)
             member = actor
         if invitation is None:
             check_version(team, data["expected_version"])

@@ -1,4 +1,5 @@
 """Private append-only comments and explicit finder opt-in."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from .admission_errors import check_version, fail
 from .admission_transactions import command, record
@@ -14,7 +15,7 @@ def comment(*, event_id, team_id, actor, data):
             return get_object_or_404(TeamComment, pk=ctx.reference["id"], team=team)
         check_version(team, data["expected_version"])
         if team.state == "disbanded":
-            fail("team_closed", "This team is closed.")
+            fail("team_closed", gettext("This team is closed."))
         row = TeamComment.objects.create(team=team, author=actor, encrypted_body=data["body"])
         team.version += 1
         team.save()
@@ -31,7 +32,7 @@ def project_comment(row):
 def finder_profile(*, event_id, actor, data):
     with command(event_id=event_id, actor=actor, data=data, action="finder.edit", owner=True) as ctx:
         if not ctx.config.finder_enabled or ctx.config.team_mode != "individual_then_team":
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         if data.get("opted_in") is not False:
             member_application(ctx, actor)
         row = HackathonFinderProfile.objects.select_for_update().filter(event=ctx.event, member=actor).first()

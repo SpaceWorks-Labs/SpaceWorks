@@ -33,9 +33,9 @@ def require_claims(event):
 
 def award_total(award):
     if award.prize.kind != "cash" or award.prize.funding != "space":
-        raise ProgrammeError("prize_not_split", "Only a cash prize the space pays can be split.")
+        raise ProgrammeError("prize_not_split", gettext("Only a cash prize the space pays can be split."))
     if not award.prize.amount_per_winner:
-        raise ProgrammeError("prize_amount_required", "Set the prize amount before splitting it.")
+        raise ProgrammeError("prize_amount_required", gettext("Set the prize amount before splitting it."))
     return award.prize.amount_per_winner
 
 
@@ -60,11 +60,11 @@ def _validate_rows(award, snapshot, rows):
     if sum((Decimal(row["amount"]) for row in rows), Decimal("0")) > total:
         raise ValidationError({"shares": gettext('The shares add up to more than the prize ({total}).').format(total=total)})
     if has_standing_payout(award):
-        raise ProgrammeError("payout_exists", "A payout is already recorded for this prize; reverse it first.")
+        raise ProgrammeError("payout_exists", gettext("A payout is already recorded for this prize; reverse it first."))
     from .models_prize_money import HackathonPrizeOutcome
     from .prize_lineage import lineage_ids
     if HackathonPrizeOutcome.objects.filter(award_id__in=lineage_ids(award)).exists():
-        raise ProgrammeError("already_settled", "This prize has a recorded outcome; its split is fixed.")
+        raise ProgrammeError("already_settled", gettext("This prize has a recorded outcome; its split is fixed."))
 
 
 def _replace(event, award, rows, *, actor, confirmed_for):
@@ -93,7 +93,7 @@ def propose(event_id, award_id, *, actor, data):
             if actor.pk not in snapshot.member_ids:
                 raise Http404
             if leader_of(snapshot) != actor.pk:
-                raise ProgrammeError("leader_required", "Only the team leader proposes the split.", status=403)
+                raise ProgrammeError("leader_required", gettext("Only the team leader proposes the split."), status=403)
             _validate_rows(award, snapshot, values["shares"])
             shares = _replace(event, award, values["shares"], actor=actor, confirmed_for={actor.pk})
             record(actor, "event.prize.split_proposed", makerspace=event.makerspace, target=award,
@@ -138,9 +138,9 @@ def respond(event_id, share_id, *, actor, data, accept):
             if share is None:
                 raise Http404
             if share.version != values["expected_version"]:
-                raise ProgrammeError("stale_version", "This share changed.", current_version=share.version)
+                raise ProgrammeError("stale_version", gettext("This share changed."), current_version=share.version)
             if share.state != "proposed":
-                raise ProgrammeError("invalid_transition", "Only a proposed share can be answered.")
+                raise ProgrammeError("invalid_transition", gettext("Only a proposed share can be answered."))
             share.state = "confirmed" if accept else "declined"
             share.confirmed_at = timezone.now() if accept else None
             share.version += 1

@@ -1,4 +1,5 @@
 """Consistent no-store, command header and paginated API boundaries."""
+from django.utils.translation import gettext
 from uuid import UUID
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
@@ -14,7 +15,7 @@ from .admission_transactions import member_event, require_programme
 
 def require_hackathon(event):
     if not hackathon_enabled(event.makerspace):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
 
 
 class ProgrammeCommandThrottle(SimpleRateThrottle):
@@ -64,9 +65,9 @@ class ProgrammeView(APIView):
         try:
             header = UUID(request.headers.get("Idempotency-Key", ""))
         except (ValueError, TypeError, AttributeError):
-            fail("idempotency_key_required", "Provide the operation UUID as Idempotency-Key.", status=400)
+            fail("idempotency_key_required", gettext("Provide the operation UUID as Idempotency-Key."), status=400)
         if header != data["operation_id"]:
-            fail("idempotency_key_mismatch", "The operation ID and header must match.", status=400)
+            fail("idempotency_key_mismatch", gettext("The operation ID and header must match."), status=400)
         return data
 
 

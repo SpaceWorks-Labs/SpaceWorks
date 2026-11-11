@@ -34,7 +34,7 @@ def finalize(event_id, *, actor, data, correction=False):
             previous = EventResultRevision.objects.filter(event=event).order_by("-version").first()
             version = previous.version if previous else 0
             if values["expected_version"] != version:
-                raise ProgrammeError("stale_version", "This item changed.", current_version=version)
+                raise ProgrammeError("stale_version", gettext("This item changed."), current_version=version)
             if previous and not correction:
                 invalid("Create a correction to preserve finalized history.")
             if correction and (not previous or not values.get("reason")):
@@ -54,7 +54,7 @@ def finalize(event_id, *, actor, data, correction=False):
                     invalid("Finalize every selected judging round first.")
                 calculation = round_calculation(round)
                 if not calculation["coverage_complete"] and not round.coverage_exception_id:
-                    raise ProgrammeError("incomplete_coverage", "Record an explicit coverage exception before finalization.")
+                    raise ProgrammeError("incomplete_coverage", gettext("Record an explicit coverage exception before finalization."))
                 calculations.append(calculation)
             awards = _awards(event, values["awards"], calculations, rounds)
             aggregate = {"rounds": [{"round_id": r.pk, **c} for r, c in zip(rounds, calculations)],
@@ -126,7 +126,7 @@ def publish(event_id, *, actor, data):
                 invalid("Publish the latest finalized result revision.")
             for evidence in result.rounds.select_related("round").all():
                 if digest(round_calculation(evidence.round)) != digest(evidence.calculation):
-                    raise ProgrammeError("result_inputs_changed", "Judging eligibility changed. Create a result correction before announcing.")
+                    raise ProgrammeError("result_inputs_changed", gettext("Judging eligibility changed. Create a result correction before announcing."))
             # Revalidate at release: an intervening disqualification cannot be announced.
             for award in result.awards.all():
                 snapshot = runtime().snapshot(award.submission_snapshot_id)

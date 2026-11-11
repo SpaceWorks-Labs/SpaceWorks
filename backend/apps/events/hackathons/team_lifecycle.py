@@ -1,4 +1,5 @@
 """Leaving, disbanding and eligibility repair preserve frozen roster history."""
+from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from .admission_errors import check_version, fail
@@ -55,7 +56,7 @@ def require_moderation(event):
     """Handover, removal and organiser moderation are one switch; off = 404 (decision 218)."""
     from apps.makerspaces.platform import feature_enabled
     if not feature_enabled(event.makerspace, MODERATION):
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
 
 
 def cancel_member_registration_locked(ctx, member_id):
@@ -81,7 +82,7 @@ def leave(*, event_id, team_id, actor, data, cancel=False):
         check_version(team, data["expected_version"])
         require_forming(ctx.config, team)
         if ports().has_submission(team_id=team.pk):
-            fail("active_submission", "This team has a retained submission.")
+            fail("active_submission", gettext("This team has a retained submission."))
         from .admission_cohorts import invalidate_locked
         invalidate_locked(ctx, team)
         selected = list(team.memberships.select_for_update().filter(state="active").order_by("pk")) if cancel else [member]
@@ -142,10 +143,10 @@ def transfer_leadership(*, event_id, team_id, actor, data):
             return team
         check_version(team, data["expected_version"])
         if team.state == "disbanded":
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         target = data["new_leader_id"]
         if target == actor.pk or not team.memberships.filter(state="active", member_id=target).exists():
-            fail("invalid_leader", "Choose another active member of this team.", status=400)
+            fail("invalid_leader", gettext("Choose another active member of this team."), status=400)
         team.leader_id, team.version = target, team.version + 1
         team.save()
         record(ctx, "team_leadership_transferred", team, new_leader_id=target, version=team.version)
@@ -166,7 +167,7 @@ def remove_member(*, event_id, team_id, actor, data):
         check_version(team, data["expected_version"])
         require_forming(ctx.config, team)
         if data["member_id"] == team.leader_id:
-            fail("leader_cannot_be_removed", "Hand the team over first, or leave it.", status=400)
+            fail("leader_cannot_be_removed", gettext("Hand the team over first, or leave it."), status=400)
         row = get_object_or_404(HackathonTeamMember.objects.select_for_update(), team=team,
                                 member_id=data["member_id"], state="active")
         from .admission_cohorts import invalidate_locked

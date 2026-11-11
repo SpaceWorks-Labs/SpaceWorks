@@ -11,6 +11,7 @@ may mark an unpaid prize forfeited (`prize_outcomes.forfeit`). Finance verifies 
 paying. A member may remove their details while the share is unpaid. Nothing here moves money.
 """
 
+from django.utils.translation import gettext
 import json
 from contextlib import contextmanager
 from datetime import timedelta
@@ -59,7 +60,7 @@ def _share_for(event, award, actor):
     if lineage_shares(award).exists() or leader_of(snapshot) != actor.pk:
         raise Http404  # a split exists without this member, or only the leader is the default payee
     if has_standing_payout(award):
-        raise ProgrammeError("payout_exists", "This prize was already paid.")
+        raise ProgrammeError("payout_exists", gettext("This prize was already paid."))
     return HackathonPrizeShare.objects.create(event=event, makerspace=event.makerspace, award=award, member=actor,
                                               amount=award_total(award), state="confirmed", proposed_by=actor,
                                               confirmed_at=timezone.now())
@@ -81,10 +82,10 @@ def submit(event_id, award_id, *, actor, data):
                 raise Http404
             deadline = claim_deadline(event)
             if deadline is not None and timezone.now() > deadline:
-                raise ProgrammeError("claim_window_closed", "The claim window for this prize has closed.")
+                raise ProgrammeError("claim_window_closed", gettext("The claim window for this prize has closed."))
             share = _share_for(event, award, actor)
             if share.state != "confirmed":
-                raise ProgrammeError("share_not_confirmed", "Confirm your share before giving payee details.")
+                raise ProgrammeError("share_not_confirmed", gettext("Confirm your share before giving payee details."))
             try:
                 key = template_key(values["country"], values["method"])
                 enabled, _ = configured_templates(event.makerspace_id)
@@ -124,7 +125,7 @@ def remove(event_id, award_id, *, actor, data):
             if claim is None:
                 raise Http404
             if has_standing_payout(claim.share.award):
-                raise ProgrammeError("payout_exists", "This prize was paid; finance keeps the record.")
+                raise ProgrammeError("payout_exists", gettext("This prize was paid; finance keeps the record."))
             claim.details, claim.pan, claim.cleared_at, claim.verified_at = "", "", timezone.now(), None
             claim.version += 1
             claim.save()
@@ -149,7 +150,7 @@ def verify(event_id, share_id, *, actor, data):
             if claim is None or not claim.submitted_at or claim.cleared_at:
                 raise Http404
             if claim.version != values["expected_version"]:
-                raise ProgrammeError("stale_version", "These details changed.", current_version=claim.version)
+                raise ProgrammeError("stale_version", gettext("These details changed."), current_version=claim.version)
             claim.verified_at, claim.verified_by = timezone.now(), actor
             claim.version += 1
             claim.save()
@@ -175,7 +176,7 @@ def reveal(event_id, share_id, *, actor, data):
         if claim is None or not claim.submitted_at or claim.cleared_at:
             raise Http404
         if claim.version != values["expected_version"]:
-            raise ProgrammeError("stale_version", "These details changed.", current_version=claim.version)
+            raise ProgrammeError("stale_version", gettext("These details changed."), current_version=claim.version)
         record(actor, "event.prize.claim_revealed", makerspace=event.makerspace, target=claim,
                meta={"event_id": event.pk, "share_id": share_id, "reason_code": values["reason_code"]})
         return {"share_id": share_id, "country": claim.country, "method": claim.method,

@@ -6,6 +6,7 @@
   asked to find a second one. Authority is unchanged (C-38): this only separates the two acts.
 """
 
+from django.utils.translation import gettext
 from apps.accounts import rbac
 from .errors import ProgrammeError
 from .models_prize_money import HackathonPrizeClaim
@@ -38,6 +39,6 @@ def require_verified_claim(event, award, recipient, actor):
     claim = HackathonPrizeClaim.objects.select_related("share").filter(
         share__in=lineage_shares(award).filter(member_id=recipient)).order_by("-pk").first()
     if claim is None or not claim.submitted_at or claim.cleared_at or not claim.verified_at:
-        raise ProgrammeError("claim_not_verified", "Verify the winner's payee details before recording the payout.")
+        raise ProgrammeError("claim_not_verified", gettext("Verify the winner's payee details before recording the payout."))
     if claim.verified_by_id == actor.pk and not sole_finance_person(event, actor):
-        raise ProgrammeError("same_person_verified", "A second finance person must record a payout you verified.")
+        raise ProgrammeError("same_person_verified", gettext("A second finance person must record a payout you verified."))

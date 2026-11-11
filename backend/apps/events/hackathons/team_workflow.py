@@ -1,4 +1,5 @@
 """Only writer of team and membership state; event parent serializes slots."""
+from django.utils.translation import gettext
 import unicodedata
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -11,7 +12,7 @@ from .team_models import HackathonTeam, HackathonTeamMember
 def normalized_name(name):
     value = " ".join(unicodedata.normalize("NFKC", name).split())
     if not value or len(value) > 100 or any(unicodedata.category(c).startswith("C") for c in value):
-        fail("invalid_team_name", "Use a team name of 1–100 printable characters.", status=400)
+        fail("invalid_team_name", gettext("Use a team name of 1–100 printable characters."), status=400)
     return value, value.casefold()
 
 
@@ -19,12 +20,12 @@ def require_forming(config, team, *, at=None):
     now = at or timezone.now()
     reopened = getattr(team, "roster_reopened_until", None)
     if team.state != "forming" or (config.team_lock_at and now >= config.team_lock_at and not (reopened and now < reopened)):
-        fail("team_locked", "The team roster is locked.")
+        fail("team_locked", gettext("The team roster is locked."))
 
 
 def require_leader(team, actor):
     if team.leader_id != actor.pk:
-        fail("leader_required", "Only the team leader can do this.", status=403)
+        fail("leader_required", gettext("Only the team leader can do this."), status=403)
 
 
 def member_application(ctx, actor):
@@ -34,20 +35,20 @@ def member_application(ctx, actor):
             app = HackathonApplication.objects.create(event=ctx.event, member=actor)
             record(ctx, "application_saved", app, version=app.version)
         if app.state not in ("draft", "submitted"):
-            fail("team_ineligible", "This application cannot join a forming cohort.")
+            fail("team_ineligible", gettext("This application cannot join a forming cohort."))
     else:
         states = ("confirmed", "offered") if ctx.config.team_eligibility == "offered" else ("confirmed",)
         if app is None or app.state not in states:
-            fail("team_ineligible", "Confirm your place before joining a team.")
+            fail("team_ineligible", gettext("Confirm your place before joining a team."))
     return app
 
 
 def activate_locked(ctx, team, member, application):
     require_forming(ctx.config, team)
     if HackathonTeamMember.objects.filter(event=ctx.event, member=member, state="active").exists():
-        fail("already_in_team", "You already belong to a team for this event.")
+        fail("already_in_team", gettext("You already belong to a team for this event."))
     if team.memberships.filter(state="active").count() >= ctx.config.team_max:
-        fail("capacity_full", "The team's last place was taken.")
+        fail("capacity_full", gettext("The team's last place was taken."))
     from .admission_cohorts import invalidate_locked
     invalidate_locked(ctx, team)
     row = team.memberships.filter(member=member, state__in=("requested", "invited")).first()
@@ -66,7 +67,7 @@ def create(*, event_id, actor, data):
             return get_object_or_404(HackathonTeam, pk=ctx.reference["id"], event=ctx.event)
         check_version(None, data["expected_version"])
         if ctx.config.team_mode == "solo":
-            fail("solo_team_automatic", "Your solo team is created when you confirm your place.")
+            fail("solo_team_automatic", gettext("Your solo team is created when you confirm your place."))
         app = member_application(ctx, actor)
         name, key = normalized_name(data.get("name", ""))
         require_available_name(ctx.event, key)
@@ -87,7 +88,7 @@ def require_available_name(event, key, exclude=None):
                 suggestions.append(candidate)
             if len(suggestions) == 3:
                 break
-        fail("team_name_taken", "That team name is in use.", fields={"name": suggestions})
+        fail("team_name_taken", gettext("That team name is in use."), fields={"name": suggestions})
 
 
 def update(*, event_id, team_id, actor, data):
@@ -133,7 +134,7 @@ def lock_roster_locked(*, team_id, locks):
     digest = roster_hash(members)
     if team.state == "locked":
         if team.roster_hash != digest:
-            fail("roster_changed", "The sealed roster no longer matches.")
+            fail("roster_changed", gettext("The sealed roster no longer matches."))
         return digest
     team.state, team.roster_hash, team.locked_at = "locked", digest, timezone.now()
     team.seeking_members, team.version = False, team.version + 1

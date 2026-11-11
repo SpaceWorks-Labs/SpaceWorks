@@ -12,6 +12,7 @@
 Who records: RECORD_PAYMENT holders or the Event Manager (C-38), behind `events.prize_payouts`.
 """
 
+from django.utils.translation import gettext
 from django.http import Http404
 from django.utils import timezone
 
@@ -56,9 +57,9 @@ def fulfil(event_id, award_id, *, actor, data):
             prize = award.prize
             kind = "sponsor_paid" if prize.funding == "sponsor_direct" else "fulfilled"
             if kind == "fulfilled" and prize.kind == "cash":
-                raise ProgrammeError("cash_prize", "Record a cash prize the space pays as a payout.")
+                raise ProgrammeError("cash_prize", gettext("Record a cash prize the space pays as a payout."))
             if _settled(award):
-                raise ProgrammeError("already_settled", "This prize is already settled.")
+                raise ProgrammeError("already_settled", gettext("This prize is already settled."))
             row = _row(event, award, kind, actor, method=values["method"], reference=values.get("reference", ""),
                        note=values.get("note", ""), happened_on=values["happened_on"])
             if kind == "sponsor_paid":  # Literal actions, so the audit catalogue labels each one.
@@ -85,7 +86,7 @@ def forfeit(event_id, award_id, *, actor, data):
             award = _award(event, award_id)
             deadline = claim_deadline(event)
             if deadline is None or timezone.now() <= deadline:
-                raise ProgrammeError("claim_window_open", "A prize is forfeited only after its claim window closes.")
+                raise ProgrammeError("claim_window_open", gettext("A prize is forfeited only after its claim window closes."))
             share = None
             if values.get("share_id"):
                 share = HackathonPrizeShare.objects.select_for_update().filter(award=award, pk=values["share_id"]).first()
@@ -93,12 +94,12 @@ def forfeit(event_id, award_id, *, actor, data):
                     raise Http404
                 from .prize_lineage import standing_payouts
                 if standing_payouts(award).filter(recipient_id=share.member_id).exists():
-                    raise ProgrammeError("already_settled", "This share was paid.")
+                    raise ProgrammeError("already_settled", gettext("This share was paid."))
                 share.state, share.version = "forfeited", share.version + 1
                 share.save()
                 clear_locked(share, pan=True)
             elif _settled(award):
-                raise ProgrammeError("already_settled", "This prize is already settled.")
+                raise ProgrammeError("already_settled", gettext("This prize is already settled."))
             else:
                 for unpaid in HackathonPrizeShare.objects.filter(award=award):
                     clear_locked(unpaid, pan=True)
@@ -162,7 +163,7 @@ def resolve_recovery(event_id, outcome_id, *, actor, data):
             if opened is None:
                 raise Http404
             if HackathonPrizeOutcome.objects.filter(resolves=opened).exists():
-                raise ProgrammeError("already_resolved", "This recovery is already closed.")
+                raise ProgrammeError("already_resolved", gettext("This recovery is already closed."))
             entry = None
             if values["outcome"] == "repaid":
                 from apps.payments.ledger_api import record_receipt

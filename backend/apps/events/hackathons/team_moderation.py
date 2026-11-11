@@ -1,4 +1,5 @@
 """G/B call these from their existing authorized amendment surface."""
+from django.utils.translation import gettext
 import re
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
@@ -17,12 +18,12 @@ def grant_exception_locked(*, team_id, actor, rule, member_id, reason_code, lock
     team = get_object_or_404(HackathonTeam, pk=team_id, event_id=locks.event_id)
     event_authority.require(actor, team.event, "manage_hackathon")
     if not re.fullmatch(r"[a-z][a-z0-9_]{2,39}", reason_code or ""):
-        fail("reason_required", "Select a reason for this exception.", status=400)
+        fail("reason_required", gettext("Select a reason for this exception."), status=400)
     members = list(team.memberships.filter(state="active"))
     if rule not in ("team_size", "attendance") or (rule == "team_size" and member_id is not None):
-        fail("invalid_exception", "Choose a specific supported rule.", status=400)
+        fail("invalid_exception", gettext("Choose a specific supported rule."), status=400)
     if rule == "attendance" and member_id not in {m.member_id for m in members}:
-        fail("not_found", "Not found.", status=404)
+        fail("not_found", gettext("Not found."), status=404)
     row = HackathonTeamException.objects.create(team=team, rule=rule, member_id=member_id,
         roster_hash=roster_hash(members), reason_code=reason_code, approved_by=actor, valid_until=team.event.ends_at)
     record(actor, "event.hackathon.team_exception_granted", makerspace=team.event.makerspace,
@@ -37,7 +38,7 @@ def reopen(*, event_id, team_id, actor, data):
             return team
         check_version(team, data["expected_version"])
         if team.state == "disbanded" or not re.fullmatch(r"[a-z][a-z0-9_]{2,39}", data.get("reason_code", "")):
-            fail("reason_required", "An active team and a reason are required.", status=400)
+            fail("reason_required", gettext("An active team and a reason are required."), status=400)
         ports().reopen_submission_locked(team_id=team.pk, actor_id=actor.pk, reason_code=data["reason_code"], locks=ctx.locks)
         cohort = getattr(team, "cohort", None)
         if cohort and cohort.state in ("submitted", "offered", "confirmed", "waitlisted"):
@@ -73,7 +74,7 @@ def rename(*, event_id, team_id, actor, data):
             return team
         check_version(team, data["expected_version"])
         if team.state == "disbanded":
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         team.name, team.normalized_name = normalized_name(data["name"])
         require_available_name(ctx.event, team.normalized_name, team.pk)
         team.version += 1
@@ -93,14 +94,14 @@ def move_member(*, event_id, team_id, actor, data):
             return source
         check_version(source, data["expected_version"])
         if data["to_team_id"] == source.pk:
-            fail("invalid_move", "Choose a different team.", status=400)
+            fail("invalid_move", gettext("Choose a different team."), status=400)
         target = get_object_or_404(HackathonTeam.objects.select_for_update(), pk=data["to_team_id"], event=ctx.event)
         if source.state == "disbanded" or target.state != "forming":
-            fail("team_locked", "Both teams must be open.")
+            fail("team_locked", gettext("Both teams must be open."))
         row = get_object_or_404(HackathonTeamMember.objects.select_for_update(), team=source,
                                 member_id=data["member_id"], state="active")
         if target.memberships.filter(state="active").count() >= ctx.config.team_max:
-            fail("capacity_full", "The team is at its maximum size.")
+            fail("capacity_full", gettext("The team is at its maximum size."))
         invalidate_locked(ctx, source)
         invalidate_locked(ctx, target)
         row.team, row.joined_at = target, timezone.now()
@@ -124,9 +125,9 @@ def delete(*, event_id, team_id, actor, data):
             return team
         check_version(team, data["expected_version"])
         if team.state == "disbanded":
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         if ports().has_submission(team_id=team.pk):
-            fail("active_submission", "This team has a retained submission.")
+            fail("active_submission", gettext("This team has a retained submission."))
         invalidate_locked(ctx, team)
         now = timezone.now()
         rows = list(team.memberships.select_for_update().filter(state="active").order_by("pk"))
@@ -155,13 +156,13 @@ def restore(*, event_id, team_id, actor, data):
             return team
         check_version(team, data["expected_version"])
         if team.deleted_at is None:
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         if timezone.now() - team.deleted_at > UNDO_WINDOW:
-            fail("undo_expired", "The undo window has passed.")
+            fail("undo_expired", gettext("The undo window has passed."))
         require_available_name(ctx.event, team.normalized_name, team.pk)
         member_ids = team.deleted_snapshot.get("member_ids", [])
         if HackathonTeamMember.objects.filter(event=ctx.event, member_id__in=member_ids, state="active").exists():
-            fail("already_in_team", "A member has joined another team since the delete.")
+            fail("already_in_team", gettext("A member has joined another team since the delete."))
         rows = list(team.memberships.select_for_update().filter(state="removed", left_at=team.deleted_at))
         for row in rows:
             row.state, row.left_at = "active", None

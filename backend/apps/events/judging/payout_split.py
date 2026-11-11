@@ -32,16 +32,16 @@ def payout_amount(award, recipient, entered):
     shares = lineage_shares(award)
     if not shares.exists():
         if _standing(award).exists():
-            raise ProgrammeError("payout_exists", "This award already has a recorded payout. Reverse it first.")
+            raise ProgrammeError("payout_exists", gettext("This award already has a recorded payout. Reverse it first."))
         amount = entered or award.prize.amount_per_winner
         if not amount:
             raise ValidationError({"amount": gettext("This prize has no amount; enter what was paid.")})
         return Decimal(amount)
     share = shares.filter(member_id=recipient).first()
     if share is None or share.state != "confirmed":
-        raise ProgrammeError("share_not_confirmed", "Pay a member whose share is confirmed.")
+        raise ProgrammeError("share_not_confirmed", gettext("Pay a member whose share is confirmed."))
     if _standing(award).filter(recipient_id=recipient).exists():
-        raise ProgrammeError("payout_exists", "This share already has a recorded payout. Reverse it first.")
+        raise ProgrammeError("payout_exists", gettext("This share already has a recorded payout. Reverse it first."))
     amount = Decimal(entered or share.amount)
     ceiling = award.prize.amount_per_winner or shares.aggregate(total=Sum("amount"))["total"]
     paid = _standing(award).aggregate(total=Sum("amount"))["total"] or Decimal("0")

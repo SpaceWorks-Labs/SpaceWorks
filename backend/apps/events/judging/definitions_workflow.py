@@ -73,7 +73,7 @@ def _guard_prize_money(event, row, payload):
     if changing:
         from .models_payouts import HackathonPrizePayout
         if HackathonPrizePayout.objects.filter(prize=row).exists():
-            raise ProgrammeError("prize_locked", "A payout exists for this prize, so its amount and kind are fixed.")
+            raise ProgrammeError("prize_locked", gettext("A payout exists for this prize, so its amount and kind are fixed."))
 
 
 def _validate_round(row, criteria, options):

@@ -1,4 +1,5 @@
 """Opt-in finder and private team comments share no contact directory."""
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from . import team_coordination
@@ -31,10 +32,10 @@ class FinderView(MemberCommandView):
     def get(self, request, makerspace_id, pk):
         event, config = self.team_target(request, makerspace_id, pk)
         if not config.finder_enabled or config.team_mode != "individual_then_team":
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         skills = [v.strip() for v in request.query_params.get("skills", "").split(",") if v.strip()]
         if len(skills) > 20 or any(len(v) > 40 for v in skills):
-            fail("invalid_skills", "Use up to 20 short skills.", status=400)
+            fail("invalid_skills", gettext("Use up to 20 short skills."), status=400)
         teams = HackathonTeam.objects.filter(event=event, state="forming", seeking_members=True).order_by("pk")
         active_members = HackathonTeamMember.objects.filter(event=event, state="active").values("member_id")
         eligible_states = ("confirmed", "offered") if config.team_eligibility == "offered" else ("confirmed",)
@@ -59,7 +60,7 @@ class FinderMeView(MemberCommandView):
     def get(self, request, makerspace_id, pk):
         event, config = self.team_target(request, makerspace_id, pk)
         if not config.finder_enabled:
-            fail("not_found", "Not found.", status=404)
+            fail("not_found", gettext("Not found."), status=404)
         row = HackathonFinderProfile.objects.filter(event=event, member=request.user).first()
         return Response(team_coordination.project_finder_profile(row, event_id=pk))
 

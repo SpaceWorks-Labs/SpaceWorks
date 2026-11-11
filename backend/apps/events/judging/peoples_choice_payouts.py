@@ -56,20 +56,20 @@ def record_payout(event_id, *, actor, data):
                 raise Http404
             prize = standing.result.prize
             if prize is None:
-                raise ProgrammeError("no_prize", "This People's choice award carries no prize to pay.")
+                raise ProgrammeError("no_prize", gettext("This People's choice award carries no prize to pay."))
             # As payouts._require_payable: only space-funded cash is a space expense (decision 296 review).
             if prize.funding == "sponsor_direct":
-                raise ProgrammeError("sponsor_direct", "The sponsor pays this prize directly; record it as fulfilled.")
+                raise ProgrammeError("sponsor_direct", gettext("The sponsor pays this prize directly; record it as fulfilled."))
             if prize.kind != "cash":
-                raise ProgrammeError("non_cash_prize", "Record a non-cash prize as handed over or shipped.")
+                raise ProgrammeError("non_cash_prize", gettext("Record a non-cash prize as handed over or shipped."))
             snapshot = runtime().snapshot(standing.submission_snapshot_id)
             recipient = values.get("recipient_id") or payouts._leader(snapshot)
             if recipient not in snapshot.member_ids:
                 raise ValidationError({"recipient_id": gettext("Pay a member of the winning team.")})
             if _standing_paid(standing):
-                raise ProgrammeError("payout_exists", "This winner already has a recorded payout. Reverse it first.")
+                raise ProgrammeError("payout_exists", gettext("This winner already has a recorded payout. Reverse it first."))
             if values["expected_version"] != 0:
-                raise ProgrammeError("stale_version", "A new payout uses expected_version 0.", current_version=0)
+                raise ProgrammeError("stale_version", gettext("A new payout uses expected_version 0."), current_version=0)
             amount = values.get("amount") or prize.amount_per_winner
             if not amount:
                 raise ValidationError({"amount": gettext("This prize has no amount; enter what was paid.")})

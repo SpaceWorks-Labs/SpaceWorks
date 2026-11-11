@@ -38,7 +38,7 @@ def require_recorder(actor, event):
 def _published_award(event, award_id):
     state = ResultPublicationState.objects.filter(event=event).select_related("current_announcement").first()
     if state is None or state.current_announcement_id is None:
-        raise ProgrammeError("results_unpublished", "Prizes are paid only for published results.")
+        raise ProgrammeError("results_unpublished", gettext("Prizes are paid only for published results."))
     award = EventAward.objects.select_related("prize").filter(
         pk=award_id, result_id=state.current_announcement.result_id, result__event=event).first()
     if award is None:
@@ -63,7 +63,7 @@ def record_payout(event_id, *, actor, data):
             if recipient not in snapshot.member_ids:
                 raise ValidationError({"recipient_id": gettext("Pay a member of the winning team.")})
             if values["expected_version"] != 0:
-                raise ProgrammeError("stale_version", "A new payout uses expected_version 0.", current_version=0)
+                raise ProgrammeError("stale_version", gettext("A new payout uses expected_version 0."), current_version=0)
             from .payout_checks import require_verified_claim
             from .payout_split import payout_amount
             from .prize_precision import require_precision
@@ -106,14 +106,14 @@ def record_payout(event_id, *, actor, data):
 def _require_payable(award):
     """Hack-money G5/G8: only a cash prize the space pays is a payout; the rest are fulfilled."""
     if award.prize.funding == "sponsor_direct":
-        raise ProgrammeError("sponsor_direct", "The sponsor pays this prize directly; record it as fulfilled.")
+        raise ProgrammeError("sponsor_direct", gettext("The sponsor pays this prize directly; record it as fulfilled."))
     if award.prize.kind != "cash":
-        raise ProgrammeError("non_cash_prize", "Record a non-cash prize as handed over or shipped.")
+        raise ProgrammeError("non_cash_prize", gettext("Record a non-cash prize as handed over or shipped."))
     from .models_prize_money import HackathonPrizeOutcome
     from .prize_lineage import lineage_ids
     if HackathonPrizeOutcome.objects.filter(award_id__in=lineage_ids(award), share__isnull=True,
                                             kind__in=("fulfilled", "sponsor_paid", "forfeited")).exists():
-        raise ProgrammeError("already_settled", "This prize is already settled.")
+        raise ProgrammeError("already_settled", gettext("This prize is already settled."))
 
 
 def _description(award, tds, currency):
@@ -144,13 +144,13 @@ def reverse_payout(event_id, payout_id, *, actor, data):
             if payout is None:
                 raise Http404
             if values["expected_version"] != 0:
-                raise ProgrammeError("stale_version", "Reversals use expected_version 0.", current_version=0)
+                raise ProgrammeError("stale_version", gettext("Reversals use expected_version 0."), current_version=0)
             if HackathonPrizePayout.objects.filter(reverses=payout).exists():
-                raise ProgrammeError("already_reversed", "This payout is already reversed.")
+                raise ProgrammeError("already_reversed", gettext("This payout is already reversed."))
             from .models_prize_money import HackathonPrizeOutcome
             if HackathonPrizeOutcome.objects.filter(payout=payout, kind="recovery_opened",
                                                     resolution__isnull=True).exists():
-                raise ProgrammeError("recovery_open", "Close the open recovery for this payout before reversing it.")
+                raise ProgrammeError("recovery_open", gettext("Close the open recovery for this payout before reversing it."))
             from apps.payments.ledger_api import void
             void(payout.ledger_entry, actor, values["reason"])
             row = HackathonPrizePayout.objects.create(

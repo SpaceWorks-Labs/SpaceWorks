@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 from apps.audit import services as audit
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
+from django.utils.translation import gettext_lazy
 
 
 class PublicImageAdminForm(forms.ModelForm):
@@ -44,7 +45,7 @@ class PublicImageAdminMixin:
     image_attach_action = ""
     image_clear_action = ""
 
-    @admin.display(description="Image preview")
+    @admin.display(description=gettext_lazy("Image preview"))
     def image_preview(self, obj):
         object_key = getattr(obj, self.image_field, "")
         url = public_image_storage.public_url(object_key)

@@ -3,9 +3,11 @@ from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin
 
 from apps.boxes.models import QrCode
+from apps.boxes.qr_lookup import label_value
 from apps.boxes.qr_render import render_qr_label_svg
 from apps.inventory.models import InventoryAsset
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(InventoryAsset)
@@ -28,6 +30,6 @@ class InventoryAssetAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         ).first()
         if not qr:
             return "(no active QR)"
-        return mark_safe(render_qr_label_svg(qr.payload, obj.asset_tag))
+        return mark_safe(render_qr_label_svg(label_value(qr), obj.asset_tag))
 
-    qr_preview.short_description = "QR preview"
+    qr_preview.short_description = gettext_lazy("QR preview")

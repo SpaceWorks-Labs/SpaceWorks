@@ -2,9 +2,9 @@
 
 from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, PolymorphicProxySerializer, extend_schema
 from rest_framework import serializers
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,11 +32,32 @@ class ConsumableRowSerializer(serializers.Serializer):
     threshold = serializers.CharField(allow_null=True)
     status = serializers.ChoiceField(choices=["ok", "low"])
     open_to_buy_id = serializers.IntegerField(allow_null=True)
+    replayed = serializers.BooleanField(required=False)
 
 
 class ConsumableUseSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=1, max_value=100000)
     note = serializers.CharField(required=False, allow_blank=True, max_length=200, default="")
+    operation_id = serializers.UUIDField(required=False)
+    allocation_id = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=9007199254740991)
+    plan_id = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=9007199254740991)
+
+    def validate(self, attrs):
+        linked = any(key in self.initial_data for key in ("operation_id", "allocation_id", "plan_id"))
+        if linked and ("operation_id" not in attrs or (attrs.get("allocation_id") is None) == (attrs.get("plan_id") is None)):
+            raise serializers.ValidationError(gettext("A linked use requires an operation ID and exactly one source."))
+        return attrs
+
+
+class ConsumableUseConflict(APIException):
+    status_code = 409
+    default_code = "operation_conflict"
+    default_detail = "Consumable operation cannot be completed."
+
+
+class LinkedUseAcknowledgement(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["recorded"])
+    replayed = serializers.BooleanField()
 
 
 class ConsumablePagination(PageNumberPagination):
@@ -73,22 +94,49 @@ class ConsumableUseView(APIView):
 
     @extend_schema(
         tags=["Admin inventory"], summary="Log units of an item consumable as used",
-        request=ConsumableUseSerializer, responses={200: ConsumableRowSerializer, **ERRORS},
+        description="Linked use (operation_id, allocation_id or plan_id) requires an account session.",
+        request=ConsumableUseSerializer, responses={200: PolymorphicProxySerializer(
+          component_name="ConsumableUseResult", serializers=[ConsumableRowSerializer, LinkedUseAcknowledgement],
+          resource_type_field_name=None),
+          409: ErrorSerializer, 423: ErrorSerializer, **ERRORS},
     )
     def post(self, request, makerspace_id, pk):
+        # A linked operation is a full-session feature, even for malformed inputs.
+        # Check authenticated middleware context rather than client-supplied headers.
+        if (any(key in request.data for key in ("operation_id", "allocation_id", "plan_id"))
+                and (getattr(request, "api_client", None) is not None
+                     or getattr(request, "person_credential", None) is not None)):
+            raise PermissionDenied(gettext("Linked consumable use requires an account session."))
         space = _space(request.user, makerspace_id)
         require_action(request.user, rbac.Action.EDIT_INVENTORY, space.pk)
+        serializer = ConsumableUseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        note = data["note"].strip()
+        if "operation_id" in data:
+            from apps.inventory.equipment_use_service import UseConflict, linked_use
+            kind = "allocation" if data.get("allocation_id") is not None else "plan"
+            source_id = data["allocation_id"] if kind == "allocation" else data["plan_id"]
+            try:
+                product, _adjustment, replayed = linked_use(
+                    actor=request.user, makerspace_id=space.pk, product_id=pk, operation_id=data["operation_id"],
+                    source_kind=kind, source_id=source_id, quantity=data["quantity"], note=note,
+                )
+            except UseConflict as exc:
+                error = ConsumableUseConflict()
+                error.detail = {"code": str(exc), "detail": error.default_detail}
+                raise error from exc
+            except availability.InsufficientStock as exc:
+                raise ValidationError({"quantity": str(exc)}) from exc
+            return Response({"status": "recorded", "replayed": replayed})
         product = get_object_or_404(rbac.scope_by_action(
             request.user, rbac.Action.EDIT_INVENTORY,
             InventoryProduct.objects.filter(makerspace=space, is_archived=False)), pk=pk)
         if not product.is_consumable:
             raise PermissionDenied(gettext("Only consumables can be logged as used."))
-        serializer = ConsumableUseSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        note = serializer.validated_data["note"].strip()
         try:
             product = availability.consume_available(
-                product, serializer.validated_data["quantity"],
+                product, data["quantity"],
                 reason=f"Consumable used{': ' + note if note else ''}", actor=request.user)
         except availability.InsufficientStock as exc:
             raise ValidationError({"quantity": str(exc)}) from exc

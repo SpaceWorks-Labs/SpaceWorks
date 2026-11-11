@@ -15,7 +15,7 @@ AVAILABILITY_SCHEMA = {
         },
         "label": {
             "type": "string",
-            "enum": ["Available", "Limited", "Unavailable"],
+            "enum": ["Available", "Limited", "Unavailable", "Lent at events only"],
         },
         "count": {"type": "integer", "minimum": 0},
     },
@@ -46,6 +46,7 @@ class PublicProductSerializer(serializers.Serializer):
     availability = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
     expected_back_on = serializers.SerializerMethodField()
+    event_only = serializers.BooleanField(read_only=True, help_text="Lent only through an event: show no request button.")
 
     @extend_schema_field({"type": "string", "format": "date", "nullable": True})
     def get_expected_back_on(self, product):
@@ -75,6 +76,12 @@ class PublicCategorySerializer(serializers.Serializer):
     product_count = serializers.IntegerField(read_only=True)
 
 
+class PublicNextEventSerializer(serializers.Serializer):
+    title = serializers.CharField(read_only=True)
+    starts_at = serializers.DateTimeField(read_only=True)
+    public_url = serializers.CharField(read_only=True, help_text="Relative path of the public event page.")
+
+
 class PublicMakerspaceSerializer(serializers.Serializer):
     name = serializers.CharField(read_only=True)
     public_code = serializers.CharField(read_only=True)
@@ -83,6 +90,19 @@ class PublicMakerspaceSerializer(serializers.Serializer):
     map_url = serializers.CharField(read_only=True)
     logo_url = serializers.SerializerMethodField()
     cover_image_url = serializers.SerializerMethodField()
+    offers = serializers.SerializerMethodField()
+    next_event = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(choices=[
+        "inventory", "machines", "events", "bookings", "shop", "memberships", "donations",
+    ])))
+    def get_offers(self, makerspace):
+        return self.context.get("public_offers", ({}, {}))[0].get(makerspace.pk, [])
+
+    @extend_schema_field(PublicNextEventSerializer(allow_null=True))
+    def get_next_event(self, makerspace):
+        event = self.context.get("public_offers", ({}, {}))[1].get(makerspace.pk)
+        return PublicNextEventSerializer(event).data if event else None
 
     @extend_schema_field({"type": "string", "format": "uri", "nullable": True})
     def get_logo_url(self, makerspace):

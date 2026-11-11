@@ -7,6 +7,7 @@ from django.db import models
 
 from apps.makerspaces.models import Makerspace
 from apps.inventory.kit_validators import validate_kit_definition
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PublicAvailabilityMode(models.TextChoices):
@@ -92,6 +93,9 @@ class InventoryProduct(models.Model):
     # Public expected-back date while none is free (inventory.expected_back, D16): the
     # earliest due date only, never who holds it or how many are out.
     public_show_expected_back = models.BooleanField(default=False)
+    # Decision 221b: lendable only through an event context (an event-linked contextual
+    # request); ordinary requests, self-checkout and direct handouts refuse it.
+    event_only = models.BooleanField(default=False)
     kit_components = models.JSONField(default=list, blank=True, validators=[validate_kit_definition])
     description = models.TextField(blank=True)
     image_key = models.CharField(max_length=300, blank=True, default="")
@@ -122,8 +126,8 @@ class InventoryProduct(models.Model):
     storage_location = models.CharField(max_length=200, blank=True)
     # Per-unit loan deposit in major units, used only when the makerspace's
     # `loan_deposit_mode` is `per_product`. Null means "no deposit for this item".
-    deposit_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True
+    deposit_amount = MoneyDecimalField(
+        max_digits=13, decimal_places=3, null=True, blank=True
     )
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -267,3 +271,11 @@ class InventoryAsset(models.Model):
         return f"{self.asset_tag} ({self.makerspace.slug})"
 
 from .models_tracking import InventoryStockSnapshot  # noqa: F401
+from .models_equipment_proposals import (  # noqa: F401
+    EquipmentConsumablePlan,
+    EquipmentConsumableUseReceipt,
+    EquipmentKitAllocation,
+    EquipmentKitTemplate,
+    EquipmentKitVersion,
+    EquipmentProposalReceipt,
+)

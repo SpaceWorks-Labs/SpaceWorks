@@ -58,6 +58,17 @@ class PublicMakerspaceListView(ListAPIView):
             public_site_enabled=True,
         )).exclude(hidden_from_central_directory=True).order_by("name")
 
+    def list(self, request, *args, **kwargs):
+        # Offers and next_event are computed once for the whole directory (one query
+        # per area), never per row.
+        from rest_framework.response import Response
+
+        from apps.inventory.public_offers import build_public_offers
+
+        spaces = list(self.filter_queryset(self.get_queryset()))
+        context = {**self.get_serializer_context(), "public_offers": build_public_offers(spaces)}
+        return Response(PublicMakerspaceSerializer(spaces, many=True, context=context).data)
+
 
 @extend_schema(
     tags=["Public inventory"],

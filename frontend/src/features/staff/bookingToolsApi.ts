@@ -12,7 +12,7 @@ const pathFor = (path: ApiPath, id: number) => path.replace("/api/v1", "").repla
 export function useEditBooking(makerspaceId: number, spaceId: number, bookingId: number) {
   const invalidate = useSpaceInvalidation(makerspaceId, spaceId);
   return useMutation({
-    mutationFn: (payload: { kind: "details"; note?: string; custom_answers?: CustomAnswers } | { kind: "time"; starts_at: string; ends_at: string }) => {
+    mutationFn: (payload: { kind: "details"; note?: string; custom_answers?: CustomAnswers } | { kind: "time"; starts_at: string; ends_at: string; price_confirmation?: string }) => {
       const { kind, ...body } = payload;
       return staffRequest<Booking>(pathFor(kind === "details" ? DETAILS : TIME, bookingId), {
         method: kind === "details" ? "PATCH" : "POST", body: JSON.stringify(body),

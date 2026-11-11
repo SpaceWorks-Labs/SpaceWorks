@@ -44,7 +44,7 @@ export const DOMAIN_TITLES: Record<SettingsDomain, string> = {
   events: t`Event settings`,
   bookings: t`Booking settings`,
   machines: t`Machine settings`,
-  inventory: t`Lending settings`,
+  inventory: t`Inventory settings`,
   shop: t`Shop settings`,
 };
 

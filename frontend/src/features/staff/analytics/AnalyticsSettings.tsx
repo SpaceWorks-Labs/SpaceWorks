@@ -4,8 +4,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Callout, Skeleton } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { AnalyticsLoginCard } from "./AnalyticsLoginCard";
+import { AnalyticsProviderChoice } from "./AnalyticsProviderChoice";
+import { GrafanaSettings } from "./GrafanaSettings";
+import { TELEMETRY_DOCS_URL } from "./TelemetryProviderHelp";
 import {
-  type AnalyticsDashboard, type AnalyticsScope, useAnalyticsConnection, useUpdateAnalyticsConnection,
+  type AnalyticsDashboard, type AnalyticsScope, useAnalyticsConnection, useUpdateAnalyticsConnection, usesGrafana,
+  usesMetabase,
 } from "./analyticsApi";
 
 type DashboardDraft = { id: string; title: string };
@@ -47,7 +51,10 @@ export function AnalyticsSettings({ scope }: { scope: AnalyticsScope }) {
 
   return (
     <div className="grid gap-5 rounded-xl border border-line p-4">
-      <form className="grid gap-3" onSubmit={submit} aria-label={t`Metabase connection`}>
+      <p className="text-sm text-muted">{t`Web telemetry providers that load a vendor script, such as GA4 and Microsoft Clarity, work only after the operator adds their origins to the content security policy allow-list (WEB_TELEMETRY_ALLOWED_ORIGINS). A space setting alone never widens it.`}{" "}
+        <a className="desk-link" href={TELEMETRY_DOCS_URL} target="_blank" rel="noreferrer">{t`Provider guide ↗`}</a></p>
+      <AnalyticsProviderChoice scope={scope} value={data.provider ?? "metabase"} />
+      {usesMetabase(data.provider) ? <form className="grid gap-3" onSubmit={submit} aria-label={t`Metabase connection`}>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           {t`Metabase site URL`}<input className="desk-input" type="url" placeholder="https://metabase.example.org" value={url}
             onChange={(event) => setUrl(event.target.value)} />
@@ -81,10 +88,11 @@ export function AnalyticsSettings({ scope }: { scope: AnalyticsScope }) {
         {update.error ? <Callout size="inline" tone="danger" lead="Not saved."
           body={update.error instanceof StructuredApiError ? update.error.message : t`Try again.`} /> : null}
         <div><button className="desk-button-primary" type="submit" disabled={update.isPending}>{t`Save connection`}</button></div>
-      </form>
+      </form> : null}
+      {usesGrafana(data.provider) ? <GrafanaSettings scope={scope} /> : null}
       <section className="grid gap-2" aria-label={t`Database login`}>
         <h2 className="title-section">{t`Read-only database login`}</h2>
-        <p className="text-sm text-muted">{t`Views version ${data.views_version}. Metabase sees only the curated views in schema ${data.database.schema}.`}</p>
+        <p className="text-sm text-muted">{t`Views version ${data.views_version}. Metabase and Grafana see only the curated views in schema ${data.database.schema}.`}</p>
         <AnalyticsLoginCard scope={scope} connection={data} />
       </section>
     </div>

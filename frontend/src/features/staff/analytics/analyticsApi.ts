@@ -7,6 +7,11 @@ export type AnalyticsScope = { kind: "space"; makerspaceId: number } | { kind: "
 
 export type AnalyticsDashboard = { id: number; title: string };
 
+/** Decision 263: which dashboard tool the console shows. Missing (older server) = Metabase. */
+export type AnalyticsProvider = "metabase" | "grafana" | "both";
+export const usesMetabase = (provider?: AnalyticsProvider) => provider !== "grafana";
+export const usesGrafana = (provider?: AnalyticsProvider) => provider === "grafana" || provider === "both";
+
 export type AnalyticsSummary = {
   available: boolean;
   reason: string;
@@ -14,6 +19,7 @@ export type AnalyticsSummary = {
   configured: boolean;
   dashboards: AnalyticsDashboard[];
   can_manage: boolean;
+  provider?: AnalyticsProvider;
 };
 
 export type AnalyticsConnection = Omit<AnalyticsSummary, "can_manage"> & {
@@ -29,6 +35,7 @@ export type AnalyticsConnectionPatch = Partial<{
   embed_secret: string;
   dashboards: AnalyticsDashboard[];
   show_member_details: boolean;
+  provider: AnalyticsProvider;
 }>;
 
 /** Returned once, by create and rotate; never stored in the query cache. */

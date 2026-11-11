@@ -3,7 +3,10 @@ import { useState } from "react";
 
 import { Callout, ConfirmDialog } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
-import { type AnalyticsConnection, type AnalyticsCredentials, type AnalyticsScope, useAnalyticsLogin } from "./analyticsApi";
+import {
+  type AnalyticsConnection, type AnalyticsCredentials, type AnalyticsScope, useAnalyticsLogin, usesGrafana,
+} from "./analyticsApi";
+import { downloadGrafanaBundleWithPassword } from "./grafanaApi";
 
 const failure = (error: unknown) => error instanceof StructuredApiError && error.code === "analytics_not_available"
   ? "Analytics logins are not available on this hosting."
@@ -14,6 +17,7 @@ export function AnalyticsLoginCard({ scope, connection }: { scope: AnalyticsScop
   const { create, rotate, revoke } = useAnalyticsLogin(scope);
   const [shown, setShown] = useState<AnalyticsCredentials | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState(false);
+  const [bundleFailed, setBundleFailed] = useState(false);
   const login = connection.login;
   const pending = create.isPending || rotate.isPending || revoke.isPending;
   const error = create.error ?? rotate.error ?? revoke.error;
@@ -42,8 +46,14 @@ export function AnalyticsLoginCard({ scope, connection }: { scope: AnalyticsScop
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button className="desk-button" type="button" onClick={() => void navigator.clipboard.writeText(shown.password)}>{t`Copy password`}</button>
+            {usesGrafana(connection.provider) ? (
+              <button className="desk-button" type="button"
+                onClick={() => void downloadGrafanaBundleWithPassword(scope, shown.password).catch(() => setBundleFailed(true))}>
+                {t`Download Grafana bundle with this password`}</button>
+            ) : null}
             <button className="desk-button-primary" type="button" onClick={() => setShown(null)}>{t`Done`}</button>
           </div>
+          {bundleFailed ? <p role="alert" className="mt-2 text-sm">{t`The Grafana bundle could not be downloaded. Copy the password instead.`}</p> : null}
         </div>
       ) : null}
       {error ? <Callout size="inline" tone="danger" lead="Not done." body={failure(error)} /> : null}

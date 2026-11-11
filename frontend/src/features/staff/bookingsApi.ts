@@ -80,7 +80,17 @@ export type Booking = {
   open_issue_id?: number | null;
   /** L15 (#159): the price frozen when a booking awaiting approval was requested. */
   requested_price?: { total?: string | null; currency?: string | null; discount_total?: string | null } | null;
+  /** Decision 216: the event this booking holds the room for; the title only when this viewer may see it. */
+  linked_event?: LinkedEventLabel | null;
+  /** Decision 223 (h): a staff-only house booking (no member booker, no charge). */
+  is_house?: boolean;
+  /** Decision 223 P2: the organization a staff organization booking was made for. */
+  organization_name?: string | null;
+  /** Decision 242 (BK2): the requester's account, for the member link; null for house/guest bookings. */
+  member_id?: number | null;
 };
+export type LinkedEventLabel = { kind: "event" | "reserved"; event_id?: number; title?: string;
+  event_status?: "draft" | "published" | "cancelled" | "completed" };
 
 export type Paginated<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 export type BookingFilters = { status?: BookingStatus | ""; starts_at?: string; ends_at?: string; booking_id?: number };

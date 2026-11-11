@@ -2,7 +2,7 @@ Space Works — Open Source Makerspace Manager
 Copyright (C) 2026 Space Works contributors.
 
 Space Works is a self-hostable, multi-tenant management platform built for makerspace
-communities — covering inventory, tool and equipment lending, and 3D printing in
+communities — covering inventory, tool and equipment loans, and 3D printing in
 one place — so a community can see what tools and equipment exist, who borrowed
 what, what is available, and how every loan and print job moves from request to
 completion, without spreadsheets or guesswork.
@@ -27,8 +27,10 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 
-Self-hosted fonts: Gilroy (Radomir Tinkov Free Font EULA), Outfit and Unbounded
-(SIL OFL 1.1). See frontend/public/fonts/LICENSES/ for the licence texts.
+Self-hosted fonts are NOT covered by the AGPL: Gilroy Light and ExtraBold only (Radomir
+Tinkov Free Font EULA — see frontend/public/fonts/README.md for its redistribution
+limits), Outfit and Unbounded (SIL OFL 1.1). Licence texts: frontend/public/fonts/LICENSES/
+and backend/apps/events/certificates/fonts/.
 
 Backend image dependency: pillow-heif (BSD-3-Clause) decodes HEIC/HEIF uploads; its
 wheels bundle libheif and libde265 (LGPL-3.0) and x265 (GPL-2.0-or-later). Their licence

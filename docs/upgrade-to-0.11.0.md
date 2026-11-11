@@ -1,5 +1,7 @@
 # Upgrade to SpaceWorks 0.11.0
 
+> **Superseded.** The 0.11.0 candidate was never published; its changes ship in 0.12.0. This upgrade guide is kept as history — use the [0.12.0 upgrade guide](upgrade-to-0.12.0.md).
+
 This guide accompanies the 0.11.0 release candidate. Use a published immutable release tag when it becomes available; a dev branch or an unpublished candidate is not an installable release identifier.
 
 ## Before updating

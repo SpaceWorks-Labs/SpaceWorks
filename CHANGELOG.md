@@ -13,7 +13,54 @@ carries the design rule each change introduced.
 
 ## Unreleased
 
-## 0.11.0
+## 0.12.0
+
+0.12.0 is the first published release after 0.9.3. The 0.11.0 candidate below was never published;
+its changes ship in 0.12.0 and its section is kept as history. Notes: [release](docs/release-0.12.0.md),
+[upgrade](docs/upgrade-to-0.12.0.md), [security verification](docs/security-summary-0.12.0.md).
+
+- **Contextual loans for events and bookings** — a loan can be ordinary, linked to an event, to one
+  exact booking, or both. Context explains the purpose only; it never approves, issues or changes the
+  borrower, and changing it rechecks authority on both records ([equipment contexts](docs/equipment-contexts.md)).
+- **Equipment kits** — versioned kits of equipment and consumables, published to eligible requesters.
+  Requesters may pick a kit and their own registration or booking; event and booking staff can propose
+  equipment. Kit consumables become an explicit plan and use no stock until recorded ([kits](docs/equipment-kits.md)).
+- **Event venue booking link** — an event can be linked to a room booking that owns the single room
+  charge; event and room charges stay independent (free/paid in every combination). Linking refuses
+  while an event venue fee is configured or has history. A rejected or cancelled booking can be
+  replaced once by a new booking, keeping the original's price, payment and audit.
+- **Staff price confirmation** — a staff booking preview binds room, member, window and charge mode;
+  a create carrying a stale confirmation is refused with `price_changed` before writing a booking or
+  debt (the field stays optional on the single-booking API).
+- **Booking readiness** — before submit, staff see what admission would refuse (outage, machine under
+  repair, certification) from the same admission checks, plus advisory warnings.
+- **Queue estimates respect maintenance lockout** — the queue ETA applies the authoritative
+  time/meter lockout rule, so a machine blocked by overdue maintenance no longer looks available.
+- **Damaged returns to repairs** — with repairs on, an area manager can open one repair issue from a
+  damaged return line and read a loan's repair context.
+- **Loan and activity reports** — loan-context reports and timelines count each request once in one
+  context; per-activity consumables read inventory-owned use receipts and never move stock
+  ([equipment reports](docs/equipment-reports.md)).
+- **Related facts and event linked finance** — read-only side-by-side registration, attendance,
+  arrival, presence and machine-session facts, and per-currency event finance sections (the
+  Booking-owned room charge counted once), each gated by its source module and authority.
+- **Shop** — an audited staff move of an order to makerspace pickup, recorded consumable costs for
+  sales linked to inventory consumables, and a cancellation fix.
+- **Notifications** — direct-room delivery fails closed when its lookup errors, without spending quota
+  or reaching a provider; independent email delivery stays eligible.
+- **Calendar feeds** — the private booking feed link is pinned to the signed-in owner, so a late
+  response cannot show another account's link.
+- **Clearer refusals** — member-eligibility and delegated-authority refusals explain what is wrong and
+  what to do (presentation only; server decisions unchanged).
+- **Event helper invites** — co-organizers can invite volunteers, mentors, judges and sponsor
+  representatives with that helper role's permissions.
+- **Security** — the web telemetry settings endpoint requires an active account; revoking a person's
+  authentication also ends their personal access tokens and disconnects OAuth app connections.
+- **Translations** — i18n catalogue and message fixes.
+- **Migrations** — new since the 0.11.0 candidate: see the [upgrade guide](docs/upgrade-to-0.12.0.md#new-migrations).
+  `audit.0011` builds an index concurrently in a non-atomic migration.
+
+## 0.11.0 (candidate, not published — folded into 0.12.0)
 
 - **Makerspace home and Inventory** — a separate overview and Inventory page, shared uploaded logo,
   and the existing banner on both the home and directory card. Light mode is the default;
@@ -23,7 +70,7 @@ carries the design rule each change introduced.
 - **Your history** — account-owned borrowing and returns, event and booking history, Shop pickup
   progress, and permanent payment/receipt links without requiring the membership dashboard.
 - **Release 2 roles and operations** — Technician and Shop Manager extend the fixed role
-  catalogue to nine roles. Repair jobs, maintenance, lending, stocktake and reports follow
+  catalogue to nine roles. Repair jobs, maintenance, inventory loans, stocktake and reports follow
   their tenant, role and capability scope, including when a feature is switched off.
 - **Free, offline and online workflows** — chargeable domains can run free, record balances
   for offline settlement or use an optional payment rail. Receipts, refunds and retained

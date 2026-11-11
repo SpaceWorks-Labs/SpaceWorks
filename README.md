@@ -1,33 +1,21 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="docs/readme/banner.png" />
-  <img src="docs/readme/banner.png" width="100%" alt="Space Works: open-source makerspace management. Bring your makerspace together. Tools, machines, people and events in one place. Modular by design." />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/banner-dark.svg" />
+  <img src="docs/readme/banner.svg" width="100%" alt="Space Works. Run the space. Not the spreadsheets. Free, open-source makerspace software: inventory, machines, events, members. Self-hosted, open source, made in a makerspace." />
 </picture>
 
 <div align="center">
 
-<h3>Bring your makerspace together.</h3>
-
-<p>Open-source makerspace management: tools, machines, members, events, bookings and money in one place, with a trail behind every handover.</p>
+<p><b>Run the space, not spreadsheets.</b> Inventory, machines, events, bookings and members in one self-hosted place, with a trail behind every handover.</p>
 
 <p>
-  <a href="https://github.com/SpaceWorks-Labs/SpaceWorks/actions/workflows/checks.yml"><img src="https://img.shields.io/github/actions/workflow/status/SpaceWorks-Labs/SpaceWorks/checks.yml?branch=dev&style=flat-square&label=checks&labelColor=142C2A" alt="Checks workflow status" /></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-0.12.0-006E63?style=flat-square&labelColor=142C2A" alt="Version 0.12.0" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0--or--later-006E63?style=flat-square&labelColor=142C2A" alt="Licence: AGPL-3.0-or-later" /></a>
-  <a href="https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest"><img src="https://img.shields.io/github/v/release/SpaceWorks-Labs/SpaceWorks?style=flat-square&label=release&color=006E63&labelColor=142C2A" alt="Latest release" /></a>
-  <a href=".github/DEVELOPMENT.md"><img src="https://img.shields.io/badge/Python-3.12%2B-B5CDFF?style=flat-square&labelColor=142C2A&logo=python&logoColor=FFF4E8" alt="Python 3.12+" /></a>
-  <a href=".github/DEVELOPMENT.md"><img src="https://img.shields.io/badge/Node-22-DFFF8F?style=flat-square&labelColor=142C2A&logo=nodedotjs&logoColor=FFF4E8" alt="Node 22" /></a>
-  <a href="https://www.djangoproject.com"><img src="https://img.shields.io/badge/Django-6-B5CDFF?style=flat-square&labelColor=142C2A&logo=django&logoColor=FFF4E8" alt="Django 6" /></a>
-  <a href="https://react.dev"><img src="https://img.shields.io/badge/React-19-B5CDFF?style=flat-square&labelColor=142C2A&logo=react&logoColor=FFF4E8" alt="React 19" /></a>
 </p>
 
 <p>
-  <a href="docs/README.md">Docs</a> Â·
-  <a href="docs/install-and-update.md">Install</a> Â·
-  <a href="docs/MODULES.md">Modules</a> Â·
-  <a href="#integrations">Integrations</a> Â·
-  <a href="#api">API</a> Â·
-  <a href="CHANGELOG.md">Changelog</a> Â·
-  <a href=".github/SECURITY.md">Security</a>
+  <a href="docs/README.md"><b>Documentation</b></a> ·
+  <a href="https://github.com/SpaceWorks-Labs/SpaceWorks-Design"><b>Design system</b></a> ·
+  <a href="#quickstart"><b>Get started</b></a>
 </p>
 
 </div>
@@ -42,11 +30,37 @@ Space Works started in the **TinkerSpace Kochi** community; run it for yours, fo
 to the way your workshop works.
 
 <!--
-  SCREENSHOT GALLERY PLACEHOLDER â€” filled in the final phase of release 2.
+  SCREENSHOT GALLERY PLACEHOLDER — filled in the final phase of release 2.
   Add "## A look around" with a two-column <table> of docs/readme/screens/*.webp images, each with
-  alt text and a one-line bold caption (public catalogue, staff dashboard, handover with evidence,
+  alt text and a one-line bold caption (public inventory, staff dashboard, handover with evidence,
   machine queue, events, bookings, member area, dark mode). No image tags until the files exist.
 -->
+
+## Quickstart
+
+About five minutes from a fresh server to a working staff console.
+
+1. **Run one command** on a 64-bit Linux server (Ubuntu 24.04 is the tested target) or on a Mac with
+   Docker Desktop running:
+
+   ```sh
+   curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh
+   ```
+
+   Quick setup asks only for the web address, your makerspace's name, the areas you run and your
+   email. Each question has a suggested answer you accept with Enter, and nothing changes until you
+   confirm the summary.
+2. **Open the address it prints**: your domain, or `http://localhost/admin` for a trial on this computer.
+3. **Sign in with your admin account.** The installer creates it and saves a generated password in
+   `/opt/spaceworks/.spaceworks-bootstrap-credential.json`. At first sign-in you choose your own
+   password and set up two-step sign-in.
+4. **Follow the guided setup** on the dashboard: name, logo, opening hours, the areas you run and
+   staff invitations. Every step can be skipped and resumed later, and a "Next steps" card tracks
+   what is left.
+
+The install log is `/opt/spaceworks/install.log`. Run the same command again to update.
+For your own domain with HTTPS, an API-only server, external storage or a cloud provider, see
+[Install options](#install-options) and [Choose your hosting](docs/choose-your-hosting.md).
 
 ## Who it is for
 
@@ -63,9 +77,9 @@ to the way your workshop works.
 
 Grouped the way a space actually works. The full list lives in [Features](docs/FEATURES.md).
 
-### Lend tools and hardware
+### Loan out tools and hardware
 
-- A **public catalogue** per makerspace, with per-item control over what the public sees.
+- A **public inventory** per makerspace, with per-item control over what the public sees.
 - **Borrow requests** that staff review, accept and issue; **direct handouts** at the front desk; and
   optional **QR self-checkout and return** for eligible tools.
 - **Evidence on every handover:** a reviewed issue needs a box QR scan and a photo; a return needs a
@@ -110,7 +124,7 @@ Grouped the way a space actually works. The full list lives in [Features](docs/F
 
 - **Append-only audit logs** and immutable evidence records; photo bytes can expire under a per-space
   retention policy while the metadata, remarks and scans remain.
-- **Nine built-in roles**, scoped per makerspace and per action, plus a separate superadmin control plane.
+- **Ten built-in roles**, scoped per makerspace and per action, plus a separate superadmin control plane.
 - Live staff queues over Server-Sent Events, full-text search with typo tolerance, request IDs across
   logs and a token-protected Prometheus endpoint.
 - Platform backups, single-space restore points, and an encrypted export to move a space onto its own server.
@@ -134,7 +148,7 @@ makerspace; leave one out and nothing else changes.
 ## Modules
 
 A makerspace only carries the parts it uses. Space Works ships **37 modules**: **6 core** modules that
-are always on (the public catalogue, request workflow, staff admin, evidence uploads, QR management and
+are always on (the public inventory, request workflow, staff admin, evidence uploads, QR management and
 the scanner), because the handover rules depend on them, and the rest are **opt-in**. The console groups
 them into areas:
 
@@ -159,22 +173,47 @@ Uninstalling a module hides its surfaces and **keeps its data**; deleting a modu
 superadmin-only step. [Choosing modules](docs/choosing-modules.md) covers setup areas, features,
 defaults and the commands; [MODULES.md](docs/MODULES.md) explains each module and what happens without it.
 
-## Quick start
+## Install options
 
-On a 64-bit Linux server (or macOS / Windows with Docker Desktop running), as a user with `sudo`:
+### The one-line installer
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks/main/install.sh | bash
+On a 64-bit Linux server (Ubuntu 24.04 is the tested target) as a user with `sudo`, or on macOS with
+Docker Desktop running:
+
+```sh
+curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh
 ```
 
-The installer asks every question first (hosting, website, HTTPS, storage, your makerspace and admin,
-sign-in providers and which areas to turn on), shows one summary, and **changes nothing until you
-confirm**. It then installs Docker if needed, generates every secret, pulls the newest published
-release's images and creates your first admin and makerspace. You need a 64-bit (x86_64 or arm64)
-machine, internet access to `github.com` and `ghcr.io`, and at least 8 GiB of free disk.
+It installs the **latest published release**: it downloads the release bundle, verifies it against the
+release's `SHA256SUMS` (and the cosign signature when `cosign` is installed) and only then runs it.
+To read the script first, download it, inspect it and run it (see
+[Inspect before running](docs/install-and-update.md#inspect-before-running)). It then offers
+**quick setup** (the recommended answers, about a dozen questions) or the full questionnaire. Answer
+**n** to quick setup to choose each option yourself, each with a default you accept with Enter:
 
-Run the same command again later to **update** (it backs up the database first), **change modules**, or
-both. A GitHub Actions runner on your server can deploy each new release automatically.
+- hosting (one makerspace, several, or hosting other makerspaces) and **Full or API-only**;
+- HTTPS (plain HTTP on this computer for a trial, automatic HTTPS with your domain and a certificate
+  email, or your own reverse proxy) and file storage (bundled, or your S3 buckets);
+- your organization, makerspace, sign-in options and which areas to turn on (inventory, machines,
+  events, bookings, membership...), then the admin username, email and password.
+
+It shows one summary and **changes nothing until you confirm**; then it installs Docker if needed,
+generates every secret, starts the services and finishes with one block: the address to open, how to
+sign in, and where the install log is.
+
+- **API-only** runs just the backend, for the mobile apps and integrations, with no website
+  container: answer **2** at the frontend question or add `--frontend api-only`
+  (`curl ... | sh -s -- --frontend api-only`). It needs HTTPS.
+- **Windows:** run the command inside WSL2 (Ubuntu) or a Linux VM. `setup.ps1` is only a developer
+  helper, not an installer.
+- `sh -s -- --dry-run` checks the host and shows the plan without installing anything;
+  `--version X.Y.Z` (or `SPACEWORKS_VERSION=X.Y.Z`) installs a specific release; `--uninstall` removes
+  the services and keeps your data; `--help` lists every option.
+
+You need a 64-bit (x86_64 or arm64) machine with at least 2 GB of RAM (4 GB recommended) and 10 GB of
+free disk, and internet access to `github.com` and `ghcr.io`. Run the same command again later to **update** (it
+backs up the database first), **change modules**, or both; updates only move forward. A GitHub
+Actions runner on your server can deploy each new release automatically.
 
 | Read this | When you want to |
 | --- | --- |
@@ -183,7 +222,8 @@ both. A GitHub Actions runner on your server can deploy each new release automat
 | [Self-hosting guide](docs/self-hosting.md) | The production reference: HTTPS, the control plane, backups, environment |
 | [Recovery after an update](docs/update-recovery.md) | Restore a database dump or inspect a failed deployment |
 
-After install the public catalogue is at `/`, the staff console at `/admin`, the API at `/api` and the
+After install, open `/` to find or open your makerspace. Equipment has its own **Inventory** page.
+The staff console is at `/admin`, the API at `/api`, and the
 superadmin-only Django control plane at `/control/` (never exposed on the public port by default).
 
 **Running from source** for development: `./scripts/dev.sh up --build` starts the whole stack in Docker
@@ -201,10 +241,13 @@ shapes are:
 - **API on your server, website elsewhere** such as Netlify, with HTTPS on both sides and the required
   origin, cookie, tenant-domain and storage settings.
   See [split deployment](docs/README-HOSTING.md#split-deployment-backend-on-your-server-frontend-on-netlify).
-- **Managed cloud and Kubernetes**: provider recipes and their operational contracts are in the
+- **Cloud providers and Kubernetes**: provider recipes and their operational contracts are in the
   [hosting overview](docs/deploy/cloud-overview.md) and the [Helm guide](docs/helm.md). Full host
-  defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.
-- **A tenant on a neighbour's instance**, then an approved, encrypted export onto your own server when
+  defaults remain unchanged; the cloud and free profiles are explicit opt-ins.
+- **Hosting other makerspaces (optional)**: any install can run spaces for other groups, with plans,
+  per-space limits and subdomains, switched on by the superadmin. See
+  [Plans and hosting other makerspaces](docs/self-hosting.md#plans-and-hosting-other-makerspaces-optional).
+- **A space on a neighbour's install**, then an approved, encrypted export onto your own server when
   you are ready. See [moving a makerspace](docs/README-HOSTING.md#moving-a-makerspace-onto-its-own-server)
   and the [account portability contract](docs/account-portability.md).
 
@@ -221,13 +264,13 @@ explains every module and capability, retained data and re-enabling.
 
 ```mermaid
 flowchart LR
-  browser([Browser or app]) --> web["Website<br/>React 19 Â· Vite"]
-  web --> api["API<br/>Django 6 Â· DRF"]
+  browser([Browser or app]) --> web["Website<br/>React 19 · Vite"]
+  web --> api["API<br/>Django 6 · DRF"]
   api --> db[("PostgreSQL 16")]
   api --> redis[("Redis")]
   api --> s3[("Silo / S3<br/>private evidence")]
   worker["Celery worker + beat"] --> db
-  worker --> out["Email Â· chat Â· push Â· webhooks"]
+  worker --> out["Email · chat · push · webhooks"]
   redis --> worker
 
   classDef core fill:#006E63,stroke:#142C2A,color:#FFF4E8
@@ -241,16 +284,16 @@ The website is a thin client over an API built from deep modules. Two rules hold
 quantity math**, so stock can never go below zero and every handover is audited the same way. Every
 query for staff is scoped to a makerspace through the access-control module.
 
-**Stack:** Django 6 + DRF Â· React 19 + Vite 8 + Tailwind CSS 4 + TypeScript (TanStack Query v5) Â·
-PostgreSQL 16 Â· Celery + Redis Â· Silo (S3-compatible MinIO fork) Â· django-unfold admin Â·
+**Stack:** Django 6 + DRF · React 19 + Vite 8 + Tailwind CSS 4 + TypeScript (TanStack Query v5) ·
+PostgreSQL 16 · Celery + Redis · Silo (S3-compatible MinIO fork) · django-unfold admin ·
 drf-spectacular / OpenAPI. Delivered as two Docker images (`spaceworks-backend`, `spaceworks-frontend`);
 everything else is official upstream images. Read [ARCHITECTURE.md](ARCHITECTURE.md) for request flows,
 tenancy and the module map.
 
 ## API
 
-Every endpoint is documented in OpenAPI. A running deployment serves Swagger UI at `/docs/`, ReDoc at
-`/redoc/` and the schema at `/schema/`; the versioned API lives under `/api/v1/`. To connect another
+Every endpoint is documented in OpenAPI. A running deployment serves the in-app API reference at `/docs/api/reference`, ReDoc at
+`/redoc/` and the schema at `/schema/` (Swagger UI answers at `/docs/` on the API server itself); the versioned API lives under `/api/v1/`. To connect another
 system, start with the [API guide](docs/api-guide.md), then the [API client protocol](docs/api-client-protocol.md) (scoped, signed clients) and
 [signed webhooks v2](docs/webhooks-v2.md). Printers and label printers use the
 [device protocol](docs/device-protocol.md); branded phone apps use the [mobile integration guide](docs/mobile-integration.md).
@@ -258,7 +301,7 @@ system, start with the [API guide](docs/api-guide.md), then the [API client prot
 ## Roles and access
 
 Access is per makerspace and per action. The platform **Super Admin** is global; each makerspace has
-nine fixed built-in roles:
+ten fixed built-in roles:
 
 | Role | Scope |
 | --- | --- |
@@ -270,9 +313,10 @@ nine fixed built-in roles:
 | **Handover** | Issue accepted requests/direct handouts, return tools, upload evidence and collect completed jobs |
 | **Technician** | Assigned repair jobs, scheduled maintenance and machine service state |
 | **Shop Manager** | The shop: products, stock, orders, the front desk and cash-ups |
+| **Fundraising** | Donations, campaigns, sponsors and donation receipts for non-profit spaces |
 | **Member** | Community services without staff management actions |
 
-Space Manager and Member each stand alone; the other seven combine. One person has one account; staff
+Space Manager and Member each stand alone; the other eight combine. One person has one account; staff
 roles are added to it, and staff always use two-step sign-in. Organizations can grant actions across
 linked spaces without conferring membership. Staff roles, invitations and machine scope are covered in [Roles & access](docs/README-HOSTING.md#roles--access).
 
@@ -291,7 +335,7 @@ moment per layout.
 | <img src="docs/readme/swatch-sky-blue.svg" width="48" height="24" alt="" /> | Sky Blue | `#B5CDFF` | Supporting information |
 | <img src="docs/readme/swatch-warm-yellow.svg" width="48" height="24" alt="" /> | Warm Yellow | `#FFD447` | Small highlights |
 
-- **Type.** Gilroy for text and headings; Unbounded for one short accent per layout. GitHub controls
+- **Type.** Gilroy ExtraBold for headings, Outfit for text; Unbounded for one short accent per layout. GitHub controls
   Markdown body fonts here; the app loads the approved fonts.
 - **Logo.** Use the supplied logo masters in [docs/brand](docs/brand/) as they are; never rebuild them.
   Dark horizontal layouts use the supplied [reversed horizontal master](docs/brand/lockup-horizontal-reversed.svg), including its outlined wordmark.
@@ -306,7 +350,7 @@ moment per layout.
 | [Modules](docs/MODULES.md) and [choosing modules](docs/choosing-modules.md) | Decide what to turn on |
 | [Self-hosting](docs/self-hosting.md) and [advanced configuration](.github/ADVANCED.md) | Run it in production |
 | [Events programme guide](docs/events/README.md) | Run hackathons, mentoring and volunteering with optional programme features |
-| [0.11.0 notes](docs/release-0.11.0.md), [upgrade](docs/upgrade-to-0.11.0.md) and [security verification](docs/security-summary-0.11.0.md) | Review changes, update steps and candidate verification status |
+| [0.12.0 notes](docs/release-0.12.0.md), [upgrade](docs/upgrade-to-0.12.0.md) and [security verification](docs/security-summary-0.12.0.md) | Review changes, update steps and verification status (includes the unpublished [0.11.0 candidate](docs/release-0.11.0.md)) |
 | [Environment reference](docs/environment-reference.md) | Look up an environment variable |
 | [Development](.github/DEVELOPMENT.md) | Run from source and run the tests |
 

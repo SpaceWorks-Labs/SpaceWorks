@@ -1,5 +1,7 @@
 # SpaceWorks 0.11.0 security verification
 
+> **Superseded.** The 0.11.0 candidate was never published; its changes ship in 0.12.0. This security summary is kept as history — use the [0.12.0 security summary](security-summary-0.12.0.md).
+
 Security verification is tied to an exact source and image. Pending entries below do not establish a passing final result. The final QR/schema changes still need the complete PostgreSQL/runtime and generated-client checks; results from the earlier EEA candidate stay bounded to its inputs.
 
 | Area | Implemented protection | Verification required for the final candidate |

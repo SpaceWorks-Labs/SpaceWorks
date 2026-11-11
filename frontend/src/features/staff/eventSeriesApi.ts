@@ -13,6 +13,9 @@ export type EventSeriesPayload = {
   description: string;
   location: string;
   location_kind: "indoor" | "outdoor" | "other";
+  /** Parity E-B7: an outside venue, inherited by every occurrence. */
+  venue_address?: string;
+  venue_map_url?: string;
   custom_form: CustomFormSchema;
   capacity: number;
   payment_amount: string;
@@ -48,6 +51,8 @@ export type EventSeries = Omit<EventSeriesPayload, "effective_from"> & {
   created_at: string;
   updated_at: string;
   image_url: string | null;
+  /** Parity C24: null when the viewer may not see event money. */
+  money?: import("./SeriesMoneyCard").SeriesMoney | null;
 };
 type MutationResponse = {
   series: EventSeries;

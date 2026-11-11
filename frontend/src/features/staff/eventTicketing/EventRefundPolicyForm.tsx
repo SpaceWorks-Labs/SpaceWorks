@@ -34,7 +34,7 @@ export function EventRefundPolicyForm({ eventId, disabled = false }: { eventId: 
           onChange={event => set("partial_before_minutes", Math.round(Number(event.target.value) * 60))} /></label>
       <label className={panelField}>{t`Partial refund, percent`}<input className={panelInput} type="number" min="0" max="100" value={values.partial_percent} disabled={disabled}
           onChange={event => set("partial_percent", Number(event.target.value))} /></label>
-      <label className={panelField}>{t`Cancellation fee kept`}<input className={panelInput} type="number" min="0" step="0.01" value={values.cancellation_fee} disabled={disabled}
+      <label className={panelField}>{t`Cancellation fee kept`}<input className={panelInput} type="number" min="0" step="any" value={values.cancellation_fee} disabled={disabled}
           onChange={event => set("cancellation_fee", event.target.value)} /></label>
     </> : null}
     <label className={panelField}>{t`Words buyers see before paying`}<textarea className={panelInput} rows={3} maxLength={2000} value={values.policy_text} disabled={disabled}

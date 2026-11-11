@@ -23,7 +23,7 @@ export function EventAddonsEditor({ eventId, disabled = false }: { eventId: numb
       <label className={panelField}>{t`Kind`}<select className={panelInput} value={kind} disabled={disabled} onChange={event => setKind(event.target.value)}>
         <option value="kit">{t`Kit`}</option><option value="meal">{t`Meal`}</option><option value="merch">{t`Merchandise`}</option>
         <option value="session">{t`Session seat`}</option><option value="other">{t`Other`}</option></select></label>
-      <label className={panelField}>{t`Price`}<input className={panelInput} type="number" min="0" step="0.01" value={amount} disabled={disabled} onChange={event => setAmount(event.target.value)} /></label>
+      <label className={panelField}>{t`Price`}<input className={panelInput} type="number" min="0" step="any" value={amount} disabled={disabled} onChange={event => setAmount(event.target.value)} /></label>
       <label className={panelField}>{t`Stock (0 = unlimited)`}<input className={panelInput} type="number" min="0" value={stock} disabled={disabled} onChange={event => setStock(Number(event.target.value))} /></label>
       <label className={panelField}>{t`Sizes or options, comma separated (optional)`}<input className={panelInput} value={sizes} disabled={disabled} onChange={event => setSizes(event.target.value)} /></label>
       <button className="desk-button-primary justify-self-start" type="submit" disabled={disabled || create.isPending}>{t`Add add-on`}</button>

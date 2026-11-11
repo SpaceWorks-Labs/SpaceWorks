@@ -16,7 +16,7 @@ export function StageMilestones({ scope, eventVersion, allowedActions, onDirtyCh
   useUnsavedChanges(Boolean(participants) && !mutation.isSuccess, onDirtyChange);
   return <FormPageLayout header={{ title: t`Shortlist milestone` }} state={{ status: "ready" }}
     submit={{ label: published ? t`Publish checklist milestone` : t`Withdraw checklist milestone`, pending: mutation.isPending, disabled: !confirmed || !allowedActions.includes("stage_shortlist"),
-      disabledReason: "Review the selection and confirm this checklist change.", onClick: () => {
+      disabledReason: t`Review the selection and confirm this checklist change.`, onClick: () => {
         try { const ids = parseParticipantIds(participants); if (ids.length > 100) throw new Error(t`Choose at most 100 participants.`); setError("");
           mutation.mutate({ path: `${stageAdminPath(scope)}stage-milestones/shortlist/`, body: { expected_version: eventVersion, participant_ids: ids, published, reason_code: code } });
         } catch (failure) { setError(failure instanceof Error ? failure.message : t`Check participant IDs.`); }

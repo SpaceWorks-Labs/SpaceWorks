@@ -34,7 +34,7 @@ export function StageActivation({ scope, stageFormId, onDirtyChange }: { scope: 
   return <FormPageLayout header={{ title: t`Activate stage assignments`, subtitle: query.data?.title }}
     state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready", error: t`The stage definition could not be loaded.`, onRetry: () => void query.refetch() }}
     submit={{ label: t`Confirm activation`, pending: mutation.isPending, disabled: !previewReady || !confirmed || !query.data?.allowed_actions?.includes("stage_activate") || mutation.data?.state === "pending",
-      disabledReason: "Preview the current selection and confirm the deadline first.", onClick: () => run(false) }} form={<div className="grid gap-4">
+      disabledReason: t`Preview the current selection and confirm the deadline first.`, onClick: () => run(false) }} form={<div className="grid gap-4">
       <Field label={t`Participant member IDs`} hint={t`Comma separated; up to 1000. Preview checks each participant's trigger eligibility.`}><textarea className="desk-input" required value={participants} onChange={event => { setParticipants(event.target.value); setConfirmed(false); }} /></Field>
       <Field label={t`Reviewed deadline (your local time)`}><input className="desk-input" required type="datetime-local" value={due} onChange={event => { setDue(event.target.value); setConfirmed(false); }} /></Field>
       <button type="button" className="desk-button" disabled={mutation.isPending || !query.data?.allowed_actions?.includes("stage_activate")} onClick={() => run(true)}>{t`Preview eligible participants`}</button>

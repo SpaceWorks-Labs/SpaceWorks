@@ -16,7 +16,7 @@ export function EventSalesRules({ eventId, transfers, disabled = false }: { even
   const set = <K extends keyof SalesSettings>(key: K, value: SalesSettings[K]) => setValues(current => ({ ...current, [key]: value }));
   return <Card><form className="grid gap-4" aria-label={t`Sales rules`} onSubmit={event => { event.preventDefault(); save.mutate(values); }}>
     <h3 className="title-section">{t`Sales rules`}</h3>
-    <label className={panelField}>{t`Booking fee, fixed per order`}<input className={panelInput} type="number" min="0" step="0.01" value={values.booking_fee_fixed} disabled={disabled}
+    <label className={panelField}>{t`Booking fee, fixed per order`}<input className={panelInput} type="number" min="0" step="any" value={values.booking_fee_fixed} disabled={disabled}
         onChange={event => set("booking_fee_fixed", event.target.value)} /></label>
     <label className={panelField}>{t`Booking fee, percent of tickets`}<input className={panelInput} type="number" min="0" max="100" step="0.01" value={values.booking_fee_bps / 100} disabled={disabled}
         onChange={event => set("booking_fee_bps", Math.round(Number(event.target.value) * 100))} /></label>

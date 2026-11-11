@@ -41,3 +41,16 @@ export function EventDeliveryFields({ values, setValues, settings, disabled }: P
     </EventField> : null}
   </>;
 }
+
+/** Parity E-F3 (E-B7): an outside venue's address and map link, shown on the public page and tickets. */
+export function EventVenueFields({ values, setValues, settings, disabled }: Props) {
+  if (values.delivery_mode === "online") return null;
+  return <>
+    <EventField label={t`Venue address`} settings={settings} helper={t`For a venue outside your space. Shown on the event page with a directions link.`}>
+      <textarea className="desk-input min-h-20 w-full" maxLength={500} value={values.venue_address ?? ""} disabled={disabled}
+        onChange={(e) => setValues({ ...values, venue_address: e.target.value })} /></EventField>
+    <EventField label={t`Map link`} settings={settings} helper={t`An https:// link to the place on a map. Without one, directions search for the address.`}>
+      <input className="desk-input w-full" type="url" inputMode="url" placeholder="https://" maxLength={500} value={values.venue_map_url ?? ""} disabled={disabled}
+        pattern="https://.*" onChange={(e) => setValues({ ...values, venue_map_url: e.target.value })} /></EventField>
+  </>;
+}

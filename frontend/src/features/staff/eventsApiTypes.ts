@@ -36,8 +36,16 @@ export type StaffEvent = {
   ends_at: string;
   timezone_name: string;
   location: string;
+  /** Parity E-B7: an outside venue's street address and an https map link (the link wins for directions). */
+  venue_address?: string;
+  venue_map_url?: string;
   capacity: number;
   payment_amount: string;
+  /** Lowercase ISO code the space charges in; `payment_amount` is in this currency. */
+  currency?: string;
+  /** The caller's own track/window limit as a limited co-organizer (decision 221(i)); prefills the staff
+   *  invite form. Single-event reads (detail GET/PATCH) only: null when unlimited and on list reads. */
+  my_limit?: { track_ids: number[]; valid_from: string | null; valid_until: string | null } | null;
   registration_requires_approval: boolean;
   registration_cutoff_at: string | null;
   registration_cutoff_lead_minutes: number | null;
@@ -84,7 +92,12 @@ export type EventRegistration = {
   cancelled_at?: string | null;
   status_before_cancel?: EventRegistrationStatus | null;
   restore_until?: string | null;
+  /** Parity E-B5: the end of a paid place's pay window, while one is open. */
+  pay_by?: string | null;
   created_at: string;
+  /** The ticket bought, when ticket types are on (EB5 ticket column). */
+  ticket_type_id?: number | null;
+  ticket_type_name?: string | null;
 };
 
 export type EventPayload = {
@@ -97,6 +110,8 @@ export type EventPayload = {
   ends_at: string;
   timezone_name: string;
   location: string;
+  venue_address?: string;
+  venue_map_url?: string;
   capacity: number;
   payment_amount: string;
   registration_requires_approval: boolean;

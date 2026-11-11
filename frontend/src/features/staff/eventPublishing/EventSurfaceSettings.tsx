@@ -6,8 +6,8 @@ import { StructuredApiError } from "../../../lib/api";
 import { eventErrorText } from "../eventUi";
 import { useEmbedPolicy, useReportSwitches, useSaveEmbedPolicy, useSaveReportSwitch, type EmbedPolicy } from "./eventSurfaceApi";
 
-const READ_ONLY = { setting_locked: "The Space Manager has locked this setting.",
-  setting_not_delegated: "Ask the Space Manager to give you control of event settings." } as Record<string, string>;
+const READ_ONLY = { setting_locked: t`The Space Manager has locked this setting.`,
+  setting_not_delegated: t`Ask the Space Manager to give you control of event settings.` } as Record<string, string>;
 
 /** DY-61: the event PDF and event exports switches, editable by the Event Manager with the events grant. */
 export function EventReportSwitches({ makerspaceId }: { makerspaceId: number }) {

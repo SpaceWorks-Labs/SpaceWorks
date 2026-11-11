@@ -11,8 +11,10 @@ import { useStaffChargesOn } from "../useStaffChargesOn";
 
 /** Paid ticketing v2 in the event drawer's Tickets section. Each tool shows only while its switch is on;
  * money policy (refund override, venue fee) only for the space's event managers. */
-export function EventOrderTools({ eventId, features, manager, disabled = false }: {
+export function EventOrderTools({ eventId, features, manager, disabled = false, makerspaceId, exportsOn = false }: {
   eventId: number; features: string[]; manager: boolean; disabled?: boolean;
+  /** Parity C24: the orders CSV needs the space (report route) and the `reports.event_exports` switch. */
+  makerspaceId?: number; exportsOn?: boolean;
 }) {
   // #184: with event charges off nothing is sold, so only the order history stays; every money tool hides.
   const chargesOn = useStaffChargesOn("events");
@@ -21,7 +23,7 @@ export function EventOrderTools({ eventId, features, manager, disabled = false }
   return <section className="grid gap-4" aria-label={t`Ticket orders and money`}>
     <ScreenHelp screen="events.orders" />
     {on("events.orders") ? <>
-      <EventOrdersList eventId={eventId} />
+      <EventOrdersList eventId={eventId} makerspaceId={makerspaceId} exportsOn={exportsOn} />
       {chargesOn ? <><EventDisclosure title={t`Ticket order options`}><TicketOrderOptions eventId={eventId} disabled={disabled} /></EventDisclosure>
       <EventDisclosure title={t`Sales rules`}><EventSalesRules eventId={eventId} transfers={on("events.transfers")} disabled={disabled} /></EventDisclosure></>
         : <p className="text-sm text-muted">{t`Event charges are off in this space, so events are free.`}</p>}

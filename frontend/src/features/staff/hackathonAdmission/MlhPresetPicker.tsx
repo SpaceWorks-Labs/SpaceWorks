@@ -17,6 +17,8 @@ export function MlhPresetPicker({ presets, value, disabled, onSelect }: {
       {configured && !current ? <option value="current" disabled>{t`Current MLH preset`}</option> : null}
       {presets.map(preset => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
     </select></label>
-    <p className="text-sm text-muted">{t`Choosing a preset replaces the application form below. Each applicant can separately opt in to sharing; consent starts off. Review the questions before enabling applications.`}</p>
+    <p className="text-sm text-muted">{presets.length
+      ? t`Choosing a preset replaces the application form below. Each applicant can separately opt in to sharing; consent starts off. Review the questions before enabling applications.`
+      : t`No MLH presets are available on this server, so MLH sharing cannot be turned on here.`}</p>
   </fieldset>
 }

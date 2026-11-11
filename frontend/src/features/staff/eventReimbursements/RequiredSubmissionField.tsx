@@ -17,7 +17,7 @@ export function RequiredSubmissionField({ value, onChange }: { value: PolicySett
     <Field label={t`Project submission required`}><select className="desk-input" value={mode} onChange={e => set(e.target.value as RequiredSubmission, value.required_submission_stage ?? null)}>
       {Object.entries(MODES).map(([key, text]) => <option key={key} value={key}>{text}</option>)}</select></Field>
     {needsStage ? <Field label={t`Stage position`} hint={mode === "shortlisted_at" ? t`A stage that ends with a shortlist.` : t`1 is the first stage.`}>
-      <input className="desk-input" type="number" min={1} max={10} required value={value.required_submission_stage ?? 1}
+      <input className="desk-input" type="number" min={1} max={50} required value={value.required_submission_stage ?? 1}
         onChange={e => set(mode, e.target.valueAsNumber || 1)} /></Field> : null}
   </div>;
 }

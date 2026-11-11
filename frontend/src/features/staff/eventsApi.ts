@@ -18,6 +18,7 @@ import {
   type Paginated,
   type StaffEvent,
 } from "./eventsApiTypes";
+import { venueKeys, type VenueOffer } from "./eventVenueApi";
 
 export {
   eligibleMemberKey,
@@ -66,6 +67,7 @@ export function useEventInvalidation(makerspaceId: number, eventId?: number) {
       queryClient.invalidateQueries({ queryKey: ["events", "accessible"] }),
       ...(eventId === undefined ? [] : [
         queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) }),
+        queryClient.invalidateQueries({ queryKey: venueKeys.panel(makerspaceId, eventId) }),
       queryClient.invalidateQueries({ queryKey: eventKeys.registrations(eventId) }),
       queryClient.invalidateQueries({ queryKey: ["event", eventId, "eligible-members"] }),
       queryClient.invalidateQueries({ queryKey: ["event-organization-eligibility"] }),
@@ -94,7 +96,7 @@ export function useCreateEvent(makerspaceId: number) {
 export function useUpdateEvent(makerspaceId: number, eventId: number) {
   const invalidate = useEventInvalidation(makerspaceId, eventId);
   return useMutation({
-    mutationFn: (payload: EventPatch) => staffRequest<StaffEvent>(
+    mutationFn: (payload: EventPatch) => staffRequest<EventWithOffers>(
       staffPath(EVENT_DETAIL_PATH, { id: eventId }),
       { method: "PATCH", body: JSON.stringify(payload) },
     ), onSuccess: invalidate,
@@ -130,12 +132,21 @@ function useLifecycle(makerspaceId: number, eventId: number, path: ApiPath) {
   }), onSuccess: invalidate });
 }
 
+/** Decision 223 (g): `publish_without_room` overrides a rejected, cancelled or missing room booking (audited). */
+export type PublishOptions = { publish_website?: boolean; website_revision?: number; publish_without_room?: boolean };
+/** Decision 223 (m): a cancel or a schedule change answers with offers; nothing was changed on the room. */
+export type EventWithOffers = StaffEvent & { venue_offers?: VenueOffer[] };
+
 export function usePublishEvent(makerspaceId: number, eventId: number) {
   const invalidate = useEventInvalidation(makerspaceId, eventId);
-  return useMutation({ mutationFn: (options: { publish_website: boolean; website_revision?: number } | undefined) => staffRequest<StaffEvent>(staffPath(EVENT_PUBLISH_PATH, { id: eventId }), { method: "POST", body: JSON.stringify(options ?? {}) }), onSuccess: invalidate });
+  return useMutation({ mutationFn: (options: PublishOptions | undefined) => staffRequest<StaffEvent>(staffPath(EVENT_PUBLISH_PATH, { id: eventId }), { method: "POST", body: JSON.stringify(options ?? {}) }),
+    onSuccess: invalidate });
 }
 export function useCancelEvent(makerspaceId: number, eventId: number) {
-  return useLifecycle(makerspaceId, eventId, EVENT_CANCEL_PATH);
+  const invalidate = useEventInvalidation(makerspaceId, eventId);
+  return useMutation({ mutationFn: () => staffRequest<EventWithOffers>(staffPath(EVENT_CANCEL_PATH, { id: eventId }), {
+    method: "POST", body: JSON.stringify({}),
+  }), onSuccess: invalidate });
 }
 export function useCompleteEvent(makerspaceId: number, eventId: number) {
   return useLifecycle(makerspaceId, eventId, EVENT_COMPLETE_PATH);

@@ -18,11 +18,16 @@ const REJECT_PATH = "/api/v1/admin/event-registrations/{id}/reject/";
 const PROMOTE_PATH = "/api/v1/admin/event-registrations/{id}/promote/";
 const CANCEL_PATH = "/api/v1/admin/event-registrations/{id}/cancel/";
 
-export function useEventRegistrations(eventId: number, page = 1) {
+/** Decision 242 (EB5): the roster's server-side filters; empty values are not sent. */
+export type RegistrationFilters = { status?: string; ticket_type?: string; q?: string; group?: "ticket_type" | "" };
+
+export function useEventRegistrations(eventId: number, page = 1, filters: RegistrationFilters = {}) {
+  const query = new URLSearchParams({ page: String(page) });
+  Object.entries(filters).forEach(([key, value]) => { if (value) query.set(key, value); });
   return useQuery({
-    queryKey: [...eventKeys.registrations(eventId), page],
+    queryKey: [...eventKeys.registrations(eventId), page, filters.status ?? "", filters.ticket_type ?? "", filters.q ?? "", filters.group ?? ""],
     queryFn: () => staffRequest<Paginated<EventRegistration>>(
-      `${staffPath(EVENT_REGISTRATIONS_PATH, { id: eventId })}?page=${page}`,
+      `${staffPath(EVENT_REGISTRATIONS_PATH, { id: eventId })}?${query}`,
     ),
   });
 }

@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { EyeOff, Globe, Lock, Users } from "lucide-react";
 import type { ReactNode } from "react";
+import { signupSummary, SignupsQuestion, type SignupAnswers } from "./SignupsQuestion";
 
 export type Listing = "listed" | "unlisted";
 export type PageState = "live" | "offline";
@@ -13,7 +14,7 @@ export type PublishingAnswers = {
 
 type Option<T> = { value: T; label: string; detail: string; icon?: ReactNode };
 
-const AUDIENCES: Option<string>[] = [
+const AUDIENCES = (): Option<string>[] => [
   { value: "accounts", label: t`Signed-in accounts`, detail: t`Anyone with an account here can sign up.` },
   { value: "members", label: t`Members`, detail: t`Only active members of this space.` },
   { value: "participating_organizations", label: t`Selected organizations`, detail: t`People in the organizations you pick.` },
@@ -38,19 +39,22 @@ function RadioCards<T extends string>({ name, legend, options, value, onChange, 
 }
 
 /** One sentence that says who sees what, in the same words the questions use. */
-export function publishingSummary(answers: PublishingAnswers, published: boolean) {
+export function publishingSummary(answers: PublishingAnswers, published: boolean, signups?: SignupAnswers) {
   if (!answers.is_public) return t`Only your team can open this event. It is not on any public page.`;
   if (published && answers.page_state === "offline") return t`The public page is taken down: the link shows 'not found' until you put it back.`;
   const find = answers.listing === "listed"
-    ? "It is listed on the events page, Discover, organisation pages and search engines."
-    : "It is hidden from every listing and from search engines; only people with the link can open it.";
-  const audience = AUDIENCES.find(row => row.value === answers.registration_audience)?.label ?? answers.registration_audience;
-  return t`Anyone with the link can open it. ${find} Who can sign up: ${audience.toLowerCase()}.`;
+    ? t`It is listed on the events page, Discover, organisation pages and search engines.`
+    : t`It is hidden from every listing and from search engines; only people with the link can open it.`;
+  const audience = AUDIENCES().find(row => row.value === answers.registration_audience)?.label ?? answers.registration_audience;
+  const sentence = t`Anyone with the link can open it. ${find} Who can sign up: ${audience.toLowerCase()}.`;
+  return signups ? `${sentence} ${signupSummary(signups)}.` : sentence;
 }
 
 /** The three publishing questions ("who can see / find / sign up") plus the page state. */
-export function PublishingQuestions({ answers, onChange, published, idPrefix = "publishing" }: {
+export function PublishingQuestions({ answers, onChange, published, idPrefix = "publishing", signups, onSignupsChange, approvalLocked = false }: {
   answers: PublishingAnswers; onChange: (patch: Partial<PublishingAnswers>) => void; published: boolean; idPrefix?: string;
+  /** The sign-ups question (B2); omitted where the editor cannot change spots, closing or approval. */
+  signups?: SignupAnswers; onSignupsChange?: (patch: Partial<SignupAnswers>) => void; approvalLocked?: boolean;
 }) {
   return <div className="grid gap-5">
     <RadioCards<"private" | "public"> name={`${idPrefix}-see`} legend={t`1. Who can see it?`} value={answers.is_public ? "public" : "private"}
@@ -66,12 +70,13 @@ export function PublishingQuestions({ answers, onChange, published, idPrefix = "
       ]} />
     <RadioCards<string> name={`${idPrefix}-signup`} legend={t`3. Who can sign up?`} value={answers.registration_audience}
       onChange={registration_audience => onChange({ registration_audience })}
-      options={AUDIENCES.map(row => ({ ...row, icon: <Users aria-hidden="true" size={16} /> }))} />
+      options={AUDIENCES().map(row => ({ ...row, icon: <Users aria-hidden="true" size={16} /> }))} />
+    {signups && onSignupsChange ? <SignupsQuestion answers={signups} onChange={onSignupsChange} approvalLocked={approvalLocked} idPrefix={idPrefix} /> : null}
     {published ? <RadioCards<PageState> name={`${idPrefix}-page`} legend={t`Public page`} value={answers.page_state}
       onChange={page_state => onChange({ page_state })} options={[
         { value: "live", label: t`Up`, detail: t`The page and its links work.` },
         { value: "offline", label: t`Taken down`, detail: t`Hide the page without cancelling or unpublishing the event.` },
       ]} /> : null}
-    <p className="rounded-control bg-surface p-3 text-sm" aria-live="polite">{publishingSummary(answers, published)}</p>
+    <p className="rounded-control bg-surface p-3 text-sm" aria-live="polite">{publishingSummary(answers, published, signups)}</p>
   </div>;
 }

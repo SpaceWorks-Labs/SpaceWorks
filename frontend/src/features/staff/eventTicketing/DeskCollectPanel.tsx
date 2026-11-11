@@ -27,7 +27,7 @@ export function DeskCollectPanel({ registrationId, onCollected }: { registration
       <button type="button" className="desk-button" disabled={collect.isPending} onClick={() => collect.mutate(true)}>{t`Pay on phone`}</button>
       <button type="button" className="desk-button" disabled={link.isPending} onClick={() => link.mutate(true)}>{t`Email pay link`}</button>
     </div>
-    {collect.data && !collect.data.checkout_url ? <p role="status" className="text-sm text-success">{t`Payment recorded.`}</p> : null}
+    {collect.data && !collect.data.checkout_url ? <p role="status" className="text-sm text-success-ink">{t`Payment recorded.`}</p> : null}
     {link.data?.sent ? <p role="status" className="text-sm text-muted">{t`Pay link emailed.`}</p> : null}
     {url ? <p className="break-all text-sm"><a className="underline" href={url} target="_blank" rel="noreferrer">{url}</a></p> : null}
     {error ? <p role="alert" className="text-sm text-danger">{error.message}</p> : null}

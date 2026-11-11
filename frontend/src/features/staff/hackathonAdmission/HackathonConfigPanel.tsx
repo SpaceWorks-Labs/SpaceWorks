@@ -16,6 +16,9 @@ const defaults: Partial<Config> = { enabled: false, review_mode: 'rolling', revi
   team_eligibility: 'confirmed', attendance_required: true, late_policy: 'reject', submission_grace_minutes: 0,
   review_rubric: { revision: 1, criteria: [] }, application_form: [], offer_capacity: null }
 const dateFields = ['application_opens_at', 'application_closes_at', 'team_lock_at', 'submission_opens_at', 'submission_deadline'] as const
+const dateFieldLabel = (key: string) => ({ application_opens_at: t`Applications open (UTC)`, application_closes_at: t`Applications close (UTC)`,
+  team_lock_at: t`Teams lock (UTC)`, submission_opens_at: t`Submissions open (UTC)`, submission_deadline: t`Submission deadline (UTC)` } as Record<string, string>)[key]
+  ?? t`${key.replace(/_/g, ' ')} (UTC)`
 const WINDOW_KEYS = ['submission_opens_at', 'submission_deadline', 'submission_grace_minutes', 'late_policy']
 
 export function HackathonConfigPanel({ eventId, FormEditor, mlhPresets }: { eventId: number; FormEditor: ProgrammeFormEditor; mlhPresets: readonly ProgrammeMlhPreset[] }) {
@@ -63,7 +66,7 @@ export function HackathonConfigPanel({ eventId, FormEditor, mlhPresets }: { even
       </fieldset>
       <fieldset className="grid gap-3"><legend className="title-section mb-3">{t`Application and submission windows`}</legend>
         {multiStage ? <p className="text-sm text-muted">{t`This event has several submission stages. Each stage's window, grace and late policy are set in Submission stages below.`}</p> : null}
-        {dateFields.filter(key => !multiStage || !WINDOW_KEYS.includes(key)).map(key => <label className="grid gap-1 text-sm text-ink" key={key}>{key.replace(/_/g, ' ')} (UTC)
+        {dateFields.filter(key => !multiStage || !WINDOW_KEYS.includes(key)).map(key => <label className="grid gap-1 text-sm text-ink" key={key}>{dateFieldLabel(key)}
           <input type="datetime-local" className="desk-input" value={draft[key] ? new Date(draft[key]!).toISOString().slice(0, 16) : ''}
             onChange={e => set(key, e.target.value ? new Date(e.target.value + 'Z').toISOString() : null)} /></label>)}
         {multiStage ? null : <><label className="grid gap-1 text-sm text-ink">{t`Late submission policy`}<select className="desk-input" value={draft.late_policy} onChange={e => set('late_policy', e.target.value as Config['late_policy'])}>

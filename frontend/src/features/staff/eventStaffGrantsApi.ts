@@ -12,6 +12,12 @@ export type EventStaffGrant = {
 export type EventStaffInvite = {
   id: number; permissions: EventPermission[]; role_label?: string; expires_at: string;
   redeemed_at: string | null; revoked_at: string | null;
+  // Decision 221(i): [] = every track; null = no start/end limit.
+  track_ids?: number[]; valid_from?: string | null; valid_until?: string | null;
+};
+export type EventStaffInvitePayload = {
+  email: string; send_email: boolean; permissions: EventPermission[]; role_label?: string;
+  track_ids?: number[]; valid_from?: string | null; valid_until?: string | null;
 };
 export type StaffGrantTarget = { kind: "event" | "series"; id: number };
 const base = (target: StaffGrantTarget) => `/admin/${target.kind === "event" ? "events" : "event-series"}/${target.id}`;
@@ -35,7 +41,7 @@ export function useEventStaffGrantActions(target: StaffGrantTarget) {
     client.invalidateQueries({ queryKey: eventStaffGrantKeys.accessible }),
     client.invalidateQueries({ queryKey: target.kind === "event" ? ["event", target.id] : ["event-series", target.id, "detail"] }),
   ]); };
-  const invite = useMutation({ mutationFn: (payload: { email: string; send_email: boolean; permissions: EventPermission[]; role_label?: string }) =>
+  const invite = useMutation({ mutationFn: (payload: EventStaffInvitePayload) =>
     staffRequest<EventStaffInvite & { token: string }>(`${base(target)}/staff-invites/`, {
       method: "POST", body: JSON.stringify(payload),
     }), onSuccess: invalidate });

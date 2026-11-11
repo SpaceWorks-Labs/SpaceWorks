@@ -36,9 +36,9 @@ export function SeriesPassTypes({ seriesId, disabled = false }: { seriesId: numb
       <ScreenHelp screen="events.series-passes" className="" /></div>
     <Card><form className="grid gap-4" onSubmit={event => { event.preventDefault(); save.mutate(draft, { onSuccess: () => setDraft(blank) }); }}>
       <label className={panelField}>{t`Name`}<input className={panelInput} required maxLength={100} value={draft.name} disabled={disabled} onChange={event => set("name", event.target.value)} /></label>
-      <label className={panelField}>{t`Price`}<input className={panelInput} type="number" min="0" step="0.01" value={draft.amount} disabled={disabled} onChange={event => set("amount", event.target.value)} /></label>
+      <label className={panelField}>{t`Price`}<input className={panelInput} type="number" min="0" step="any" value={draft.amount} disabled={disabled} onChange={event => set("amount", event.target.value)} /></label>
       <label className={panelField}>{t`Passes available (0 = unlimited)`}<input className={panelInput} type="number" min="0" value={draft.capacity} disabled={disabled} onChange={event => set("capacity", Number(event.target.value))} /></label>
-      <label className={panelField}>{t`Owed back per cancelled occurrence`}<input className={panelInput} type="number" min="0" step="0.01" value={draft.occurrence_refund_amount} disabled={disabled} onChange={event => set("occurrence_refund_amount", event.target.value)} /></label>
+      <label className={panelField}>{t`Owed back per cancelled occurrence`}<input className={panelInput} type="number" min="0" step="any" value={draft.occurrence_refund_amount} disabled={disabled} onChange={event => set("occurrence_refund_amount", event.target.value)} /></label>
       {save.error ? <p role="alert" className="text-sm text-danger">{save.error.message}</p> : null}
       <button className="desk-button-primary justify-self-start" type="submit" disabled={disabled || save.isPending}>{t`Add pass`}</button>
     </form></Card>

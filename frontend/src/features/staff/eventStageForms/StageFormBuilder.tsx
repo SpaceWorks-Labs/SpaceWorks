@@ -33,7 +33,7 @@ function Builder({ scope, definition, allowedActions, onCreated, onDirtyChange }
   const canEdit = actions.includes(definition ? "stage_edit" : "stage_create");
   const path = `${stageAdminPath(scope)}stage-forms/${definition ? `${definition.id}/` : ""}`;
   return <FormPageLayout header={{ title: definition ? definition.title : t`Create stage form`, subtitle: t`Each publication preserves its immutable question revision.` }} state={{ status: "ready" }}
-    submit={{ label: definition ? t`Save stage form` : t`Create draft stage`, pending: mutation.isPending, disabled: !canEdit || !dirty, disabledReason: "You need authoring access and unsaved changes.", onClick: () => {
+    submit={{ label: definition ? t`Save stage form` : t`Create draft stage`, pending: mutation.isPending, disabled: !canEdit || !dirty, disabledReason: t`You need authoring access and unsaved changes.`, onClick: () => {
       mutation.mutate({ path, method: definition ? "PATCH" : "POST", body: { expected_version: definition?.version ?? 0, settings, ...(definition ? { schema } : {}) } }, {
         onSuccess: result => { setDirty(false); if (!definition) onCreated(result.id); },
       });

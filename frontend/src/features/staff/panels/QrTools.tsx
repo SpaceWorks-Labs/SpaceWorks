@@ -4,6 +4,7 @@ import { ListLayout, DetailLayout } from "../../../components/layouts";
 import { ErrorText, Field, Modal, EmptyState, ListRow, RelativeTime, SegmentedControl } from "../../../components/ui";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { QrImage } from "./QrImage";
+import { QrLabelPrinterSend } from "./QrLabelPrinterSend";
 import { useQrBatchBuilder } from "./useQrBatchBuilder";
 import type { Makerspace } from "./shared";
 export function QrTools({ makerspace }: { makerspace: Makerspace }) {
@@ -16,6 +17,8 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
    canGenerateAssets, generateAssets, assetId, setAssetId, assets,
    assetOptions, canReprintAsset, reprintAsset, canAddItemQr, addProduct,
  } = useQrBatchBuilder({ makerspace });
+  // The label adapter needs both modules (server: devices/label_access.MODULES).
+  const labelPrintersOn = ["devices", "qr_print_batches"].every(key => (makerspace.enabled_modules ?? []).includes(key));
   const createDialog = <>
       <Modal open={batchModalOpen} onClose={() => setBatchModalOpen(false)} title={t`Create QR print batch`} footer={<ModalActions pending={createBatch.isPending} onCancel={() => setBatchModalOpen(false)} onSubmit={() => createBatch.mutate()} submitLabel={t`Create batch`} disabled={!batchTitle.trim()} />}>
         <Field label={t`Batch title`}><input className="desk-input w-full" value={batchTitle} onChange={(event) => setBatchTitle(event.target.value)} /></Field>
@@ -27,7 +30,7 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
     empty={{ message: t`No label batches yet. Start one to print QR labels.`, action: { label: t`New batch`, onClick: () => setBatchModalOpen(true) } }}
     body={{ kind: "rows", rows: batches.data?.results.map(item => <ListRow key={item.id} title={item.title} identity={{ kind: "date", date: item.created_at }} meta={<RelativeTime date={item.created_at} />} onClick={() => setBatchId(String(item.id))} />) }} detail={createDialog} />;
   return <DetailLayout title={batch.data?.title ?? t`QR labels`} back={{ label: t`All batches`, onClick: () => setBatchId("") }} state={inventoryQueryState(batch, "this label batch")} meta={[`${batchItems.length} labels`]}
-    actions={{ primary: { label: t`Download all (ZIP)`, pending: downloadZip.isPending, pendingLabel: "Preparing…", disabled: !batchItems.length, disabledReason: "Add a label to this batch first.", onClick: () => downloadZip.mutate() },
+    actions={{ primary: { label: t`Download all (ZIP)`, pending: downloadZip.isPending, pendingLabel: t`Preparing…`, disabled: !batchItems.length, disabledReason: t`Add a label to this batch first.`, onClick: () => downloadZip.mutate() },
       secondary: { label: t`New batch`, icon: "Plus", onClick: () => setBatchModalOpen(true) } }}
     main={<div className="grid gap-6">
         <ActionBox title={t`Add labels`}>
@@ -105,6 +108,7 @@ export function QrTools({ makerspace }: { makerspace: Makerspace }) {
           </div>
           {downloadZip.isError ? <ErrorText message={(downloadZip.error as Error).message} /> : null}
         </div>
+        {labelPrintersOn && Number(batchId) ? <QrLabelPrinterSend makerspaceId={makerspace.id} batchId={Number(batchId)} hasItems={batchItems.length > 0} /> : null}
         {createDialog}
     </div>} />;
 }

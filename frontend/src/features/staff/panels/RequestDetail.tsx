@@ -1,19 +1,28 @@
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
-import type { ReactNode } from "react";
+import { useContext, type ReactNode } from "react";
 import { DetailLayout } from "../../../components/layouts";
 import { KeyValueCard, ListRow, RelativeTime, StatusBadge, type Action } from "../../../components/ui";
+import { requestStatusLabel } from "../../../components/ui/StatusStepper";
 import { StatusStepper } from "../../../components/ui/StatusStepper";
 import { RequestTimelineBlock } from "./LoanTimeline";
 import type { HardwareRequest } from "./Queues";
 import { RequestEvidence } from "./RequestEvidence";
 import { LoanChargesPanel } from "../loanCharges/LoanChargesPanel";
+import { LoanRepairsPanel } from "../loanRepairs/LoanRepairsPanel";
+import { BorrowerHistoryToggle } from "../memberActivity/BorrowerHistory";
+import { StaffListContext } from "../StaffListContext";
+
+// A26: the member 360 refuses handover-only desks, so only offer it to inventory reviewers.
+const HISTORY_ACTIONS = ["view_inventory", "accept_request", "manage_members"];
 
 type Actor = { username: string; role: string };
 export function RequestDetail({ row, canViewAudit, primary, secondary, menu, extra, view, onView, onClose }: {
   row: HardwareRequest; canViewAudit: boolean; primary?: Action; secondary?: Action; menu?: Action[]; extra?: ReactNode;
   view: string; onView: (view: string) => void; onClose: () => void;
 }) {
+  const access = useContext(StaffListContext);
+  const canSeeHistory = Boolean(access.isSuperadmin || access.actions?.some(action => HISTORY_ACTIONS.includes(action)));
   const active = ["overview", "evidence", ...(canViewAudit ? ["timeline"] : [])].includes(view) ? view : "overview";
   const actors = row as HardwareRequest & { accepted_by?: Actor; issued_by?: Actor };
   const tabs = ["overview", "evidence", ...(canViewAudit ? ["timeline"] : [])].map(key => {
@@ -27,7 +36,7 @@ export function RequestDetail({ row, canViewAudit, primary, secondary, menu, ext
     if (next) { event.preventDefault(); event.stopPropagation(); onView(next); }
   }}><DetailLayout presentation="drawer" open onClose={onClose} drawerWidth={640}
     title={t`Request #${row.id}`} identity={{ kind: "avatar", name: row.requester_display || row.requester_username, seed: row.requester_username }}
-    status={<StatusBadge status={row.status} />} meta={[row.requester_display || row.requester_username,
+    status={<StatusBadge status={row.status} label={requestStatusLabel(row.status)} />} meta={[row.requester_display || row.requester_username,
       row.return_due_at ? <span>{t`Due `}<RelativeTime date={row.return_due_at} /></span> : "No due date set"]}
     actions={{ overflow: menu }} tabs={tabs} activeTab={active} state={{ status: "ready" }}
     main={active === "evidence" ? <RequestEvidence row={row} /> : active === "timeline" ? <RequestTimelineBlock requestId={row.id} /> : <div className="grid gap-6">
@@ -41,6 +50,9 @@ export function RequestDetail({ row, canViewAudit, primary, secondary, menu, ext
         {row.items.filter(item => item.damaged_quantity || item.missing_quantity || item.needs_fix_quantity).map(item => <p key={item.id}>{t`${item.product_name}: ${item.damaged_quantity} damaged · ${item.missing_quantity} missing · ${item.needs_fix_quantity} to-fix`}</p>)}</div> : null}
       {extra}
       <LoanChargesPanel loan={row} />
+      <LoanRepairsPanel loan={row} />
+      {canSeeHistory && row.requester_id && row.makerspace_id
+        ? <BorrowerHistoryToggle key={row.requester_id} makerspaceId={row.makerspace_id} userId={row.requester_id} /> : null}
     </div>}
     aside={active === "overview" ? <KeyValueCard items={[
       { label: t`Purpose`, value: <span className="break-words">{row.requested_for || t`No note`}</span> },

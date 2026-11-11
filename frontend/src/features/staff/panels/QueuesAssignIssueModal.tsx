@@ -119,7 +119,7 @@ function IssueItems({ row, pending, rejects, setBroken, setDisposition }: { row:
           <ShelfLine location={item.storage_location} />
           <div className="mt-2 grid gap-2 @md:grid-cols-[auto_minmax(0,1fr)] @md:items-end">
             <label className="eyebrow grid min-w-0 gap-1"><span>{t`Reject as broken`}</span><QuantityStepper label="broken" max={item.accepted_quantity} value={rejects[item.id]?.broken ?? 0} disabled={pending} onValueChange={(value) => setBroken(item.id, Number(value))} /></label>
-            {(rejects[item.id]?.broken ?? 0) > 0 ? <label className="eyebrow grid gap-1"><span>{t`Send broken units to`}</span><select className="desk-input" value={rejects[item.id]?.disposition ?? "needs_fix"} disabled={pending} onChange={(event) => setDisposition(item.id, event.target.value as "needs_fix" | "remove")}><option value="needs_fix">{t`To-be-fixed shelf`}</option><option value="remove">{t`Remove from inventory`}</option></select></label> : null}
+            {(rejects[item.id]?.broken ?? 0) > 0 ? <label className="eyebrow grid gap-1"><span>{t`Send broken units to`}</span><select className="desk-input" value={rejects[item.id]?.disposition ?? "needs_fix"} disabled={pending} onChange={(event) => setDisposition(item.id, event.target.value as "needs_fix" | "remove")}><option value="needs_fix">{t`Repair shelf`}</option><option value="remove">{t`Remove from inventory`}</option></select></label> : null}
           </div>
         </div>
       ))}

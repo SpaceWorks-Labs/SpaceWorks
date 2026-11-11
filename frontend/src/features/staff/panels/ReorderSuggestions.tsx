@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
@@ -24,9 +24,9 @@ export function useReorderSuggestions({ makerspaceId, canProcure }: { makerspace
       client.invalidateQueries({ queryKey: ["procurement", makerspaceId] }); },
   });
   const count = suggestions.data?.count ?? 0;
-  const callout: CalloutProps | undefined = count ? { size: "banner", tone: "warn", lead: `${count} ${count === 1 ? "item is" : "items are"} running low.`,
+  const callout: CalloutProps | undefined = count ? { size: "banner", tone: "warn", lead: plural(count, { one: "# item is running low.", other: "# items are running low." }),
     body: t`Review their reorder points before your next project.`, action: { label: t`Review suggestions`, onClick: () => setOpen(true) } } : undefined;
-  const error = suggestions.error ? <ErrorText resource="reorder suggestions" onRetry={() => { void suggestions.refetch(); }} message={t`Couldn't load reorder suggestions. Try again.`} /> : null;
+  const error = suggestions.error ? <ErrorText resource={t`reorder suggestions`} onRetry={() => { void suggestions.refetch(); }} message={t`Couldn't load reorder suggestions. Try again.`} /> : null;
   const panel = open ? <DetailLayout presentation="drawer" open onClose={() => setOpen(false)} title={t`Reorder suggestions`}
       state={inventoryQueryState(suggestions, "reorder suggestions")} isEmpty={!suggestions.data?.results.length}
       empty={{ message: t`No products are at their reorder points. Check back as stock changes.` }}

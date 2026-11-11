@@ -101,7 +101,7 @@ export function ReportSchedules({ makerspaceId, reports }: { makerspaceId: numbe
               <OverflowMenu label={t`Actions for ${title(schedule.report_key)}`} actions={[
                 { label: t`Edit`, onClick: () => { setCreating(false); setEditing(schedule); } },
                 { label: schedule.is_active ? t`Pause` : t`Resume`, disabled: toggle.isPending && toggle.variables?.id === schedule.id,
-                  disabledReason: toggle.isPending && toggle.variables?.id === schedule.id ? "Updating this schedule." : undefined, onClick: () => toggle.mutate(schedule) },
+                  disabledReason: toggle.isPending && toggle.variables?.id === schedule.id ? t`Updating this schedule.` : undefined, onClick: () => toggle.mutate(schedule) },
                 { label: t`Delete`, tone: "danger", onClick: () => setDeleting(schedule) },
               ]} />
             </div>

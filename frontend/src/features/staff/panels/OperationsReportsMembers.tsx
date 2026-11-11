@@ -57,7 +57,7 @@ function MemberActivityMetrics({ row }: { row: MemberActivityRow }) {
       </div>
       <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
         <MetricDetail label={t`Membership policy`} value={humanizePolicy(row.membership_policy)} />
-        <MetricDetail label={t`Referrals`} value={row.referrals_enabled ? "Enabled" : "Disabled"} />
+        <MetricDetail label={t`Referrals`} value={row.referrals_enabled ? t`Enabled` : t`Disabled`} />
       </dl>
       <ReportTable data={{ rows: [Object.keys(row), Object.values(row).map((value) => value ?? null)] }} />
     </>
@@ -69,8 +69,8 @@ function MetricDetail({ label, value }: { label: string; value: string }) {
 }
 
 function humanizePolicy(policy: string) {
-  if (policy === "invite_only") return "Invite only";
-  if (policy === "request") return "Request approval";
-  if (policy === "open") return "Open signup";
+  if (policy === "invite_only") return t`Invite only`;
+  if (policy === "request") return t`Request approval`;
+  if (policy === "open") return t`Open signup`;
   return policy.replace(/_/g, " ");
 }

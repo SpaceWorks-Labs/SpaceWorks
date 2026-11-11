@@ -12,7 +12,7 @@ type ChartOptions = { valueLabel?: string; title?: string; chartData?: ChartData
 export function BarChart({ rows, valueLabel, title, chartData }: { rows: ChartRow[] } & ChartOptions) {
   const maxValue = Math.max(...rows.map((row) => Math.abs(row.value)), 1);
   if (!rows.length) return <EmptyState message={t`No chart data.`} />;
-  return <ChartFrame title={title ?? t`Bar chart of ${valueLabel ?? "values"}`} data={chartData ?? legacyChartData(rows, valueLabel)}>
+  return <ChartFrame title={title ?? (valueLabel ? t`Bar chart of ${valueLabel}` : t`Bar chart of values`)} data={chartData ?? legacyChartData(rows, valueLabel)}>
     <div className="space-y-2">
       {rows.map((row, index) => <div key={`${row.label}-${index}`} className="grid grid-cols-[minmax(0,1fr)_minmax(4rem,2fr)_auto] items-center gap-2 text-sm sm:grid-cols-[minmax(7rem,11rem)_1fr_auto]">
         <span className="truncate text-ink" title={row.label}>{row.label}</span>
@@ -38,8 +38,8 @@ export function LineChart({ rows, valueLabel, title, chartData }: { rows: ChartR
     x: rows.length === 1 ? width / 2 : index / (rows.length - 1) * (width - 32) + 16,
     y: height - 16 - (row.value - low) / (high - low || 1) * (height - 32),
   }));
-  return <ChartFrame title={title ?? t`Line chart of ${valueLabel ?? "values"}`} data={chartData ?? legacyChartData(rows, valueLabel)}>
-    <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full" role="img" aria-label={t`Line chart of ${valueLabel ?? "values"}; exact values in the table.`}>
+  return <ChartFrame title={title ?? (valueLabel ? t`Line chart of ${valueLabel}` : t`Line chart of values`)} data={chartData ?? legacyChartData(rows, valueLabel)}>
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full" role="img" aria-label={valueLabel ? t`Line chart of ${valueLabel}; exact values in the table.` : t`Line chart of values; exact values in the table.`}>
       <polyline fill="none" stroke={seriesColor(valueLabel ?? "values")} strokeWidth="4" points={points.map((point) => `${point.x},${point.y}`).join(" ")} />
       {points.map((point, index) => <circle key={`${point.label}-${index}`} cx={point.x} cy={point.y} r="5" fill={panel} stroke={seriesColor(valueLabel ?? "values")} strokeWidth="3" />)}
     </svg>
@@ -58,7 +58,7 @@ export function StackedBarChart({ rows, valueLabel, title, chartData }: { rows: 
   data.series = labels.map((label) => ({ id: label, label, unit: valueLabel ?? "values", panelKey: "stacked",
     points: rows.flatMap((row) => row.segments.filter((segment) => segment.label === label).map((segment) => ({ x: row.label, label: row.label, value: segment.value }))) }));
   data.summary = `${rows.length} categories with ${labels.length} segments.`;
-  return <ChartFrame title={title ?? t`Stacked bar chart of ${valueLabel ?? "values"}`} data={chartData ?? data}>
+  return <ChartFrame title={title ?? (valueLabel ? t`Stacked bar chart of ${valueLabel}` : t`Stacked bar chart of values`)} data={chartData ?? data}>
     <div className="space-y-3">{rows.map((row) => <div key={row.label} className="space-y-1 text-sm">
       <p>{row.label}</p>
       <div className="flex h-4 overflow-hidden rounded border border-line bg-bg" aria-hidden="true">
@@ -76,9 +76,9 @@ export function PieChart({ rows, valueLabel, title, chartData }: { rows: ChartRo
   if (!rows.length) return <EmptyState message={t`No chart data.`} />;
   let consumed = 0;
   const circumference = 2 * Math.PI * 60;
-  return <ChartFrame title={title ?? t`Pie chart of ${valueLabel ?? "values"}`} data={chartData ?? legacyChartData(rows, valueLabel)}>
+  return <ChartFrame title={title ?? (valueLabel ? t`Pie chart of ${valueLabel}` : t`Pie chart of values`)} data={chartData ?? legacyChartData(rows, valueLabel)}>
     {rows.some((row) => row.value < 0) ? <p>{t`Negative values cannot be represented as pie segments. Show the table for all values.`}</p> : <div className="flex flex-wrap items-center gap-4">
-      <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label={t`Pie chart of ${valueLabel ?? "values"}`}><g transform="rotate(-90 80 80)">{data.map((row) => {
+      <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label={(valueLabel ? t`Pie chart of ${valueLabel}` : t`Pie chart of values`)}><g transform="rotate(-90 80 80)">{data.map((row) => {
         const dash = row.value / total * circumference;
         const offset = -consumed;
         consumed += dash;

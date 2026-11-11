@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../../lib/api";
+import { stocktakeConditionLabel } from "../lifecycleLabels";
 import { DataTable, EmptyState, ErrorBlock, ScanWorkbench, Skeleton, StatRow, StatusPill } from "../../../components/ui";
 import { type Makerspace, useStaffGet } from "./shared";
 import { QuantityStepper } from "../QuantityStepper";
@@ -109,7 +110,7 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
 
   return (
     <div className="mt-3 rounded-md border border-line bg-bg p-3">
-      {detail.isLoading ? <Skeleton className="h-32" /> : detail.error ? <ErrorBlock error={detail.error} resource="the count" onRetry={() => { void detail.refetch(); }} /> : null}
+      {detail.isLoading ? <Skeleton className="h-32" /> : detail.error ? <ErrorBlock error={detail.error} resource={t`the count`} onRetry={() => { void detail.refetch(); }} /> : null}
       {editable ? <ScanWorkbench searchLabel="QR payload" onFind={handleScan} onScan={handleScan}
         controls={<div className="@container grid gap-3">
       {/* Sized by the workbench column, not the viewport: beside the camera at xl the column is half width. */}
@@ -152,7 +153,7 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
         <label className="eyebrow grid gap-1">
           <span>{t`Condition`}</span>
           <select className="desk-input" value={condition} onChange={(event) => setCondition(event.target.value)}>
-            {CONDITIONS.map((value) => <option key={value} value={value}>{value}</option>)}
+            {CONDITIONS.map((value) => <option key={value} value={value}>{stocktakeConditionLabel(value)}</option>)}
           </select>
         </label>
       </div>
@@ -178,13 +179,13 @@ export function CountSection({ makerspace, stocktakeId, readOnly = false }: { ma
       <StatRow stats={[{ label: t`Lines counted`, value: lines.length }, ...(!detail.data?.blind ? [{ label: t`Variances`, value: lines.filter(line => line.variance_quantity != null && line.variance_quantity !== 0).length }] : [])]} />
       <h2 className="title-section mt-6">{t`Counted so far`}</h2>
       {lines.length ? <DataTable<StocktakeLine> data={lines} getRowId={line => line.id} columns={[
-        { key: "item", header: "Item", render: line => line.asset ? assetName(line.asset) : productName(line.product) },
-        { key: "container", header: "Container", render: line => containerName(line.container) },
-        { key: "expected_quantity", header: "Expected", render: line => line.expected_quantity ?? "Hidden" },
-        { key: "counted_quantity", header: "Counted" },
-        { key: "variance_quantity", header: "Variance", render: line => <StatusPill label={line.variance_quantity === null ? t`Hidden` : String(line.variance_quantity)} tone={line.variance_quantity ? "warn" : "neutral"} /> },
-        { key: "condition", header: "Condition", render: line => <StatusPill label={line.condition} /> },
-        { key: "notes", header: "Notes" },
+        { key: "item", header: t`Item`, render: line => line.asset ? assetName(line.asset) : productName(line.product) },
+        { key: "container", header: t`Container`, render: line => containerName(line.container) },
+        { key: "expected_quantity", header: t`Expected`, render: line => line.expected_quantity ?? "Hidden" },
+        { key: "counted_quantity", header: t`Counted` },
+        { key: "variance_quantity", header: t`Variance`, render: line => <StatusPill label={line.variance_quantity === null ? t`Hidden` : String(line.variance_quantity)} tone={line.variance_quantity ? "warn" : "neutral"} /> },
+        { key: "condition", header: t`Condition`, render: line => <StatusPill label={stocktakeConditionLabel(line.condition)} /> },
+        { key: "notes", header: t`Notes` },
       ]} /> : <EmptyState message={t`No counts recorded yet. Scan or pick an item to start.`} />}
 
     </div>

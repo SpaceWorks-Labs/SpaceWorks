@@ -23,7 +23,7 @@ export function RequestCancelDialog({ row, makerspaceId, onClose }: { row: Hardw
   const who = row.requester_display || row.requester_username;
   return <Modal open onClose={() => { if (!cancel.isPending) onClose(); }} title={t`Cancel request #${row.id}?`}>
     <form className="grid gap-4" onSubmit={event => { event.preventDefault(); cancel.mutate(); }}>
-      <p className="text-sm text-muted">{t`${who}'s request closes as Cancelled`}{row.status === "accepted" ? t` and the items it held go back on the shelf` : ""}. This can't be undone.</p>
+      <p className="text-sm text-muted">{row.status === "accepted" ? t`${who}'s request closes as Cancelled and the items it held go back on the shelf. This can't be undone.` : t`${who}'s request closes as Cancelled. This can't be undone.`}</p>
       <Field label={t`Reason (optional)`} hint={t`Shown in the request history.`}><textarea className="desk-input min-h-20" maxLength={500} value={reason} onChange={event => setReason(event.target.value)} /></Field>
       <ErrorText message={cancel.error?.message} />
       <div className="flex flex-wrap justify-end gap-2">

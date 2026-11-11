@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ListLayout } from "../../../components/layouts";
 import type { CalloutProps } from "../../../components/ui";
@@ -17,7 +17,7 @@ function HardwareRequests({ makerspace, guestOnly, canViewAudit }: { makerspace:
   // Same query key as the recovery panel's default view, so this adds no request.
   const failed = useKioskReplays(makerspace.id, "unresolved", 1).data?.count ?? 0;
   const callout: CalloutProps | undefined = failed > 0 ? { size: "banner", tone: "warn",
-    lead: failed === 1 ? "1 failed kiosk handover needs review." : `${failed} failed kiosk handovers need review.`,
+    lead: plural(failed, { one: "# failed kiosk handover needs review.", other: "# failed kiosk handovers need review." }),
     action: { label: t`Review failures`, onClick: () => setReveal(key => key + 1) } } : undefined;
   return <Queues makerspace={makerspace} guestOnly={guestOnly} canViewAudit={canViewAudit} callout={callout}
     recovery={<KioskReplayRecoveryPanel makerspaceId={makerspace.id} revealKey={reveal} />} />;

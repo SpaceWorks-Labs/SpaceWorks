@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { PersonalInbox } from "../../notifications/PersonalInbox";
 import { MyNotificationSettings } from "../../notifications/MyNotificationSettings";
+import { FirebaseAlertsSetupLink } from "../../notifications/firebase/FirebaseAlertsSetupLink";
 import { BrowserAlertsToggle } from "../../notifications/BrowserAlertsToggle";
 import { BroadcastComposer } from "../BroadcastComposer";
 import type { Makerspace } from "./shared";
@@ -15,7 +16,7 @@ export function NotificationInbox({ makerspace, canManageMembers = false }: { ma
   const myChannels: Action = { label: t`My channels`, icon: "Settings", onClick: () => setChannels(true) };
   const announcement: Action | undefined = canBroadcast ? { label: t`Send announcement`, onClick: () => setCompose(true) } : undefined;
   return <>
-    {makerspace.enabled_features?.includes("notifications.web_push") ? <BrowserAlertsToggle makerspaceId={makerspace.id} /> : null}
+    {makerspace.enabled_features?.includes("notifications.web_push") ? <><BrowserAlertsToggle makerspaceId={makerspace.id} /><FirebaseAlertsSetupLink makerspaceId={makerspace.id} /></> : null}
     <PersonalInbox makerspaceId={makerspace.id} makerspaceSlug={makerspace.slug} announcement={announcement ?? myChannels}
       overflow={announcement && myChannels ? [myChannels] : undefined}
       snooze={Boolean(makerspace.enabled_features?.includes("notifications.inbox_snooze"))} />

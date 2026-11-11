@@ -98,7 +98,7 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
     <ListRow title={`${item.name} ×${item.quantity}`} onClick={() => setOpen(true)} identity={{ kind: "icon", icon: "Circle", tone: "accent" }}
       meta={<>{item.vendor_name || t`No vendor yet`} {t` · Est. ${item.estimated_unit_cost ?? "—"} each · `}{item.purchaser_username || t`Unassigned purchaser`} · {receiptCount === 1 ? t`1 receipt` : `${receiptCount} receipts`}{item.source_pool ? <Badge tone="warn">{t`Auto · low stock`}</Badge> : null}</>}
       right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={labelStatus(item.status)} tone={item.status === "received" ? "success" : "neutral"} />
-        {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={advance}>{updatePending ? t`Saving…` : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>{t`Move to inventory`}</button> : null}
+        {next ? <button className="desk-button-ghost" disabled={updatePending} onClick={advance}>{updatePending ? t`Saving…` : nextLabel}</button> : item.status === "received" && !item.moved_to_inventory_at ? <button className="desk-button-ghost" onClick={onMove}>{item.source_consumable ? t`Refill consumable` : t`Move to inventory`}</button> : null}
         <OverflowMenu label={t`Actions for ${item.name}`} actions={[{ label: t`Edit`, onClick: () => setOpen(true) },
           ...(onMarkBought && next ? [{ label: t`Mark bought`, onClick: onMarkBought }] : []),
           ...(cancellable ? [{ label: t`Cancel request`, disabled: updatePending, onClick: () => onSave({ ...draftFromItem(item), status: "cancelled" as const }),
@@ -112,7 +112,7 @@ export function ProcurementRow({ item, makerspaceSlug, updatePending, deletePend
         <p className="text-sm text-muted">{t`Estimated unit cost: ${item.estimated_unit_cost ?? "—"} · Purchaser: `}{item.purchaser_username ?? t`Unassigned`}</p>
         {item.ordered_at ? <p>{t`Ordered `}<RelativeTime date={item.ordered_at} /></p> : null}{item.received_at ? <p>{t`Received `}<RelativeTime date={item.received_at} /></p> : null}
         <Field label={t`Vendor for ${item.name}`}><input className="desk-input" value={draft.vendor_name} onChange={event => setDraft({ ...draft, vendor_name: event.target.value })} /></Field>
-        <Field label={t`Actual unit cost for ${item.name}`}><input className="desk-input" type="number" min={0} step="0.01" value={draft.actual_unit_cost} onChange={event => setDraft({ ...draft, actual_unit_cost: event.target.value })} /></Field>
+        <Field label={t`Actual unit cost for ${item.name}`}><input className="desk-input" type="number" min={0} step="any" value={draft.actual_unit_cost} onChange={event => setDraft({ ...draft, actual_unit_cost: event.target.value })} /></Field>
         <Field label={t`Status for ${item.name}`}><select className="desk-input" value={draft.status} onChange={event => setDraft({ ...draft, status: event.target.value as ToBuyStatus })}>{statusOptions.map(status => <option key={status} value={status}>{labelStatus(status)}</option>)}</select></Field>
         <MoveState item={item} makerspaceSlug={makerspaceSlug} />
         <ProcurementReceipts itemId={item.id} receipts={item.receipts ?? []} onChanged={onReceiptsChanged} />

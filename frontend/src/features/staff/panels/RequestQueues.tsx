@@ -28,12 +28,14 @@ import {
   ReturnRequestModal,
   type AssignIssueValues,
   type RejectRequestValues,
+  type ReturnDueNotice,
   type ReturnDueValues,
   type ReturnRequestValues,
 } from "./QueuesModals";
 import { AcceptRequestModal } from "./QueuesAcceptModal";
 import { DamageChargeDialog, needsDamageCharges } from "../loanCharges/DamageChargeStep";
 import { RequestCancelDialog } from "./RequestCancelDialog";
+import { BulkDecisionBar } from "../bulk/BulkDecisionBar";
 
 export type RequestItem = {
   id: number;
@@ -53,6 +55,9 @@ export type RequestItem = {
 };
 export type HardwareRequest = {
   id: number;
+  /** Open item A26: the space and the borrower's account, for the borrower history drawer. */
+  makerspace_id?: number;
+  requester_id?: number;
   has_kit_checklist?: boolean;
   status: string;
   requester_username: string;
@@ -64,6 +69,7 @@ export type HardwareRequest = {
   return_evidence_ids?: number[];
   requested_for: string;
   return_due_at: string | null;
+  return_due_notice?: ReturnDueNotice | null;
   return_reminder_sent_at: string | null;
   items: RequestItem[];
   // AdminRequestSerializer serializes the assigned container as the flat `assigned_box_label`.
@@ -125,17 +131,21 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
     setReturnRow(null);
     setModalError("");
   };
-  const runAction = async (path: string, body?: object, onDone = closeModals) => {
+  const runAction = async (path: string, body?: object, onDone: (data: unknown) => void = closeModals) => {
     setModalError("");
     try {
-      await action.mutateAsync({ path, body });
-      onDone();
+      onDone(await action.mutateAsync({ path, body }));
     } catch (error) {
       setModalError(error instanceof Error ? error.message : t`Action failed.`);
     }
   };
   const submitReturnDue = (values: ReturnDueValues) => {
-    if (dueRow) void runAction(`/admin/requests/${dueRow.id}/return-due`, { return_due_at: values.returnDueAt ? new Date(values.returnDueAt).toISOString() : null });
+    // Saved as entered; a closed-time warning keeps the dialog open so staff can adjust it.
+    if (dueRow) void runAction(`/admin/requests/${dueRow.id}/return-due`, { return_due_at: values.returnDueAt ? new Date(values.returnDueAt).toISOString() : null }, (data) => {
+      const saved = data as HardwareRequest | undefined;
+      if (saved?.return_due_notice) setDueRow(saved);
+      else closeModals();
+    });
   };
   const submitAccept = (acceptedQuantities: { item_id: number; quantity: number }[]) => {
     if (acceptRow) void runAction(`/admin/requests/${acceptRow.id}/accept`, { accepted_quantities: acceptedQuantities });
@@ -211,10 +221,16 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
         action: { label: t`Clear filters`, onClick: () => list.update({ search: "", id: "", request: "", requestView: "overview" }) } }}
       filters={{ toolbar: <ListViewControls searchControl={{ label: t`Search requests`, placeholder: t`Search by name, email, phone or purpose`, value: search, onChange: value => list.setFilter("search", value) }} state={list} makerspaceId={makerspace.id} entity="requests" search={false} sorts={[["-created_at", "Newest"], ["created_at", "Oldest"], ["return_due_at", "Due first"]]} /> }}
       body={{ kind: "rows", rows: <div role="region" aria-label={requestTabLabels[tab ?? "pending"]} className={tab === "all" ? "grid gap-8" : undefined}>
+        {/* Decision 242 / U5: accept or reject many pending requests at once (all or nothing). */}
+        {tab === "pending" && can("accept_request") && can("reject_request") ? <BulkDecisionBar title={t`Decide several borrow requests`}
+          rows={queries.pending.results.map(row => ({ id: row.id, label: `#${row.id} · ${row.requester_display || row.requester_username} · ${row.items.map(item => `${item.product_name} × ${item.requested_quantity}`).join(", ")}` }))}
+          decisions={[{ key: "accept", label: t`Accept in full` }, { key: "reject", label: t`Reject`, needsReason: true, danger: true }]}
+          path={decision => `/admin/bulk/requests/${decision}`}
+          onDone={() => { invalidateRequestQueues(queryClient, makerspace.id, actionInvalidationScope("/accept")); void queryClient.invalidateQueries({ queryKey: ["dashboard", makerspace.id] }); }} /> : null}
         {involved.map(key => {
           const rows = queries[key].results;
           if (tab === "all" && !rows.length) return null;
-          const list = <RequestList rows={rows} canViewAudit={canViewAudit} primary={row => primary(row, key)} menu={row => menu(row, key)}
+          const list = <RequestList makerspace={makerspace} rows={rows} canViewAudit={canViewAudit} primary={row => primary(row, key)} menu={row => menu(row, key)}
             reject={key === "pending" ? row => ({ label: t`Reject`, tone: "danger", onClick: () => openModal(setRejectRow, row) }) : undefined}
             extra={key === "active" && makerspace.enabled_features?.includes("loans.renewals") ? row => <StaffLoanRenew makerspaceId={makerspace.id} requestId={row.id} /> : undefined} />;
           return tab !== "all" ? <div key={key}>{list}</div> : <section key={key} aria-label={requestTabLabels[key]} className="grid gap-3">
@@ -229,7 +245,7 @@ export function Queues({ makerspace, guestOnly, canViewAudit = false, recovery, 
       detail={<><div className="mt-8">{recovery}</div>
       <AcceptRequestModal row={acceptRow} open={Boolean(acceptRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitAccept} />
       {guided ? <HandoverWizard key={`${makerspace.id}:${guided.row.id}:${guided.mode}`} row={guided.row} mode={guided.mode} makerspace={makerspace} canScanCards={Boolean(can("scan_member_cards"))} onClose={() => setGuided(null)} /> : null}
-      <ReturnDueModal row={dueRow} defaultValue={dueRow?.return_due_at ? localDateTimeValue(dueRow.return_due_at) : localDateTimeValue(defaultDueDate(Number(defaultLoanDays) || 7).toISOString())} open={Boolean(dueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturnDue} />
+      <ReturnDueModal row={dueRow} defaultValue={dueRow?.return_due_at ? localDateTimeValue(dueRow.return_due_at) : localDateTimeValue(defaultDueDate(Number(defaultLoanDays) || 7).toISOString())} notice={dueRow?.return_due_notice} timeZone={makerspace.timezone} open={Boolean(dueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturnDue} />
       <RejectRequestModal row={rejectRow} open={Boolean(rejectRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReject} />
       <AssignIssueModal row={assignIssueRow} open={Boolean(assignIssueRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitAssignIssue} makerspaceId={makerspace.id} kitEnabled={featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist")} />
       <ReturnRequestModal row={returnRow} open={Boolean(returnRow)} pending={action.isPending} error={modalError} onClose={closeModals} onSubmit={submitReturn} makerspaceId={makerspace.id} />

@@ -64,7 +64,7 @@ export function OperationsReports({
   const hardwareEnabled = canViewAudit && reportsEnabled;
 
 
-  const scopeLabel = aggregate ? "all makerspaces" : makerspace.name;
+  const scopeLabel = aggregate ? t`all makerspaces` : makerspace.name;
   const availableExports = reportsEnabled ? catalogEntries.filter((report) => report.exportable && report.available !== false) : [];
   const selected = catalogEntries.find((report) => report.key === selectedReport);
   const effectiveGrain = (selected?.grains ?? ["day"]).includes(grain) ? grain : selected?.grains[0] ?? "day";
@@ -99,13 +99,13 @@ export function OperationsReports({
 
   return <>
     <DetailLayout title={t`Reports`} width="wide" asideSide="start"
-      meta={[`Operations reporting for ${scopeLabel}.`, selected?.title ?? "Choose a report"]}
+      meta={[t`Operations reporting for ${scopeLabel}.`, selected?.title ?? t`Choose a report`]}
       state={{ status: catalog.isLoading ? "loading" : catalog.isError ? "error" : "ready",
         error: t`Couldn't load reports. Try again.`, onRetry: () => void catalog.refetch() }}
       isEmpty={reportsEnabled && catalog.isSuccess && !catalogEntries.length}
       empty={{ message: t`No reports available yet. Enable the reporting modules to get started.` }}
-      actions={{ primary: { label: t`Export`, pending: exportReport.isPending, pendingLabel: "Exporting…",
-        disabled: !canExport, disabledReason: !canExport ? "Choose an available exportable report." : undefined, onClick: () => exportSelected(formats[0] ?? "csv") },
+      actions={{ primary: { label: t`Export`, pending: exportReport.isPending, pendingLabel: t`Exporting…`,
+        disabled: !canExport, disabledReason: !canExport ? t`Choose an available exportable report.` : undefined, onClick: () => exportSelected(formats[0] ?? "csv") },
         secondary: !aggregate && reportsEnabled ? { label: t`Schedule…`, onClick: () => setSchedulesOpen(true) } : undefined,
         overflow: [...(canExport ? formats.map(format => ({ label: t`Export ${format.toUpperCase()}`, onClick: () => exportSelected(format) })) : []),
           ...(availableExports.length ? [{ label: t`Export any report`, confirms: true, onClick: () => setExportsOpen(true) }] : [])] }}

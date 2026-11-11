@@ -1,10 +1,10 @@
-import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { DataTable, StatusPill } from "../../../components/ui";
 import { STICKY_FIRST_COLUMN } from "../matrixColumns";
 import { SelectedReportPanel as Panel } from "./OperationsReportSelection";
 import { BarChart, DataState, PieChart } from "./OperationsReportsParts";
 import { useStaffGet } from "./shared";
+import { formatMoney, paymentStatusLabel, paymentSubjectLabel, settlementMethodLabel } from "../paymentsApi";
 
 type PaymentReportRow = {
   makerspace_id?: number;
@@ -59,8 +59,8 @@ function PaymentChart({ rows }: { rows: PaymentReportRow[] }) {
     <section key={currency} className="rounded-md border border-line p-3">
       <h4 className="eyebrow">{currency.toUpperCase()}</h4>
       <div className="mt-2 grid gap-4 lg:grid-cols-2">
-        <BarChart rows={group.map((row) => ({ label: label(row.status), value: row.payment_count }))} valueLabel="payments" />
-        <BarChart rows={group.map((row) => ({ label: label(row.status), value: Number(row.amount_total) }))} valueLabel={`${currency.toUpperCase()} total`} />
+        <BarChart rows={group.map((row) => ({ label: paymentStatusLabel(row.status), value: row.payment_count }))} valueLabel={t`payments`} />
+        <BarChart rows={group.map((row) => ({ label: paymentStatusLabel(row.status), value: Number(row.amount_total) }))} valueLabel={t`${currency.toUpperCase()} total`} />
       </div>
       {/* Where settled money actually came from -- cash vs UPI vs card -- which is what
           reconciles against a physical cash box. Only settled rows carry a method, so a
@@ -68,7 +68,7 @@ function PaymentChart({ rows }: { rows: PaymentReportRow[] }) {
       {methodSlices(group).length ? (
         <div className="mt-4">
           <h5 className="eyebrow">{t`Settled by method`}</h5>
-          <PieChart rows={methodSlices(group)} valueLabel={`${currency.toUpperCase()} settled`} />
+          <PieChart rows={methodSlices(group)} valueLabel={t`${currency.toUpperCase()} settled`} />
         </div>
       ) : null}
     </section>
@@ -78,14 +78,14 @@ function PaymentChart({ rows }: { rows: PaymentReportRow[] }) {
 function PaymentTable({ rows }: { rows: PaymentReportRow[] }) {
   return <div className="mt-4 min-w-0"><DataTable<PaymentReportRow & { id: number }> data={rows.map((row, id) => ({ ...row, id }))}
     columns={[
-      { key: "currency", header: "Currency", className: STICKY_FIRST_COLUMN, render: row => row.currency.toUpperCase() },
-      { key: "subject_type", header: "Subject", render: row => label(row.subject_type) },
-      { key: "status", header: "Status", render: row => <StatusPill label={label(row.status)}
-        tone={row.status === "paid" ? "success" : row.status === "pending" ? "warn" : "neutral"} /> },
-      { key: "settlement_method", header: "Method", render: row => row.settlement_method ? label(row.settlement_method) : "—" },
-      { key: "payment_count", header: "Payments", className: "tabular-nums md:text-right" },
-      ...([ ["amount_total", "Total"], ["outstanding_amount", "Outstanding"], ["refunded_amount", "Refunded"] ] as const).map(([key, header]) => ({
-        key, header, className: "tabular-nums md:text-right", render: (row: PaymentReportRow) => money(row[key], row.currency),
+      { key: "currency", header: t`Currency`, className: STICKY_FIRST_COLUMN, render: row => row.currency.toUpperCase() },
+      { key: "subject_type", header: t`Subject`, render: row => paymentSubjectLabel(row.subject_type) },
+      { key: "status", header: t`Status`, render: row => <StatusPill label={paymentStatusLabel(row.status)}
+        tone={row.status.startsWith("paid") ? "success" : row.status === "pending" ? "warn" : "neutral"} /> },
+      { key: "settlement_method", header: t`Method`, render: row => row.settlement_method ? settlementMethodLabel(row.settlement_method) : "—" },
+      { key: "payment_count", header: t`Payments`, className: "tabular-nums md:text-right" },
+      ...([ ["amount_total", t`Total`], ["outstanding_amount", t`Outstanding`], ["refunded_amount", t`Refunded`] ] as const).map(([key, header]) => ({
+        key, header, className: "tabular-nums md:text-right", render: (row: PaymentReportRow) => formatMoney(row[key], row.currency),
       })),
     ]} /></div>;
 }
@@ -96,7 +96,7 @@ function methodSlices(rows: PaymentReportRow[]) {
     if (!row.settlement_method) continue;
     totals.set(row.settlement_method, (totals.get(row.settlement_method) ?? 0) + Number(row.amount_total));
   }
-  return [...totals].map(([method, value]) => ({ label: label(method), value }));
+  return [...totals].map(([method, value]) => ({ label: settlementMethodLabel(method), value }));
 }
 
 function paymentGroups(rows: PaymentReportRow[]) {
@@ -112,16 +112,4 @@ function currencyGroups(rows: PaymentReportRow[]) {
   const groups = new Map<string, PaymentReportRow[]>();
   for (const row of rows) groups.set(row.currency, [...(groups.get(row.currency) ?? []), row]);
   return [...groups];
-}
-
-function label(value: string) {
-  return value.replace(/_/g, " ").replace(/^./, (letter) => letter.toUpperCase());
-}
-
-function money(amount: string, currency: string) {
-  try {
-    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
-  } catch {
-    return `${currency.toUpperCase()} ${amount}`;
-  }
 }

@@ -141,13 +141,15 @@ function SerializedReturnItem({ item, outcomes, pending, onChange }: { item: Non
   );
 }
 
+const outcomeLabel = (key: "returned" | "damaged" | "missing") => key === "returned" ? t`Returned` : key === "damaged" ? t`Damaged` : t`Missing`;
+
 function QuantityReturnItem({ item, resolution, pending, onChange }: { item: NonNullable<FormModalProps<ReturnRequestValues>["row"]>["items"][number]; resolution?: ReturnRequestValues["resolutions"][number]; pending: boolean; onChange: (itemId: number, key: "returned" | "damaged" | "missing", value: string) => void }) {
   return (
     <div className="rounded-md border border-line p-2">
       <p className="text-sm font-medium text-ink">{item.product_name}</p>
       <ShelfLine location={item.storage_location} />
       <div className="mt-2 grid gap-3 @xl:grid-cols-3">
-        {(["returned", "damaged", "missing"] as const).map((key) => <label key={key} className="eyebrow grid min-w-0 gap-1"><span className="capitalize">{key}</span><QuantityStepper label={key} max={remainingCount(item)} value={resolution?.[key] ?? 0} disabled={pending} onValueChange={(value) => onChange(item.id, key, value)} /></label>)}
+        {(["returned", "damaged", "missing"] as const).map((key) => <label key={key} className="eyebrow grid min-w-0 gap-1"><span>{outcomeLabel(key)}</span><QuantityStepper label={outcomeLabel(key)} max={remainingCount(item)} value={resolution?.[key] ?? 0} disabled={pending} onValueChange={(value) => onChange(item.id, key, value)} /></label>)}
       </div>
     </div>
   );

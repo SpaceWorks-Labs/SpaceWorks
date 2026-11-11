@@ -42,8 +42,8 @@ export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Maker
       </select></label>
     </div>
       <AnalyticsPeriodControls value={period} onChange={setPeriod} grains={organizationReportGrains(reportKey)} />
-      {organizations.isLoading ? <p role="status">{t`Loading organizations?`}</p> : null}
-      {organizations.isError ? <ErrorText resource="organizations" onRetry={() => void organizations.refetch()} /> : null}
+      {organizations.isLoading ? <p role="status">{t`Loading organizations…`}</p> : null}
+      {organizations.isError ? <ErrorText resource={t`organizations`} onRetry={() => void organizations.refetch()} /> : null}
       {organizations.isSuccess && !choices.length ? <p>{t`No organizations available.`}</p> : null}
       {organizations.data && (organizations.data.next || organizations.data.previous) ? <Pagination page={page} totalPages={Math.ceil(organizations.data.count / 24)} onChange={setPage} /> : null}
     </div> }}
@@ -51,12 +51,12 @@ export function OrganizationAnalyticsPanel({ makerspaces }: { makerspaces: Maker
     main={[
       { title: t`Organization total`, empty: { message: t`No combined activity in this period.` },
         content: organizationId === null ? <EmptyState message={t`Pick an organization to see its numbers.`} />
-          : data ? <AnalyticsData title={t`${title} ? organization total`} rows={data.total.rows} spec={spec} hint={hint} /> : null },
+          : data ? <AnalyticsData title={t`${title} · organization total`} rows={data.total.rows} spec={spec} hint={hint} /> : null },
       ...(organizationId && data ? [{ title: t`Breakdown by makerspace`, empty: { message: t`This organization doesn't own any spaces with reports yet.` },
         isEmpty: !data.breakdown.length, content: <div className="grid gap-6">{data.breakdown.map(entry => {
-          const name = makerspaces.find(space => space.id === entry.makerspace_id)?.name ?? `Makerspace #${entry.makerspace_id}`;
+          const name = makerspaces.find(space => space.id === entry.makerspace_id)?.name ?? t`Space #${entry.makerspace_id}`;
           return <section key={entry.makerspace_id}><h3 className="title-section mb-3">{name}</h3>
-            <AnalyticsData title={`${title} ? ${name}`} rows={entry.rows} spec={spec} hint={hint} />
+            <AnalyticsData title={`${title} · ${name}`} rows={entry.rows} spec={spec} hint={hint} />
           </section>;
         })}</div> }] : []),
     ]} />;

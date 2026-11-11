@@ -10,7 +10,7 @@ export function RequestFlowDialog({ title, open, pending, onClose, formId, submi
   return <FlowLayout presentation="dialog" open={open} title={title} compact
     state={{ status: "ready" }} steps={[{ key: "confirm", label: t`Review and confirm`, state: "current" }]} current="confirm"
     onCancel={() => { if (!pending) onClose(); }} work={children}
-    footer={{ next: { label: submitLabel, pending, pendingLabel: "Saving…", disabled: !canSubmit,
-      disabledReason: !canSubmit ? "Accept at least one unit before continuing." : undefined, tone: danger ? "danger" : "default",
+    footer={{ next: { label: submitLabel, pending, pendingLabel: t`Saving…`, disabled: !canSubmit,
+      disabledReason: !canSubmit ? t`Accept at least one unit before continuing.` : undefined, tone: danger ? "danger" : "default",
       onClick: () => (document.getElementById(formId) as HTMLFormElement | null)?.requestSubmit() } }} />;
 }

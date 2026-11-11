@@ -1,9 +1,12 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ActionControl, EmptyState, ListRow, OverflowMenu, RelativeTime, StatusBadge, StatusPill, type Action } from "../../../components/ui";
+import { requestStatusLabel } from "../../../components/ui/StatusStepper";
 import type { HardwareRequest } from "./Queues";
 import { RequestDetail } from "./RequestDetail";
+import { LoanContextPanel } from "../loanContext/LoanContextPanel";
+import type { Makerspace } from "./shared";
 
 /** "2 damaged · 1 missing" across the request, so problem loans stand out without opening each one. */
 function itemFlags(row: HardwareRequest) {
@@ -16,7 +19,8 @@ function shelves(row: HardwareRequest) {
   return row.status === "accepted" ? [...new Set(row.items.map(item => item.storage_location).filter(Boolean))] : [];
 }
 
-export function RequestList({ rows, canViewAudit = false, actions, primary, menu, reject, extra }: {
+export function RequestList({ makerspace, rows, canViewAudit = false, actions, primary, menu, reject, extra }: {
+  makerspace?: Makerspace;
   rows: HardwareRequest[]; canViewAudit?: boolean; actions?: (row: HardwareRequest) => ReactNode;
   primary?: (row: HardwareRequest) => Action | undefined; menu?: (row: HardwareRequest) => Action[];
   reject?: (row: HardwareRequest) => Action; extra?: (row: HardwareRequest) => ReactNode;
@@ -56,13 +60,13 @@ export function RequestList({ rows, canViewAudit = false, actions, primary, menu
     ];
     return <article key={row.id} aria-label={t`Request #${row.id}`}>
       <ListRow title={row.requester_display || row.requester_username} identity={identity} onClick={() => open(row)}
-        meta={<><span>#{row.id} · {row.items.length} {row.items.length === 1 ? "item" : "items"} · {row.items.slice(0, 2).map(item => `${item.product_name} ×${item.requested_quantity}`).join(", ")}{row.items.length > 2 ? t` · +${row.items.length - 2} more` : ""}</span>
+        meta={<><span>#{row.id} · {plural(row.items.length, { one: "# item", other: "# items" })} · {row.items.slice(0, 2).map(item => `${item.product_name} ×${item.requested_quantity}`).join(", ")}{row.items.length > 2 ? t` · +${row.items.length - 2} more` : ""}</span>
           {row.requested_for ? <span className="mt-1 block break-words">{row.requested_for}</span> : null}
           {shelf.length ? <span className="mt-1 block break-words">{t`Shelf: ${shelf.join(", ")}`}</span> : null}
           {row.rejection_reason ? <span className="mt-1 block break-words">{t`Rejected: ${row.rejection_reason}`}</span> : null}
           {row.status === "accepted" && row.pickup_until ? <span className="mt-1 block">{t`Collect by `}<RelativeTime date={row.pickup_until} /></span> : null}
           {row.return_due_at ? <span className="mt-1 block">{new Date(row.return_due_at).getTime() < Date.now() ? t`Overdue · ` : t`Due `}<RelativeTime date={row.return_due_at} /></span> : null}</>}
-        right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={row.status} />
+        right={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={row.status} label={requestStatusLabel(row.status)} />
           {flags ? <StatusPill tone="danger" label={flags} /> : null}
           {next ? <ActionControl primary action={{ ...next, label: row.status === "issued" || row.status === "partially_returned" ? t`Return` : next.label }} />
             : pending ? <ActionControl action={{ label: t`Review`, onClick: () => open(row) }} /> : null}
@@ -70,7 +74,7 @@ export function RequestList({ rows, canViewAudit = false, actions, primary, menu
     </article>;
   })}
     {detail ? <RequestDetail row={detail} canViewAudit={canViewAudit} primary={primary?.(detail)} secondary={reject?.(detail)}
-      menu={menu?.(detail)} extra={extra?.(detail)} view={params.get("requestView") ?? "overview"}
+      menu={menu?.(detail)} extra={<>{extra?.(detail)}{makerspace ? <LoanContextPanel tenant={makerspace.id} request={detail.id} modules={makerspace.enabled_modules} unavailable={makerspace.unavailable_apps} /> : null}</>} view={params.get("requestView") ?? "overview"}
       onView={view => update({ requestView: view })} onClose={() => update({ request: "", id: "", requestView: "", queue: params.get("queue") || (detail.status === "pending_approval" ? "pending" : detail.status === "accepted" ? "accepted" : ["issued", "partially_returned"].includes(detail.status) ? "active" : "history") })} /> : null}
   </div>;
 }

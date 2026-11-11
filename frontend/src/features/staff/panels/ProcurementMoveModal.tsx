@@ -73,7 +73,7 @@ export function ProcurementMoveModal({ item, makerspace, onClose, onMoved }: {
 
   return <FlowLayout presentation="dialog" open={open} title={isHardware ? t`Move to inventory` : t`Move to printing`} subject={item ? `${item.name} · ${item.quantity} received` : ""}
     state={{ status: "ready" }} steps={[{ key: "destination", label: t`Choose a destination`, state: "current" }]} current="destination" onCancel={onClose}
-    footer={{ next: { label: t`Move`, pending, pendingLabel: "Moving…", disabled: !canSubmit, disabledReason: "Choose a destination and complete the required fields.", onClick: () => isHardware ? moveHardware.mutate() : movePrinting.mutate() } }}
+    footer={{ next: { label: t`Move`, pending, pendingLabel: t`Moving…`, disabled: !canSubmit, disabledReason: t`Choose a destination and complete the required fields.`, onClick: () => isHardware ? moveHardware.mutate() : movePrinting.mutate() } }}
     work={<div className="grid gap-4">{isHardware ? <HardwareMoveForm form={hardware} setForm={setHardware} products={products.data?.results ?? []} categories={categoryResults(categories.data)} containers={containers.data?.results ?? []} />
       : <PrintingMoveForm form={printing} setForm={setPrinting} printers={printers.data?.results ?? []} />}
       <ErrorText message={error instanceof Error ? error.message : undefined} />

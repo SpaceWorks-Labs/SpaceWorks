@@ -21,6 +21,7 @@ import {
   type ProcurementMachineTypeOptions,
 } from "./ProcurementPanelTypes";
 import { ProcurementMoveModal } from "./ProcurementMoveModal";
+import { RefillConsumableDialog } from "./RefillConsumableDialog";
 import { ReorderSuggestions } from "./ReorderSuggestions";
 import { ListLayout } from "../../../components/layouts";
 import { useSearchParams } from "react-router-dom";
@@ -30,6 +31,7 @@ import { capabilityOn } from "../../../lib/features";
 import { invalidateFinance } from "../../finance/financeApi";
 import { MarkBoughtDialog } from "./MarkBoughtDialog";
 import { VendorsPanel } from "./VendorsPanel";
+import { AreaOverviewPage } from "../areaOverview/AreaOverviewPage";
 
 type StatusFilter = "all" | ToBuyStatus;
 type UpdateVariables = { id: number; payload: { status: ToBuyStatus; vendor_name: string; actual_unit_cost: number | null } };
@@ -146,9 +148,11 @@ export function ProcurementPanel({
   const tabHref = (status: string) => { const next = new URLSearchParams(params); next.set("status", status); return `?${next}`; };
   const showView = (view: string) => setParams(current => { const next = new URLSearchParams(current); if (view) next.set("view", view); else next.delete("view"); return next; });
   if (vendorsEnabled && params.get("view") === "vendors") return <VendorsPanel makerspaceId={makerspace.id} onBack={() => showView("")} />;
+  // Decision 241: the same list grouped by area, machine type then machine, and item category.
+  if (params.get("view") === "groups") return <AreaOverviewPage title={t`To buy, grouped`} makerspaceId={makerspace.id} section="tobuy" onBack={() => showView("")} />;
   return <ListLayout header={{ title: t`To buy`, subtitle: t`What the space needs, from request to shelf.`, primary: add,
     secondary: vendorsEnabled ? { label: t`Vendors`, onClick: () => showView("vendors") } : undefined,
-    overflow: [{ label: t`Export CSV`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("csv") }, { label: t`Export Excel`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("xlsx") }] }}
+    overflow: [{ label: t`Group by area and machine`, onClick: () => showView("groups") }, { label: t`Export CSV`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("csv") }, { label: t`Export Excel`, pending: exportToBuy.isPending, onClick: () => exportToBuy.mutate("xlsx") }] }}
     callout={rows.some(item => item.status === "received" && !item.moved_to_inventory_at) ? { size: "banner", tone: "warn", lead: "Received items aren't in inventory yet.", body: t`Move a purchase onto the shelves when it's ready.`, action: { label: t`Move them`, onClick: () => setMoveTarget(rows.find(item => item.status === "received" && !item.moved_to_inventory_at)!) } } : undefined}
     state={inventoryQueryState(items, "the list")} isEmpty={!rows.length} filtered={statusFilter !== "all"}
     empty={{ message: t`Nothing on the list yet. Add the first thing your space needs.`, action: add }}
@@ -165,9 +169,9 @@ export function ProcurementPanel({
         <Field label={t`Item name`} className="sm:col-span-2"><input className="desk-input sm:col-span-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label={t`Quantity`}><input className="desk-input" type="number" min={1} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} /></Field>
         <Field label={t`Link (optional)`}><input className="desk-input" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} /></Field>
-        <Field label={t`Estimated unit cost`}><input className="desk-input" type="number" min={0} step="0.01" value={form.estimated_unit_cost} onChange={(e) => setForm({ ...form, estimated_unit_cost: e.target.value })} /></Field>
+        <Field label={t`Estimated unit cost`}><input className="desk-input" type="number" min={0} step="any" value={form.estimated_unit_cost} onChange={(e) => setForm({ ...form, estimated_unit_cost: e.target.value })} /></Field>
         <Field label={t`Vendor`}><input className="desk-input" value={form.vendor_name} onChange={(e) => setForm({ ...form, vendor_name: e.target.value })} /></Field>
-        <Field label={t`Actual unit cost`}><input className="desk-input" type="number" min={0} step="0.01" value={form.actual_unit_cost} onChange={(e) => setForm({ ...form, actual_unit_cost: e.target.value })} /></Field>
+        <Field label={t`Actual unit cost`}><input className="desk-input" type="number" min={0} step="any" value={form.actual_unit_cost} onChange={(e) => setForm({ ...form, actual_unit_cost: e.target.value })} /></Field>
         <label className="eyebrow grid gap-1">
           {t`Machine type`}<select
             className="desk-input"
@@ -189,7 +193,9 @@ export function ProcurementPanel({
       </form>
         <ErrorText message={create.error?.message || machineTypes.error?.message} />
       </Modal><ErrorText message={exportToBuy.error?.message} />
-      <ProcurementMoveModal item={moveTarget} makerspace={makerspace} onClose={() => setMoveTarget(null)} onMoved={invalidate} />
+      <ProcurementMoveModal item={moveTarget?.source_consumable ? null : moveTarget} makerspace={makerspace} onClose={() => setMoveTarget(null)} onMoved={invalidate} />
+      {moveTarget?.source_consumable ? <RefillConsumableDialog key={moveTarget.id} item={moveTarget} onClose={() => setMoveTarget(null)}
+        onDone={() => { invalidate(); void queryClient.invalidateQueries({ queryKey: ["consumables", makerspace.id] }); }} /> : null}
       {boughtTarget ? <MarkBoughtDialog key={boughtTarget.id} item={boughtTarget} makerspaceId={makerspace.id} vendorsEnabled={vendorsEnabled}
         onClose={() => setBoughtTarget(null)} onDone={() => { setBoughtTarget(null); invalidate(); invalidateFinance(queryClient, makerspace.id);
           void queryClient.invalidateQueries({ queryKey: ["consumables", makerspace.id] }); }} /> : null}

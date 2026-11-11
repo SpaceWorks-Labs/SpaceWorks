@@ -78,7 +78,7 @@ export function StatCards({ stats }: { stats: [string, number | undefined][] }) 
 export function formatReportCell(value: ReportCell | undefined) {
   if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "number") return formatNumber(value);
-  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "boolean") return value ? t`Yes` : t`No`;
   if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value).toLocaleString(formatLocale());
   return value;
 }

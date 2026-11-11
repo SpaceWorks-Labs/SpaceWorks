@@ -20,7 +20,7 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
    destinationContainerNames,
  } = useStockTransfer({ makerspace, makerspaces, isSuperadmin, canEditInventory });
   return <ListLayout header={{ title: t`Transfers`, subtitle: t`Stock moved between boxes and spaces.`, primary: canCreate ? { label: t`New transfer`, onClick: () => { setStep("from"); setOpen(true); } } : undefined }}
-    callout={!canCreate ? { size: "inline", tone: "warn", lead: "Transfers are managed by inventory staff.", body: t`This view is read-only.` } : undefined}
+    callout={!canCreate ? { size: "inline", tone: "warn", lead: t`Transfers are managed by inventory staff.`, body: t`This view is read-only.` } : undefined}
     filters={isSuperadmin && spaceOptions.length > 1 ? { views: <label className="relative flex h-11 min-w-0 items-center">
       <span aria-hidden="true" className="pointer-events-none absolute left-3 text-sm text-muted">{t`Makerspace:`}</span><span className="sr-only">{t`Show transfers for makerspace`}</span>
       <select className="desk-input h-11 w-full min-w-0 pl-28" value={sourceMakerspaceId} onChange={event => changeSource(Number(event.target.value))}>
@@ -33,7 +33,7 @@ export function StockTransferPanel({ makerspace, makerspaces, isSuperadmin, canE
       steps={[{ key: "from", label: t`From and to`, state: step === "from" ? "current" : "done" }, { key: "lines", label: t`What's moving`, state: step === "lines" ? "current" : "todo" }]} onCancel={() => setOpen(false)}
       leaveGuard={reason.trim() || lineRows.some(line => line.productId) ? "Leave this transfer? Your draft will stay here until you start another transfer." : undefined}
       footer={{ back: step === "lines" ? { label: t`Back`, onClick: () => setStep("from") } : undefined,
-        next: step === "from" ? { label: t`Next`, onClick: () => setStep("lines") } : { label: t`Move stock`, pending: create.isPending, pendingLabel: "Moving…", onClick: submit } }}
+        next: step === "from" ? { label: t`Next`, onClick: () => setStep("lines") } : { label: t`Move stock`, pending: create.isPending, pendingLabel: t`Moving…`, onClick: submit } }}
       work={<div className="@container grid gap-4">{step === "from" ? <>
             <div className="grid gap-3 @xl:grid-cols-2">
               {isSuperadmin ? (

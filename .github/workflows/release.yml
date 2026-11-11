@@ -48,8 +48,8 @@ jobs:
           registry_owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           version="${base}-main.${GITHUB_RUN_NUMBER}.${short_sha}"
 
-          # A GitHub Release is cut only when VERSION changed in this push (or on a
-          # manual run). Every other push still builds and promotes images.
+          # A push to main must have changed VERSION (enforced below), so every push cuts a
+          # release; a manual run (workflow_dispatch) re-runs the current VERSION.
           release=false
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             release=true
@@ -65,7 +65,21 @@ jobs:
                 exit 1
               fi
             fi
-            [[ "$previous" != "$base" ]] && release=true
+            if [[ "$previous" == "$base" ]]; then
+              echo "::error file=VERSION::VERSION is still ${base}, the same as the previous main commit. Every push to main must bump VERSION (strictly higher semver) - see docs/project/release-process.md. Use workflow_dispatch to re-run an existing version."
+              exit 1
+            fi
+            release=true
+          fi
+
+          # A release for this VERSION must not already exist (a manual re-run of the
+          # same version via workflow_dispatch is the one deliberate exception).
+          if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]]; then
+            existing="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/v${base}" --jq '.[].ref' 2>/dev/null || true)"
+            if grep -Eq "^refs/tags/v${base//./\.}(-main\..*)?$" <<<"$existing"; then
+              echo "::error file=VERSION::A release/tag for ${base} already exists. Bump VERSION to a new version - see docs/project/release-process.md."
+              exit 1
+            fi
           fi
 
           echo "release=$release" >> "$GITHUB_OUTPUT"
@@ -96,6 +110,11 @@ jobs:
             image: spaceworks-frontend
     steps:
       - uses: actions/checkout@v4
+
+      # The frontend image's build context is ./frontend; /docs reads docs/ through this copy.
+      - name: Snapshot docs into the frontend build context
+        if: matrix.image == 'spaceworks-frontend'
+        run: node frontend/scripts/docs-snapshot.mjs
 
       - uses: docker/setup-qemu-action@v3
 
@@ -169,16 +188,59 @@ jobs:
           '
           done
 
+  # Installer assets (decision 232): install.sh, the deploy bundle, SHA256SUMS and a keyless
+  # cosign signature of SHA256SUMS (GitHub OIDC; no secret or repository setting is needed).
+  assets:
+    needs: prepare
+    if: needs.prepare.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: sigstore/cosign-installer@v3.7.0
+        with:
+          cosign-release: v2.4.1
+
+      - name: Build and sign the installer assets
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          bash scripts/release-assets.sh "$VERSION" "$GITHUB_SHA" release-assets
+          cd release-assets
+          cosign sign-blob --yes --output-signature SHA256SUMS.sig --output-certificate SHA256SUMS.pem SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/*
+          if-no-files-found: error
+
   github-release:
     needs:
       - prepare
       - publish
+      - assets
+    # `assets` is skipped (not failed) on pushes that cut no release.
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && needs.publish.result == 'success' && (needs.assets.result == 'success' || needs.assets.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
+      - name: Download installer assets
+        if: needs.prepare.outputs.release == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets
+
       - name: Create GitHub Release
         if: needs.prepare.outputs.release == 'true'
         uses: softprops/action-gh-release@v3
         with:
+          files: release-assets/*
           tag_name: ${{ needs.prepare.outputs.tag }}
           target_commitish: ${{ github.sha }}
           # Product name then version, e.g. "SpaceWorks 0.7.5". The immutable `tag_name`

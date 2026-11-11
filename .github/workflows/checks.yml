@@ -9,6 +9,7 @@ name: Checks
 #   - backend
 #   - contracts
 #   - rules
+#   - version-bump   (runs on pull requests into main only; mark it required in branch protection)
 
 on:
   pull_request:
@@ -156,3 +157,30 @@ jobs:
 
       - name: 300-line ceiling and CLAUDE.md/AGENTS.md twins
         run: python scripts/ci/check_rules.py
+
+  # Every merge to main must bump VERSION. Only meaningful for PRs whose base is main;
+  # for other events the job is skipped, which branch protection treats as passing.
+  version-bump:
+    name: version-bump
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: VERSION is strictly higher than main and everywhere consistent
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "${BASE_REF}"
+          git show "origin/${BASE_REF}:VERSION" > "${RUNNER_TEMP}/base-version"
+          git ls-remote --tags origin 'v*' | sed 's#.*refs/tags/##; s#\^{}$##' | sort -u > "${RUNNER_TEMP}/tags"
+          python scripts/ci/check_version_bump.py \
+            --base-file "${RUNNER_TEMP}/base-version" \
+            --existing-tags "${RUNNER_TEMP}/tags"

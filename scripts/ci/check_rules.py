@@ -7,6 +7,9 @@
 2. CLAUDE.md and AGENTS.md are one document under two names: byte-identical.
 3. No plans, prompts, hand-offs, lane notes or research notes in the repository (owner
    decision #148b): no tracked file may match the patterns in ``planning_reason``.
+4. No double-encoded UTF-8 (Windows-1252 mojibake) in tracked text files: sequences such
+   as an en dash that was re-read as three Latin-1 characters mean a file was saved
+   through the wrong codec. Fix the character, not the check.
 
 Only tracked files are measured, so the local-only test trees (backend/tests/,
 frontend/src/**/*.test.ts(x)) never affect the result.
@@ -183,9 +186,52 @@ def check_no_planning_files(root: str) -> list[str]:
     return ["paperwork"]
 
 
+# Lead characters of double-encoded UTF-8 (written as escapes so this file never matches itself):
+# U+00E2 U+20AC (dashes, quotes, ellipsis), U+00C3/U+00C2 + a continuation byte as Latin-1/cp1252,
+# U+00EF U+00BF U+00BD (a replacement character that was re-encoded).
+_CP1252_EXTRAS = "\u0152\u0153\u0160\u0161\u0178\u017d\u017e\u0192\u02c6\u02dc\u2013\u2014\u2018-\u201e\u2020-\u2022\u2026\u2030\u2039\u203a\u20ac\u2122"
+MOJIBAKE = re.compile(
+    "[" + "\u00c2\u00c3" + "][" + "\u0080-\u00bf" + _CP1252_EXTRAS + "]"
+    "|\u00e2[" + _CP1252_EXTRAS + "]"
+    "|\u00ef\u00bf\u00bd"
+)
+MOJIBAKE_SUFFIXES = {
+    ".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".css", ".html", ".md", ".txt", ".po",
+    ".json", ".yml", ".yaml", ".sh", ".ps1", ".toml", ".cfg", ".ini", ".example",
+}
+
+
+def mojibake_hits(root: str) -> list[tuple[str, int, str]]:
+    out = subprocess.run(["git", "-C", root, "ls-files", "-z"], check=True, capture_output=True)
+    hits: list[tuple[str, int, str]] = []
+    for path in (p for p in out.stdout.decode("utf-8").split("\0") if p):
+        if PurePosixPath(path).suffix not in MOJIBAKE_SUFFIXES or path.startswith("frontend/src/generated/"):
+            continue
+        try:
+            with open(os.path.join(root, path), encoding="utf-8") as handle:
+                lines = handle.read().splitlines()
+        except (OSError, UnicodeDecodeError):
+            continue
+        hits += [(path, number, line.strip()[:100]) for number, line in enumerate(lines, 1) if MOJIBAKE.search(line)]
+    return hits
+
+
+def check_mojibake(root: str) -> list[str]:
+    print("[mojibake] no double-encoded UTF-8 in tracked text files")
+    hits = mojibake_hits(root)
+    if not hits:
+        print("  ok")
+        return []
+    print(f"  FAIL: {len(hits)} line(s) with double-encoded characters:")
+    for path, number, text in hits:
+        print(f"    {path}:{number}: {text}")
+        annotate(path, f"Line {number} holds double-encoded UTF-8 (mojibake); restore the intended character")
+    return ["mojibake"]
+
+
 def main() -> int:
     root = repo_root()
-    failures = check_ceiling(root) + check_twin_docs(root) + check_no_planning_files(root)
+    failures = check_ceiling(root) + check_twin_docs(root) + check_no_planning_files(root) + check_mojibake(root)
     if failures:
         print(f"Rules failed: {', '.join(failures)}")
         return 1

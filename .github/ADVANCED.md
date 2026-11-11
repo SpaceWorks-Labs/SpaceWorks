@@ -1,7 +1,7 @@
 # Space Works — Advanced configuration
 
 Optional configuration for operators. None of this is needed for a standard self-hosted install —
-the [Quick start](../README.md#quick-start) covers the common case. See
+the [Quick start](../README.md#quickstart) covers the common case. See
 [docs/self-hosting.md](../docs/self-hosting.md) for the full environment reference.
 
 ## Telegram alerts

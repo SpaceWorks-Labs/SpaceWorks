@@ -8,7 +8,6 @@ space, so no request crosses tenants.
 import hmac
 from datetime import datetime, timezone as dt_timezone
 
-from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.http import http_date
@@ -21,19 +20,21 @@ from rest_framework.views import APIView
 from apps.openapi_errors import errors
 
 from ..models import WalletDeviceRegistration, WalletPass
-from .credentials import apple_ready, digest
+from .credentials import apple_for, digest
 
 TAGS = ["Wallet passes"]
 
 
 def _pass(request, pass_type, serial):
-    if not apple_ready() or pass_type != settings.WALLET_APPLE_PASS_TYPE_ID:
-        return None
     header = request.headers.get("Authorization", "")
     if not header.startswith("ApplePass "):
         return None
     row = WalletPass.objects.filter(serial=serial, platform="apple").select_related("makerspace").first()
     if row is None or not hmac.compare_digest(row.auth_token_digest, digest(header[len("ApplePass "):])):
+        return None
+    # The pass names its own space, so the Pass Type ID must be the one that space (or the platform) signs with.
+    creds = apple_for(row.makerspace_id)
+    if creds is None or pass_type != creds.pass_type_id or row.pass_type_id not in ("", creds.pass_type_id):
         return None
     return row
 
@@ -72,9 +73,8 @@ class ApplePassSerialsView(_Base):
     @extend_schema(tags=TAGS, summary="Serial numbers of this device's passes updated since a tag", request=None,
                    responses={200: OpenApiTypes.OBJECT, 204: None})
     def get(self, request, device, pass_type):
-        if not apple_ready() or pass_type != settings.WALLET_APPLE_PASS_TYPE_ID:
-            return Response(status=204)
-        rows = WalletPass.objects.filter(devices__device_digest=digest(device), platform="apple")
+        rows = WalletPass.objects.filter(devices__device_digest=digest(device), platform="apple",
+                                         pass_type_id=pass_type)
         since = request.query_params.get("passesUpdatedSince", "")
         if since.isdigit():
             rows = rows.filter(last_updated_at__gt=datetime.fromtimestamp(int(since), tz=dt_timezone.utc))

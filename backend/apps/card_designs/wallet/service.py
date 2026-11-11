@@ -9,7 +9,6 @@ from django.utils.translation import gettext
 import logging
 import secrets
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -18,24 +17,49 @@ from apps.audit import services as audit
 
 from ..models import CardJob, WalletPass
 from .content import content_digest, pass_content
-from .credentials import auth_token, configured_platforms, digest
+from .credentials import apple_for, auth_token, configured_platforms, digest
 
 logger = logging.getLogger(__name__)
-SCOPES = {"member_card": "member_cards", "programme_card": "id_programme", "event_card": "event"}
+SCOPES = {"member_card": "member_cards", "programme_card": "id_programme", "event_card": "event",
+          "staff_card": "staff_cards"}
+
+
+def _check_platform_allowance(kind, card, platform):
+    """Owner 2026-11-11: a NEW pass signed with the PLATFORM certificates counts against the space's monthly
+    allowance (null = unlimited). Own-credential passes and re-requests of an existing pass are never limited."""
+    from apps.managed_hosting.platform_limits import note_reached, platform_limit, platform_refusal
+    from .credentials import apple_for, google_for
+    space = card.makerspace
+    if platform_limit(space, "platform_wallet_monthly") is None or WalletPass.objects.filter(
+            **{kind: card}, platform=platform).exists():
+        return
+    creds = apple_for(space.pk) if platform == "apple" else google_for(space.pk)
+    if creds is None or getattr(creds, "source", "") != "platform":
+        return
+    refusal = platform_refusal(space, "platform_wallet_monthly")
+    if refusal:
+        note_reached(space, "platform_wallet_monthly")
+        raise ValidationError({"platform": refusal, "code": "platform_wallet_limit_reached"},
+                              code="platform_wallet_limit_reached")
 
 
 def request_pass(actor, kind, card, platform):
     from ..jobs import enqueue
     from ..switches import wallet_on
-    if platform not in configured_platforms() or not wallet_on(kind, card.makerspace):
+    if platform not in configured_platforms(card.makerspace_id) or not wallet_on(kind, card.makerspace):
         raise ValidationError({"platform": gettext("Wallet passes are not available here.")})
+    _check_platform_allowance(kind, card, platform)
+    if not WalletPass.objects.filter(**{kind: card}, platform=platform).exists():
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(card.makerspace, "wallet_passes")  # decision 284: only a NEW pass counts
     with transaction.atomic():
         row, created = WalletPass.objects.get_or_create(
             **{kind: card}, platform=platform,
             defaults={"makerspace_id": card.makerspace_id, "serial": secrets.token_hex(16), "auth_token_digest": ""})
         if created:
             row.auth_token_digest = digest(auth_token(row.serial))
-            row.pass_type_id = getattr(settings, "WALLET_APPLE_PASS_TYPE_ID", "") if platform == "apple" else ""
+            creds = apple_for(card.makerspace_id) if platform == "apple" else None
+            row.pass_type_id = creds.pass_type_id if creds else ""
             row.save(update_fields=["auth_token_digest", "pass_type_id"])
         job, _ = enqueue(actor, card.makerspace, CardJob.Kind.WALLET_ISSUE, scope=SCOPES[kind], targets=[card.pk],
                          params={}, revision=f"{platform}:{row.serial}:{row.generation}")
@@ -64,8 +88,12 @@ def issue_from_job(job):
         job.params = {**job.params, "save_url": save_link(row, content)}
         CardJob.objects.filter(pk=job.pk).update(params=job.params)
     WalletPass.objects.filter(pk=row.pk).update(last_updated_at=timezone.now(), content_digest=content_digest(content))
+    from .credentials import google_for
+    creds = apple_for(job.makerspace_id) if row.platform == "apple" else google_for(job.makerspace_id)
+    # `source` ("platform" when signed with the operator's certificates) is what `platform_wallet_monthly`
+    # counts: only platform-signed passes, never a space's own certificates.
     audit.record(job.requested_by, "wallet_pass.issued", makerspace=job.makerspace, target=row,
-                 meta={"pass_id": row.pk, "platform": row.platform})
+                 meta={"pass_id": row.pk, "platform": row.platform, "source": getattr(creds, "source", "own")})
     return True
 
 

@@ -9,6 +9,7 @@ another tenant's host -- answers one uniform 404. No audit row per check: a dail
 aggregate counter feeds the issuance report.
 """
 from django.db.models import F
+from django.utils.translation import gettext
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
@@ -16,7 +17,7 @@ from .holders import registered
 from .models import CardVerifyCheckDay, CardVerifyToken
 from .tokens import SHAPE
 
-KIND_OF = {"member_card": "space", "programme_card": "organisation", "event_card": "event"}
+KIND_OF = {"member_card": "space", "programme_card": "organisation", "event_card": "event", "staff_card": "space"}
 
 
 def _count(makerspace_id):
@@ -90,6 +91,8 @@ def _label(kind, card, values):
         from apps.makerspaces.models import MemberCardSettings
         settings_row = MemberCardSettings.objects.filter(makerspace_id=card.makerspace_id).first()
         return values.get("plan") or None if settings_row is None or settings_row.verify_show_plan else None
+    if kind == "staff_card":
+        return gettext("Staff: %(roles)s") % {"roles": values.get("roles", "")} if values.get("roles") else gettext("Staff")
     if kind == "programme_card":
         return values.get("programme") or None
     return values.get("event") or None

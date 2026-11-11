@@ -132,7 +132,7 @@ class MyCardWalletView(APIView):
                    responses={201: CardJobSerializer, **errors(400, 401, 404)})
     def post(self, request, kind, card_id, platform):
         from .wallet.service import request_pass
-        spec, card = own_card(request.user, kind, card_id)
+        spec, card = own_card(request.user, kind, card_id, staff_ok=True)
         if spec.standing(card) != "valid":
             raise ValidationError({"detail": gettext("Only a valid card can go into a wallet.")})
         _row, job = request_pass(request.user, kind, card, platform)

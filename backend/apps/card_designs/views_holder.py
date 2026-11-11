@@ -19,7 +19,7 @@ from .lifecycle import public_verify_on
 from .models import CardPhotoRequest
 
 TAGS = ["My cards"]
-KIND_CHOICES = ("member_card", "programme_card", "event_card")
+KIND_CHOICES = ("member_card", "programme_card", "event_card", "staff_card")
 
 
 class MyCardSerializer(serializers.Serializer):
@@ -79,14 +79,14 @@ def _row(kind, spec, card, standing):
     document, _design = spec.design(card)
     return {"kind": kind, "id": card.pk, "makerspace_id": card.makerspace_id, "issuer": spec.issuer(card)["name"],
             "title": {"member_card": "Member card", "programme_card": values.get("programme", "ID card"),
-                      "event_card": values.get("event", "Event card")}[kind],
+                      "event_card": values.get("event", "Event card"), "staff_card": gettext("Staff card")}[kind],
             "name": values.get("name", ""), "number": values.get("number", ""), "label": spec.label(card) or "",
             "valid_until": values.get("valid_until", ""), "status": standing,
             "has_back": bool(document.get("back_enabled")),
             "check_url": tokens.url(token.token) if token and public_verify_on(kind, card) else "",
             "photo_request_open": CardPhotoRequest.objects.filter(**{kind: card}, resolved_at__isnull=True).exists(),
-            "wallet_platforms": list(configured_platforms()) if standing == "valid" and wallet_on(kind, card.makerspace)
-            else [], "email_available": not blocked(card.makerspace), "qr_image": _qr_image(kind, spec, card, token,
+            "wallet_platforms": list(configured_platforms(card.makerspace_id)) if standing == "valid" and wallet_on(kind, card.makerspace)
+            else [], "email_available": kind != "staff_card" and not blocked(card.makerspace), "qr_image": _qr_image(kind, spec, card, token,
                                                                                           standing),
             "photo_set": bool(getattr(card, "photo_object_key", "")),
             "photo_cleanup_available": segmentation.available() and standing != "revoked",
@@ -133,7 +133,7 @@ class MyCardDownloadView(APIView):
     def get(self, request, kind, card_id):
         from .cards import render
         from .downloads import record_download
-        spec, card = own_card(request.user, kind, card_id)
+        spec, card = own_card(request.user, kind, card_id, staff_ok=True)
         if spec.standing(card) == "revoked":
             raise PermissionDenied(gettext("This card was revoked."))
         fmt, side = request.query_params.get("format", "pdf"), request.query_params.get("side", "front")
@@ -178,7 +178,7 @@ class MyCardSettingsView(APIView):
     @extend_schema(tags=TAGS, summary="My card's check-page and extras choices", request=None,
                    responses={200: CardSettingsSerializer, **errors(401, 404)})
     def get(self, request, kind, card_id):
-        _spec, card = own_card(request.user, kind, card_id)
+        _spec, card = own_card(request.user, kind, card_id, staff_ok=True)
         return Response(self._payload(kind, card))
 
     @extend_schema(tags=TAGS, summary="Choose what the check page shows, and the opt-in extras",
@@ -215,7 +215,7 @@ class MyCardRotateLinkView(APIView):
     @extend_schema(tags=TAGS, summary="Rotate my check link (the old printed QR stops working)", request=None,
                    responses={200: CheckLinkSerializer, **errors(400, 401, 404)})
     def post(self, request, kind, card_id):
-        _spec, card = own_card(request.user, kind, card_id)
+        _spec, card = own_card(request.user, kind, card_id, staff_ok=True)
         if not public_verify_on(kind, card):
             raise ValidationError({"detail": gettext("The public check page is off for this card.")})
         token = tokens.rotate(kind, card)

@@ -72,7 +72,7 @@ class CardDesignRejectView(CardDesignApproveView):
 class CardDesignResetView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="Start the draft again from one of the six templates",
+    @extend_schema(tags=TAGS, summary="Start the draft again from one of the card templates",
                    request=CardDesignResetSerializer, responses={200: CardDesignSerializer, **errors(400, 401, 403, 404)})
     def post(self, request, pk):
         design = require_edit(request.user, design_for(request.user, pk))

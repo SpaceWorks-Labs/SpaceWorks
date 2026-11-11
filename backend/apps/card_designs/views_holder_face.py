@@ -46,7 +46,7 @@ def qr_uri(payload):
 
 
 def live_card(user, kind, card_id):
-    spec, card = own_card(user, kind, card_id)
+    spec, card = own_card(user, kind, card_id, staff_ok=True)
     if spec.standing(card) == "revoked":
         raise PermissionDenied(gettext("This card was revoked."))
     return spec, card
@@ -64,6 +64,7 @@ def face(kind, card):
             "logos": {name: data_uri(data) for name, data in (context.logos or {}).items()},
             "assets": {key: data_uri(data) for key, data in (context.assets or {}).items()},
             "desk_qr": qr_uri(context.desk_qr), "verify_qr": qr_uri(context.verify_qr),
+            "checkin_qr": qr_uri(context.checkin_qr),
             "barcodes": {source: barcode_svg_uri(barcode_payload({"source": source}, context))
                          for source in ("number", "desk")}}
 
@@ -93,7 +94,8 @@ class MyCardFontView(APIView):
         document = document_for(kind, card)
         used = {layer.get("font_family") for side in ("front", "back")
                 for layer in (document.get(side) or {}).get("layers", ()) if layer.get("font_family")}
-        family = next((name for name in used if fonts.slug(name) == family_slug), None)
+        family = fonts.canonical(next((name for name in {*used, *map(fonts.canonical, used)}
+                                       if fonts.slug(name) == family_slug), None))
         data = font_store.font_bytes(family, weight) if family else None
         if data is None:
             raise NotFound()

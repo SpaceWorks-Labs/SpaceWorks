@@ -9,7 +9,7 @@ import json
 
 from ..holders import spec_for
 
-LABELS = {"member_card": "Plan", "programme_card": "Programme", "event_card": "Event"}
+LABELS = {"member_card": "Plan", "programme_card": "Programme", "event_card": "Event", "staff_card": "Roles"}
 
 
 def pass_content(kind, card):
@@ -20,7 +20,7 @@ def pass_content(kind, card):
     token = tokens.live(kind, card)
     qr = spec.desk_payload(card) if kind == "member_card" else (tokens.url(token.token) if token else "")
     label_value = {"member_card": values.get("plan"), "programme_card": values.get("programme"),
-                   "event_card": values.get("event")}[kind] or ""
+                   "event_card": values.get("event"), "staff_card": values.get("roles")}[kind] or ""
     return {
         "issuer": issuer["name"], "name": values.get("name", ""), "number": values.get("number", ""),
         "label": LABELS[kind], "label_value": label_value, "valid_until": values.get("valid_until", ""),

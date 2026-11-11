@@ -2,6 +2,7 @@
 from django.urls import path
 
 from .wallet.views_apple import ApplePassLatestView, ApplePassLogView, ApplePassRegistrationView, ApplePassSerialsView
+from .wallet.views_guest import GuestPassPkpassDownloadView
 
 urlpatterns = [
     path("apple/v1/devices/<str:device>/registrations/<str:pass_type>/<str:serial>", ApplePassRegistrationView.as_view(),
@@ -10,4 +11,5 @@ urlpatterns = [
          name="wallet-apple-serials"),
     path("apple/v1/passes/<str:pass_type>/<str:serial>", ApplePassLatestView.as_view(), name="wallet-apple-pass"),
     path("apple/v1/log", ApplePassLogView.as_view(), name="wallet-apple-log"),
+    path("guest-pass/<str:token>.pkpass", GuestPassPkpassDownloadView.as_view(), name="wallet-guest-pass-download"),
 ]

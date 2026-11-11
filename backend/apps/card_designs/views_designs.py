@@ -1,7 +1,7 @@
 """Staff card-design endpoints: list/create per space, read/save one design (CAS)."""
 from django.utils.translation import gettext
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from apps.openapi_errors import errors
 
-from . import designs, resolution
+from . import archive, designs, resolution
 from .authority import acted_for, design_for, require_edit, space_for
 from .default_templates import LABELS, THEMES, build
 from .models import CardDesign
@@ -23,7 +23,7 @@ TAGS = ["Card designs"]
 class CardTemplateListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(tags=TAGS, summary="List the six card templates, light and dark, for this design's domain", request=None,
+    @extend_schema(tags=TAGS, summary="List the card templates, light and dark, for this design's domain", request=None,
                    responses={200: CardTemplateSerializer(many=True), **errors(400, 401, 403, 404)})
     def get(self, request, pk):
         domain = require_edit(request.user, design_for(request.user, pk)).domain
@@ -35,11 +35,15 @@ class SpaceCardDesignListView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(tags=TAGS, summary="List member-card designs (space default, plan and title overrides)",
+                   description="Archived overrides are left out unless `archived=true`, which lists only them.",
+                   parameters=[OpenApiParameter("archived", bool, required=False)],
                    request=None, responses={200: CardDesignSerializer(many=True), **errors(400, 401, 403, 404)})
     def get(self, request, makerspace_id):
         space = space_for(request.user, makerspace_id)
         resolution.get_or_create(space, "member_cards", actor=request.user)
-        rows = CardDesign.objects.filter(makerspace=space, domain="member_cards").select_related("plan", "title")
+        archived = request.query_params.get("archived") in ("1", "true")
+        rows = CardDesign.objects.filter(makerspace=space, domain="member_cards",
+                                         archived_at__isnull=not archived).select_related("plan", "title")
         return Response(CardDesignSerializer(rows, many=True, context={"request": request}).data)
 
     @extend_schema(tags=TAGS, summary="Create a per-plan or per-title member-card design",
@@ -89,15 +93,9 @@ class CardDesignDetailView(APIView):
         design.refresh_from_db()
         return Response(CardDesignSerializer(design, context={"request": request}).data)
 
-    @extend_schema(tags=TAGS, summary="Delete a plan or title override (the space default stays)", request=None,
-                   responses={204: None, **errors(400, 401, 403, 404)})
+    @extend_schema(tags=TAGS, summary="Delete a never-published override (the space default stays)",
+                   description="An override that was ever published answers 409 `archive_instead`: archive it.",
+                   request=None, responses={204: None, **errors(400, 401, 403, 404, 409)})
     def delete(self, request, pk):
-        design = require_edit(request.user, design_for(request.user, pk))
-        if not (design.plan_id or design.title_id or design.ticket_type_id or
-                (design.event_id and design.domain in ("event_card", "event_ticket"))):
-            raise ValidationError({"detail": gettext("The default design cannot be deleted; reset it instead.")})
-        from apps.audit import services as audit
-        audit.record(request.user, "card_design.deleted", makerspace=design.makerspace, target=design,
-                     meta={"design_id": design.pk, "domain": design.domain})
-        design.delete()
+        archive.delete(request.user, require_edit(request.user, design_for(request.user, pk)))
         return Response(status=status.HTTP_204_NO_CONTENT)

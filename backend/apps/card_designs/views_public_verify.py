@@ -21,6 +21,9 @@ class IssuerSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(choices=("space", "organisation", "event"))
     name = serializers.CharField()
     logo_url = serializers.CharField(allow_null=True)
+    space_noun = serializers.ChoiceField(
+        choices=("makerspace", "organization"), required=False,
+        help_text="Space issuers only: the wording noun of the issuing space (decision 295).")
 
 
 class HolderSerializer(serializers.Serializer):

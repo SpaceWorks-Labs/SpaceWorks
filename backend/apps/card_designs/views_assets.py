@@ -125,8 +125,8 @@ class CardFontFileView(APIView):
                    request=None, responses={(200, "font/ttf"): OpenApiTypes.BINARY, **errors(401, 403, 404)})
     def get(self, request, pk, family_slug, weight):
         require_edit(request.user, design_for(request.user, pk))
-        family = next((name for name in [*fonts.BRAND, *fonts.catalogue(), *fonts.bundled_noto()]
-                       if fonts.slug(name) == family_slug), None)
+        family = fonts.canonical(next((name for name in [*fonts.BRAND, *fonts.LEGACY_FAMILIES, *fonts.catalogue(),
+                                                         *fonts.bundled_noto()] if fonts.slug(name) == family_slug), None))
         data = font_store.font_bytes(family, weight) if family else None
         if data is None:
             raise NotFound()

@@ -16,7 +16,7 @@ from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.openapi_errors import errors
 
-from . import jobs
+from . import job_targets_filter, jobs
 from .authority import space_for
 from .models import CardJob
 from .serializers import CardJobCreateSerializer, CardJobLinkSerializer, CardJobSerializer
@@ -67,7 +67,9 @@ class MemberCardJobListView(APIView):
         params = {"explicit": False} if values["kind"] == "email" else job_params(values)
         design_revision = space.card_designs.filter(domain="member_cards").values_list("published_revision", flat=True)
         job, created = jobs.enqueue(request.user, space, values["kind"], scope="member_cards",
-                                    targets=member_card_targets(space, values), params=params,
+                                    targets=(job_targets_filter.resolve(request.user, space, values["filter"])
+                                             if values.get("filter") else member_card_targets(space, values)),
+                                    params=params,
                                     revision=list(design_revision))
         return Response(CardJobSerializer(job).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 

@@ -18,10 +18,10 @@ import {
   PublicHandlePage, PublicEventCodePage, PayLinkPage, PresenceNowPage, PublicWebsiteDetailPage, HostingRequestPage,
   HostingInvitePage, HostingRequestStatusPage, PublicShopPage, PublicShopProductPage, ShopOrderStatusPage,
   MemberShopOrdersPage, MfaAccountPage, NotMePage, StaffInvitationAcceptPage, BookingStaffInvitePage, EventStaffInvitePage,
-  ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes, HelpPage,
+  ProgrammeRoutes, CardRoutes, MemberEventAddonRoutes, DonationRoutes, HelpPage, DocsPage,
   TechnicianOptInPage, MyMachineJobsPage, AttendanceReplyPage, CrewSignupPage, ApplicationReviewsPage,
-  MachineJobPage, UseMachinePage, MySessionsPage, OAuthConsentPage, PersonalApiAccessPage,
-  SpeakerClaimPage, EventDiscoverPage, PublicSelfCheckoutPage, ArchivedPayments, MemberAccountPage, PublicPrintRequestPage, PublicMachineServiceStatusPage, JobRequestPage,
+  MachineJobPage, UseMachinePage, MySessionsPage, SupervisedSessionsPage, OAuthConsentPage, PersonalApiAccessPage,
+  SpeakerClaimPage, EventDiscoverPage, PublicSelfCheckoutPage, ArchivedPayments, MemberAccountPage, PublicPrintRequestPage, PublicMachineServiceStatusPage, JobRequestPage, UnsubscribePage, LegalPage,
 } from "./AppRoutesLazyPages";
 // Every public surface below is its own chunk. The makerspace overview and staff shell stay eager
 // because they are the two pages almost every visit lands on; everything else loads when its
@@ -30,6 +30,8 @@ import {
 const MemberBorrowingHistoryPage = lazy(() => import("./features/members/MemberBorrowingHistoryPage").then(m => ({ default: m.MemberBorrowingHistoryPage })));
 const PublicInventoryRoute = lazy(() => import("./features/inventory/PublicInventoryRoute").then(m => ({ default: m.PublicInventoryRoute })));
 const AboutPage = lazy(() => import("./features/AboutPage").then((m) => ({ default: m.AboutPage })));
+const SpacesPage = lazy(() => import("./features/discover/spaces/SpacesPage").then((m) => ({ default: m.SpacesPage })));
+const PublicOrganizationDirectory = lazy(() => import("./features/organizations/PublicOrganizationDirectory").then((m) => ({ default: m.PublicOrganizationDirectory })));
 const PublicBookingResourcePage = lazy(() => import("./features/bookings/PublicBookingResourcePage").then((m) => ({ default: m.PublicBookingResourcePage })));
 const BookingDiscoverPage = lazy(() => import("./features/bookings/BookingDiscoverPage").then((m) => ({ default: m.BookingDiscoverPage })));
 const PublicBookingsPage = lazy(() => import("./features/bookings/PublicBookingsPage").then((m) => ({ default: m.PublicBookingsPage })));
@@ -97,6 +99,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes><Route path="/staff/event-invite" element={<EventStaffInvitePage />} /></Routes>;
   } else if (location.pathname === "/member/archived") {
     routes = <Routes><Route path="/member/archived" element={<ArchivedPayments />} /></Routes>;
+  } else if (location.pathname.startsWith("/unsubscribe/")) {
+    routes = <Routes><Route path="/unsubscribe/:token" element={<UnsubscribePage />} /></Routes>;
   } else if (location.pathname.startsWith("/pay/")) {
     routes = <Routes><Route path="/pay/:token" element={<PayLinkPage />} /></Routes>;
   } else if (location.pathname.startsWith("/organization-invitations/redeem/")) {
@@ -105,6 +109,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes><Route path="/discover/bookings" element={<BookingDiscoverPage />} /></Routes>;
   } else if (location.pathname === "/discover") {
     routes = <Routes><Route path="/discover" element={<EventDiscoverPage />} /></Routes>;
+  } else if (location.pathname === "/privacy" || location.pathname === "/terms") {
+    routes = <Routes><Route path="/privacy" element={<LegalPage slug="privacy" />} /><Route path="/terms" element={<LegalPage slug="terms" />} /></Routes>;
   } else if (mode === "single") {
     routes = <Routes>
       <Route path="/" element={<FamilyHome />} />
@@ -136,6 +142,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/member/machine-jobs/:jobId" element={<MachineJobPage />} />
       <Route path="/machines/:machineId/use" element={<UseMachinePage />} />
       <Route path="/member/machine-sessions" element={<MySessionsPage />} />
+      <Route path="/machines/:machineId/supervise" element={<SupervisedSessionsPage />} />
+      <Route path="/member/supervised-sessions" element={<SupervisedSessionsPage />} />
       <Route path="/member" element={<MemberArea />} />
       <Route path="/member/loans/history" element={<MemberBorrowingHistoryPage />} />
       <Route path="/member/account" element={<MemberAccountPage />} />
@@ -171,6 +179,7 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/help" element={<HelpPage />} />
       <Route path="/help/:sectionId" element={<HelpPage />} />
       <Route path="/help/:sectionId/:articleSlug" element={<HelpPage />} />
+      <Route path="/docs/*" element={<DocsPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
       <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />
@@ -179,6 +188,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
     routes = <Routes>
       <Route path="/" element={landing} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/spaces" element={<SpacesPage />} />
+      <Route path="/organizations" element={<PublicOrganizationDirectory />} />
       <Route path="/o/:organizationSlug" element={<PublicOrganizationPage />} />
       <Route path="/e/:publicToken" element={<PublicEventCodePage />} />
       <Route path="/m/:slug" element={<FamilyHome />} />
@@ -204,6 +215,8 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/member/machine-jobs/:jobId" element={<MachineJobPage />} />
       <Route path="/m/:slug/machines/:machineId/use" element={<UseMachinePage />} />
       <Route path="/m/:slug/member/machine-sessions" element={<MySessionsPage />} />
+      <Route path="/m/:slug/machines/:machineId/supervise" element={<SupervisedSessionsPage />} />
+      <Route path="/m/:slug/member/supervised-sessions" element={<SupervisedSessionsPage />} />
       <Route path="/m/:slug/member" element={<MemberArea />} />
       <Route path="/m/:slug/member/loans/history" element={<MemberBorrowingHistoryPage />} />
       <Route path="/m/:slug/member/account" element={<MemberAccountPage />} />
@@ -256,6 +269,9 @@ export function AppRoutes({ mode, landing }: { mode: "single" | "central"; landi
       <Route path="/m/:slug/help" element={<HelpPage />} />
       <Route path="/m/:slug/help/:sectionId" element={<HelpPage />} />
       <Route path="/m/:slug/help/:sectionId/:articleSlug" element={<HelpPage />} />
+      <Route path="/m/:slug/privacy" element={<LegalPage slug="privacy" />} />
+      <Route path="/m/:slug/terms" element={<LegalPage slug="terms" />} />
+      <Route path="/docs/*" element={<DocsPage />} />
       {/* Public profiles: after every explicit route, before the catch-all. */}
       <Route path="/:handle" element={<PublicHandlePage />} />
       <Route path="*" element={<NotFoundPage />} />

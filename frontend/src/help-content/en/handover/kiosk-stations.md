@@ -10,7 +10,7 @@ A station is a shared device at the desk. Its PIN unlocks the device; the person
 
 ## Set up a station
 
-1. Open **Settings**, then **Lending**, then **Kiosk stations**.
+1. Open **Settings**, then **Inventory**, then **Kiosk stations**.
 2. Name it, choose **Handover** or **Scanner**, and press **Create station**.
 3. Copy the PIN (shown once) and the station's address.
 4. Later: **Rotate PIN**, **Reveal PIN**, **Disable**, or re-enable with a new PIN.

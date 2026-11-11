@@ -26,7 +26,7 @@ It lists your requests, staff handouts, self-checkout loans and returns in this 
 actual dates, states and item outcomes. Use **All borrowing**, **Requests and current loans** or
 **Closed requests and returns**, then **Next** and **Previous** to reach older records.
 
-This read also works for an account without membership while lending is enabled. It never shows
+This read also works for an account without membership while loans are switched on. It never shows
 another borrower's records, private evidence or stock locations. **Payments & receipts** opens
 your separate money history, including charges recorded without online payments.
 

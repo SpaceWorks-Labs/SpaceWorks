@@ -6,10 +6,13 @@ import { AppRoutes } from "./AppRoutes";
 import { lazy, Suspense } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { CenteredCardLayout } from "./components/layouts";
-import { LandingPage } from "./features/LandingPage";
 import { PausedSpacePage } from "./features/platformNotices/PausedSpacePage";
 import { isAccountUtilityPath } from "./lib/accountUtilityPaths";
 import { useTenant } from "./lib/tenant";
+import { LandingGate } from "./features/hub/LandingGate";
+// The hub front page is its own chunk: single-tenant installs never download it.
+const HubLandingPage = lazy(() => import("./features/hub/HubLandingPage").then(m => ({ default: m.HubLandingPage })));
+const FirebaseBridgePage = lazy(() => import("./features/notifications/firebase/FirebaseBridgePage").then(m => ({ default: m.FirebaseBridgePage })));
 const KioskStationPage = lazy(() => import("./features/kiosk/KioskStationPage").then((m) => ({ default: m.KioskStationPage })));
 // Explicit test dev mode only: Vite removes this import and route from production builds.
 const ChartTestPage = import.meta.env.DEV && import.meta.env.MODE === "chart-test"
@@ -18,6 +21,7 @@ const ChartTestPage = import.meta.env.DEV && import.meta.env.MODE === "chart-tes
 export default function App() {
   const tenant = useTenant();
   const { pathname } = useLocation();
+  if (pathname === "/firebase-alerts/setup") return <Suspense fallback={<p role="status">{t`Loading notifications…`}</p>}><FirebaseBridgePage /></Suspense>;
   if (ChartTestPage && pathname === "/__test/charts") return <Suspense fallback={<p role="status">{t`Loading chart fixture…`}</p>}><ChartTestPage /></Suspense>;
   if (pathname === "/reauth/callback" || pathname === "/reauth/confirm") return <ReauthenticationReturn confirmation={pathname === "/reauth/confirm"} />;
   if (pathname === "/account/restore" || pathname === "/member/archived") {
@@ -47,8 +51,8 @@ export default function App() {
   }
   if (!accountUtility && tenant.mode === "single" && tenant.error) {
     return <CenteredCardLayout state={{ status: "ready" }} media={{ icon: "TriangleAlert", tone: "danger" }}
-      title={t`Site unavailable`} body={t`The configured tenant could not be resolved.`}
+      title={t`Site unavailable`} body={t`This makerspace address could not be found. Check the link, or ask the person who runs the site.`}
       primary={{ label: t`Retry`, onClick: () => window.location.reload() }} />;
   }
-  return <ProgrammeDelight><AppRoutes mode={tenant.mode} landing={<LandingPage />} /><ReauthenticationDialog /></ProgrammeDelight>;
+  return <ProgrammeDelight><AppRoutes mode={tenant.mode} landing={<LandingGate landing={<HubLandingPage />} />} /><ReauthenticationDialog /></ProgrammeDelight>;
 }

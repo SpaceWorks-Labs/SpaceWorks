@@ -21,7 +21,7 @@ A **module** is a whole area, such as Bookings, Events or Machines. A **feature*
 2. Tick or untick a feature under its group.
 3. A feature whose module is off says to turn the module on first.
 
-Area managers also find their area's switches in their own settings dialogs (**Lending settings**, **Machine settings**, **Event settings**, **Booking settings**) when you've given them control. Security switches live on the [Security](help:space-manager/security-settings) page instead.
+Area managers also find their area's switches in their own settings dialogs (**Inventory settings**, **Machine settings**, **Event settings**, **Booking settings**) when you've given them control. Security switches live on the [Security](help:space-manager/security-settings) page instead.
 
 ## Deleting data
 

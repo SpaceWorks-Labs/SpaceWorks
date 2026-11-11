@@ -28,7 +28,7 @@ Under **Communication channels**, press **Turn on** for a channel, enter its det
 
 - **Email delivery** holds your sender address, or your own mail server.
 - **Email templates** lets you edit the wording of the emails Space Works sends.
-- **Delivery logs** shows every message sent, including ones a switched-off module skipped.
+- **Delivery log** shows every message sent, including ones a switched-off module skipped.
 
 ## Your own inbox
 

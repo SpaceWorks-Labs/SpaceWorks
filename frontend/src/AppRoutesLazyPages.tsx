@@ -13,6 +13,7 @@ export const PublicStatsTvPage = lazy(() => import("./features/stats/PublicStats
 export const PublicHandlePage = lazy(() => import("./features/publicPages/PublicHandlePage").then((m) => ({ default: m.PublicHandlePage })));
 export const PublicEventCodePage = lazy(() => import("./features/events/PublicEventCodePage").then((m) => ({ default: m.PublicEventCodePage })));
 export const PayLinkPage = lazy(() => import("./features/finance/PayLinkPage").then((m) => ({ default: m.PayLinkPage })));
+export const UnsubscribePage = lazy(() => import("./features/notifications/UnsubscribePage").then((m) => ({ default: m.UnsubscribePage })));
 export const PresenceNowPage = lazy(() => import("./features/presence/PresenceNowPage").then((m) => ({ default: m.PresenceNowPage })));
 export const PublicWebsiteDetailPage = lazy(() => import("./features/events/PublicWebsiteDetailPage").then((m) => ({ default: m.PublicWebsiteDetailPage })));
 export const HostingRequestPage = lazy(() => import("./features/hosting/HostingRequestPage").then((m) => ({ default: m.HostingRequestPage })));
@@ -43,6 +44,7 @@ export const ApplicationReviewsPage = lazy(() => import("./features/events/parti
 export const MachineJobPage = lazy(() => import("./features/machine-jobs/MachineJobPage").then((m) => ({ default: m.MachineJobPage })));
 export const UseMachinePage = lazy(() => import("./features/machine-sessions/UseMachinePage").then((m) => ({ default: m.UseMachinePage })));
 export const MySessionsPage = lazy(() => import("./features/machine-sessions/MySessionsPage").then((m) => ({ default: m.MySessionsPage })));
+export const SupervisedSessionsPage = lazy(() => import("./features/supervised-sessions/SupervisedSessionsPage").then((m) => ({ default: m.SupervisedSessionsPage })));
 export const SpeakerClaimPage = lazy(() => import("./features/events/SpeakerClaimPage").then((m) => ({ default: m.SpeakerClaimPage })));
 export const EventDiscoverPage = lazy(() => import("./features/events/EventDiscoverPage").then((m) => ({ default: m.EventDiscoverPage })));
 export const PublicSelfCheckoutPage = lazy(() => import("./features/inventory/PublicSelfCheckoutPage").then((m) => ({ default: m.PublicSelfCheckoutPage })));
@@ -55,3 +57,7 @@ export const JobRequestPage = lazy(() => import("./features/machine-jobs/JobRequ
 // #196: the app-connection consent screen and personal API access (rarely visited; own chunks).
 export const OAuthConsentPage = lazy(() => import("./features/members/apiAccess/OAuthConsentPage").then((m) => ({ default: m.OAuthConsentPage })));
 export const PersonalApiAccessPage = lazy(() => import("./features/members/apiAccess/PersonalApiAccessPage").then((m) => ({ default: m.PersonalApiAccessPage })));
+// The in-app documentation (/docs/*): Markdown, Mermaid and the API reference each load in their own chunks.
+export const DocsPage = lazy(() => import("./features/docs/DocsPage").then((m) => ({ default: m.DocsPage })));
+// Parity A13: /privacy and /terms (and a space's own, under /m/:slug/ on the central origin).
+export const LegalPage = lazy(() => import("./features/legal/LegalPage").then((m) => ({ default: m.LegalPage })));

@@ -6,7 +6,7 @@ keywords: tenant migration, move space, transfer, self-host, export, import, cut
 ---
 ## Between two servers you run
 
-Open **Tenant migration** on both servers and work through the steps in order:
+Open **Move a space** on both servers and work through the steps in order:
 
 1. **Review disclosure** (source): approve exactly whose personal details travel.
 2. **Pin deployments**: compare fingerprints with the other operator outside the app.
@@ -15,7 +15,7 @@ Open **Tenant migration** on both servers and work through the steps in order:
 5. **Verify & materialise** (target).
 6. **Cut over**: the source stops taking changes and the target goes live.
 
-![Screenshot: the Tenant migration steps](screenshot:sa-tenant-migration)
+![Screenshot: the Move a space steps](screenshot:sa-tenant-migration)
 
 It's one-way. The source space is archived, not deleted, and only one server is writable at a time. Staff sign-ins travel with the space.
 

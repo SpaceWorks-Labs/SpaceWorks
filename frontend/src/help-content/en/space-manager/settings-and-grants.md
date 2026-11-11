@@ -11,7 +11,7 @@ keywords: settings, settings hub, grant, give control, lock, delegate, who can c
 By default, area managers see their area's settings but can't change them.
 
 1. Open **Settings**. Under **Start here**, find **Who can change settings**.
-2. Pick a row: **Event settings**, **Booking settings**, **Machine settings** or **Lending settings**.
+2. Pick a row: **Event settings**, **Booking settings**, **Machine settings** or **Inventory settings**.
 3. Press **Give control to**, choose a person and press **Give control**.
 4. Press **Remove** to take it back.
 

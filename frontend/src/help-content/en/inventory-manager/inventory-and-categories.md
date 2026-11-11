@@ -2,7 +2,7 @@
 title: Items, quantities and categories
 summary: Add items, correct counts with a reason, choose what the public sees, and organise categories.
 order: 40
-keywords: inventory, items, add item, quantity, adjust, categories, archive, public, visibility, lending history, export
+keywords: inventory, items, add item, quantity, adjust, categories, archive, public, visibility, loan history, lending history, export
 ---
 ## Add an item
 
@@ -23,7 +23,7 @@ Open an item and press **Adjust quantities**. Change available, damaged or lost,
 
 ## Other item actions
 
-**Show QR**, **Lending history**, **Move to repair shelf**, **Add to To buy** and **Archive**. Archived items leave the catalogue; restore them from the **Archived** tab. **Export CSV** and **Export Excel** download the list.
+**Show QR**, **Loan history**, **Move to repair shelf**, **Add to To buy** and **Archive**. Archived items leave the catalogue; restore them from the **Archived** tab. **Export CSV** and **Export Excel** download the list.
 
 ## Categories
 

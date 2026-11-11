@@ -1,6 +1,6 @@
 ---
 title: Price lists and member discounts
-summary: Set what lending, machines, rooms, events and membership cost, and give members automatic discounts.
+summary: Set what loans, machines, rooms, events and membership cost, and give members automatic discounts.
 order: 50
 keywords: pricing, price list, rates, free, paid, worked example, discount, member discount, rental, late fee, deposit
 features: charges.pricing, charges.discounts
@@ -8,7 +8,7 @@ features: charges.pricing, charges.discounts
 ## Price lists
 
 1. Open **Settings**, then **Pricing**.
-2. Choose an area: **Lending**, **Machines**, **Bookings**, **Events** or **Membership**.
+2. Choose an area: **Inventory**, **Machines**, **Bookings**, **Events** or **Membership**.
 3. Choose **Free** or **Paid**, and set the rates, caps, grace periods and billing steps.
 4. Check the **Worked example** to see what a typical member would pay, then save.
 

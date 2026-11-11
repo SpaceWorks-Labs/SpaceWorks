@@ -30,4 +30,17 @@ Where pay links are on, press **Pay link** on a row, optionally add an email, an
 
 Where the two-person check is on, a receipt someone records waits under **Finance**, **Offline payments**, until a second person with the payments action presses **Confirm** (or **Reject**). Nobody confirms their own receipt.
 
+## Collection sheet
+
+Where the collection sheet is on, **Finance**, **Collection sheet** records up to 200 offline payments at once, for example after a meeting.
+
+1. Type each charge number, or copy rows from a spreadsheet and use **Paste from a spreadsheet** (columns: charge number, method, reference, received date).
+2. Fix any row marked in red, then press **Record payments**.
+
+Each row is settled on its own, with its own receipt: a charge that is already paid or not found fails alone and the rest still land. With the two-person check on, every row waits for a second person as usual.
+
+## Cash in hand
+
+**Finance**, **Cash in hand** shows, for each person who took cash, what they received less cash refunds they paid and cash they handed over. When someone passes cash to the treasurer or the bank, press **Record hand-over** on their row. A hand-over is a transfer in the ledger, not spending.
+
 > **Who can do this:** staff who record payments, and the managers of each area for their own charges; viewing needs the finance view. An Event Manager sees event charges only.

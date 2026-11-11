@@ -34,4 +34,16 @@ Open **Views**, press **Save current view…**, name it and press **Save view**.
 3. Open an entry for its details.
 4. Press **Verify these entries** to check nothing has been tampered with.
 
+## Web telemetry
+
+With the Analytics module on, open **Reports → Analytics → Web telemetry**. Choose one page
+analytics provider and enter its public site or measurement ID; choose `none` to turn it off.
+Umami needs its website UUID and an endpoint approved by your operator. Session replay and
+diagnostics are separate choices. Replay is limited to the anonymous public `/about` page. All collection requires the visitor's consent, and private or
+unknown pages are excluded. Do not paste a server secret into these public settings. Ask your
+operator to approve destinations and verify privacy controls before enabling a provider.
+
+Firebase browser notifications use a separate notification opt-in and service-account setup;
+enabling analytics does not enable alerts. Your operator can explain the setup and limits.
+
 > **Who can do this:** reports follow each person's area (finance, audit, machines, events, bookings). The audit log needs the audit action, held by the Space Manager and Inventory Managers.

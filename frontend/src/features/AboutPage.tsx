@@ -21,13 +21,13 @@ function AboutHero() {
     <p className="sw-field-eyebrow">{t`About`}</p>
     <h1 id="about-title" className="sw-field-heading">{t`Open-source makerspace management`}</h1>
     <p className="sw-hero-lede">{t`Tools to run a community workshop, with care for every handover.`}</p>
-    <div><ActionControl action={{ label: t`Browse spaces`, href: "/" }} primary /></div>
+    <div><ActionControl action={{ label: t`Browse spaces`, href: "/spaces" }} primary /></div>
   </section>;
 }
 
 export function AboutPage() {
   return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
-    nav={[{ label: t`Browse spaces`, href: "/" }]} headerAction={{ label: t`Sign in`, href: "/member" }}
+    nav={[{ label: t`Browse spaces`, href: "/spaces" }]} headerAction={{ label: t`Sign in`, href: "/member" }}
     liveStatus={<ThemeToggle variant="icon" />} width="narrow" state={{ status: "ready" }} hero={<AboutHero />}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`License`, href: LICENSE_URL, external: true }, { label: t`Staff sign-in`, href: "/admin" }] }}>
     <div className="space-y-5 text-base leading-7 text-muted">
@@ -38,7 +38,7 @@ export function AboutPage() {
     <WorkshopLogbook />
     <div className="mt-5"><AboutMakerMode /></div>
     <div className="mt-8 grid gap-4">
-      <ListRow title={t`Browse spaces`} meta="Find a community workshop and explore its catalogue." href="/" right={<span aria-hidden="true">→</span>} />
+      <ListRow title={t`Browse spaces`} meta="Find a community workshop and explore its catalogue." href="/spaces" right={<span aria-hidden="true">→</span>} />
       <ListRow title={t`Staff sign-in`} meta="Open the console for your makerspace." href="/admin" right={<span aria-hidden="true">→</span>} />
     </div>
   </PublicLayout>;

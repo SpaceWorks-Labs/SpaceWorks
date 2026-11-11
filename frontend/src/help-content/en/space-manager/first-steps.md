@@ -1,19 +1,25 @@
 ---
 title: First steps for a new space
-summary: Work through the setup checklist: profile, hours, first items, staff and modules.
+summary: The guided setup and the Next steps card: name, logo, hours, areas, staff and first items.
 order: 10
-keywords: setup, checklist, onboarding, new space, getting started, dashboard, home
+keywords: setup, checklist, onboarding, wizard, guided setup, next steps, new space, getting started, dashboard, home
 ---
-When you open the console as a Space Manager, **Home** shows **Finish setting up** with your progress.
+When you open the console as a Space Manager for a new space, the **guided setup** opens by itself. It
+walks through five steps: name your space, add your logo, set your opening hours, choose what your
+space runs, and invite your staff. Every step has **Skip for now**; close it at any time and it
+resumes where you stopped.
 
-## Work through the checklist
+## The Next steps card
 
-1. Open **Home** and find the setup card.
-2. Press the next step's link. The steps are: set the profile and location, set opening hours, add your first item, invite staff, and choose modules.
-3. Come back to Home; each step ticks itself off as you do it.
-4. Press **Hide** to tuck the card away on this browser.
+1. Open **Home** and find **Next steps**. It shows how much is done; the ticks come from your real
+   records, not from the browser.
+2. Press **Start guided setup** (or **Continue guided setup**), or follow the link to the next step.
+   The steps are: add your address, add your logo, set opening hours, add your first item, invite
+   staff, and choose what your space runs.
+3. The card disappears by itself once everything is done. Press **Hide** to tuck it away sooner on
+   this browser.
 
-![Screenshot: the Finish setting up card on Home](screenshot:sm-setup-checklist)
+![Screenshot: the Next steps card on Home](screenshot:sm-setup-checklist)
 
 **Settings** has a second checklist under **Start here**: your address, logo, support email, the features you use, how people get notified, and the check-in area.
 

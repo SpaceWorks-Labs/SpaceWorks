@@ -32,18 +32,22 @@ def _send(space, row, event, *, account, email, subject, text, link, marker):
 
 
 @safe_notification
-def notify_receipt(donation):
+def notify_receipt(donation, *, marker=None):
+    """The giver's receipt notice; `marker` (default: paid_at) makes a staff resend a new message."""
     from .identity import STATUS_SALT, link_token
+    from .tax_receipts import receipt_note
 
     space = donation.makerspace
     amount = f"{donation.currency.upper()} {donation.amount}"
     text = f"Thank you for your gift of {amount} to {space.name}. It has been received."
     if donation.tax_receipt:
         text += f" Your {donation.tax_receipt['section']} receipt {donation.tax_receipt['number']} is ready to download."
+    else:
+        text += f" {receipt_note(donation)}"
     link = ("" if donation.donor_id else public_link(space, "donate/gift", link_token(donation, "access_secret",
                                                                                       STATUS_SALT)))
     return _send(space, donation, "donation_received", account=donation.donor, email=donation.donor_email,
-                 subject=gettext('Thank you for supporting {name}').format(name=space.name), text=text, link=link, marker=donation.paid_at)
+                 subject=gettext('Thank you for supporting {name}').format(name=space.name), text=text, link=link, marker=marker or donation.paid_at)
 
 
 @safe_notification
@@ -67,10 +71,12 @@ def notify_perk_due(perk):
     from apps.operations.notifications_p2 import staff_link
 
     space = perk.makerspace
-    text = f"A sponsor perk is due on {perk.due_on.isoformat()} and is not marked fulfilled yet."
     return fanout(row=perk, space=space, feature="payments", stream="payments", event="perk_due", source_kind=SOURCE,
                   revision=revision("SponsorPerk", perk.pk, "perk_due", perk.due_on), owner=None,
-                  staff_body=body("A sponsor perk is due", text, staff_link(space, "finance")),
+                  staff_body=lambda: body(
+                      gettext("A sponsor perk is due"),
+                      gettext("A sponsor perk is due on %(date)s and is not marked fulfilled yet.")
+                      % {"date": perk.due_on.isoformat()}, staff_link(space, "donations")),
                   context={"row_kind": "SponsorPerk", "row_id": perk.pk})
 
 

@@ -63,6 +63,8 @@ class FinancePayoutDetail(MemberPayoutDetail):
 class TemplateField(serializers.Serializer):
     key = serializers.CharField()
     required = serializers.BooleanField()
+    label = serializers.CharField(help_text="Translated display label for the field.")
+    help = serializers.CharField(allow_blank=True, help_text="Optional translated hint; empty when none.")
 
 
 class PayeeTemplate(serializers.Serializer):

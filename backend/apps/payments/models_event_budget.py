@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventFinanceBudget(models.Model):
@@ -17,7 +18,7 @@ class EventFinanceBudget(models.Model):
     event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     event_id_snapshot = models.PositiveBigIntegerField()
     currency = models.CharField(max_length=3, validators=[currency_validator])
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     set_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
     set_at = models.DateTimeField(auto_now_add=True)
 

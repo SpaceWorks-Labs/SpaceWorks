@@ -20,6 +20,7 @@ from django.db import models
 
 from apps.payments.models_payment import Payment
 from apps.payments.models_refund import Refund
+from apps.payments.money_model import MoneyDecimalField
 
 
 class RefundCase(models.Model):
@@ -103,7 +104,7 @@ class RefundCase(models.Model):
     member_reason = models.CharField(max_length=500, blank=True, default="")
     #: What the policy says is owed when the case opened or was upgraded. Staff may
     #: approve a different amount; the approval re-clamps to the live balance.
-    due_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    due_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     #: The policy figures used to compute `due_amount`, frozen for the receipt trail.
     policy_snapshot = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN)
@@ -112,7 +113,7 @@ class RefundCase(models.Model):
     refund = models.ForeignKey(
         Refund, null=True, blank=True, on_delete=models.PROTECT, related_name="refund_cases",
     )
-    approved_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    approved_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     # Staff-authored and shown to the member. Financial context only, never PII.
     decision_note = models.CharField(max_length=500, blank=True, default="")
     requested_by = models.ForeignKey(
@@ -178,7 +179,7 @@ class RefundPolicy(models.Model):
     #: Memberships choose pro rata or a percentage after the full window; others use a percentage.
     partial_mode = models.CharField(max_length=16, choices=PartialMode.choices, default=PartialMode.PERCENT)
     #: Kept by the space on every refund, in the space's default currency.
-    cancellation_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    cancellation_fee = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     updated_by = models.ForeignKey(
         "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
     )

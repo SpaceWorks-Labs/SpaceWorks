@@ -4,6 +4,7 @@ from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal, InvalidOperation
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PaymentDocument(models.Model):
@@ -27,7 +28,7 @@ class PaymentDocument(models.Model):
     payer_label = models.CharField(max_length=150)
     payer_type = models.CharField(max_length=16)
     lines = models.JSONField(default=list)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3)
     settlement_method = models.CharField(max_length=16, blank=True)
     settlement_reference = models.CharField(max_length=64, blank=True)
@@ -61,7 +62,7 @@ class PaymentDocument(models.Model):
             models.CheckConstraint(condition=models.Q(tax_breakdown__isnull=True) | models.Q(fy_start__isnull=False),
                                    name="document_tax_on_fy_series"),
             models.CheckConstraint(condition=models.Q(fy_start__isnull=True, number_series="") | models.Q(
-                fy_start__isnull=False, number_series__in=["invoice", "credit_note"]), name="document_series_shape"),
+                fy_start__isnull=False, number_series__in=["invoice", "credit_note", "receipt"]), name="document_series_shape"),
         ]
 
     def clean(self):

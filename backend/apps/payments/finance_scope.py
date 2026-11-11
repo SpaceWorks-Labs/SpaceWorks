@@ -12,6 +12,8 @@ that area's money, in and out, and nothing else:
   and prize payouts (#128 C-16).
 * Shop Manager (`manage_shop`) -- shop sales, shop refunds and shop restock spending
   (lane L22, #137).
+* Fundraising (`manage_donations`) -- gifts and sponsorship (decision 242(m)). No area
+  manager holds it: donation money never shows in an area manager's Finance views.
 
 Recording spending follows the same areas (#94). Finance staff holding BOTH
 `view_finance` and `record_payment` record in every area; `view_finance` alone is
@@ -32,6 +34,9 @@ DOMAIN_ACTIONS = {
     "events": rbac.Action.MANAGE_EVENTS,
     # Lane L22 (#135 Q-S10, #137): shop money is the Shop Manager's (and the Space Manager's).
     "shop": rbac.Action.MANAGE_SHOP,
+    # Decision 242(m): donations money is the Fundraising role's (and the Space Manager's).
+    # No area manager holds manage_donations, so it never reaches an area's Finance views.
+    "donations": rbac.Action.MANAGE_DONATIONS,
 }
 #: Payment subject types per finance domain (the ledger's own vocabulary).
 PAYMENT_DOMAINS = {
@@ -41,6 +46,7 @@ PAYMENT_DOMAINS = {
     "makerspace_membership": "membership",
     "membership_term": "membership",
     "membership_term_start": "membership",  # #184: a term staff opened
+    "guest_pass": "membership",  # decision 223(b): a paid day pass
     "membership_request": "membership",
     "loan_deposit": "loans",
     "loan_late_fee": "loans",

@@ -15,18 +15,23 @@ from apps.operations.notifications_p2 import fanout, revision, safe_notification
 from .models import RefundCase
 
 CASE_SOURCE = "payments.refund_case"
-STAFF_EVENTS = frozenset({"refund_due_opened", "refund_request_received"})
+STAFF_EVENTS = frozenset({"refund_due_opened", "refund_request_received", "refund_approval_failed"})
 MEMBER_EVENTS = frozenset({"refund_request_approved", "refund_request_declined"})
 EVENTS = STAFF_EVENTS | MEMBER_EVENTS
 _STATUS = {
     "refund_due_opened": RefundCase.ACTIVE_STATUSES,
     "refund_request_received": RefundCase.ACTIVE_STATUSES,
+    # Parity B20: the provider refused an approved refund; staff retry or decline.
+    "refund_approval_failed": (RefundCase.Status.APPROVAL_FAILED,),
     "refund_request_approved": (RefundCase.Status.APPROVED,),
     "refund_request_declined": (RefundCase.Status.DECLINED,),
 }
 
 
 def case_revision(case, event):
+    if event == "refund_approval_failed":
+        # One notice per refused attempt: a retry that is refused again is new news.
+        return revision(case.pk, event, case.refund_id)
     marker = case.decided_at if event in MEMBER_EVENTS else (case.requested_by_id if event ==
                                                              "refund_request_received" else case.due_amount)
     return revision(case.pk, event, marker)

@@ -37,8 +37,14 @@ def staff_flags(payment, context=None):
                                    and payment.makerspace_id in context["pay_links"])}
 
 
-def member_offline_context(rows):
-    """Per page: billing policies, which spaces run `billing.offline_claims`, latest claims."""
+def member_offline_context(rows, viewer=None):
+    """Per page: billing policies, which spaces run `billing.offline_claims`, latest claims.
+
+    With `viewer` (the signed-in member reading their OWN charges) the unit-specific instructions are resolved
+    too (`unit_instructions.py`); without one the space-wide text is all anyone gets.
+    """
+    from apps.payments.unit_instructions import resolve_unit_instructions
+
     from apps.makerspaces.capability_eligibility import feature_enabled_servable_ids
 
     spaces = {row.makerspace_id for row in rows}
@@ -48,7 +54,8 @@ def member_offline_context(rows):
     for claim in PaymentClaim.objects.filter(payment_id__in=[row.pk for row in rows]).order_by("-created_at", "-pk"):
         latest.setdefault(claim.payment_id, claim)
     enabled = set(feature_enabled_servable_ids(spaces, "billing.offline_claims")) if spaces else set()
-    return {"policies": policies, "claims": latest, "enabled": enabled}
+    return {"policies": policies, "claims": latest, "enabled": enabled,
+            "unit_instructions": resolve_unit_instructions(rows, viewer)}
 
 
 def offline_collection(payment, context=None):
@@ -59,7 +66,10 @@ def offline_collection(payment, context=None):
     claim = context["claims"].get(payment.pk)
     open_claim = claim is not None and claim.status in PaymentClaim.OPEN_STATUSES
     enabled = payment.makerspace_id in context["enabled"]
-    return {"upi": upi_details(payment, policy) if enabled else None,
-            "instructions": policy.payment_instructions if policy else "",
+    unit = context.get("unit_instructions", {}).get(payment.pk)
+    # A unit with its own instructions replaces the space's UPI QR as well: the QR is the space's VPA.
+    return {"upi": upi_details(payment, policy) if enabled and unit is None else None,
+            "instructions": unit["text"] if unit else (policy.payment_instructions if policy else ""),
+            "instructions_unit": unit["unit"] if unit else None,
             "claim": OwnClaimSerializer(claim).data if claim else None,
             "claimable": enabled and payment.status == "pending" and not open_claim}

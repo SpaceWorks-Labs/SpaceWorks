@@ -11,7 +11,7 @@ from django.db import transaction
 
 from apps.payments import services_checkout as compatibility
 from apps.payments.checkout_expiry import live_checkout_url
-from apps.payments.money import to_minor_units
+from apps.payments.money import AmountNotCapturable, to_provider_minor_units
 from apps.payments.connect import restrict_account_status
 from apps.payments.models import (
     MakerspacePaymentSettings,
@@ -34,8 +34,46 @@ class _ConnectAccountCannotCharge(Exception):
         self.merchant_id = merchant_id
 
 
+def _stripe_minor(payment):
+    try:
+        return to_provider_minor_units(payment.amount, payment.currency)
+    except AmountNotCapturable as exc:
+        raise compatibility.stripe_client.PaymentsUnavailable(
+            "The charge amount is finer than Stripe can capture.") from exc
+
+
 class PaymentRailConflict(Exception):
     pass
+
+
+class PaymentSettlementPending(PaymentRailConflict):
+    """Payments audit 0.12.0: an "I paid" claim or a maker-checker proposal is open.
+
+    Minting a new online page then invites a second payment of the same debt. A subclass,
+    so every existing `except PaymentRailConflict` still answers 409 instead of 500.
+    """
+
+    code = "payment_settlement_pending"
+
+
+class PlatformRailLimitReached(PaymentRailConflict):
+    """Owner 2026-11-11: the superadmin's monthly allowance on the platform Connect rail is used up.
+
+    Only a NEW online page is refused; offline settlement and the space's own gateway keep working.
+    """
+
+    code = "platform_rail_limit_reached"
+
+
+def settlement_in_progress(payment):
+    """True while staff are deciding an offline payment of this charge."""
+    from apps.payments.models import PaymentClaim, SettlementConfirmation
+
+    return (
+        PaymentClaim.objects.filter(payment_id=payment.pk, status__in=PaymentClaim.OPEN_STATUSES).exists()
+        or SettlementConfirmation.objects.filter(
+            payment_id=payment.pk, status=SettlementConfirmation.Status.AWAITING).exists()
+    )
 
 
 def create_checkout(payment):
@@ -138,6 +176,8 @@ def _create_checkout_url_atomic(payment_id, *, actor=None):
             return ""
         if payment.online_rail == Payment.OnlineRail.NATIVE_PAYMENT_INTENT:
             raise PaymentRailConflict('The payment already uses the native payment rail.')
+        if settlement_in_progress(payment):
+            raise PaymentSettlementPending("An offline payment of this charge is waiting for staff.")
         # Generic column first: a Razorpay row never fills the Stripe one, and without
         # this the service would mint a fresh payment link on every call -- several live
         # links for one charge, any of which a member could pay.
@@ -153,6 +193,11 @@ def _create_checkout_url_atomic(payment_id, *, actor=None):
         if source is None:
             raise compatibility.stripe_client.PaymentsUnavailable("Payments are not configured.")
         if payment.stripe_provider == Payment.StripeProvider.CONNECT:
+            from apps.managed_hosting.platform_limits import rail_refusal
+            # This charge is itself already counted (created pending), so test the others + this one.
+            refusal = rail_refusal(payment.makerspace, payment)
+            if refusal:
+                raise PlatformRailLimitReached(refusal)
             if (
                 merchant is None
                 or merchant.connect_account_id
@@ -201,7 +246,7 @@ def _create_checkout_url_atomic(payment_id, *, actor=None):
             "success_url": f"{member_url}?checkout=success",
             "cancel_url": f"{member_url}?checkout=cancelled",
             "metadata": {"payment_id": str(payment.pk), "makerspace_id": str(payment.makerspace_id)},
-            "line_items": [{"price_data": {"currency": payment.currency, "unit_amount": to_minor_units(payment.amount, payment.currency), "product_data": {"name": label}}, "quantity": 1}],
+            "line_items": [{"price_data": {"currency": payment.currency, "unit_amount": _stripe_minor(payment), "product_data": {"name": label}}, "quantity": 1}],
         }
         if payment.stripe_application_fee_amount:
             checkout_params["payment_intent_data"] = {

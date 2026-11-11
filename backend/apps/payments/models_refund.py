@@ -19,6 +19,7 @@ from django.db.models import Sum
 from apps.payments.models_payment import Payment
 from apps.payments.models_settings import currency_validator
 from apps.payments.models_settlement import ManualSettlement
+from apps.payments.money_model import MoneyDecimalField
 
 
 class Refund(models.Model):
@@ -37,7 +38,7 @@ class Refund(models.Model):
     COUNTED_STATUSES = (Status.PENDING, Status.SUCCEEDED)
 
     payment = models.ForeignKey(Payment, on_delete=models.PROTECT, related_name="refunds")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     provider = models.CharField(max_length=16, choices=Provider.choices)

@@ -1,8 +1,8 @@
 """Tax arithmetic. Pure functions over Decimals; no database access except `estimate`.
 
-Every amount is quantized to the ledger's precision: the currency's ISO exponent, capped
-at the two decimal places `Payment.amount` stores (a BHD fils cannot be stored, a yen has
-no subunit). A component split never invents or loses a unit: the total tax is computed
+Every amount is quantized to the charge precision (`money.rail_exponent`): the currency's ISO
+exponent, except that a three-decimal currency (KWD, BHD...) moves in 10-fils steps because
+Stripe and Razorpay refuse a last digit other than 0. The column itself stores thousandths. A component split never invents or loses a unit: the total tax is computed
 once and divided between CGST and SGST (or any component set) by largest remainder, so
 taxable + every component always equals the gross exactly.
 """
@@ -10,13 +10,9 @@ taxable + every component always equals the gross exactly.
 from dataclasses import dataclass, field
 from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
-from apps.payments.money import minor_unit_exponent
+from apps.payments.money import quantum  # noqa: F401  (re-exported: the one rounding rule)
 
 BPS = Decimal(10000)
-
-
-def quantum(currency):
-    return Decimal(1).scaleb(-min(minor_unit_exponent(currency), 2))
 
 
 def q(value, currency):

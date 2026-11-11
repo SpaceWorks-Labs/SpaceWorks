@@ -34,21 +34,28 @@ def settle_capture(payment, *, provider, capture_id="", event_id="", polled=Fals
         payment.method_label = method_label[:64]
         fields.append("method_label")
     payment.save(update_fields=fields)
+    mismatch = differs(payment, minor, currency)
+    # Payments audit 0.12.0: a capture that differs from the charge is always named in the
+    # settlement's audit entry, so it stays visible even with `billing.capture_flags` off.
+    extra = {"capture_mismatch": True, "captured_minor": int(minor or 0),
+             "captured_currency": (currency or "").lower()} if mismatch else {}
     if polled:
         audit.record(None, "payment.paid_online", makerspace=payment.makerspace, target=payment,
-                     meta={"provider": provider, "event_id": event_id, "polled": True})
+                     meta={"provider": provider, "event_id": event_id, "polled": True, **extra})
     elif provider == Payment.Provider.STRIPE:
         audit.record(None, "payment.paid_online", makerspace=payment.makerspace, target=payment,
-                     meta={"stripe_event_id": event_id})
+                     meta={"stripe_event_id": event_id, **extra})
     else:
         audit.record(None, "payment.paid_online", makerspace=payment.makerspace, target=payment,
-                     meta={"provider": provider, "event_id": event_id})
-    if differs(payment, minor, currency) and flags_on(payment):
+                     meta={"provider": provider, "event_id": event_id, **extra})
+    if mismatch and flags_on(payment):
         record_flag(payment, kind=PaymentCaptureFlag.Kind.MISMATCH, provider=provider,
                     provider_payment_id=capture_id, event_id=event_id,
                     minor=minor, currency=currency, prior_status=Payment.Status.PENDING)
     from apps.payments.documents import issue_receipt
     issue_receipt(payment)
+    from apps.payments.settlement_supersede import supersede_open_settlements
+    supersede_open_settlements(payment)
     notify_payment(payment, "payment_received")
     resume_admission_after_settlement(payment)
     return payment

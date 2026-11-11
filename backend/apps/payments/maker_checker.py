@@ -57,6 +57,11 @@ def _locked(actor, makerspace_id, confirmation_id):
     if row is None:
         raise NotFound(gettext("Settlement confirmation not found."))
     payment = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=row.payment_id)
+    from apps.payments.unit_payer_scope import payer_user_ids
+
+    payers = payer_user_ids(actor, makerspace_id, rbac.Action.RECORD_PAYMENT)
+    if payers is not None and payment.member_id not in payers:  # parity O-B3 (rule 261): out of unit scope
+        raise NotFound(gettext("Payment not found."))
     row = SettlementConfirmation.objects.select_for_update().get(pk=row.pk)
     # The checker must hold RECORD_PAYMENT itself; domain authority is not enough here.
     if not rbac.scope_by_action(actor, rbac.Action.RECORD_PAYMENT, Payment.objects.filter(pk=payment.pk)).exists():
@@ -75,10 +80,12 @@ def confirm(*, actor, makerspace_id, confirmation_id):
     payment, row = _locked(actor, makerspace_id, confirmation_id)
     if payment.status != Payment.Status.PENDING:
         raise PaymentConflict([payment.pk])
-    receipt = apply_reconciliation(
-        payment, actor, Payment.Status.PAID_OFFLINE,
-        {"method": row.method, "reference": row.reference, "received_at": row.received_at},
-        recorded_by=row.proposed_by)
+    from apps.payments.settlement_supersede import keeping
+    with keeping(claim_id=row.claim_id, confirmation_id=row.pk):
+        receipt = apply_reconciliation(
+            payment, actor, Payment.Status.PAID_OFFLINE,
+            {"method": row.method, "reference": row.reference, "received_at": row.received_at},
+            recorded_by=row.proposed_by)
     row.status, row.decided_by, row.decided_at, row.settlement = (
         SettlementConfirmation.Status.CONFIRMED, actor, timezone.now(), receipt)
     row.save()

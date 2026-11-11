@@ -44,3 +44,27 @@ def event_wall(event):
         return None
     ids = SponsorEventLink.objects.filter(event_sponsor__event=event, event_sponsor__active=True).values("sponsor_id")
     return [card(row) for row in live_sponsors(event.makerspace).filter(pk__in=ids)[:LIMIT]]
+
+
+SUPPORTER_LIMIT = 30
+
+
+def supporters(campaign):
+    """Decision 242(m): who gave to a campaign, for its public page.
+
+    Every received gift counts toward `supporter_count`; a name appears only when its giver chose to
+    be named (`recognize_publicly`, off by default), newest first. Never an amount, email or note.
+    """
+    from .models import Donation
+
+    paid = Donation.objects.filter(campaign=campaign, status=Donation.Status.PAID)
+    accounts = paid.filter(donor__isnull=False).values("donor_id").distinct().count()
+    guests = paid.filter(donor__isnull=True).count()
+    names = []
+    for name in paid.filter(recognize_publicly=True).order_by("-paid_at", "-pk").values_list("donor_name", flat=True):
+        name = (name or "").strip()
+        if name and name not in names:
+            names.append(name)
+        if len(names) >= SUPPORTER_LIMIT:
+            break
+    return {"supporter_count": accounts + guests, "supporters": names}

@@ -94,7 +94,15 @@ def _issue(payment, *, kind, actor, money_at, method, reference, amount,
     plan = plan_for(payment, kind=kind, amount=amount, refund=refund, reverses=reverses)
     counter = "next_bill_number" if kind == "bill" else "next_document_number"
     prefix = policy.bill_prefix if kind == "bill" else policy.number_prefix
-    if plan is None:
+    taken = lambda value: PaymentDocument.objects.filter(makerspace=space, number=value).exists()  # noqa: E731
+    from .numbering_fy_receipts import allocate_receipt, applies as fy_receipt
+    fy_plain = plan is None and fy_receipt(space, kind)
+    if fy_plain:
+        # Parity O-B3: tax off, `billing.fy_receipts` on -- the receipt joins its own per-FY series.
+        fy = allocate_receipt(space, policy, taken=taken, actor=actor)
+        numbering = {"sequence": fy.sequence, "number": fy.number, "number_series": fy.series,
+                     "fy_start": fy.fy_start}
+    elif plan is None:
         number = getattr(policy, counter)
         while PaymentDocument.objects.filter(makerspace=space, number=f"{prefix}{number:06d}").exists():
             number += 1
@@ -110,6 +118,9 @@ def _issue(payment, *, kind, actor, money_at, method, reference, amount,
     logo_key, logo_digest = retain_logo(space)
     lines = [{"label": payment.subject_label or payment.get_subject_type_display(),
               "quantity": "1", "unit_amount": str(amount), "total": str(amount)}]
+    sac = (plan.breakdown or {}).get("sac_code") if plan is not None and plan.breakdown else ""
+    if sac and (plan.breakdown or {}).get("mode") == "gst_india":
+        lines[0]["sac_code"] = sac  # parity O-B3: the SAC the charge froze (the plan's own when `billing.plan_sac`)
     if len(lines) > 200:
         raise ValueError("A payment document supports at most 200 lines.")
     document = PaymentDocument.objects.create(
@@ -124,7 +135,7 @@ def _issue(payment, *, kind, actor, money_at, method, reference, amount,
         amount=amount, currency=payment.currency, settlement_method=method,
         settlement_reference=reference, money_at=money_at,
     )
-    if plan is None:
+    if plan is None and not fy_plain:
         setattr(policy, counter, number + 1)
         policy.save(update_fields=[counter])
     audit.record(actor, "payment.document_issued", makerspace=space, target=document,

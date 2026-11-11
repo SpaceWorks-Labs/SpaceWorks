@@ -75,6 +75,7 @@ SUBJECT_DOMAINS = {
     "makerspace_membership": "membership",
     "membership_term": "membership",
     "membership_term_start": "membership",  # #184: a term staff opened
+    "guest_pass": "membership",  # decision 223(b): a paid day pass is membership-domain money
     "membership_request": "membership",
     "loan_deposit": "loans",
     "loan_late_fee": "loans",

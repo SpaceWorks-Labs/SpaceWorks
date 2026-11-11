@@ -14,6 +14,17 @@ def status(row):
         "scan_status": row.scan_status, "error_code": row.error_code}
 
 
+def owner_files(obligation):
+    """The owner's routing documents for the current payee revision: metadata only."""
+    rows = FinanceAttachment.objects.filter(
+        obligation=obligation, owner_member_id=obligation.owner_member_id, binding_kind="payee",
+        purpose="reimbursement_payee_document",
+        binding_uuid__in=obligation.payee_revisions.filter(state="current").values("pk"),
+    ).exclude(state__in=("expired", "deleting", "deleted")).order_by("created_at", "pk")
+    return [{"id": row.pk, "filename": row.original_filename, "size": row.expected_bytes,
+             "uploaded_at": row.created_at, "status": row.state} for row in rows]
+
+
 def payee_asset(obligation, asset_id, *, lock=False):
     rows = FinanceAttachment.objects
     if lock:

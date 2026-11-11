@@ -1,7 +1,8 @@
 """Staff donations: settings, campaigns, the gift list, desk gifts, cancellation and returns.
 
-Finance staff only (#100): reading needs `view_finance`; recording, cancelling and opening a
-return case also need `record_payment`; the page text and 80G registration are finance
+Finance staff or the Fundraising role (#100, decision 242(m)): reading needs `view_finance` or
+`manage_donations`; recording, cancelling and opening a return case also need one of
+`manage_donations`/`record_payment`; the page text and the non-profit profile are finance
 settings, written through the settings authority (Space Manager only, never delegated).
 """
 
@@ -39,6 +40,15 @@ def payments_by_gift(rows):
                                                                                subject_id__in=ids)}
 
 
+def claims_by_gift(payments):
+    """Each gift's open "I've paid" claim, keyed by gift id (one query)."""
+    from apps.payments.models import PaymentClaim
+
+    by_payment = {payment.pk: gift_id for gift_id, payment in payments.items()}
+    return {by_payment[claim.payment_id]: claim for claim in PaymentClaim.objects.filter(
+        payment_id__in=list(by_payment), status__in=PaymentClaim.OPEN_STATUSES)}
+
+
 def gift_or_404(request, makerspace_id, pk, *, record=False):
     staff_space(request.user, makerspace_id, DONATIONS, record=record)
     donation = scoped(request.user, Donation, makerspace_id).select_related("makerspace", "campaign").filter(
@@ -51,7 +61,7 @@ def gift_or_404(request, makerspace_id, pk, *, record=False):
 class DonationSettingsView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAG, summary="Donation page text and 80G registration",
+    @extend_schema(tags=TAG, summary="Donation page text and the non-profit profile",
                    responses={200: s.DonationSettingsSerializer, **ERRORS})
     def get(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, DONATIONS)
@@ -95,7 +105,9 @@ class CampaignListView(APIView):
         space = staff_space(request.user, makerspace_id, DONATIONS, record=True)
         payload = s.CampaignSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
         with tenant_write(space.pk):
+            check_extra_quota(space, "donation_campaigns")  # decision 284: typed 409; gifts to existing ones never read it
             row = payload.save(makerspace=space, currency=space_currency(space), created_by=request.user)
             audit.record(request.user, "donation.campaign_created", makerspace=space, target=row,
                          meta={"campaign_id": row.pk, "kind": row.kind})
@@ -136,7 +148,8 @@ class DonationListView(APIView):
         if str(request.query_params.get("campaign") or "").isdigit():
             rows = rows.filter(campaign_id=int(request.query_params["campaign"]))
         rows = list(rows[:500])
-        context = {"request": request, "payments": payments_by_gift(rows)}
+        payments = payments_by_gift(rows)
+        context = {"request": request, "payments": payments, "claims": claims_by_gift(payments)}
         return Response(s.DonationSerializer(rows, many=True, context=context).data)
 
     @extend_schema(tags=TAG, summary="Record a gift received in person",
@@ -161,7 +174,7 @@ class DonationListView(APIView):
             donation = record_desk_gift(space, donor, actor=request.user, amount=clean_amount(space, data["amount"]),
                                         settlement=data["settlement"], campaign=open_campaign(
                                             space, data["campaign"], staff=True), note=data["note"],
-                                        tax=tax)
+                                        tax=tax, recognize=data["recognize_publicly"])
         context = {"request": request, "payments": payments_by_gift([donation])}
         return Response(s.DonationSerializer(donation, context=context).data, status=201)
 

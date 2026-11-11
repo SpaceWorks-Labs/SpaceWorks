@@ -2,6 +2,7 @@
 
 from django.utils.translation import gettext
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 
@@ -63,7 +64,7 @@ class SponsorSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer):
 
 
 class ChargeCreateSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=1)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=1)
     description = serializers.CharField(required=False, allow_blank=True, max_length=200, default="")
     # Hack-money G8: the payment may be for one event of this space, and earmarked for its prize pool.
     event_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)

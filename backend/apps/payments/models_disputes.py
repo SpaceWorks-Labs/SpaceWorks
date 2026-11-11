@@ -10,6 +10,7 @@ the append-only history; `PaymentDispute.status` is the latest of it.
 from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PaymentDispute(models.Model):
@@ -24,7 +25,7 @@ class PaymentDispute(models.Model):
     payment = models.ForeignKey("payments.Payment", on_delete=models.CASCADE, related_name="disputes")
     provider = models.CharField(max_length=16)
     provider_dispute_id = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3)
     reason = models.CharField(max_length=64, blank=True, default="")
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN)
@@ -49,7 +50,7 @@ class PaymentDisputeEvent(models.Model):
     status = models.CharField(max_length=16, choices=PaymentDispute.Status.choices)
     provider_status = models.CharField(max_length=32, blank=True, default="")
     provider_event_id = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     recorded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

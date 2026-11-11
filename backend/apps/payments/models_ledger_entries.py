@@ -20,6 +20,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 slug_validator = RegexValidator(r"^[a-z][a-z0-9_.]{0,47}$", "Use lower-case letters, digits, '_' or '.'.")
 
@@ -31,7 +32,7 @@ class LedgerEntry(models.Model):
 
     class Domain(models.TextChoices):
         INVENTORY = "inventory", "Inventory"
-        LOANS = "loans", "Lending"
+        LOANS = "loans", "Inventory loans"
         MACHINES = "machines", "Machines"
         BOOKINGS = "bookings", gettext_noop("Bookings and rooms")
         EVENTS = "events", "Events"
@@ -68,7 +69,7 @@ class LedgerEntry(models.Model):
     category = models.CharField(max_length=48, validators=[slug_validator])
     method = models.CharField(max_length=16, choices=Method.choices)
     account = models.CharField(max_length=8, choices=Account.choices)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     entry_date = models.DateField()
     description = models.CharField(max_length=300)
@@ -124,8 +125,8 @@ class OpeningBalance(models.Model):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     fy_start = models.DateField()
     currency = models.CharField(max_length=3, validators=[currency_validator])
-    cash_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    bank_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    cash_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    bank_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     set_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
     set_at = models.DateTimeField(auto_now_add=True)
 

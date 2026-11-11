@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 
 class Payment(models.Model):
@@ -45,6 +46,8 @@ class Payment(models.Model):
         # #184: a term staff open from the console (subject_id = that MembershipTerm pk). Not
         # MEMBERSHIP_TERM: that subject id already names the term whose RENEWAL is charged.
         MEMBERSHIP_TERM_START = "membership_term_start", gettext_noop("Membership term")
+        # Decision 223(b): a paid day pass (subject_id = the makerspaces.GuestPass pk). Never a membership.
+        GUEST_PASS = "guest_pass", gettext_noop("Day pass")
 
     #: Subjects whose subject_id is the HardwareRequest id.
     LOAN_SUBJECT_TYPES = ("loan_deposit", "loan_late_fee", "loan_rental")
@@ -111,7 +114,7 @@ class Payment(models.Model):
     # so it must never carry PII -- callers pass an event title, a space name or a service
     # title, never a person's name, contact details or custom-form answers.
     subject_label = models.CharField(max_length=255, blank=True, default="")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     due_at = models.DateTimeField(null=True, blank=True)

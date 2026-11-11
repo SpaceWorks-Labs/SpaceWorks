@@ -6,6 +6,7 @@ No tax identifiers, card details, credentials or Saved-details inputs are accept
 
 import re
 
+from .template_labels import field_descriptor
 from .validation import PayoutValidationError, closed
 
 
@@ -62,7 +63,7 @@ def operator_templates(makerspace_id):
 def template_descriptors(makerspace_id):
     enabled, documents = configured_templates(makerspace_id)
     return [{"country": country, "method": method, "template_key": key, "template_version": version,
-        "fields": [{"key": field, "required": True} for field in ROUTING_FIELDS[key]],
+        "fields": [field_descriptor(field) for field in ROUTING_FIELDS[key]],
         "routing_document_required": (country, method) in documents}
         for country, method, key, version in sorted(enabled)]
 

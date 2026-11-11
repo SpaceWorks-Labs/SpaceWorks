@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PriceDiscount(models.Model):
@@ -40,7 +41,7 @@ class PriceDiscount(models.Model):
     components = models.JSONField(default=list, blank=True)
     percent_bps = models.PositiveIntegerField(null=True, blank=True,
                                               validators=[MinValueValidator(1), MaxValueValidator(10000)])
-    amount_off = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    amount_off = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     starts_at = models.DateTimeField(null=True, blank=True)
     ends_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

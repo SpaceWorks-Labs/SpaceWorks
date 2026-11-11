@@ -7,7 +7,11 @@ Every 5 minutes, both schedulers:
   attempt still unpaid a week after it opened is closed and forgotten; the DEBT stays
   pending, it simply no longer has a stale link.
 * PENDING provider refunds -- ones a staff member already approved -- are asked for
-  their status for 30 days and flagged once when still pending after a day.
+  their status for 30 days and flagged once when still pending after a day. A refund whose
+  create call had an UNKNOWN outcome (no provider id bound yet) is looked up at the provider
+  by our refund id and bound/settled the same way; until it resolves it stays PENDING, so
+  its amount stays reserved against the payment's balance. Settlement is idempotent
+  (`settle_refund` no-ops on a final row), so a webhook racing the poll is harmless.
 
 Polling never creates, approves or cancels a refund and never cancels a charge. It does
 nothing when the payment rail is tombstoned.
@@ -28,6 +32,7 @@ logger = logging.getLogger(__name__)
 ABANDON_AFTER = timedelta(days=7)
 REFUND_POLL_FOR = timedelta(days=30)
 REFUND_FLAG_AFTER = timedelta(days=1)
+UNBOUND_GRACE = timedelta(minutes=5)  # an in-flight dispatch is not an unknown outcome
 BATCH = 200
 
 
@@ -113,9 +118,16 @@ def _abandon(payment_id):
         payment = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=payment_id)
         if payment.status != Payment.Status.PENDING or payment.stripe_checkout_session_expired_at:
             return False
-        _expire_checkout_best_effort(payment)
-        fields = forget_closed_checkout(payment)
-        payment.save(update_fields=[*fields, "updated_at"])
+        if payment.online_rail == Payment.OnlineRail.NATIVE_PAYMENT_INTENT:
+            # Payments audit 0.12.0: a native intent/order is the charge's only online rail
+            # (`online_rail` is immutable). Cancelling it or forgetting its order id left a
+            # member who reopened the app unable to pay online ever again, and a late
+            # Razorpay capture of the retained order unmatched. Stop polling it only.
+            payment.stripe_checkout_session_expired_at = timezone.now()
+            payment.save(update_fields=["stripe_checkout_session_expired_at", "updated_at"])
+        else:
+            _expire_checkout_best_effort(payment)
+            payment.save(update_fields=[*forget_closed_checkout(payment), "updated_at"])
         audit.record(None, "payment.checkout_abandoned", makerspace=payment.makerspace, target=payment,
                      meta={"provider": payment.provider})
     return True
@@ -123,7 +135,8 @@ def _abandon(payment_id):
 
 def _pending_refunds(space, now):
     return (Refund.objects.filter(payment__makerspace=space, status=Refund.Status.PENDING, provider__in=("stripe", "razorpay"),
-                                  external_refund_id__isnull=False, created_at__gte=now - REFUND_POLL_FOR)
+                                  created_at__gte=now - REFUND_POLL_FOR)
+            .filter(Q(external_refund_id__isnull=False) | Q(created_at__lte=now - UNBOUND_GRACE))
             .select_related("payment__makerspace").order_by("pk")[:BATCH])
 
 
@@ -132,8 +145,18 @@ def _poll_refund(refund, now):
     from apps.payments.services_refunds import settle_refund
     from apps.payments_rail.provider_poll import poll_refund
 
+    from apps.payments_rail.provider_poll import find_refund
+
     source = source_for_payment(refund.payment)
-    status = poll_refund(refund, source) if source is not None else None
+    if source is not None and not refund.external_refund_id:
+        found = find_refund(refund, source)
+        if found is not None:
+            external_id, status = found
+            settle_refund(refund, external_refund_id=external_id, status=status, actor=None)
+            return status != Refund.Status.PENDING
+        status = None
+    else:
+        status = poll_refund(refund, source) if source is not None else None
     if status in (Refund.Status.SUCCEEDED, Refund.Status.FAILED):
         settle_refund(refund, external_refund_id=refund.external_refund_id, status=status, actor=None)
         return True

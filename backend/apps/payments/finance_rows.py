@@ -38,6 +38,9 @@ class MoneyRow:
     method: str = ""
     subject_type: str = ""
     row_id: str = ""
+    #: The charge's subject id (member charges only), so a grouped view can place machine
+    #: money on its machine (decision 241) without re-reading the payment.
+    subject_id: int | None = None
 
 
 def _machine_types(payment_subjects):
@@ -105,7 +108,8 @@ def money_rows(space, date_range=None):
                       else event_money.get((subject_type, subject_id))),
             category=subject_type, account=_account(method),
             provider=method if row["row_kind"] in ("online_settlement", "refund") and method in ONLINE else "",
-            method=method, subject_type=subject_type, row_id=f"{row['row_kind']}:{row['row_id']}")
+            method=method, subject_type=subject_type, row_id=f"{row['row_kind']}:{row['row_id']}",
+            subject_id=subject_id)
     yield from _ledger_rows(space, date_range)
     yield from _payout_rows(space, date_range)
 
@@ -116,7 +120,9 @@ def _ledger_rows(space, date_range):
     from apps.payments.models_ledger_entries import LedgerEntry
 
     bounds = finance_window(space, date_range)
-    for entry in LedgerEntry.objects.filter(makerspace=space, voided_at__isnull=True).iterator(chunk_size=1000):
+    # A cash hand-over (parity O-B3) moves money between people; it is neither income nor spending.
+    live = LedgerEntry.objects.filter(makerspace=space, voided_at__isnull=True).exclude(source_kind="cash_handover")
+    for entry in live.iterator(chunk_size=1000):
         at = local_day_bounds(space, entry.entry_date)[0]
         if not in_window(at, bounds):
             continue

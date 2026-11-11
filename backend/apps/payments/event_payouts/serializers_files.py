@@ -34,6 +34,16 @@ class FileStatus(serializers.Serializer):
     error_code = serializers.CharField()
 
 
+@extend_schema_serializer(component_name="PayeeFileListItem")
+class PayeeFileListItem(serializers.Serializer):
+    """Owner listing: no storage key, digest, scanner detail or presign is ever included."""
+    id = Integer()
+    filename = serializers.CharField()
+    size = Integer()
+    uploaded_at = serializers.DateTimeField()
+    status = serializers.CharField()
+
+
 @extend_schema_serializer(component_name="PayoutUploadDescriptor")
 class UploadDescriptor(serializers.Serializer):
     method = serializers.CharField()

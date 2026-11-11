@@ -15,6 +15,7 @@ Kinds:
 from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PaymentCaptureFlag(models.Model):
@@ -43,7 +44,7 @@ class PaymentCaptureFlag(models.Model):
     #: currency (NULL when the currency itself differs, so it cannot be receipted).
     captured_minor = models.BigIntegerField(default=0)
     captured_currency = models.CharField(max_length=3, blank=True, default="")
-    captured_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    captured_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     prior_status = models.CharField(max_length=16, blank=True, default="")
     flagged_at = models.DateTimeField(auto_now_add=True)
     resolution = models.CharField(max_length=16, choices=Resolution.choices, blank=True, default="")

@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.makerspaces.secrets import decrypt_value, encrypt_value
+from apps.payments.money_model import MoneyDecimalField
 
 
 currency_validator = RegexValidator(
@@ -73,9 +74,9 @@ class MakerspacePaymentSettings(models.Model):
     loan_deposit_mode = models.CharField(
         max_length=16, choices=LoanDepositMode.choices, default=LoanDepositMode.NONE
     )
-    loan_deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_late_fee_per_day = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    loan_late_fee_cap = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    loan_deposit_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    loan_late_fee_per_day = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    loan_late_fee_cap = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     loan_grace_days = models.PositiveSmallIntegerField(default=0)
     # Off by default: a deposit is RAISED at issue and payable afterwards. On, the
     # handover refuses until the deposit is settled -- and that gate runs before the

@@ -52,6 +52,11 @@ def allocate(space, policy, kind, *, taken):
     """
     series = series_for(kind)
     prefix = policy.credit_note_prefix if series == DocumentNumberCounter.Series.CREDIT_NOTE else policy.invoice_prefix
+    return allocate_in_series(space, series, prefix, taken=taken)
+
+
+def allocate_in_series(space, series, prefix, *, taken):
+    """The same locked, gapless allocation for any counter series (parity O-B3 adds `receipt`)."""
     start = fy_start(space, local_now(space).date())
     counter, _ = DocumentNumberCounter.objects.get_or_create(makerspace=space, series=series, fy_start=start)
     counter = DocumentNumberCounter.objects.select_for_update().get(pk=counter.pk)

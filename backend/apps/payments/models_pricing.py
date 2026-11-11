@@ -19,10 +19,11 @@ from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PricingDomain(models.TextChoices):
-    LOANS = "loans", "Lending"
+    LOANS = "loans", "Inventory loans"
     MACHINES = "machines", "Machines"
     BOOKINGS = "bookings", "Bookings"
     EVENTS = "events", "Events"
@@ -72,10 +73,10 @@ class PricingDefault(models.Model):
 class PricingDefaultLine(models.Model):
     default = models.ForeignKey(PricingDefault, on_delete=models.CASCADE, related_name="lines")
     component = models.CharField(max_length=32)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     #: Optional ceiling (per unit of each item line for rentals, per loan for late fees,
     #: per day for hourly bookings). Null means no cap.
-    cap = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    cap = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     #: Free units before a per-day fee starts (late fees: grace days).
     grace_units = models.PositiveIntegerField(default=0)
     #: Round metered time UP to this many minutes (0 or 1 means per minute).
@@ -125,8 +126,8 @@ class PriceOverride(models.Model):
     room = models.ForeignKey("bookings.BookableSpace", null=True, blank=True, on_delete=models.CASCADE,
                              related_name="price_overrides")
     mode = models.CharField(max_length=8, choices=Mode.choices)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    cap = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
+    cap = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     updated_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
 

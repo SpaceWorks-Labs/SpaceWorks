@@ -16,6 +16,7 @@ from django.db.models import F, Q
 
 from apps.encryption.mappers import ScopedPiiModelMixin
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 
 class DonationCampaign(models.Model):
@@ -31,7 +32,7 @@ class DonationCampaign(models.Model):
     name = models.CharField(max_length=120)
     slug = models.SlugField(max_length=80)
     description = models.TextField(blank=True, default="")
-    goal_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    goal_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     starts_at = models.DateTimeField(null=True, blank=True)
     ends_at = models.DateTimeField(null=True, blank=True)
@@ -87,7 +88,7 @@ class DonationPledge(ScopedPiiModelMixin, models.Model):
                               related_name="donation_pledges")
     donor_name = models.TextField(blank=True, default="")
     donor_email = models.TextField(blank=True, default="")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     interval = models.CharField(max_length=10, choices=Interval.choices, default=Interval.MONTHLY)
     starts_on = models.DateField()
@@ -138,7 +139,7 @@ class Donation(ScopedPiiModelMixin, models.Model):
     donor_name = models.TextField(blank=True, default="")
     donor_email = models.TextField(blank=True, default="")
     donor_note = models.TextField(blank=True, default="")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     source = models.CharField(max_length=10, choices=Source.choices, default=Source.ONLINE)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
@@ -147,6 +148,9 @@ class Donation(ScopedPiiModelMixin, models.Model):
     #: The 80G receipt frozen when the gift was received: registration, validity, number,
     #: amount and date. Never the PAN (it stays encrypted on this row). Insert-once.
     tax_receipt = models.JSONField(null=True, blank=True, default=None)
+    #: Decision 242(m): the giver chose to be named among a campaign's supporters. Off by
+    #: default, so every gift is anonymous on public pages unless its giver opted in.
+    recognize_publicly = models.BooleanField(default=False)
     #: A random secret bound into a guest donor's signed status link (`identity.link_token`).
     #: Replaced on a tenant move, so links minted elsewhere stop working.
     access_secret = models.CharField(max_length=64, unique=True, default=secrets.token_hex, editable=False)
@@ -176,18 +180,33 @@ class Donation(ScopedPiiModelMixin, models.Model):
 
 
 class DonationSettings(models.Model):
-    """Per-space donation page text and the optional 80G registration (C-14d)."""
+    """Per-space donation page text and the non-profit profile (C-14d, decision 242(m)).
+
+    `tax_exemptions` is the authority for tax receipts: a typed list of
+    `{scheme, number, valid_from, valid_until}` (`nonprofit.SCHEMES`). The older single-80G
+    columns are kept as a mirror of its first India 80G entry for readers that predate it.
+    """
 
     makerspace = models.OneToOneField("makerspaces.Makerspace", on_delete=models.CASCADE,
                                       related_name="donation_settings")
     page_intro = models.CharField(max_length=500, blank=True, default="")
     suggested_amounts = models.JSONField(default=list, blank=True)
-    minimum_amount = models.DecimalField(max_digits=12, decimal_places=2, default=1)
+    minimum_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=1)
     tax_exempt_registration_number = models.CharField(max_length=64, blank=True, default="")
     tax_exempt_valid_from = models.DateField(null=True, blank=True)
     tax_exempt_valid_until = models.DateField(null=True, blank=True)
     tax_exempt_registrant_pan = models.CharField(max_length=10, blank=True, default="")
     tax_exempt_note = models.CharField(max_length=300, blank=True, default="")
+    #: Decision 242(m): "This makerspace is a non-profit". On, tax receipts can be issued under
+    #: a live exemption and the public pages show a Donate entry; off, gifts still work and
+    #: every receipt says it is not a tax receipt.
+    is_nonprofit = models.BooleanField(default=False)
+    legal_name = models.CharField(max_length=200, blank=True, default="")
+    organization_registration_number = models.CharField(max_length=64, blank=True, default="")
+    tax_exemptions = models.JSONField(default=list, blank=True)
+    signatory_name = models.CharField(max_length=120, blank=True, default="")
+    signatory_title = models.CharField(max_length=120, blank=True, default="")
+    receipt_footer = models.CharField(max_length=500, blank=True, default="")
     updated_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL,
                                    related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
@@ -196,6 +215,14 @@ class DonationSettings(models.Model):
         constraints = [
             models.CheckConstraint(condition=Q(minimum_amount__gt=0), name="donation_settings_minimum_positive"),
         ]
+
+    def save(self, *args, **kwargs):
+        from .nonprofit import mirror_legacy_80g
+
+        changed = mirror_legacy_80g(self)
+        if kwargs.get("update_fields") is not None and changed:
+            kwargs["update_fields"] = sorted(set(kwargs["update_fields"]) | set(changed))
+        return super().save(*args, **kwargs)
 
     @classmethod
     def for_makerspace(cls, makerspace):

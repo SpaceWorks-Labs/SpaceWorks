@@ -17,7 +17,7 @@ from apps.audit import services as audit
 from apps.payments.exceptions_refunds import RefundCaseConflict
 from apps.payments.models import Payment, RefundCase
 from apps.payments.models_capture_flags import PaymentCaptureFlag as Flag
-from apps.payments.money import minor_unit_exponent, to_minor_units
+from apps.payments.money import minor_unit_exponent, quantize_money, to_minor_units
 
 
 class FlagConflict(RefundCaseConflict):
@@ -33,7 +33,7 @@ def captured_amount(minor, currency, payment):
     if (currency or "").lower() != payment.currency:
         return None
     value = Decimal(int(minor)).scaleb(-minor_unit_exponent(currency))
-    return value if value == value.quantize(Decimal("0.01")) and value > 0 else None
+    return value if value == quantize_money(value, currency) and value > 0 else None
 
 
 def differs(payment, minor, currency):

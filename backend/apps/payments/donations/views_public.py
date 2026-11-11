@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -60,30 +61,38 @@ class DonationPageView(_Read, APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(tags=["Donations"], summary="The space's donation page", auth=[],
-                   description="Public. 404 `feature_disabled` while `finance.donations` is off.",
+                   description="Public. 404 `feature_disabled` while `finance.donations` is off. `nonprofit` is the "
+                               "space's own legal identity (decision 242(m)); campaign `supporters` lists only "
+                               "givers who chose to be named.",
                    responses={200: s.DonationPageSerializer, **ERRORS})
     def get(self, request, makerspace_slug):
         from apps.payments.availability import online_payments_enabled
 
+        from . import nonprofit
         from .services import space_currency
-        from .tax_receipts import registration_live
+        from .wall import supporters
 
         space = public_space(makerspace_slug)
         settings = DonationSettings.for_makerspace(space)
-        tax = feature_enabled(space, "finance.tax_exempt_receipts") and registration_live(
-            settings, timezone.localdate())
+        today = timezone.localdate()
+        tax = nonprofit.receipts_available(space, settings, today)
+        exemptions = nonprofit.receipt_exemptions(settings, today) if tax else []
         campaigns = [{
             "id": row.pk, "kind": row.kind, "name": row.name, "slug": row.slug, "description": row.description,
             "goal_amount": row.goal_amount, "raised_amount": raised(row), "currency": row.currency,
-            "starts_at": row.starts_at, "ends_at": row.ends_at} for row in open_campaigns(space)[:50]]
+            "starts_at": row.starts_at, "ends_at": row.ends_at, **supporters(row)}
+            for row in open_campaigns(space)[:50]]
         return Response(s.DonationPageSerializer({
             "makerspace": space.name, "intro": settings.page_intro, "currency": space_currency(space),
             "minimum_amount": settings.minimum_amount,
             "suggested_amounts": [str(value) for value in (settings.suggested_amounts or [])][:8],
             "campaigns": campaigns, "online_available": online_payments_enabled(space, "donations"),
             "recurring_available": feature_enabled(space, PLEDGES), "tax_receipts_available": bool(tax),
-            "tax_registration_number": settings.tax_exempt_registration_number if tax else "",
-            "guest_allowed": True}).data)
+            "tax_registration_number": exemptions[0]["number"] if exemptions else "",
+            "tax_schemes": [nonprofit.label(row["scheme"]) for row in exemptions],
+            "tax_receipt_needs_pan": nonprofit.needs_pan(exemptions),
+            "receipt_note": "" if tax else gettext(nonprofit.NOT_A_TAX_RECEIPT),
+            "nonprofit": nonprofit.public_profile(settings), "guest_allowed": True}).data)
 
 
 class DonationEmailCodeView(_Give, APIView):
@@ -126,7 +135,7 @@ class DonationCreateView(_Give, APIView):
         donor = donor_for(request, space, data)
         with tax_key(space, tax), tenant_write(space.pk):
             donation, payment = create_gift(space, donor, amount=amount, campaign=campaign, note=data["note"],
-                                            tax=tax)
+                                            tax=tax, recognize=data["recognize_publicly"])
         # The gift is committed first: a provider failure never loses it (the debt stays payable).
         with tenant_write(space.pk):
             checkout = checkout_url(payment)

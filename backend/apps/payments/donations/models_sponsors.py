@@ -14,13 +14,14 @@ from django.db.models import F, Q
 
 from apps.encryption.mappers import ScopedPiiModelMixin
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 
 class SponsorTier(models.Model):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="sponsor_tiers")
     name = models.CharField(max_length=80)
     rank = models.PositiveSmallIntegerField(default=0)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     currency = models.CharField(max_length=3, blank=True, default="")
     description = models.CharField(max_length=300, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -96,7 +97,7 @@ class SponsorshipCharge(models.Model):
     # RESTRICT, not PROTECT: a sponsor with charges is never deleted on its own (it is archived),
     # but a space purge that deletes both together may.
     sponsor = models.ForeignKey(Sponsor, on_delete=models.RESTRICT, related_name="charges")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     description = models.CharField(max_length=200, blank=True, default="")
     # Hack-money G8: a payment may be for one event, and earmarked for that event's prize pool.

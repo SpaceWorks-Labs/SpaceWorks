@@ -10,6 +10,7 @@ second claim quoting the same UTR is refused, whatever happened to the first.
 from django.utils.translation import gettext, gettext_noop
 from django.core.exceptions import ValidationError
 from django.db import models
+from apps.payments.money_model import MoneyDecimalField
 
 
 class PaymentClaim(models.Model):
@@ -35,7 +36,7 @@ class PaymentClaim(models.Model):
     #: Upper-cased, spaces removed. A payment reference, never contact details.
     reference = models.CharField(max_length=35)
     paid_on = models.DateField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.SUBMITTED)
     decided_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")

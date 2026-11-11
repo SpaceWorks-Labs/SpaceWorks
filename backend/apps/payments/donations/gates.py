@@ -1,8 +1,10 @@
 """Switches and authority for donations and sponsors (#95: off means 404, data kept).
 
-Staff surfaces are the finance ledger's `donations` domain (#100): only holders of
-`view_finance` (the Space Manager and finance staff) read them, and recording, cancelling
-or opening a refund case also needs `record_payment`.
+Staff surfaces are the finance ledger's `donations` domain (#100): holders of `view_finance`
+(the Space Manager and finance staff) or `manage_donations` (the Fundraising role, decision
+242(m); the Space Manager holds it through `manage_makerspace`) read them. Recording,
+cancelling or opening a refund case needs `manage_donations` or `record_payment`. No area
+manager holds either, so donation money never reaches an area's views.
 """
 
 from django.utils.translation import gettext
@@ -64,21 +66,36 @@ def public_space(slug, key=DONATIONS):
     return require_feature(get_public_makerspace(slug), key)
 
 
+def read_action(actor, makerspace_id):
+    """The action that admits `actor` to this space's donations, or None."""
+    for action in (rbac.Action.MANAGE_DONATIONS, rbac.Action.VIEW_FINANCE):
+        if rbac.can(actor, action, makerspace_id):
+            return action
+    return None
+
+
+def may_record(actor, makerspace_id):
+    return any(rbac.can(actor, action, makerspace_id)
+               for action in (rbac.Action.MANAGE_DONATIONS, rbac.Action.RECORD_PAYMENT))
+
+
 def staff_space(actor, makerspace_id, key, *, record=False):
-    """The servable space when `actor` holds finance authority there, else 404."""
+    """The servable space when `actor` holds donations authority there, else 404."""
     from apps.makerspaces.models import Makerspace
     from apps.makerspaces.servability import servable_queryset
 
     space = servable_queryset(Makerspace.objects.filter(pk=makerspace_id)).first()
-    if space is None or not rbac.can(actor, rbac.Action.VIEW_FINANCE, makerspace_id):
+    if space is None or read_action(actor, makerspace_id) is None:
         raise NotFound(gettext("Makerspace not found."))
     require_feature(space, key)
-    if record and not rbac.can(actor, rbac.Action.RECORD_PAYMENT, makerspace_id):
-        raise PermissionDenied({"detail": gettext("Recording money needs record_payment."), "code": "record_payment_required"})
+    if record and not may_record(actor, makerspace_id):
+        raise PermissionDenied({"detail": gettext("Recording money needs manage_donations or record_payment."),
+                                "code": "record_payment_required"})
     return space
 
 
 def scoped(actor, model, makerspace_id):
     """Every staff list goes through the Auth module's makerspace scoping."""
-    return rbac.scope_by_action(actor, rbac.Action.VIEW_FINANCE, model.objects.filter(makerspace_id=makerspace_id),
+    action = read_action(actor, makerspace_id) or rbac.Action.VIEW_FINANCE
+    return rbac.scope_by_action(actor, action, model.objects.filter(makerspace_id=makerspace_id),
                                 field="makerspace_id")

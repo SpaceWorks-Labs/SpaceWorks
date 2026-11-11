@@ -21,6 +21,7 @@ from django.db import models
 
 from apps.payments.models_payment import Payment
 from apps.payments.models_settings import currency_validator
+from apps.payments.money_model import MoneyDecimalField
 
 
 class ManualSettlement(models.Model):
@@ -49,7 +50,7 @@ class ManualSettlement(models.Model):
     reference = models.CharField(max_length=64, blank=True, default="")
     #: When the money actually changed hands, which is not always when staff recorded it.
     received_at = models.DateTimeField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     recorded_by = models.ForeignKey(
         "accounts.User", on_delete=models.PROTECT, related_name="recorded_settlements"
@@ -167,7 +168,7 @@ class SettlementConfirmation(models.Model):
     method = models.CharField(max_length=16, choices=ManualSettlement.Method.choices)
     reference = models.CharField(max_length=64, blank=True, default="")
     received_at = models.DateTimeField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     currency = models.CharField(max_length=3, validators=[currency_validator])
     proposed_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
     claim = models.ForeignKey("payments.PaymentClaim", null=True, blank=True, on_delete=models.CASCADE,

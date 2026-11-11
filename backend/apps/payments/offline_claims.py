@@ -29,7 +29,7 @@ class ClaimConflict(APIException):
 def normalize_reference(value):
     reference = re.sub(r"\s+", "", str(value or "")).upper()
     if not REFERENCE.fullmatch(reference):
-        raise ClaimConflict("Enter the 6-35 character transaction reference (UTR) from your bank or UPI app.",
+        raise ClaimConflict(gettext("Enter the 6-35 character transaction reference (UTR) from your bank or UPI app."),
                             "claim_reference_invalid")
     return reference
 
@@ -38,22 +38,22 @@ def normalize_reference(value):
 def submit_claim(payment, *, claimant, reference, paid_on, method=PaymentClaim.Method.UPI, pay_link=None):
     locked = Payment.objects.select_for_update(of=("self",)).select_related("makerspace").get(pk=payment.pk)
     if locked.status != Payment.Status.PENDING:
-        raise ClaimConflict("This charge is no longer waiting for payment.", "payment_terminal")
+        raise ClaimConflict(gettext("This charge is no longer waiting for payment."), "payment_terminal")
     from apps.makerspaces.local_time import local_now
     if paid_on > local_now(locked.makerspace).date():
-        raise ClaimConflict("The payment date cannot be in the future.", "claim_date_invalid")
+        raise ClaimConflict(gettext("The payment date cannot be in the future."), "claim_date_invalid")
     reference = normalize_reference(reference)
     if PaymentClaim.objects.filter(makerspace=locked.makerspace, reference=reference).exists():
-        raise ClaimConflict("This reference has already been claimed.", "claim_exists")
+        raise ClaimConflict(gettext("This reference has already been claimed."), "claim_exists")
     if PaymentClaim.objects.filter(payment=locked, status__in=PaymentClaim.OPEN_STATUSES).exists():
-        raise ClaimConflict("A claim for this charge is already waiting for staff.", "claim_exists")
+        raise ClaimConflict(gettext("A claim for this charge is already waiting for staff."), "claim_exists")
     try:
         with transaction.atomic():
             claim = PaymentClaim.objects.create(
                 makerspace=locked.makerspace, payment=locked, claimant=claimant, pay_link=pay_link, method=method,
                 reference=reference, paid_on=paid_on, amount=locked.amount, currency=locked.currency)
     except IntegrityError:
-        raise ClaimConflict("This reference has already been claimed.", "claim_exists")
+        raise ClaimConflict(gettext("This reference has already been claimed."), "claim_exists")
     audit.record(claimant, "payment.paid_claim_submitted", makerspace=locked.makerspace, target=locked,
                  meta={"claim_id": claim.pk, "method": claim.method, "via_pay_link": pay_link is not None})
     from apps.payments.notifications_l5 import notify_claim
@@ -68,7 +68,7 @@ def _locked_claim(makerspace_id, claim_id):
     Payment.objects.select_for_update(of=("self",)).get(pk=claim.payment_id)
     claim = PaymentClaim.objects.select_for_update().select_related("payment__makerspace").get(pk=claim.pk)
     if claim.status != PaymentClaim.Status.SUBMITTED:
-        raise ClaimConflict("This claim has already been decided.", "claim_decided")
+        raise ClaimConflict(gettext("This claim has already been decided."), "claim_decided")
     return claim
 
 
@@ -97,8 +97,10 @@ def confirm_claim(*, actor, makerspace_id, claim_id):
         audit.record(actor, "payment.paid_claim_confirmed", makerspace=payment.makerspace, target=payment,
                      meta={"claim_id": claim.pk, "awaiting_confirmation": True})
         return claim
-    reconcile_payments(actor=actor, makerspace_id=makerspace_id, payment_ids=[payment.pk],
-                       target_status=Payment.Status.PAID_OFFLINE, settlement=settlement)
+    from apps.payments.settlement_supersede import keeping
+    with keeping(claim_id=claim.pk):
+        reconcile_payments(actor=actor, makerspace_id=makerspace_id, payment_ids=[payment.pk],
+                           target_status=Payment.Status.PAID_OFFLINE, settlement=settlement)
     return finish_claim(claim, actor, confirmed=True)
 
 

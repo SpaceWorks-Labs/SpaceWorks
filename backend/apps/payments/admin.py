@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
@@ -97,7 +98,7 @@ class MakerspacePaymentSettingsAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     list_filter = ("makerspace",)
     search_fields = ("makerspace__name", "makerspace__slug", "makerspace__public_code")
 
-    @admin.display(boolean=True, description="Configured")
+    @admin.display(boolean=True, description=gettext_lazy("Configured"))
     def configured(self, obj):
         return obj.is_configured
 
@@ -234,3 +235,6 @@ class PlatformStripeConnectSettingsAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 if not app_is_tombstoned("payments_rail"):
     admin.site.register(MakerspacePaymentSettings, MakerspacePaymentSettingsAdmin)
     admin.site.register(PlatformStripeConnectSettings, PlatformStripeConnectSettingsAdmin)
+
+# The core ledger is listed read-only whatever happens to the rail (0.12.0, /control/ Money).
+from apps.payments import admin_ledger  # noqa: E402,F401

@@ -90,4 +90,4 @@ def dispatch(space, schedule, message, now, local_tz):
         return NotificationResult(bool(envelope), {"envelope": int(envelope is not None)})
 
 
-PAYOUT_DETAILS_SOURCE = ReminderSource(SOURCE_KEY, "request_workflow", discover, build, dispatch=dispatch)
+PAYOUT_DETAILS_SOURCE = ReminderSource(SOURCE_KEY, "events", discover, build, dispatch=dispatch)

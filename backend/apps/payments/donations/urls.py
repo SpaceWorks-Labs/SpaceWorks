@@ -5,6 +5,7 @@ from django.urls import path
 
 from . import views_guest as guest, views_member as member, views_public as public
 from . import views_sponsor_logo as logo, views_sponsors as sponsors, views_staff as staff
+from . import views_staff_area as area
 
 SPACE = "admin/makerspace/<int:makerspace_id>"
 PUBLIC = "public/<slug:makerspace_slug>"
@@ -37,6 +38,15 @@ DONATION_PATTERNS = [
          name="admin-donation-return"),
     path(f"{SPACE}/donations/<int:pk>/tax-receipt.pdf", staff.StaffTaxReceiptView.as_view(),
          name="admin-donation-tax-receipt"),
+    # Decision 242(m): the Donations area.
+    path(f"{SPACE}/donations/donors", area.DonorListView.as_view(), name="admin-donation-donors"),
+    path(f"{SPACE}/donations/export.csv", area.DonationExportView.as_view(), name="admin-donation-export"),
+    path(f"{SPACE}/donations/<int:pk>/receipt/reissue", area.ReceiptReissueView.as_view(),
+         name="admin-donation-receipt-reissue"),
+    path(f"{SPACE}/donations/<int:pk>/claim/confirm", area.GiftClaimDecisionView.as_view(confirm=True),
+         name="admin-donation-claim-confirm"),
+    path(f"{SPACE}/donations/<int:pk>/claim/reject", area.GiftClaimDecisionView.as_view(confirm=False),
+         name="admin-donation-claim-reject"),
     path(f"{SPACE}/sponsors", sponsors.SponsorListView.as_view(), name="admin-sponsors"),
     path(f"{SPACE}/sponsors/tiers", sponsors.TierListView.as_view(), name="admin-sponsor-tiers"),
     path(f"{SPACE}/sponsors/tiers/<int:pk>", sponsors.TierDetailView.as_view(), name="admin-sponsor-tier"),

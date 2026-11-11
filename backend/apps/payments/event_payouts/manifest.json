@@ -3,7 +3,7 @@
   "lane": "RB3-B",
   "module_key": "request_workflow",
   "integration_status": "IMPLEMENTED_PENDING_G_MIGRATIONS_WIRING_AND_RUNTIME_VALIDATION_DO_NOT_ENABLE",
-  "prerequisite": "G1 JSON present and reconciled. Django/PostgreSQL unavailable; see scratchpad/build/RB3-B-report.txt.",
+  "prerequisite": "G1 JSON present and reconciled.",
   "models": [
     {
       "label": "payments.FinanceAttachment",

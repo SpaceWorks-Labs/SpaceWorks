@@ -6,6 +6,12 @@ class PaymentsConfig(AppConfig):
     name = "apps.payments"
 
     def ready(self):
+        # A ModelSerializer over a money column renders it like a hundredth when exact ("25.00"),
+        # not as the stored thousandth ("25.000"); the explicit MoneyField sites already did.
+        from rest_framework import serializers as drf_serializers
+        from .money_fields import MoneyField
+        from .money_model import MoneyDecimalField
+        drf_serializers.ModelSerializer.serializer_field_mapping[MoneyDecimalField] = MoneyField
         from apps.encryption.registry import register_retained_pii
         register_retained_pii("payments.")
         from .notifications_p2 import register

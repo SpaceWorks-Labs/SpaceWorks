@@ -17,6 +17,13 @@ class FinanceAttachmentDownloadView(PrivateView):
 
 
 class PayeeFileCreateView(PrivateView):
+    @extend_schema(tags=["Event payouts"], description="Owner-only: the signed-in member's own routing documents "
+        "for this payout's current payee details. Metadata only; bytes are never readable by the owner.",
+        responses={200: f.PayeeFileListItem(many=True), **s.ERRORS})
+    def get(self, request, obligation_id):
+        row = obligation(request, obligation_id, owner=True)
+        return Response(file_commands.owner_files(row))
+
     @extend_schema(tags=["Event payouts"], request=f.PayeeFileCreateCommand, responses={201: f.FileCreated, **s.ERRORS})
     def post(self, request, obligation_id):
         obligation(request, obligation_id, owner=True)

@@ -11,7 +11,6 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
@@ -256,8 +255,7 @@ class EventSponsorChoicesView(APIView):
         from apps.events.models import EventSponsor
 
         staff_space(request.user, makerspace_id, SPONSORS)
-        rows = rbac.scope_by_action(request.user, rbac.Action.VIEW_FINANCE, EventSponsor.objects.filter(
-            makerspace_id=makerspace_id), field="makerspace_id").select_related("event").order_by("-event__starts_at", "pk")
+        rows = scoped(request.user, EventSponsor, makerspace_id).select_related("event").order_by("-event__starts_at", "pk")
         linked = dict(SponsorEventLink.objects.filter(makerspace_id=makerspace_id).values_list(
             "event_sponsor_id", "sponsor_id"))
         return Response(s.EventSponsorChoiceSerializer([{

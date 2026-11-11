@@ -2,7 +2,7 @@
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from apps.payments.money import to_minor_units
+from apps.payments.money import AmountNotCapturable, to_minor_units, to_provider_minor_units
 
 
 def _create_checkout_via_provider(payment, source, label, member_url):
@@ -11,7 +11,12 @@ def _create_checkout_via_provider(payment, source, label, member_url):
     Called with the Payment row already locked by `_create_checkout_url_atomic`, so the
     lock ordering (platform settings -> makerspace settings -> Payment) is unchanged.
     """
-    from apps.payments.providers import CheckoutRequest, get_provider
+    from apps.payments.providers import CheckoutRequest, PaymentsUnavailable, get_provider
+
+    try:
+        amount_minor = to_provider_minor_units(payment.amount, payment.currency)
+    except AmountNotCapturable as exc:
+        raise PaymentsUnavailable("The charge amount is finer than the provider can capture.") from exc
 
     provider = get_provider(payment.provider)
     result = provider.create_checkout(
@@ -19,7 +24,7 @@ def _create_checkout_via_provider(payment, source, label, member_url):
         CheckoutRequest(
             # Integer minor units. A float here is a rounding bug that reconciles as a
             # real money difference.
-            amount_minor=to_minor_units(payment.amount, payment.currency),
+            amount_minor=amount_minor,
             currency=payment.currency,
             description=label,
             reference=str(payment.pk),

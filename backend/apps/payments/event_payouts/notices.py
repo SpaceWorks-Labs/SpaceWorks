@@ -1,4 +1,5 @@
 """Transactional personal core notices. No payee value, filename or reason text."""
+from django.utils.translation import gettext
 from django.db import connection
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
@@ -7,11 +8,13 @@ from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import is_servable
 from apps.notifications.inbox import eligible_owner
 from .obligation_models import EventPayoutObligation
+from apps.integrations.fanout_jobs import deferred_fanout
 
 KINDS = frozenset(("approved", "decision_corrected", "cancelled", "payment_recorded", "payment_corrected",
     "payee_submitted", "payee_verified", "payee_correction", "held", "hold_released", "details_reminder"))
 
 
+@deferred_fanout()
 def enqueue_locked(obligation, kind, *, identity="command"):
     if kind not in KINDS or not connection.in_atomic_block:
         raise ValueError("A supported core notice requires the owning transaction.")
@@ -25,7 +28,7 @@ def enqueue_locked(obligation, kind, *, identity="command"):
         dedup_key=f"payout:{obligation.pk}:{obligation.version}:{kind}:{identity}",
         source_kind="finance.event_payout", source_id=str(obligation.pk), revision=str(obligation.version), subject=obligation,
         context={"obligation_id": str(obligation.pk), "version": obligation.version, "kind": kind},
-        rendered={"subject": "Event reimbursement update", "text": "Your reimbursement record has an update. Sign in to review it.",
+        rendered=lambda: {"subject": gettext("Event reimbursement update"), "text": gettext("Your reimbursement record has an update. Sign in to review it."),
                   "link": f"/member/event-payouts/{obligation.pk}"})
 
 

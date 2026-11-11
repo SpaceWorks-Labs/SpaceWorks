@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.db.models import Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventMoneySettings(models.Model):
@@ -18,7 +19,7 @@ class EventMoneySettings(models.Model):
                                       related_name="event_money_settings")
     prize_tds_enabled = models.BooleanField(default=False)
     prize_tds_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("30.00"))
-    prize_tds_threshold = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("10000.00"))
+    prize_tds_threshold = MoneyDecimalField(max_digits=13, decimal_places=3, default=Decimal("10000.00"))
     payee_templates = models.JSONField(default=list, blank=True)
     version = models.PositiveIntegerField(default=1)
     updated_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")

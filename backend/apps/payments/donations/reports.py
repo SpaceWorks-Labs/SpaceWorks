@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from apps.makerspaces.local_time import local_now
 from apps.operations.report_types import ReportResult
+from apps.payments.money import trim_money
 
 ZERO = Decimal("0.00")
 CENT = Decimal("0.01")
@@ -59,7 +60,7 @@ def _status(campaign, now):
 
 
 def _money(value):
-    return (value or ZERO).quantize(CENT, rounding=ROUND_HALF_UP)
+    return trim_money(value or ZERO)
 
 
 def _campaign_rows(space, date_range):

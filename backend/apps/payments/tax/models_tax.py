@@ -91,6 +91,8 @@ class DocumentNumberCounter(models.Model):
     class Series(models.TextChoices):
         INVOICE = "invoice", gettext_noop("Tax invoice / receipt")
         CREDIT_NOTE = "credit_note", gettext_noop("Credit note")
+        # Parity O-B3 (`billing.fy_receipts`): plain receipts numbered per FY while tax is off.
+        RECEIPT = "receipt", gettext_noop("Receipt")
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     series = models.CharField(max_length=16, choices=Series.choices)

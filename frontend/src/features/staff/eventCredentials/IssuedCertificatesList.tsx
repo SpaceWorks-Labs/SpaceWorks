@@ -3,10 +3,11 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Image as ImageIcon, RotateCcw, Ban } from "lucide-react";
-import { StatusPill } from "../../../components/ui";
+import { ConfirmDialog, StatusPill } from "../../../components/ui";
 import { staffRequest } from "../../../lib/api";
 import { CERTIFICATE_KINDS } from "./designer/samples";
 import { savePng, useIssued, type IssuedRow } from "./issueApi";
+import { EventPanelPager } from "../EventPanelPager";
 
 const REASONS = [{ value: "staff_revoked", label: t`Withdrawn by organisers` }, { value: "attendance_corrected", label: t`Records corrected` },
   { value: "event_cancelled", label: t`Event cancelled` }];
@@ -14,6 +15,7 @@ const TONES: Record<string, "success" | "info" | "danger" | "neutral"> = { activ
 
 function Row({ row, eventId, onChanged }: { row: IssuedRow; eventId: number; onChanged: () => void }) {
   const [reason, setReason] = useState("staff_revoked");
+  const [confirming, setConfirming] = useState(false);
   const act = useMutation({ mutationFn: async (action: "download" | "png" | "revoke" | "reissue") => {
     if (action === "png") return savePng(eventId, row);
     if (action === "download") {
@@ -36,11 +38,14 @@ function Row({ row, eventId, onChanged }: { row: IssuedRow; eventId: number; onC
         <label className="sr-only" htmlFor={`reason-${row.id}`}>{t`Reason for revoking ${row.recipient_name}'s certificate`}</label>
         <select id={`reason-${row.id}`} className="desk-input min-h-11 w-auto" value={reason} onChange={(event) => setReason(event.target.value)}>
           {REASONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
-        <button type="button" className="desk-button-danger" disabled={act.isPending} onClick={() => { if (window.confirm(t`Revoke ${row.recipient_name}'s certificate? The verification page will show it as withdrawn.`)) act.mutate("revoke"); }}>
+        <button type="button" className="desk-button-danger" disabled={act.isPending} onClick={() => setConfirming(true)}>
           <Ban size={16} aria-hidden="true" />{t`Revoke`}</button></> : null}
       {row.status === "revoked" ? <button type="button" className="desk-button-success" disabled={act.isPending} onClick={() => act.mutate("reissue")}><RotateCcw size={16} aria-hidden="true" />{t`Reissue`}</button> : null}
     </div>
     {act.error ? <p role="alert" className="text-sm text-danger">{act.error.message}</p> : null}
+    <ConfirmDialog open={confirming} tone="danger" title={t`Revoke this certificate?`} confirmLabel={t`Revoke`}
+      message={t`Revoke ${row.recipient_name}'s certificate? The verification page will show it as withdrawn.`}
+      onCancel={() => setConfirming(false)} onConfirm={() => { setConfirming(false); act.mutate("revoke"); }} />
   </li>;
 }
 
@@ -61,8 +66,6 @@ export function IssuedCertificatesList({ eventId }: { eventId: number }) {
     {query.data && !query.data.results.length ? <p className="text-sm text-muted">{t`Nothing issued yet.`}</p> : null}
     <ul className="grid gap-2">{query.data?.results.map((row) => <Row key={row.id} row={row} eventId={eventId}
       onChanged={() => { void client.invalidateQueries({ queryKey: ["events", "credentials", eventId, "issued"] }); }} />)}</ul>
-    {query.data && (query.data.next || query.data.previous) ? <div className="flex gap-2">
-      <button type="button" className="desk-button" disabled={!query.data.previous} onClick={() => setPage(page - 1)}>{t`Previous`}</button>
-      <button type="button" className="desk-button" disabled={!query.data.next} onClick={() => setPage(page + 1)}>{t`Next`}</button></div> : null}
+    {query.data ? <EventPanelPager page={page} setPage={setPage} count={query.data.count} next={query.data.next} /> : null}
   </section>;
 }

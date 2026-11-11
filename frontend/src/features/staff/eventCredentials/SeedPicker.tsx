@@ -26,7 +26,7 @@ export function SeedPicker({ eventId, version, kind, stock, onInstall }: {
   return <fieldset className="grid gap-3 rounded-control border border-line p-3" disabled={install.isPending || preview.isPending}>
     <legend className="font-semibold">{t`Default designs`}</legend>
     <label className="grid gap-1 text-sm">{t`Theme`}<select className="desk-input" value={theme} onChange={(event) => setTheme(event.target.value)}><option value="light">{t`Light`}</option><option value="dark">{t`Dark`}</option></select></label>
-    {query.isPending ? <p role="status">{t`Loading designs?`}</p> : null}
+    {query.isPending ? <p role="status">{t`Loading designs…`}</p> : null}
     {query.data?.results.map((seed) => <div className="flex flex-wrap items-center gap-2" key={seed.seed_id}>
       <span className="text-sm">{seed.seed_id.replace(/-/g, " ")}</span>
       <button className="desk-button" type="button" onClick={() => preview.mutate(seed)}>{t`Preview sample`}</button>

@@ -21,7 +21,7 @@ export function LayerList({ layers, selectedId, onSelect, onMove, onToggle, onDu
       <button className="desk-button min-h-11 min-w-11" type="button" aria-pressed={Boolean(layer.locked)} aria-label={`${layer.locked ? "Unlock" : "Lock"} ${name}`} onClick={() => onToggle(layer.id, "locked")}>
         {layer.locked ? <Lock size={16} aria-hidden="true" /> : <LockOpen size={16} aria-hidden="true" />}</button>
       <button className="desk-button min-h-11 min-w-11" type="button" aria-pressed={Boolean(layer.hidden)} disabled={PROTECTED.includes(layer.type)}
-        aria-label={PROTECTED.includes(layer.type) ? t`${name} always prints` : `${layer.hidden ? "Show" : "Hide"} ${name}`} onClick={() => onToggle(layer.id, "hidden")}>
+        aria-label={PROTECTED.includes(layer.type) ? t`${name} always prints` : layer.hidden ? t`Show ${name}` : t`Hide ${name}`} onClick={() => onToggle(layer.id, "hidden")}>
         {layer.hidden ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}</button>
       <button className="desk-button min-h-11 min-w-11" type="button" aria-label={t`Duplicate ${name}`} disabled={full} onClick={() => onDuplicate(layer.id)}><Copy size={16} aria-hidden="true" /></button>
       <button className="desk-button min-h-11 min-w-11" type="button" aria-label={t`Delete ${name}`} disabled={layers.length === 1 || layer.locked} onClick={() => onDelete(layer.id)}><Trash2 size={16} aria-hidden="true" /></button>

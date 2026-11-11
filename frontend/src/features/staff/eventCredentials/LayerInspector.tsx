@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { AlignHorizontalJustifyCenter, AlignHorizontalJustifyEnd, AlignHorizontalJustifyStart, AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd, AlignVerticalJustifyStart } from "lucide-react";
 import type { Layer } from "./layout";
-import { CERTIFICATE_MERGE_TAGS, MERGE_TAGS } from "./layout";
+import { brandFamily, CERTIFICATE_MERGE_TAGS, MERGE_TAGS } from "./layout";
 import { ColourField } from "./designer/ColourField";
 import type { Alignment } from "./designer/geometry";
 
@@ -54,8 +54,8 @@ export function LayerInspector({ layer, onChange, onAlign, kind = "certificate",
     {!typed ? <p className="text-sm text-muted">{t`The server fills this picture or code at issue time; the PDF preview shows samples.`}</p> : null}
     {typed ? <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <label className="grid gap-1 text-sm">{t`Font`}<select className="desk-input" value={layer.font_family ?? "Gilroy"}
-          onChange={(event) => onChange({ font_family: event.target.value as Layer["font_family"] })}><option>{t`Gilroy`}</option><option>{t`Unbounded`}</option></select></label>
+        <label className="grid gap-1 text-sm">{t`Font`}<select className="desk-input" value={brandFamily(layer)}
+          onChange={(event) => onChange({ font_family: event.target.value as Layer["font_family"] })}><option value="Outfit">{t`Outfit`}</option><option value="Unbounded">{t`Unbounded`}</option></select></label>
         <label className="grid gap-1 text-sm">{t`Weight`}<select className="desk-input" value={layer.font_weight ?? 400}
           onChange={(event) => onChange({ font_weight: Number(event.target.value) as Layer["font_weight"] })}>
           {[[400, "Regular"], [500, "Medium"], [600, "Semibold"], [700, "Bold"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -70,7 +70,7 @@ export function LayerInspector({ layer, onChange, onAlign, kind = "certificate",
         <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={layer.shrink_to_fit ?? true} onChange={(event) => onChange({ shrink_to_fit: event.target.checked })} />{t`Shrink to fit (down to 6 pt)`}</label>
         <label className="flex min-h-11 items-center gap-2 text-sm text-muted"><input type="checkbox" className="h-5 w-5" checked={false} disabled aria-describedby={`italic-${layer.id}`} />{t`Italic`}</label>
       </div>
-      <p id={`italic-${layer.id}`} className="text-xs text-muted">{layer.font_family ?? t`Gilroy`} {t` has no true italic face in the approved font kit, so italic is off. Use weight or size for emphasis.`}</p>
+      <p id={`italic-${layer.id}`} className="text-xs text-muted">{brandFamily(layer)} {t` has no true italic face in the approved font kit, so italic is off. Use weight or size for emphasis.`}</p>
       <ColourField layer={layer} paperMeasurable={paperMeasurable} onChange={onChange} />
     </> : null}
   </fieldset>;

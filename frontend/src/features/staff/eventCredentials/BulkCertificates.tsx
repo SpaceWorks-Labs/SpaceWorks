@@ -1,11 +1,11 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { Award } from "lucide-react";
 import { CertificatePublicationControls } from "./CertificatePublicationControls";
 import { IssuedCertificatesList } from "./IssuedCertificatesList";
 import { useBatch, useIssue, useIssuePlan, useSample, type IssueGroup, type IssuePlan } from "./issueApi";
 
-const GROUPS: { value: IssueGroup; label: string; hint: string }[] = [
+const groupOptions = (): { value: IssueGroup; label: string; hint: string }[] => [
   { value: "attendance", label: t`Attendance`, hint: t`Everyone marked as attended.` },
   { value: "participants", label: t`Participants`, hint: t`Members of teams with an eligible project.` },
   { value: "awards", label: t`Winners and finalists`, hint: t`From the published results: 1st place is a winner, other places finalists.` },
@@ -28,7 +28,7 @@ export function BulkCertificates({ eventId }: { eventId: number }) {
     <summary className="min-h-11 cursor-pointer font-semibold text-ink"><span className="inline-flex items-center gap-2"><Award size={18} aria-hidden="true" />{t`Issue certificates`}</span></summary>
     <div className="mt-3 grid gap-4">
       <fieldset className="grid gap-2"><legend className="text-sm font-semibold text-ink">{t`Who should receive one?`}</legend>
-        {GROUPS.map((group) => <label key={group.value} className="flex min-h-11 items-start gap-3 text-sm">
+        {groupOptions().map((group) => <label key={group.value} className="flex min-h-11 items-start gap-3 text-sm">
           <input type="checkbox" className="mt-1 h-5 w-5" checked={groups.includes(group.value)} onChange={(event) => {
             reset(); setGroups(event.target.checked ? [...groups, group.value] : groups.filter((item) => item !== group.value));
           }} /><span><span className="font-semibold text-ink">{group.label}.</span> {group.hint}</span></label>)}
@@ -54,7 +54,7 @@ export function BulkCertificates({ eventId }: { eventId: number }) {
           <label className="flex min-h-11 items-start gap-3 text-sm"><input type="checkbox" className="mt-1 h-5 w-5" checked={publish} onChange={(event) => setPublish(event.target.checked)} />
             <span>{t`Let anyone with the link or QR code check these certificates (issuer, event, date, kind and status; names only if the holder chooses).`}</span></label>
           <label className="flex min-h-11 items-start gap-3 text-sm"><input type="checkbox" className="mt-1 h-5 w-5" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-            <span>{t`Issue ${plan.recipients.length} certificate${plan.recipients.length === 1 ? "" : "s"} as listed.`}</span></label>
+            <span>{plural(plan.recipients.length, { one: "Issue # certificate as listed.", other: "Issue # certificates as listed." })}</span></label>
           <button type="button" className="desk-button-primary justify-self-start" disabled={!confirmed || issue.isPending}
             onClick={() => issue.mutate({ plan, publish }, { onSuccess: (value) => { setBatchId(value.id); reset(); } })}>{t`Issue certificates`}</button>
         </> : null}

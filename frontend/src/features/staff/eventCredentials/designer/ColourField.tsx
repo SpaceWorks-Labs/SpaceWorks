@@ -22,12 +22,12 @@ export function ColourField({ layer, paperMeasurable, onChange }: { layer: Layer
     <div className="flex flex-wrap items-end gap-2">
       <label className="grid gap-1 text-sm">{t`Any colour`}<input type="color" className="h-11 w-16 rounded-control border border-line bg-surface" value={current}
         onChange={(event) => onChange({ colour: event.target.value.toUpperCase() })} /></label>
-      <label className="grid min-w-0 flex-1 gap-1 text-sm">{t`Hex code`}<input className="desk-input font-mono" value={draft} maxLength={7}
+      <label className="grid min-w-0 flex-1 gap-1 text-sm">{t`Hex code`}<input className="desk-input code-text" value={draft} maxLength={7}
         aria-invalid={!valid} onChange={(event) => { setDraft(event.target.value); if (/^#[0-9A-Fa-f]{6}$/.test(event.target.value)) onChange({ colour: event.target.value.toUpperCase() }); }} /></label>
     </div>
     {!valid ? <p className="text-xs text-danger" role="alert">{t`Use a hex code like #142C2A.`}</p> : null}
     {paperMeasurable ? <p className={`text-xs ${ratio < 4.5 ? "text-danger" : "text-muted"}`} role={ratio < 4.5 ? "alert" : undefined}>
-      {t`Contrast on white paper ${ratio}:1${ratio < 4.5 ? ". Text needs at least 4.5:1 to stay readable; choose a darker colour." : ""}`}</p>
+      {ratio < 4.5 ? t`Contrast on white paper ${ratio}:1. Text needs at least 4.5:1 to stay readable; choose a darker colour.` : t`Contrast on white paper ${ratio}:1`}</p>
       : <p className="text-xs text-muted">{t`A full-page picture sits behind this text, so check its contrast in the PDF preview.`}</p>}
   </fieldset>;
 }

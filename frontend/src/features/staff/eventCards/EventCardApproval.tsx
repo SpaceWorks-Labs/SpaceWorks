@@ -24,7 +24,7 @@ export function EventCardApproval({ eventId }: { eventId: number }) {
       void client.invalidateQueries({ queryKey: ["event-card-designs", eventId] });
     },
   });
-  if (!settings.data) return settings.error ? <ErrorBlock error={settings.error} resource="card settings" /> : null;
+  if (!settings.data) return settings.error ? <ErrorBlock error={settings.error} resource={t`card settings`} /> : null;
   return <div className="grid max-w-md gap-1">
     <ApprovalLevelSelect label={t`Design changes for this event`} value={settings.data.design_approval_required}
       inherited={settings.data.design_approval_inherited} inheritLabel="Follow the organisation and space"

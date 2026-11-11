@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../../lib/api";
 import type { LayerDocument } from "./layout";
+import { CertificateLibraryEditor } from "./CertificateLibraryEditor";
 
 type LibraryRow = { id: number; name: string; version: number };
 type Revision = { id: number; parameters: LayerDocument; artwork_id: number | null };
@@ -36,6 +37,7 @@ export function CertificateLibrary({ makerspaceId, eventId, document, eventVersi
       <p className="text-xs text-muted">{t`Save the event revision first to include images. The copy owns its own private artwork and stays independent of later event edits.`}</p>
       <label className="grid gap-1 text-sm">{t`Library template`}<select className="desk-input" value={selected} onChange={(event) => { const id = Number(event.target.value); setSelected(id); setName(library.data?.results.find((row) => row.id === id)?.name ?? ""); }}><option value={0}>{t`Choose a template`}</option>
         {library.data?.results.map((row) => <option value={row.id} key={row.id}>{row.name}</option>)}</select></label>
+      {selected ? <CertificateLibraryEditor key={selected} makerspaceId={makerspaceId} templateId={selected} document={document} /> : null}
       {revisions.data?.results.map((revision) => <button key={revision.id} type="button" className="desk-button" disabled={copy.isPending || eventVersion === undefined} onClick={() => copy.mutate(revision.id)}>{t`Copy revision ${revision.id} to this event`}</button>)}
       <button type="button" className="desk-button" disabled={!selected || !eventRevisionId || !name.trim() || capture.isPending} onClick={() => capture.mutate(true)}>{t`Append saved event design and artwork as a library revision`}</button>
       {copy.isSuccess || save.isSuccess ? <p role="status" className="text-sm text-success-ink">{t`Template saved. Issued certificates keep their original design.`}</p> : null}

@@ -1,10 +1,14 @@
 import { API_V1_URL, staffRequest, StructuredApiError } from "../../lib/api";
+import type { BadgeReceipt, DeskBadge, DeskBundle, ReceiptResult } from "./eventBadges/deskBadgeApi";
 
 export type OfflineRosterRegistration = {
   registration_id: number;
   checkin_token: string;
   name: string;
   host_waiver_state: "not_required" | "on_file" | "missing";
+  /** With events.badge_desk_print: what the desk needs to print this person offline. */
+  checkin_payload?: string | null;
+  badge?: DeskBadge | null;
 };
 
 export type OfflineRoster = {
@@ -18,6 +22,8 @@ export type OfflineRoster = {
   sync_deadline: string;
   event: { id: number; title: string; starts_at: string; ends_at: string };
   registrations: OfflineRosterRegistration[];
+  /** Published badge designs, role map and logos; present only when the badge desk switch is on. */
+  badges?: DeskBundle;
 };
 
 export type QueuedCheckIn = {
@@ -34,7 +40,10 @@ export type SyncOutcome = {
   attended_at?: string;
 };
 
-export type SyncResponse = { recorded_at: string; results: SyncOutcome[] };
+export type SyncResponse = { recorded_at: string; results: SyncOutcome[]; badge_receipts?: ReceiptResult };
+
+const withReceipts = (roster: OfflineRoster, operations: QueuedCheckIn[], receipts: BadgeReceipt[]) =>
+  JSON.stringify({ lease_token: roster.lease_token, operations, ...(receipts.length ? { badge_receipts: receipts } : {}) });
 
 export function downloadStaffRoster(eventId: number) {
   return staffRequest<OfflineRoster>(
@@ -42,10 +51,10 @@ export function downloadStaffRoster(eventId: number) {
   );
 }
 
-export function syncStaffRoster(eventId: number, roster: OfflineRoster, operations: QueuedCheckIn[]) {
+export function syncStaffRoster(eventId: number, roster: OfflineRoster, operations: QueuedCheckIn[], receipts: BadgeReceipt[] = []) {
   return staffRequest<SyncResponse>(
     `/admin/events/${eventId}/check-in/offline-sync/`,
-    { method: "POST", body: JSON.stringify({ lease_token: roster.lease_token, operations }) },
+    { method: "POST", body: withReceipts(roster, operations, receipts) },
   );
 }
 
@@ -82,8 +91,8 @@ export function downloadStationRoster(token: string) {
   return stationRequest<OfflineRoster>(`/event-checkin-stations/${token}/roster/`);
 }
 
-export function syncStationRoster(token: string, roster: OfflineRoster, operations: QueuedCheckIn[]) {
+export function syncStationRoster(token: string, roster: OfflineRoster, operations: QueuedCheckIn[], receipts: BadgeReceipt[] = []) {
   return stationRequest<SyncResponse>(`/event-checkin-stations/${token}/sync/`, {
-    method: "POST", body: JSON.stringify({ lease_token: roster.lease_token, operations }),
+    method: "POST", body: withReceipts(roster, operations, receipts),
   });
 }

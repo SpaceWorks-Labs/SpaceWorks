@@ -67,7 +67,7 @@ export function SignatoriesPanel({ eventId }: { eventId: number }) {
         <ul className="grid gap-2">{state.designs.map((design) => <li key={design.template_revision_id} className="rounded-control border border-line p-3 text-sm">
           <p className="font-semibold text-ink">{t`${kindLabel(design.certificate_kind)} · revision ${design.template_revision_id}`}</p>
           <ul className="mt-1 flex flex-wrap gap-3">{design.slots.map((slot) => <li key={slot.slot} className={`inline-flex items-center gap-1 ${slot.approved ? "text-success-ink" : "text-warn-ink"}`}>
-            {slot.approved ? <CheckCircle2 size={16} aria-hidden="true" /> : <Clock size={16} aria-hidden="true" />}{t`Signatory ${slot.slot}: ${slot.approved ? "approved" : "waiting"}`}</li>)}</ul>
+            {slot.approved ? <CheckCircle2 size={16} aria-hidden="true" /> : <Clock size={16} aria-hidden="true" />}{slot.approved ? t`Signatory ${slot.slot}: approved` : t`Signatory ${slot.slot}: waiting`}</li>)}</ul>
         </li>)}</ul></section> : null}
       {error ? <p role="alert" className="text-sm text-danger">{eventErrorText(error)}</p> : null}
     </div>

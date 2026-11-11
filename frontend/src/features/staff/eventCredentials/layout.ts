@@ -4,7 +4,9 @@ import type { PositionedElement } from "../../../components/print-layout/positio
 export type Layer = {
   id: string; order: number; type: "text" | "image" | "logo" | "photo" | "certificate_id" | "certificate_qr" | "event_credential_qr" | "signature";
   x_mm: number; y_mm: number; width_mm: number; height_mm: number; rotation: number;
-  text?: string; font_family?: "Gilroy" | "Unbounded"; font_weight?: 400 | 500 | 600 | 700;
+  text?: string;
+  /** "Gilroy" is the pre-decision-220(c) name of Outfit, still read from stored revisions. */
+  font_family?: "Outfit" | "Unbounded" | "Gilroy"; font_weight?: 400 | 500 | 600 | 700;
   font_size_pt?: number; align?: "left" | "center" | "right"; shrink_to_fit?: boolean;
   italic?: boolean; uppercase?: boolean; tracking_pt?: number; line_height?: number;
   opacity?: number; resource_id?: string; resource_slot?: string; colour_token?: string;
@@ -12,6 +14,8 @@ export type Layer = {
   /** Signature layers print signatory 1, 2 or 3. */ signature_slot?: 1 | 2 | 3;
   locked?: boolean; hidden?: boolean;
 };
+/** The face a layer prints in: Unbounded, else Outfit (a legacy "Gilroy" layer is Outfit). */
+export const brandFamily = (layer: Pick<Layer, "font_family">) => layer.font_family === "Unbounded" ? "Unbounded" : "Outfit";
 /** Brand colour tokens (backend certificates/layout.py COLOURS): presets beside the free colour. */
 export const COLOUR_TOKENS: Record<string, string> = { ink: "#142C2A", teal: "#006E63", orange: "#FF7447",
   citron: "#DFFF8F", sky: "#B5CDFF", yellow: "#FFD447", cream: "#FFF4E8" };
@@ -55,13 +59,13 @@ export function upgradeDocument(input: LayerDocument | LegacyDocument): LayerDoc
   return { version: 2, page_width_mm: input.page_width_mm, page_height_mm: input.page_height_mm,
     layers: [{ id: crypto.randomUUID(), order: 0, type: "text", rotation: 0, text: "{{name}}",
       x_mm: box.x_mm, y_mm: box.y_mm, width_mm: box.width_mm, height_mm: box.height_mm,
-      font_size_pt: box.font_size_pt, font_weight: box.bold ? 700 : 400, font_family: "Gilroy",
+      font_size_pt: box.font_size_pt, font_weight: box.bold ? 700 : 400, font_family: "Outfit",
       align: box.align, shrink_to_fit: true }] };
 }
 
 export function newTextLayer(order: number): Layer {
   return { id: crypto.randomUUID(), order, type: "text", x_mm: 10, y_mm: 10, width_mm: 40, height_mm: 12,
-    rotation: 0, text: "{{name}}", font_family: "Gilroy", font_weight: 600, font_size_pt: 14,
+    rotation: 0, text: "{{name}}", font_family: "Outfit", font_weight: 600, font_size_pt: 14,
     align: "left", shrink_to_fit: true, colour_token: "ink" };
 }
 

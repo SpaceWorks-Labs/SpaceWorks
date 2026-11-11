@@ -28,10 +28,10 @@ export function blankBadge(width: number, height: number): LayerDocument {
   const qr = Math.max(20, Math.min(30, Math.min(width, height) * 0.4));
   return { version: 2, page_width_mm: width, page_height_mm: height, layers: [
     { id: crypto.randomUUID(), order: 0, type: "text", x_mm: 5, y_mm: 5, width_mm: Math.max(10, width - 10), height_mm: 12,
-      rotation: 0, text: "{{name}}", font_family: "Gilroy", font_weight: 700, font_size_pt: 16, align: "left",
+      rotation: 0, text: "{{name}}", font_family: "Outfit", font_weight: 700, font_size_pt: 16, align: "left",
       shrink_to_fit: true, colour_token: "ink" },
     { id: crypto.randomUUID(), order: 1, type: "text", x_mm: 5, y_mm: 19, width_mm: Math.max(10, width - 10), height_mm: 8,
-      rotation: 0, text: "{{event}}", font_family: "Gilroy", font_weight: 500, font_size_pt: 9, align: "left",
+      rotation: 0, text: "{{event}}", font_family: "Outfit", font_weight: 500, font_size_pt: 9, align: "left",
       shrink_to_fit: true, colour_token: "ink" },
     { id: crypto.randomUUID(), order: 2, type: "event_credential_qr", x_mm: width - qr - 5, y_mm: height - qr - 5,
       width_mm: qr, height_mm: qr, rotation: 0, resource_slot: "event_credential_qr" },

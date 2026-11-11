@@ -51,7 +51,9 @@ export function eventDrawerSurfaces(event: StaffEvent | undefined, access: Retur
   const credentials = eventCredentialTools(event, access, enabledFeatures);
   const checkable = event?.status === "published" || event?.status === "completed";
   const invites = access.invitations && ticketing.includes("events.invites");
-  const ticketTypes = access.manager && ticketing.includes("events.ticket_types");
+  // A21: manage_registrations may read ticket types (the list route allows it); only managers change them.
+  const ticketTypes = (access.manager || access.registrations) && ticketing.includes("events.ticket_types");
+  const ticketTypesReadOnly = !access.manager;
   const promos = access.manager && ticketing.includes("events.promo_codes");
   // Applications run on hackathons and, with events.applications, on any one-off event (#128 C-32).
   const admission = enabledFeatures.includes("events.hackathons") || enabledFeatures.includes("events.applications");
@@ -63,7 +65,8 @@ export function eventDrawerSurfaces(event: StaffEvent | undefined, access: Retur
     broadcasts: (access.registrations && Boolean(event?.broadcasts_enabled)) || attendance,
     analytics: Boolean(event?.report_features?.includes("analytics")),
     website: ticketing.includes("events.website") && (access.edit || access.publish),
-    team: access.manager,
+    // Decision 15: a co-organizer holding manage_team reaches Team for helper invitations only.
+    team: access.manager || access.teams,
     settings: access.edit || access.publish,
     applications: admission && (access.applications || access.hackathon),
     "programme-teams": enabledFeatures.includes("events.hackathons") && (access.teams || access.hackathon),
@@ -79,7 +82,7 @@ export function eventDrawerSurfaces(event: StaffEvent | undefined, access: Retur
     "checkin-lists": enabledFeatures.includes("events.checkin_lists") && access.checkIn,
   };
   return {
-    ticketing, checkable, invites, ticketTypes, promos, sections, credentials,
+    ticketing, checkable, invites, ticketTypes, ticketTypesReadOnly, promos, sections, credentials,
     // Drafts keep the tab so check-in staff learn when it opens; cancelled events have no door.
     checkInTab: access.checkIn && (checkable || event?.status === "draft"),
   };

@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { KeyboardEvent, PointerEvent } from "react";
 import { Image, Lock, PenLine, QrCode } from "lucide-react";
 import { mergeTags } from "../badgeStocks";
-import { layerColour, type Layer } from "../layout";
+import { brandFamily, layerColour, type Layer } from "../layout";
 import type { Corner } from "./geometry";
 
 const PT_MM = 25.4 / 72;
@@ -16,7 +16,12 @@ export function layerLabel(layer: Layer) {
   if (layer.type === "certificate_qr") return t`Verification QR`;
   if (layer.type === "certificate_id") return t`Certificate ID`;
   if (layer.type === "event_credential_qr") return t`Check-in QR`;
-  return layer.type.replace(/_/g, " ").replace(/^\w/, (char) => char.toUpperCase());
+  if (layer.type === "image") return t`Image`;
+  if (layer.type === "logo") return t`Logo`;
+  if (layer.type === "photo") return t`Photo`;
+  // Every layer type is handled above; a new one added to the union must get its own label.
+  const unhandled: never = layer.type;
+  return String(unhandled);
 }
 
 type Props = { layer: Layer; scale: number; selected: boolean; values?: Record<string, string>;
@@ -30,7 +35,8 @@ export function CanvasLayer({ layer, scale, selected, values, signature, onPoint
   const colour = layerColour(layer);
   const text = layer.type === "certificate_id" ? "6f1c2a9e-1b2c-4d5e-8f90-123456789abc"
     : values ? mergeTags(layer.text ?? "", values) : layer.text ?? "";
-  const textStyle = { fontFamily: layer.font_family ?? "Gilroy", fontWeight: layer.font_weight ?? 400, fontSize: `${fontPx}px`,
+  // Outfit or Unbounded, as the server prints it; a legacy "Gilroy" layer is Outfit (decision 220(c)).
+  const textStyle = { fontFamily: brandFamily(layer), fontWeight: layer.font_weight ?? 400, fontSize: `${fontPx}px`,
     lineHeight: layer.line_height ?? 1.3, letterSpacing: `${(layer.tracking_pt ?? 0) * PT_MM * scale}px`, color: colour,
     textAlign: layer.align ?? "left", textTransform: layer.uppercase ? "uppercase" : "none" } as const;
   return <div className={`absolute ${layer.locked ? "" : "cursor-move"} ${selected ? "z-10" : ""}`}

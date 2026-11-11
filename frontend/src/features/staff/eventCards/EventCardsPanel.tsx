@@ -12,7 +12,10 @@ import { staffRequest, staffRequestBlob } from "../../../lib/api";
 import { CardJobList, JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
 import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
+import { RoleBadgeTabs } from "../eventBadges/RoleBadgeTabs";
 import { EventCardApproval } from "./EventCardApproval";
+import { EventCardExtras } from "./EventCardExtras";
+import { TicketTypeDesigns } from "./TicketTypeDesigns";
 
 type EventCard = { id: number; registration: number | null; role: string; printed_name: string; status: "active" | "revoked";
   valid_until: string | null; issued_at: string; revoked_at: string | null; photo_set: boolean };
@@ -24,7 +27,7 @@ export function EventCardsPanel({ eventId, features }: { eventId: number; featur
   const cardsOn = features.includes("events.id_cards");
   const [view, setView] = useState<"cards" | "design" | "ticket">(cardsOn ? "cards" : "ticket");
   if (designs.isLoading) return <Skeleton className="h-40 w-full" />;
-  if (designs.isError || !designs.data) return <ErrorBlock error={designs.error} resource="event card designs" />;
+  if (designs.isError || !designs.data) return <ErrorBlock error={designs.error} resource={t`event card designs`} />;
   const options = [...(designs.data.event_card ? [{ value: "cards", label: t`ID cards` }, { value: "design", label: t`Card design` }] : []),
     ...(designs.data.event_ticket ? [{ value: "ticket", label: t`Ticket design` }] : [])];
   if (!options.length) return null;
@@ -33,15 +36,17 @@ export function EventCardsPanel({ eventId, features }: { eventId: number; featur
   return <section className="grid gap-4" aria-label={t`Event cards and tickets`}>
     <h3 className="text-lg font-semibold text-ink">{t`Cards and tickets`}</h3>
     <SegmentedControl label={t`Cards and tickets`} value={view} options={options} onChange={(value) => setView(value as typeof view)} />
-    {view === "cards" && card ? <EventCardList eventId={eventId} designId={card.id} /> : null}
+    {view === "cards" && card ? <><EventCardList eventId={eventId} designId={card.id} /><EventCardExtras eventId={eventId} /></> : null}
     {view === "design" && card ? <>
       <EventCardApproval eventId={eventId} />
-      <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title={t`Event card design`} />
+      {features.includes("events.badge_designer") ? <RoleBadgeTabs eventId={eventId} />
+        : <CardDesigner key={card.id} designId={card.id} canEdit={card.can_edit} title={t`Event card design`} />}
     </> : null}
     {view === "ticket" && ticket ? <>
       <EventCardApproval eventId={eventId} />
       <p className="text-sm text-muted">{t`The published ticket is attached as a PDF to each confirmation email.`}</p>
-      <CardDesigner key={ticket.id} designId={ticket.id} canEdit={ticket.can_edit} title={t`Ticket design`} />
+      {/* Parity D17 (E-F5): a design per ticket type, picked here; the event's design stays the default. */}
+      <TicketTypeDesigns eventId={eventId} eventDesign={ticket} ticketTypesOn={features.includes("events.ticket_types")} />
     </> : null}
   </section>;
 }

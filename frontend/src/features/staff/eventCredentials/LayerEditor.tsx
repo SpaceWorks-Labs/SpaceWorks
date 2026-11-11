@@ -8,6 +8,10 @@ import { badgeSampleValues } from "./badgeStocks";
 import { LayerInspector } from "./LayerInspector";
 import { DesignCanvas, type Zoom } from "./designer/DesignCanvas";
 import { LayerList } from "./designer/LayerList";
+
+const addLayerLabel = (type: string) => ({ text: t`Add text`, image: t`Add image`, logo: t`Add logo`, photo: t`Add photo`,
+  certificate_qr: t`Add verification QR`, certificate_id: t`Add certificate ID`, event_credential_qr: t`Add check-in QR`,
+  signature: t`Add signature` } as Record<string, string>)[type] ?? t`Add ${type.replace(/_/g, " ")}`;
 import { alignToPage, hasNameTag, keepOnPage, measurablePaper } from "./designer/geometry";
 
 const SLOTS: Partial<Record<Layer["type"], string>> = { logo: "logo", certificate_qr: "certificate_verification_qr",
@@ -51,8 +55,8 @@ export function LayerEditor({ document, onChange, disabled = false, kind = "cert
     const size = type === "signature" ? { width_mm: 60, height_mm: 30 } : type.endsWith("qr") ? { width_mm: 25, height_mm: 25 } : { width_mm: 25, height_mm: 25 };
     const next: Layer = type === "text" ? base : { id: base.id, order: base.order, type, x_mm: 10, y_mm: 10, rotation: 0, ...size,
       ...(SLOTS[type] ? { resource_slot: SLOTS[type] } : {}),
-      ...(type === "signature" ? { signature_slot: 1 as const, font_family: "Gilroy" as const, font_weight: 600 as const, font_size_pt: 11, align: "center" as const, colour_token: "ink" } : {}),
-      ...(type === "certificate_id" ? { font_family: "Gilroy" as const, font_weight: 400 as const, font_size_pt: 7, align: "right" as const, colour_token: "ink", width_mm: 70, height_mm: 6 } : {}) };
+      ...(type === "signature" ? { signature_slot: 1 as const, font_family: "Outfit" as const, font_weight: 600 as const, font_size_pt: 11, align: "center" as const, colour_token: "ink" } : {}),
+      ...(type === "certificate_id" ? { font_family: "Outfit" as const, font_weight: 400 as const, font_size_pt: 7, align: "right" as const, colour_token: "ink", width_mm: 70, height_mm: 6 } : {}) };
     change([...document.layers, next]); setSelected(next.id);
   }
   const addTypes: Layer["type"][] = kind === "badge" ? ["text", "logo", "photo", "event_credential_qr"]
@@ -66,7 +70,7 @@ export function LayerEditor({ document, onChange, disabled = false, kind = "cert
       <button type="button" className="desk-button" disabled={!history.canRedo} onClick={history.redo} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
         <Redo2 size={16} aria-hidden="true" />{t`Redo`}</button>
       {addTypes.map((type) => <button className="desk-button" key={type} type="button" disabled={document.layers.length >= 20} onClick={() => add(type)}>
-        <Plus size={16} aria-hidden="true" />{t`Add `}{type === "certificate_qr" ? t`verification QR` : type === "certificate_id" ? t`certificate ID` : type.replace(/_/g, " ")}</button>)}
+        <Plus size={16} aria-hidden="true" />{addLayerLabel(type)}</button>)}
       {kind === "badge" ? <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
         <input type="checkbox" className="h-5 w-5" checked={longNames} onChange={(event) => setLongNames(event.target.checked)} />
         {t`Preview a long name`}</label> : null}

@@ -11,12 +11,14 @@ import { spaceNotice, usePlatformNotices } from "../platformNotices/platformNoti
 export const MEMBER_TABS = ["overview", "loans", "bookings", "events", "payments", "inbox", "account"] as const;
 export type MemberTab = typeof MEMBER_TABS[number];
 
-export function memberTabs(modules: string[]) {
+/** `features` (the bootstrap capability list) is optional: callers without it keep the module-only rule. */
+export function memberTabs(modules: string[], features?: readonly string[]) {
   return MEMBER_TABS.filter((tab) => {
     if (["overview", "payments", "account"].includes(tab)) return true;
     if (tab === "bookings") return modules.includes("bookings");
     if (!modules.includes("membership")) return false;
-    if (tab === "loans") return modules.includes("request_workflow");
+    // Lending switched off (`loans.enabled`) removes the tab, as it removes the staff loan tabs (#218).
+    if (tab === "loans") return modules.includes("request_workflow") && (!features || features.includes("loans.enabled"));
     if (tab === "events") return modules.includes(tab);
     // The member inbox is the notifications module's surface: no tab while it is off (#183B).
     if (tab === "inbox") return modules.includes("notifications");
@@ -24,17 +26,23 @@ export function memberTabs(modules: string[]) {
   });
 }
 
-export function useMemberTab(modules: string[]) {
+/** The tab's name in the nav; translated (the nav used to capitalise the raw key). */
+export function memberTabLabel(tab: MemberTab): string {
+  return { overview: t`Home`, loans: t`Loans`, bookings: t`Bookings`, events: t`Events`, payments: t`Payments`,
+    inbox: t`Inbox`, account: t`Account` }[tab];
+}
+
+export function useMemberTab(modules: string[], features?: readonly string[]) {
   const location = useLocation();
   const segment = location.pathname.match(/^((?:\/m\/[^/]+)?\/member)(?:\/([^/]+))?\/?$/)?.[2];
   const requested = segment === "account-portal" ? "account" : segment;
-  const tabs = memberTabs(modules);
+  const tabs = memberTabs(modules, features);
   return tabs.find((tab) => tab === requested) ?? "overview";
 }
 
 /** URL destinations use ordinary navigation links; the main region remains the skip target. */
-export function MemberPortalTabs({ modules, active, children, workspace, user, space }: {
-  modules: string[]; active: MemberTab; children: ReactNode; workspace?: ShellWorkspace; user: ShellUser;
+export function MemberPortalTabs({ modules, features, active, children, workspace, user, space }: {
+  modules: string[]; features?: readonly string[]; active: MemberTab; children: ReactNode; workspace?: ShellWorkspace; user: ShellUser;
   /** The member's space, for the platform banners and the paused page. */
   space?: { id?: number; slug?: string };
 }) {
@@ -45,7 +53,9 @@ export function MemberPortalTabs({ modules, active, children, workspace, user, s
   // Deeper member pages (member/machine-jobs/12) keep the tenant prefix for the nav links too.
   const base = location.pathname.match(/^((?:\/m\/[^/]+)?\/member)(?:\/.*)?$/)?.[1] ?? "/member";
   const icons = { overview: Home, loans: Package, bookings: CalendarClock, events: Calendar, payments: Wallet, inbox: Inbox, account: User };
-  const items = memberTabs(modules).map(tab => ({ key: tab, label: tab === "overview" ? t`Home` : tab[0].toUpperCase() + tab.slice(1),
+  // A signed-out visitor gets Home (sign in, join) only: every other tab is their own
+  // account's data, which the server answers with 401.
+  const items = (user.onSignOut ? memberTabs(modules, features) : (["overview"] as const)).map(tab => ({ key: tab, label: memberTabLabel(tab),
     href: `${base}/${tab === "account" ? "account-portal" : tab}`, icon: icons[tab] }));
   if (paused?.state === "suspended") {
     return <PausedSpacePage name={paused.name} reason={paused.reason} primary={{ label: t`Find another space`, href: "/" }}

@@ -9,6 +9,7 @@ export function MemberHistoryLinks({ slug, modules = [], features = [] }: { slug
     ...(modules.includes("events") ? [{ label: t`Event history`, href: `${base}/events/history` }] : []),
     ...(modules.includes("bookings") ? [{ label: t`Booking history`, href: `${base}/bookings?period=past` }] : []),
     ...(modules.includes("shop") ? [{ label: t`Shop orders`, href: `${base}/shop-orders` }] : []),
+    ...(modules.includes("machines") && features.includes("machines.supervised_sessions") ? [{ label: t`Supervised sessions`, href: `${base}/supervised-sessions` }] : []),
     { label: t`Payments & receipts`, href: `${base}/payments` },
   ];
   return <section className="desk-panel grid gap-3 p-4 sm:p-5" aria-labelledby="own-history-heading">

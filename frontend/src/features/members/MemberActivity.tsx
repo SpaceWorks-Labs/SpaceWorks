@@ -1,5 +1,6 @@
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router-dom";
 import { useTenantPath } from "../../lib/tenant";
 import { useEffect, useState } from "react";
@@ -11,6 +12,8 @@ import { CertificateApprovals } from "./certificates/CertificateApprovals";
 import { MyCertificates } from "./certificates/MyCertificates";
 import { MemberLoanRenew } from "./MemberLoanRenew";
 import { MemberEventCancel } from "./MemberEventCancel";
+import { registrationStatusLabel } from "./registrationLabels";
+import { bookingStatusLabel } from "../bookings/bookingStatusLabel";
 import { MemberCalendarLinks } from "./calendarFeeds/MemberCalendarLinks";
 import { MemberGifts } from "../donations/MemberGifts";
 import { OfflineLoansControl } from "./memberCard/OfflineLoansControl";
@@ -54,6 +57,8 @@ export type MemberDuesSummary = {
   // for "nothing outstanding" -- rendering the two alike would tell a member they owe
   // nothing on the strength of a failed query.
   dues_amount: string; outstanding_by_currency: Record<string, string> | null;
+  /** The space's payment-settings default currency, which the dues charge is raised in (0.12.0). */
+  dues_currency?: string;
 };
 
 export type MemberActivity = {
@@ -72,6 +77,13 @@ export type MemberActivity = {
   membership_dues?: MemberDuesSummary;
   // The member's current (else latest) plan term; null when they never held one.
   membership_term?: MemberTermSummary | null;
+  /** Decision 221(d): the current term's included-hours pools; absent while bookings is off. */
+  included_hours?: MemberIncludedHours[];
+};
+
+export type MemberIncludedHours = {
+  kind: "booking" | "machine"; term_id: number; plan_name: string; term_starts_at: string; term_ends_at: string;
+  allowance_minutes: number; used_minutes: number; remaining_minutes: number;
 };
 
 export type MemberTermSummary = {
@@ -140,7 +152,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Empty({ children = "Nothing here yet. Check back after your next visit." }: { children?: string }) {
   return <EmptyState message={children} />;
 }
-const REGISTRATION_LABELS: Record<string, string> = { pending_approval: t`Awaiting approval`, registered: t`Confirmed`, waitlisted: t`Waitlisted`, rejected: t`Not approved`, cancelled: t`Cancelled`, attended: t`Attended` };
 const statusTone = (status: string) => ["registered", "confirmed", "attended", "completed"].includes(status) ? "success" as const : ["cancelled", "rejected"].includes(status) ? "neutral" as const : "warn" as const;
 
 export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, makerspaceName, modules, section = "all", eventPeriod, features = [] }: {
@@ -159,16 +170,16 @@ export function MemberActivityPanel({ activity, makerspaceId, makerspaceSlug, ma
   return <div className="grid gap-6">
     {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <OfflineLoansControl key={makerspaceId} space={makerspaceSlug} loans={activity.active_hardware_loans} /> : null}
     {section === "all" || section === "overview" ? <Section title={t`My activity`}><p className="text-sm text-muted">{activity.currently_checked_in ? t`You are currently checked in.` : t`You are not currently checked in.`}</p>{activity.accountability.waiver_acceptance_required ? <p className="text-sm text-danger">{t`Accept the current waiver before making facility requests.`}</p> : null}</Section> : null}
-    {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <Section title={t`Active hardware loans`}>{activity.active_hardware_loans.length ? activity.active_hardware_loans.map(loan => <ListRow key={`${loan.label}-${loan.checked_out_at}`} title={loan.label}
+    {(section === "all" || section === "loans") && modules.includes("request_workflow") ? <Section title={t`Active loans`}>{activity.active_hardware_loans.length ? activity.active_hardware_loans.map(loan => <ListRow key={`${loan.label}-${loan.checked_out_at}`} title={loan.label}
       identity={loan.due_at ? { kind: "date", date: loan.due_at } : { kind: "icon", icon: "Wrench", tone: "info" }}
-      meta={loan.due_at ? <>{t`Due `}<RelativeTime date={loan.due_at} /></> : "No due date"}
-      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={loan.overdue ? t`Overdue` : t`On loan`} tone={loan.overdue ? "danger" : "info"} />{loan.can_renew && loan.request_id ? <MemberLoanRenew key={loan.due_at} makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} requestId={loan.request_id} /> : null}
-        {loan.request_id && features.includes("inventory.issue_reporting") ? <ReportProblem source={{ makerspace_id: makerspaceId, loan_id: loan.request_id }} /> : null}</div>} />) : <EmptyState message={t`Nothing out right now. Browse the catalogue to borrow something.`} action={{ label: t`Browse inventory`, href: tenantPath("inventory") }} />}</Section> : null}
+      meta={loan.due_at ? <Trans>Due <RelativeTime date={loan.due_at} /></Trans> : t`No due date`}
+      right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={loan.overdue ? t`Overdue` : t`On loan`} tone={loan.overdue ? "danger" : "info"} />{loan.can_renew && loan.request_id ? <MemberLoanRenew key={loan.due_at} makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} requestId={loan.request_id} /> : loan.renewal_refusal === "self_renewal_off" ? <span className="text-sm text-muted">{t`Ask staff to renew`}</span> : null}
+        {loan.request_id && features.includes("inventory.issue_reporting") ? <ReportProblem source={{ makerspace_id: makerspaceId, loan_id: loan.request_id }} /> : null}</div>} />) : <EmptyState message={t`Nothing out right now. Browse inventory to borrow something.`} action={{ label: t`Browse inventory`, href: tenantPath("inventory") }} />}</Section> : null}
     {(section === "all" || section === "overview") && (modules.includes("machines") || modules.includes("machine_service")) && activity.machine_service_requests ? <>{modules.includes("printing") ? <Section title={t`3D print requests`}>{requestRows(printerRequests)}</Section> : null}{otherServiceRequests.length ? <Section title={t`Machine-service requests`}>{requestRows(otherServiceRequests)}</Section> : null}<div className="flex flex-wrap gap-2">{modules.includes("machine_service") ? <Link className="desk-button" to={tenantPath("member/machine-jobs")}>{t`All my machine jobs`}</Link> : null}{modules.includes("machines") && features.includes("machines.sessions") ? <Link className="desk-button" to={tenantPath("member/machine-sessions")}>{t`My machine sessions`}</Link> : null}</div></> : null}
-    {(section === "all" || section === "bookings") && modules.includes("bookings") && activity.bookings ? <Section title={t`Bookings`}>{(["upcoming", "past"] as const).map(period => <div key={period} className="grid gap-3"><h3 className="title-section">{period === "upcoming" ? t`Upcoming` : t`Past`}</h3>{activity.bookings![period].length ? activity.bookings![period].map((item, index) => <ListRow key={index} title={item.space_name} identity={{ kind: "date", date: item.starts_at }} meta={`${new Date(item.starts_at).toLocaleString(formatLocale())} – ${new Date(item.ends_at).toLocaleTimeString(formatLocale())}`} right={<StatusPill label={item.status.replace(/_/g, " ")} tone={statusTone(item.status)} />} />) : <Empty />}</div>)}</Section> : null}
+    {(section === "all" || section === "bookings") && modules.includes("bookings") && activity.bookings ? <Section title={t`Bookings`}>{(["upcoming", "past"] as const).map(period => <div key={period} className="grid gap-3"><h3 className="title-section">{period === "upcoming" ? t`Upcoming` : t`Past`}</h3>{activity.bookings![period].length ? activity.bookings![period].map((item, index) => <ListRow key={index} title={item.space_name} identity={{ kind: "date", date: item.starts_at }} meta={`${new Date(item.starts_at).toLocaleString(formatLocale())} – ${new Date(item.ends_at).toLocaleTimeString(formatLocale())}`} right={<StatusPill label={bookingStatusLabel(item.status)} tone={statusTone(item.status)} />} />) : <Empty />}</div>)}</Section> : null}
     {(section === "all" || section === "events") && modules.includes("events") && activity.event_registrations ? <Section title={t`Event registrations`}><MemberCalendarLinks makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} />{registrations.length ? registrations.map(item => <ListRow key={item.registration_id} title={item.event_title} identity={{ kind: "date", date: item.starts_at }}
       meta={<><span className="tabular-nums">{new Date(item.starts_at).toLocaleString(formatLocale())}</span>{item.status === "pending_approval" ? t` · No payment until confirmed` : ""}{item.waitlist_position ? t` · Waitlist ${item.waitlist_position}` : ""}</>}
-      right={<div className="grid gap-2"><StatusPill label={REGISTRATION_LABELS[item.status] ?? item.status} tone={statusTone(item.status)} />
+      right={<div className="grid gap-2"><StatusPill label={registrationStatusLabel(item.status)} tone={statusTone(item.status)} />
         <Link className="desk-button-ghost" to={tenantPath(`member/events/${item.registration_id}/ticket`)}>{t`Open ticket`}</Link>
         {item.checkin_token ? <CheckInQr makerspaceId={makerspaceId} registrationId={item.registration_id} title={item.event_title} startsAt={item.starts_at} organisation={makerspaceName} /> : null}
         <MemberEventCancel makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={item.registration_id} status={item.status} canCancel={item.can_cancel} cutoffAt={item.cancellation_cutoff_at} />

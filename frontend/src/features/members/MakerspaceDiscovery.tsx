@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { EmptyState, ListRow, StatusPill } from "../../components/ui";
 import { fetchPublicMakerspaces } from "../inventory/api";
 import { tenantPath, useOptionalTenant } from "../../lib/tenant";
+import { membershipStatusLabel } from "./membershipLabels";
 
 type SpaceRef = { makerspace: { slug: string } };
 
@@ -25,7 +26,7 @@ export function MakerspaceDiscovery({ currentSlug, memberships = [], requests = 
   const shown = needle ? others.filter(space => `${space.name} ${space.location ?? ""}`.toLocaleLowerCase().includes(needle)) : others;
   const status = (slug: string) => {
     const membership = memberships.find(row => row.makerspace.slug === slug);
-    if (membership) return <StatusPill label={membership.membership_status === "active" ? t`Member` : membership.membership_status.replace(/_/g, " ")} tone={membership.membership_status === "active" ? "success" : "warn"} />;
+    if (membership) return <StatusPill label={membership.membership_status === "active" ? t`Member` : membershipStatusLabel(membership.membership_status)} tone={membership.membership_status === "active" ? "success" : "warn"} />;
     const request = requests.find(row => row.makerspace.slug === slug && !["rejected", "cancelled", "withdrawn", "expired"].includes(row.state));
     return request ? <StatusPill label={t`Request pending`} tone="warn" /> : null;
   };

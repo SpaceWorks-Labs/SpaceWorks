@@ -5,14 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Field, Modal, StatusPill } from "../../components/ui";
 import type { MemberRefundCase } from "../../generated/api";
 import { StructuredApiError, memberRequest } from "../../lib/api";
+import { formatMoney } from "../../lib/money";
 
 type Payment = { id: number; refund_case?: MemberRefundCase | null; refund_requestable?: boolean };
 
-const CHIP: Record<MemberRefundCase["status"], [string, "warn" | "success" | "danger" | "neutral"]> = {
-  open: ["Refund under review", "warn"], approval_failed: ["Refund under review", "warn"],
-  approved: ["Refund approved", "success"], declined: ["Refund declined", "danger"],
-  withdrawn: ["Request withdrawn", "neutral"], void: ["Refund closed", "neutral"],
-};
+// A function, not a module constant: `t` must run after the locale is active.
+const chip = (status: MemberRefundCase["status"]): [string, "warn" | "success" | "danger" | "neutral"] => ({
+  open: [t`Refund under review`, "warn"], approval_failed: [t`Refund under review`, "warn"],
+  approved: [t`Refund approved`, "success"], declined: [t`Refund declined`, "danger"],
+  withdrawn: [t`Request withdrawn`, "neutral"], void: [t`Refund closed`, "neutral"],
+} as const)[status] as [string, "warn" | "success" | "danger" | "neutral"];
 
 type Suggestion = { applies: boolean; suggested_amount: string | null; currency: string; band: string };
 
@@ -22,7 +24,7 @@ function RefundSuggestion({ makerspaceId, paymentId }: { makerspaceId: number; p
     queryFn: () => memberRequest<Suggestion>(`/member/makerspaces/${makerspaceId}/payments/${paymentId}/refund-suggestion`), retry: false });
   if (!suggestion.data?.applies || suggestion.data.suggested_amount == null) return null;
   return <p className="text-sm text-ink" role="status">{t`The space's refund policy suggests about${" "}`}
-    <strong>{suggestion.data.suggested_amount} {suggestion.data.currency.toUpperCase()}</strong> {t` if you cancel today. Staff decide the final amount.`}</p>;
+    <strong>{formatMoney(suggestion.data.suggested_amount, suggestion.data.currency)}</strong> {t` if you cancel today. Staff decide the final amount.`}</p>;
 }
 
 function errorText(error: unknown) {
@@ -51,7 +53,7 @@ export function MemberRefundControl({ makerspaceId, payment }: { makerspaceId: n
     onSuccess: () => { void refresh(); },
   });
   const current = payment.refund_case;
-  const [label, tone] = current ? CHIP[current.status] : ["", "neutral" as const];
+  const [label, tone] = current ? chip(current.status) : ["", "neutral" as const];
   if (!current && !payment.refund_requestable) return null;
   return <span className="mt-3 grid gap-2">
     {current ? <span className="flex flex-wrap items-center gap-2">

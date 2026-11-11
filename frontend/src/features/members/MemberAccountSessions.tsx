@@ -1,6 +1,7 @@
-import { formatLocale } from "../../lib/format";
+import { formatDateTime } from "../../lib/format";
 import { t } from "@lingui/core/macro";
-import { EmptyState, ListRow, StatusPill, RelativeTime } from "../../components/ui";
+import { Trans } from "@lingui/react/macro";
+import { EmptyState, ListRow, Pagination, StatusPill, RelativeTime } from "../../components/ui";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clearAccessToken } from "../../lib/api";
@@ -20,8 +21,8 @@ export function MemberAccountSessions({ makerspaceId, onSignedOut }: { makerspac
     {rows.error || revoke.error ? <p role="alert" className="text-sm text-danger">{(rows.error || revoke.error)?.message}</p> : null}
     {rows.data?.results.length === 0 ? <EmptyState message={t`No other devices are signed in.`} /> : null}
     <div className="grid gap-3">{rows.data?.results.map(session => <ListRow key={session.id} title={session.kind === "device" ? t`Native device` : t`Browser session`}
-      identity={{ kind: "icon", icon: "User", tone: "info" }} meta={<>{t`Started ${new Date(session.created_at).toLocaleString(formatLocale())}`}{session.last_used_at ? <> {t` · Last used `}<RelativeTime date={session.last_used_at} /></> : null}{session.id.startsWith("web-legacy:") ? <span className="block">{t`This older session loses refresh access immediately; its current access token lasts until its original expiry.`}</span> : null}</>}
-      right={<div className="flex flex-wrap items-center gap-3">{session.current ? <StatusPill label={t`This device`} tone="info" /> : null}<button type="button" className="desk-button" disabled={revoke.isPending} onClick={() => revoke.mutate(session)}>{t`Revoke `}{session.current ? t`this session` : session.kind === "device" ? "device" : "session"}</button></div>} />)}</div>
-    <div className="flex flex-wrap gap-2"><button type="button" className="desk-button" disabled={!rows.data?.previous} onClick={() => setPage(page - 1)}>{t`Previous sessions`}</button><button type="button" className="desk-button" disabled={!rows.data?.next} onClick={() => setPage(page + 1)}>{t`Next sessions`}</button></div>
+      identity={{ kind: "icon", icon: "User", tone: "info" }} meta={<>{t`Started ${formatDateTime(session.created_at)}`}{session.last_used_at ? <span className="block"><Trans>Last used <RelativeTime date={session.last_used_at} /></Trans></span> : null}{session.id.startsWith("web-legacy:") ? <span className="block">{t`This older session loses refresh access immediately; its current access token lasts until its original expiry.`}</span> : null}</>}
+      right={<div className="flex flex-wrap items-center gap-3">{session.current ? <StatusPill label={t`This device`} tone="info" /> : null}<button type="button" className="desk-button" disabled={revoke.isPending} onClick={() => revoke.mutate(session)}>{session.current ? t`Revoke this session` : session.kind === "device" ? t`Revoke device` : t`Revoke session`}</button></div>} />)}</div>
+    <Pagination page={page} totalPages={rows.data?.next ? page + 1 : page} onChange={setPage} />
   </section>;
 }

@@ -1,5 +1,5 @@
-import { formatLocale } from "../../lib/format";
-import { t } from "@lingui/core/macro";
+import { formatDate } from "../../lib/format";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 
 import { Callout, EmptyState, StatusPill, TicketCard, Icon } from "../../components/ui";
@@ -12,7 +12,8 @@ import { useCardPreview, useMyMemberCard, useRenameCard } from "./memberCard/api
 
 /** The member's own ID card: the printed name they control, their photo, and a
  *  watermarked preview of what the front desk will print. */
-export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", compact = false, cardHref = "/member/account-portal?section=card" }: { makerspaceId: number; spaceName?: string; compact?: boolean; cardHref?: string }) {
+export function MemberCardPanel({ makerspaceId, spaceName: givenSpaceName, compact = false, cardHref = "/member/account-portal?section=card" }: { makerspaceId: number; spaceName?: string; compact?: boolean; cardHref?: string }) {
+  const spaceName = givenSpaceName ?? t`Your makerspace`; // ID-6: translated default
   const card = useMyMemberCard(makerspaceId);
   const rename = useRenameCard(makerspaceId);
   const preview = useCardPreview(makerspaceId);
@@ -62,15 +63,15 @@ export function MemberCardPanel({ makerspaceId, spaceName = "Your makerspace", c
       <div className="max-w-md"><TicketCard organisation={spaceName} title={row.printed_name} fields={[
         { label: t`Card number`, value: <span className="tabular-nums">{row.card_number}</span> },
         { label: t`Status`, value: <StatusPill label={row.is_active ? t`Active` : t`Revoked`} tone={row.is_active ? "success" : "danger"} /> },
-        { label: t`Printed`, value: `${row.print_count} ${row.print_count === 1 ? "time" : "times"}` },
-        { label: t`Issued`, value: new Date(row.issued_at).toLocaleDateString(formatLocale()) },
+        { label: t`Printed`, value: plural(row.print_count, { one: "# time", other: "# times" }) },
+        { label: t`Issued`, value: formatDate(row.issued_at) },
       ]} qr={scannable ? <img src={scannable} alt={t`Your member card QR code`} /> : <div className="flex h-full items-center justify-center rounded-xl bg-surface"><Icon name="User" className="h-16 w-16 text-muted" /></div>}
         caption={row.is_active ? t`Your member card · ask the front desk to scan your printed card.` : t`This card is no longer valid.`} /></div>
       {scannable || compact ? <div className="mt-4 flex flex-wrap gap-3">
         {scannable ? <ScanQrView src={scannable} name={row.printed_name} /> : null}
         {compact ? <a className="desk-button w-full sm:w-auto" href={cardHref}>{t`View your member card`}</a> : null}
       </div> : null}
-      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead="This card was revoked." body={t`Ask staff for a new one.`} /></div> : null}
+      {!row.is_active ? <div className="mt-4"><Callout size="panel" tone="danger" lead={t`This card was revoked.`} body={t`Ask staff for a new one.`} /></div> : null}
       {!compact ? <>
       <label className="mt-6 block text-sm font-medium text-ink" htmlFor="member-card-printed-name">
         {t`Name printed on the card`}</label>

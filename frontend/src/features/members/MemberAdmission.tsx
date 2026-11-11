@@ -1,10 +1,13 @@
-import { formatLocale } from "../../lib/format";
+import { formatDate, formatDateTime } from "../../lib/format";
+import { formatMoney, paymentStatusLabel } from "../staff/paymentsApi";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../lib/api";
 import { CustomAnswersView } from "../forms/CustomAnswersView";
 import { cancelAdmission, vouchForAdmission, type AdmissionRequest } from "./membershipAdmissionApi";
+import { admissionStateLabel } from "./membershipLabels";
+import { ApplicationChanges } from "./ApplicationChanges";
 
 export function MemberAdmission({ makerspaceId, request }: { makerspaceId: number; request: AdmissionRequest }) {
   const client = useQueryClient();
@@ -15,14 +18,16 @@ export function MemberAdmission({ makerspaceId, request }: { makerspaceId: numbe
     link.href = url; link.download = "membership-applications.json"; link.click();
     URL.revokeObjectURL(url);
   } });
-  const pending = ["requested", "awaiting_vouches", "awaiting_payment"].includes(request.state);
-  const title = request.state === "awaiting_payment" ? "Membership awaiting payment" : request.state === "awaiting_vouches" ? "Membership awaiting vouches" : request.state === "requested" ? "Membership request sent" : `Membership application: ${request.state.replace(/_/g, " ")}`;
+  const pending = ["requested", "awaiting_vouches", "awaiting_payment", "changes_requested"].includes(request.state);
+  const changes = request.state === "changes_requested"; // parity O-B2
+  const stateWords = admissionStateLabel(request.state);
+  const title = request.state === "awaiting_payment" ? t`Membership awaiting payment` : request.state === "awaiting_vouches" ? t`Membership awaiting vouches` : request.state === "requested" ? t`Membership request sent` : changes ? t`Your application needs changes` : t`Membership application: ${stateWords}`;
   return <section className="desk-panel p-5">
     <h2 className="title-panel">{title}</h2>
-    <p className="mt-2 text-sm text-muted">{request.state === "awaiting_payment" ? t`Your membership activates when the admission charge is settled. Use the Payments tab, or pay at the space.` : request.state === "awaiting_vouches" ? t`Share application number ${request.id} with an eligible member, who can vouch from their member area.` : request.state === "requested" ? t`Staff will review your request.` : t`This is the latest recorded state of your application.`}</p>
-    {request.admission_payment ? <p className="mt-2 text-sm text-ink">{t`Admission charge: ${request.admission_payment.amount} ${request.admission_payment.currency.toUpperCase()} · ${request.admission_payment.status.replace(/_/g, " ")}`}</p> : null}
-    {pending && request.expires_at ? <p className="mt-2 text-sm text-muted">{t`Application expires ${new Date(request.expires_at).toLocaleString(formatLocale())}.`}</p> : null}
-    {request.vouches?.length ? <ul className="mt-3 break-words text-sm text-muted">{request.vouches.map((vouch) => <li key={vouch.voucher_id}>{t`Vouched by ${vouch.voucher_name} · expires ${new Date(vouch.expires_at).toLocaleDateString(formatLocale())}`}</li>)}</ul> : null}
+    {changes ? <ApplicationChanges key={`${request.id}:${request.edit_schema !== undefined}`} makerspaceId={makerspaceId} request={request} /> : <p className="mt-2 text-sm text-muted">{request.state === "awaiting_payment" ? t`Your membership activates when the admission charge is settled. Use the Payments tab, or pay at the space.` : request.state === "awaiting_vouches" ? t`Share application number ${request.id} with an eligible member, who can vouch from their member area.` : request.state === "requested" ? t`Staff will review your request.` : t`This is the latest recorded state of your application.`}</p>}
+    {request.admission_payment ? <p className="mt-2 text-sm text-ink">{t`Admission charge: ${formatMoney(request.admission_payment.amount, request.admission_payment.currency)} · ${paymentStatusLabel(request.admission_payment.status)}`}</p> : null}
+    {pending && request.expires_at ? <p className="mt-2 text-sm text-muted">{t`Application expires ${formatDateTime(request.expires_at)}.`}</p> : null}
+    {request.vouches?.length ? <ul className="mt-3 break-words text-sm text-muted">{request.vouches.map((vouch) => <li key={vouch.voucher_id}>{t`Vouched by ${vouch.voucher_name} · expires ${formatDate(vouch.expires_at)}`}</li>)}</ul> : null}
     {request.application_answers?.answers.length ? <details className="mt-3"><summary className="cursor-pointer text-sm font-semibold text-ink">{t`Your application answers`}</summary><div className="mt-3"><CustomAnswersView snapshot={request.application_answers} /></div></details> : null}
     <div className="mt-4 flex flex-wrap gap-3 [&>button]:flex-1 sm:[&>button]:flex-none">
       {pending ? <button type="button" className="desk-button-danger" disabled={cancel.isPending} onClick={() => cancel.mutate()}>{t`Cancel application`}</button> : null}

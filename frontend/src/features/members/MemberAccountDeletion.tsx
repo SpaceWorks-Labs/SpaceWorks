@@ -1,4 +1,4 @@
-import { formatLocale } from "../../lib/format";
+import { formatDate } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { Field } from "../../components/ui/Field";
@@ -10,7 +10,7 @@ import { useDeleteAccount, useDeletionPreview, type DeletionBlocker, type Deleti
 export function AccountDeletionReceipt({ result }: { result: DeletionResult }) {
   return <section aria-labelledby="deletion-result-heading" className="grid gap-3">
     <h2 id="deletion-result-heading" className="title-panel">{t`Account deletion requested`}</h2>
-    <p role="status">{t`Your account is inactive and you have been signed out on all devices. Identity removal is scheduled from ${new Date(result.purge_after).toLocaleDateString(formatLocale())}.`}</p>
+    <p role="status">{t`Your account is inactive and you have been signed out on all devices. Your account will be permanently removed on ${formatDate(result.purge_after)}.`}</p>
     <p>{t`Accountability and financial records remain as described in the deletion notice. A makerspace migration or storage outage can delay identity removal.`}</p>
   </section>;
 }
@@ -35,7 +35,7 @@ export function MemberAccountDeletion({ slug, onDeleted }: { slug: string; onDel
     {preview.error ? <div><p role="alert" className="text-danger">{preview.error.message}</p><button type="button" className="desk-button" onClick={() => void preview.refetch()}>{t`Retry deletion check`}</button></div> : null}
     {blockers.length ? <><p role="status">{t`Resolve these items before deleting your account.`}</p><AccountDeletionBlockers blockers={blockers} slug={slug} /></> : null}
     {ready && preview.data ? <>
-      <p role="status" className="text-sm text-muted">{preview.data.restorable ? t`Recovery during the archive window: ` : t`This account cannot be restored: `}{preview.data.restore_reason}</p>
+      <p role="status" className="text-sm text-muted">{preview.data.restorable ? t`Recovery during the archive window: ${preview.data.restore_reason}` : t`This account cannot be restored: ${preview.data.restore_reason}`}</p>
       {needsReauth ? <AccountDeletionReauthentication methods={preview.data.reauth.methods} onVerified={() => { void preview.refetch(); }} /> : <p role="status">{t`Your recent sign-in is confirmed.`}</p>}
       <form className="grid gap-3" onSubmit={event => { event.preventDefault(); if (confirmation === "DELETE" && !needsReauth) deletion.mutate(); }}>
         <Field label={t`Type DELETE to confirm`} hint={t`This affects your whole account and all makerspace memberships.`}><input className="desk-input" value={confirmation} autoComplete="off" spellCheck={false} onChange={event => setConfirmation(event.target.value)} /></Field>

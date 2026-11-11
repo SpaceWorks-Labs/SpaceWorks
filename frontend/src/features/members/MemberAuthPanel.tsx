@@ -21,6 +21,7 @@ import { PasskeySignInButton } from "../auth/passkeys/PasskeySignInButton";
 import { usePasskeySignIn } from "../auth/passkeys/usePasskeySignIn";
 import { tokenHeaders, useTurnstileGate } from "../../components/auth/useTurnstileGate";
 import { authErrorCode, authErrorMessage } from "../../lib/api/authErrorCopy";
+import { LegalLinks } from "../legal/LegalLinks";
 
 export function MemberAuthPanel({
   onAuthenticated,
@@ -158,7 +159,7 @@ export function MemberAuthPanel({
     if (isMfaChallenge(result)) { setPassword(""); setMfaChallenge(result); return; }
     setAccessToken(result.access, "person"); onAuthenticated();
   }} /></>;
-  const legal = selfServeAccounts ? "One account works at every makerspace you join." : "This space does not run self sign-up. Ask a staff member to add you.";
+  const legal = selfServeAccounts ? t`One account works at every makerspace you join.` : t`This space does not run self sign-up. Ask a staff member to add you.`;
   const form = <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (!pending) void submit(); }}>
       <p className="text-sm text-muted">{mode === "signup" ? t`Use one global account across every makerspace you join.`
         : passwordLogin ? t`Sign in to manage memberships, waivers, visits, and payments.`
@@ -193,11 +194,12 @@ export function MemberAuthPanel({
       <span className="h-px flex-1 bg-line" />{t`or with email`}<span className="h-px flex-1 bg-line" /></p>
     {form}
     <p className="text-sm text-muted">{legal}</p>
+    <LegalLinks space={makerspaceSlug} />
     {footer}
   </section>;
   return <AuthLayout state={{ status: "ready" }} eyebrow={eyebrow} title={title}
     brand={{ tenant: tenantBrand, showcase: <AuthShowcase /> }}
     modeSwitch={modeSwitch} social={social}
-    legal={footer ? <div className="grid gap-4"><p>{legal}</p>{footer}</div> : legal}
+    legal={<div className="grid gap-4"><p>{legal}</p><LegalLinks space={makerspaceSlug} />{footer}</div>}
     form={context ? <div className="grid gap-4">{context}{form}</div> : form} />;
 }

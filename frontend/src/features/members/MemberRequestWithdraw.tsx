@@ -14,7 +14,12 @@ export function MemberRequestWithdraw({ makerspaceId, makerspaceSlug, requestId 
   const withdraw = useMutation({
     mutationFn: () => memberRequest<{ id: number; status: string; closed_at: string | null }>(
       `/member/makerspaces/${makerspaceId}/requests/${requestId}/withdraw`, { method: "POST", body: JSON.stringify({}) }),
-    onSuccess: () => { setConfirming(false); void client.invalidateQueries({ queryKey: ["member", makerspaceSlug, "activity"] }); },
+    onSuccess: () => {
+      setConfirming(false);
+      void client.invalidateQueries({ queryKey: ["member", makerspaceSlug, "activity"] });
+      // The account-only borrowing history page lists the same request.
+      void client.invalidateQueries({ queryKey: ["member", "borrowing-history"] });
+    },
   });
   if (withdraw.isSuccess) return <p role="status" className="text-sm text-muted">{t`Request withdrawn.`}</p>;
   return <div className="grid gap-1">

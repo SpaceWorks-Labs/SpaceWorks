@@ -1,6 +1,7 @@
 import { MemberHistoryLinks } from "./MemberHistoryLinks";
 import { t } from "@lingui/core/macro";
 import { MemberUsagePanel } from "./MemberUsagePanel";
+import { MemberIncidentReports } from "../incidents/MemberIncidentReports";
 import { MemberSectionNavigation } from "./MemberSectionNavigation";
 import { MemberPortalTabs, useMemberTab } from "./MemberPortalTabs";
 import { SupportContact } from "../../components/SupportContact";
@@ -9,13 +10,15 @@ import { EmptyState, StatusPill } from "../../components/ui";
 import { MemberScreenLayout } from "./MemberScreenLayout";
 import { useTenantBranding } from "../../lib/useTenantBranding";
 import { chargesOn } from "../../lib/charges";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import type { ArchivedPaymentSummary, MembershipPolicyEnum } from "../../generated/api";
 import { bootstrapTenant, logout, memberRequest, refreshAccessToken, StructuredApiError } from "../../lib/api";
 import { MemberAuthPanel } from "./MemberAuthPanel";
+import { useMemberReturn } from "./useMemberReturn";
+import { hasPendingSocialCallback } from "../auth/socialSdk";
 import { MyBookings } from "../bookings/MyBookings";
 import { InvitationRequestForm } from "./InvitationRequestForm";
 import { JoinMembershipCta } from "./JoinMembershipCta";
@@ -23,7 +26,8 @@ import { PresencePanel } from "../presence/PresencePanel";
 import { usePresenceCurrent } from "../presence/api";
 import { MemberCertifications } from "./MemberCertifications";
 import { MemberActivityPanel, type MemberActivity } from "./MemberActivity";
-import { MemberDues, MemberHistory, MemberNotices, MemberTerm } from "./MemberDashboardSections";
+import { MemberDues, MemberHistory, MemberIncludedHours, MemberNotices, MemberTerm } from "./MemberDashboardSections";
+import { MemberAllowances } from "./MemberAllowances";
 import { MemberWaitlist } from "./MemberWaitlist";
 import { PartnerEvents } from "./PartnerEvents";
 import { MemberDirectory } from "./MemberDirectory";
@@ -34,6 +38,8 @@ import { forgetOfflineMemberData } from "./memberCard/offlineCard";
 import { MemberProfilePanel } from "./MemberProfilePanel";
 import { MemberReferrals, type ClaimableInvitation } from "./MemberReferrals";
 import { MemberPaymentRows, type MemberPayment } from "./MemberPayments";
+import { MemberCheckoutReturn } from "./MemberCheckoutReturn";
+import { memberPaymentErrorText } from "./memberPaymentErrors";
 import { MemberVerifierPanel } from "./MemberVerifierPanel";
 import { MemberClaimRedemption } from "./MemberClaimRedemption";
 import { hasClaimSession, MemberClaimSession } from "./MemberClaimSession";
@@ -48,6 +54,9 @@ import { MemberShopOrdersLink } from "./shopOrders/MemberShopOrdersLink";
 import { MyNotificationSettings } from "../notifications/MyNotificationSettings";
 import { usePreferences } from "../notifications/channelsApi";
 import { MemberPhoneVerification } from "./MemberPhoneVerification";
+import { MemberCommunityArea } from "../community/member/MemberCommunityArea";
+import { JOIN_ANCHOR } from "../community/member/JoinButton";
+import { membershipRoleLabel, membershipStatusLabel } from "./membershipLabels";
 
 type Membership = { makerspace: { slug: string; name: string }; membership_status: string; role: string; waiver_acceptance_required: boolean; can_refer: boolean; can_verify: boolean; verified_at: string | null; referrals_enabled: boolean };
 type Memberships = { memberships: Membership[]; requests: (Partial<AdmissionRequest> & { makerspace: { id?: number; slug: string; name: string }; state: string; kind: string })[] };
@@ -67,7 +76,8 @@ export function MemberArea() {
   const [search] = useSearchParams();
 
   const [restoring, setRestoring] = useState(true);
-  const [showSignIn, setShowSignIn] = useState(false);
+  // An identity-provider redirect lands back here: reopen sign-in so its panel finishes the callback.
+  const [showSignIn, setShowSignIn] = useState(hasPendingSocialCallback);
   const [hasPartnerEvents, setHasPartnerEvents] = useState(false);
   const [claimSession, setClaimSession] = useState(hasClaimSession);
   useEffect(() => {
@@ -81,16 +91,19 @@ export function MemberArea() {
   const makerspaceId = bootstrap.data?.makerspace.id ?? -1;
   const memberships = useQuery({ queryKey: ["member", "memberships"], queryFn: () => memberRequest<Memberships>("/memberships/me"), enabled: !claimSession && !restoring, retry: false });
   const unauthenticated = memberships.error instanceof StructuredApiError && memberships.error.status === 401;
+  // 0.12.0 row 29: "Sign in to borrow" sends `?next=<inventory page>` (the cart is restored from cartHandoff).
+  const openSignIn = useCallback(() => setShowSignIn(true), []);
+  const { afterSignIn } = useMemberReturn(search, { unauthenticated, signedIn: memberships.isSuccess && !claimSession, openSignIn });
   const membershipRefused = memberships.error instanceof StructuredApiError && [400, 401, 403, 404].includes(memberships.error.status);
   const memberAccess = !claimSession && !memberships.error ? memberships.data : undefined;
   const membership = memberAccess?.memberships.find((row) => row.makerspace.slug === resolvedSlug);
-  const requestRecord = memberAccess?.requests.find((row) => row.makerspace.slug === resolvedSlug && ["requested", "awaiting_vouches", "awaiting_payment"].includes(row.state));
+  const requestRecord = memberAccess?.requests.find((row) => row.makerspace.slug === resolvedSlug && ["requested", "awaiting_vouches", "awaiting_payment", "changes_requested"].includes(row.state));
   const latestApplication = memberAccess?.requests.filter((row) => row.makerspace.slug === resolvedSlug).sort((left, right) => (right.id ?? 0) - (left.id ?? 0))[0];
   const requested = Boolean(requestRecord);
   // Declared before the queries below, which gate on it. The activity endpoint enforces
   // `require_module(makerspace, "membership")`, so calling it with the module off just
   // errors -- the dashboard simply does not exist for a space that runs no memberships.
-  const activeTab = useMemberTab(bootstrap.data?.modules ?? []);
+  const activeTab = useMemberTab(bootstrap.data?.modules ?? [], bootstrap.data?.features);
   const membershipModuleOn = (bootstrap.data?.modules ?? []).includes("membership");
   const membershipCharges = chargesOn(bootstrap.data, "membership"); // #184: free membership shows no fee
   // The server derives ties from owned loans/bookings/events as well as memberships.
@@ -149,6 +162,8 @@ export function MemberArea() {
   const archivedUnknown = !archivedRemoved && (archivedPayments.isError || (bootstrap.isError && !archivedPayments.data?.length));
   // The layout swaps its body for an error block when this holds, which would also swallow the sign-in controls.
   const bootstrapBlocked = bootstrap.isError && !archivedUnknown && !archivedPayments.data?.length;
+  // The bookings module's own list (with its calendar link) replaces the activity summary's copy of the same bookings.
+  const ownBookings = activeTab === "bookings" && !unauthenticated && memberships.isSuccess && Boolean(bootstrap.data?.modules.includes("bookings"));
   const refresh = () => client.invalidateQueries({ queryKey: ["member"] });
   const presencePanel = activeTab === "overview" ? <PresencePanel enabled={presenceOn} slug={resolvedSlug} spaceName={spaceName} member={membership?.membership_status === "active"}
     selfCheckIn={Boolean(bootstrap.data?.makerspace.geofence_enabled)} sheetOpen={presenceSheet} onSheetOpenChange={setPresenceSheet} /> : null;
@@ -156,19 +171,19 @@ export function MemberArea() {
   const accept = useMutation({ mutationFn: () => memberRequest(`/member/makerspaces/${makerspaceId}/waiver/accept`, { method: "POST" }), onSuccess: refresh });
   const refer = useMutation({ mutationFn: (inviteEmail: string) => memberRequest<ReferralOutcome>(`/member/makerspaces/${makerspaceId}/referrals`, { method: "POST", body: JSON.stringify({ invite_email: inviteEmail }) }), onSuccess: refresh });
   const claim = useMutation({ mutationFn: ({ id, answers }: { id: number; answers: CustomAnswers }) => memberRequest<ClaimOutcome>(`/memberships/invitations/${id}/claim`, { method: "POST", body: JSON.stringify({ application_answers: answers }) }), onSuccess: refresh });
-  const generatePaymentLink = useMutation({ mutationFn: (id: number) => memberRequest<{ checkout_url: string }>(`/member/makerspaces/${makerspaceId}/payments/${id}/checkout`, { method: "POST" }), onSuccess: (data) => { refresh(); window.location.assign(data.checkout_url); } });
+  const generatePaymentLink = useMutation({ mutationFn: (id: number) => memberRequest<{ checkout_url: string }>(`/member/makerspaces/${makerspaceId}/payments/${id}/checkout`, { method: "POST" }), onSuccess: (data) => { refresh(); window.location.assign(data.checkout_url); }, onError: () => { void client.invalidateQueries({ queryKey: ["member", resolvedSlug, "payments"] }); } });
   const spaceInvitations = invitations.data?.invitations.filter((item) => item.makerspace.slug === resolvedSlug && (membershipModuleOn || item.is_staff)) ?? [];
-  const error = bootstrap.error ?? (!unauthenticated ? memberships.error : null) ?? request.error ?? accept.error ?? activity.error ?? generatePaymentLink.error;
+  const error = bootstrap.error ?? (!unauthenticated ? memberships.error : null) ?? request.error ?? accept.error ?? activity.error;
   const policy: MembershipPolicyEnum | undefined = bootstrap.data?.makerspace.membership_policy;
   // The card panel exists only where the `membership` module is installed -- the card is
   // hung off a membership, so every one of its endpoints refuses with 400 without it.
 
   if (restoring) return <CenteredCardLayout title={t`Your makerspace access`} body={t`Restoring session...`} primary={{ label: t`Back to home`, href: slug ? `/m/${slug}` : "/" }} state={{ status: "loading" }} />;
   if (claimSession && bootstrap.data) return <div style={brandStyle}><MemberClaimSession slug={resolvedSlug} makerspaceId={makerspaceId} modules={bootstrap.data.modules} geofenceEnabled={bootstrap.data.makerspace.geofence_enabled} name={spaceName} logoUrl={spaceLogo} /></div>;
-  if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
+  if (showSignIn) return <div style={brandStyle}><MemberAuthPanel tenantBrand={bootstrap.data ? { name: spaceName, logo: spaceLogo } : undefined} makerspaceSlug={resolvedSlug} onAuthenticated={() => { const target = afterSignIn(); if (target) { window.location.assign(target); return; } setShowSignIn(false); void client.invalidateQueries({ queryKey: ["member"] }); }} /><div className="px-5 pb-5"><SupportContact branding={bootstrap.data?.branding} /></div></div>;
 
   return <div style={brandStyle}>
-    <MemberPortalTabs modules={bootstrap.data?.modules ?? []} active={activeTab} space={{ id: makerspaceId >= 0 ? makerspaceId : undefined, slug: resolvedSlug }}
+    <MemberPortalTabs modules={bootstrap.data?.modules ?? []} features={bootstrap.data?.features} active={activeTab} space={{ id: makerspaceId >= 0 ? makerspaceId : undefined, slug: resolvedSlug }}
       workspace={bootstrap.data ? { name: bootstrap.data.makerspace.name, subtitle: membership?.membership_status ?? t`Member area`,
         avatar: spaceLogo ? { kind: "image", src: spaceLogo } : { kind: "avatar", name: bootstrap.data.makerspace.name, seed: resolvedSlug }, locked: true } : undefined}
       // A signed-out visitor gets a way in, not "Your account" and "Sign out".
@@ -179,14 +194,18 @@ export function MemberArea() {
       name={bootstrap.data?.makerspace.name || "Space Works"} slug={resolvedSlug} modules={bootstrap.data?.modules ?? []}
       activity={memberActivity} state={bootstrap.isLoading ? { status: "loading" } : bootstrapBlocked ? { status: "error", error: t`Couldn't load your makerspace. Try again.`, onRetry: () => void bootstrap.refetch() } : { status: "ready" }}
       primary={presenceOn && activeTab === "overview" && presence.isSuccess && !presence.data.active ? { label: t`Check in`, onClick: () => setPresenceSheet(true) } : undefined}>
-    {membershipModuleOn ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
+    {/* The install tip belongs on the home tab, not repeated above every screen's own content. */}
+    {membershipModuleOn && activeTab === "overview" ? <MemberInstall name={bootstrap.data?.branding?.display_name || bootstrap.data?.makerspace.name || "Space Works member"} /> : null}
     {activeTab === "account" && profile.data ? <Link className="desk-button-brand inline-flex" to="/mfa">{t`Manage two-step sign-in`}</Link> : null}
     {archivedPayments.data?.length ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Payments from closed makerspaces`}</h2><p className="mt-1 text-sm text-muted">{t`Receipts and outstanding charges remain available after a makerspace closes.`}</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">{t`View archived payments`}</Link></section> : null}
     {archivedUnknown ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Closed makerspace?`}</h2><p className="mt-1 text-sm text-muted">{t`If a makerspace you belonged to has closed, its receipts and any outstanding charges are still reachable. You may need to sign in there.`}</p><Link className="desk-button-brand mt-4 inline-flex" to="/member/archived">{t`View archived payments`}</Link></section> : null}
     {bootstrap.isLoading ? <section className="desk-panel p-5 text-sm text-muted">{t`Loading makerspace joining options…`}</section> : null}
     {bootstrap.isError ? <section className="desk-panel p-5"><p className="text-sm text-danger" role="alert">{message(bootstrap.error)}</p></section> : null}
     {activeTab === "overview" && policy && canApply && !requested && memberships.isLoading ? <section className="desk-panel p-5 text-sm text-muted">{t`Checking your sign-in status…`}</section> : null}
-    {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading ? membershipModuleOn ? admission.data ? <AdmissionJoinWithPlans key={resolvedSlug} settings={admission.data} signedIn={Boolean(memberships.data)} pending={request.isPending} error={request.error} slug={resolvedSlug} showPrice={membershipCharges} onJoin={(answers, join) => request.mutate({ answers, ...join })} onSignIn={() => setShowSignIn(true)} /> : <section className="desk-panel p-5"><p className={admission.isError ? "text-sm text-danger" : "text-sm text-muted"} role={admission.isError ? "alert" : undefined}>{admission.error?.message ?? t`Loading admission conditions…`}</p></section> : <JoinMembershipCta policy={policy} signedIn={Boolean(memberships.data)} pending={request.isPending} onJoin={() => request.mutate({})} onSignIn={() => setShowSignIn(true)} /> : null}
+    {/* Decision 223: guest passes, day passes, Bring a guest, guardian consent and volunteering. */}
+    {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberCommunityArea makerspaceId={makerspaceId} memberBase={slug ? `/m/${slug}/member` : "/member"} features={bootstrap.data?.features ?? []} activeMember={membership?.membership_status === "active"} /> : null}
+    {activeTab === "overview" ? <span id={JOIN_ANCHOR} className="block scroll-mt-24" aria-hidden="true" /> : null}
+    {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading ? membershipModuleOn ? admission.data ? <AdmissionJoinWithPlans key={resolvedSlug} makerspaceId={makerspaceId >= 0 ? makerspaceId : undefined} settings={admission.data} signedIn={Boolean(memberships.data)} pending={request.isPending} error={request.error} slug={resolvedSlug} showPrice={membershipCharges} onJoin={(answers, join) => request.mutate({ answers, ...join })} onSignIn={() => setShowSignIn(true)} /> : <section className="desk-panel p-5"><p className={admission.isError ? "text-sm text-danger" : "text-sm text-muted"} role={admission.isError ? "alert" : undefined}>{admission.error?.message ?? t`Loading admission conditions…`}</p></section> : <JoinMembershipCta policy={policy} signedIn={Boolean(memberships.data)} pending={request.isPending} onJoin={() => request.mutate({})} onSignIn={() => setShowSignIn(true)} /> : null}
     {activeTab === "overview" && policy && canApply && !requested && !memberships.isLoading && membershipModuleOn && admission.data ? <PricePreview makerspaceSlug={resolvedSlug} request={{ domain: "membership", joining: true, plan_id: admission.data.default_plan?.id }} /> : null}
     {activeTab === "overview" && membershipModuleOn && admission.data?.join_mode !== "closed" && admission.isSuccess && resolvedSlug && canApply && !requested && !memberships.isLoading ? <InvitationRequestForm slug={resolvedSlug} /> : null}
     {activeTab === "overview" && (membershipModuleOn && latestApplication?.id ? <MemberAdmission makerspaceId={makerspaceId} request={ownApplication.data?.id === latestApplication.id && ownApplication.data.state === latestApplication.state ? ownApplication.data : latestApplication as AdmissionRequest} /> : requested ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Membership request sent`}</h2><p className="mt-1 text-sm text-muted">{t`Staff will review your request.`}</p></section> : null)}
@@ -194,9 +213,9 @@ export function MemberArea() {
     {unauthenticated && resolvedSlug ? <MemberClaimRedemption slug={resolvedSlug} onRedeemed={() => setClaimSession(true)} /> : null}
     {!membership ? presencePanel : null}
     {activeTab === "account" && !claimSession ? <nav aria-label={t`Personal account tools`} className="flex flex-wrap gap-3"><Link className="desk-button" to={`${slug ? `/m/${slug}` : ""}/member/account/saved-details`}>{t`Saved details`}</Link><Link className="desk-button" to={`${slug ? `/m/${slug}` : ""}/member/account/security-activity`}>{t`Security activity`}</Link></nav> : null}
-    {membership ? <>{activeTab === "overview" ? <section className={`desk-panel ${membership.membership_status === "active" ? "border-success" : "border-warn"} p-5`}><h2 className="title-panel">{t`Membership`}</h2><div className="mt-2 flex flex-wrap items-center gap-3"><StatusPill label={membership.membership_status} tone={membership.membership_status === "active" ? "success" : "warn"} /><p className="text-sm text-muted">{membership.makerspace.name} · {membership.role.replace(/_/g, " ")}</p></div></section> : null}
+    {membership ? <>{activeTab === "overview" ? <section className={`desk-panel ${membership.membership_status === "active" ? "border-success" : "border-warn"} p-5`}><h2 className="title-panel">{t`Membership`}</h2><div className="mt-2 flex flex-wrap items-center gap-3"><StatusPill label={membershipStatusLabel(membership.membership_status)} tone={membership.membership_status === "active" ? "success" : "warn"} /><p className="text-sm text-muted">{membership.makerspace.name} · {membershipRoleLabel(membership.role)}</p></div></section> : null}
       {activeTab === "account" && membershipModuleOn && bootstrap.data?.modules.includes("member_accounts") && membership.membership_status === "active" && (bootstrap.data?.features?.includes("membership.self_service") || bootstrap.data?.features?.includes("membership.self_export")) ? <Link className="desk-button-brand inline-flex" to={`${slug ? `/m/${slug}/member` : "/member"}/account`}>{t`Manage your account`}</Link> : null}
-      {activeTab === "overview" && waiver.data?.has_waiver ? <section id="current-waiver" className="desk-panel p-5"><h2 className="title-panel">{t`Current waiver (`}<span className="tabular-nums">{waiver.data.version}</span>)</h2><p className="mt-3 max-w-prose whitespace-pre-wrap break-words text-sm text-muted">{waiver.data.body}</p>{membership.waiver_acceptance_required ? <button className="desk-button-brand mt-4" disabled={accept.isPending} onClick={() => accept.mutate()}>{t`Accept waiver`}</button> : <p className="mt-3 text-sm text-success-ink">{t`Current waiver acceptance is on file.`}</p>}</section> : null}
+      {activeTab === "overview" && waiver.data?.has_waiver ? <section id="current-waiver" className="desk-panel p-5"><h2 className="title-panel">{t`Current waiver (${waiver.data.version ?? ""})`}</h2><p className="mt-3 max-w-prose whitespace-pre-wrap break-words text-sm text-muted">{waiver.data.body}</p>{membership.waiver_acceptance_required ? <button className="desk-button-brand mt-4" disabled={accept.isPending} onClick={() => accept.mutate()}>{t`Accept waiver`}</button> : <p className="mt-3 text-sm text-success-ink">{t`Current waiver acceptance is on file.`}</p>}</section> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" && membership.can_verify ? <MemberVerifierPanel makerspaceId={makerspaceId} /> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" && admission.data?.join_mode === "vouch" ? <MemberVouch makerspaceId={makerspaceId} /> : null}
       {/* The check-in action lives with its status, so it survives on layouts whose header primary is something else. */}
@@ -205,15 +224,16 @@ export function MemberArea() {
       {(activeTab === "overview" || activeTab === "inbox" && section === "notices") && memberActivity ? <MemberNotices notices={memberActivity.notices} /> : null}
       {activeTab === "account" && section === "certifications" && membership?.membership_status === "active" && (bootstrap.data?.modules ?? []).includes("machines") ? <MemberCertifications key={makerspaceId} makerspaceId={makerspaceId} /> : null}
       {activeTab === "inbox" && membership.membership_status === "active" && bootstrap.data?.modules.includes("notifications") ? <MemberNotifications makerspaceId={makerspaceId} features={bootstrap.data.features ?? []} /> : null}
-      {(["overview", "events", "bookings"].includes(activeTab) && section !== "partners" || activeTab === "loans" && section !== "history") && memberActivity ? <MemberActivityPanel modules={bootstrap.data?.modules ?? []} features={bootstrap.data?.features ?? []} section={activeTab === "overview" ? "overview" : activeTab as "loans" | "bookings" | "events"} activity={memberActivity} eventPeriod={section === "past" ? "past" : "going"} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} makerspaceName={spaceName} /> : null}
-      {activeTab === "overview" && memberActivity ? <MemberTerm term={memberActivity.membership_term} /> : null}
+      {(["overview", "events", "bookings"].includes(activeTab) && section !== "partners" && !ownBookings || activeTab === "loans" && section !== "history") && memberActivity ? <MemberActivityPanel modules={bootstrap.data?.modules ?? []} features={bootstrap.data?.features ?? []} section={activeTab === "overview" ? "overview" : activeTab as "loans" | "bookings" | "events"} activity={memberActivity} eventPeriod={section === "past" ? "past" : "going"} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} makerspaceName={spaceName} /> : null}
+      {activeTab === "overview" && memberActivity ? <><MemberTerm term={memberActivity.membership_term} /><MemberIncludedHours rows={memberActivity.included_hours} /><MemberAllowances makerspaceId={makerspaceId} /></> : null}
       {activeTab === "overview" && membershipModuleOn && membership.membership_status === "active" ? <MemberCardPanel compact cardHref={`${slug ? `/m/${slug}/member` : "/member"}/account-portal?section=card`} makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : null}
-      {activeTab === "payments" && memberActivity && membershipCharges ? <MemberDues dues={memberActivity.membership_dues} /> : null}
+      {activeTab === "payments" && memberActivity && membershipCharges ? <MemberDues dues={memberActivity.membership_dues} currency={admission.data?.joining_fee_currency ?? admission.data?.default_plan?.currency} /> : null}
       {activeTab === "loans" && section === "history" && memberActivity ? <MemberHistory loans={memberActivity.loan_history} requests={memberActivity.request_history}
         withdraw={bootstrap.data?.features?.includes("loans.withdrawals") ? { makerspaceId, makerspaceSlug: resolvedSlug } : undefined} /> : null}
       {activeTab === "events" && bootstrap.data?.modules.includes("events") && membership?.membership_status === "active" ? <div hidden={section !== "partners"}><PartnerEvents makerspaceId={makerspaceId} slug={resolvedSlug} onAvailable={setHasPartnerEvents} visible={section === "partners"} /></div> : null}
       {activeTab === "account" && membership.membership_status === "active" && makerspaceId >= 0 && membershipModuleOn ? <>{section === "profile" ? <MemberProfilePanel makerspaceId={makerspaceId} /> : section === "card" ? <MemberCardPanel makerspaceId={makerspaceId} spaceName={membership.makerspace.name} /> : section === "community" ? <MemberDirectory makerspaceId={makerspaceId} /> : null}</> : null}</> : null}
     {activeTab === "overview" && memberAccess && makerspaceId >= 0 ? <MemberUsagePanel key={makerspaceId} makerspaceId={makerspaceId} /> : null}
+    {activeTab === "overview" && membership?.membership_status === "active" && makerspaceId >= 0 && bootstrap.data?.features?.includes("safety.incidents") ? <MemberIncidentReports key={makerspaceId} makerspaceId={makerspaceId} /> : null}
     {activeTab === "loans" && section !== "history" && memberAccess && makerspaceId >= 0 && bootstrap.data?.features?.includes("loans.waitlist") ? <MemberWaitlist key={makerspaceId} makerspaceId={makerspaceId} makerspaceSlug={resolvedSlug} /> : null}
     {activeTab === "account" && section === "channels" && messagingAllowed ? <MyNotificationSettings key={makerspaceId} makerspaceId={makerspaceId} member /> : null}
     {activeTab === "account" && messagingEnabled && messaging.isLoading ? <p role="status">{t`Checking notification access…`}</p> : null}
@@ -223,7 +243,8 @@ export function MemberArea() {
     {/* OUTSIDE the membership branch. A loan deposit is raised against a borrower, who
         needs an active account rather than a membership -- nesting this meant the person
         who owed the money was the one person who could not see it. */}
-    {activeTab === "payments" && paymentRows?.length ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Payments`}</h2><MemberPaymentRows makerspaceId={makerspaceId} refunds payments={paymentRows} checkoutPaymentId={generatePaymentLink.isPending ? generatePaymentLink.variables : undefined} onCheckout={(paymentId) => generatePaymentLink.mutate(paymentId)} /></section> : null}
+    {!unauthenticated && !claimSession ? <MemberCheckoutReturn onPaymentsTab={activeTab === "payments"} /> : null}
+    {activeTab === "payments" && paymentRows?.length ? <section className="desk-panel p-5"><h2 className="title-panel">{t`Payments`}</h2><MemberPaymentRows makerspaceId={makerspaceId} refunds payments={paymentRows} checkoutPaymentId={generatePaymentLink.isPending ? generatePaymentLink.variables : undefined} onCheckout={(paymentId) => generatePaymentLink.mutate(paymentId)} />{generatePaymentLink.error ? <p role="alert" className="mt-3 text-sm text-danger">{memberPaymentErrorText(generatePaymentLink.error)}</p> : null}</section> : null}
     {activeTab === "account" && section === "invitations" && memberAccess && resolvedSlug && makerspaceId >= 0 ? <MemberReferrals
       canRefer={membershipModuleOn && membership?.membership_status === "active" && membership.can_refer}
       referralsEnabled={membershipModuleOn && membership?.membership_status === "active" && membership.referrals_enabled}
@@ -238,14 +259,14 @@ export function MemberArea() {
       isReferring={refer.isPending}
       claimingId={claim.isPending ? claim.variables.id : null}
       referralError={refer.error instanceof Error ? refer.error : null}
-      referralSuccess={refer.data ? "Referral invitation sent." : null}
+      referralSuccess={refer.data ? t`Referral invitation sent.` : null}
       claimError={claim.error instanceof Error ? claim.error : null}
-      claimSuccess={claim.data ? claim.data.outcome === "active" ? "You are now an active member." : claim.data.outcome === "awaiting_payment" ? "Your invitation is awaiting payment before activation." : claim.data.outcome === "awaiting_vouches" ? "Your invitation is awaiting member vouches." : "Your invitation is waiting for manager approval." : null}
+      claimSuccess={claim.data ? claim.data.outcome === "active" ? t`You are now an active member.` : claim.data.outcome === "awaiting_payment" ? t`Your invitation is awaiting payment before activation.` : claim.data.outcome === "awaiting_vouches" ? t`Your invitation is awaiting member vouches.` : t`Your invitation is waiting for manager approval.` : null}
     /> : null}
     {unauthenticated && !showSignIn && policy?.startsWith("invite") ? <p className="text-sm text-muted">{t`Sign in to view memberships or claim an invitation.`}</p> : null}
     {error ? <p className="text-sm text-danger" role="alert">{message(error)}</p> : null}
     {memberships.isError && !unauthenticated ? <Link className="desk-button-brand inline-flex" to="/admin">{t`Sign in`}</Link> : null}
-    {activeTab === "bookings" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("bookings") ? <MyBookings slug={resolvedSlug} initialPeriod={search.get("period") === "past" ? "past" : "upcoming"} canReport={(bootstrap.data?.features ?? []).includes("bookings.issue_reporting")} /> : null}
+    {ownBookings ? <MyBookings slug={resolvedSlug} initialPeriod={search.get("period") === "past" ? "past" : "upcoming"} canReport={(bootstrap.data?.features ?? []).includes("bookings.issue_reporting")} canReportMachines={(bootstrap.data?.features ?? []).includes("machines.issue_reporting")} /> : null}
     {/* L22: a buyer reaches their shop orders from Payments; ordering needs an account, not a membership. */}
     {activeTab === "payments" && !unauthenticated && memberships.isSuccess && bootstrap.data?.modules.includes("shop") ? <MemberShopOrdersLink slug={slug} /> : null}
     {!unauthenticated && memberships.isSuccess && bootstrap.data && !claimSession && activeTab === "overview" ? <MemberHistoryLinks slug={slug} modules={bootstrap.data.modules} features={bootstrap.data.features} /> : null}

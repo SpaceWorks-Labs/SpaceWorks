@@ -45,7 +45,7 @@ export function AccountDeletionReauthentication({ methods, onVerified }: { metho
     }}>{methods.map(value => <option key={value} value={value}>{value === "totp" ? t`Authenticator` : value === "phone" ? t`Phone code` : value === "password" ? t`Password` : value}</option>)}</select></Field>
     {socialMethod && !factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => social.mutate(method)}>{t`Confirm with ${method}`}</button> : null}
     {method === "phone" && !factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => phone.mutate()}>{phoneToken ? t`Send a new phone verification code` : t`Send phone verification code`}</button> : null}
-    {factor ? <p role="status">{factor.factor_required === "totp" ? t`Enter your authenticator code.` : t`Enter the verification code sent to your ${factor.factor_required === "phone" ? "phone" : "email"}.`}</p> : null}
+    {factor ? <p role="status">{factor.factor_required === "totp" ? t`Enter your authenticator code.` : factor.factor_required === "phone" ? t`Enter the verification code sent to your phone.` : t`Enter the verification code sent to your email.`}</p> : null}
     {factor ? <button type="button" className="desk-button" disabled={pending} onClick={() => { setFactor(null); setCode(""); verify.reset(); social.reset(); }}>{t`Restart provider verification`}</button> : null}
     {!socialMethod || factor ? <form className="grid gap-3" onSubmit={event => { event.preventDefault(); verify.mutate(); }}>
       {passwordNeeded ? <Field label={t`Current password`}><input className="desk-input" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></Field> : null}

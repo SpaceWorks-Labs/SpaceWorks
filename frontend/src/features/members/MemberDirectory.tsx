@@ -1,5 +1,5 @@
 import { formatLocale } from "../../lib/format";
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { DetailDrawer, EmptyState, ListRow } from "../../components/ui";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -80,7 +80,7 @@ export function MemberDirectory({ makerspaceId }: { makerspaceId: number }) {
       {openId !== null ? <DetailDrawer open title={directory.data?.members.find(entry => entry.membership_id === openId)?.display_name || t`Member profile`} onClose={() => setOpenId(null)}>{detail.isLoading ? <p role="status">{t`Loading profile...`}</p> : detail.data ? <ProfileDetail profile={detail.data} /> : null}</DetailDrawer> : null}
       {hidden > 0 ? (
         <p className="mt-3 text-sm text-muted">
-          {t`${hidden} more ${hidden === 1 ? "member has" : "members have"} not published a profile.`}
+          {plural(hidden, { one: "# more member has not published a profile.", other: "# more members have not published a profile." })}
         </p>
       ) : null}
     </section>

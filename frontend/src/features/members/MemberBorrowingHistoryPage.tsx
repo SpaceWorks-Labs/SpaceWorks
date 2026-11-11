@@ -12,6 +12,7 @@ import { personalRecipientKey } from "../notifications/personalQueryKeys";
 import { HelpLink } from "../help/HelpLink";
 import { MemberAuthPanel } from "./MemberAuthPanel";
 import { BorrowingHistoryList } from "./BorrowingHistoryList";
+import { MemberWaitlist } from "./MemberWaitlist";
 import { useOwnBorrowingHistory, type BorrowingPeriod } from "./borrowingHistoryApi";
 import { RouteLink } from "../../components/ui/RouteLink";
 
@@ -58,7 +59,10 @@ export function MemberBorrowingHistoryPage() {
         <Field label={t`Borrowing view`}><select className="desk-input w-full" value={period} onChange={event => { setPeriod(event.target.value as BorrowingPeriod); setPage(1); }}>
           <option value="all">{t`All borrowing`}</option><option value="current">{t`Requests and current loans`}</option><option value="history">{t`Closed requests and returns`}</option>
         </select></Field>
-        {history.data ? <><BorrowingHistoryList rows={history.data.results} /><Pagination page={page} count={history.data.count} pageSize={24}
+        {/* The only waitlist screen an account-only borrower has: the member area's Loans tab needs the membership module. */}
+        {bootstrap?.features.includes("loans.waitlist") && identity.data?.id ? <MemberWaitlist makerspaceId={bootstrap.makerspace.id} makerspaceSlug={spaceSlug} /> : null}
+        {history.data ? <><BorrowingHistoryList rows={history.data.results} space={bootstrap ? { makerspaceId: bootstrap.makerspace.id, makerspaceSlug: spaceSlug } : undefined}
+          withdraw={bootstrap?.features.includes("loans.withdrawals") ? { makerspaceId: bootstrap.makerspace.id, makerspaceSlug: spaceSlug } : undefined} /><Pagination page={page} count={history.data.count} pageSize={24}
           totalPages={Math.max(1, Math.ceil(history.data.count / 24))} onChange={setPage} disabled={history.isFetching} /></> : null}
       </> : null}
       <nav aria-label={t`Related account history`} className="flex flex-wrap gap-3">

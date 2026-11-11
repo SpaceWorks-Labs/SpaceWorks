@@ -7,6 +7,8 @@ import type { ArchivedPaymentSummary } from "../../generated/api";
 import { StructuredApiError, staffRequest } from "../../lib/api";
 import { MemberAuthPanel } from "./MemberAuthPanel";
 import { MemberPaymentRows, type MemberPayment } from "./MemberPayments";
+import { MemberCheckoutReturn } from "./MemberCheckoutReturn";
+import { memberPaymentErrorText } from "./memberPaymentErrors";
 
 const MAKERSPACE_TONES = ["border-accent", "border-brand", "border-success", "border-warn"] as const;
 
@@ -34,6 +36,12 @@ function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSumma
       });
       window.location.assign(checkout_url);
     },
+    // A refusal (rail switched off) re-reads the list so the stale "Generate payment link" goes away.
+    onError: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["member", "archived-payments", summary.makerspace.id, "payments"],
+      });
+    },
   });
 
   return (
@@ -58,13 +66,14 @@ function ArchivedMakerspacePayments({ summary }: { summary: ArchivedPaymentSumma
         <MemberPaymentRows
           makerspaceId={summary.makerspace.id}
           payments={payments.data}
+          offlineClaims
           checkoutPaymentId={checkout.isPending ? checkout.variables : undefined}
           onCheckout={(paymentId) => checkout.mutate(paymentId)}
         />
       ) : null}
       {checkout.isError ? (
         <p className="mt-3 text-sm text-danger" role="alert">
-          {errorMessage(checkout.error)}
+          {memberPaymentErrorText(checkout.error)}
         </p>
       ) : null}
     </section>
@@ -104,6 +113,6 @@ export function ArchivedPayments() {
   return <PublicLayout state={discovery.isLoading ? { status: "loading" } : discovery.isError ? { status: "error", error: errorMessage(discovery.error), onRetry: () => void discovery.refetch() } : { status: "ready" }}
     makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} nav={[]} headerAction={{ label: t`Member area`, href: "/member" }}
     header={{ title: t`Payments and receipts`, eyebrow: t`Archived makerspaces`, subtitle: t`Closed makerspaces no longer appear in the normal member area. Outstanding charges and past receipts remain available here.`, primary: { label: t`Back to Space Works`, href: "/" } }} footer={{ links: [] }}>
-    <div className="grid gap-6">{discovery.data?.length === 0 ? <EmptyState message={t`No charges outstanding from closed makerspaces.`} /> : discovery.data?.map(summary => <ArchivedMakerspacePayments key={summary.makerspace.id} summary={summary} />)}</div>
+    <div className="grid gap-6"><MemberCheckoutReturn />{discovery.data?.length === 0 ? <EmptyState message={t`No charges outstanding from closed makerspaces.`} /> : discovery.data?.map(summary => <ArchivedMakerspacePayments key={summary.makerspace.id} summary={summary} />)}</div>
   </PublicLayout>;
 }

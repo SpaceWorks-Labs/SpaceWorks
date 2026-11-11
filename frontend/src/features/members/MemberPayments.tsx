@@ -1,9 +1,10 @@
-import { formatLocale } from "../../lib/format";
+import { formatDate } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { EmptyState, ListRow, StatusPill } from "../../components/ui";
 import type { MemberPayment as GeneratedMemberPayment } from "../../generated/api";
 import { useState } from "react";
 import { DUE_OPTIONS, PaymentDueBadge } from "../staff/PaymentDueBadge";
+import { formatMoney, paymentStatusLabel, settlementMethodLabel } from "../staff/paymentsApi";
 import { PaymentDocuments } from "../payments/PaymentDocuments";
 import { MemberRefundControl } from "./MemberRefundRequest";
 import { MemberPaymentOffline, type OfflineCollection } from "./MemberPaymentOffline";
@@ -21,12 +22,23 @@ export type MemberPayment = Omit<GeneratedMemberPayment, "refunded_amount" | "re
   }>;
 };
 
+// An "I paid" note staff have not decided yet: paying online too would pay the debt twice.
+const claimOpen = (payment: MemberPayment) =>
+  ["submitted", "awaiting_confirmation"].includes(payment.offline_collection?.claim?.status ?? "");
+
+// A pending donation is an unfinished gift, never a debt (payments audit B-7): neutral, not "Pending".
+const unpaidGift = (payment: MemberPayment) => payment.subject_type === "donation" && payment.status === "pending";
+
+// One locale-formatted amount; a row without a currency keeps the bare number.
+const money = (amount: string, currency?: string | null) => (currency ? formatMoney(amount, currency) : amount);
+
 export function MemberPaymentRows({
   payments,
   checkoutPaymentId,
   onCheckout,
   makerspaceId,
   refunds = false,
+  offlineClaims = refunds,
 }: {
   payments: MemberPayment[];
   checkoutPaymentId?: number;
@@ -34,6 +46,8 @@ export function MemberPaymentRows({
   makerspaceId?: number;
   /** Offer "Request refund" on paid charges. Off for archived spaces' read-only history. */
   refunds?: boolean;
+  /** Show the UPI / "I paid" block. Archived spaces keep it: the server still takes claims there. */
+  offlineClaims?: boolean;
 }) {
   const [dueFilter, setDueFilter] = useState("");
   return (
@@ -45,7 +59,7 @@ export function MemberPaymentRows({
     </label>
     <ul className="mt-3 space-y-2 text-sm text-muted [&>li>div>:first-child]:basis-48">
       {payments.filter((payment) => !dueFilter || payment.due_state === dueFilter).map((payment) => (
-        <li key={payment.id}><ListRow title={payment.subject_label} right={<div className="grid justify-items-end gap-1 text-right"><span className="font-display text-lg tabular-nums text-ink">{payment.amount} {(payment.currency ?? "").toUpperCase()}</span><StatusPill label={(payment.status || "Unknown").replace(/_/g, " ")} tone={["paid_online", "paid_offline"].includes(payment.status || "") ? "success" : payment.status === "pending" ? "warn" : "neutral"} /></div>} meta={<>
+        <li key={payment.id}><ListRow title={payment.subject_label} right={<div className="grid justify-items-end gap-1 text-right"><span className="font-display text-lg tabular-nums text-ink">{money(payment.amount, payment.currency)}</span><StatusPill label={unpaidGift(payment) ? t`Gift not completed` : payment.status ? paymentStatusLabel(payment.status) : t`Unknown`} tone={["paid_online", "paid_offline"].includes(payment.status || "") ? "success" : payment.status === "pending" && !unpaidGift(payment) ? "warn" : "neutral"} /></div>} meta={<>
           {/* Facts wrap as chips on a phone; the one action gets its own full-width line
               below them instead of sitting mid-sentence between separators. */}
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -55,7 +69,7 @@ export function MemberPaymentRows({
             {!payment.checkout_url && payment.status === "pending" && !payment.online_payment_available ? <span>{t`Pay at the space`}</span> : null}
             {payment.settlement ? (
               <span>
-                {t`Received ${new Date(payment.settlement.received_at).toLocaleDateString(formatLocale())}${" by "}${payment.settlement.method.replace(/_/g, " ")}`}
+                {t`Received ${formatDate(payment.settlement.received_at)} by ${settlementMethodLabel(payment.settlement.method)}`}
               </span>
             ) : null}
             {payment.method_label ? <span>{t`Paid with ${payment.method_label}`}</span> : null}
@@ -65,17 +79,17 @@ export function MemberPaymentRows({
               <span key={index} className="break-words">
                 {refund.status === "succeeded" ? t`Refunded` : t`Refund pending`}{" "}
                 <span className="tabular-nums">
-                  {refund.amount} {(refund.currency ?? "").toUpperCase()}
+                  {money(refund.amount, refund.currency)}
                 </span>
                 {refund.reason ? ` (${refund.reason})` : null}
-                {refund.method ? ` by ${refund.method.replace(/_/g, " ")}` : ""}
+                {refund.method ? <> {t`by ${settlementMethodLabel(refund.method)}`}</> : ""}
                 {refund.reference ? ` · ${refund.reference}` : ""}
               </span>
             ))}
           </span>
           {payment.checkout_url ? (
             <span className="mt-3 flex"><a className="desk-button-brand w-full sm:w-auto" href={payment.checkout_url}>{t`Pay now`}</a></span>
-          ) : payment.status === "pending" && payment.online_payment_available ? (
+          ) : payment.status === "pending" && payment.online_payment_available && !claimOpen(payment) ? (
             <span className="mt-3 flex">
               <button
                 className="desk-button w-full sm:w-auto"
@@ -86,7 +100,7 @@ export function MemberPaymentRows({
                 {t`Generate payment link`}</button>
             </span>
           ) : null}
-          {refunds && makerspaceId !== undefined && payment.offline_collection
+          {offlineClaims && makerspaceId !== undefined && payment.offline_collection
             ? <MemberPaymentOffline makerspaceId={makerspaceId} paymentId={payment.id} offline={payment.offline_collection} /> : null}
           {refunds && makerspaceId !== undefined ? <MemberRefundControl makerspaceId={makerspaceId} payment={payment} /> : null}
         </>} /></li>

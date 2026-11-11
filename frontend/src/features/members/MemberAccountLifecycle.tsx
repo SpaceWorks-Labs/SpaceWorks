@@ -1,4 +1,4 @@
-import { formatLocale } from "../../lib/format";
+import { formatDate } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,15 @@ import type { ConsentRow, TimelineEntry } from "../staff/membershipLifecycleApi"
 
 type Ledger = { purposes: { key: string; label: string; description: string }[]; notice_version: string; consents: ConsentRow[] };
 type Erasure = { id: number; status: string; member_note: string; decision_note: string; created_at: string; decided_at: string | null };
+const erasureStatusLabel = (status: string) => {
+  switch (status) {
+    case "requested": return t`Requested`;
+    case "approved": return t`Approved`;
+    case "rejected": return t`Declined`;
+    case "withdrawn": return t`Withdrawn`;
+    default: return t`Unknown`;
+  }
+};
 const base = (id: number) => `/member/makerspaces/${id}`;
 const errorText = (error: unknown) => (error instanceof StructuredApiError ? error.message : t`That did not work. Try again.`);
 
@@ -58,8 +67,8 @@ function ErasureRequest({ makerspaceId }: { makerspaceId: number }) {
   return <div className="grid gap-3">
     <p className="text-sm text-muted">{t`Ask this space to erase what it holds about your membership. If staff approve, your membership here ends and your record, titles, profile and answers are erased. Payment records and the audit log are kept. Your account stays.`}</p>
     {rows.data?.map((row) => <p key={row.id} className="flex flex-wrap items-center gap-2 text-sm">
-      <StatusPill tone={row.status === "approved" ? "success" : row.status === "rejected" ? "danger" : "warn"} label={row.status} />
-      {new Date(row.created_at).toLocaleDateString(formatLocale())}{row.decision_note ? ` · “${row.decision_note}”` : ""}
+      <StatusPill tone={row.status === "approved" ? "success" : row.status === "rejected" ? "danger" : "warn"} label={erasureStatusLabel(row.status)} />
+      {formatDate(row.created_at)}{row.decision_note ? ` · “${row.decision_note}”` : ""}
       {row.status === "requested" ? <button className="desk-button" type="button" disabled={withdraw.isPending} onClick={() => withdraw.mutate(row.id)}>{t`Withdraw`}</button> : null}
     </p>)}
     {!open ? <form className="grid gap-2" onSubmit={(event) => { event.preventDefault(); ask.mutate(); }}>

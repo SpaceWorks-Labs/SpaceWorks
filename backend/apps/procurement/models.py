@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from apps.payments.money_model import MoneyDecimalField
 
 
 class ToBuyItem(models.Model):
@@ -44,16 +45,16 @@ class ToBuyItem(models.Model):
         choices=Status.choices,
         default=Status.REQUESTED,
     )
-    estimated_unit_cost = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    estimated_unit_cost = MoneyDecimalField(
+        max_digits=11,
+        decimal_places=3,
         null=True,
         blank=True,
     )
     vendor_name = models.CharField(max_length=200, blank=True)
-    actual_unit_cost = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    actual_unit_cost = MoneyDecimalField(
+        max_digits=11,
+        decimal_places=3,
         null=True,
         blank=True,
     )

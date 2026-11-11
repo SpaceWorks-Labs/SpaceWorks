@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -80,7 +81,7 @@ class ToBuyMoveToInventoryView(ToBuyMoveBaseView):
 
 
 class RefillConsumableRequestSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"))
 
 
 @extend_schema(tags=["Procurement"])

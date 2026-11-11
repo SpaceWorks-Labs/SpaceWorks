@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
+from apps.payments.money_fields import MoneyField
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,7 +31,7 @@ class VendorSerializer(serializers.ModelSerializer):
 
 
 class MarkBoughtSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"))
     currency = serializers.CharField(max_length=3, required=False, allow_blank=True)
     method = serializers.ChoiceField(choices=LedgerEntry.Method.choices)
     reference = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")

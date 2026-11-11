@@ -93,7 +93,7 @@ def mark_bought(actor, item, *, amount, currency, method, reference="", receipt_
     locked.status, locked.received_at, locked.purchaser = ToBuyItem.Status.RECEIVED, now, actor
     locked.ordered_at = locked.ordered_at or now
     locked.vendor, locked.vendor_name = vendor, supplier
-    locked.actual_unit_cost = (amount / Decimal(max(locked.quantity, 1))).quantize(Decimal("0.01"))
+    locked.actual_unit_cost = (amount / Decimal(max(locked.quantity, 1))).quantize(Decimal("0.001"))
     locked.save(update_fields=["status", "received_at", "ordered_at", "purchaser", "vendor", "vendor_name",
                                "actual_unit_cost", "updated_at"])
     credited, credited_id = _restock(actor, locked, refill_amount)

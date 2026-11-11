@@ -4,10 +4,10 @@
 import { t } from "@lingui/core/macro";
 import { useRef, useState } from "react";
 
-import { PX_PER_MM, printNodes } from "../../../components/card-print";
+import { enqueueReceipt, newReceipt, PX_PER_MM, printNodes, type PrintReceipt } from "../../../components/card-print";
 import { CardJobList, useStartCardJob } from "../../cards/cardJobs";
 import { DeskBadgeFace, deskSize } from "./DeskBadgeFace";
-import { designFor, fetchDesk, STATUS_SETS, type DeskResponse, type StatusSet } from "./deskBadgeApi";
+import { designFor, fetchDesk, sendDeskReceipts, STATUS_SETS, type BadgeReceipt, type DeskResponse, type StatusSet } from "./deskBadgeApi";
 
 export function statusSetLabels(): Record<StatusSet, string> {
   return {
@@ -28,6 +28,17 @@ export function BulkBadgesPanel({ eventId, canPrint }: { eventId: number; canPri
   const labels = statusSetLabels();
   if (!canPrint) return null;
 
+  // One receipt per badge (method bulk), sent in batches of 200; what cannot be sent waits in the persistent queue.
+  async function reportPrints(data: DeskResponse) {
+    const receipts = (data.badges ?? []).map((badge) => newReceipt({ registration_id: badge.registration_id, method: "bulk" as const,
+      role: badge.role, stock: designFor(data, badge.role)?.design.stock ?? "" }));
+    for (let start = 0; start < receipts.length; start += 200) {
+      const batch = receipts.slice(start, start + 200);
+      try { await sendDeskReceipts(eventId, batch as BadgeReceipt[]); }
+      catch { await Promise.all(batch.map((receipt) => enqueueReceipt(`event:${eventId}`, receipt as PrintReceipt))); }
+    }
+  }
+
   async function printHere() {
     setBusy(true); setMessage(null);
     try {
@@ -42,7 +53,8 @@ export function BulkBadgesPanel({ eventId, canPrint }: { eventId: number; canPri
       const faces = Array.from(pages.current?.children ?? []) as HTMLElement[];
       if (!first || !faces.length) return;
       const result = await printNodes(faces, deskSize(first.design), { title: t`Event badges` });
-      if (result === "blocked") setMessage(t`Your browser blocked the print window. Allow pop-ups for this site, then print again.`);
+      if (result === "blocked") { setMessage(t`Your browser blocked the print window. Allow pop-ups for this site, then print again.`); return; }
+      await reportPrints(data);
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : t`Could not prepare the badges.`);
     } finally { setBusy(false); }

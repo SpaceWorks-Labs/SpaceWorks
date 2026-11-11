@@ -65,7 +65,7 @@ export function DeskPrintSheet({ badge, bundle, onPrinted, onSkip, onEdit }: {
       {chosen ? <DeskBadgeFace badge={badge} design={chosen.design} logos={bundle.logos} pxPerMm={previewScale} />
         : <p role="alert" className="text-sm text-danger">{t`No badge design is published for this event yet.`}</p>}
       {state === "blocked" ? <p role="alert" className="text-sm text-danger">{t`Your browser blocked the print window. Allow pop-ups for this site, then print again.`}</p> : null}
-      {state === "sent" && receipt === "queued" ? <p role="status" className="text-sm text-muted">{t`Print recorded on this device. It will be sent when you sync.`}</p> : null}
+      {state === "sent" && receipt === "queued" ? <p role="status" className="text-sm text-muted">{t`Print recorded on this device. It will be sent when the connection is back.`}</p> : null}
       {state === "sent" && receipt === "lost" ? <p role="status" className="text-sm text-warn-ink">{t`The badge printed, but the print could not be recorded.`}</p> : null}
     </div>
     {/* The true-size copy the print window takes: off screen, never visible. */}

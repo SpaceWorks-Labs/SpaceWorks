@@ -15,7 +15,7 @@ function FreeCanvasFace({ badge, design, logos, pxPerMm }: { badge: DeskBadge; d
   const front = design.document.front;
   const qr = useQrImage(badge.checkin_payload);
   const values = badgeValues(badge);
-  const live = { photo: null, logos, assets: {}, desk_qr: null, verify_qr: null };
+  const live = { photo: badge.photo ?? null, logos, assets: design.assets ?? {}, desk_qr: null, verify_qr: null };
   return <div data-badge-preview="" className="relative shrink-0 select-none overflow-hidden"
     style={{ width: widthMm * pxPerMm, height: heightMm * pxPerMm, background: front.background?.colour ?? "#FFFFFF",
       printColorAdjust: "exact", WebkitPrintColorAdjust: "exact", outline: "1px solid rgb(20 44 42 / 14%)" }}>
@@ -35,5 +35,5 @@ export function DeskBadgeFace({ badge, design, logos, pxPerMm }: { badge: DeskBa
   // No check-in payload (a provisional badge): print no QR rather than the designer's placeholder pattern.
   const settings = badge.checkin_payload ? design.settings : { ...design.settings, showQr: false };
   return <BadgeCanvas settings={settings} values={badgeValues(badge)} pxPerMm={pxPerMm} designId={design.design_id}
-    qrValue={badge.checkin_payload} images={{ logos, absent }} />;
+    qrValue={badge.checkin_payload} images={{ logos, absent, photo: badge.photo ?? null }} />;
 }

@@ -8,6 +8,8 @@ import { EventDisclosure } from "./EventDisclosure";
 import { eventKeys } from "./eventsApi";
 import { organizedEventKeys } from "./organizedEventsApi";
 import { downloadStaffRoster, syncStaffRoster } from "./eventCheckInOfflineApi";
+import { useReceiptQueueFlush } from "../../components/card-print";
+import { fetchDesk, sendDeskReceipts, type BadgeReceipt } from "./eventBadges/deskBadgeApi";
 import { OfflineCheckInOperator } from "./OfflineCheckInOperator";
 import { wipeOfflineState } from "./eventCheckInOfflineStore";
 
@@ -16,6 +18,8 @@ export function EventCheckInOperator({ visible = true, makerspaceId, eventId, of
 }) {
   const [scanning, setScanning] = useState(false);
   const queryClient = useQueryClient();
+  // Badge print receipts that could not be sent when printed are retried here, and when the network returns.
+  useReceiptQueueFlush(`event:${eventId}`, (receipts) => sendDeskReceipts(eventId, receipts as BadgeReceipt[]));
   useEffect(() => {
     if (!offlineEnabled) void wipeOfflineState(`staff:${eventId}`);
   }, [eventId, offlineEnabled]);
@@ -30,6 +34,6 @@ export function EventCheckInOperator({ visible = true, makerspaceId, eventId, of
   return <section aria-labelledby="event-checkin-operator-title">
     <h4 id="event-checkin-operator-title" className="title-section mt-3">{t`Attendance check-in`}</h4>
     {scanning ? <EventCheckInScanner makerspaceId={makerspaceId} eventId={eventId} onClose={() => setScanning(false)} /> : <button className="desk-button-primary mt-3 w-full sm:w-auto" type="button" onClick={() => setScanning(true)}>{t`Scan online`}</button>}
-    {offlineEnabled ? <><OfflineCheckInOperator scope={`staff:${eventId}`} download={() => downloadStaffRoster(eventId)} synchronize={(roster, operations, receipts) => syncStaffRoster(eventId, roster, operations, receipts)} onSynchronized={invalidate} />{canManageStation ? <div className="mt-3"><EventDisclosure title={t`Check-in stations`}><EventStationSettings eventId={eventId} /></EventDisclosure></div> : null}</> : null}
+    {offlineEnabled ? <><OfflineCheckInOperator scope={`staff:${eventId}`} download={() => downloadStaffRoster(eventId)} fetchBadge={(registrationId) => fetchDesk(eventId, registrationId)} synchronize={(roster, operations, receipts) => syncStaffRoster(eventId, roster, operations, receipts)} onSynchronized={invalidate} />{canManageStation ? <div className="mt-3"><EventDisclosure title={t`Check-in stations`}><EventStationSettings eventId={eventId} /></EventDisclosure></div> : null}</> : null}
   </section>;
 }

@@ -1,5 +1,5 @@
 import { API_V1_URL, staffRequest, StructuredApiError } from "../../lib/api";
-import type { BadgeReceipt, DeskBadge, DeskBundle, ReceiptResult } from "./eventBadges/deskBadgeApi";
+import type { BadgeReceipt, DeskBadge, DeskBundle, DeskResponse, ReceiptResult } from "./eventBadges/deskBadgeApi";
 
 export type OfflineRosterRegistration = {
   registration_id: number;
@@ -85,6 +85,10 @@ export function endStationSession(token: string) {
   return stationRequest<void>(`/event-checkin-stations/${token}/session/`, {
     method: "DELETE",
   });
+}
+
+export function fetchStationBadge(token: string, registrationId: number) {
+  return stationRequest<DeskResponse>(`/event-checkin-stations/${token}/badge/${registrationId}/`);
 }
 
 export function downloadStationRoster(token: string) {

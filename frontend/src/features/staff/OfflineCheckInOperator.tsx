@@ -8,7 +8,7 @@ import { usePrintReceipts } from "../../components/card-print";
 import { DangerZone, ScanWorkbench } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
 import { DeskPrintSheet } from "./eventBadges/DeskPrintSheet";
-import type { BadgeReceipt } from "./eventBadges/deskBadgeApi";
+import type { BadgeReceipt, DeskBadge, DeskBundle, DeskResponse } from "./eventBadges/deskBadgeApi";
 import { offlineSyncOutcomeLabel, waiverStateLabel } from "./checkInLabels";
 import type {
   OfflineRoster,
@@ -35,19 +35,21 @@ export function OfflineCheckInOperator({
   synchronize,
   onSynchronized,
   autoDownload = false,
+  fetchBadge,
 }: {
   scope: string;
   download: () => Promise<OfflineRoster>;
   synchronize: (roster: OfflineRoster, operations: QueuedCheckIn[], receipts: BadgeReceipt[]) => Promise<SyncResponse>;
   onSynchronized?: () => void | Promise<void>;
   autoDownload?: boolean;
+  /** Online fallback for a badge the downloaded roster does not carry (station or desk route). */
+  fetchBadge?: (registrationId: number) => Promise<DeskResponse>;
 }) {
   const scope = resourceScope.startsWith("staff:") ? offlineAccountScope(resourceScope) : resourceScope;
   const [state, setState] = useState<OfflineCheckInState | null>(null);
   const [resolved, setResolved] = useState<OfflineRosterRegistration | null>(null);
-  const [printing, setPrinting] = useState<OfflineRosterRegistration | null>(null);
-  const station = resourceScope.startsWith("station:");
-  const receipts = usePrintReceipts<{ registration_id: number; method: "offline" | "station"; stock?: string; role?: string }>({
+  const [printing, setPrinting] = useState<{ badge: DeskBadge; bundle: DeskBundle } | null>(null);
+  const receipts = usePrintReceipts<{ registration_id: number; method: "offline"; stock?: string; role?: string }>({
     queue: async (receipt) => setState(await queueBadgeReceipt(scope, receipt as BadgeReceipt)) });
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -96,14 +98,21 @@ export function OfflineCheckInOperator({
     }
   }, [autoAttempted, autoDownload, busy, downloadNow, state]);
 
-  function handleScan(value: string) {
+  async function handleScan(value: string) {
     setScanning(false); setError(null);
     if (!state || Date.now() > Date.parse(state.roster.expires_at)) {
       setError(t`The offline roster expired. Download it again.`); return;
     }
-    const match = state.roster.registrations.find(
+    const find = (roster: OfflineRoster) => roster.registrations.find(
       (row) => row.checkin_token.toLowerCase() === value.trim().toLowerCase(),
     );
+    let match = find(state.roster);
+    if (!match && navigator.onLine) {
+      // Someone added after the roster was downloaded: refresh it, but only when nothing is waiting to sync
+      // (a new lease would strand queued check-ins and prints).
+      if (state.operations.length || state.badgeReceipts?.length) { setError(t`Synchronize first, then refresh the roster to include people added since it was downloaded.`); return; }
+      try { const fresh = await saveOfflineRoster(scope, await download()); setState(fresh); match = find(fresh.roster); } catch { /* fall through to the message below */ }
+    }
     if (!match) { setError(t`That is not a check-in code for this event.`); return; }
     setResolved(match);
   }
@@ -122,7 +131,11 @@ export function OfflineCheckInOperator({
     try {
       setState(await queueOfflineCheckIn(scope, operation));
       // The roster carries the badge and the designs when the badge desk is on: print offline.
-      if (resolved.badge && state.roster.badges) setPrinting(resolved);
+      if (resolved.badge && state.roster.badges) setPrinting({ badge: resolved.badge, bundle: state.roster.badges });
+      else if (fetchBadge && navigator.onLine) {
+        // The roster has no badge for this person (card issued after the download): ask the server.
+        try { const fresh = await fetchBadge(resolved.registration_id); if (fresh.badge) setPrinting({ badge: fresh.badge, bundle: fresh }); } catch { /* no badge desk or quota: skip printing */ }
+      }
       setResolved(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : t`Could not queue attendance.`);
@@ -168,8 +181,8 @@ export function OfflineCheckInOperator({
     {/* The guest is standing at the door: name large, Confirm full-width on a phone, and the card
         scrolled into view because the scan happens further down the page. */}
     {resolved ? <div ref={resolvedRef} className="mt-3 scroll-mb-[calc(var(--shell-bottom-tabs,0px)+env(safe-area-inset-bottom)+1rem)] rounded-md border border-line p-3"><p className="break-words text-lg font-semibold text-ink">{resolved.name}</p><p className="text-sm text-muted">{t`Waiver: ${waiverStateLabel(resolved.host_waiver_state)}`}</p><div className="mt-3 grid gap-2 sm:flex sm:flex-wrap"><button className={`desk-button-primary min-h-12 ${FOCUS}`} type="button" onClick={confirm}>{t`Confirm attendance`}</button><button className={`desk-button ${FOCUS}`} type="button" onClick={() => setResolved(null)}>{t`Cancel`}</button></div></div> : null}
-    {printing?.badge && state?.roster.badges ? <DeskPrintSheet badge={printing.badge} bundle={state.roster.badges} onSkip={() => setPrinting(null)}
-      onPrinted={(info) => receipts.record({ registration_id: printing.registration_id, method: station ? "station" : "offline", ...info })} /> : null}
+    {printing ? <DeskPrintSheet badge={printing.badge} bundle={printing.bundle} onSkip={() => setPrinting(null)}
+      onPrinted={(info) => receipts.record({ registration_id: printing.badge.registration_id, method: "offline", ...info })} /> : null}
     {error ? <p className="mt-3 text-sm text-danger" role="alert">{error}</p> : null}
     {scanning ? <div ref={workbenchRef} className="mt-3"><ScanWorkbench onFind={handleScan} onScan={handleScan} searchLabel="Find an offline check-in code" controls={<button className="desk-button" type="button" onClick={() => setScanning(false)}>{t`Done`}</button>} /></div> : null}
     {state ? <DangerZone title={t`Remove offline attendee data`} consequence="The roster and unsynchronized attendance on this device will be removed." action={{ label: t`Wipe attendee data`, onClick: wipe, confirm: { title: t`Wipe attendee data from this device?`, message: t`The roster and any check-ins not yet synced are removed from this device. This can't be undone.` } }} /> : null}

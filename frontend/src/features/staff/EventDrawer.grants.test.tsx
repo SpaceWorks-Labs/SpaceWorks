@@ -23,6 +23,7 @@ vi.mock("../../components/ui", async (importOriginal) => ({ ...await importOrigi
 vi.mock("./EventFormFields", () => ({ EventFields: ({ canEditDetails, canEditSchedule }: { canEditDetails: boolean; canEditSchedule: boolean }) => <>{canEditDetails ? <p>Details editor</p> : null}{canEditSchedule ? <p>Schedule editor</p> : null}</>, emptyEventForm: {}, payloadFor: vi.fn(), valuesFor: () => ({}) }));
 vi.mock("./EventDuplicateAction", () => ({ EventDuplicateAction: () => <p>Duplicate event</p> }));
 vi.mock("./ImageUploader", () => ({ ImageUploader: () => <p>Image editor</p> }));
+vi.mock("./eventProgramme/EventCoverUploader", () => ({ EventCoverUploader: () => <p>Image editor</p> }));
 vi.mock("./EventCategoriesField", () => ({ EventCategoriesField: () => <p>Tenant categories</p> }));
 vi.mock("./EventInvitesPanel", () => ({ EventInvitesPanel: () => <p>Registration invitations</p> }));
 // A21: registration staff read the ticket types; only managers get the editable panel.

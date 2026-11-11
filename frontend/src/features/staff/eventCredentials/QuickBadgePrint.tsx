@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { StructuredApiError } from "../../../lib/api";
-import { usePrintReceipts } from "../../../components/card-print";
+import { enqueueReceipt, usePrintReceipts, type PrintReceipt } from "../../../components/card-print";
 import { Modal } from "../../../components/ui";
 import { deskKey, fetchDesk, sendDeskReceipts } from "../eventBadges/deskBadgeApi";
 import { DeskPrintSheet } from "../eventBadges/DeskPrintSheet";
@@ -22,7 +22,9 @@ export function QuickBadgePrint({ eventId, registrationId, name, onClose }: {
   const desk = useQuery({ queryKey: [...deskKey(eventId, registrationId), ...sessionScope()], retry: false, gcTime: 0, staleTime: 0,
     queryFn: () => fetchDesk(eventId, registrationId) });
   const receipts = usePrintReceipts<{ registration_id: number; method: "desk"; stock?: string; role?: string }>({
-    send: (receipt) => sendDeskReceipts(eventId, [receipt]) });
+    send: (receipt) => sendDeskReceipts(eventId, [receipt]),
+    // A receipt that cannot be sent waits in a small persistent queue; EventCheckInOperator retries it.
+    queue: (receipt) => enqueueReceipt(`event:${eventId}`, receipt as PrintReceipt) });
   if (desk.isPending) return null;
   if (desk.error instanceof StructuredApiError && desk.error.status === 404) {
     return <LegacyQuickBadgePrint eventId={eventId} registrationId={registrationId} name={name} onClose={onClose} />;

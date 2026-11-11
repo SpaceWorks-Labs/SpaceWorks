@@ -85,7 +85,7 @@ PROFILES = {
     MINIMAL: "Core only -- the smallest coherent install.",
     CLOUD: "A single Django process: no worker, no beat, object storage on R2.",
     FULL: "Every module, for a local server running the whole stack.",
-    LENDING: "A tool library: the hardware lending lifecycle, no machines.",
+    LENDING: "A tool library: the hardware loan lifecycle, no machines.",
     WORKSHOP: "A machine shop: machines, the service queue and maintenance.",
     RECOMMENDED: "Core plus the inventory lifecycle, reports and machines.",
     EVERYTHING: "Every module (the pre-opt-in default).",

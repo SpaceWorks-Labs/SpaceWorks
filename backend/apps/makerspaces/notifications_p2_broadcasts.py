@@ -6,6 +6,7 @@ from apps.integrations.notification_sources import NotificationSource, register_
 from apps.operations.notifications_p2 import body, fanout, revision, scoped
 from apps.notifications.models_broadcasts import MemberBroadcast
 from .platform import feature_enabled, module_enabled
+from apps.integrations.fanout_jobs import deferred_fanout
 
 SOURCE = "membership.broadcast"
 SEGMENT_KEYS = {"plan_id", "status", "certification_id"}
@@ -44,6 +45,7 @@ def render(envelope):
 
 
 # Broadcast creation and all recipient intents must succeed in the same transaction.
+@deferred_fanout()
 def notify_broadcast(row, *, user_id, segment):
     if set(segment) - SEGMENT_KEYS:
         raise ValueError("Unknown member broadcast segment")

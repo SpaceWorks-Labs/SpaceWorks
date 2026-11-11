@@ -2,10 +2,12 @@
 import logging
 
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from apps.accounts import rbac
 from apps.accounts.account_obligations import AccountDeletionPending, lock_obligation_owner
 from apps.audit import services as audit
+from apps.makerspaces.guards import SurfaceOff
 from apps.makerspaces.models import MembershipTerm
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,8 @@ def raise_renewal(term):
                     or membership.renewal_cancelled_at or not locked.plan.is_active or not locked.plan.renews
                     or locked.plan.renewal_price <= 0 or not charge_tracking_enabled(space, "membership")):
                 return "skipped"
+            if locked.renewal_covered_at:
+                return "skipped"
             if locked.renewal_payment_id:
                 term.renewal_payment = locked.renewal_payment
                 return "skipped"
@@ -41,11 +45,34 @@ def raise_renewal(term):
             # A savepoint contains a uniqueness race; the outer transaction stays usable.
             try:
                 with transaction.atomic():
+                    if Payment.objects.filter(**lookup).exists():
+                        raise IntegrityError("renewal charge already recorded")
+                    # Decision 223 (k): approved volunteer hours reduce the renewal as a recorded credit.
+                    from apps.makerspaces.volunteer_credit import reduce_charge, stamp_applied
+                    days = (locked.ends_at - locked.starts_at).days if locked.ends_at else 365
+                    amount, used = reduce_charge(space, membership.user, plan.renewal_price, plan.currency,
+                                                 term_days=days or 1)
+                    if amount <= 0:
+                        # Volunteer credit covered the whole renewal: no debt, so no Payment (the ledger is
+                        # append-only and payments are positive). A covered marker on the term tells the
+                        # sweep it is already charged; the credits are stamped used with no payment.
+                        stamp_applied(None, space, used, None)
+                        now = timezone.now()
+                        rbac.scope_for_scheduled_work(
+                            MembershipTerm.objects.all(), makerspace_id=space.pk,
+                            field="membership__makerspace_id",
+                        ).filter(pk=term.pk).update(renewal_covered_at=now)
+                        term.renewal_covered_at = now
+                        audit.record(None, "membership.renewal_raised", makerspace=space, target=term,
+                                     meta={"membership_id": term.membership_id, "term_id": term.pk,
+                                           "payment_id": None, "covered_by_credit": True})
+                        return "charged"
                     payment = create_payment(
-                        **lookup, member=membership.user, amount=plan.renewal_price,
+                        **lookup, member=membership.user, amount=amount,
                         currency=plan.currency, created_by=membership.user,
                         subject_label=f"Membership renewal: {plan.name}", due_at=locked.ends_at,
                     )
+                    stamp_applied(None, space, used, payment)
             except IntegrityError:
                 payment = rbac.scope_for_scheduled_work(
                     Payment.objects.all(), makerspace_id=space.pk,
@@ -59,6 +86,9 @@ def raise_renewal(term):
                                "payment_id": payment.pk})
         return "charged"
     except AccountDeletionPending:
+        return "skipped"
+    except SurfaceOff:
+        # Decision 253(b): Membership off is by design, not a failure -- no retry state, no failed count.
         return "skipped"
     except Exception:
         logger.warning("membership_renewal_charge_failed", extra={"term_id": term.pk})

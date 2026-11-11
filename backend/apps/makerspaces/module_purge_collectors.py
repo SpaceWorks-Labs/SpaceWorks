@@ -98,11 +98,11 @@ def maintenance_private_key_sizes(makerspace):
 
 def notifications_delete(makerspace, cursor):
     from apps.accounts import rbac
-    from apps.notifications.models import Notification, NotificationInboxRow, MemberBroadcast
+    from apps.notifications.models import Notification, NotificationInboxRow, MemberBroadcast, BrowserFirebaseRegistration
     # Inbox retention cannot revoke channel proofs/preferences or destroy an
     # envelope needed for email, SMS, WhatsApp or native push without an inbox.
     deleted, labels = 0, []
-    for model in (NotificationInboxRow, Notification, MemberBroadcast):
+    for model in (NotificationInboxRow, Notification, MemberBroadcast, BrowserFirebaseRegistration):
         count, model_labels = _delete(rbac.scope_notification_policy(
             model.objects.all(), makerspace_id=makerspace.pk,
         ))

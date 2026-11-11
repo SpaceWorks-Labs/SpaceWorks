@@ -11,7 +11,12 @@ from apps.makerspaces.capabilities import FEATURES
 from apps.makerspaces.capability_eligibility import configuration_feature_enabled
 from apps.makerspaces.module_registry import is_frontend_exposed, module_available, module_workflows
 from apps.separability.registry import runtime_active
-from apps.makerspaces.loan_visibility import LOAN_MODULES
+from apps.makerspaces.loan_visibility import LOAN_MODULES, INVENTORY_ONLY_MODULES
+
+
+def inventory_master_allows(makerspace, module_key):
+    """Inventory-only modules answer off while the Inventory switch is off (decision 254)."""
+    return module_key not in INVENTORY_ONLY_MODULES or configuration_feature_enabled(makerspace, "loans.enabled")
 
 # Derived from the module registry, which also decides frontend exposure: an
 # internal master switch declares frontend_exposed=False and is dropped from both
@@ -76,6 +81,16 @@ def member_payment_return_url(makerspace):
     return member_area_url(makerspace)
 
 
+# Where a fix link lands: the exact routed Settings section (`/admin/settings/<section>`,
+# ids from frontend/src/features/staff/settingsSections.ts), never the bare Settings root.
+SETTINGS_FIX_PATHS = {
+    "payments": "settings/money",
+    "health": "settings/health",
+    "branding": "settings/branding",
+    "integrations": "settings/integrations",
+}
+
+
 def staff_payment_settings_url(makerspace=None, *, outcome):
     """Return a trusted staff settings URL without accepting browser input."""
     verified_domain = (
@@ -87,12 +102,13 @@ def staff_payment_settings_url(makerspace=None, *, outcome):
         base = f"https://{makerspace.frontend_domain}"
     else:
         base = (settings.PUBLIC_APP_BASE_URL or "http://localhost:5000").rstrip("/")
+    section = SETTINGS_FIX_PATHS["payments"]
     path = (
-        "/admin/settings"
+        f"/admin/{section}"
         if verified_domain
-        else f"/m/{makerspace.slug}/admin/settings"
+        else f"/m/{makerspace.slug}/admin/{section}"
         if makerspace is not None and makerspace.slug
-        else "/admin/settings"
+        else f"/admin/{section}"
     )
     return f"{base}{path}?{urlencode({'stripe_connect': outcome})}"
 
@@ -142,6 +158,7 @@ def module_enabled(makerspace, module_key):
         is_servable(makerspace, allow_archived=True)
         and module_key in set(makerspace.enabled_modules or [])
         and module_available(module_key)
+        and inventory_master_allows(makerspace, module_key)
     )
 
 
@@ -211,6 +228,10 @@ def bootstrap_payload(makerspace):
         "public_landing_page": makerspace.public_landing_page,
         "membership_policy": makerspace.membership_policy,
     }
+    # Decision 295: kind keys only for an organization workspace (byte-identical otherwise).
+    from apps.makerspaces.space_kind import bootstrap_kind_payload
+
+    makerspace_payload.update(bootstrap_kind_payload(makerspace))
     # Emitted ONLY for a space without member accounts (#80), so every other deployment
     # keeps a byte-for-byte identical payload; absent means "sign in to request". The
     # public form needs it to ask for name, phone, email and the email code instead.
@@ -225,6 +246,13 @@ def bootstrap_payload(makerspace):
     notice = public_notice(makerspace)
     if notice:
         makerspace_payload["closed_notice"] = notice
+    # P3-4: emitted only for a space that records opening hours (byte-identical otherwise).
+    from apps.makerspaces.opening_hours import has_hours
+
+    if has_hours(makerspace):
+        from apps.makerspaces.open_status import open_status
+
+        makerspace_payload["open_status"] = open_status(makerspace)
     # Advisory geofence: expose the flag ONLY when configured AND the feature is on, so
     # dormant/self-host bootstrap payloads stay byte-for-byte unchanged (self-host
     # invariant) and a disabled feature cannot leave the client asking for coordinates
@@ -238,6 +266,11 @@ def bootstrap_payload(makerspace):
         and runtime_active("presence")
     ):
         makerspace_payload["geofence_enabled"] = True
+    # Decision 242(m): the public Donate entry, emitted only for a non-profit taking gifts.
+    from apps.payments.donations.nonprofit import donate_entry_enabled
+
+    if donate_entry_enabled(makerspace):
+        makerspace_payload["donate_enabled"] = True
     return {
         "makerspace": makerspace_payload,
         "frontend": {

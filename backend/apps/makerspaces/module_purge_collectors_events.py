@@ -90,9 +90,15 @@ def events_delete(makerspace, cursor):
     checkins, checkin_labels = _delete(
         EventCheckInEvent.objects.filter(makerspace=makerspace)
     )
+    from apps.events.models_loan_context import EventLoanContext
+    contexts, context_labels = _delete(EventLoanContext.objects.filter(makerspace=makerspace))
+    from apps.events.models_consumable_plan_context import EventConsumablePlanContext
+    plan_contexts, plan_context_labels = _delete(EventConsumablePlanContext.objects.filter(makerspace=makerspace))
     registrations, registration_labels = _delete(
         EventRegistration.objects.filter(event__makerspace=makerspace)
     )
+    from .booking_decision_purge import delete_booking_decisions
+    decisions = delete_booking_decisions(makerspace)
     events, event_labels = _delete(Event.objects.filter(makerspace=makerspace))
     series, series_labels = _delete(EventSeries.objects.filter(makerspace=makerspace))
     categories, category_labels = _delete(EventCategory.objects.filter(makerspace=makerspace))
@@ -104,7 +110,7 @@ def events_delete(makerspace, cursor):
             | projected_collaboration_labels | series_collaboration_labels | series_labels
             | feed_labels | station_credential_labels | station_binding_labels
             | station_labels | category_labels | grant_labels | invite_labels | broadcast_labels | programme_labels
-            | addon.model_labels
+            | context_labels | plan_context_labels | addon.model_labels | frozenset({"events.EventBookingDecision"})
         ),
         event_series_collaboration_projections=projected_collaborations,
         event_series_collaborations=series_collaborations,
@@ -120,6 +126,8 @@ def events_delete(makerspace, cursor):
         event_stations=stations,
         event_registration_provenance_cleared=provenance_cleared,
         event_registrations=registrations,
+        event_consumable_plan_contexts=plan_contexts,
+        event_booking_decisions=decisions,
         events=events,
         event_series=series,
         event_categories=categories,

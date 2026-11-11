@@ -22,7 +22,8 @@ from apps.makerspaces.models import Makerspace, MemberCard, MemberCardSettings
 
 TAGS = ["Admin memberships"]
 SETTING_KEYS = {"auto_issue": "member_cards.auto_issue", "email_on_issue": "member_cards.email_on_issue",
-                "public_verify": "member_cards.public_verify", "verify_show_plan": "member_cards.verify_show_plan"}
+                "public_verify": "member_cards.public_verify", "verify_show_plan": "member_cards.verify_show_plan",
+                "verify_show_name": "member_cards.verify_show_name"}
 
 
 class MemberCardSettingsSerializer(serializers.Serializer):
@@ -30,6 +31,7 @@ class MemberCardSettingsSerializer(serializers.Serializer):
     email_on_issue = serializers.BooleanField(required=False)
     public_verify = serializers.BooleanField(required=False)
     verify_show_plan = serializers.BooleanField(required=False)
+    verify_show_name = serializers.BooleanField(required=False)
     design_approval_required = serializers.BooleanField(required=False)
     email_available = serializers.BooleanField(read_only=True)
     photo_cleanup_available = serializers.BooleanField(read_only=True)
@@ -63,7 +65,7 @@ def _payload(space):
     return {**{name: getattr(row, name) for name in SETTING_KEYS},
             "design_approval_required": approval.required if approval else DEFAULTS["membership"],
             "email_available": not blocked(space), "photo_cleanup_available": segmentation.available(),
-            "wallet_platforms": list(configured_platforms())}
+            "wallet_platforms": list(configured_platforms(space))}
 
 
 class MemberCardSettingsView(APIView):

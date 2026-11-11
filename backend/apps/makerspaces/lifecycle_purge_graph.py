@@ -104,10 +104,25 @@ def _delete_object_graph(makerspace):
             | Q(lines__asset__makerspace=makerspace)
         ).distinct().delete()
         StocktakeSession.objects.filter(makerspace=makerspace).delete()
+        from apps.inventory.purge_equipment_proposals import delete_equipment_use_receipts
+        delete_equipment_use_receipts(makerspace)
         InventoryAdjustment.objects.filter(makerspace=makerspace).delete()
         # Organizations are platform-level and may be shared by other tenants. Remove
         # only this tenant's through rows; never traverse from the organization side.
         OrganizationMakerspace.objects.filter(makerspace=makerspace).delete()
+
+        # Both optional-domain link rows PROTECT core requests and domain targets.
+        # Their models remain registered in the retention registry when tombstoned.
+        from apps.events.models_loan_context import EventLoanContext
+        from apps.bookings.models_loan_context import BookingLoanContext
+        EventLoanContext.objects.filter(makerspace=makerspace).delete()
+        BookingLoanContext.objects.filter(makerspace=makerspace).delete()
+        from apps.events.models_consumable_plan_context import EventConsumablePlanContext
+        from apps.bookings.models_consumable_plan_context import BookingConsumablePlanContext
+        EventConsumablePlanContext.objects.filter(makerspace=makerspace).delete()
+        BookingConsumablePlanContext.objects.filter(makerspace=makerspace).delete()
+        from apps.inventory.purge_equipment_proposals import delete_equipment_proposals
+        delete_equipment_proposals(makerspace)
 
         delete_for_makerspace(makerspace, cursor)
 
@@ -250,6 +265,8 @@ def _delete_object_graph(makerspace):
         EventSeriesCollaborator.objects.filter(makerspace=makerspace).delete()
         from apps.events.models_website import EventPage
         EventPage.objects.filter(makerspace=makerspace).delete()
+        from .booking_decision_purge import delete_booking_decisions
+        delete_booking_decisions(makerspace)
         Event.objects.filter(makerspace=makerspace).delete()
         EventSeries.objects.filter(makerspace=makerspace).delete()
         # Credentials and event bindings are already gone. Delete every Station kind so

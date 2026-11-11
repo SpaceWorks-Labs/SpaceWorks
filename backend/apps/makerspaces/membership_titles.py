@@ -67,6 +67,7 @@ def assign(actor, membership, title, *, primary=False):
     with transaction.atomic():
         space = _locked(membership.makerspace_id)
         membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
+        before = primary_title(membership)
         if title.makerspace_id != space.pk or title.archived_at is not None:
             raise ValidationError({"title_id": gettext("Choose a current title of this makerspace.")})
         if primary:
@@ -79,14 +80,19 @@ def assign(actor, membership, title, *, primary=False):
             row.save(update_fields=["is_primary"])
         audit.record(actor, "membership.title_assigned", makerspace=space, target=membership,
                      meta={"membership_id": membership.pk, "title_id": title.pk, "primary": primary})
+        from apps.card_designs.title_reissue import after_title_change
+        after_title_change(actor, membership, before)
     return row
 
 
 def unassign(actor, membership, title):
     with transaction.atomic():
         space = _locked(membership.makerspace_id)
+        before = primary_title(membership)
         deleted, _ = MembershipTitleAssignment.objects.filter(membership=membership, title=title).delete()
         if deleted:
+            from apps.card_designs.title_reissue import after_title_change
+            after_title_change(actor, membership, before)
             audit.record(actor, "membership.title_unassigned", makerspace=space, target=membership,
                          meta={"membership_id": membership.pk, "title_id": title.pk})
     return bool(deleted)

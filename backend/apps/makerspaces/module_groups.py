@@ -9,6 +9,8 @@ of its own, because a second source of truth for "is this installed" is exactly 
 the registry exists to remove.
 """
 
+from django.utils.translation import gettext_noop
+
 from apps.makerspaces.module_install import module_status
 from apps.makerspaces.module_registry import (
     GROUPS,
@@ -35,6 +37,34 @@ SEPARABLE_APP_NOTES = {
     "procurement": "The To-Buy list (the machines.tobuy and inventory.tobuy switches).",
     "roadmap": "Already tombstoned; retained for migration history only.",
 }
+
+
+# Display name of each separable app, the single source for `deployment.apps[].label`.
+# Declared with gettext_noop and translated at the presentation seam (`display`).
+SEPARABLE_APP_LABELS = {
+    "procurement": gettext_noop("Procurement"),
+    "notifications": gettext_noop("Notifications"),
+    "warranty": gettext_noop("Warranty"),
+    "maintenance": gettext_noop("Maintenance"),
+    "presence": gettext_noop("Presence"),
+    "events": gettext_noop("Events"),
+    "bookings": gettext_noop("Bookings"),
+    "payments_rail": gettext_noop("Online payments"),
+    "payments": gettext_noop("Payments"),
+    "event_reimbursements": gettext_noop("Event reimbursements"),
+    "tenant_migration": gettext_noop("Space migration"),
+    "devices": gettext_noop("Devices"),
+    "id_programmes": gettext_noop("ID programmes"),
+    "shop": gettext_noop("Shop"),
+    "roadmap": gettext_noop("Roadmap"),
+    "printing": gettext_noop("3D printing"),
+}
+
+
+def app_display_label(app):
+    """Translated name of a separable app; an unlisted one falls back to its humanised label."""
+    label = SEPARABLE_APP_LABELS.get(app)
+    return display(label) if label else app.replace("_", " ").capitalize()
 
 
 def grouped_module_status(makerspace):
@@ -92,6 +122,7 @@ def deployment_app_status():
         "apps": [
             {
                 "app_label": app,
+                "label": app_display_label(app),
                 "shipped": app not in tombstoned,
                 "note": SEPARABLE_APP_NOTES.get(app, ""),
             }

@@ -74,7 +74,8 @@ def _open_next(term, now=None):
     paid = term.renewal_payment
     starts_at = late_renewal_start(term.plan, term, now or timezone.now())
     next_term = create_term(None, term.membership, term.plan, starts_at=starts_at, renewed_from=term,
-                            price=paid.amount if paid is not None and paid.status != "waived" else None)
+                            price=paid.amount if paid is not None and paid.status != "waived"
+                            else (0 if paid is None and term.renewal_covered_at else None))
     from apps.makerspaces.membership_renewal_notifications import notify_term
     notify_term(next_term, "renewed")
     audit.record(None, "membership.renewed", makerspace=term.membership.makerspace,
@@ -111,14 +112,14 @@ def _process(term_id, now, counts):
                          target=term)
         if (membership.renewal_cancelled_at is None and term.plan.is_active and term.plan.renews
                 and days_left <= window):
-            paid = term.renewal_payment and term.renewal_payment.status in (
+            paid = bool(term.renewal_covered_at) or (term.renewal_payment and term.renewal_payment.status in (
                 Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE, Payment.Status.WAIVED,
-            )
+            ))
             if auto and (paid or term.plan.renewal_price <= 0 or not charge_tracking_enabled(membership.makerspace, "membership")):
                 if _open_next(term, now):
                     counts["opened"] += 1
             elif (term.status == "active" and now < grace_end(term) and
-                  term.renewal_payment_id is None and
+                  term.renewal_payment_id is None and term.renewal_covered_at is None and
                   (not auto or term.renewal_attempts <= term.plan.renewal_retries) and
                   (term.renewal_retry_at is None or term.renewal_retry_at <= now)):
                 result = raise_renewal(term)
@@ -168,7 +169,9 @@ def run_membership_renewals(*, now=None, limit=200, makerspace_id=None):
         MembershipTerm.objects.filter(membership__status="active").filter(
             Q(status="active") | Q(status="expired", next_term__isnull=True,
                                    plan__auto_renew=True, membership__renewal_cancelled_at__isnull=True,
-                                   renewal_payment__status__in=("paid_online", "paid_offline", "waived")),
+                                   renewal_payment__status__in=("paid_online", "paid_offline", "waived")) |
+            Q(status="expired", next_term__isnull=True, plan__auto_renew=True,
+              membership__renewal_cancelled_at__isnull=True, renewal_covered_at__isnull=False),
         ), makerspace_id=makerspace_id, field="membership__makerspace_id",
     ).filter(Q(ends_at__lte=now + timedelta(days=8)) |
              Q(plan__auto_renew=True, ends_at__lte=now + timedelta(days=1) + F("plan__renewal_open_days") * timedelta(days=1)))

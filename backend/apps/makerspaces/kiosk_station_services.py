@@ -68,6 +68,8 @@ def create_station(makerspace, *, actor, name, kind):
     locked = require_feature_locked(makerspace.pk, KIOSK_FEATURE)
     if Station.objects.filter(makerspace=locked, kind=kind, name=name).exists():
         raise ValidationError({"name": gettext("A Station of this kind already has that name.")})
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(locked, "kiosk_stations")  # decision 284: typed 409 kiosk_stations_quota_reached
     station = Station.objects.create(makerspace=locked, kind=kind, name=name, created_by=actor)
     credential, pin = rotate_credential(station, material_for=_material_for(station))
     audit.record(

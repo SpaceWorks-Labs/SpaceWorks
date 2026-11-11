@@ -20,7 +20,7 @@ RECENT_LIMIT = 20
 ACTIVITY_LIMIT = 50
 
 
-def active_member_memberships(user):
+def active_member_memberships(user, *, allow_restricted=False):
     """Every active membership this identity may act through, archived spaces INCLUDED.
 
     The single source of truth for "is this caller allowed to act as a member at all".
@@ -30,10 +30,15 @@ def active_member_memberships(user):
     separable app that a deployment may tombstone, and this module must keep working without
     it. Archival is deliberately NOT filtered here -- each caller applies its own rule.
     """
+    # Decision 260 (G-1): payments pass `allow_restricted` so a restricted or suspended member can still
+    # read and pay their own charge -- paying it is how a restriction is cleared.
+    statuses = {User.AccessStatus.ACTIVE}
+    if allow_restricted:
+        statuses |= {User.AccessStatus.RESTRICTED, User.AccessStatus.SUSPENDED}
     if not (
         user and user.is_authenticated and user.pk and user.is_active
         and is_person(user)
-        and user.access_status == User.AccessStatus.ACTIVE
+        and user.access_status in statuses
     ):
         return MakerspaceMembership.objects.none()
     return MakerspaceMembership.objects.select_related("makerspace", "accepted_waiver").filter(
@@ -87,6 +92,10 @@ def member_activity(membership):
     payload["request_history"] = dashboard.request_history(makerspace.id, member)
     payload["membership_dues"] = dashboard.membership_dues(membership)
     payload["membership_term"] = dashboard.membership_term(membership)
+    if runtime_active("bookings") and module_enabled(makerspace, "bookings"):
+        # Decision 221(d): the plan's included hours per term (empty when the plan has none).
+        from apps.bookings.included_hours import member_balances
+        payload["included_hours"] = member_balances(makerspace, member, now)
     payload["notices"] = dashboard.notices(membership, payload)
     return payload
 

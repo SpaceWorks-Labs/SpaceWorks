@@ -72,7 +72,7 @@ def _revoke_locked(actor, membership, makerspace, reason, *, self_leave=False):
     end_sessions_for_membership(actor, membership)
     for row in MembershipRequest.objects.select_for_update().filter(
         makerspace=makerspace, user=membership.user,
-        state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment"],
+        state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested"],
     ):
         from apps.makerspaces.membership_admission_payments import close_admission
         close_admission(actor, row, "revoked")
@@ -93,9 +93,9 @@ def revoke_request(actor, request, reason=""):
             membership = MakerspaceMembership.objects.filter(makerspace=makerspace, user=request.user).first()
             if membership:
                 return revoke_membership(actor, membership, reason)
-        was_requested = request.state in ("requested", "awaiting_vouches", "awaiting_payment")
+        was_requested = request.state in ("requested", "awaiting_vouches", "awaiting_payment", "changes_requested")
         from apps.makerspaces.membership_admission_payments import close_admission
-        if request.state in ("requested", "invited", "awaiting_vouches", "awaiting_payment"):
+        if request.state in ("requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested"):
             close_admission(actor, request, "revoked")
         request.state = MembershipRequest.State.REVOKED
         request.decided_by = actor

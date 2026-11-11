@@ -27,7 +27,12 @@ def bulk_decide(actor, makerspace, request_ids, *, decision, role=None, reason="
     from apps.makerspaces.membership_revocation import revoke_request
     require_membership_feature(makerspace, "admission_tools")
     ids = list(dict.fromkeys(int(value) for value in request_ids))[:MAX_BULK]
-    rows = {row.pk: row for row in MembershipRequest.objects.filter(makerspace=makerspace, pk__in=ids)}
+    from apps.accounts import rbac
+    from apps.makerspaces.member_unit_scope import narrow_by_unit_lookup
+    # Parity O-B1/O-B2: a unit-scoped lead's out-of-scope requests do not exist for them (reported `not_found`).
+    visible = narrow_by_unit_lookup(MembershipRequest.objects.filter(makerspace=makerspace, pk__in=ids), actor,
+                                    makerspace.pk, "unit_choice__unit__path", rbac.Action.MANAGE_MEMBERS)
+    rows = {row.pk: row for row in visible}
     results = []
     for request_id in ids:
         row = rows.get(request_id)

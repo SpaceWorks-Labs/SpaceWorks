@@ -9,15 +9,19 @@ from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.email_templates_fablab import membership_context
 from apps.operations.notifications_p2 import body, direct_mail_unless_routed, fanout, revision, safe_notification, scoped, staff_link, template
 from .models import MakerspaceMembership, MembershipRequest
+from .website_directory import public_url
 from .platform import feature_enabled
 from .membership_gating import is_staff_invitation
 
 MEMBERSHIP = "membership.lifecycle"
+# The member account portal's invitations section (frontend MemberArea `section=invitations`).
+INVITATIONS_TAIL = "account-portal?section=invitations"
 REQUEST = "membership.application"
 PERSONAL_EVENTS = {"joined", "verified", "cancelled"}
 REQUEST_EVENTS = {"request_pending": {"requested", "awaiting_vouches"},
                   "declined": {"revoked"}, "awaiting_payment": {"awaiting_payment"},
-                  "payment_due": {"awaiting_payment"}, "invitation": {"invited"}}
+                  "payment_due": {"awaiting_payment"}, "invitation": {"invited"},
+                  "changes_requested": {"changes_requested"}, "resubmitted": {"requested", "awaiting_vouches"}}
 
 
 def account_notice(row, event):
@@ -176,14 +180,18 @@ def member_body(row, event, audience):
             return template(row.makerspace, "membership", audience, event,
                 {"makerspace": bag(name=row.makerspace.name), "event_name": event,
                  "subject": bag(id=row.pk, status=row.status)}, link=staff_link(row.makerspace, "members"))
-        return body("Membership update", f"Membership #{row.pk}: {event.replace('_', ' ')}.", staff_link(row.makerspace, "members"))
+        return body(gettext("Membership update"), gettext("Membership #%(id)s: %(what)s.") % {
+            "id": row.pk, "what": event.replace("_", " ")}, staff_link(row.makerspace, "members"))
     if event in {"approved", "joined"}:
-        return body(f"Welcome to {row.makerspace.name}",
-                    f"Your membership at {row.makerspace.name} is active. Welcome!", link)
+        name = {"name": row.makerspace.name}
+        return body(gettext("Welcome to %(name)s") % name,
+                    gettext("Your membership at %(name)s is active. Welcome!") % name, link)
     if event == "verified":
-        return body(f"You are verified at {row.makerspace.name}",
-                    f"You have been verified as a member of {row.makerspace.name}.", link)
-    return body("Membership update", f"Your membership at {row.makerspace.name}: {event.replace('_', ' ')}.", link)
+        name = {"name": row.makerspace.name}
+        return body(gettext("You are verified at %(name)s") % name,
+                    gettext("You have been verified as a member of %(name)s.") % name, link)
+    return body(gettext("Membership update"), gettext("Your membership at %(name)s: %(what)s.") % {
+        "name": row.makerspace.name, "what": event.replace("_", " ")}, link)
 
 
 def request_body(row, event, audience):
@@ -196,11 +204,19 @@ def request_body(row, event, audience):
             {"makerspace": bag(name=row.makerspace.name), "event_name": event,
              "subject": bag(id=row.pk, status=row.state)},
             link=staff_link(row.makerspace, "members") if audience == "staff" else local_link(row.makerspace, "member"))
+    if event in ("changes_requested", "resubmitted"):  # parity O-B2
+        from .notifications_p2_members_changes import changes_body
+        return changes_body(row, event)
     if audience == "staff":
-        return body("Membership application update", f"Membership application #{row.pk}: {event.replace('_', ' ')}.", staff_link(row.makerspace, "members"))
-    text = ("You have been invited to join this makerspace. Sign in to review the invitation."
-            if event == "invitation" else f"Your membership application at {row.makerspace.name}: {event.replace('_', ' ')}.")
-    return body("Membership update", text, local_link(row.makerspace, "member"))
+        return body(gettext("Membership application update"), gettext("Membership application #%(id)s: %(what)s.") % {
+            "id": row.pk, "what": event.replace("_", " ")}, staff_link(row.makerspace, "members"))
+    if event == "invitation":
+        return body(gettext("Membership update"),
+                    gettext("You have been invited to join this makerspace. Sign in to review the invitation."),
+                    local_link(row.makerspace, "member", INVITATIONS_TAIL))
+    text = gettext("Your membership application at %(name)s: %(what)s.") % {
+        "name": row.makerspace.name, "what": event.replace("_", " ")}
+    return body(gettext("Membership update"), text, local_link(row.makerspace, "member"))
 
 
 def render_member(envelope):
@@ -247,11 +263,11 @@ def notify_member(row, event, *, owner=True, staff=True):
 def notify_request(row, event):
     feature, stream = routing(row, event)
     return fanout(row=row, space=row.makerspace, feature=feature, stream=stream, event=event,
-        source_kind=REQUEST, revision=request_revision(row, event), owner=row.user,
+        source_kind=REQUEST, revision=request_revision(row, event), owner=None if event == "resubmitted" else row.user,
         owner_context={"request": bag(id=row.pk), "subject": bag(id=row.pk, status=row.state)},
         owner_body=request_body(row, event, "requester"), staff_body=request_body(row, event, "staff"),
         staff_feature="members", staff_stream="membership",
-        staff=event != "invitation", staff_context=membership_context(row.makerspace, event, request=row)
+        staff=event not in ("invitation", "changes_requested"), staff_context=membership_context(row.makerspace, event, request=row)
         if event == "request_pending" else {"makerspace": bag(name=row.makerspace.name), "event_name": event,
                                           "subject": bag(id=row.pk, status=row.state)})
 
@@ -261,18 +277,20 @@ def notify_invitation(row):
     # Only the explicit account link can receive personal chat; an unclaimed
     # invitation keeps the existing email/share path and carries no chat bearer.
     feature, stream = routing(row, "invitation")
+    # The tenant-canonical URL: a verified domain (single-tenant) omits /m/<slug>.
+    text = (gettext("You have been invited to join this makerspace. Sign in with this email to claim the invitation.")
+            + "\n\n" + gettext("Review it in your account: %(url)s") % {
+                "url": public_url(row.makerspace, "member", INVITATIONS_TAIL)})
     if row.user_id and row.user.email_verified_at:
         result = notify_request(row, "invitation")
         # The invitation email was always sent; keep it unless the envelope emails.
         direct_mail_unless_routed(space=row.makerspace, source_kind=REQUEST, row=row,
             revision=request_revision(row, "invitation"), event="invitation", owner=row.user,
             to_email=row.invite_email, subject=gettext("Makerspace membership invitation"),
-            text="You have been invited to join this makerspace. Sign in with this email to claim the invitation.",
-            stream=stream, audience="member", feature=feature, address_owner=False)
+            text=text, stream=stream, audience="member", feature=feature, address_owner=False)
         return result
     from apps.integrations.email import send_makerspace_email
-    return send_makerspace_email(row.makerspace, "Makerspace membership invitation",
-        "You have been invited to join this makerspace. Sign in with this email to claim the invitation.",
+    return send_makerspace_email(row.makerspace, gettext("Makerspace membership invitation"), text,
         [row.invite_email], stream=stream, event="invitation", audience="member")
 
 

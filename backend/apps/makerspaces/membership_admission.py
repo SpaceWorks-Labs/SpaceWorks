@@ -24,7 +24,7 @@ from apps.makerspaces.membership_gating import is_staff_invitation, require_modu
 from apps.makerspaces.membership_helpers import _eligible_user, _member_role, _outcome, normalized_email
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MembershipRequest
 
-OPEN_STATES = ("requested", "invited", "awaiting_vouches", "awaiting_payment")
+OPEN_STATES = ("requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested")
 
 
 def transition(actor, row, state, *, event=None):
@@ -35,19 +35,24 @@ def transition(actor, row, state, *, event=None):
                  meta={"from_state": previous, "to_state": state})
 
 
-def _prepare(row, user, policy, raw_answers, plan=None):
+def _prepare(row, user, policy, raw_answers, plan=None, join_fields=None, collect=True):
     require_member_account(user)
     row.user = user
     row.admission_managed = True
     row.application_schema = application_schema_for(row.makerspace, policy)
-    row.application_answers = encode_answers(row.application_schema, raw_answers)
     row.selected_plan = plan if plan is not None else policy.default_plan
+    from apps.makerspaces import membership_join_fields
+    # An invitation claim (collect=False) never asks for the join-form extras: the invitation fixed the plan.
+    row.application_answers = membership_join_fields.encode(
+        row.application_schema, raw_answers,
+        membership_join_fields.clean(row.makerspace, row.selected_plan, join_fields) if collect else None)
     row.expires_at = timezone.now() + timedelta(days=policy.request_expiry_days)
     row.rejoining = MakerspaceMembership.objects.filter(makerspace=row.makerspace, user=user).exists()
     row.save()
 
 
-def request_membership(user, makerspace, application_answers=None, *, plan_id=None, invite_code=None):
+def request_membership(user, makerspace, application_answers=None, *, plan_id=None, invite_code=None,
+                       unit_code=None, join_fields=None):
     require_member_account(user)
     from apps.tenant_migration.gate_runtime import assert_write_allowed
     with transaction.atomic():
@@ -66,6 +71,8 @@ def request_membership(user, makerspace, application_answers=None, *, plan_id=No
             raise ValidationError({"detail": gettext("You are already an active member.")})
         from apps.makerspaces.membership_admission_plans import resolve_join
         plan, policy = resolve_join(makerspace, user, policy, plan_id, invite_code)
+        from apps.makerspaces.membership_join_units import record_request_unit, resolve_join_unit
+        unit = resolve_join_unit(makerspace, user, plan, unit_code, invite_code)  # parity O-B1; None while units are off
         try:
             with transaction.atomic():
                 row = MembershipRequest.objects.create(
@@ -74,7 +81,8 @@ def request_membership(user, makerspace, application_answers=None, *, plan_id=No
                 )
         except IntegrityError as exc:
             raise AdmissionError("membership_request_exists", "An open membership request already exists.") from exc
-        _prepare(row, user, policy, application_answers, plan)
+        _prepare(row, user, policy, application_answers, plan, join_fields)
+        record_request_unit(row, unit)
         audit.record(user, "membership.requested", makerspace=makerspace, target=row)
         from apps.makerspaces.membership_notifications import notify_membership_request_pending
         notify_membership_request_pending(row)
@@ -119,7 +127,7 @@ def claim_invitation(user, request_id, application_answers=None):
         policy = plan_policy(makerspace, row.selected_plan or policy.default_plan, policy)
         if not _eligible_user(user) or user.access_status != "active":
             raise ValidationError({"detail": gettext("An unrestricted account with a verified email is required.")})
-        _prepare(row, user, policy, application_answers, row.selected_plan)
+        _prepare(row, user, policy, application_answers, row.selected_plan, collect=False)
         audit.record(user, "membership.invitation_claimed", makerspace=makerspace, target=row)
         from apps.makerspaces.membership_notifications import notify_membership_request_pending
         notify_membership_request_pending(row)

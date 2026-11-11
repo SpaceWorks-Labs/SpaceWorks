@@ -40,7 +40,9 @@ def charge_admission(row, actor, policy):
     amount = row.first_term_amount + row.joining_fee
     if amount <= 0:
         return None
+    from apps.managed_hosting.space_quotas import require_payment_capacity
     from apps.payments.services import create_payment
+    require_payment_capacity(row.makerspace, amount, row.charge_currency)
     payment = create_payment(
         makerspace=row.makerspace, subject_type=Payment.SubjectType.MEMBERSHIP_REQUEST,
         subject_id=row.pk, member=row.user, amount=amount, currency=row.charge_currency,

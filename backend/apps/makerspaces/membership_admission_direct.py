@@ -54,7 +54,7 @@ def admit_walk_in(actor, makerspace, user, raw_answers=None):
         makerspace=makerspace, user=user, kind="request", state="requested",
         requested_by=actor, assigned_role=_member_role(makerspace),
     )
-    _prepare(row, user, policy, raw_answers)
+    _prepare(row, user, policy, raw_answers, collect=False)  # staff add: no applicant extras
     audit.record(actor, "membership.requested", makerspace=makerspace, target=row)
     from apps.makerspaces.membership_notifications import notify_membership_request_pending
     notify_membership_request_pending(row)

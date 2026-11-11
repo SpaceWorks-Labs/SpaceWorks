@@ -27,7 +27,7 @@ def code_digest(code):
     return hmac.new(settings.SECRET_KEY.encode(), message, hashlib.sha256).hexdigest()
 
 
-def create_link(actor, makerspace, *, label="", plan_id=None, max_uses=1, expires_at=None):
+def create_link(actor, makerspace, *, label="", plan_id=None, max_uses=1, expires_at=None, unit_id=None):
     if not 1 <= int(max_uses) <= MAX_USES:
         raise ValidationError({"max_uses": gettext('Use a limit between 1 and {MAX_USES}.').format(MAX_USES=MAX_USES)})
     if expires_at is not None and expires_at <= timezone.now():
@@ -38,16 +38,24 @@ def create_link(actor, makerspace, *, label="", plan_id=None, max_uses=1, expire
                                              archived_at__isnull=True).first()
         if plan is None:
             raise ValidationError({"plan_id": gettext("Choose an active plan in this makerspace.")})
+    unit = None
+    if unit_id is not None:  # parity O-B1: the link preselects a unit (`membership.units`)
+        from apps.makerspaces.membership_features import membership_feature_on
+        from apps.makerspaces.models_member_units import MemberUnit
+        unit = MemberUnit.objects.filter(makerspace=makerspace, pk=unit_id, archived_at__isnull=True).first()
+        if unit is None or not membership_feature_on(makerspace, "units"):
+            raise ValidationError({"unit_id": gettext("Choose an active unit in this makerspace.")})
     code = secrets.token_urlsafe(18)
     with transaction.atomic():
         from apps.tenant_migration.gate_runtime import assert_write_allowed
         assert_write_allowed(makerspace.pk)
         link = MembershipInviteLink.objects.create(
-            makerspace=makerspace, code_digest=code_digest(code), label=(label or "")[:120], plan=plan,
+            makerspace=makerspace, code_digest=code_digest(code), label=(label or "")[:120], plan=plan, unit=unit,
             max_uses=int(max_uses), expires_at=expires_at, created_by=actor,
         )
         audit.record(actor, "membership.invite_link_created", makerspace=makerspace, target=link,
-                     meta={"link_id": link.pk, "plan_id": plan.pk if plan else None, "max_uses": link.max_uses})
+                     meta={"link_id": link.pk, "plan_id": plan.pk if plan else None, "max_uses": link.max_uses,
+                           "unit_id": unit.pk if unit else None})
     return link, code
 
 

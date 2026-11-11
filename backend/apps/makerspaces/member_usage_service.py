@@ -110,7 +110,9 @@ def payment_usage(space, member):
     from apps.payments.member_scope import member_payment_queryset
 
     # This also preserves collaborative-event routing and claim-local restrictions.
-    payments = member_payment_queryset(member, space.pk)
+    # A pending gift is not owed (payments audit B-7); a paid one still counts as paid.
+    payments = member_payment_queryset(member, space.pk).exclude(
+        subject_type=Payment.SubjectType.DONATION, status=Payment.Status.PENDING)
     rows = payments.filter(status__in=(Payment.Status.PAID_ONLINE, Payment.Status.PAID_OFFLINE, Payment.Status.PENDING)).values(
         "currency", "status",
     ).annotate(total=Sum("amount")).order_by("currency", "status")

@@ -22,6 +22,7 @@ from datetime import timedelta
 
 from django.db.models import Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.hardware_requests.models import HardwareRequest
 from apps.hardware_requests.self_checkout_models import PublicToolLoan
@@ -88,6 +89,13 @@ def request_history(makerspace_id, member):
     return history
 
 
+def _dues_currency(makerspace):
+    """The currency the dues charge is raised in (membership_payments uses the same setting)."""
+    from apps.payments.models import MakerspacePaymentSettings
+
+    return MakerspacePaymentSettings.for_makerspace(makerspace).default_currency
+
+
 def membership_dues(membership):
     """What this membership costs and what of it is outstanding.
 
@@ -101,17 +109,22 @@ def membership_dues(membership):
     makerspace = membership.makerspace
     totals = {}
     try:
+        from apps.payments.member_scope import member_payment_queryset
         from apps.payments.models import Payment
 
         # Grouped BY CURRENCY and never added across them, the same rule the staff
         # dashboard and the reconciliation report follow: one combined figure mixing
-        # INR and USD is not money.
+        # INR and USD is not money. Read through the member payment scope (payments
+        # audit 0.12.0, D-4) so the total sums exactly the pending rows the Payments list
+        # shows: collaborative-event charges routed via this space and charges on merged
+        # accounts were listed but missing from "Outstanding".
         rows = (
-            Payment.objects.filter(
-                makerspace=makerspace,
-                member=membership.user,
-                status=Payment.Status.PENDING,
-            )
+            member_payment_queryset(membership.user, makerspace.pk)
+            .filter(status=Payment.Status.PENDING)
+            # A pending gift (an unpaid pledge period or an abandoned donation checkout) is
+            # not a debt (payments audit B-7): it stays in history, never in "Outstanding".
+            .exclude(subject_type=Payment.SubjectType.DONATION)
+            .order_by()
             .values("currency")
             .annotate(total=Sum("amount"))
             .order_by("currency")
@@ -126,6 +139,7 @@ def membership_dues(membership):
         totals = None
     return {
         "dues_amount": str(makerspace.membership_dues_amount or 0),
+        "dues_currency": _dues_currency(makerspace),
         "outstanding_by_currency": totals,
     }
 
@@ -165,17 +179,17 @@ def _term_notices(term, now):
         return [{
             "level": "critical" if term["blocks_borrowing"] else "warning",
             "event": "term_lapsed",
-            "title": "Your membership term has ended",
+            "title": gettext("Your membership term has ended"),
             "body": (
-                "You cannot borrow until staff renew your membership."
-                if term["blocks_borrowing"] else "Speak to staff to renew it."
+                gettext("You cannot borrow until staff renew your membership.")
+                if term["blocks_borrowing"] else gettext("Speak to staff to renew it.")
             ),
         }]
     if term["ends_at"] - now <= TERM_ENDING_WINDOW:
         return [{
             "level": "info",
             "event": "term_ending_soon",
-            "title": f"Your {term['plan_name']} term ends soon",
+            "title": gettext("Your %(plan)s term ends soon") % {"plan": term["plan_name"]},
             "body": "",
         }]
     return []
@@ -194,23 +208,23 @@ def notices(membership, activity):
         feed.append({
             "level": "critical",
             "event": "access_restricted",
-            "title": "Your borrowing is restricted",
-            "body": "Speak to staff to resolve an outstanding accountability issue.",
+            "title": gettext("Your borrowing is restricted"),
+            "body": gettext("Speak to staff to resolve an outstanding accountability issue."),
         })
     if accountability.get("waiver_acceptance_required"):
         feed.append({
             "level": "warning",
             "event": "waiver_required",
-            "title": "A waiver needs your acceptance",
-            "body": "You cannot borrow or check in until the current waiver is accepted.",
+            "title": gettext("A waiver needs your acceptance"),
+            "body": gettext("You cannot borrow or check in until the current waiver is accepted."),
         })
     feed.extend(_term_notices(activity.get("membership_term"), now))
     if not accountability.get("membership_active", True):
         feed.append({
             "level": "warning",
             "event": "membership_inactive",
-            "title": "Your membership is not active",
-            "body": "Renew to keep borrowing and booking.",
+            "title": gettext("Your membership is not active"),
+            "body": gettext("Renew to keep borrowing and booking."),
         })
     overdue = [
         loan for loan in activity.get("active_hardware_loans") or [] if loan.get("overdue")
@@ -219,8 +233,8 @@ def notices(membership, activity):
         feed.append({
             "level": "critical",
             "event": "loan_overdue",
-            "title": f"{len(overdue)} item(s) are overdue",
-            "body": "Return them as soon as you can; a late fee may apply.",
+            "title": gettext("%(count)s item(s) are overdue") % {"count": len(overdue)},
+            "body": gettext("Return them as soon as you can; a late fee may apply."),
         })
     due_soon = [
         loan
@@ -234,7 +248,7 @@ def notices(membership, activity):
         feed.append({
             "level": "info",
             "event": "loan_due_soon",
-            "title": f"{len(due_soon)} item(s) are due within a day",
+            "title": gettext("%(count)s item(s) are due within a day") % {"count": len(due_soon)},
             "body": "",
         })
     dues = activity.get("membership_dues") or {}
@@ -246,8 +260,8 @@ def notices(membership, activity):
         feed.append({
             "level": "warning",
             "event": "payment_due",
-            "title": f"You have {owed} outstanding",
-            "body": "Pay online where available, or settle it at the space.",
+            "title": gettext("You have %(owed)s outstanding") % {"owed": owed},
+            "body": gettext("Pay online where available, or settle it at the space."),
         })
     from apps.separability.tombstones import app_is_tombstoned
     if not app_is_tombstoned("bookings"):

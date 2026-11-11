@@ -21,6 +21,14 @@ def canonical_origin(space=None):
     return settings.PUBLIC_APP_BASE_URL.rstrip("/")
 
 
+def _public_home_organization(space):
+    from apps.organizations.models import Organization
+    return Organization.objects.filter(
+        makerspace_links__makerspace=space, makerspace_links__relationship="owner",
+        is_active=True, public_profile_enabled=True, review_status="approved",
+    ).order_by("pk").first()
+
+
 def canonical_url(kind, owner, handle=None):
     origin = canonical_origin(owner if kind == "makerspace" else None)
     if handle:
@@ -28,6 +36,11 @@ def canonical_url(kind, owner, handle=None):
     if kind == "makerspace" and _verified_domain(owner):
         # A verified tenant domain boots the single-space SPA, which has no /m/<slug> route.
         return f"{origin}/"
+    if kind == "makerspace" and getattr(owner, "kind", "makerspace") == "organization":
+        # Decision 295: an organization workspace has no /m/ page; its public face is /o/<slug>.
+        organization = _public_home_organization(owner)
+        if organization is not None:
+            return f"{canonical_origin(None)}/o/{organization.slug}"
     return f"{origin}/{'m' if kind == 'makerspace' else 'o'}/{owner.slug}"
 
 
@@ -49,7 +62,8 @@ def public_page(kind, owner, request=None):
     if kind == "makerspace":
         if not owner.public_site_enabled or not is_servable(owner):
             raise NotFound()
-    elif not owner.is_active or not owner.public_profile_enabled:
+    elif (not owner.is_active or not owner.public_profile_enabled
+            or owner.review_status != "approved"):  # pending/declined/suspended orgs are inert
         raise NotFound()
     if request:
         require_scope(kind, owner, request)

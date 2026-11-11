@@ -103,7 +103,11 @@ def public_schema(schema):
     """
     if not isinstance(schema, dict):
         return schema
-    return {**schema, "questions": [q for q in schema.get("questions", []) if q.get("visibility") != "server"]}
+    questions = [q for q in schema.get("questions", []) if q.get("visibility") != "server"]
+    if not schema.get("sections"):
+        return {**schema, "questions": questions}
+    from apps.forms_schema.schema_items_static import reanchor_sections
+    return {**schema, "questions": questions, "sections": reanchor_sections(schema, questions)}
 
 
 def staff_only_questions(schema):

@@ -20,9 +20,27 @@ SERVICE_TOKEN_ROUTES = {"member-machine-service-owner"}
 QR_PAYLOAD_ROUTES = {"qr-resolve", "qr-scan"}
 
 # Only these creation routes take their authoritative tenant from the body.
-BODY_SCOPED_ROUTES = {"qr-boxes", "qr-containers", "qr-tools"}
+BODY_SCOPED_ROUTES = {"qr-boxes", "qr-containers", "qr-tools", "qr-external-assign"}
 
 MAKERSPACE_KWARG_ROUTES = {
+    "admin-event-booking-link": "makerspace_id",
+    "admin-event-booking-replacement": "makerspace_id",
+    "admin-event-venue": "makerspace_id",
+    "admin-event-create-with-room": "makerspace_id",
+    "admin-event-room-choices": "makerspace_id",
+    "admin-event-registration-queue": "makerspace_id",
+    "admin-event-workshop-machines": "makerspace_id",
+    "admin-event-workshop-machine-replacement": "makerspace_id",
+    "admin-event-workshop-machine-link": "makerspace_id",
+    "admin-request-event-context": "makerspace_id",
+    "admin-direct-loan-event-context": "makerspace_id",
+    "admin-request-booking-context": "makerspace_id",
+    "admin-direct-loan-booking-context": "makerspace_id",
+    "admin-member-included-hours": "makerspace_id",
+    "admin-org-hours-bank": "makerspace_id",
+    "admin-org-hours-bank-ledger": "makerspace_id",
+    "admin-related-facts-event": "makerspace_id",
+    "admin-related-facts-booking": "makerspace_id",
     "whatsapp-meta-webhook": "makerspace_id",
     "email-provider-webhook": "makerspace_id",
     "website-origins": "makerspace_id",
@@ -35,6 +53,7 @@ MAKERSPACE_KWARG_ROUTES = {
     'admin-settings-authority-locks': 'makerspace_id',
     'admin-settings-authority-effective': 'makerspace_id',
     'admin-makerspace-usage': 'makerspace_id',
+    'admin-makerspace-allowances': 'makerspace_id',
     'admin-kiosk-replay-list': 'makerspace_id',
     'admin-maintenance-schedule-list-create': 'makerspace_id',
     'admin-maintenance-log-list-create': 'makerspace_id',
@@ -140,6 +159,8 @@ from .origin_scope_routes_r2_l12 import MODEL_LOOKUPS as R2_L12_LOOKUPS
 MODEL_LOOKUPS.update(R2_L12_LOOKUPS)
 from .origin_scope_routes_r2_l23 import MODEL_LOOKUPS as R2_L23_LOOKUPS
 MODEL_LOOKUPS.update(R2_L23_LOOKUPS)
+from .origin_scope_routes_l3a import MODEL_LOOKUPS as L3A_LOOKUPS  # noqa: E402
+MODEL_LOOKUPS.update(L3A_LOOKUPS)
 from .origin_scope_routes_r2_l26 import MAKERSPACE_ROUTES as R2_L26_MAKERSPACE_ROUTES  # noqa: E402
 MAKERSPACE_KWARG_ROUTES.update(R2_L26_MAKERSPACE_ROUTES)
 from .origin_scope_routes_r2_l16 import MODEL_LOOKUPS as R2_L16_LOOKUPS

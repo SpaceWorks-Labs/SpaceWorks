@@ -181,8 +181,13 @@ def _qr_payload_makerspace_id(request):
     from apps.boxes.access import inventory_qr_codes
     from apps.boxes.models import QrCode
 
+    # A pinned `makerspace_id` bounds the whole lookup in the view (external label values
+    # are unique only per makerspace), so it is the target; otherwise the payload's space.
+    pinned = _positive_int(body.get("makerspace_id"))
+    if pinned is not None:
+        return pinned
     return inventory_qr_codes().filter(
-        payload=payload, status=QrCode.Status.ACTIVE,
+        payload=payload.strip(), status=QrCode.Status.ACTIVE,
     ).values_list("makerspace_id", flat=True).first()
 
 

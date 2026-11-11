@@ -1,4 +1,5 @@
 """Technical-access outcomes use the existing Space-Manager access category."""
+from django.utils.translation import gettext
 from apps.accounts import rbac
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, scoped, staff_link
@@ -27,13 +28,17 @@ def eligible(envelope):
 
 def content(row, audience):
     if audience == "staff":
-        return body("Subdomain request resolved", f"Subdomain request #{row.pk} was {row.status}.", staff_link(row.makerspace, "settings"))
-    text = f"Your subdomain request '{row.requested_label}' for {row.makerspace.name} was {row.status}."
+        return body(gettext("Subdomain request resolved"),
+                    gettext("Subdomain request #%(id)s was %(status)s.") % {"id": row.pk, "status": row.status},
+                    staff_link(row.makerspace, "settings"))
+    text = gettext("Your subdomain request '%(label)s' for %(space)s was %(status)s.") % {
+        "label": row.requested_label, "space": row.makerspace.name, "status": row.status}
     if row.status == "approved":
-        text += f"\n\nYour new address is {row.makerspace.frontend_domain}."
+        text += "\n\n" + gettext("Your new address is %(domain)s.") % {"domain": row.makerspace.frontend_domain}
     elif row.note:
-        text += f"\n\nNote: {row.note}"
-    return body(f"{row.makerspace.name} subdomain request {row.status}", text, staff_link(row.makerspace, "settings"))
+        text += "\n\n" + gettext("Note: %(note)s") % {"note": row.note}
+    return body(gettext("%(space)s subdomain request %(status)s") % {"space": row.makerspace.name, "status": row.status},
+                text, staff_link(row.makerspace, "settings"))
 
 
 def render(envelope):
@@ -45,7 +50,7 @@ def notify_subdomain_request_resolved(row):
     # Not the account stream: that stream is reserved for email-only proofs.
     return fanout(row=row, space=row.makerspace, feature="api_access", stream="makerspace",
         event="subdomain_request_resolved", source_kind=SOURCE, revision=source_revision(row),
-        owner=row.requested_by, owner_body=content(row, "requester"), staff_body=content(row, "staff"))
+        owner=row.requested_by, owner_body=lambda: content(row, "requester"), staff_body=lambda: content(row, "staff"))
 
 
 def register():

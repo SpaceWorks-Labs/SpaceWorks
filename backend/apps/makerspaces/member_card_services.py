@@ -38,6 +38,27 @@ def active_qr(card):
     ).first()
 
 
+def _number_text(membership):
+    """The printed number from the space's numbering scheme (switch `membership.card_numbering`), or ""."""
+    from apps.card_designs import numbering
+    from apps.card_designs.switches import CARD_NUMBERING
+    from apps.makerspaces.membership_titles import primary_title
+    from apps.makerspaces.platform import feature_enabled
+    if not feature_enabled(membership.makerspace, CARD_NUMBERING):
+        return ""
+    title = primary_title(membership)
+    scheme = numbering.scheme_for(membership.makerspace_id, title.pk if title else None)
+    return numbering.next_number(membership, scheme) if scheme else ""
+
+
+def _show_name_default(makerspace_id):
+    """Decision 290: the card starts with the holder's name on the public check page; the holder may hide it."""
+    from apps.makerspaces.models import MemberCardSettings
+    value = MemberCardSettings.objects.filter(makerspace_id=makerspace_id).values_list(
+        "verify_show_name", flat=True).first()
+    return bool(value)
+
+
 def _next_card_number(makerspace_id):
     current = MemberCard.objects.filter(makerspace_id=makerspace_id).aggregate(
         top=Max("card_number")
@@ -50,7 +71,9 @@ def issue_card(actor, membership, *, printed_name=""):
     require_member_account(membership.user)
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, membership.makerspace_id)
     require_module_locked(membership.makerspace_id, "membership")
-    membership = MakerspaceMembership.objects.select_for_update().get(pk=membership.pk)
+    membership = MakerspaceMembership.objects.select_for_update().select_related("makerspace").get(pk=membership.pk)
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(membership.makerspace, "member_cards_issued_monthly")  # decision 284: typed 409 on manual issue
     if membership.status != "active":
         raise PermissionDenied(gettext("Only an active membership can hold a card."))
     # Only a LIVE card blocks a new one: after a revocation the member gets a fresh card
@@ -65,6 +88,8 @@ def _issue_locked(actor, membership, printed_name, *, automatic=False):
         makerspace_id=membership.makerspace_id,
         membership=membership,
         card_number=_next_card_number(membership.makerspace_id),
+        number_text=_number_text(membership),
+        verify_show_name=_show_name_default(membership.makerspace_id),
         printed_name=printed_name or "",
     )
     QrCode.objects.create(
@@ -75,6 +100,8 @@ def _issue_locked(actor, membership, printed_name, *, automatic=False):
     )
     from apps.card_designs.lifecycle import on_issue
     on_issue("member_card", card)
+    from apps.makerspaces.membership_join_fields import apply_join_photo
+    transaction.on_commit(lambda: apply_join_photo(card), robust=True)  # parity O-B2: a photo from the join form
     audit.record(actor, "member_card.created", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
     if automatic:
         audit.record(actor, "member_card.auto_issued", makerspace=membership.makerspace, target=card, meta={"card_id": card.pk, "card_number": card.card_number})
@@ -98,7 +125,16 @@ def auto_issue(membership_id):
             or not MemberCardSettings.objects.filter(makerspace_id=membership.makerspace_id, auto_issue=True).exists()
             or MemberCard.objects.filter(membership=membership, revoked_at__isnull=True).exists()):
         return None
-    card = _issue_locked(None, membership, "", automatic=True)
+    from apps.card_designs.numbering import CardNumberExhausted
+    from apps.managed_hosting.extra_quotas import ExtraQuotaReached, check_extra_quota
+    try:
+        # A card limit or an exhausted numbering scheme must never undo or block the activation.
+        check_extra_quota(membership.makerspace, "member_cards_issued_monthly")
+        card = _issue_locked(None, membership, "", automatic=True)
+    except (ExtraQuotaReached, CardNumberExhausted) as exc:
+        audit.record(None, "member_card.auto_issue_skipped", makerspace=membership.makerspace, target=membership,
+                     meta={"membership_id": membership.pk, "reason": getattr(exc, "default_code", None) or "quota"})
+        return None
     from apps.card_designs.notifications import card_issued
     transaction.on_commit(lambda: card_issued("member_card", card.pk), robust=True)
     return card
@@ -111,6 +147,11 @@ def reissue_card(actor, card, *, reason):
     _require(actor, rbac.Action.MANAGE_MEMBER_CARDS, card.makerspace_id)
     if reason not in REISSUE_REASONS:
         raise PermissionDenied(gettext("Unknown reissue reason."))
+    return reissue_locked(actor, card, reason=reason)
+
+
+def reissue_locked(actor, card, *, reason):
+    """Rotate the QR and verify token of a live card, keeping its number. `reason` is audit meta only."""
     card = MemberCard.objects.select_for_update().get(pk=card.pk)
     if not card.is_active:
         raise PermissionDenied(gettext("A revoked card cannot be reissued; issue a new one."))

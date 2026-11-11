@@ -97,6 +97,8 @@ class MemberRequestHistorySerializer(serializers.Serializer):
 
 class MemberDuesSerializer(serializers.Serializer):
     dues_amount = serializers.CharField()
+    dues_currency = serializers.CharField(help_text=(
+        "The currency the dues charge uses: the space's payment-settings default currency."))
     # Amounts are strings keyed by currency code, never one summed number: outstanding
     # money cannot be added across currencies. Null when the ledger could not be read --
     # distinct from an empty map, which means nothing is outstanding.
@@ -113,6 +115,19 @@ class MemberTermSerializer(serializers.Serializer):
     # True only when no term is current AND the space has switched on
     # `lapsed_members_cannot_borrow` -- the member's own explanation for a refusal.
     blocks_borrowing = serializers.BooleanField()
+
+
+class MemberIncludedHoursSerializer(serializers.Serializer):
+    """One pool of the member's current term: plan hours per term, used and left (minutes)."""
+
+    kind = serializers.ChoiceField(choices=["booking", "machine"])
+    term_id = serializers.IntegerField()
+    plan_name = serializers.CharField()
+    term_starts_at = serializers.DateTimeField()
+    term_ends_at = serializers.DateTimeField()
+    allowance_minutes = serializers.IntegerField()
+    used_minutes = serializers.IntegerField()
+    remaining_minutes = serializers.IntegerField()
 
 
 class MemberNoticeSerializer(serializers.Serializer):
@@ -142,4 +157,6 @@ class MemberActivitySerializer(serializers.Serializer):
     membership_dues = MemberDuesSerializer(required=False)
     # The member's current (else latest) plan term; null when they have never held one.
     membership_term = MemberTermSerializer(required=False, allow_null=True)
+    # Decision 221(d): present only with bookings on; empty when the plan includes no hours.
+    included_hours = MemberIncludedHoursSerializer(many=True, required=False)
     notices = MemberNoticeSerializer(many=True, required=False)

@@ -63,14 +63,24 @@ def bookings_delete(makerspace, cursor):
     arrivals, arrival_labels = _delete(BookingCheckInEvent.objects.filter(booking__space__makerspace=makerspace))
     from apps.bookings.purge_p2 import delete_departure_history
     departures, departure_labels = delete_departure_history(makerspace)
+    from apps.bookings.models_loan_context import BookingLoanContext
+    contexts, context_labels = _delete(BookingLoanContext.objects.filter(makerspace=makerspace))
+    from apps.bookings.models_consumable_plan_context import BookingConsumablePlanContext
+    plan_contexts, plan_context_labels = _delete(BookingConsumablePlanContext.objects.filter(makerspace=makerspace))
+    from apps.bookings.models import OrganizationHoursAllowance, OrganizationHoursLedger
+    org_ledger, org_ledger_labels = _delete(OrganizationHoursLedger.objects.filter(makerspace=makerspace))  # B13
+    org_banks, org_bank_labels = _delete(OrganizationHoursAllowance.objects.filter(makerspace=makerspace))
+    from .booking_decision_purge import detach_booking_decisions
+    detach_booking_decisions(makerspace)
     bookings, booking_labels = _delete(
         rbac.scope_notification_policy(Booking.objects.all(), makerspace_id=makerspace.pk, field='space__makerspace_id')
     )
     spaces, space_labels = _delete(rbac.scope_notification_policy(BookableSpace.objects.all(), makerspace_id=makerspace.pk))
     return _counts(
         model_labels=(booking_labels | space_labels | feed_labels | grant_labels | invite_labels | arrival_labels
-                      | campaign_labels | departure_labels),
-        arrivals=arrivals, departures=departures,
+                      | campaign_labels | departure_labels | context_labels | plan_context_labels
+                      | org_ledger_labels | org_bank_labels),
+        organization_hours_rows=org_ledger + org_banks, arrivals=arrivals, departures=departures, consumable_plan_contexts=plan_contexts,
         broadcasts=campaigns,
         staff_grants=grants, staff_invites=invites,
         calendar_feeds=feeds,

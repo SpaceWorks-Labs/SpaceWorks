@@ -16,10 +16,14 @@ from apps.makerspaces.limits_core import RESOURCE_LABELS
 
 
 def custom_domain_allowed(makerspace) -> bool:
-    from apps.makerspaces import limits
+    from apps.makerspaces import domain_verification
 
-    if limits.is_self_host():
+    if domain_verification.is_self_host():
         return True
+    from apps.managed_hosting.hosting_type import is_hosted
+
+    if not is_hosted(makerspace):
+        return True  # decision 236: an own space is never limited
     return bool((makerspace.resource_limit_overrides or {}).get("custom_domain"))
 
 
@@ -128,6 +132,17 @@ def _print_requests(makerspace) -> int:
     ).count()
 
 
+def _guest_passes(makerspace) -> int:
+    """Passes issued today (UTC), revoked ones included so revoke-and-reissue cannot dodge the cap."""
+    from apps.makerspaces.models import GuestPass
+
+    now = datetime.now(UTC)
+    day_start = datetime(now.year, now.month, now.day, tzinfo=UTC)
+    return GuestPass.objects.filter(
+        makerspace=makerspace, created_at__gte=day_start, created_at__lt=day_start + timedelta(days=1),
+    ).count()
+
+
 def _machine_service_open(makerspace) -> int:
     from apps.machines.models import MachineServiceRequest
 
@@ -166,23 +181,24 @@ def add_storage(makerspace, size_bytes) -> None:
 
     Opens its own ``transaction.atomic()`` so the ``select_for_update`` row lock
     works at every finalize call site regardless of whether the caller already
-    holds a transaction (it degrades to a savepoint when nested). On self-host or
-    unlimited it is a no-op.
+    holds a transaction (it degrades to a savepoint when nested). Owner rule 261: bytes are
+    counted for EVERY space (own, self-host, hosted) so a storage limit the superadmin sets later
+    can be enforced; an unlimited space is counted but never refused.
     """
     from apps.makerspaces import limits
 
-    if limits.is_self_host() or not size_bytes:
+    if not size_bytes:
         return
     limit = limits.resource_limit(makerspace, "storage")
-    if limit is None:
-        return
     from django.db.models import F
 
     from apps.makerspaces.models import Makerspace
 
+    # #261: bytes are counted for every space (own and unlimited ones too), so a later switch to
+    # "hosted" or a new storage limit starts from the real figure (see limits_storage_backfill).
     with transaction.atomic():
         locked = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
-        if _storage(locked) + size_bytes > limit:
+        if limit is not None and _storage(locked) + size_bytes > limit:
             raise serializers.ValidationError(
                 {
                     "limit": gettext("You've reached the free storage limit for this space — ask the operator to raise it or self-host.")
@@ -195,10 +211,8 @@ def add_storage(makerspace, size_bytes) -> None:
 
 
 def free_storage(makerspace, size_bytes) -> None:
-    """Release managed object storage (never below zero)."""
-    from apps.makerspaces import limits
-
-    if limits.is_self_host() or not size_bytes:
+    """Release managed object storage (never below zero); counted for every space (#261)."""
+    if not size_bytes:
         return
     from apps.makerspaces.models import Makerspace
     from django.db.models import F, Value
@@ -234,49 +248,10 @@ _COUNTERS: dict[str, Callable[[object], int]] = {
     "machine_service_open": _machine_service_open,
     "machine_service_submit": _machine_service_submit,
     "data_exports": _data_exports,
+    "guest_passes": _guest_passes,
     "storage": _storage,
     "email": _emails,
 }
 
 
-def check_quota(makerspace, key, *, adding=1) -> None:
-    """Raise when a managed limit would be exceeded.
-
-    The caller must wrap this check and its create operation in
-    ``transaction.atomic()`` so the makerspace row lock serializes creators.
-    """
-    from apps.makerspaces import limits
-    from apps.managed_hosting.enforcement import check_monthly
-
-    if key == "events":
-        # #187A: a plan's monthly allowance applies even where the base limit is unlimited;
-        # a no-op while MANAGED_PLANS_ENABLED is off.
-        check_monthly(makerspace, "events_monthly", adding=adding)
-    limit = limits.resource_limit(makerspace, key)
-    if limit is None:
-        return
-
-    counter = _COUNTERS.get(key)
-    if counter is None:
-        raise NotImplementedError(f"No quota counter is registered for {key!r}.")
-
-    from apps.makerspaces.models import Makerspace
-
-    # NO KEY UPDATE, like require_module_locked: creators still serialize with each other
-    # and with module install/uninstall, and a caller already holding the fence never has
-    # to upgrade to FOR UPDATE (which would wait on commit-time FOR KEY SHARE holders).
-    locked = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
-    current = counter(locked)
-    from apps.managed_hosting.enforcement import plan_limit_error, plan_name_for_limit
-    if current + adding > limit:
-        resource = RESOURCE_LABELS.get(key, key.replace("_", " "))
-        plan_name = plan_name_for_limit(locked, key)
-        if plan_name is not None:
-            raise plan_limit_error(plan_name, resource, limit)
-        message = (
-            f"You've reached the free {resource} limit for this space — "
-            "ask the operator to raise it or self-host."
-        )
-        raise serializers.ValidationError(
-            {"limit": message}, code="limit_reached"
-        )
+from apps.makerspaces.limits_check import check_quota  # noqa: E402,F401  (split out at the 300-line ceiling)

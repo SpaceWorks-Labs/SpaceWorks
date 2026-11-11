@@ -30,6 +30,9 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed
         ensure_join_allowed(makerspace)
+        # Decision 223 (k): a minor needs a standing guardian consent (inert unless membership.minors is on).
+        from apps.makerspaces.minors_guard import require_minor_clearance
+        require_minor_clearance(user, makerspace, "membership")
         driving_request = None
         if request is not None:
             driving_request = MembershipRequest.objects.select_for_update().get(pk=request.pk)
@@ -100,6 +103,10 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
             # not consume one. A later term opening numbers anyone who holds a term.
             from apps.makerspaces.membership_number import assign as assign_number
             assign_number(membership, source=source)
+            from apps.makerspaces.membership_join_units import apply_request_unit
+            apply_request_unit(membership, driving_request, actor)  # parity O-B1: the unit the request chose
+            from apps.makerspaces.membership_join_fields import apply_on_activation
+            apply_on_activation(membership, driving_request, actor)  # parity O-B2: phone, state, photo
 
         role_changes = {}
         if adding or source == "approval":
@@ -111,7 +118,7 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
 
         open_requests = list(MembershipRequest.objects.select_for_update().filter(
             makerspace=makerspace,
-            state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment"],
+            state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested"],
         ).filter(Q(user=user) | Q(invite_email=(user.email or "").strip().lower())))
         for item in open_requests:
             item.state = MembershipRequest.State.ACTIVE
@@ -136,6 +143,10 @@ def _activate_membership(actor, makerspace, user, role, *, request=None, source,
                              target=membership, meta={"role_id": role.id})
                 from apps.makerspaces.membership_notifications_research import notify_membership_decision
                 notify_membership_decision(membership, "approved")
+        if adding and not role.granted_actions:
+            # Decision 223: a guest who joins has their passes closed as `converted`.
+            from apps.makerspaces.guest_pass_lifecycle import mark_converted
+            mark_converted(membership, actor)
         if adding:
             from apps.makerspaces.membership_notifications import (
                 notify_member_joined,

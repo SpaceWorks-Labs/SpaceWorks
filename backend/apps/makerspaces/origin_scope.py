@@ -103,6 +103,12 @@ def validate_native_makerspace_scope(request, user, grant):
     url_name, targets, invalid, native_route_allowed = request_route_targets(
         request
     )
+    if not native_route_allowed:
+        from .origin_scope_native_slug import native_slug_targets
+        slug = native_slug_targets(request)
+        if slug is not None:
+            targets, native_route_allowed = targets | slug[0], True
+            invalid = invalid or slug[1] or len(targets) > 1
     from .origin_scope_routes_public_pages import GLOBAL_ROUTES
     if url_name in GLOBAL_ROUTES:
         raise PermissionDenied(gettext("Global organization pages cannot select a makerspace."))

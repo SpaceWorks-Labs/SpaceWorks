@@ -1,0 +1,101 @@
+from datetime import timedelta
+
+import pytest
+from django.utils import timezone
+from rest_framework.test import APIClient
+
+from apps.accounts.models import User
+from apps.makerspaces import membership_services
+from apps.makerspaces.models import Makerspace, MakerspaceMembership, MakerspaceRole
+from apps.presence import services
+from tests.account_split.p1_helpers import staff as staff_account
+from apps.presence.models import PresenceSession
+from apps.presence.policy import PresenceError
+from .fence_helpers import INSIDE, fence
+from apps.apiclients.throttling import MemberPrincipalRateThrottle
+
+
+def member(space, username="member"):
+    user = User.objects.create_user(username=username, email=f"{username}@example.test", password="password")
+    role = MakerspaceRole.objects.get(makerspace=space, slug="member")
+    return user, MakerspaceMembership.objects.create(
+        makerspace=space, user=user, assigned_role=role, role="custom", status="active"
+    )
+
+
+@pytest.mark.django_db(transaction=True)
+def test_start_is_idempotent_then_supersedes_and_expiry_is_derived():
+    space = fence(Makerspace.objects.create(name="Presence", slug="presence"))
+    user, _ = member(space)
+    first = services.start_session(user, space, 60, **INSIDE)
+    assert services.start_session(user, space, 60, **INSIDE).pk == first.pk
+    first.expires_at = timezone.now() + timedelta(minutes=5)
+    first.save(update_fields=["expires_at"])
+    replacement = services.start_session(user, space, 60, **INSIDE)
+    first.refresh_from_db()
+    assert first.end_reason == PresenceSession.EndReason.SUPERSEDED
+    assert replacement.pk != first.pk
+    replacement.started_at = timezone.now() - timedelta(hours=2)
+    replacement.expires_at = timezone.now() - timedelta(seconds=1)
+    replacement.save(update_fields=["started_at", "expires_at"])
+    assert services.current_session(user, space) is None
+
+
+@pytest.mark.django_db(transaction=True)
+def test_presets_validate_and_revoke_ends_active_session():
+    space = fence(Makerspace.objects.create(name="Preset", slug="preset", presence_preset_minutes=[30, 90]))
+    user, membership = member(space)
+    with pytest.raises(PresenceError):
+        services.start_session(user, space, 60, **INSIDE)
+    session = services.start_session(user, space, 30, **INSIDE)
+    actor = User.objects.create_superuser(username="root", email="root@example.test", password="password")
+    membership_services.revoke_membership(actor, membership)
+    session.refresh_from_db()
+    assert session.end_reason == PresenceSession.EndReason.MEMBERSHIP_REVOKED
+
+
+@pytest.mark.django_db
+def test_presence_api_and_roster_minimize_pii():
+    space = fence(Makerspace.objects.create(name="Roster", slug="roster"))
+    user, membership = member(space)
+    client = APIClient(); client.force_authenticate(user)
+    started = client.post(f"/api/v1/public/{space.slug}/presence-sessions", {"duration_minutes": 60, **INSIDE}, format="json")
+    assert started.status_code == 201
+    current = client.get(f"/api/v1/public/{space.slug}/presence-sessions/current")
+    assert current.data["active"] is True and user.email not in str(current.data)
+    manager, _ = staff_account(space, "manager", role="space_manager",
+                               email="manager@example.test", password="password")
+    staff = APIClient(); staff.force_authenticate(manager)
+    roster = staff.get(f"/api/v1/admin/makerspace/{space.id}/presence-sessions/current")
+    assert roster.status_code == 200 and user.email not in str(roster.data)
+
+
+@pytest.mark.django_db
+def test_presence_start_is_throttled_per_member(monkeypatch):
+    """Every start consumes the budget, replays included.
+
+    An earlier draft exempted identical-duration replays, but that needed a throttle
+    subclass overriding allow_request -- which the claim-route guard refuses, because an
+    allow_request override can silently disable throttling on a claim-reachable route --
+    and it resolved the makerspace inside the throttle, where get_public_makerspace's
+    Http404 would have rewritten the response. A plain scoped member throttle is the
+    documented shape; the generous production rate is what protects legitimate re-checkins.
+    """
+    space = fence(Makerspace.objects.create(name="Throttle", slug="presence-throttle"))
+    user, _ = member(space, "throttled-member")
+    client = APIClient()
+    client.force_authenticate(user)
+    monkeypatch.setattr(
+        MemberPrincipalRateThrottle,
+        "THROTTLE_RATES",
+        {**MemberPrincipalRateThrottle.THROTTLE_RATES, "presence_start": "2/hour"},
+    )
+    url = f"/api/v1/public/{space.slug}/presence-sessions"
+
+    assert client.post(url, {"duration_minutes": 60, **INSIDE}, format="json").status_code == 201
+    assert client.post(url, {"duration_minutes": 120, **INSIDE}, format="json").status_code == 201
+
+    blocked = client.post(url, {"duration_minutes": 60, **INSIDE}, format="json")
+
+    assert blocked.status_code == 429
+    assert PresenceSession.objects.filter(member=user, makerspace=space).count() == 2

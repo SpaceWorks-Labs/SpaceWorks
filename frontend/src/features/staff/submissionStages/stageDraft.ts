@@ -63,36 +63,37 @@ function pick(stage: Partial<StageRules>): Partial<StageRules> {
   return Object.fromEntries(RULE_KEYS.filter(key => key in stage).map(key => [key, stage[key]])) as Partial<StageRules>;
 }
 
-const REASONS: Record<string, string> = {
-  deadline_before_opening: "the deadline must come after the opening time",
-  deadline_after_event: "the deadline must fall before the event ends",
-  deadline_required: "every stage except the last needs a deadline",
-  deadlines_out_of_order: "each deadline must come after the previous stage's deadline",
-  first_stage_has_no_previous: "the first stage cannot require a previous stage",
-  last_stage_has_no_shortlist: "the last stage cannot end with a shortlist",
-  duplicate_field_key: "two custom fields share the same key",
-  unknown_choice: "a link kind, file family or video host is not recognised",
-  max_files_below_min: "the most files allowed is below the fewest required",
+const REASONS = (): Record<string, string> => ({
+  deadline_before_opening: t`the deadline must come after the opening time`,
+  deadline_after_event: t`the deadline must fall before the event ends`,
+  deadline_required: t`every stage except the last needs a deadline`,
+  deadlines_out_of_order: t`each deadline must come after the previous stage's deadline`,
+  first_stage_has_no_previous: t`the first stage cannot require a previous stage`,
+  last_stage_has_no_shortlist: t`the last stage cannot end with a shortlist`,
+  duplicate_field_key: t`two custom fields share the same key`,
+  unknown_choice: t`a link kind, file family or video host is not recognised`,
+  max_files_below_min: t`the most files allowed is below the fewest required`,
   links_rule_in_files_only: "a files-only stage cannot have link rules",
   files_rule_in_links_only: "a links-only stage cannot have file rules",
-  requirement_in_presentation: "a presentation stage cannot require files or links",
+  requirement_in_presentation: t`a presentation stage cannot require files or links`,
   file_cap_above_hard_cap: "the per-file size is above the hard limit for those file types",
-  unknown_preset: "the preset is not recognised",
-};
+  unknown_preset: t`the preset is not recognised`,
+});
 
 export function stageErrorMessage(error: unknown) {
   if (!(error instanceof StructuredApiError)) return error instanceof Error ? error.message : "";
   const body = error.body;
   if (error.code === "invalid_stage") {
-    const reason = REASONS[String(body.reason)] ?? "one of its rules is not allowed";
+    const reason = REASONS()[String(body.reason)] ?? t`one of its rules is not allowed`;
     return body.stage ? t`Stage ${String(body.stage)}: ${reason}.` : t`The stage plan was refused: ${reason}.`;
   }
   if (error.code === "stage_in_use") return t`A stage that has submissions, a shortlist, an extension or a judging round cannot be removed. Edit it instead.`;
   if (error.code === "stale_version") return t`Someone else changed the stages. Reload to see the latest plan, then make your changes again.`;
-  if (error.code === "invalid_stage_count") return t`An event needs between 1 and ${String(body.limit ?? 10)} stages.`;
-  const promote: Record<string, string> = { next_stage_open: "The next stage is already open, so the list can no longer change.",
-    not_a_withdrawn_shortlisted_team: "That team has not withdrawn, or is not on the list.",
-    no_ranked_source: "This list was hand-picked, so there is no ranked next team.", no_next_team: "There is no next ranked team left." };
+  if (error.code === "invalid_stage_count") return t`An event needs between 1 and ${String(body.limit ?? 50)} stages.`;
+  if (error.code === "hackathon_stages_quota_reached") return t`This space allows at most ${String(body.limit ?? "")} stages on one event. Ask the platform operator to raise it.`;
+  const promote: Record<string, string> = { next_stage_open: t`The next stage is already open, so the list can no longer change.`,
+    not_a_withdrawn_shortlisted_team: t`That team has not withdrawn, or is not on the list.`,
+    no_ranked_source: t`This list was hand-picked, so there is no ranked next team.`, no_next_team: t`There is no next ranked team left.` };
   if (error.code && promote[error.code]) return promote[error.code];
   if (error.code === "submission_window_by_stage") return t`This event has several submission stages. Edit each stage's window in the stage editor.`;
   return error.message;

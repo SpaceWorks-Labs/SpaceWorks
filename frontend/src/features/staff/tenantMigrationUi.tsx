@@ -14,7 +14,7 @@ function flatten(value: unknown): string[] {
 
 export function migrationError(error: unknown, field?: string) {
   if (!(error instanceof StructuredApiError)) {
-    return error instanceof Error ? error.message : t`The tenant migration request failed.`;
+    return error instanceof Error ? error.message : t`The space move request failed.`;
   }
   // Field names do not survive StructuredApiError.message: it deliberately flattens
   // Object.values(body). Boundary errors therefore have to be read from body[field].

@@ -57,13 +57,33 @@ const TAB_FEATURES: Record<string, string[]> = {
   warranty: ["inventory.warranty", "machines.warranty"],
   // Lane L5: the finance tab holds the ledger and the money queues, each with its own switch.
   finance: ["finance.ledger", "billing.offline_claims", "billing.maker_checker", "billing.capture_flags",
-    "billing.disputes", "finance.donations", "finance.sponsors"],
+    "billing.disputes", "billing.collection_sheet"], donations: ["finance.donations", "finance.sponsors"], // decision 242(m)
   // Lane L12 (MI-40): the merged consumables list.
   consumables: ["inventory.consumables"],
   // Lane L16: repairs, issue reporting and item/room maintenance, under each parent.
   repairs: ["machines.repairs", "machines.issue_reporting", "inventory.repairs", "inventory.issue_reporting",
     "bookings.room_repairs", "bookings.issue_reporting", "inventory.maintenance", "bookings.room_maintenance"],
+  // Decision 223 (k): the incident register is a standalone capability (no parent module).
+  incidents: ["safety.incidents"],
 };
+
+// Role-screen audit 0.12.0: a shared tab needs a switch in an area the ACTOR works in (the
+// server narrows rows to those areas, so a Booking Manager would otherwise open an always-empty
+// Repairs page). Actors with none of these actions (Space Manager, Technician) keep any-switch.
+const AREA_SWITCHES: Record<string, Record<string, string[]>> = {
+  repairs: { manage_machines: ["machines.repairs", "machines.issue_reporting"],
+    edit_inventory: ["inventory.repairs", "inventory.issue_reporting", "inventory.maintenance"],
+    manage_bookings: ["bookings.room_repairs", "bookings.issue_reporting", "bookings.room_maintenance"] },
+  tobuy: { edit_inventory: ["inventory.tobuy"], manage_machines: ["machines.tobuy"], manage_printing: ["machines.tobuy"] },
+  warranty: { edit_inventory: ["inventory.warranty"], manage_machines: ["machines.warranty"], manage_printing: ["machines.warranty"] },
+};
+
+function actorSwitches(tabName: string, actions?: readonly string[]) {
+  const byAction = AREA_SWITCHES[tabName];
+  if (!byAction || !actions || actions.includes("manage_makerspace")) return undefined;
+  const keys = Object.entries(byAction).filter(([action]) => actions.includes(action)).flatMap(([, keys]) => keys);
+  return keys.length ? keys : undefined;
+}
 
 // Tabs whose backing app can be tombstoned out of a deployment but which no module
 // key describes. `warranty` is gated by core `staff_admin`, so dropping a module key
@@ -110,7 +130,8 @@ type TabCapabilities = Pick<
   "enabled_modules" | "enabled_features" | "unavailable_apps"
 >;
 
-export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?: TabCapabilities) {
+/** `actions` (optional, the actor's effective actions) narrows shared tabs to the actor's areas. */
+export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?: TabCapabilities, actions?: readonly string[]) {
   const unavailable = new Set(makerspace?.unavailable_apps ?? []);
   // Checked before the module gate and outside the early return below: an app the
   // deployment does not ship is unreachable no matter what the tenant enabled, and a
@@ -127,7 +148,7 @@ export function filterTabsByEnabledModules(tabs: readonly string[], makerspace?:
     if (tabName === "direct") {
       return featureEnabled(makerspace.enabled_features ?? [], "inventory.self_checkout");
     }
-    const switches = TAB_FEATURES[tabName];
+    const switches = actorSwitches(tabName, actions) ?? TAB_FEATURES[tabName];
     if (switches && makerspace.enabled_features !== undefined) {
       return switches.some((key) => capabilityOn(makerspace, key));
     }
@@ -162,9 +183,16 @@ export function staffBasePath(guestOnly: boolean) {
 // Tabs allowed to carry a subpath. Everything else NORMALISES trailing segments away, and
 // that behaviour is deliberate: a stale deep link to `/admin/inventory/whatever` should land
 // on the inventory tab, not 404. Relaxing it globally would change how every existing
-// bookmark resolves, so the exception is opt-in and currently holds exactly one tab.
-const TABS_WITH_SUBPATHS = new Set(["machines"]);
-const GLOBAL_TABS = new Set(["organizations", "platform-dashboard", "platform-spaces", "granted", "platform-analytics"]);
+// bookmark resolves, so the exception is opt-in: machine-type pages and the routed
+// Settings subpages (`/admin/settings/<section>`, 0.12.0), machine-type views
+// (`/admin/machines/<id-slug>/<view>`) and the Shop and Finance views (`/admin/shop/pos`,
+// `/admin/finance/disputes`; useRoutedSubTab.ts).
+// `platform-limits/<id>` opens one space's limits; `platform/spaces/<id>/limits` (inbox notices) redirects there.
+const TABS_WITH_SUBPATHS = new Set(["machines", "settings", "shop", "finance", "donations", "security", "platform-limits", "platform"]);
+/** The superadmin's platform pages: they open without a chosen space (no picker, no slug). */
+export const SUPERADMIN_GLOBAL_TABS: readonly string[] = ["platform-dashboard", "platform-spaces", "platform-inbox", "platform-access",
+  "platform-security", "platform-data", "platform-limits", "platform", "platform-analytics"];
+const GLOBAL_TABS = new Set(["organizations", "granted", ...SUPERADMIN_GLOBAL_TABS]);
 
 export function staffTabPath(
   tab: string,
@@ -228,28 +256,8 @@ function trimSlashes(value: string) {
   return value.replace(/^\/+|\/+$/g, "");
 }
 
-// --- machine-type subpages -------------------------------------------------------------
-//
-// THE ID IS AUTHORITATIVE AND THE SLUG IS DECORATION. Machine-type slug uniqueness is only
-// SCOPED -- `uniq_global_machinetype_slug` among globals, `uniq_lab_machinetype_slug` per
-// makerspace -- so a makerspace may legally own a local type slugged `3d_printer` while the
-// global built-in of that slug also exists, and both appear in one console. Three shipped
-// surfaces have already served one type's jobs under another by keying on the slug. The
-// slug rides along only so the URL is readable.
-
-export function machineTypeSegment(machineType: { id: number; slug?: string | null }) {
-  const slug = (machineType.slug ?? "").trim();
-  return slug ? `${machineType.id}-${slug}` : String(machineType.id);
-}
-
-export function parseMachineTypeSegment(segment: string): number | null {
-  // Leading integer only. A malformed segment is `null` -- "no type selected", i.e. the
-  // index -- and never a silent fall-through to some default type.
-  const match = /^(\d+)/.exec(segment.trim());
-  if (!match) return null;
-  const id = Number(match[1]);
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-}
+// Machine-type subpage segments live in their own module; re-exported so existing imports keep resolving.
+export { machineTypeSegment, parseMachineTypeSegment } from "./staffTabMachineTypes";
 
 export function staffMakerspaceSlugFromPath(pathname: string, guestOnly: boolean) {
   return staffPathState(pathname, guestOnly).makerspaceSlug;
@@ -265,6 +273,8 @@ export function tabToPath(tab: string) {
 
 function pathToTab(path: string | null) {
   if (path === "printing") return "machines";
+  // Staff alerts about a machine-service request link to /admin/machine-service/requests/<id>; the Machines tab owns those jobs.
+  if (path === "machine-service") return "machines";
   if (!path) {
     return "";
   }

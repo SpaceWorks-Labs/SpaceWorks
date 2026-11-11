@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ConfirmDialog, ErrorText, Field } from "../../../components/ui";
@@ -14,7 +14,7 @@ type RoundRow = { id: number; key: string; state: string; submission_stage_id?: 
 
 export function publishWarning(plan: { not_shortlisted: number; email_enabled: boolean } | null) {
   if (!plan || plan.email_enabled || plan.not_shortlisted === 0) return "";
-  return `${plan.not_shortlisted} ${plan.not_shortlisted === 1 ? "team" : "teams"} will NOT be told by email that they were not shortlisted.`;
+  return plural(plan.not_shortlisted, { one: "# team will NOT be told by email that it was not shortlisted.", other: "# teams will NOT be told by email that they were not shortlisted." });
 }
 
 /** #179: choose who continues after this stage (finalists engine), apply, then publish once. */
@@ -71,7 +71,7 @@ export function StageShortlistPanel({ eventId, stage }: { eventId: number; stage
 function TriageBlocker({ eventId, stageId, count, ids }: { eventId: number; stageId: number; count: number; ids: number[] }) {
   const { triage } = useStageCommands(eventId, stageId);
   return <div className="grid gap-2 rounded-2xl border border-line bg-warn-soft p-3">
-    <p className="text-sm text-warn-ink">{t`${count} ${count === 1 ? "submission is" : "submissions are"} waiting for triage. Triage every submission of this stage before choosing.`}</p>
+    <p className="text-sm text-warn-ink">{plural(count, { one: "# submission is waiting for triage. Triage every submission of this stage before choosing.", other: "# submissions are waiting for triage. Triage every submission of this stage before choosing." })}</p>
     <button type="button" className="desk-button min-h-11 justify-self-start" disabled={!ids.length || triage.isPending}
       onClick={() => triage.mutate({ submission_ids: ids, triage: "eligible", reason: t`Bulk-marked eligible before the shortlist.` })}>{t`Mark ${ids.length} pending as eligible`}</button>
     {triage.error ? <ErrorText message={stageErrorMessage(triage.error)} /> : null}

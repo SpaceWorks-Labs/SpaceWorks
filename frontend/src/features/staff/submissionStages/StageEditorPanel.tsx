@@ -8,7 +8,7 @@ import { StageFields } from "./StageFields";
 import { StageTools } from "./StageTools";
 import type { Preset, StageDraft, StagePlan } from "./types";
 
-const WARNINGS: Record<string, string> = { ambiguous_deadline_time: "This deadline is at midnight or noon event time; pick 23:59 or a clearer time." };
+const WARNINGS = (): Record<string, string> => ({ ambiguous_deadline_time: t`This deadline is at midnight or noon event time; pick 23:59 or a clearer time.` });
 
 /** #178-#180: the organiser's submission stages. Picking a preset only fills the draft; nothing saves until Save. */
 export function StageEditorPanel({ eventId }: { eventId: number }) {
@@ -37,20 +37,23 @@ export function StageEditorPanel({ eventId }: { eventId: number }) {
       const server = saved(stage.id);
       return <li key={stage.key} className="grid gap-4 rounded-2xl border border-line p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h4 className="font-semibold text-ink">{`${index + 1}. ${stage.name || "Untitled stage"}`}</h4>
+          <h4 className="font-semibold text-ink">{stage.name ? `${index + 1}. ${stage.name}` : t`${index + 1}. Untitled stage`}</h4>
           <div className="flex flex-wrap gap-2">
             <button type="button" className="desk-button min-h-11" aria-label={t`Move ${stage.name || `stage ${index + 1}`} up`} disabled={index === 0} onClick={() => change(move(rows, index, -1))}><ArrowUp aria-hidden size={18} /></button>
             <button type="button" className="desk-button min-h-11" aria-label={t`Move ${stage.name || `stage ${index + 1}`} down`} disabled={index === rows.length - 1} onClick={() => change(move(rows, index, 1))}><ArrowDown aria-hidden size={18} /></button>
             <button type="button" className="desk-button min-h-11 gap-2" disabled={rows.length === 1} onClick={() => change(rows.filter((_, i) => i !== index))}><Trash2 aria-hidden size={18} />{t`Remove ${stage.name || `stage ${index + 1}`}`}</button>
           </div></div>
         {server ? <p className="text-sm text-muted">{t`${server.submissions ?? 0} submitted · ${server.pending_triage ?? 0} waiting for triage`}</p> : null}
-        {server?.warnings?.map(code => <p key={code} className="rounded-2xl border border-line bg-warn-soft p-3 text-sm text-warn-ink">{WARNINGS[code] ?? code}</p>)}
+        {server?.warnings?.map(code => <p key={code} className="rounded-2xl border border-line bg-warn-soft p-3 text-sm text-warn-ink">{WARNINGS()[code] ?? code}</p>)}
         <StageFields stage={stage} index={index} last={index === rows.length - 1} plan={data} onChange={next => change(rows.map((row, i) => i === index ? next : row))} />
         {server && server.id !== null && !dirty ? <StageTools eventId={eventId} stage={server} timezone={data.timezone} /> : null}
       </li>;
     })}</ol>
     <button type="button" className="desk-button min-h-11 justify-self-start" disabled={rows.length >= data.max_stages}
       onClick={() => change([...rows, blankStage(rows.length + 1)])}>{t`Add a stage`}</button>
+    <p className="text-sm text-muted">{rows.length >= data.max_stages
+      ? t`This event has reached the most stages this space allows (${data.max_stages}).`
+      : t`${rows.length} of up to ${data.max_stages} stages.`}</p>
     {save.error ? <ErrorText message={stageErrorMessage(save.error)} /> : null}
     {dirty ? <p role="status" className="text-sm font-semibold text-ink">{t`You have unsaved stage changes.`}</p> : null}
     <div className="flex flex-wrap gap-3">

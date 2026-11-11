@@ -11,7 +11,7 @@ import {
 } from "./techniciansApi";
 
 type Candidate = { person_id: number; name: string; is_technician: boolean };
-const CHANNELS = Object.keys(CHANNEL_LABELS) as Channel[];
+const CHANNELS = Object.keys(CHANNEL_LABELS()) as Channel[];
 
 /** Add or change one technician. An in-house person's coverage is their Technician scope, so
  *  only the Space Manager sets it; a contractor's coverage only pre-selects them. */
@@ -60,7 +60,7 @@ export function TechnicianForm({ makerspaceId, technician, canSetCoverage, onClo
         {CHANNELS.map(channel => <label key={channel} className="flex min-h-11 items-center gap-2">
           <input type="checkbox" checked={channel === "email" || channels.includes(channel)} disabled={channel === "email"}
             onChange={() => setChannels(current => current.includes(channel) ? current.filter(item => item !== channel) : [...current, channel])} />
-          {CHANNEL_LABELS[channel]}{channel !== "email" && technician && !technician.consent[channel] ? t` (needs opt-in)` : ""}</label>)}
+          {CHANNEL_LABELS()[channel]}{channel !== "email" && technician && !technician.consent[channel] ? t` (needs opt-in)` : ""}</label>)}
       </fieldset>
       {coverageEditable ? <fieldset className="grid gap-1 text-sm"><legend className="eyebrow mb-1">{t`Covers`}</legend>
         <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={has({ kind: "inventory", id: null })}
@@ -93,12 +93,12 @@ function TechnicianExtras({ technician, onArchived }: { technician: Technician; 
         onClick={() => link.mutate(technician.id, { onSuccess: setSent })}>{t`Send chat opt-in link`}</button>
       {(["telegram", "whatsapp", "sms"] as const).filter(channel => technician.consent[channel]).map(channel =>
         <button key={channel} type="button" className="desk-button-ghost" onClick={() => withdraw.mutate({ id: technician.id, channel })}>
-          {t`Stop ${CHANNEL_LABELS[channel]}`}</button>)}
+          {t`Stop ${CHANNEL_LABELS()[channel]}`}</button>)}
       {!technician.is_archived ? <button type="button" className="desk-button-danger"
         onClick={() => archive.mutate(technician.id, { onSuccess: onArchived })}>{t`Archive`}</button> : null}
     </div>
-    {sent ? <p className="break-words">{sent.emailed ? t`Emailed. ` : ""}{t`Link: `}<span className="font-mono">{sent.url}</span>.
-      For Telegram they send <span className="font-mono">{sent.telegram_start}</span> {t` to your space's bot.`}</p> : null}
+    {sent ? <p className="break-words">{sent.emailed ? t`Emailed. ` : ""}{t`Link: `}<span className="code-text">{sent.url}</span>.
+      For Telegram they send <span className="code-text">{sent.telegram_start}</span> {t` to your space's bot.`}</p> : null}
     {link.error || withdraw.error || archive.error ? <p role="alert" className="text-danger">
       {(link.error ?? withdraw.error ?? archive.error)?.message}</p> : null}
   </div>;

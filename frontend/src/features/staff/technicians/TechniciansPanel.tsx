@@ -25,8 +25,8 @@ export function TechniciansPanel({ makerspace, canSetCoverage }: { makerspace: M
       body={{ kind: "rows", rows: rows.map(row => <ListRow key={row.id} title={row.name} onClick={() => setEditing(row)}
         identity={{ kind: "icon", icon: "HardHat", tone: row.kind === "in_house" ? "accent" : "neutral" }}
         meta={[row.kind === "in_house" ? "In-house" : "Contractor", row.coverage.map(item => item.label).join(", ") || "No coverage set"].join(" · ")}
-        right={<span className="flex flex-wrap gap-1.5">{(Object.keys(CHANNEL_LABELS) as Channel[]).filter(channel => row.consent[channel])
-          .map(channel => <StatusPill key={channel} tone="success" label={CHANNEL_LABELS[channel]} />)}
+        right={<span className="flex flex-wrap gap-1.5">{(Object.keys(CHANNEL_LABELS()) as Channel[]).filter(channel => row.consent[channel])
+          .map(channel => <StatusPill key={channel} tone="success" label={CHANNEL_LABELS()[channel]} />)}
           {row.opt_in_pending ? <StatusPill tone="warn" label={t`Opt-in sent`} /> : null}</span>} />) }} />
     {editing ? <TechnicianForm makerspaceId={makerspace.id} technician={editing === "new" ? null : editing}
       canSetCoverage={canSetCoverage} onClose={() => setEditing(null)} /> : null}

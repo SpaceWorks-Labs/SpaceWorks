@@ -14,7 +14,7 @@ export type TechnicianInput = Partial<Pick<Technician, "name" | "email" | "phone
   & { person_id?: number | null; coverage?: CoverageRow[] };
 export type OptInLink = { url: string; telegram_start: string; expires_at: string; emailed: boolean };
 
-export const CHANNEL_LABELS: Record<Channel, string> = { email: t`Email`, telegram: t`Telegram`, whatsapp: t`WhatsApp`, sms: "SMS" };
+export const CHANNEL_LABELS = (): Record<Channel, string> => ({ email: t`Email`, telegram: t`Telegram`, whatsapp: t`WhatsApp`, sms: t`SMS` });
 export const technicianKeys = { all: ["technicians"] as const, list: (msId: number) => ["technicians", msId] as const };
 
 export function useTechnicians(msId: number, enabled = true) {

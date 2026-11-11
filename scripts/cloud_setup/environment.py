@@ -28,8 +28,9 @@ OPERATOR_DEFAULTS = {
     "LOGIN_IP_BLOCK_ENABLED": "True", "PASSWORD_BREACH_CHECK_ENABLED": "True", "WEBAUTHN_RP_NAME": "Space Works",
     "WEB_PUSH_VAPID_SUBJECT": "", "MIN_NATIVE_APP_VERSION_IOS": "", "MIN_NATIVE_APP_VERSION_ANDROID": "",
     "CARD_FONT_DOWNLOADS_ENABLED": "True",
-    # #187A: the managed-hosting limiter and its online billing stay off unless the operator opts in.
-    "MANAGED_PLANS_ENABLED": "False", "MANAGED_BILLING_ONLINE_ENABLED": "False",
+    # #187A/#234: empty leaves the "Hosting other makerspaces" switch to the superadmin console
+    # (off by default there); True/False force it. Online billing stays off unless opted in.
+    "MANAGED_PLANS_ENABLED": "", "MANAGED_BILLING_ONLINE_ENABLED": "False",
 }
 COMMON.update(OPERATOR_DEFAULTS)
 BOOLEAN_DEFAULTS = {
@@ -47,7 +48,7 @@ CONFIGURABLE_DEFAULTS = {
 
 def validate_default_override(name, value):
     if name in BOOLEAN_DEFAULTS:
-        valid = value.lower() in {"true", "false"}
+        valid = value.lower() in {"true", "false"} or (name == "MANAGED_PLANS_ENABLED" and value == "")
     elif name == "TURNSTILE_FAIL_MODE":
         valid = value in {"open", "closed"}
     elif name in OPERATOR_DEFAULTS:

@@ -28,12 +28,16 @@ deployment_value() {
 
 append_deployment_layers() {
   local layer="$1" prefix="$2"
-  local frontend storage tunnel_port
+  local frontend storage database redis tunnel_port
   frontend="$(deployment_value SPACEWORKS_RUN_FRONTEND)"
   storage="$(deployment_value SPACEWORKS_STORAGE)"
+  database="$(deployment_value SPACEWORKS_DATABASE)"
+  redis="$(deployment_value SPACEWORKS_REDIS)"
   tunnel_port="$(deployment_value CONTROL_PLANE_TUNNEL_PORT)"
   [[ -z "$frontend" || "$frontend" == yes || "$frontend" == no ]] || { echo 'SPACEWORKS_RUN_FRONTEND must be yes or no.' >&2; return 64; }
   [[ -z "$storage" || "$storage" == bundled || "$storage" == external ]] || { echo 'SPACEWORKS_STORAGE must be bundled or external.' >&2; return 64; }
+  [[ -z "$database" || "$database" == bundled || "$database" == external ]] || { echo 'SPACEWORKS_DATABASE must be bundled or external.' >&2; return 64; }
+  [[ -z "$redis" || "$redis" == bundled || "$redis" == external ]] || { echo 'SPACEWORKS_REDIS must be bundled or external.' >&2; return 64; }
   DEPLOYMENT_SUFFIX=''
   if [[ "$frontend" == no ]]; then
     COMPOSE_FILES+=("$prefix/docker/compose.api-only.yml")
@@ -45,6 +49,14 @@ append_deployment_layers() {
   if [[ "$storage" == external ]]; then
     COMPOSE_FILES+=("$prefix/docker/compose.external-storage.yml")
     DEPLOYMENT_SUFFIX+='-external-storage'
+  fi
+  if [[ "$database" == external ]]; then
+    COMPOSE_FILES+=("$prefix/docker/compose.external-db.yml")
+    DEPLOYMENT_SUFFIX+='-external-db'
+  fi
+  if [[ "$redis" == external ]]; then
+    COMPOSE_FILES+=("$prefix/docker/compose.external-redis.yml")
+    DEPLOYMENT_SUFFIX+='-external-redis'
   fi
   control_plane_settings_valid "$layer" || return 64
   if [[ -n "$tunnel_port" && "$layer" == *tls ]]; then

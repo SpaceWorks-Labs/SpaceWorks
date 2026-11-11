@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Compose dotenv single quotes suppress interpolation of operator-provided secrets.
+source "$(dirname "${BASH_SOURCE[0]}")/installer/outside-services.sh"
 env_setting() {
   local value="$2"
   value="${value//\\/\\\\}"
@@ -67,6 +68,7 @@ write_setup_environment() {
   # Insecure cookies are permitted only after the loopback-only check above.
   env_setting AUTH_COOKIE_SECURE "$([[ "$HTTPS_MODE" == 1 ]] && echo false || echo true)"
   env_setting AUTH_COOKIE_SAMESITE "$([[ "$HTTPS_MODE" == 1 ]] && echo Lax || echo None)"
+  env_setting HUB_LANDING_ENABLED "$([[ "${SETUP_HUB_LANDING:-Y}" =~ ^[Yy] ]] && echo true || echo false)"
   env_setting CONTROL_PLANE_PROXY "${CONTROL_PLANE_PROXY:-false}"
   [[ -z "${CONTROL_PLANE_ALLOW_CIDRS:-}" ]] || env_setting CONTROL_PLANE_ALLOW_CIDRS "$CONTROL_PLANE_ALLOW_CIDRS"
   [[ -z "${CONTROL_PLANE_TUNNEL_PORT:-}" ]] || env_setting CONTROL_PLANE_TUNNEL_PORT "$CONTROL_PLANE_TUNNEL_PORT"
@@ -103,7 +105,7 @@ write_setup_environment() {
   env_setting SPACEWORKS_WEB_UPSTREAM "$([[ "$RUN_FRONTEND" == 1 ]] && echo frontend:80 || echo api-edge:80)"
   if [[ "$STORAGE" == 2 ]]; then
     env_setting AWS_S3_ENDPOINT_URL "$S3_ENDPOINT"
-    env_setting AWS_S3_PUBLIC_ENDPOINT_URL "$S3_ENDPOINT"
+    env_setting AWS_S3_PUBLIC_ENDPOINT_URL "${S3_PUBLIC_ENDPOINT:-$S3_ENDPOINT}"
     env_setting AWS_S3_REGION_NAME "$S3_REGION"
     env_setting AWS_ACCESS_KEY_ID "$S3_ACCESS_KEY"
     env_setting AWS_SECRET_ACCESS_KEY "$S3_SECRET_KEY"
@@ -124,6 +126,7 @@ write_setup_environment() {
     env_setting PUBLIC_IMAGE_BASE_URL "http://$WEBHOST:9000/public-images"
     env_setting MINIO_CORS_ALLOWED_ORIGINS "$origins"
   fi
+  write_outside_environment || return
   source "$(dirname "${BASH_SOURCE[0]}")/installer/environment-continuity.sh"
   forward_installer_environment || return
 }

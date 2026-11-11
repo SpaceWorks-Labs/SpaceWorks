@@ -26,6 +26,10 @@ create_update_backup() {
   [[ ! -L "$ROOT/backups" ]] || die 'The backup directory cannot be a symlink.'
   mkdir -p "$ROOT/backups"
   chmod 700 "$ROOT/backups"
+  if [[ "$(deployment_value SPACEWORKS_DATABASE)" == external ]]; then
+    create_external_update_backup
+    return
+  fi
   ${COMPOSE[@]+"${COMPOSE[@]}"} up -d --wait db
   backup_name="pre-update-$(date -u +%Y%m%dT%H%M%SZ)-$$.sql.gz"
   say "Creating database backup backups/$backup_name."
@@ -48,4 +52,23 @@ create_update_backup() {
     "${COMPOSE[@]}" exec -T db chown "$(id -u):$(id -g)" "/backups/$backup_name" \
       || die 'Cannot protect the private pre-update backup for its install owner.'
   fi
+}
+
+# An outside database has no bundled `db` container: dump it from the backend container with the
+# version-matched pg_dump, then stream the file to backups/ and remove the working copy.
+create_external_update_backup() {
+  local container_path size
+  backup_name="pre-update-$(date -u +%Y%m%dT%H%M%SZ)-$$.dump"
+  container_path="/var/lib/spaceworks/ops/work/$backup_name"
+  say "Creating database backup backups/$backup_name (outside database)."
+  require_operation_capacity upgrade || die 'Measured peak capacity admission failed; update cancelled.'
+  size="$("${COMPOSE[@]}" exec -T "$APP_SERVICE" python - "$backup_name" < "$UPDATE_SCRIPT_DIR/installer/external-db-dump.py")" \
+    || die 'Database backup failed; update cancelled. A transaction pooler cannot be dumped: set DATABASE_URL to the direct or session connection.'
+  [[ "${size//$'\r'/}" =~ ^[0-9]{1,15}$ ]] || die 'Database backup did not report a size; update cancelled.'
+  # The dump holds every record: create it private (the sealed-recovery check refuses group/other access).
+  ( umask 077; "${COMPOSE[@]}" exec -T "$APP_SERVICE" cat "$container_path" > "$ROOT/backups/$backup_name" ) \
+    || die 'Could not copy the database backup; update cancelled.'
+  chmod 600 "$ROOT/backups/$backup_name" || die 'Cannot protect the private pre-update backup.'
+  "${COMPOSE[@]}" exec -T "$APP_SERVICE" rm -f "$container_path" || true
+  [[ -s "$ROOT/backups/$backup_name" ]] || die 'Database backup was not created; update cancelled.'
 }

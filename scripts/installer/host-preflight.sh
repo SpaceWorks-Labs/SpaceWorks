@@ -72,6 +72,17 @@ if ((${#missing[@]} > 0)); then
 else
   say "Dependencies are already present."
 fi
+# Memory is advisory: the full stack (database, Redis, storage, API, worker, scheduler,
+# website) wants about 4 GiB; smaller hosts may work with swap but start slowly.
+memory_kb=''
+if [[ "$HOST_KIND" == linux && -r /proc/meminfo ]]; then
+  memory_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+elif [[ "$HOST_KIND" == macos ]]; then
+  memory_kb="$(sysctl -n hw.memsize 2>/dev/null || true)"; [[ ! "$memory_kb" =~ ^[0-9]+$ ]] || memory_kb=$((memory_kb / 1024))
+fi
+if [[ "$memory_kb" =~ ^[0-9]+$ ]] && ((memory_kb > 0 && memory_kb < 3584 * 1024)); then
+  say "Warning: $((memory_kb / 1024)) MiB RAM detected; about 4 GiB is recommended (2 GiB plus swap is the floor). Expect slow starts."
+fi
 if command -v docker >/dev/null 2>&1 && ! docker info >/dev/null 2>&1; then
   if [[ "$HOST_KIND" == linux ]]; then
     say "Docker is installed but stopped/inaccessible; after preflight the installer will start it or configure docker-group access."

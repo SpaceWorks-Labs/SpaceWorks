@@ -59,7 +59,9 @@ What do you want to do?
   5) Install or re-register the GitHub Actions runner only.
   6) Turn web access to the control plane (/control/) on or off - no new version is
      downloaded.
-Choose 1-6 [4]: ")"
+  7) Change outside services (database, Redis, storage, email) - no new version is
+     downloaded.
+Choose 1-7 [4]: ")"
   fi
   ACTION="${ACTION:-4}"
   case "$ACTION" in
@@ -68,6 +70,7 @@ Choose 1-6 [4]: ")"
     3) ACTION=both ;;
     5) ACTION=runner ;;
     6) ACTION=controlplane ;;
+    7) ACTION=services ;;
     4) say "Cancelled; existing deployment was not changed."; exit 130 ;;
     *) die "Invalid menu choice; existing deployment was not changed." ;;
   esac
@@ -92,6 +95,15 @@ elif ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} test -e "$INSTALL_DIR"; then
 else
   EMPTY_INSTALL_DIR=0
 fi
+# install.sh --dry-run exports SPACEWORKS_INSTALL_DRY_RUN=1: report the plan before any effect.
+dry_run_done() {
+  say "Dry run plan: $*"
+  say "Dry run complete; nothing was installed, written or started."
+  exit 0
+}
+if [[ "${SPACEWORKS_INSTALL_DRY_RUN:-0}" == 1 && "$ACTION" != fresh ]]; then
+  dry_run_done "update the install in $INSTALL_DIR to $VERSION (database backup first; modules and data kept)."
+fi
 if [[ "$ACTION" == runner ]]; then
   ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} test -f "$INSTALL_DIR/scripts/install-runner.sh" \
     || die 'This installation needs a release update before installing its runner.'
@@ -105,6 +117,13 @@ if [[ "$ACTION" == controlplane ]]; then
   cp_runner=()
   [[ "$RUN_INSTALLED_AS_ROOT" != 1 ]] || cp_runner=(${RUN_ROOT[@]+"${RUN_ROOT[@]}"})
   ${cp_runner[@]+"${cp_runner[@]}"} bash "$INSTALL_DIR/scripts/control-plane-settings.sh" </dev/tty || exit $?
+  exit 0
+fi
+if [[ "$ACTION" == services ]]; then
+  ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} test -f "$INSTALL_DIR/scripts/switch-services.sh"     || die 'This installation needs a release update (option 1) before it can change outside services.'
+  sv_runner=()
+  [[ "$RUN_INSTALLED_AS_ROOT" != 1 ]] || sv_runner=(${RUN_ROOT[@]+"${RUN_ROOT[@]}"})
+  ${sv_runner[@]+"${sv_runner[@]}"} bash "$INSTALL_DIR/scripts/switch-services.sh" menu </dev/tty || exit $?
   exit 0
 fi
 port_in_use() {
@@ -130,6 +149,10 @@ say "Using verified release $VERSION ($REPOSITORY)."
 if [[ "$ACTION" == fresh ]]; then
   source "$STAGE_DIR/scripts/setup-questions.sh"
   SETUP_HOST_PLAN="install/ensure ${missing[*]:-no missing packages}; enable Docker/access if needed; install $RELEASE_TAG in $INSTALL_DIR; write private settings; pull images; initialize database; create your admin/makerspace; apply selected modules; start selected services; install the optional GitHub Actions runner"
+  if [[ "${SPACEWORKS_INSTALL_DRY_RUN:-0}" == 1 && "${SETUP_NON_INTERACTIVE:-0}" == 1 && -z "${ANSWERS_ARG:-}" ]]; then
+    dry_run_done "ask the deployment questions, then $SETUP_HOST_PLAN."
+  fi
+  [[ "${SPACEWORKS_INSTALL_DRY_RUN:-0}" != 1 ]] || say "Dry run: answer the questions to preview the plan; nothing is installed."
   if [[ "${SETUP_NON_INTERACTIVE:-0}" == 1 && "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" != free ]]; then
     ROOT="$STAGE_DIR"
     load_noninteractive_answers "$ANSWERS_ARG" || exit $?
@@ -154,10 +177,11 @@ elif [[ "$ACTION" == fresh ]]; then
     ports+=("$CONTROL_PLANE_TUNNEL_PORT")
   fi
   for port in "${ports[@]}"; do
-    port_in_use "$port" && die "TCP port $port is already in use. Free it before installing."
+    port_in_use "$port" && die "TCP port $port is already in use (find the program with: sudo ss -ltnp 'sport = :$port'). Stop it or choose the own-proxy HTTPS option, then rerun; nothing was changed."
   done
   say "Required TCP ports ${ports[*]} are free."
 fi
+[[ "${SPACEWORKS_INSTALL_DRY_RUN:-0}" != 1 ]] || dry_run_done "${SETUP_HOST_PLAN:-prepare the selected profile}."
 source "$STAGE_DIR/scripts/installer/linux-dependencies.sh"
 
 if ((${#missing[@]} > 0)); then install_linux_dependencies

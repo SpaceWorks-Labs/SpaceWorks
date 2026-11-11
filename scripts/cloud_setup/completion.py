@@ -24,7 +24,7 @@ def configuration_hash(values):
 
 def verify_acceptance(path, values, answers):
     if not path:
-        raise SetupError("runtime_acceptance_required", "Run lane Q's deployed acceptance harness and supply its private receipt with --acceptance-file.")
+        raise SetupError("runtime_acceptance_required", "Run the deployed acceptance checks and supply their private receipt with --acceptance-file.")
     report = read_json(path)
     required = {"version", "deployment_id", "backend_image", "configuration_sha256", "profile", "checked_at", "checks"}
     if set(report) != required or report["version"] != 1:

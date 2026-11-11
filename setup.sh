@@ -28,10 +28,22 @@ while (($#)); do
     --resume) [[ -f .spaceworks-install.json ]] || { echo 'No private incomplete-install journal.' >&2; exit 64; } ;;
     --profile) (($# > 1)) || exit 64; SPACEWORKS_DEPLOYMENT_PROFILE="$2"; shift ;;
     --profile=*) SPACEWORKS_DEPLOYMENT_PROFILE="${1#*=}" ;;
-    *) printf 'Usage: bash setup.sh [--build] [--resume] [--profile full|free] [--non-interactive --answers-file private.json]\n' >&2; exit 64 ;;
+    --frontend) (($# > 1)) || exit 64; SPACEWORKS_FRONTEND="$2"; shift ;;
+    --frontend=*) SPACEWORKS_FRONTEND="${1#*=}" ;;
+    *) printf 'Usage: bash setup.sh [--build] [--resume] [--profile full|free] [--frontend full|api-only] [--non-interactive --answers-file private.json]\n' >&2; exit 64 ;;
   esac
   shift
 done
+case "${SPACEWORKS_FRONTEND:-}" in
+  ''|full|api-only) ;;
+  *) echo 'Use --frontend full (web app + API) or --frontend api-only.' >&2; exit 64 ;;
+esac
+# The frontend mode is chosen once, at first install; an existing install keeps its own.
+if [[ -n "${SPACEWORKS_FRONTEND:-}" && -f .env ]]; then
+  installed_frontend="$(deployment_value SPACEWORKS_RUN_FRONTEND)"
+  [[ "$installed_frontend" == no && "$SPACEWORKS_FRONTEND" == api-only || "$installed_frontend" != no && "$SPACEWORKS_FRONTEND" == full ]] \
+    || { echo "This install already runs $([[ "$installed_frontend" == no ]] && echo API-only || echo Full); --frontend cannot change it. See docs/self-hosting.md, 'API-only and external storage'." >&2; exit 64; }
+fi
 case "${SPACEWORKS_DEPLOYMENT_PROFILE:-full}" in
   full) ;;
   free) export SPACEWORKS_DEPLOYMENT_PROFILE ;;
@@ -160,6 +172,10 @@ mkdir -p "$ROOT/backups"
 chmod 700 "$ROOT/backups"
 source "$ROOT/scripts/installer/setup-state.sh"
 checkpoint_install environment
+# Outside services (database, Redis, storage, email) are tested before the database pointer is
+# written or anything starts, so a typo never leaves a half-initialised install.
+source "$ROOT/scripts/installer/outside-checks.sh"
+run_outside_checks || die 'An outside service failed its test; fix it as described above, then run setup again.'
 prepare_compose_wrapper
 ensure_station_pepper
 deployment_services
@@ -241,35 +257,38 @@ if [ "$FIRST_RUN" = 1 ]; then
   checkpoint_install configured
   say "All done!"
   rm -f -- "$ROOT/.spaceworks-answers"
-  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
+  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no && -z "${SITE_ORIGINS:-}" ]]; then
+    echo "  Install: API-only, no website (admin: $ADMINUSER). Email links use $(deployment_value PUBLIC_APP_BASE_URL) until PUBLIC_APP_BASE_URL is changed in .env."
+  elif [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
     echo "  Website (hosted elsewhere): $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
   else
     echo "  Website: $(deployment_value PUBLIC_APP_BASE_URL) (admin: $ADMINUSER)"
   fi
   echo "  API: $([[ "$HTTPS_MODE" == 1 ]] && echo http || echo https)://$WEBHOST/api"
   if [[ "$(deployment_value CONTROL_PLANE_PROXY)" == true ]]; then
-    echo "  Control plane: $(deployment_value PUBLIC_APP_BASE_URL)/control/"
+    echo "  Control panel: $(deployment_value PUBLIC_APP_BASE_URL)/control/"
   else
-    echo "  Control plane: off (see docs/self-hosting.md, 'Reaching the control plane')"
+    echo "  Control panel (/control/): off (see docs/self-hosting.md, 'Reaching the control plane')"
   fi
   tunnel_port="$(deployment_value CONTROL_PLANE_TUNNEL_PORT)"
   if [[ -n "$tunnel_port" ]]; then
     echo "  SSH tunnel: ssh -L 8443:127.0.0.1:$tunnel_port <you>@<this server>, then https://localhost:8443/control/"
   fi
-  [ "$GEN_PASS" != 1 ] || echo "  Generated credential: $ROOT/.spaceworks-bootstrap-credential.json (private; change it at first sign-in)."
+  [ "$GEN_PASS" != 1 ] || echo "  Admin password: made for you and saved in $ROOT/.spaceworks-bootstrap-credential.json (private; you choose a new one at first sign-in)."
   print_key_backup_notice
   echo
-  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no ]]; then
-    echo "Next: log into the React staff console at $(deployment_value PUBLIC_APP_BASE_URL)/admin, add inventory, and turn on 'public inventory' for your makerspace."
+  if [[ "$(deployment_value SPACEWORKS_RUN_FRONTEND)" == no && -z "${SITE_ORIGINS:-}" ]]; then
+    echo "Next: connect your mobile app or integration to the API above. The staff console needs a website: host one and set its origin, or use /control/ (see docs/self-hosting.md)."
   else
-    echo   "Next: log into the React staff console at /admin, add inventory, and turn on 'public inventory' for your makerspace."
+    echo "Next: open $(deployment_value PUBLIC_APP_BASE_URL)/admin, sign in as $ADMINUSER and set up two-step sign-in."
+    echo "      The guided setup on your dashboard then walks you through name, logo, hours, areas and staff."
   fi
   if [[ "$HTTPS_MODE" == 3 ]]; then
     write_proxy_nginx_config || warn "Could not write the nginx example; see docs/self-hosting.md."
     print_proxy_nginx_steps
   fi
 else
-  say "App started. To create the first admin (only if you haven't yet), run:"
+  say "App started with the existing settings; first-run admin and makerspace creation was skipped."
   echo "  Configure Platform Email in /control/ and verify a real delivery before using invitations or account recovery."
 fi
 

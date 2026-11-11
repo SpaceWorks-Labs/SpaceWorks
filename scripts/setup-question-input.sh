@@ -45,7 +45,7 @@ question() {
       echo "Invalid noninteractive answer: $input_key" >&2; return 64
     fi
     local hint="${default:-required}"
-    case "$rule" in secret|google|cidrs|port) hint="${default:-skip}" ;; esac
+    case "$rule" in secret|google|cidrs|port|origins) hint="${default:-skip}" ;; esac
     [[ "$key" != ADMINPASS ]] || hint=auto-generate
     [[ "$key" != S3_SECRET_KEY ]] || hint=required
     if [[ "$rule" == choices:Y,* ]]; then
@@ -57,7 +57,7 @@ question() {
       [[ -z "${INPUT_ANSWERS[$input_key]+present}" ]] || INPUT_USED["$input_key"]=1
       [[ "$key" != proceed ]] || value=Y
       echo '(private answers file)'
-    elif [[ "$rule" == secret ]]; then
+    elif [[ "$rule" == secret || "$rule" == postgres_url || "$rule" == redis_url ]]; then
       IFS= read -r -s -u 3 value || return 1
       echo
     else
@@ -90,6 +90,11 @@ question() {
         fi ;;
       repository) [[ "$value" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9_.-]{1,100}$ && "$value" != */. && "$value" != */.. ]] || { echo 'Enter a GitHub owner/repo name.'; continue; } ;;
       loopback) [[ "$value" == localhost || "$value" == 127.0.0.1 ]] || { echo 'Plain HTTP is only for localhost or 127.0.0.1. LAN access requires HTTPS (automatic Caddy or your own proxy).'; continue; } ;;
+      web_address)
+        value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+        [[ "$value" == localhost || "$value" == 127.0.0.1 ]] \
+          || { [[ "$value" == *.* && ! "${value##*.}" =~ ^[0-9]+$ ]] && valid_dns_host "$value"; } \
+          || { echo 'Enter a domain name such as tools.example.org (no http://, port or path), or press Enter for localhost.'; continue; } ;;
       host) valid_dns_host "$value" || { echo 'Enter a hostname or IPv4 address without a scheme, port or path.'; continue; } ;;
       domain) [[ "$value" == *.* && ! "${value##*.}" =~ ^[0-9]+$ ]] && valid_dns_host "$value" || { echo 'Enter a DNS domain without a scheme, port or path.'; continue; }; value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" ;;
       slug)
@@ -125,6 +130,8 @@ question() {
       currency) [[ "$value" =~ ^[a-z]{3}$ ]] || { echo 'Use a three-letter lowercase currency code.'; continue; } ;;
       region) [[ "$value" =~ ^[a-zA-Z0-9._-]+$ ]] || { echo 'Enter a region code without whitespace.'; continue; } ;;
       username) [[ "$value" =~ ^[a-zA-Z0-9_.@+-]+$ ]] || { echo 'Use letters, digits or . @ + - _.'; continue; } ;;
+      postgres_url) local problem; problem="$(db_url_problem "$value")" || { echo "$problem"; continue; } ;;
+      redis_url) local problem; problem="$(redis_url_problem "$value")" || { echo "$problem"; continue; } ;;
       text) [[ -n "$value" ]] || { echo 'A value is required.'; continue; } ;;
     esac
     if [[ "$rule" == url || "$rule" == secure_url ]]; then
@@ -143,10 +150,12 @@ SETUP_ANSWER_KEYS=(HOSTING_MODEL RUN_FRONTEND SITE_ORIGINS PLATFORM_DOMAIN PUBLI
   SETUP_SCAN_MODE SETUP_CLAMD_HOST SETUP_CLAMD_PORT
   TLS_EMAIL HTTPS_MODE STORAGE WEBHOST MSNAME ORG_NAME MS_SUBDOMAIN SPACEWORKS_EDITION
   CONTROL_PLANE_PROXY CONTROL_PLANE_ALLOW_CIDRS CONTROL_PLANE_TUNNEL_PORT
-  SETUP_SELECTED_AREAS AREA_SETTINGS_JSON AREA_ORGANIZATION AREA_CREATE_PLAN REQUEST_ACCESS ADMINUSER ADMINEMAIL ADMINPASS GEN_PASS SETUP_MFA_ENABLED SETUP_SOCIAL_PROVIDERS
+  SETUP_SELECTED_AREAS AREA_SETTINGS_JSON AREA_ORGANIZATION AREA_CREATE_PLAN REQUEST_ACCESS ADMINUSER ADMINEMAIL ADMINPASS GEN_PASS SETUP_MFA_ENABLED SETUP_SOCIAL_PROVIDERS SETUP_HUB_LANDING
   STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_DEFAULT_CURRENCY SPACEWORKS_REPOSITORY INSTALL_RUNNER
   S3_ENDPOINT S3_REGION PRIVATE_BUCKET IMAGE_BUCKET S3_ACCESS_KEY S3_SECRET_KEY
-  IMAGE_BASE_URL PRESIGN_METHOD ANSWERS_CONFIRMED)
+  IMAGE_BASE_URL PRESIGN_METHOD STORAGE_PROFILE S3_PUBLIC_ENDPOINT
+  DATABASE_CHOICE EXTERNAL_DB_URL EXTERNAL_DB_DIRECT_URL REDIS_CHOICE EXTERNAL_REDIS_URL
+  EMAIL_CHOICE SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASSWORD SMTP_TLS SMTP_FROM SMTP_TEST ANSWERS_CONFIRMED)
 
 save_setup_answers() {
   local target="$1" key
@@ -177,9 +186,19 @@ load_setup_answers() {
   [[ "${ANSWERS_CONFIRMED:-}" == yes ]] || { echo 'Deployment answers have not been confirmed.' >&2; return 1; }
 }
 
+# Decision 300(c): the product page is the front page by default on every install; No is the opt-out.
+ask_setup_landing() {
+  echo 'The SpaceWorks product page is the public front page of this site. Answer n when your space wants its own home page there instead.'
+  question SETUP_HUB_LANDING "Show the SpaceWorks product page at your site's front page?" Y choices:Y,y,yes,YES,N,n,no,NO
+}
+
 validate_setup_login_answers() {
   SETUP_MFA_ENABLED="${SETUP_MFA_ENABLED:-Y}"
   SETUP_SOCIAL_PROVIDERS="${SETUP_SOCIAL_PROVIDERS:-google}"
+  SETUP_HUB_LANDING="${SETUP_HUB_LANDING:-Y}"
+  [[ "$SETUP_HUB_LANDING" =~ ^([Yy]|[Yy][Ee][Ss]|[Nn]|[Nn][Oo])$ ]] || {
+    echo 'SETUP_HUB_LANDING must be y or n.' >&2; return 1;
+  }
   [[ "$SETUP_MFA_ENABLED" =~ ^([Yy]|[Yy][Ee][Ss]|[Nn]|[Nn][Oo])$ ]] || {
     echo 'SETUP_MFA_ENABLED must be y or n.' >&2; return 1;
   }

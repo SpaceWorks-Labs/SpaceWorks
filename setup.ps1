@@ -1,6 +1,7 @@
 <#
-  Space Works - Open Source Makerspace Manager first-run setup for self-hosting (Windows).
-  Right-click -> "Run with PowerShell", or run:  powershell -ExecutionPolicy Bypass -File setup.ps1
+  Space Works - developer helper for Windows checkouts. It does not install anything.
+  Servers install with the one-line install.sh on Linux or macOS; on Windows run that inside
+  WSL2 (Ubuntu) or a Linux VM. See docs/install-and-update.md.
 #>
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot

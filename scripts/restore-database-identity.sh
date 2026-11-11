@@ -2,6 +2,10 @@
 # Called under operation.lock, before any restore-control or destructive effect.
 prove_restore_database() {
   local active bootstrap
+  if declare -F restore_database_is_external >/dev/null && restore_database_is_external; then
+    prove_external_restore_database
+    return
+  fi
   active="$("${COMPOSE[@]}" run --rm --no-deps -T backend --role management python -c \
     "$(cat "$RESTORE_SCRIPT_DIR/restore-database-identity.py")")" \
     || die 'Cannot prove the active database identity; restore refused.'

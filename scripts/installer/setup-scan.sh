@@ -3,6 +3,9 @@
 ask_setup_scanner() {
   SETUP_SCAN_MODE=none; SETUP_CLAMD_HOST=''; SETUP_CLAMD_PORT=3310
   if [[ ",${SETUP_SELECTED_AREAS}," == *,events,* && "$HTTPS_MODE" != 1 ]]; then
+    if [[ "${SETUP_QUICK:-N}" == Y ]]; then
+      SETUP_SCAN_MODE=bundled; echo 'File scanning: uploads are checked for malware on this server (bundled ClamAV).'; return 0
+    fi
     echo 'File scanning: bundled uses private ClamAV; external needs a private scanner or protected tunnel. No public scanner port is opened.'
     question SETUP_SCAN_MODE 'File scanning (bundled/external/none)' bundled choices:bundled,external,none || return
     if [[ "$SETUP_SCAN_MODE" == external ]]; then

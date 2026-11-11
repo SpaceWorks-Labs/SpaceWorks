@@ -54,9 +54,13 @@ say() { printf '[Space Works settings] %s\n' "$*"; }
 die() { printf '[Space Works settings] ERROR: %s\n' "$*" >&2; exit 1; }
 refuse() { printf '[Space Works settings] ERROR: %s\n' "$*" >&2; exit 64; }
 source "$APPLY_SCRIPT_DIR/../frontend/docker/control-plane-allowlist.sh"
-CP_MODE=''; NEW_CIDRS=''; NEW_PORT=''; CIDRS_GIVEN=0; PORT_GIVEN=0
+CP_MODE=''; NEW_CIDRS=''; NEW_PORT=''; CIDRS_GIVEN=0; PORT_GIVEN=0; LANDING_MODE=''
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --landing)
+      [[ $# -ge 2 ]] || refuse "Missing value for $1."
+      LANDING_MODE="$2"; [[ "$LANDING_MODE" == on || "$LANDING_MODE" == off ]] || refuse '--landing must be on or off.'
+      shift 2 ;;
     --control-plane|--allow-cidrs|--tunnel-port)
       [[ $# -ge 2 ]] || refuse "Missing value for $1."
       case "$1" in
@@ -117,15 +121,23 @@ cleanup() {
 }
 trap cleanup EXIT
 acquire_update_lock
-if [[ -n "$CP_MODE" ]]; then
+if [[ -n "$CP_MODE" || -n "$LANDING_MODE" ]]; then
   cp -p -- "$ROOT/.env" "$ROOT/.env.before-control-plane"
   ENV_TEMP="$(umask 077; mktemp "$ROOT/.env.control-plane.XXXXXX")"
-  sed '/^[[:space:]]*\(export[[:space:]]\+\)\?CONTROL_PLANE_\(PROXY\|ALLOW_CIDRS\|TUNNEL_PORT\)=/d' "$ROOT/.env" > "$ENV_TEMP"
+  # Decision 300: --landing rewrites only HUB_LANDING_ENABLED; --control-plane only the CONTROL_PLANE_* keys.
+  cp -- "$ROOT/.env" "$ENV_TEMP"
+  [[ -z "$CP_MODE" ]] || sed -i '/^[[:space:]]*\(export[[:space:]]\+\)\?CONTROL_PLANE_\(PROXY\|ALLOW_CIDRS\|TUNNEL_PORT\)=/d' "$ENV_TEMP"
+  [[ -z "$LANDING_MODE" ]] || sed -i '/^[[:space:]]*\(export[[:space:]]\+\)\?HUB_LANDING_ENABLED=/d' "$ENV_TEMP"
   # A hand-edited .env may lack its final newline; appending would join two settings.
   [[ ! -s "$ENV_TEMP" || -z "$(tail -c 1 "$ENV_TEMP")" ]] || printf '\n' >> "$ENV_TEMP"
+  if [[ -n "$LANDING_MODE" ]]; then
+    landing=true; [[ "$LANDING_MODE" == on ]] || landing=false
+    printf "HUB_LANDING_ENABLED='%s'\n" "$landing" >> "$ENV_TEMP"
+  fi
   proxy=false; [[ "$CP_MODE" != on ]] || proxy=true
-  printf "CONTROL_PLANE_PROXY='%s'\n" "$proxy" >> "$ENV_TEMP"
+  [[ -z "$CP_MODE" ]] || printf "CONTROL_PLANE_PROXY='%s'\n" "$proxy" >> "$ENV_TEMP"
   for key in ALLOW_CIDRS TUNNEL_PORT; do
+    [[ -n "$CP_MODE" ]] || break
     if [[ "$key" == ALLOW_CIDRS ]]; then value="$NEW_CIDRS"; else value="$NEW_PORT"; fi
     [[ -n "$value" ]] || continue
     value="${value//\\/\\\\}"; value="${value//\'/\\\'}"

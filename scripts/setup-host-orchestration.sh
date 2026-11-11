@@ -130,7 +130,9 @@ with tenant_write(makerspace.pk):
 }
 
 configure_setup_domain() {
-  [[ "$HOSTING_MODEL" == 3 || "$RUN_FRONTEND" == 2 ]] || return 0
+  # API-only with no website elsewhere has no frontend domain to record; only a hosted
+  # platform provisions a subdomain without one.
+  [[ "$HOSTING_MODEL" == 3 || ( "$RUN_FRONTEND" == 2 && -n "${SITE_ORIGINS:-}" ) ]] || return 0
   SETUP_MAKERSPACE_NAME="$MSNAME" SETUP_MAKERSPACE_SLUG="$MS_SUBDOMAIN" \
   SETUP_SITE_ORIGINS="$SITE_ORIGINS" \
   ${COMPOSE[@]+"${COMPOSE[@]}"} run --rm --no-deps -T \

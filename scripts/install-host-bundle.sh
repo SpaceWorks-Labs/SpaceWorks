@@ -26,6 +26,9 @@ host_bundle_files() {
     scripts/installer/privileged-target.sh scripts/installer/probe-bundle.py
     scripts/installer/probe-common.py scripts/installer/probe-services.py
     scripts/installer/probe-storage.py scripts/installer/probe-integrations.py
+    scripts/installer/probe-external.py scripts/installer/outside-services.sh scripts/installer/outside-checks.sh
+    scripts/installer/external-db-dump.py scripts/installer/external-restore-db.py
+    scripts/switch-services.sh
     scripts/installer/restore-terminal.py scripts/installer/retention-receipts.py
     scripts/installer/retention.sh
     scripts/installer/retention-run.sh
@@ -39,7 +42,7 @@ host_bundle_files() {
     scripts/installer/import-environment.sh
     scripts/installer/import-journal.py
     scripts/installer/install-finish.sh
-    scripts/installer/install-runtime.sh
+    scripts/installer/install-runtime.sh scripts/installer/install-entry.sh
     scripts/installer/key-backfill-probe.py
     scripts/installer/key-backfill.sh
     scripts/installer/key-format.py
@@ -57,6 +60,7 @@ host_bundle_files() {
     scripts/installer/runtime-probes.py
     scripts/installer/setup-lock.sh
     scripts/installer/setup-scan.sh
+    scripts/installer/frontend-choice.sh
     scripts/installer/setup-state.sh
     scripts/installer/state.py
     scripts/installer/uninstall-admission.py
@@ -65,6 +69,7 @@ host_bundle_files() {
     docker-compose.prod.yml docker-compose.cloud.yml docker-compose.free.yml deploy/cloud/free.env.example
     docker/compose.build.yml docker/compose.tls.yml docker/compose.saas.yml
     docker/compose.api-only.yml docker/compose.api-only-edge.yml docker/compose.external-storage.yml
+    docker/compose.external-db.yml docker/compose.external-redis.yml
     docker/compose.control-tunnel.yml
     deploy/Caddyfile deploy/Caddyfile.saas deploy/Caddyfile.saas-install frontend/nginx.conf
     deploy/nginx.api-only.conf deploy/storage.caddy deploy/storage-disabled.caddy
@@ -82,7 +87,7 @@ host_bundle_files() {
     scripts/setup-host-orchestration.sh scripts/spaceworks-compose.sh scripts/spaceworks-repository.sh
     scripts/update-lock.sh scripts/update.ps1 scripts/update.sh scripts/validate-compose-wrapper.py
     scripts/update-release-bundle.sh scripts/release-host-bundle.py scripts/update-proxy-edges.sh
-    scripts/restore-database-identity.sh scripts/restore-database-identity.py
+    scripts/restore-database-identity.sh scripts/restore-database-identity.py scripts/restore-database-ops.sh
   )
 }
 

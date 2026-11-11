@@ -46,7 +46,7 @@ if [[ "$LAYER" == tls ]]; then say "SSH tunnel loopback port: ${CONTROL_PLANE_TU
 if [[ "$LAYER" != tls && "$ENABLE_HTTPS" != true ]]; then
   echo 'Warning: over plain HTTP, the superadmin password and MFA code cross the network unencrypted.'
 fi
-question ANSWER 'Reach the Django control plane (/control/) through the website?' "$default" choices:Y,y,yes,YES,N,n,no,NO
+question ANSWER 'Reach the control panel (/control/) through the website?' "$default" choices:Y,y,yes,YES,N,n,no,NO
 NEW_PROXY=false; MODE=off; NEW_CIDRS=''; NEW_PORT=''
 if [[ "$ANSWER" =~ ^[Yy] ]]; then
   NEW_PROXY=true; MODE=on

@@ -76,4 +76,32 @@ run_installed "SPACEWORKS_INSTALL_REPOSITORY_PINNED=1 SPACEWORKS_REPOSITORY='$RE
 ${RUN_ROOT[@]+"${RUN_ROOT[@]}"} rm -f -- "$INSTALL_DIR/.spaceworks-answers"
 run_installed "printf '%s\\n' '$VERSION' > .spaceworks-version"
 run_installed "project_name=\$(bash scripts/spaceworks-compose.sh bundled config --format json | python3 scripts/installer/project-name.py) || exit 1; source scripts/install-host-bundle.sh; host_bundle_files; printf '%s\\n' \"\${HOST_BUNDLE_FILES[@]}\" | python3 scripts/installer/managed-files.py '$INSTALL_DIR' '$INSTALL_DIR/.spaceworks-release.json' \"\$project_name\""
-say "Installed SpaceWorks $VERSION in $INSTALL_DIR."
+# One clear finish block (decision 235): where to go, how to sign in, where the log is.
+env_value() {
+  local value
+  value="$(run_installed "sed -n 's/^$1=//p' .env" 2>/dev/null | tail -n 1)" || true
+  value="${value%$'\r'}"; value="${value#['\"]}"; value="${value%['\"]}"
+  printf '%s' "$value"
+}
+site_url="$(env_value PUBLIC_APP_BASE_URL)"; web_app="$(env_value SPACEWORKS_RUN_FRONTEND)"
+echo
+echo '=================================================================='
+echo "  SpaceWorks $VERSION is installed and running."
+if [[ "$web_app" != no ]]; then
+  echo "  1. Open ${site_url:-the website address printed above}/admin"
+  echo '  2. Sign in with your admin account and set up two-step sign-in'
+  echo '     (an authenticator app or a passkey).'
+  echo '  3. Follow the guided setup on your dashboard: name, logo, hours,'
+  echo '     the areas you run, and your staff.'
+else
+  echo '  This server runs the API only: connect your app or website to the API address above.'
+fi
+if [[ -f "$INSTALL_DIR/.spaceworks-bootstrap-credential.json" ]]; then
+  echo "  Admin password: in $INSTALL_DIR/.spaceworks-bootstrap-credential.json"
+fi
+[[ -z "${SPACEWORKS_INSTALL_LOG:-}" ]] || echo "  Install log: $INSTALL_DIR/install.log"
+echo "  Update later: run the same install command again."
+echo '=================================================================='
+say "More: logs  cd $INSTALL_DIR && bash scripts/spaceworks-compose.sh bundled logs -f backend"
+say "      backups $INSTALL_DIR/backups (a database backup is taken before every update)"
+say "      remove  bash $INSTALL_DIR/scripts/uninstall.sh --help (keeps your data unless you purge it)"

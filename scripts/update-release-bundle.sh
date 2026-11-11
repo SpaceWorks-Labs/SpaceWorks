@@ -22,6 +22,10 @@ handoff_release_bundle() {
   exit "$status"
 }
 
+# Upgrades are forward-only (decision 219g): no flag, --force included, selects an older or
+# same-run release. Going back means restoring the pre-upgrade backup.
+FORWARD_ONLY_HINT='Upgrades are forward-only: to go back, restore the pre-upgrade backup in backups/ (docs/install-and-update.md#rolling-back, docs/update-recovery.md).'
+
 refuse_release_downgrade() {
   [[ -n "$current" ]] || return 0
   local current_run selected_run index comparison
@@ -35,11 +39,12 @@ refuse_release_downgrade() {
   IFS=. read -ra selected_base <<< "${version%%-main.*}"
   for index in 0 1 2; do
     comparison="$(compare_release_decimal "${selected_base[index]}" "${current_base[index]}")"
-    [[ "$comparison" != -1 ]] || die "Refusing release downgrade: $current -> $version."
-    [[ "$comparison" == 0 ]] || break
+    [[ "$comparison" != -1 ]] || die "Refusing release downgrade: $current -> $version. $FORWARD_ONLY_HINT"
+    # A strictly higher X.Y.Z is an upgrade whatever the run counter says (a reset workflow counter must not block it).
+    [[ "$comparison" == 0 ]] || return 0
   done
   [[ "$(compare_release_decimal "$selected_run" "$current_run")" == 1 ]] \
-    || die "Refusing release downgrade or conflicting run: $current -> $version. Use the recovery procedure for rollback."
+    || die "Refusing release downgrade or conflicting run: $current -> $version. $FORWARD_ONLY_HINT"
 }
 
 compare_release_decimal() {

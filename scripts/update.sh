@@ -257,6 +257,17 @@ refresh_update_proxy_edges
 wait_for_backend || die "Release $version did not become ready. The backup is backups/$backup_name."
 source "$UPDATE_SCRIPT_DIR/installer/completion.sh"
 verify_full_host_completion "$UPDATE_SCRIPT_DIR" || die 'Required full-host runtime checks failed.'
+# One-off after the 0.12.0 upgrade: recompute every space's managed-storage figure from the canonical rows
+# (decision 284 polish). Idempotent; the marker stops it repeating. A failure only warns.
+storage_marker="$ROOT/.spaceworks-storage-recomputed-0.12.0"
+if [[ ! -e "$storage_marker" ]]; then
+  say "Recomputing storage usage for existing spaces (one-off)."
+  if "${COMPOSE[@]}" exec -T backend python manage.py recompute_storage; then
+    : > "$storage_marker"
+  else
+    warn "Storage recompute did not finish; run 'python manage.py recompute_storage' in the backend container."
+  fi
+fi
 
 if [[ ! -e "$ROOT/.git" ]]; then
   host_bundle_files

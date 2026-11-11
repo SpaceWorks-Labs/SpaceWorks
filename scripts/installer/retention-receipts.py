@@ -10,7 +10,7 @@ import sys
 import time
 import uuid
 
-BACKUP = re.compile(r"(?:backups/(?:pre-update-[0-9TZ-]+\.sql\.gz|host-config-[0-9TZ-]+|pre-h1-[0-9TZ-]+\.dump(?:\.env)?)|\.env\.pre-restore-[0-9TZ-]+|(?:work/)?restore-[0-9a-f-]{36})")
+BACKUP = re.compile(r"(?:backups/(?:pre-update-[0-9TZ-]+\.(?:sql\.gz|dump)|host-config-[0-9TZ-]+|pre-h1-[0-9TZ-]+\.dump(?:\.env)?)|\.env\.pre-restore-[0-9TZ-]+|(?:work/)?restore-[0-9a-f-]{36})")
 
 
 def check_private(path, owner, private=True, runtime=False):

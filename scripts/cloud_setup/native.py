@@ -119,7 +119,7 @@ def render_provider(root, source, values, answers):
         from .secret_files import INLINE_FILES, read_config
         for name, inline in INLINE_FILES.items():
             if values.get(name) and not values.get(inline):
-                raise SetupError("provider_secret_file_required", f"Supply {inline} in protected secrets and integrate lane M's materialize_secret_files before enabling this provider; a file-path setting alone cannot deliver a file.")
+                raise SetupError("provider_secret_file_required", f"Supply {inline} in protected secrets and let the bootstrap step write it to a file (materialize_secret_files) before enabling this provider; a file-path setting alone cannot deliver a file.")
             if values.get(name):
                 path = PurePosixPath(values[name])
                 if not str(path).startswith("/tmp/spaceworks-secrets/") or ".." in path.parts:

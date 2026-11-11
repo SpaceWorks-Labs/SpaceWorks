@@ -41,7 +41,7 @@ def database():
 
 def runtime():
     from probe_common import ProbeError
-    for binary in ("age", "age-keygen", "ffprobe", "ffmpeg"):
+    for binary in ("age", "age-keygen", "ffprobe"):
         if not shutil.which(binary):
             raise ProbeError("missing_runtime_binary")
     subprocess.run([sys.executable, "-m", "scripts.verify_printable_runtime", "--bundle"],

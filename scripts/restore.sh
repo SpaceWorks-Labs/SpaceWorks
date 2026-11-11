@@ -18,6 +18,10 @@ deployment_services
 source "$RESTORE_SCRIPT_DIR/installer/host-paths.sh"
 resolve_host_paths || exit $?
 RESTORE_ID="${1:-}"
+# An outside database is only replaced on explicit confirmation (--replace or SPACEWORKS_RESTORE_REPLACE=1).
+REPLACE_CONFIRMED=0
+if [[ "${2:-}" == --replace ]]; then REPLACE_CONFIRMED=1; set -- "$1"; fi
+[[ "${SPACEWORKS_RESTORE_REPLACE:-}" != 1 ]] || REPLACE_CONFIRMED=1
 OPS_WORK_DIR="$OPS_DIR/work"
 IDENTITY_FILE="${BACKUP_AGE_IDENTITY_FILE:-$OPS_WORK_DIR/age-identity.txt}"
 
@@ -33,8 +37,7 @@ control() {
 reprovision_grants() {
   local database_name="${1:-$RESTORE_DATABASE}" proof oid identity
   [[ "$database_name" =~ ^[A-Za-z_][A-Za-z0-9_$]{0,62}$ ]] || return 1
-  proof="$("${COMPOSE[@]}" exec -T -e "SPACEWORKS_RESTORE_DATABASE=$database_name" db sh -c \
-    'psql -X -v ON_ERROR_STOP=1 -At -F "|" -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE" -c "SELECT d.oid, i.database_uuid FROM pg_database d CROSS JOIN backup_deploymentdatabaseidentity i WHERE d.datname=current_database() AND i.id=1"')" || return
+  proof="$(restore_db_grant_proof "$database_name")" || return
   proof="${proof//$'\r'/}"
   IFS='|' read -r oid identity <<< "$proof"
   [[ "$oid" =~ ^[1-9][0-9]*$ && "$identity" =~ ^[0-9a-f-]{36}$ && "$proof" == "$oid|$identity" ]] || return 1
@@ -46,7 +49,7 @@ reprovision_grants() {
   ${COMPOSE[@]+"${COMPOSE[@]}"} ${command[@]+"${command[@]}"} orchestration-ready >/dev/null
 }
 
-[[ $# == 1 ]] || die "Usage: scripts/restore.sh <restore-uuid>"
+[[ $# == 1 ]] || die "Usage: scripts/restore.sh <restore-uuid> [--replace]"
 [[ "$RESTORE_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || die "Usage: scripts/restore.sh <restore-uuid>"
 RESTORE_ID="$(printf '%s' "$RESTORE_ID" | tr '[:upper:]' '[:lower:]')"
 command -v docker >/dev/null 2>&1 || die "Docker is required."
@@ -57,8 +60,10 @@ command -v flock >/dev/null 2>&1 || die "In-place restore must run under WSL2 (n
 
 exec 9>"$OPS_DIR/operation.lock"
 flock -n 9 || die "Another backup, restore, verification, or update is running."
+source "$RESTORE_SCRIPT_DIR/restore-database-ops.sh"
 source "$RESTORE_SCRIPT_DIR/restore-database-identity.sh"
 prove_restore_database
+confirm_external_replace
 
 WORK="$OPS_WORK_DIR/restore-$RESTORE_ID"
 ARCHIVE="$WORK/archive.tar.age"
@@ -104,10 +109,8 @@ cleanup() {
       control stage "$RESTORE_ID" rolling_back >/dev/null 2>&1 || true
       objects_rolled_back=0
       rollback_grants_ready=0
-      if ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-        'pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
-        < "$PRE_DB" >/dev/null 2>&1 && reprovision_grants >/dev/null 2>&1 \
-        && prove_restore_database >/dev/null 2>&1; then
+      if restore_db_rollback >/dev/null 2>&1 && reprovision_grants >/dev/null 2>&1 \
+        && prove_restore_database >/dev/null 2>&1 && control rotate-context-generations "$RESTORE_ID" >/dev/null 2>&1; then
         rollback_grants_ready=1
         control rollback-objects "$RESTORE_ID" >/dev/null 2>&1 && objects_rolled_back=1
       fi
@@ -150,9 +153,7 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   backend_stopped=1
   workers_stopped=1
   restart_allowed=0
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-    'pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
-    < "$PRE_DB"
+  restore_db_rollback
   if ! reprovision_grants; then
     restart_allowed=0
     die "Interrupted rollback grants could not be reprovisioned; Django remains stopped."
@@ -161,9 +162,10 @@ if [[ -f "$DESTRUCTIVE_MARKER" ]]; then
   control reconcile-journal "$RESTORE_ID" \
     --journal "/var/lib/spaceworks/ops/work/restore-$RESTORE_ID/swap-journal.jsonl" >/dev/null
   control rollback-objects "$RESTORE_ID" >/dev/null
+  prove_restore_database
+  control rotate-context-generations "$RESTORE_ID" >/dev/null || die 'Generation rotation failed; writers remain stopped.'
   control fail "$RESTORE_ID" --message \
     "Interrupted destructive restore was rolled back from the durable host journal." >/dev/null
-  prove_restore_database
   retain_rolled_back_restore || die 'Rolled-back work retained; terminal cleanup could not be proven.'
   restart_allowed=1
   rm -f -- "$DESTRUCTIVE_MARKER"
@@ -231,24 +233,17 @@ say "Writers are excluded; draining presigned uploads for ${drain_seconds}s."
 sleep "$drain_seconds"
 
 say "Taking the mandatory pre-restore database snapshot."
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-  'pg_dump --format=custom --no-owner --no-acl -U "$POSTGRES_USER" "$SPACEWORKS_RESTORE_DATABASE"' \
-  > "$PRE_DB"
+restore_db_snapshot
 [[ -s "$PRE_DB" ]] || die "The pre-restore database snapshot is empty."
 
 if [[ "$kind" == "rollback_in_place" ]]; then
   temp_db="spaceworks_restore_${RESTORE_ID//-/}"
   temp_db="${temp_db:0:60}"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-    'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db"' && createdb -U "$POSTGRES_USER" '"$temp_db"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-    'pg_restore --exit-on-error --no-owner --no-acl -U "$POSTGRES_USER" -d '"$temp_db" \
-    < "$BUNDLE/database.dump"
-  reprovision_grants "$temp_db"
+  restore_db_scratch_load "$temp_db"
+  reprovision_grants "$temp_db" || die "Grants could not be provisioned on the diff database; nothing destructive has run."
   say "Computing every-table diff in one live snapshot; choose before the console countdown expires."
   decision="$(control diff-wait "$RESTORE_ID" --archive-database-name "$temp_db" | tail -n 1)"
-  ${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-    'dropdb --if-exists -U "$POSTGRES_USER" '"$temp_db" >/dev/null 2>&1 || true
+  restore_db_scratch_drop "$temp_db"
   [[ "$decision" != "abort" ]] || { finished=1; seal_terminal_restore_work aborted; say "Restore aborted without destructive effect."; exit 0; }
 else
   decision="reset"
@@ -265,10 +260,8 @@ ${COMPOSE[@]+"${COMPOSE[@]}"} stop "$APP_SERVICE" >/dev/null
 backend_stopped=1
 destructive=1
 say "Replacing the database."
-${COMPOSE[@]+"${COMPOSE[@]}"} exec -T -e "SPACEWORKS_RESTORE_DATABASE=$RESTORE_DATABASE" db sh -c \
-  'psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()" >/dev/null && pg_restore --exit-on-error --clean --if-exists --no-owner --no-acl -U "$POSTGRES_USER" -d "$SPACEWORKS_RESTORE_DATABASE"' \
-  < "$BUNDLE/database.dump"
-reprovision_grants
+restore_db_replace
+reprovision_grants || die "Restored database grants could not be reprovisioned."
 
 control rehydrate "$RESTORE_ID" --archive-id "$archive_id" --kind "$kind" \
   --requested-by "$requested_by" \

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # Failed image deployment leaves forward migrations in place; never restore data here.
+# This is only the in-flight rollback of a FAILED update to the images that were running when it
+# started. It is not a downgrade path: upgrades are forward-only (decision 219g), the updater
+# refuses an older target, and a deliberate return to an older version means restoring the
+# pre-upgrade backup (docs/install-and-update.md#rolling-back).
 rollback_application_images() {
   UPDATE_ROLLBACK_PROVEN=0
   [[ "$previous_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-main\.[0-9]+\.[0-9a-f]{12}$ ]] || return 0

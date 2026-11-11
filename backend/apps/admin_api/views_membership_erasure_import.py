@@ -45,6 +45,9 @@ class MemberImportUploadSerializer(import_sources.ImportSourceSerializer):
     mapping = serializers.CharField(required=False, allow_blank=True)
     record_only_rows = serializers.CharField(required=False, allow_blank=True)
     skip_rows = serializers.CharField(required=False, allow_blank=True)
+    # Parity O-B1: land every row in this unit; `verify` holds them for the unit lead to approve first.
+    unit_id = serializers.IntegerField(required=False)
+    verify = serializers.BooleanField(required=False, default=False)
 
 
 def _json(raw, default):
@@ -111,7 +114,8 @@ class MemberImportApplyView(APIView):
             request.user, space, rows, mapping,
             record_only_rows=_json(data.get("record_only_rows"), []), skip_rows=_json(data.get("skip_rows"), []),
             file_name="Google Sheet" if sheet else getattr(upload, "name", ""),
-            file_kind="xlsx" if upload.name.lower().endswith(".xlsx") else "csv", source=import_sources.source_of(sheet))
+            file_kind="xlsx" if upload.name.lower().endswith(".xlsx") else "csv", source=import_sources.source_of(sheet),
+            unit_id=data.get("unit_id"), verify=bool(data.get("verify")))
         return Response({"batch_id": batch.pk, "counts": batch.counts, "rows": results})
 
 

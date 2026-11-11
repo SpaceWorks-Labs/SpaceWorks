@@ -11,10 +11,11 @@ from rest_framework.views import APIView
 from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_audit import (
-    AuditLogFilterSerializer,
+    AuditLogListFilterSerializer,
     AuditLogSerializer,
     apply_audit_filters,
 )
+from apps.audit.area_scope import area_q, scope_audit_rows, scope_audit_tenants
 from apps.admin_api.serializers_users import (
     StaffCreateSerializer,
     StaffMembershipSerializer,
@@ -104,13 +105,19 @@ class AuditLogPagination(PageNumberPagination):
     tags=["Admin users"],
     summary="List audit log entries",
     description=(
-        "Tenant- and VIEW_AUDIT-scoped audit rows, newest first, 24 per page. `meta` is the "
+        "Tenant- and audit-reader-scoped rows, newest first, 24 per page. Decision 219(e): "
+        "the superadmin and a Space Manager read the whole space; any other reader reads "
+        "only the rows of the areas their actions open there. A reader is a VIEW_AUDIT holder "
+        "or, since 219(e-1), a holder of an area action (for example manage_machines, "
+        "manage_events, manage_bookings, manage_shop or a Technician action) without "
+        "VIEW_AUDIT; handover-desk actions alone admit no one. `area` narrows further; an "
+        "area the reader does not hold yields an empty page. `meta` is the "
         "presentation-catalogue projection, never the raw stored metadata; unknown or "
         "dynamically built actions expose `{}`. `start` is inclusive, `end` exclusive, and "
         "a start/end range may span at most 366 days. A valid but out-of-scope makerspace "
         "yields an empty page."
     ),
-    parameters=[AuditLogFilterSerializer, OpenApiParameter("ordering", str, enum=["created_at", "-created_at", "action", "-action", "target_type", "-target_type"]),
+    parameters=[AuditLogListFilterSerializer, OpenApiParameter("ordering", str, enum=["created_at", "-created_at", "action", "-action", "target_type", "-target_type"]),
                 OpenApiParameter("platform_only", bool, description="Only platform-level rows (no makerspace). Superadmin scope only.")],
     responses={200: AuditLogSerializer(many=True), **{code: ErrorSerializer for code in (400, 401, 403, 404)}},
 )
@@ -123,11 +130,15 @@ class AuditLogListView(generics.ListAPIView):
     ordering = ["-created_at", "-pk"]
 
     def get_queryset(self):
-        filters = AuditLogFilterSerializer(data=self.request.query_params)
+        filters = AuditLogListFilterSerializer(data=self.request.query_params)
         filters.is_valid(raise_exception=True)
         queryset = AuditLog.objects.select_related("actor").order_by("-created_at", "-pk")
-        # Tenant/action scope and archived spaces are applied BEFORE user filters.
-        queryset = rbac.scope_by_action(self.request.user, rbac.Action.VIEW_AUDIT, queryset)
+        # Tenant/action scope, the reader's areas (#219e) and archived spaces are applied
+        # BEFORE user filters.
+        queryset = scope_audit_tenants(self.request.user, queryset)
+        queryset = scope_audit_rows(self.request.user, queryset)
+        if filters.validated_data.get("area"):
+            queryset = queryset.filter(area_q({filters.validated_data["area"]}))
         archived = rbac.archived_makerspace_ids()
         if archived:
             queryset = queryset.exclude(makerspace_id__in=archived)

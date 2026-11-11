@@ -63,16 +63,23 @@ class MembershipPlanListCreateView(APIView):
     )
     def post(self, request, makerspace_id):
         makerspace = _gated_makerspace(request.user, makerspace_id, rbac.Action.MANAGE_MAKERSPACE)
+        from apps.makerspaces.member_unit_scope import require_space_wide
+        require_space_wide(request.user, makerspace.pk)  # parity O-B1: a unit-scoped role cannot change plans
         serializer = MembershipPlanSerializer(data=request.data, context={"makerspace": makerspace})
         serializer.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
                 makerspace = require_module_locked(makerspace, "membership")
+                from apps.managed_hosting.extra_quotas import check_extra_quota
+                check_extra_quota(makerspace, "membership_plans")  # decision 284: typed 409
                 row = MembershipPlan.objects.create(
                     makerspace=makerspace, **serializer.validated_data
                 )
                 audit.record(request.user, "membership_plan.created", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "name": row.name})
+                if row.sac_code:
+                    audit.record(request.user, "membership_plan.sac_changed", makerspace=makerspace, target=row,
+                                 meta={"plan_id": row.pk, "cleared": False})
                 sync_plan_features(makerspace)
         except IntegrityError as exc:
             raise ValidationError({"name": gettext("A plan with this name or slug already exists.")}) from exc
@@ -95,13 +102,19 @@ class MembershipPlanDetailView(APIView):
                                  MembershipPlan.objects.select_related("makerspace")), pk=pk
         )
         makerspace = _gated_makerspace(request.user, row.makerspace_id, rbac.Action.MANAGE_MAKERSPACE)
+        from apps.makerspaces.member_unit_scope import require_space_wide
+        require_space_wide(request.user, makerspace.pk)  # parity O-B1
         serializer = MembershipPlanSerializer(row, data=request.data, partial=True,
                                               context={"makerspace": makerspace})
         serializer.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
                 makerspace = require_module_locked(makerspace, "membership")
+                sac_before = row.sac_code
                 row = serializer.save()
+                if row.sac_code != sac_before:  # parity O-B3: log that the code changed (not personal data)
+                    audit.record(request.user, "membership_plan.sac_changed", makerspace=makerspace, target=row,
+                                 meta={"plan_id": row.pk, "cleared": not row.sac_code})
                 audit.record(request.user, "membership_plan.updated", makerspace=makerspace,
                              target=row, meta={"plan_id": row.pk, "fields": sorted(serializer.validated_data)})
                 sync_plan_features(makerspace)

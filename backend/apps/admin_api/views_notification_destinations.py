@@ -24,6 +24,8 @@ from apps.audit import services as audit
 from apps.integrations.dispatch_channels import channel_module_blocks
 from apps.admin_api.notification_scope import ScopeTargetError, apply_scope
 from apps.integrations.models_destinations import NotificationDestination
+from apps.integrations.webhook_secrets import clear_previous, rotate_signing_secret
+from apps.integrations.notification_enums import ChatNotificationChannel
 from apps.makerspaces.servability import servable_queryset
 from apps.openapi_errors import errors
 
@@ -80,6 +82,12 @@ class NotificationDestinationListView(APIView):
             )
 
         with transaction.atomic():
+            if data["channel"] == ChatNotificationChannel.WEBHOOK:
+                # LM-3 (decision 284): the NUMBER of outbound webhook endpoints is a limit key; serialise
+                # concurrent creators on the makerspace row, then refuse with the typed 409.
+                from apps.makerspaces.models import Makerspace
+                from apps.managed_hosting.extra_quotas import check_extra_quota
+                check_extra_quota(Makerspace.objects.select_for_update().get(pk=makerspace.pk), "webhook_endpoints")
             destination = NotificationDestination(
                 makerspace=makerspace,
                 channel=data["channel"],
@@ -92,8 +100,12 @@ class NotificationDestinationListView(APIView):
             if raw:
                 destination.set_webhook_url(raw)
             secret = data.get("signing_secret") or ""
+            generated = ""
             if secret:
                 destination.set_signing_secret(secret)
+            elif data["channel"] == ChatNotificationChannel.WEBHOOK:
+                # Parity E-B8: the server makes the secret; it is returned below, once, and never readable again.
+                generated = rotate_signing_secret(destination)
             destination.save()
             try:
                 apply_scope(destination, data.get("scope"), makerspace)
@@ -107,12 +119,13 @@ class NotificationDestinationListView(APIView):
                 "notification.destination_created",
                 makerspace=makerspace,
                 target=makerspace,
-                meta={"channel": destination.channel, "label": destination.label},
+                meta={"channel": destination.channel, "label": destination.label,
+                      "secret_generated": bool(generated)},
             )
-        return Response(
-            NotificationDestinationSerializer(destination).data,
-            status=status.HTTP_201_CREATED,
-        )
+        body = NotificationDestinationSerializer(destination).data
+        if generated:
+            body = {**body, "signing_secret": generated}
+        return Response(body, status=status.HTTP_201_CREATED, headers={"Cache-Control": "no-store"})
 
 
 @extend_schema(tags=["Makerspaces"], summary="Update or delete a chat notification destination")
@@ -152,6 +165,7 @@ class NotificationDestinationDetailView(APIView):
             secret = data.get("signing_secret") or ""
             if secret:
                 destination.set_signing_secret(secret)
+                clear_previous(destination)
             destination.save()
             try:
                 apply_scope(destination, data.get("scope"), makerspace)

@@ -49,6 +49,8 @@ class RestrictUserView(APIView):
             target=user,
             meta={"status": user.access_status, "reason": user.restriction_reason},
         )
+        from apps.card_designs.staff_card_hooks import after_user_access_changed  # O-B4: staff cards end with access
+        after_user_access_changed(request.user, user)
         return Response(UserSerializer(user, context={"request": request}).data)
 
 

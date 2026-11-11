@@ -29,11 +29,13 @@ def _payload(makerspace, membership):
         "membership_id": membership.pk,
         "scoping_applies": scopes.scoping_applies(membership),
         "machine_type_ids": scopes.current_scope(membership),
+        "machine_ids": scopes.current_machine_scope(membership),
         "available_machine_types": [
             {"id": row.pk, "name": row.name, "slug": row.slug,
              "is_global": row.makerspace_id is None}
             for row in scopes.assignable_machine_types(makerspace)
         ],
+        "available_machines": list(scopes.assignable_machines(makerspace).values("id", "name", "machine_type_id")),
     }
 
 
@@ -49,7 +51,7 @@ class MemberMachineScopeView(RecentReauthenticationMixin, APIView):
         return Response(MemberMachineScopeSerializer(_payload(space, membership)).data)
 
     @extend_schema(tags=["Admin memberships"],
-                   description="Requires manage_makerspace. Replaces the member's complete type scope; exempt or non-Machine-Manager memberships return 409.",
+                   description="Requires manage_makerspace. Replaces the member's type scope and/or individual-machine scope (a list left out is kept); the reach is the union. Exempt or memberships without a Machine Manager/Technician role return 409.",
                    request=MemberMachineScopeWriteSerializer,
                    responses={200: MemberMachineScopeSerializer, **ERRORS})
     def put(self, request, makerspace_id, membership_id):

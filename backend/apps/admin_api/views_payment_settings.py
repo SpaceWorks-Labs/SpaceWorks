@@ -17,7 +17,7 @@ from apps.admin_api.serializers_payments import (
     StripeConnectOnboardingSerializer,
 )
 from apps.audit import services as audit
-from apps.makerspaces.domain_verification import is_self_host
+from apps.makerspaces.domain_verification import hosts_other_spaces
 from apps.makerspaces.guards import module_off, require_module
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.servability import servable_queryset
@@ -129,7 +129,7 @@ class StripeConnectOnboardingView(APIView):
         },
     )
     def post(self, request, makerspace_id):
-        if is_self_host():
+        if not hosts_other_spaces():
             return Response(
                 {"detail": gettext("Not found.")}, status=status.HTTP_404_NOT_FOUND
             )

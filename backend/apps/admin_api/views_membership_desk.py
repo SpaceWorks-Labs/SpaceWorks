@@ -8,6 +8,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts import rbac
 from apps.accounts.reauthentication_permissions import RecentReauthenticationMixin
 from apps.admin_api.permissions import IsActiveStaff
 from apps.admin_api.serializers_membership_l4 import (
@@ -113,8 +114,12 @@ class RenewalWorklistView(APIView):
         except ValueError:
             window = 30
         rows = []
+        from apps.makerspaces.member_unit_scope import allowed_member_ids
+        allowed = allowed_member_ids(request.user, space.pk, rbac.Action.MANAGE_MEMBERS)  # parity O-B1
         for item in desk.worklist(space, window_days=window):
             membership = item["membership"]
+            if allowed is not None and membership.pk not in allowed:
+                continue
             membership._desk = item
             rows.append(membership)
         context = {"request": request, "pattern": pattern_for(space)}
@@ -134,7 +139,12 @@ class RenewalRemindersView(APIView):
         space = staff_space(request.user, makerspace_id, "renewal_desk")
         data = MembershipIdsSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        return Response(desk.send_reminders(request.user, space, data.validated_data["membership_ids"]))
+        from apps.makerspaces.member_unit_scope import allowed_member_ids
+        allowed = allowed_member_ids(request.user, space.pk, rbac.Action.MANAGE_MEMBERS)  # parity O-B1
+        ids = data.validated_data["membership_ids"]
+        if allowed is not None:
+            ids = [pk for pk in ids if pk in allowed]
+        return Response(desk.send_reminders(request.user, space, ids))
 
 
 class MembershipExtendView(APIView):

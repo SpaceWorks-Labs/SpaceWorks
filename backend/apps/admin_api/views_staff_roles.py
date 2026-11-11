@@ -56,7 +56,7 @@ class StaffRoleBase(RecentReauthenticationMixin, GenericAPIView):
 
 
 def policy(space, superadmin):
-    from apps.machines.member_scope_services import assignable_machine_types
+    from apps.machines.member_scope_services import SCOPED_ROLE_SLUGS, assignable_machine_types, assignable_machines
 
     names = dict(space.roles.values_list("slug", "name"))
     grantable = [{"slug": slug, "name": names[slug], "combinable": entry.combinable}
@@ -64,7 +64,9 @@ def policy(space, superadmin):
                  if slug != "member" and slug in names and (slug != "space_manager" or superadmin)]
     return {"grantable_roles": grantable, "can_manage_space_managers": superadmin,
             "email_invites_available": onboarding_available(space),
-            "machine_types": list(assignable_machine_types(space).values("id", "name"))}
+            "machine_types": list(assignable_machine_types(space).values("id", "name")),
+            "machines": list(assignable_machines(space).values("id", "name", "machine_type_id")),
+            "scoped_role_slugs": sorted(SCOPED_ROLE_SLUGS)}
 
 
 class StaffRoleListCreateView(StaffRoleBase):
@@ -100,12 +102,13 @@ class StaffRoleListCreateView(StaffRoleBase):
         values = data.validated_data
         if values.get("user_id"):
             row = service.grant(request.user, makerspace_id, user_id=values["user_id"], roles=values["roles"],
-                                machine_type_ids=values["machine_type_ids"])
+                                machine_type_ids=values["machine_type_ids"], machine_ids=values["machine_ids"])
             staff_role = StaffRoleSerializer(row, context=self.context_for(request, makerspace_id)).data
             body = {"kind": "granted", "staff_role": staff_role, "invitation_id": None, "delivery_status": None}
         else:
             invitation, raw = issue(request.user, makerspace_id, email=values["email"], roles=values["roles"],
                                     machine_type_ids=values["machine_type_ids"],
+                                    machine_ids=values["machine_ids"],
                                     expires_in_days=values["expires_in_days"])
             body = {"kind": "invited", "staff_role": None, "invitation_id": invitation.pk,
                     "delivery_status": deliver(invitation, raw)["delivery_status"]}

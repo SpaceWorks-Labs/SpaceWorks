@@ -17,6 +17,7 @@ from apps.openapi_errors import errors
 
 class SetupStateSerializer(serializers.Serializer):
     profile_set = serializers.BooleanField()
+    logo_set = serializers.BooleanField()
     hours_set = serializers.BooleanField()
     first_item_added = serializers.BooleanField()
     staff_invited = serializers.BooleanField()
@@ -38,6 +39,7 @@ class MakerspaceSetupStateView(APIView):
         hours = space.opening_hours or {}
         data = {
             "profile_set": bool(space.name.strip() and space.location.strip()),
+            "logo_set": bool(space.logo_key),
             "hours_set": bool(hours.get("weekly") or hours.get("exceptions")),
             "first_item_added": scoped(InventoryProduct.objects.all()).exists(),
             "staff_invited": scoped(StaffInvitation.objects.filter(revoked_at__isnull=True)).exists(),

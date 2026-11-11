@@ -24,6 +24,8 @@ def staff_membership(actor, pk, feature, action=MANAGE):
         rbac.scope_by_action(actor, action, MakerspaceMembership.objects.select_related("makerspace", "user")),
         pk=pk)
     require_membership_feature(membership.makerspace, feature)
+    from apps.makerspaces.member_unit_scope import require_member_in_scope
+    require_member_in_scope(actor, membership, action)  # parity O-B1: a unit-scoped actor's out-of-scope member is 404
     return membership
 
 

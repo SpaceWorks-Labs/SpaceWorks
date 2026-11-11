@@ -46,7 +46,7 @@ class ProductQrHistoryView(APIView):
             ),
             pk=pk,
         )
-        require_module(product.makerspace_id, "staff_admin")
+        require_module(product.makerspace_id, "public_inventory")
         return Response(
             {
                 "product": product.id,
@@ -76,7 +76,7 @@ class AssetQrHistoryView(APIView):
             ),
             pk=pk,
         )
-        require_module(asset.makerspace_id, "staff_admin")
+        require_module(asset.makerspace_id, "public_inventory")
         return Response(
             {
                 "asset": asset.id,

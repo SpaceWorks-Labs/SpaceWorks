@@ -18,6 +18,9 @@ ENTRIES = (
     P("donation.return_case_opened", gettext_noop("Refund case opened to return a gift"), ("case_id", "payment_id", "subject_type")),
     P("donation.campaign_created", gettext_noop("Donation campaign created"), ("campaign_id", "kind")),
     P("donation.campaign_updated", gettext_noop("Donation campaign changed"), ("campaign_id", "fields")),
+    # Decision 242(m): a gift's receipt sent again (its tax receipt issued if owed), and the gift export.
+    P("donation.receipt_reissued", gettext_noop("Donation receipt sent again"), ("donation_id", "tax_receipt")),
+    P("donation.exported", gettext_noop("Donations exported"), ("rows", "status", "campaign_id")),
     P("pledge.created", gettext_noop("Donation pledge made"), ("pledge_id", "amount", "currency", "interval", "guest", "campaign_id")),
     P("pledge.paused", gettext_noop("Donation pledge paused"), _PLEDGE),
     P("pledge.resumed", gettext_noop("Donation pledge resumed"), _PLEDGE),

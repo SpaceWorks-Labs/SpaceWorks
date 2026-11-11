@@ -9,7 +9,12 @@ ENTRIES = (
     P("payment.tax_settings_updated", gettext_noop("Tax settings updated"), ("fields", "mode", "via")),
     P("payment.paid_claim_submitted", gettext_noop("Offline payment claim submitted"), ("claim_id", "method", "via_pay_link")),
     P("payment.paid_claim_confirmed", gettext_noop("Offline payment claim confirmed"), ("claim_id", "awaiting_confirmation")),
+    P("payment.manual_reminder_sent", gettext_noop("Payment reminder sent"), ("channel",)),  # decision 242
     P("payment.paid_claim_rejected", gettext_noop("Offline payment claim rejected"), ("claim_id",)),
+    P("payment.paid_claim_superseded", gettext_noop("Offline payment claim closed: charge settled another way"),
+      ("claim_id", "payment_status")),
+    P("payment.settlement_superseded", gettext_noop("Offline settlement proposal closed: charge settled another way"),
+      ("confirmation_id", "payment_status")),
     P("payment.settlement_awaiting_confirmation", gettext_noop("Offline settlement awaiting a second person"),
       ("confirmation_id", "method")),
     P("payment.settlement_confirmed", gettext_noop("Offline settlement confirmed by a second person"),

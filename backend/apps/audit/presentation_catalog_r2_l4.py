@@ -28,7 +28,7 @@ ENTRIES = (
     P("membership.erasure_withdrawn", gettext_noop("Erasure request withdrawn"), ("membership_id", "request_id")),
     P("membership.erasure_approved", gettext_noop("Erasure approved"), ("membership_id", "request_id")),
     P("membership.erasure_rejected", gettext_noop("Erasure rejected"), ("membership_id", "request_id")),
-    P("membership.invite_link_created", gettext_noop("Membership invite link created"), ("link_id", "plan_id", "max_uses")),
+    P("membership.invite_link_created", gettext_noop("Membership invite link created"), ("link_id", "plan_id", "max_uses", "unit_id")),
     P("membership.invite_link_revoked", gettext_noop("Membership invite link revoked"), ("link_id", "uses")),
     P("membership.invite_link_redeemed", gettext_noop("Membership invite link used"), ("link_id", "uses")),
     P("membership.bulk_decided", gettext_noop("Join requests decided in bulk"), ("decision", "request_ids", "refused")),

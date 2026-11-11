@@ -73,7 +73,7 @@ ENTRIES = (
     P("staff.created", gettext_noop("Staff created")),
     P("staff.membership_updated", gettext_noop("Staff membership updated")),
     P("staff.roles_changed", gettext_noop("Staff roles changed"),
-      ("membership_id", "before", "after", "removed_machine_type_ids")),
+      ("membership_id", "before", "after", "removed_machine_type_ids", "removed_machine_ids")),
     P("staff.machine_scope_changed", gettext_noop("Staff machine scope changed")),
     P("staff.roles_migrated", gettext_noop("Staff roles migrated to fixed catalogue"),
       ("membership_id", "to_roles", "dropped_actions", "gained_actions", "exception_tags",

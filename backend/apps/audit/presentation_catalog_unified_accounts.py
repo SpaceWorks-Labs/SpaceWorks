@@ -12,5 +12,5 @@ from .presentation_catalog_types import P
 
 ENTRIES = (
     P("account.converted", gettext_noop("Staff account converted to a personal account"), ("decision", "holds", "roles_kept")),
-    P("staff_role.granted", gettext_noop("Staff role granted"), ("membership_id", "roles", "machine_type_ids")),
+    P("staff_role.granted", gettext_noop("Staff role granted"), ("membership_id", "roles", "machine_type_ids", "machine_ids")),
 )

@@ -39,6 +39,7 @@ from .presentation_catalog_l12 import ENTRIES as _L12
 from .presentation_catalog_l23 import ENTRIES as _L23
 from .presentation_catalog_l16 import ENTRIES as _L16
 from .presentation_catalog_l3 import ENTRIES as _L3
+from .presentation_catalog_l3a import ENTRIES as _L3A
 from .presentation_catalog_r2_l6 import ENTRIES as _R2_L6
 from .presentation_catalog_r2_l18 import ENTRIES as _R2_L18
 from .presentation_catalog_r2_l21a import ENTRIES as _R2_L21A
@@ -91,6 +92,20 @@ from .presentation_catalog_r2_parity import ENTRIES as _R2_PARITY
 from .presentation_catalog_r2_certificates import ENTRIES as _R2_CERTIFICATES
 from .presentation_catalog_r2_l9 import ENTRIES as _R2_L9
 from .presentation_catalog_r4_audit import ENTRIES as _R4_AUDIT
+from .presentation_catalog_loan_equipment import ENTRIES as _LOAN_EQUIPMENT
+from .presentation_catalog_guest_passes import ENTRIES as _GUEST_PASSES
+from .presentation_catalog_l3b import ENTRIES as _L3B
+from .presentation_catalog_r3_org_units import ENTRIES as _R3_ORG_UNITS
+from .presentation_catalog_r3_org_b2 import ENTRIES as _R3_ORG_B2
+from .presentation_catalog_r3_events_b3 import ENTRIES as _R3_EVENTS_B3
+from .presentation_catalog_r3_events_b4 import ENTRIES as _R3_EVENTS_B4
+from .presentation_catalog_r3_events_b5 import ENTRIES as _R3_EVENTS_B5
+from .presentation_catalog_r3_events_b7 import ENTRIES as _R3_EVENTS_B7
+from .presentation_catalog_r3_events_b8 import ENTRIES as _R3_EVENTS_B8
+from .presentation_catalog_r3_events_b6 import ENTRIES as _R3_EVENTS_B6
+from .presentation_catalog_r3_events_badges import ENTRIES as _R3_EVENTS_BADGES
+from .presentation_catalog_r3_org_money import ENTRIES as _R3_ORG_MONEY
+from .presentation_catalog_r3_org_b4 import ENTRIES as _R3_ORG_B4
 
 PRESENTATION_CATALOG = _compose(
     _PROGRAMME,
@@ -114,7 +129,19 @@ PRESENTATION_CATALOG = _compose(
     _STAFF_ROLES,
     _ACCOUNTS, _MAKERSPACES, _HARDWARE, _MACHINES, _COMMUNITY, _MIGRATION, _PAYMENTS,
     _PLATFORM, _MEMBER_ACCOUNT, _MERGED, _PROFILES, _WA_TWILIO, _WA_META, _P2_P_CHAT, _P2_BOOKINGS, _P2_EVENTS,
-    _MESSAGING, _R2_L4, _L12, _L23, _L16, _L3, _R2_L6, _R2_L18, _R2_L21A, _R2_L21B, _HACKMONEY,
+    _L3B,
+    _R3_ORG_UNITS,
+    _R3_ORG_B2,
+    _R3_EVENTS_B3,
+    _R3_EVENTS_B4,
+    _R3_EVENTS_B5,
+    _R3_EVENTS_B7,
+    _R3_EVENTS_B8,
+    _R3_EVENTS_B6,
+    _R3_EVENTS_BADGES,
+    _R3_ORG_B4,
+    _R3_ORG_MONEY,
+    _MESSAGING, _R2_L4, _L12, _L23, _L16, _L3, _L3A, _R2_L6, _R2_L18, _R2_L21A, _R2_L21B, _HACKMONEY,
     _R2_L24,
     _R2_L22,
     _R2_L25,
@@ -127,6 +154,8 @@ PRESENTATION_CATALOG = _compose(
     _R2_CERTIFICATES,
     _R2_L9,
     _R4_AUDIT,
+    _LOAN_EQUIPMENT,
+    _GUEST_PASSES,
 )
 
 

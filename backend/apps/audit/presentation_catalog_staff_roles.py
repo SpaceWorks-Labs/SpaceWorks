@@ -12,10 +12,11 @@ from .presentation_catalog_types import P
 
 ENTRIES = (
     P("staff_role.changed", gettext_noop("Staff role changed"),
-      ("membership_id", "roles_before", "roles_after", "machine_type_ids_before", "machine_type_ids_after")),
+      ("membership_id", "roles_before", "roles_after", "machine_type_ids_before", "machine_type_ids_after",
+       "machine_ids_before", "machine_ids_after")),
     P("staff_role.revoked", gettext_noop("Staff role revoked"), ("membership_id",)),
     P("staff_role.restored", gettext_noop("Staff role restored"), ("membership_id",)),
-    P("staff_invitation.sent", gettext_noop("Staff invitation sent"), ("roles", "machine_type_ids", "email_hash", "expires_at")),
+    P("staff_invitation.sent", gettext_noop("Staff invitation sent"), ("roles", "machine_type_ids", "machine_ids", "email_hash", "expires_at")),
     P("staff_invitation.accepted", gettext_noop("Staff invitation accepted"), ("membership_id", "roles")),
     P("staff_invitation.accept_failed", gettext_noop("Staff invitation code rejected")),
     P("staff_invitation.revoked", gettext_noop("Staff invitation revoked")),

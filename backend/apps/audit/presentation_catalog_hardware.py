@@ -82,6 +82,7 @@ ENTRIES = (
       ("loan_id", "request_id"), request_refs=("request_id",)),
     P("public_tool.returned", gettext_noop("Public tool returned"), ("qr_id",)),
     P("qr.box_created", gettext_noop("Qr box created")),
+    P("qr.external_assigned", gettext_noop("External QR code linked"), ("qr_id", "source", "target_type")),
     P("qr.rebound", gettext_noop("Qr rebound")),
     P("qr.revoked", gettext_noop("Qr revoked")),
     P("qr.scanned", gettext_noop("Qr scanned"), ("scan_id",)),

@@ -22,7 +22,7 @@ ENTRIES = (
     P("event.prize.fulfilled", gettext_noop("Non-cash prize handed over or shipped")),
     P("event.prize.sponsor_paid", gettext_noop("Prize paid directly by the sponsor")),
     P("event.prize.forfeited", gettext_noop("Unclaimed prize forfeited")),
-    P("event.prize.recovery_opened", gettext_noop("Prize money owed back after a disqualification")),
+    P("event.prize.recovery_opened", gettext_noop("Prize money owed back (disqualification or result correction)")),
     P("event.prize.recovery_repaid", gettext_noop("Prize money repaid")),
     P("event.prize.recovery_waived", gettext_noop("Prize money recovery waived")),
     # Deposits (G10). Raising and closing go through the reviewed programme-charge wrapper.

@@ -9,6 +9,7 @@ from rest_framework.exceptions import APIException
 from unfold.admin import ModelAdmin
 
 from apps.boxes.models import Box, BoxScan, QrCode, QrScanEvent
+from apps.boxes.qr_lookup import label_value
 from apps.boxes.qr_render import render_qr_label_svg
 from apps.boxes.rebind import rebind_qr_target
 from apps.boxes.serializers import QrRebindTargetSerializer
@@ -18,6 +19,7 @@ from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.encryption.admin_search import ScopedPiiAdminSearchMixin
+from django.utils.translation import gettext_lazy
 
 
 class QrRebindAdminForm(forms.Form):
@@ -103,25 +105,28 @@ class BoxAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             return "(save first to generate the QR)"
         return mark_safe(segno.make(obj.code).svg_inline(scale=4))
 
-    qr_preview.short_description = "QR tag"
+    qr_preview.short_description = gettext_lazy("QR tag")
 
 
 @admin.register(QrCode)
 class QrCodeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     actions = ["revoke_selected", "rebind_selected"]
-    list_display = ("payload", "makerspace", "target_type", "target_id", "status", "updated_at")
-    list_filter = ("makerspace", "target_type", "status")
-    search_fields = ("payload",)
-    readonly_fields = ("payload", "qr_preview", "created_at", "updated_at", "revoked_at")
+    list_display = ("payload", "makerspace", "source", "target_type", "target_id", "status", "updated_at")
+    list_filter = ("makerspace", "source", "target_type", "status")
+    search_fields = ("payload", "external_value")
+    # External labels are registered only through the audited staff API / bulk import.
+    readonly_fields = (
+        "payload", "source", "external_value", "qr_preview", "created_at", "updated_at", "revoked_at",
+    )
 
     def qr_preview(self, obj):
         if not obj or not obj.pk:
             return "(no QR)"
-        return mark_safe(render_qr_label_svg(obj.payload))
+        return mark_safe(render_qr_label_svg(label_value(obj)))
 
-    qr_preview.short_description = "QR preview"
+    qr_preview.short_description = gettext_lazy("QR preview")
 
-    @admin.action(description="Revoke selected QR codes")
+    @admin.action(description=gettext_lazy("Revoke selected QR codes"))
     def revoke_selected(self, request, queryset):
         succeeded, skipped = 0, 0
         for qr in queryset:
@@ -142,7 +147,7 @@ class QrCodeAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             level=messages.SUCCESS if succeeded else messages.WARNING,
         )
 
-    @admin.action(description="Rebind selected QR code")
+    @admin.action(description=gettext_lazy("Rebind selected QR code"))
     def rebind_selected(self, request, queryset):
         if queryset.count() != 1:
             self.message_user(request, "Select exactly one QR code to rebind.", level=messages.ERROR)
@@ -223,11 +228,11 @@ class BoxScanAdmin(ScopedPiiAdminSearchMixin, SuperuserOnlyModelAdmin, ModelAdmi
     fields = readonly_fields
     ordering = ("-created_at",)
 
-    @admin.display(description="QR", ordering="box__code")
+    @admin.display(description=gettext_lazy("QR"), ordering="box__code")
     def box_qr(self, obj):
         return obj.box.code if obj.box_id else "-"
 
-    @admin.display(description="Scanned by", ordering="actor")
+    @admin.display(description=gettext_lazy("Scanned by"), ordering="actor")
     def scanned_by(self, obj):
         return obj.actor
 

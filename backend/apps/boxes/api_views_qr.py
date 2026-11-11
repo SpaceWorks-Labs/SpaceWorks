@@ -12,9 +12,15 @@ from apps.accounts import rbac
 from apps.accounts.models import User
 from apps.admin_api.permissions import IsActiveStaff
 from apps.audit import services as audit
-from apps.boxes.access import locked_qr_for_action, makerspace_for_action, qr_for_action
+from apps.boxes.access import (
+    locked_qr_for_action,
+    makerspace_for_action,
+    qr_for_action,
+    scanned_qr_for_action,
+)
 from apps.boxes.api_views_eligibility import _allowed_scanner_actions
 from apps.boxes.models import Box, QrCode, QrScanEvent
+from apps.boxes.qr_lookup import label_value
 from apps.boxes.qr_render import render_qr_label_svg
 from apps.boxes.serializers import (
     BoxSerializer,
@@ -70,6 +76,8 @@ class CreateBoxQrView(QrPermissionMixin, APIView):
         parent = None
         if data.get("parent_id"):
             parent = get_object_or_404(Box, pk=data["parent_id"], makerspace=makerspace)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(makerspace, "boxes")  # decision 284: typed 409 boxes_quota_reached
         box = Box.objects.create(
             makerspace=makerspace,
             parent=parent,
@@ -139,7 +147,9 @@ class QrScanView(QrPermissionMixin, APIView):
         serializer = QrScanSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        qr = qr_for_action(request.user, rbac.Action.MANAGE_QR, payload=data["payload"], status=QrCode.Status.ACTIVE)
+        qr = scanned_qr_for_action(
+            request.user, rbac.Action.MANAGE_QR, data["payload"], makerspace_id=data.get("makerspace_id"),
+        )
         self._require_qr(request.user, qr.makerspace_id)
         request_id = data.get("request_id")
         if request_id is not None:
@@ -185,6 +195,9 @@ class QrResolveView(QrPermissionMixin, APIView):
             "`payload` is the raw 32-char lowercase hex token printed on the label "
             "(Python `uuid4().hex`, e.g. `3f9a1c2b4d5e6f7081920a1b2c3d4e5f`) - it is the "
             "value stored as `QrCode.payload` (and `Box.code` for boxes), not a URL or JSON. "
+            "A label printed outside SpaceWorks and registered as an external code resolves "
+            "by its raw value (trimmed, case-sensitive); send `makerspace_id` so a value held "
+            "by several of your spaces is not ambiguous. An unknown value is a 404. "
             "Resolving a QR also records an immutable scanner-lookup scan event."
         ),
         request=QrResolveSerializer,
@@ -194,7 +207,10 @@ class QrResolveView(QrPermissionMixin, APIView):
     def post(self, request, *args, **kwargs):
         serializer = QrResolveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        qr = qr_for_action(request.user, rbac.Action.VIEW_INVENTORY, payload=serializer.validated_data["payload"], status=QrCode.Status.ACTIVE)
+        data = serializer.validated_data
+        qr = scanned_qr_for_action(
+            request.user, rbac.Action.VIEW_INVENTORY, data["payload"], makerspace_id=data.get("makerspace_id"),
+        )
         if qr.target_type == QrCode.TargetType.MEMBER_CARD:
             # Identity never travels through the inventory scanner; see member_card_services.
             raise Http404
@@ -229,10 +245,11 @@ class QrPrintView(QrPermissionMixin, APIView):
     def get(self, request, pk, *args, **kwargs):
         qr = qr_for_action(request.user, rbac.Action.MANAGE_QR, pk=pk)
         self._require_qr(request.user, qr.makerspace_id)
+        # An external label reprints its own value, never a SpaceWorks payload.
         return Response(
             {
-                "payload": qr.payload,
-                "svg": render_qr_label_svg(qr.payload),
+                "payload": label_value(qr),
+                "svg": render_qr_label_svg(label_value(qr)),
                 "target": qr_target_payload(qr),
             }
         )

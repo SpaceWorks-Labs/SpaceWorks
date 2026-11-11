@@ -129,12 +129,21 @@ class QrCode(models.Model):
         ACTIVE = "active", "Active"
         REVOKED = "revoked", "Revoked"
 
+    class Source(models.TextChoices):
+        # SpaceWorks generated the payload and prints it. EXTERNAL: the label was printed
+        # elsewhere; `external_value` is what it encodes and `payload` stays a random,
+        # never-printed token so deployment-global payload uniqueness is untouched.
+        SPACEWORKS = "spaceworks", gettext_noop("SpaceWorks")
+        EXTERNAL = "external", gettext_noop("External")
+
     makerspace = models.ForeignKey(
         Makerspace,
         on_delete=models.CASCADE,
         related_name="qr_codes",
     )
     payload = models.CharField(max_length=64, unique=True, default=generate_box_code)
+    source = models.CharField(max_length=20, choices=Source.choices, default=Source.SPACEWORKS)
+    external_value = models.CharField(max_length=64, blank=True, default="")
     target_type = models.CharField(max_length=20, choices=TargetType.choices)
     target_id = models.PositiveIntegerField()
     status = models.CharField(
@@ -159,6 +168,20 @@ class QrCode(models.Model):
                 fields=["makerspace", "target_type", "target_id"],
                 condition=models.Q(status="active"),
                 name="uniq_active_qr_per_target",
+            ),
+            # Per makerspace and across EVERY status: a revoked external label stays
+            # retired, exactly like a revoked SpaceWorks payload, and never re-links.
+            models.UniqueConstraint(
+                fields=["makerspace", "external_value"],
+                condition=models.Q(source="external"),
+                name="uniq_external_qr_value_per_makerspace",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(source="spaceworks", external_value="")
+                    | (models.Q(source="external") & ~models.Q(external_value=""))
+                ),
+                name="qr_external_value_matches_source",
             ),
         ]
 

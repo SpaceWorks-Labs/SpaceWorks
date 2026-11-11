@@ -33,7 +33,7 @@ Vitest checks every value against that source. Print artwork uses the same value
 Dark artwork is separately drawn/coloured, with no inversion, transparency-based
 text, filters, gradients or external fetches. Decorative accent fills never supply
 unlabelled application status. Text remains live in consumer components or typed
-template layers: Gilroy 400–700, one Unbounded 500–600 accent per layout.
+template layers: the "Gilroy" token 400–700 (rendered in Outfit), one Unbounded 500–600 accent per layout.
 
 ## Exact SVG inventory
 
@@ -134,7 +134,7 @@ six stocks, source ceilings, exact fixtures and CLAUDE/AGENTS equality.
 both inventories, token parity, safe markup/resources and decorative/meaningful axe.
 No Docker, Django or pytest was run. Backend schema tests remain for G's runner.
 
-Proof evidence lives in the session `scratchpad/ev/artwork/` directory:
+Proof evidence was rendered locally and is not committed:
 `contact-sheet-{intended,small}.png`, `proof-sheet-{certificates,classic,bold,minimal}.png`,
 42 named PDF files, 78 rasterized pages and `render-inventory.json` with exact
 file hashes, physical size/page counts, fitted fonts and sizes. These are local
@@ -180,8 +180,8 @@ is falsely marked integrated because its illustration exists.
 
 1. **G verification, step 5:** run
    `tests/events/programme/default_templates/test_inventory.py` through the isolated
-   backend runner. LF rerun list: `scratchpad/ev/ARTWORK-rerun-files.txt`.
-   Both new test files are ignored by the repository's broad test ignore rules;
+   backend runner. Rerun the files listed in the release test plan.
+   Both new test files are committed with the suite;
    preserve them explicitly when collecting this lane (no staging was performed).
 2. **E, steps 4–5:** replay `T/schema_fixtures.json` through the authoritative seed
    validator/server PDF renderer; verify every photo/no-photo combination, CJK/RTL
@@ -190,8 +190,8 @@ is falsely marked integrated because its illustration exists.
    No real member/credential samples may be committed.
 3. **A/B/C/D/E/F/P plus G, steps 4–5:** complete the exact imports above and per-screen
    alt/decorative, light/dark, reduced-motion, keyboard and forced-theme acceptance;
-   all twelve actual empty areas must be visibly integrated. Run lane UI tests and
+   all twelve actual empty areas must be visibly integrated. Run the UI tests and
    `frontend/e2e/events-programme.spec.ts` before accepting decision 32.
-4. **Orchestrator/G, before final acceptance:** independently review these owned
+4. **Release owner, before final acceptance:** independently review these owned
    files and correct findings, then record E/consumer/G signatures and final
-   Impeccable/owner QA. CLI review could not run in this lane's environment.
+   Impeccable/owner QA. CLI review could not run in the build environment.

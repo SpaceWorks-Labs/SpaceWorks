@@ -4,7 +4,9 @@ Every role has a manual in the in-app **Help** guide (`/help`). The guide shows 
 
 Built-in roles: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member. Finance, organisation, platform superadmin and host-operator sections cover work done through actions, organisation seats or platform access rather than one built-in role.
 
-## What changed for users in 0.11.0
+## What changed for users in 0.12.0
+
+These changes were first prepared for the unpublished 0.11.0 candidate and ship in 0.12.0. For the 0.12.0 additions (event and booking context on loans, equipment kits, clearer refusal messages) see the [0.12.0 release notes](release-0.12.0.md).
 
 - **Inventory has its own page.** A makerspace home is an overview of its enabled areas; tools to borrow live on **Inventory** (`/m/<space>/inventory`, or `/inventory` on a single-space site). See [Getting started](../frontend/src/help-content/en/member/getting-started.md) and [Borrow tools](../frontend/src/help-content/en/member/borrow-tools.md).
 - **Light mode by default.** A visitor's saved light or dark choice is kept. See [Public site and branding](../frontend/src/help-content/en/space-manager/public-site-and-branding.md).
@@ -87,7 +89,7 @@ Built-in roles: Space Manager, Inventory Manager, Machine Manager, Event Manager
 - [Consumables](../frontend/src/help-content/en/inventory-manager/consumables.md)
 - [The To-be-fixed shelf](../frontend/src/help-content/en/inventory-manager/to-be-fixed.md)
 - [The ledger and accountability](../frontend/src/help-content/en/inventory-manager/ledger-and-accountability.md)
-- [Lending rules](../frontend/src/help-content/en/inventory-manager/lending-settings.md)
+- [Inventory loan rules](../frontend/src/help-content/en/inventory-manager/lending-settings.md)
 
 ### Front desk, handover and kiosk Stations
 

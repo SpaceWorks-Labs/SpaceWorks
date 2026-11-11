@@ -127,6 +127,7 @@ outside the vocabulary.
 |---|---|---|
 | 401 | `{"detail": "Invalid client signature."}` | Any credential failure: unknown client, bad signature, skew, nonce replay, scope denied, unresolved or mismatched tenant. Deliberately uniform — it does not tell an attacker which check failed. The server log records the specific reason. |
 | 429 | throttled | Rate limit for the client's tier. |
+| 403 | `{"code": "full_session_required"}` | Payee/payout money is session-only (decision 224, `payments/payout_session.py`). Signed clients, personal access tokens and OAuth app connections are refused payout reports (`prizes-owed`, `event-finance`, any report with a payout column), the event finance view and the reimbursement routes. Finance summaries and the linked event-finance view answer without `payouts`, `money_out`, `net` and `budget_left`. |
 
 A misconfigured deployment fails at startup rather than at runtime: if
 `HMAC_PROTECTED_PATH_PREFIXES` is widened to a prefix whose routes are not registered,

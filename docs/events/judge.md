@@ -88,6 +88,26 @@ step-up). It opens that event's desks and nothing else, and ends when your role 
   (record_payment or the Event Manager). Each payout is an expense in the finance ledger; a mistake
   is reversed, never edited. Nothing is paid automatically.
 
+- *Scores CSV* (switch `events.scores_export`, off by default): one row per project per round with rank,
+  reviews, raw and adjusted (z-score) score, one average per criterion and the judges who scored. It never
+  carries comments, private notes, team feedback or email addresses; judge names show only to staff who may
+  see personal data, otherwise "Judge 1, Judge 2". Every export is audited.
+- *Reinstate*: a disqualified project can be reinstated with a reason. Its judging assignments come back
+  (submitted scores were never deleted), except for a judge who now has a conflict, a finalized round or a
+  pairwise round. An open entry-fee refund case is voided; once the fee was refunded or the refund approved,
+  reinstating is refused (`fee_refunded`) because the project would stand submitted unpaid.
+- *Unpublish results*: withdraw published results (refused once prizes were claimed or paid). Announcements
+  not yet sent are cancelled; publishing again emails only people whose earlier message was cancelled, never
+  anyone who already received it.
+- *Assignment preview*: the dry run shows each judge's load before and after, and a `plan_fingerprint`. Send
+  it back to apply exactly that plan (409 `plan_changed` if anything moved). `existing=keep` keeps current
+  unscored assignments; `existing=replace` re-plans them (scored work is never touched).
+- *Search*: the judge's own list takes `state` and `q` (project title) with a count per state; the staff
+  results list and the public results page take `q` (project or prize).
+
+Routes (E-B4) under `/api/v1/admin/events/{event_id}/`: `judging/scores-export/` (GET, CSV, `?round=`),
+`results/unpublish/` (POST) and `submissions/{submission_id}/reinstate/` (POST).
+
 Routes (L21b) under `/api/v1/admin/events/{event_id}/`: `finalists/`, `finalists/preview/`,
 `finalists/apply/`, `finalists/publish/`, `judging-rounds/{round_id}/progress/`,
 `judging-rounds/{round_id}/next-project/`, `programme-options/`, `results/send-email/`,

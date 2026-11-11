@@ -9,7 +9,7 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
 
 ## What you can run
 
-- **Inventory and lending.** A public catalogue by makerspace/category, reviewed borrow requests,
+- **Inventory.** A public catalogue by makerspace/category, reviewed borrow requests,
   staff direct handouts, and eligible authenticated QR self-checkout/return when enabled. Reviewed
   issues require a box QR scan and photo; returns require a photo and remark. Every handover is audited.
 - **Machines and 3D printing.** Public print requests, machine/service queues, printers, spools,
@@ -26,8 +26,8 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   show a Hosted at venue block. Both Events and Bookings support resource staff grants, draft cloning,
   answer edits, cancellation undo, curated websites, email campaigns, signed server reads and scoped
   reports through shared infrastructure.
-- **People and access.** Nine fixed built-in roles per makerspace: Space Manager, Inventory Manager,
-  Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member. Staff
+- **People and access.** Ten fixed built-in roles per makerspace: Space Manager, Inventory Manager,
+  Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member. Staff
   roles combine (Space Manager and Member stand alone), with per-person machine-type scope. Organizations can link spaces, publish profiles and cross-space event catalogues,
   and grant actions across the network without conferring membership identity. Superadmins use a
   separate Django control plane; see [roles and access](README-HOSTING.md#roles--access).
@@ -49,7 +49,7 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   operations. Historical metric rollups are append-only: corrections add revisions. Every module
   has a substantive report or an explicitly gated row.
 - **Platform overview (superadmin).** One page in the web superadmin console totals every live
-  space: people, lending, machines, events, bookings, membership, money and operations, each total
+  space: people, inventory, machines, events, bookings, membership, money and operations, each total
   beside its per-space table, with this month / this year / all time / custom periods, a toggle for
   archived and not-serving spaces, drill-down into each space and an audited CSV. Money stays per
   currency, a block hides where its module is off everywhere, and no member name is shown. See
@@ -95,12 +95,12 @@ Telegram group, QR namespace and audit scope. Queries and actions are scoped to 
   venue fees; calendar invites on confirmation emails; applications with review stages for any event;
   crew and custom check-in lists; hackathon finalists, prize payouts, entry fees and leader-pays teams.
 - **Help and public stats.** An in-app help centre with role-based guides, and a public stats page per
-  space (events, machines, lending, community) with a TV mode and small-number suppression.
+  space (events, machines, inventory, community) with a TV mode and small-number suppression.
 - **Space management.** Task-grouped Space Manager navigation, a searchable settings hub and setup
   checklist; domain managers reach their own settings from their consoles. The dashboard counts
   unresolved booking issues under current booking authority and links to the issues view.
 - **Modules and editions.** Install only the areas you use; uninstall hides surfaces and retains data.
-  Events-only and bookings-only editions hide unused lending surfaces through `SPACEWORKS_EDITION`.
+  Events-only and bookings-only editions hide unused Inventory surfaces through `SPACEWORKS_EDITION`.
 - **Operations.** `X-Request-ID` connects JSON request logs and Celery; a token-protected Prometheus
   endpoint reports queues, delivery failures and storage. Run tests locally before pushing with
   `./scripts/dev.sh test` and `./scripts/dev.sh e2e`. Actions builds/publishes backend/frontend images,

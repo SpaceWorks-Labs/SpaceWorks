@@ -1,6 +1,6 @@
 # Account portability: people, staff roles and credentials across backups and moves
 
-Release 2, lane U-D (owner decisions #63, #65, #66, #128 C-17/C-18, #137 Q-B1, #144). This
+Release 2, tenant-dump programme (owner decisions #63, #65, #66, #128 C-17/C-18, #137 Q-B1, #144). This
 replaces the account-split portability contract (D10/D11): there is one account per person,
 staff roles are staff-track memberships on that person, and the superadmin is a separate
 platform account. See [One account per person](INVARIANTS.md#one-account-per-person-release-2-lane-u-a1-63-65-66)
@@ -68,7 +68,7 @@ space's staff and restoring it deleted them.
   `staff_makerspace_id` becomes a person whose rows are staff-track rows. Other versions are
   refused.
 
-## Sovereign tenant dump (Lane D, `spaceworks-tenant-dump-v1`)
+## Sovereign tenant dump (tenant-dump programme, `spaceworks-tenant-dump-v1`)
 
 A user travels in full when every membership is in the exiting space or when they hold an
 active staff-track role there (so staff can sign in on the new server); everyone else, every

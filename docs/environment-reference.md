@@ -77,7 +77,7 @@ TLS hardening is gated on `ENABLE_HTTPS`, never on `DEBUG`. Internal plain-HTTP 
 
 ## Managed SaaS mode
 
-Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-host). See `docs/deploy-saas.md`.
+The built-in fair-use defaults need `PLATFORM_DOMAIN_SUFFIX`; plans, limits and hosting requests are controlled by the superadmin switch "Hosting other makerspaces" (`MANAGED_PLANS_ENABLED`, when set, overrides it). See [self-hosting](self-hosting.md#plans-and-hosting-other-makerspaces-optional).
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -87,7 +87,7 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | `PLATFORM_ORIGIN_HOST` | `''` | Managed mode: host a tenant's custom domain must resolve to (by CNAME) before it is verified. Blank skips the resolution check. |
 | `PLATFORM_STAFF_ORIGINS` | `[]` | Exact platform-console origins allowed for platform API password login; tenant staff login supplies its makerspace slug and must match a verified custom origin. Member provider switches do not disable staff/platform passwords. |
 | `PLATFORM_SUBDOMAIN_AUTO_TLS` | `False` | Guided platforms enable TLS admission for registered, verified, non-archived tenant subdomains. Unknown/pending/archived domains remain denied. Compared during restore preflight without blocking a target's TLS choice. |
-| `MANAGED_PLANS_ENABLED` | `False` | Managed hosting limiter (#187A), **off by default**: superadmin plan tiers, a plan per space, trials, recorded hosting billing and its optional non-payment enforcement. Also needs a managed deployment (`PLATFORM_DOMAIN_SUFFIX`). Off = nothing visible or enforced; self-host is unchanged. |
+| `MANAGED_PLANS_ENABLED` | *(empty)* | Optional override for **Plans and hosting other makerspaces** (decision 234). Leave it empty and the superadmin turns the feature on or off in the platform console (*Hosting other makerspaces*, off by default): plan tiers, a plan per space, per-space limits, trials, recorded hosting billing, host-your-makerspace requests and new Stripe Connect charges (platform credential fallbacks for SMS, push, WhatsApp, wallet and attestation apply on every install, decision 240). Set `True`/`False` only to force it; a set value locks the console switch. Works on any self-hosted install; the built-in fair-use defaults additionally need `PLATFORM_DOMAIN_SUFFIX`. Off = nothing visible or enforced. See [Plans and hosting other makerspaces](self-hosting.md#plans-and-hosting-other-makerspaces-optional). |
 | `MANAGED_BILLING_ONLINE_ENABLED` | `False` | Second switch, also off: lets a Space Manager pay a hosting invoice online through the platform's own Stripe/Razorpay account (keys are set encrypted in the superadmin console). Never charges without the payer opening the checkout. Meaningless unless `MANAGED_PLANS_ENABLED` is on. |
 | `PERSON_CREDENTIAL_RATE_PER_MINUTE` | `120` | Requests per minute per personal access token or OAuth app connection (#196). |
 | `OAUTH_OIDC_RSA_PRIVATE_KEY` | empty | PEM RSA key that signs OpenID Connect ID tokens for app connections (secret-bearing; `
@@ -97,6 +97,8 @@ Every managed feature is dormant while `PLATFORM_DOMAIN_SUFFIX` is blank (self-h
 | `THROTTLE_PERSON_TOKEN_MANAGE` | `30/hour` | Rate for creating and revoking personal access tokens. |
 | `THROTTLE_OAUTH_CONSENT` | `30/hour` | Rate for granting app-connection consent. |
 | `THROTTLE_API_CLIENT_MANAGE` | `120/hour` | Rate for creating, rotating and revoking API clients in the console. |
+| `THROTTLE_MINOR_PERSON_LOOKUP` | `60/min` | Rate for the staff person lookup used when adding a minor or guardian (0.12.0). |
+| `WEB_TELEMETRY_ALLOWED_ORIGINS` | empty | Comma-separated HTTPS origins (no paths) a self-hosted page-analytics provider may send to. Empty = only the built-in destinations. Set the same value on the website container so its CSP matches ([providers](web-telemetry-providers.md)). |
 
 ## Database
 
@@ -135,6 +137,7 @@ Redis backs the cache (rate limits, nonces, verified hosts), the Celery broker a
 | Variable | Default | Notes |
 |---|---|---|
 | `METRICS_TOKEN` | `''` | Bearer token for `GET /api/v1/metrics/`; 404 while unset. |
+| `GRAFANA_ALLOW_PRIVATE_HOSTS` | `False` | Lets a space's Grafana connection (test, rendered dashboards) use a private or local address, for example Grafana on the same compose network. The platform connection may always; leave off when you host other makerspaces ([Grafana setup](grafana-setup.md)). |
 | `SENTRY_DSN` | `''` | Opt-in error tracking; the SDK is imported only when set; PII is never sent. |
 | `SENTRY_ENVIRONMENT` | `'production' if not DEBUG else 'development'` | Environment label attached to Sentry events. |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Share of requests sent as performance traces (0 to 1). |
@@ -228,6 +231,7 @@ anchor, including migration/worker/beat processes, without generating or rotatin
 | `EVENT_ASSET_CLAMAV_PORT` | `3310` | Scanner TCP port. |
 | `UI_DELIGHT_ENABLED` | `True` | Deployment kill switch for frontend artwork/motion. On by default; each space can still turn `ui.delight` off, and a reduced-motion preference always applies. |
 | `UI_EASTER_EGGS_ENABLED` | `True` | Deployment kill switch for easter eggs. On by default; each space can turn `ui.easter_eggs` off; scanner, kiosk and payment routes always suppress eggs. |
+| `HUB_LANDING_ENABLED` | `True` | Shows the SpaceWorks product page at the main host's front page (`/`). On by default on every install, self-hosted included. Set `False` for a space that wants its own home at `/`: with exactly one public space `/` opens that space's home, otherwise the `/spaces` directory. `/docs`, `/spaces`, `/about` and every other route are unchanged; spaces on their own domain are unaffected. Read from `GET /api/v1/config` as `landing_enabled`; change later with `scripts/apply-settings.sh --landing off`. |
 
 Travel support (`event_reimbursements`) and staged event forms. Each value is bounded;
 an out-of-range value refuses to start. Retention counts from the record's terminal
@@ -245,7 +249,7 @@ financial anchor (receipts, payee data) or the event end (stage uploads), never 
 | `EVENT_STAGE_EVENT_QUOTA_BYTES` | `1073741824` | Per-event stage-form upload budget. |
 
 The installed video provider invokes the bounded non-root ffprobe launcher; the backend
-image includes ffmpeg. [Scanner/probe setup](events/operations.md#optional-malware-scanner)
+image includes a source-built, minimal ffprobe (no ffmpeg package). [Scanner/probe setup](events/operations.md#optional-malware-scanner)
 requires real provider/fault tests. These controls do not enable programme capabilities.
 Certificate verify uses a fixed 30/min anonymous throttle, rather than a new env setting.
 
@@ -350,6 +354,10 @@ documented under managed SaaS mode above.
 | `SPACEWORKS_HOSTING_MODEL` | `1`: one makerspace; `2`: shared `/m/<slug>` spaces; `3`: subdomain platform. Records intent; does not enforce a tenant-count limit. |
 | `SPACEWORKS_RUN_FRONTEND` | `yes`; `no` disables the website and selects the API nginx edge. |
 | `SPACEWORKS_STORAGE` | `bundled`; `external` disables Silo/MinIO and bucket initialization. |
+| `SPACEWORKS_DATABASE` | `bundled`; `external` removes the bundled PostgreSQL (`docker/compose.external-db.yml`) and uses an outside server. Written by the installer's Outside services step. |
+| `SPACEWORKS_REDIS` | `bundled`; `external` removes the bundled Redis (`docker/compose.external-redis.yml`); the broker URL is `CELERY_BROKER_URL`. |
+| `SPACEWORKS_DATABASE_RUNTIME_URL` | Only with `SPACEWORKS_DATABASE=external`: the narrow runtime login the database pointer starts from (the installer derives it from your owner URL with a generated password). Read once by `scripts/bundled-database-url.py`; the live pointer is authoritative afterwards. |
+| `SPACEWORKS_MAINTENANCE_DATABASE_URL` | Only with `SPACEWORKS_DATABASE=external`: the owner (direct or session) connection used by the one-shot orchestration and migrate jobs. Never given to resident services. Use the direct URL when the runtime URL goes through a pooler. |
 | `API_BIND` | API edge listener address, default `0.0.0.0`; existing proxies use `127.0.0.1`. Built-in HTTPS removes this listener and uses Caddy. |
 | `API_PORT` | API edge listener port, default `80`; existing proxies use `8080`. |
 | `HTTP_PORT_BIND` | Website listener address, default `0.0.0.0`; existing proxies use loopback with `HTTP_PORT=8080`. |
@@ -391,7 +399,10 @@ See [the operations reference](environment-operations.md#route-metrics-organizat
 for `ROUTE_METRICS_ENABLED` (default `False`), `PROMETHEUS_MULTIPROC_DIR` (empty;
 Compose uses `/tmp/spaceworks-prometheus`), `ORGANIZATION_SELF_CREATION_ENABLED`
 (default `False`), `ORGANIZATION_SELF_CREATION_MAX_OWNED` (3), and
-`ORGANIZATION_SELF_CREATION_MAX_PER_DAY` (1).
+`ORGANIZATION_SELF_CREATION_MAX_PER_DAY` (1), and `ORGANIZATION_REVIEW_REQUIRED`
+(default `False`; on, self-created organizations start pending review and stay inert until a
+superadmin approves them), and `ORGANIZATION_PUBLIC_DIRECTORY_ENABLED` (default `False`;
+serves the opt-in public organization directory).
 
 `WEB_ANALYTICS_SCRIPT_URL`, `WEB_ANALYTICS_COLLECT_URL` and `WEB_ANALYTICS_DOMAIN`
 default to empty and must be configured together for manual Plausible analytics.

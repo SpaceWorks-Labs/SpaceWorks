@@ -36,11 +36,11 @@ shows you:
 
 **Choose areas before confirmation.** Setup enables each area's modules and every satisfiable feature.
 Setup first asks whether to enable every area (default no); yes still asks the normal follow-ups.
-Inventory & lending, Machines and Reports default on; the other five areas default off. Core,
+Inventory, Machines and Reports default on; the other five areas default off. Core,
 notifications, email and the per-person accounts module stay installed, as do charge tracking, receipt
 documents, billing reminders, staff invitations and self-check-in geofence. Accounts supplies self
 sign-up, password/social/phone sign-in and the member area; platform login-method/provider choices still
-apply. Membership adds plans, vouching, renewals and the mobile app. Inventory off hides lending through
+apply. Membership adds plans, vouching, renewals and the mobile app. Inventory off hides loans through
 `loans.enabled` and retains all data. See [Areas used by setup](MODULES.md#areas-used-by-setup) for the
 module/feature mapping.
 
@@ -189,7 +189,7 @@ platform duties, not a module: the superadmin backs up and restores every space.
 Outside guided setup, member accounts and mobile apps are opt-in; mobile pulls in `member_accounts`
 when installed. Guided setup always enables per-person accounts.
 
-The online rail is opt-in, but configured lending deposits/late fees can still create core ledger
+The online rail is opt-in, but configured loan deposits/late fees can still create core ledger
 debts through `charges.*`; missing gateway keys never suppress that record. Other domain debts need
 their domain modules and pricing. Push needs FCM/APNs, chat needs its token/webhook, and sign-in
 methods beyond password need their own provider configuration.

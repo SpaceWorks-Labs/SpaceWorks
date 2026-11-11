@@ -49,7 +49,7 @@ resolution audit domain refs remap while replay/session/lease UUIDs stay source 
 
 Run the new hardware recovery/scope/concurrency/contracts tests plus existing replay,
 origin, data-export, catalog/reference and purge tests in the isolated Postgres runner.
-Regenerate OpenAPI schema and frontend client artifacts; the lane leaves these alone.
+Regenerate OpenAPI schema and frontend client artifacts; they are regenerated at release time.
 Run `scripts/dev.sh e2e`: it seeds separate immutable tenants, builds production assets
 and runs serial Playwright on a spare preview port (5173 by default), against the real
 Docker backend/Postgres/Redis/MinIO. Existing dev port 5000 remains untouched. Preview

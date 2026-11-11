@@ -4,8 +4,8 @@ The English labels below come from the audit presentation catalogue and reviewed
 The platform and makerspace audit screens apply the same metadata policy.
 Entries with withheld metadata show the action label and omit the stored metadata.
 
-The table lists 1,311 actions: 1,272 presentation-catalogue entries, 20 reviewed wrapper actions that
-show a label built from the key, and 19 dynamic actions under the deny policy. A further 59 shared-service
+The table lists 1,408 actions: 1,369 presentation-catalogue entries, 20 reviewed wrapper actions that
+show a label built from the key, and 19 dynamic actions under the deny policy. A further 60 shared-service
 prefixes are listed at the end. The sources are `backend/apps/audit/presentation_catalog.py`,
 `presentation_fallback_labels.py` and `presentation_catalog_dynamic.py`.
 
@@ -68,9 +68,18 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `analytics.connection_updated` | Analytics connection changed | Reviewed fields only |
 | `analytics.credentials_viewed` | Analytics credentials viewed | Reviewed fields only |
 | `analytics.dashboard_viewed` | Analytics dashboard opened | Reviewed fields only |
+| `analytics.grafana_bundle_downloaded` | Grafana bundle downloaded | Reviewed fields only |
+| `analytics.grafana_connection_tested` | Grafana connection tested | Reviewed fields only |
+| `analytics.grafana_connection_updated` | Grafana connection changed | Reviewed fields only |
+| `analytics.grafana_credentials_viewed` | Grafana connection viewed | Reviewed fields only |
+| `analytics.grafana_dashboard_viewed` | Grafana dashboard opened | Reviewed fields only |
+| `analytics.grafana_token_created` | Grafana token saved | Reviewed fields only |
+| `analytics.grafana_token_revoked` | Grafana token removed | Reviewed fields only |
+| `analytics.grafana_token_rotated` | Grafana token replaced | Reviewed fields only |
 | `analytics.login_created` | Analytics database login created | Reviewed fields only |
 | `analytics.login_revoked` | Analytics database login revoked | Reviewed fields only |
 | `analytics.login_rotated` | Analytics database login password rotated | Reviewed fields only |
+| `analytics.telemetry_updated` | Web telemetry settings changed | Reviewed fields only |
 | `api_client.bookings_read` | Api client read bookings | Reviewed fields only |
 | `api_client.created` | Api client created | Reviewed fields only |
 | `api_client.deleted` | Api client deleted | None declared |
@@ -154,16 +163,23 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `backup.space_restore_preview_ready` | Space restore preview ready | Reviewed fields only |
 | `backup.space_restore_requested` | Space restore requested | Reviewed fields only |
 | `booking.broadcast.created` | Booking broadcast created | Withheld |
+| `booking.cancelled_event_room_confirmed` | Booker confirmed cancelling a room that hosts an event | Withheld |
 | `booking.departure_recorded` | Booking departure recorded | Withheld |
 | `booking.feed_created` | Booking feed created | Withheld |
 | `booking.feed_revoked` | Booking feed revoked | Withheld |
 | `booking.feed_rotated` | Booking feed rotated | Withheld |
+| `booking.included_hours_consumed` | Plan included hours used | Withheld |
+| `booking.included_hours_restored` | Plan included hours restored | Withheld |
 | `booking.issue_resolved` | Booking issue resolved | Withheld |
+| `booking.org_hours_consumed` | Organization hours used | Withheld |
+| `booking.org_hours_released` | Organization hours restored | Withheld |
+| `booking.organization_linked` | Booking made for an organization | Withheld |
 | `booking.pass_downloaded` | Booking pass downloaded | Withheld |
 | `booking.pass_previewed` | Booking pass previewed | Withheld |
 | `booking.pass_template_updated` | Booking pass template updated | Withheld |
 | `booking.price_quoted_at_approval` | Booking charged at the approval-day price (no price frozen at request) | Withheld |
 | `booking.recurrence_created` | Booking recurrence created | Withheld |
+| `booking.replacement_created` | Replacement booking created | Withheld |
 | `booking.space_photo_added` | Space photo added | Withheld |
 | `booking.space_photo_removed` | Space photo removed | Withheld |
 | `booking.space_photo_updated` | Space photo caption updated | Withheld |
@@ -184,6 +200,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `card.verify_optin_changed` | Card check-page choices changed | Reviewed fields only |
 | `card_design.approval_setting_changed` | Card design approval switch changed | Reviewed fields only |
 | `card_design.approved` | Card design approved | Reviewed fields only |
+| `card_design.archived` | Card design override archived | Reviewed fields only |
 | `card_design.background_updated` | Card artwork uploaded | Reviewed fields only |
 | `card_design.created` | Card design created | Reviewed fields only |
 | `card_design.deleted` | Card design override deleted | Reviewed fields only |
@@ -197,6 +214,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `card_design.restored` | Card design restored from an earlier version | Reviewed fields only |
 | `card_design.saved` | Card design saved | Reviewed fields only |
 | `card_design.submitted` | Card design submitted for approval | Reviewed fields only |
+| `card_design.unarchived` | Card design override restored from the archive | Reviewed fields only |
 | `card_design.watermark_updated` | Card watermark uploaded | Reviewed fields only |
 | `card_job.cancelled` | Card job cancelled | Reviewed fields only |
 | `card_job.failed` | Card job failed | Reviewed fields only |
@@ -208,6 +226,10 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `category.deleted` | Category deleted | Reviewed fields only |
 | `category.updated` | Category updated | None declared |
 | `certification.granted` | Certification granted | Withheld |
+| `certification.guest_granted` | Guest certification granted | Reviewed fields only |
+| `certification.guest_revoked` | Guest certification revoked | Reviewed fields only |
+| `certification.induction_linked` | Event marked as an induction | Reviewed fields only |
+| `certification.induction_unlinked` | Induction marking removed | Withheld |
 | `certification.override` | Certification override | Reviewed fields only |
 | `certification.renewed` | Certification renewed | Withheld |
 | `certification.revoked` | Certification revoked | Reviewed fields only |
@@ -254,7 +276,9 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `donation.campaign_updated` | Donation campaign changed | Reviewed fields only |
 | `donation.cancelled` | Donation cancelled | Reviewed fields only |
 | `donation.created` | Donation recorded | Reviewed fields only |
+| `donation.exported` | Donations exported | Reviewed fields only |
 | `donation.paid` | Donation received | Reviewed fields only |
+| `donation.receipt_reissued` | Donation receipt sent again | Reviewed fields only |
 | `donation.return_case_opened` | Refund case opened to return a gift | Reviewed fields only |
 | `email.acceptance_reconciled` | Email provider acceptance reconciled | Reviewed fields only |
 | `email.budget_deferred` | Email budget deferred | None declared |
@@ -288,6 +312,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `encryption.search_reindexed` | Search index rebuilt under a new key | Reviewed fields only |
 | `encryption.write_fence_closed` | Encryption write fence closed | Reviewed fields only |
 | `encryption.write_fence_opened` | Encryption write fence opened | Reviewed fields only |
+| `equipment.context_linked` | Equipment linked to an event or booking | Reviewed fields only |
 | `event.addon_created` | Ticket add-on created | Withheld |
 | `event.addon_deleted` | Ticket add-on deleted | Withheld |
 | `event.addon_updated` | Ticket add-on changed | Withheld |
@@ -332,6 +357,9 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `event.badge_resource_bound` | Event badge resource bound | Withheld |
 | `event.badge_template_updated` | Event badge template updated | Withheld |
 | `event.badges_generated` | Event badges generated | Withheld |
+| `event.booking_decision_linked` | Room booking linked to the event | Withheld |
+| `event.booking_decision_partial_coverage` | Room booking linked with partial time coverage | Withheld |
+| `event.booking_decision_replaced` | Linked room booking replaced | Withheld |
 | `event.broadcast.cancelled` | Event broadcast cancelled | Withheld |
 | `event.broadcast.created` | Event broadcast created | Withheld |
 | `event.broadcast.previewed` | Event broadcast previewed | Withheld |
@@ -392,6 +420,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `event.contributor_notice.claimed` | Event contributor notice claimed | Withheld |
 | `event.contributor_notice.delivered` | Event contributor notice delivered | Withheld |
 | `event.contributor_notice.retry` | Event contributor notice retry | Withheld |
+| `event.created_with_room` | Event created with a room step | Withheld |
 | `event.credential_issued` | Event credential issued | Withheld |
 | `event.credential_revoked` | Event credential revoked | Withheld |
 | `event.crew.approved` | Crew member approved | Withheld |
@@ -407,6 +436,8 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `event.embed_policy_updated` | Event embed allow-list updated | Withheld |
 | `event.entitlement.created` | Event entitlement created | Withheld |
 | `event.entitlement.revoked` | Event entitlement revoked | Withheld |
+| `event.equipment_planned` | Equipment planned for event participants | Withheld |
+| `event.equipment_return_window_changed` | Event equipment return window changed | Withheld |
 | `event.export.csv` | Event list exported as CSV | Withheld |
 | `event.feedback_anonymous_enabled` | Event feedback set to anonymous | Withheld |
 | `event.feedback_submitted` | Event feedback submitted | Withheld |
@@ -551,6 +582,9 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `event.venue_fee_charged` | Venue fee charged | Withheld |
 | `event.venue_fee_configured` | Venue fee set | Withheld |
 | `event.website_unattached_assets_removed` | Unattached event website images removed | Withheld |
+| `event.workshop_machine_linked` | Workshop machine booking linked to the event | Withheld |
+| `event.workshop_machine_replaced` | Linked workshop machine booking replaced | Withheld |
+| `event.workshop_machine_unlinked` | Workshop machine booking unlinked from the event | Withheld |
 | `event_card.downloaded` | Event ID card downloaded | Reviewed fields only |
 | `event_card.emailed` | Event ID card emailed | Reviewed fields only |
 | `event_card.extras_access_changed` | First-aid card details access changed | Reviewed fields only |
@@ -622,6 +656,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `hosting_request.rejected` | Hosting request rejected | None declared |
 | `hosting_request.resubmitted` | Hosting request resubmitted | Reviewed fields only |
 | `hosting_request.submitted` | Hosting request submitted | Reviewed fields only |
+| `id_programme.archived` | ID programme archived | Reviewed fields only |
 | `id_programme.card_added` | Person added to an ID programme | Reviewed fields only |
 | `id_programme.card_deleted` | ID card deleted | Reviewed fields only |
 | `id_programme.card_downloaded` | ID card downloaded | Reviewed fields only |
@@ -641,12 +676,22 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `id_programme.created` | ID programme created | Reviewed fields only |
 | `id_programme.deleted` | ID programme deleted | Reviewed fields only |
 | `id_programme.fields_updated` | ID programme questions changed | Reviewed fields only |
+| `id_programme.unarchived` | ID programme restored from the archive | Reviewed fields only |
 | `id_programme.updated` | ID programme changed | Reviewed fields only |
+| `incident.action_added` | Incident follow-up action added | Reviewed fields only |
+| `incident.action_done` | Incident follow-up action updated | Reviewed fields only |
+| `incident.reported` | Incident reported | Withheld |
+| `incident.status_changed` | Incident status changed | Withheld |
+| `incident.updated` | Incident updated | Withheld |
 | `inventory.asset_moved_makerspace` | Inventory asset moved makerspace | Reviewed fields only |
 | `inventory.asset_updated` | Inventory asset updated | Reviewed fields only |
 | `inventory.bulk_import_sheet_read` | Inventory import spreadsheet read | Reviewed fields only |
 | `inventory.bulk_imported` | Inventory bulk imported | Reviewed fields only |
 | `inventory.created` | Inventory created | None declared |
+| `inventory.equipment_consumable_plan_created` | Consumable plan created | None declared |
+| `inventory.equipment_kit_changed` | Equipment kit setting changed | Reviewed fields only |
+| `inventory.equipment_kit_created` | Equipment kit created | Reviewed fields only |
+| `inventory.equipment_kit_version_created` | Equipment kit version created | Reviewed fields only |
 | `inventory.image_attached` | Inventory image attached | Withheld |
 | `inventory.image_cleared` | Inventory image cleared | Withheld |
 | `inventory.quantity_adjusted` | Inventory quantity adjusted | Reviewed fields only |
@@ -690,8 +735,10 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `ledger.expense_recorded` | Expense recorded | Reviewed fields only |
 | `ledger.opening_balance_set` | Opening balance set | Reviewed fields only |
 | `loan.accountability_not_charged` | Damage or loss recorded with no charge | Reviewed fields only |
+| `loan.booking_context_changed` | Loan booking context changed | Reviewed fields only |
 | `loan.damage_charged` | Damage charge raised | Reviewed fields only |
 | `loan.deposit_raised` | Loan deposit raised | Reviewed fields only |
+| `loan.event_context_changed` | Loan event context changed | Reviewed fields only |
 | `loan.fee_waived` | Loan fees waived | Reviewed fields only |
 | `loan.fee_waiver_revoked` | Loan fee waiver revoked | Reviewed fields only |
 | `loan.late_fee_raised` | Loan late fee raised | Reviewed fields only |
@@ -724,6 +771,12 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `machine_session.device_skipped` | Device session not opened | Reviewed fields only |
 | `machine_session.started` | Machine session started | Reviewed fields only |
 | `machine_session.stopped` | Machine session stopped | Reviewed fields only |
+| `machine_session.supervised_closed` | Supervised session closed | Withheld |
+| `machine_session.supervised_opened` | Supervised session opened | Withheld |
+| `machine_session.supervised_use_ended` | Supervised use ended | Withheld |
+| `machine_session.supervised_use_started` | Supervised use started | Withheld |
+| `machine_session.supervisee_added` | Supervisee added | Withheld |
+| `machine_session.supervisee_removed` | Supervisee removed | Withheld |
 | `machine_type.created` | Machine type created | None declared |
 | `machine_type.job_settings_updated` | Machine type job settings changed | Reviewed fields only |
 | `machine_type.policy_updated` | Machine type policy updated | None declared |
@@ -753,6 +806,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `makerspace.capability_purged` | Capability data purged | Reviewed fields only |
 | `makerspace.capability_retired` | Retired setting removed | Reviewed fields only |
 | `makerspace.closed_notice_updated` | Closed-for-now banner updated | Reviewed fields only |
+| `makerspace.community_policy_updated` | Community policy changed | Reviewed fields only |
 | `makerspace.created` | Makerspace created | None declared |
 | `makerspace.default_locale_changed` | Makerspace default language changed | Reviewed fields only |
 | `makerspace.domain_changed` | Makerspace domain changed | None declared |
@@ -761,6 +815,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `makerspace.features_updated` | Makerspace features updated | None declared |
 | `makerspace.financial_year_updated` | Financial year start month changed | Reviewed fields only |
 | `makerspace.geofence_updated` | Makerspace geofence updated | Withheld |
+| `makerspace.guest_pass_policy_updated` | Guest pass policy changed | Reviewed fields only |
 | `makerspace.module_purge_started` | Makerspace module purge started | Withheld |
 | `makerspace.module_purged` | Makerspace module purged | Withheld |
 | `makerspace.module_retired` | Retired module key folded into capabilities | Reviewed fields only |
@@ -786,6 +841,8 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `makerspace.waiver_published` | Makerspace waiver published | Reviewed fields only |
 | `makerspace.website_origins_updated` | Website embed origins updated | Reviewed fields only |
 | `managed_hosting.billing_settings_updated` | Hosting billing settings changed | Reviewed fields only |
+| `managed_hosting.hosting_switch_changed` | Hosting other makerspaces switched | Reviewed fields only |
+| `managed_hosting.hosting_type_changed` | Hosting type changed (own or hosted space) | Reviewed fields only |
 | `managed_hosting.invoice_checkout_started` | Hosting invoice checkout opened | Reviewed fields only |
 | `managed_hosting.invoice_created` | Hosting invoice recorded | Reviewed fields only |
 | `managed_hosting.invoice_paid` | Hosting invoice paid | Reviewed fields only |
@@ -794,6 +851,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `managed_hosting.plan_created` | Hosting plan created | Reviewed fields only |
 | `managed_hosting.plan_removed` | Hosting plan removed | None declared |
 | `managed_hosting.plan_updated` | Hosting plan changed | Reviewed fields only |
+| `managed_hosting.throttle_rate_changed` | Request rate limit changed | Reviewed fields only |
 | `managed_hosting.trial_expired` | Hosting trial ended | Reviewed fields only |
 | `member.claim_code_issued` | Member claim code issued | Withheld |
 | `member.claim_code_revoked` | Member claim code revoked | Withheld |
@@ -819,6 +877,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `member.signup_requested` | Member signup requested | Withheld |
 | `member.walk_in_application_created` | Member walk in application created | None declared |
 | `member.walk_in_created` | Member walk in created | Reviewed fields only |
+| `member.walk_in_guest_pass_created` | Walk-in registered with a guest pass | Reviewed fields only |
 | `member.walk_in_transitioned` | Member walk in transitioned | None declared |
 | `member_card.auto_issued` | Member card issued automatically | Reviewed fields only |
 | `member_card.created` | Member card created | Reviewed fields only |
@@ -842,6 +901,8 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `membership.bulk_decided` | Join requests decided in bulk | Reviewed fields only |
 | `membership.consent_given` | Consent given | Reviewed fields only |
 | `membership.consent_withdrawn` | Consent withdrawn | Reviewed fields only |
+| `membership.day_pass_product_archived` | Day pass product archived | None declared |
+| `membership.day_pass_product_saved` | Day pass product saved | Reviewed fields only |
 | `membership.direct_admission` | Membership direct admission | None declared |
 | `membership.erasure_approved` | Erasure approved | Reviewed fields only |
 | `membership.erasure_rejected` | Erasure rejected | Reviewed fields only |
@@ -849,6 +910,17 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `membership.erasure_withdrawn` | Erasure request withdrawn | Reviewed fields only |
 | `membership.extended` | Membership extended by staff | Reviewed fields only |
 | `membership.grace_promised` | Membership grace boundary recorded | None declared |
+| `membership.guardian_consent_revoked` | Guardian consent revoked | None declared |
+| `membership.guardian_consent_signed` | Guardian consent signed | Reviewed fields only |
+| `membership.guardian_terms_published` | Guardian consent text published | Reviewed fields only |
+| `membership.guest_pass_charge_raised` | Day pass charge raised | Reviewed fields only |
+| `membership.guest_pass_charge_redirected` | Loan charge billed to a guest's sponsor | Reviewed fields only |
+| `membership.guest_pass_converted` | Guest pass converted to a membership | Reviewed fields only |
+| `membership.guest_pass_expired` | Guest pass expired | None declared |
+| `membership.guest_pass_issued` | Guest pass issued | Reviewed fields only |
+| `membership.guest_pass_kept_on_cancel` | Event pass kept after the registration was cancelled | Reviewed fields only |
+| `membership.guest_pass_revoked` | Guest pass revoked | Reviewed fields only |
+| `membership.guest_pass_waiver_stamped` | Guest pass waiver accepted | Reviewed fields only |
 | `membership.import_accepted` | Imported membership accepted | Reviewed fields only |
 | `membership.imported` | Members imported | Reviewed fields only |
 | `membership.invitation_claimed` | Membership invitation claimed | None declared |
@@ -858,6 +930,8 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `membership.invited` | Membership invited | Reviewed fields only |
 | `membership.joined` | Membership joined | Withheld |
 | `membership.left` | Member left makerspace | Withheld |
+| `membership.minor_cleared` | Minor record cleared | None declared |
+| `membership.minor_recorded` | Minor recorded | Reviewed fields only |
 | `membership.payment_after_expiry` | Membership payment after expiry | None declared |
 | `membership.plan_archived` | Membership plan archived | Reviewed fields only |
 | `membership.plan_restored` | Membership plan restored | Reviewed fields only |
@@ -888,6 +962,12 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `membership.title_updated` | Member title updated | Reviewed fields only |
 | `membership.unverified` | Membership unverified | None declared |
 | `membership.verified` | Membership verified | None declared |
+| `membership.volunteer_credit_applied` | Volunteer credit applied to a charge | Reviewed fields only |
+| `membership.volunteer_credit_created` | Volunteer credit earned | Reviewed fields only |
+| `membership.volunteer_credit_voided` | Volunteer credit voided | None declared |
+| `membership.volunteer_hours_decided` | Volunteer hours decided | Reviewed fields only |
+| `membership.volunteer_hours_imported` | Event shift hours imported | Reviewed fields only |
+| `membership.volunteer_hours_logged` | Volunteer hours logged | Reviewed fields only |
 | `membership.vouched` | Membership vouched | None declared |
 | `membership.vouchers_flagged` | Membership vouchers flagged | None declared |
 | `membership.waiver_accepted` | Membership waiver accepted | Reviewed fields only |
@@ -913,6 +993,9 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `notification.broadcast_created` | Notification broadcast created | None declared |
 | `notification.browser_alert_subscribed` | Browser notifications switched on | None declared |
 | `notification.browser_alert_unsubscribed` | Browser notifications switched off | None declared |
+| `notification.browser_firebase_challenge_started` | Browser notification sign-up started | None declared |
+| `notification.browser_firebase_subscribed` | Browser notifications turned on | None declared |
+| `notification.browser_firebase_unsubscribed` | Browser notifications turned off | None declared |
 | `notification.channel_configured` | Notification channel configured | Reviewed fields only |
 | `notification.channel_preferences_updated` | Personal notification channels updated | Reviewed fields only |
 | `notification.channel_tested` | Notification channel tested | Reviewed fields only |
@@ -956,6 +1039,8 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `organization.created` | Organization created | Withheld |
 | `organization.deleted` | Organization deleted | Reviewed fields only |
 | `organization.email_sender_updated` | Organisation event-email sender updated | Reviewed fields only |
+| `organization.hours_adjusted` | Organization hours granted or adjusted | Reviewed fields only |
+| `organization.hours_allowance_updated` | Organization hours allowance changed | Reviewed fields only |
 | `organization.invitation_created` | Organization invitation created | Reviewed fields only |
 | `organization.invitation_delivered` | Organisation invitation sent by email/chat | Reviewed fields only |
 | `organization.invitation_redeemed` | Organization invitation redeemed | Reviewed fields only |
@@ -987,12 +1072,14 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `payment.double_paid_refund_required` | Payment double paid refund required | Reviewed fields only |
 | `payment.event_money_settings_updated` | Prize tax and payee settings changed | None declared |
 | `payment.failed` | Payment failed | None declared |
+| `payment.manual_reminder_sent` | Payment reminder sent | Reviewed fields only |
 | `payment.mobile_intent_created` | Payment mobile intent created | Reviewed fields only |
 | `payment.mobile_order_created` | Mobile payment order created | None declared |
 | `payment.paid_after_terminal` | Payment paid after terminal | Reviewed fields only |
 | `payment.paid_claim_confirmed` | Offline payment claim confirmed | Reviewed fields only |
 | `payment.paid_claim_rejected` | Offline payment claim rejected | Reviewed fields only |
 | `payment.paid_claim_submitted` | Offline payment claim submitted | Reviewed fields only |
+| `payment.paid_claim_superseded` | Offline payment claim closed: charge settled another way | Reviewed fields only |
 | `payment.paid_offline` | Payment paid offline | Withheld |
 | `payment.paid_online` | Payment paid online | Reviewed fields only |
 | `payment.pay_link_created` | Pay link created | Reviewed fields only |
@@ -1009,6 +1096,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `payment.settlement_awaiting_confirmation` | Offline settlement awaiting a second person | Reviewed fields only |
 | `payment.settlement_confirmed` | Offline settlement confirmed by a second person | Reviewed fields only |
 | `payment.settlement_rejected` | Offline settlement rejected by the second person | Reviewed fields only |
+| `payment.settlement_superseded` | Offline settlement proposal closed: charge settled another way | Reviewed fields only |
 | `payment.tax_settings_updated` | Tax settings updated | Reviewed fields only |
 | `payment.waived` | Payment waived | Withheld |
 | `payments.connect_account_mapped` | Payments connect account mapped | Withheld |
@@ -1027,8 +1115,11 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `perk.fulfilled` | Sponsor perk fulfilled | Reviewed fields only |
 | `perk.reopened` | Sponsor perk reopened | Reviewed fields only |
 | `perk.updated` | Sponsor perk changed | Reviewed fields only |
+| `platform.admins_viewed` | Platform admin list viewed | Reviewed fields only |
 | `platform.attestation_settings_updated` | App attestation settings changed | Reviewed fields only |
 | `platform.email_settings_updated` | Platform email settings updated | None declared |
+| `platform.firebase_web_settings_updated` | Platform Firebase web settings changed | Reviewed fields only |
+| `platform.inbox_viewed` | Cross-space inbox viewed | Reviewed fields only |
 | `platform.ip_rule_deleted` | Platform IP rule deleted | Reviewed fields only |
 | `platform.ip_rule_saved` | Platform IP rule saved | Reviewed fields only |
 | `platform.login_methods_updated` | Sign-in methods changed | Reviewed fields only |
@@ -1038,12 +1129,14 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `platform.pii_access_opened` | Platform PII access opened | Reviewed fields only |
 | `platform.provider_test` | Platform provider credentials tested | Reviewed fields only |
 | `platform.push_settings_updated` | Platform push settings changed | Reviewed fields only |
+| `platform.searched` | Platform search run | Reviewed fields only |
 | `platform.sms_settings_updated` | Platform SMS settings changed | Reviewed fields only |
 | `platform.social_auth_settings_updated` | Platform social auth settings updated | Reviewed fields only |
 | `platform.space_pack_profile_saved` | Platform space pack profile saved | None declared |
 | `platform.stripe_connect_settings_updated` | Platform stripe connect settings updated | Reviewed fields only |
 | `platform.whatsapp_settings_updated` | Platform WhatsApp settings changed | Reviewed fields only |
 | `platform.whatsapp_template_updated` | Platform whatsapp template updated | Withheld |
+| `platform_credential_limit.reached` | Platform credential allowance reached | Reviewed fields only |
 | `pledge.cancelled` | Donation pledge cancelled | Reviewed fields only |
 | `pledge.created` | Donation pledge made | Reviewed fields only |
 | `pledge.paused` | Donation pledge paused | Reviewed fields only |
@@ -1053,7 +1146,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `presence.ended` | Presence ended | None declared |
 | `presence.ended_claim_revoked` | Presence ended claim revoked | Reviewed fields only |
 | `presence.ended_membership_revoked` | Presence ended membership revoked | None declared |
-| `presence.expired` | Presence expired | None declared |
+| `presence.expired` | Presence expired | Reviewed fields only |
 | `presence.expiry_reminded` | Presence expiry reminder queued | None declared |
 | `presence.expiry_reminder_skipped` | Stale presence reminder skipped | None declared |
 | `presence.preference_updated` | Presence display preference changed | None declared |
@@ -1096,6 +1189,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `push.device_registered` | Push device registered | Reviewed fields only |
 | `qr.asset_created` | Asset QR code created | None declared |
 | `qr.box_created` | Qr box created | None declared |
+| `qr.external_assigned` | External QR code linked | Reviewed fields only |
 | `qr.rebound` | Qr rebound | Withheld |
 | `qr.revoked` | Qr revoked | None declared |
 | `qr.scanned` | Qr scanned | Reviewed fields only |
@@ -1153,10 +1247,12 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `shop.cash_session_close_proposed` | Cash-up waiting for a second check | None declared |
 | `shop.cash_session_closed` | Cash-up closed | None declared |
 | `shop.cash_session_opened` | Cash drawer opened | None declared |
+| `shop.event_offers_set` | Shop items offered at an event changed | None declared |
 | `shop.order_cancelled` | Shop order cancelled | None declared |
 | `shop.order_collected` | Shop order collected | None declared |
 | `shop.order_paid` | Shop order paid | None declared |
 | `shop.order_paid_at_desk` | Shop order paid at the desk | None declared |
+| `shop.order_pickup_moved_to_space` | Shop pickup moved to the makerspace | None declared |
 | `shop.order_placed` | Shop order placed | None declared |
 | `shop.order_ready` | Shop order ready for pickup | None declared |
 | `shop.order_unfulfilled` | Paid shop order could not be filled | None declared |
@@ -1178,6 +1274,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `space_control.announcement_cancelled` | Platform announcement cancelled | None declared |
 | `space_control.announcement_created` | Platform announcement created | Reviewed fields only |
 | `space_control.announcement_emailed` | Platform announcement emailed | Reviewed fields only |
+| `space_control.limits_changed` | Space limits changed | Reviewed fields only |
 | `space_control.ownership_invited` | New Space Manager invited (ownership transfer) | Reviewed fields only |
 | `space_control.ownership_transferred` | Space ownership transferred | Reviewed fields only |
 | `space_control.read_only_enabled` | Space put in read-only mode | Reviewed fields only |
@@ -1309,6 +1406,7 @@ prefixes are listed at the end. The sources are `backend/apps/audit/presentation
 | `vendor.archived` | Vendor archived | Reviewed fields only |
 | `vendor.created` | Vendor added | Reviewed fields only |
 | `vendor.updated` | Vendor changed | Reviewed fields only |
+| `wallet_pass.guest_issued` | Guest pass added to a wallet | Reviewed fields only |
 | `wallet_pass.issued` | Wallet pass issued | Reviewed fields only |
 | `wallet_pass.updated` | Wallet pass updated | Reviewed fields only |
 | `wallet_pass.voided` | Wallet pass voided | Reviewed fields only |
@@ -1386,5 +1484,6 @@ The following prefixes cover reviewed shared-service audit actions. They can emi
 - `request.returned`
 - `service_state.changed`
 - `tenant_migration.source_gate_`
+- `wallet_pass.credentials_`
 
 An action outside the presentation catalogue and reviewed policy appears as “Unrecognized audit action” with its metadata withheld.

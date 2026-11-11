@@ -10,7 +10,7 @@ supported installation without them.
 
 | Optional module | What it adds | What you lose without it |
 | --- | --- | --- |
-| Asset units | Individually QR-tracked units and per-unit status | Quantity lending still works, but the exact physical unit and its label are unknown |
+| Asset units | Individually QR-tracked units and per-unit status | Quantity loans still work, but the exact physical unit and its label are unknown |
 | Containers | Nested boxes, shelves and rooms, plus container moves | No editable location hierarchy or container selection during direct handout |
 | Bulk import | Spreadsheet upload, column mapping, preview and commit | Products must be created individually or through the API |
 | Stock transfers | Recorded movement within and between makerspaces | No supported cross-tenant stock movement workflow |
@@ -63,7 +63,7 @@ An “on” switch is still inert when its parent module or required provider cr
 
 - **Makerspaces and community workshops** that lend shared tools and need evidence-backed accountability.
 - **Fab labs** that combine inventory, machine work, 3D printing, maintenance, events and bookings.
-- **Tool libraries** that want the full lending lifecycle without installing machine operations.
+- **Tool libraries** that want the full loan lifecycle without installing machine operations.
 - **Universities and institutional workshops** that need their own identity provider, organization-wide
   staff authority and multiple spaces on one deployment.
 - **Networks, chains and hosting partners** that operate several isolated makerspaces while coordinating
@@ -101,7 +101,7 @@ tier is suitable for demos or pilots, not dependable production.
 ## Genuine differentiators
 
 - **Evidence-backed handovers, enforced rather than suggested.** Photos, scans, remarks and audit entries
-  are prerequisites of the lending workflow, not fields staff may forget to fill in.
+  are prerequisites of the loan workflow, not fields staff may forget to fill in.
 - **One workflow regardless of interface.** Web staff, front desk, self-checkout, kiosk and `/control/`
   actions all reach the same state and inventory controls; chat channels only notify.
 - **Per-makerspace encrypted integrations.** Each tenant owns its notification credentials; secrets are

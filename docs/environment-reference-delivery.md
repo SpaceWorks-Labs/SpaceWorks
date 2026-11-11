@@ -18,6 +18,7 @@ Platform SMTP, SMS, push and Stripe Connect credentials normally live encrypted 
 | `GITHUB_API_TOKEN` | `''` | Optional; raises the GitHub rate limit for maker-profile contribution refresh and the hackathon first-commit flag. |
 | `WEB_PUSH_VAPID_PRIVATE_KEY` | `''` | Secret. Base64url raw P-256 private scalar for browser notifications (W3C Web Push); the public key is derived. Blank = browser notifications dormant. Generate once per deployment and keep it: rotating it invalidates every browser subscription. |
 | `HOSTING_REQUEST_RESUBMIT_ENABLED` | `True` | Managed platforms: applicants may edit and resubmit a hosting request after the superadmin asks for changes. `False` keeps "changes requested" one-way (the applicant reads the note only). |
+| `PUBLIC_SPACE_REQUESTS_ENABLED` | `False` | Self-hosted installs: opens the public "request a makerspace or organization workspace" form and the /control/ review of those requests (managed platforms always have them). Needs platform email and `PUBLIC_APP_BASE_URL`. Off means the routes answer 404. |
 | `WEB_PUSH_VAPID_SUBJECT` | `''` | `mailto:` or `https:` contact sent to push services with each browser notification. Required with the key. |
 | `NOTIFICATION_SLACK_REDIRECT_URI` | `''` | Fixed HTTPS frontend notification-settings return, registered byte-for-byte in the provider app; blank refuses personal linking. No placeholders: the signed OAuth state carries the makerspace and challenge. |
 | `NOTIFICATION_MATTERMOST_REDIRECT_URI` | `''` | Same frontend OAuth return policy as Slack. |
@@ -158,7 +159,7 @@ The card font library is the open Google Fonts catalogue, fetched **by the serve
 
 | Variable | Default | Notes |
 |---|---|---|
-| `CARD_FONT_DOWNLOADS_ENABLED` | `True` | `False` keeps cards to the bundled faces (Gilroy, Unbounded, Noto) on air-gapped servers. |
+| `CARD_FONT_DOWNLOADS_ENABLED` | `True` | `False` keeps cards to the bundled faces (the "Gilroy" token as Outfit, Unbounded, Noto) on air-gapped servers. |
 | `CARD_FONT_SOURCE_URL` | `'https://fonts.googleapis.com/css2'` | CSS endpoint the server asks for static TrueType faces; point it at a mirror if you run one. |
 | `CARD_FONT_CACHE_DIR` | `''` | Local cache for fetched font files; empty uses the system temp directory. |
 | `CARD_PHOTO_MODEL_PATH` | `''` | The background clean-up model (`manage.py fetch_card_photo_model`); empty uses the temp directory. |

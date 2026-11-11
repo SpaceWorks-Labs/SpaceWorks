@@ -1,9 +1,13 @@
 # Analytics views (release 2, lane L25)
 
-**Catalogue version 2.** These are the curated, read-only views a space's analytics database login
+**Catalogue version 3.** These are the curated, read-only views a space's analytics database login
 (and the platform-wide Metabase login) can read. They are generated from `backend/apps/analytics/catalogue/`;
 the module and its switches are described under [analytics](MODULES.md#analytics), the rules under
 [Analytics](INVARIANTS.md#per-space-analytics-release-2-lane-l25-163b) in the invariants.
+
+Step-by-step Metabase setup (run it, create the login, connect, embed): [metabase-setup.md](metabase-setup.md).
+Grafana reads the same views with the same login (data source, starter dashboards, embedding):
+[grafana-setup.md](grafana-setup.md).
 
 ## Where they live
 
@@ -42,6 +46,7 @@ Every catalogue item with its live quantity counts.
 | `sku` | Stock-keeping code. |
 | `tracking_mode` | Quantity or per-asset tracking. |
 | `is_consumable` | Used up rather than lent. |
+| `event_only` | Lendable only through an event context (since 3). |
 | `total_quantity` | Units in the catalogue. |
 | `available_quantity` | Units free to lend now. |
 | `reserved_quantity` | Units reserved for accepted requests. |
@@ -958,3 +963,164 @@ Desk cash sessions: amounts and times only.
 | `closed_at` | Closed. |
 
 L24's price-drop refund cases need no new view: they appear in `refund_cases` with their own `reason_code`.
+
+## Release 0.12: loan contexts and included hours
+
+### `loan_event_contexts` (since 3)
+
+Borrow requests lent for an event (event equipment, including event-only items).
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `request_id` | Request (loan_requests). |
+| `event_id` | Event (events); empty once the link is cleared. |
+| `participant_registration_id` | Participant registration (event_registrations), when lent to one participant. |
+| `active` | True while the request is lent for this context. |
+| `revision` | Context revision counter. |
+| `created_at` | Created. |
+| `updated_at` | Last changed. |
+
+### `loan_booking_contexts` (since 3)
+
+Borrow requests lent for a room or machine booking.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `request_id` | Request (loan_requests). |
+| `booking_id` | Booking (bookings); empty once the link is cleared. |
+| `active` | True while the request is lent for this context. |
+| `revision` | Context revision counter. |
+| `created_at` | Created. |
+| `updated_at` | Last changed. |
+
+### `included_hours_usage` (since 3)
+
+Insert-only ledger of membership-plan included booking hours: consumed and reversed minutes per term.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `usage_id` | Ledger row id. |
+| `term_id` | Membership term (membership_terms). |
+| `booking_id` | Booking (bookings). |
+| `member_id` | Member who booked (members). |
+| `kind` | Room booking or machine time. |
+| `entry` | Consumed, or reversed after a rejection or cancellation. |
+| `minutes` | Included minutes consumed or given back. |
+| `signed_minutes` | Minutes with sign: consumed positive, reversed negative; sum for net usage. |
+| `generation` | Consumption generation for a restored booking. |
+| `reverses_id` | The consume row this row undoes. |
+| `created_at` | Recorded. |
+
+## Release 0.12: guest passes, inductions and incidents
+
+### `day_pass_products` (since 3)
+
+Day passes a space sells.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `day_pass_product_id` | Product id. |
+| `name` | Product name. |
+| `amount` | Price. |
+| `currency` | Currency of the price. |
+| `daily_cap` | Passes sold per day, if capped. |
+| `is_public` | Offered on the public page. |
+| `is_active` | On sale. |
+| `archived_at` | Archived. |
+| `created_at` | Added. |
+
+### `guest_passes` (since 3)
+
+Dated guest permits (event, sponsored, day). Not memberships; never counted as members.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `pass_id` | Pass id. |
+| `member_id` | Holder (a person id; not a roster member). |
+| `sponsor_member_id` | Sponsoring member (members). |
+| `kind` | Event guest, sponsored guest or day pass. |
+| `status` | Pass state. |
+| `valid_from` | Valid from. |
+| `valid_until` | Valid until. |
+| `pass_date` | Local calendar day of the pass. |
+| `day_pass_product_id` | Day pass product (day_pass_products). |
+| `borrow_mode` | Borrowing the pass allows. |
+| `machine_mode` | Machine use the pass allows. |
+| `waiver_accepted` | A waiver was accepted. |
+| `waiver_accepted_at` | Waiver accepted. |
+| `revoked_at` | Revoked. |
+| `converted` | Converted to a membership. |
+| `created_at` | Issued. |
+
+### `guest_certification_grants` (since 3)
+
+Certifications granted to guests, for example through an induction event.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `grant_id` | Grant id. |
+| `certification_type_id` | Certification type. |
+| `member_id` | Guest (a person id; not a roster member). |
+| `source_event_id` | Induction event (events). |
+| `granted_at` | Granted. |
+| `expires_at` | Expires. |
+| `revoked_at` | Revoked. |
+
+### `incidents` (since 3)
+
+Safety incident and near-miss register: kind, severity, state and links, never the text.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `incident_id` | Incident id. |
+| `kind` | Incident or near miss. |
+| `severity` | Severity. |
+| `status` | State. |
+| `area` | Area of the space it concerns. |
+| `occurred_at` | Happened. |
+| `reporter_member_id` | Reporter (members). |
+| `involved_member_id` | Person involved (members). |
+| `machine_id` | Machine (machines). |
+| `bookable_space_id` | Room (bookable_spaces). |
+| `event_id` | Event (events). |
+| `request_id` | Loan request (loan_requests). |
+| `booking_id` | Booking (bookings). |
+| `pass_id` | Guest pass (guest_passes.pass_id). |
+| `closed_at` | Closed. |
+| `created_at` | Recorded. |
+
+### `incident_actions` (since 3)
+
+Follow-up actions on incidents; counts and timing, not text.
+
+| Column | Meaning |
+| --- | --- |
+| `makerspace_id` | The space the row belongs to. |
+| `action_id` | Action id. |
+| `incident_id` | Incident (incidents). |
+| `assignee_member_id` | Assignee (members). |
+| `due_date` | Due. |
+| `done_at` | Done. |
+| `created_at` | Created. |
+
+## Where cost and usage figures come from
+
+- **Price basis.** Products and consumable pools each carry an optional current price (`unit_cost`,
+  `cost_currency`, `cost_unit`), entered as a major-currency amount per cost unit. Recorded consumption
+  stores the resulting cost in minor units at the time it is logged, so later price edits never rewrite
+  history. Consumption with no price basis (for example grams drawn from a pool that has no price) stays
+  "cost unknown" rather than being valued at zero.
+- **Who used a machine.** A machine usage entry can name the member who used it and when they started
+  (`member_id`, `started_at`). Entries are append-only; correcting one is done with a new entry.
+- **Delivery facts.** Email, SMS and push delivery outcomes (provider source, bounce and complaint times)
+  describe the message, not the person. Provider message ids are removed from an email log row when the
+  recipient's account is purged; the remaining outcome facts are kept.
+- **Daily facts.** Machine status changes and daily stock snapshots (available, issued, total, out of
+  stock, below reorder point) hold no person.

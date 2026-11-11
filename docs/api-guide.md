@@ -122,6 +122,14 @@ reset ends the token), the space's modules, the view's own permissions. Tokens n
 reach sign-in, MFA, passkeys, credential and security settings, API clients, backups,
 superadmin routes or `/control/`.
 
+**Payee and payout money needs an interactive session (decision 224).** Personal access
+tokens, OAuth app connections and signed API clients never read what was paid to a person.
+Payout reports (`prizes-owed`, `event-finance`, any report with a payout column), the event
+finance view and the reimbursement routes answer `403 {"code": "full_session_required"}`.
+Finance summaries and the linked event-finance view answer without the `payouts`, `money_out`,
+`net` and `budget_left` fields. Other reports still follow the staff role's area: a token only
+reads the reports its holder's role manages.
+
 ```sh
 curl -s https://spaces.example.org/api/v1/member/makerspaces/7/activity -H "Authorization: Bearer $SWPAT"
 ```

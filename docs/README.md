@@ -1,15 +1,38 @@
 # Space Works documentation
 
-Every guide in this repository, grouped by what you are trying to do. Start with the
-[README](../README.md) for an overview, then pick a section below.
+Every guide in this repository, grouped by what you are trying to do. New here? Start with the
+five-minute quickstart below; everything after it is reference material for when you need it.
+
+## Quickstart (about five minutes)
+
+1. On a 64-bit Linux server (Ubuntu 24.04 is the tested target) or a Mac with Docker Desktop, run:
+
+   ```sh
+   curl -fsSL https://github.com/SpaceWorks-Labs/SpaceWorks/releases/latest/download/install.sh | sh
+   ```
+
+   Quick setup asks for the web address, your makerspace's name, the areas you run and your email.
+   Press Enter to accept each suggested answer; nothing changes until you confirm the summary.
+2. Open the address the installer prints (for a local trial, `http://localhost/admin`).
+3. Sign in with the admin account the installer created. Its generated password is saved in
+   `/opt/spaceworks/.spaceworks-bootstrap-credential.json`; you choose your own password and set up
+   two-step sign-in at first sign-in.
+4. Follow the guided setup on the dashboard: name, logo, opening hours, the areas you run and staff
+   invitations. Every step can be skipped and resumed, and the "Next steps" card shows what is left.
+
+The install log is `/opt/spaceworks/install.log`. To update, run the same command again.
+
+**Going further:** your own domain and HTTPS, an API-only server, external storage, cloud providers
+and hosting other makerspaces are covered in [Install and update](install-and-update.md),
+[Choose your hosting](choose-your-hosting.md) and the [Self-hosting guide](self-hosting.md).
 
 ## Getting started
 
 - [Setting up Space Works](setup-for-makerspaces.md) — plain-language setup walkthrough for organisers who are not developers.
-- [Choose your hosting](choose-your-hosting.md) — every way to run Space Works compared, self-host first: full VPS, API on your server with the website elsewhere, static website, managed cloud, free profile and hosting platform.
+- [Choose your hosting](choose-your-hosting.md) — every way to run Space Works compared, self-host first: full VPS, API on your server with the website elsewhere, static website, cloud providers, the free profile and hosting other makerspaces.
 - [Install and update](install-and-update.md) — the one-line installer, every setup question, forks, automatic deploys and Windows support.
 - [Features](FEATURES.md) — everything Space Works runs today, area by area.
-- [0.11.0 release notes](release-0.11.0.md), [upgrade guide](upgrade-to-0.11.0.md) and [security verification](security-summary-0.11.0.md) — changes, update steps and the candidate's completed versus pending checks.
+- [0.12.0 release notes](release-0.12.0.md), [upgrade guide](upgrade-to-0.12.0.md) and [security verification](security-summary-0.12.0.md) — changes, update steps and the completed versus pending checks. The unpublished 0.11.0 candidate's [notes](release-0.11.0.md), [upgrade guide](upgrade-to-0.11.0.md) and [security summary](security-summary-0.11.0.md) are kept as history; their changes ship in 0.12.0.
 - [Hosting and roles](README-HOSTING.md) — roles and staff accounts, first-run access, split deployments and moving a space to its own server.
 - [Roadmap and further work](future-work.md) — current focus and further work.
 - [Landing-page feature inventory](LANDING-PAGE-FEATURES.md) — the full product description used for the public site.
@@ -70,7 +93,7 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Self-hosting guide](self-hosting.md) — production Compose, HTTPS, the control plane, environment, storage and backups.
 - [Advanced configuration](../.github/ADVANCED.md) — Telegram, chat rooms, HMAC clients, hardening, managed Postgres and scheduled reminders.
 - [Production deployment](deploy-production.md) — choosing a hosting contract and deploying it.
-- [SaaS deployment](deploy-saas.md) — the managed multi-tenant platform runbook.
+- [Hosting other makerspaces](self-hosting.md#plans-and-hosting-other-makerspaces-optional) — the optional plans and hosting section (deploy-saas.md is a pointer).
 - [Hosting overview](deploy/cloud-overview.md) — operational contracts to choose before a cloud provider.
 - [Cloud contracts](deploy/cloud-contracts.md), [managed environment](deploy/cloud-environment.md) and [managed recovery](deploy/cloud-recovery.md) — the shared rules every cloud recipe follows.
 - Cloud recipes: [Cloud Run](deploy/cloud-cloud-run.md), [DigitalOcean](deploy/cloud-digitalocean.md), [Docker](deploy/cloud-docker.md), [Fly.io](deploy/cloud-fly.md), [Koyeb](deploy/cloud-koyeb.md), [Kubernetes](deploy/cloud-kubernetes.md), [Railway](deploy/cloud-railway.md), [Render](deploy/cloud-render.md), [free managed stack](deploy/cloud-free.md), [Oracle Always Free](deploy/cloud-oracle-free.md) and [static frontends](deploy/cloud-static.md).
@@ -81,7 +104,8 @@ Every guide in this repository, grouped by what you are trying to do. Start with
 - [Database recovery after an update](update-recovery.md) — restoring dumps and inspecting failed deployments.
 - [Account portability](account-portability.md) — what travels when a space is backed up, restored or moved to another deployment: people, staff roles and credentials.
 - [Environment reference](environment-reference.md), [delivery settings](environment-reference-delivery.md) and [operations settings](environment-operations.md) — every environment variable.
-- [Monitoring and private web analytics](monitoring-and-analytics.md) — storage, metrics and analytics.
+- [Monitoring and private web analytics](monitoring-and-analytics.md) — storage, metrics and analytics; [web telemetry providers](web-telemetry-providers.md), [Metabase setup](metabase-setup.md) and [Grafana setup](grafana-setup.md).
+- [Apple and Google Wallet passes](wallet-passes.md) — what holders get, how to obtain and paste credentials, how to verify offline, revocation and troubleshooting.
 - [Platform monitoring and tenant usage](platform-monitoring.md) — the superadmin platform dashboard.
 - [Scoped PII encryption](scoped-pii-encryption.md) — the opt-in personal-data encryption runbook.
 - [Notification reconciliation checkpoints](notification-reconciliation-rollout.md) — the held sending-activation rollout.

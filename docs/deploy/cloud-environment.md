@@ -74,10 +74,24 @@ an override for each in the answers file; the Render blueprints list the same ke
 | MIN_NATIVE_APP_VERSION_IOS / _ANDROID | empty | Answers file. |
 | CARD_FONT_DOWNLOADS_ENABLED | `True` | Answers file; `False` keeps cards to the bundled faces. |
 | CARD_PHOTO_MODEL_PATH | empty (temp directory) | Not rendered. Photo clean-up needs the model in BOTH the web and worker containers on durable storage, which managed roles do not share; the button stays hidden until it is there. Use the full VPS for this feature. |
-| MANAGED_PLANS_ENABLED / MANAGED_BILLING_ONLINE_ENABLED | `False` / `False` | The managed-hosting limiter. Off unless you run a hosting platform for other spaces; nothing is visible or enforced while it is off. Never set it on a self-host. |
+| MANAGED_PLANS_ENABLED / MANAGED_BILLING_ONLINE_ENABLED | *(empty)* / `False` | Plans and hosting other makerspaces. Leave `MANAGED_PLANS_ENABLED` empty: the superadmin switches it on or off in the platform console (*Hosting other makerspaces*, off by default). Setting `True`/`False` forces it and locks the switch. Online billing of hosted spaces stays off unless set. See [Plans and hosting other makerspaces](../self-hosting.md#plans-and-hosting-other-makerspaces-optional). |
 | OAUTH_OIDC_RSA_PRIVATE_KEY | empty | Secrets file only. Signs OpenID Connect ID tokens for app connections; empty = OAuth 2.0 without ID tokens. The token lifetimes and rates (`OAUTH_*_SECONDS`, `PERSON_CREDENTIAL_RATE_PER_MINUTE`, `THROTTLE_PERSON_TOKEN_MANAGE`, `THROTTLE_OAUTH_CONSENT`, `THROTTLE_API_CLIENT_MANAGE`) keep their defaults; see the environment reference. |
 
 Analytics (Metabase) logins and the control plane need no environment key on a managed recipe:
 `CONTROL_PLANE_PROXY` is pinned `false`, and day-to-day superadmin work runs in the web console. Every
 Celery beat entry is part of the scheduled-task catalogue, so the cron, loop and free-tick schedulers run
 all of them (checked against `CELERY_BEAT_SCHEDULE` for host/full, managed/full and managed/free).
+
+## Release 3 (0.12.0) settings
+
+All are optional and default safely when unset; they are listed in the [environment reference](../environment-reference.md).
+
+| Variable | Default | Where it goes |
+| --- | --- | --- |
+| WEB_TELEMETRY_ALLOWED_ORIGINS | empty | Backend **and** website container, the same comma-separated HTTPS origins (no paths or wildcards). Rendered empty in the managed Docker, Helm and free examples. A static host needs the origins added to its CSP by hand. |
+| THROTTLE_MINOR_PERSON_LOOKUP | `60/min` | Not rendered; set it in the runtime environment only to change the staff person-lookup rate. |
+| WALLET_APPLE_PASS_TYPE_ID, WALLET_APPLE_TEAM_ID, WALLET_GOOGLE_ISSUER_ID | empty | Not rendered. Wallet passes also need certificate and key files (`WALLET_APPLE_CERT_FILE`, `WALLET_APPLE_KEY_FILE`, `WALLET_APPLE_WWDR_FILE`, `WALLET_GOOGLE_SERVICE_ACCOUNT_FILE`) on a durable volume shared by web and worker, which cloud roles do not have. On a cloud recipe enter the credentials in the console instead (Settings, Wallet passes, or Platform settings), where they are stored encrypted in the database; see [wallet passes](../wallet-passes.md). |
+
+The 0.12 periodic work needs no new schedule: guest-pass expiry and notices and the post-event join follow-up run inside
+`run_membership_renewals_task`, and loan pickup reminders inside `sweep_loan_pickups_task`. Both tasks are in the scheduled-task
+catalogue, so the beat, loop, external scheduler and free tick all run them (each only for spaces that have the matching module on).

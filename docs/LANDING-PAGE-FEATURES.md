@@ -1,7 +1,7 @@
 # SpaceWorks landing-page feature inventory
 
 SpaceWorks is an open-source, self-hostable management platform for makerspaces and other shared
-workshops. It brings the public catalogue, hardware lending, machine work, 3D printing, events, bookings,
+workshops. It brings the public catalogue and inventory loans, machine work, 3D printing, events, bookings,
 membership, payments, notifications, reporting and operational records into one multi-makerspace system,
 while keeping every physical handover attributable to a person and backed by evidence.
 
@@ -35,9 +35,9 @@ These counts were checked against the current sources rather than copied as mark
 | Seeded default roles | **9**: Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member | `backend/apps/makerspaces/role_catalog.py` |
 
 The six core keys counted in the registry are Public inventory, Request workflow, Staff admin, Evidence
-uploads, QR management and Scanner. The nine built-ins are fixed; seven staff roles combine, while Space Manager and Member each stand alone.
+uploads, QR management and Scanner. The ten built-ins are fixed; eight staff roles combine, while Space Manager and Member each stand alone.
 
-## Hardware lending and returns
+## Inventory: loans and returns
 
 - Publish a public, makerspace-specific catalogue with categories and item detail pages.
 - Let authenticated members submit borrow requests and follow their status.
@@ -51,7 +51,7 @@ uploads, QR management and Scanner. The nine built-ins are fixed; seven staff ro
   request system.
 
 **Honest limits:** public request submission is not anonymous; it requires an authenticated member. The public
-catalogue can be made effectively empty by marking every item private, but the core catalogue and lending
+catalogue can be made effectively empty by marking every item private, but the core catalogue and loans
 workflow themselves cannot be uninstalled.
 
 ## Inventory and availability
@@ -115,7 +115,7 @@ the revocation path. The member sign-in screen has no "Forgot password?" link ye
 ## Staff roles and permissions
 
 - Scope staff access by makerspace and by action, not by a hard-coded role name.
-- Provide nine fixed built-in roles; assign combinable staff role sets within the acting manager’s action ceiling.
+- Provide ten fixed built-in roles; assign combinable staff role sets within the acting manager’s action ceiling.
 - Give the Technician assigned repair jobs, scheduled maintenance and machine service state, with no inventory, money or settings.
 - Give the Shop Manager the shop's products, stock, prices, orders, front desk, cash-ups and shop reports, and nothing else.
 - Give Inventory Managers the full hardware lifecycle without machine, staff or settings access.
@@ -227,7 +227,7 @@ underlying operational records remain owned by their original modules.
 
 ## Multiple makerspaces and organization accounts
 
-- Host many makerspaces on one deployment. Each tenant owns its inventory, public URL, staff memberships, nine built-in role instances, integrations, QR namespace and audit scope.
+- Host many makerspaces on one deployment. Each tenant owns its inventory, public URL, staff memberships, ten built-in role instances, integrations, QR namespace and audit scope.
 - Keep public and staff queries scoped to the selected makerspace.
 - Move stock through an explicit cross-makerspace transfer rather than silently changing another tenant's
   count.

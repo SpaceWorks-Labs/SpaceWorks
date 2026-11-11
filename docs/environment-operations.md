@@ -142,6 +142,8 @@ so restore preflight reports differences without preventing recovery.
 | `ORGANIZATION_SELF_CREATION_ENABLED` | `False` | Allow authenticated users to create organizations; off retains administrator-controlled creation. |
 | `ORGANIZATION_SELF_CREATION_MAX_OWNED` | `3` | Maximum organizations owned by one account; integer from 1 to 100. |
 | `ORGANIZATION_SELF_CREATION_MAX_PER_DAY` | `1` | Maximum organizations an account may create per day; integer from 1 to 100. |
+| `ORGANIZATION_REVIEW_REQUIRED` | `False` | Self-created organizations start pending review and stay inert (no public page, links or invitations) until a superadmin approves them. |
+| `ORGANIZATION_PUBLIC_DIRECTORY_ENABLED` | `False` | Serves the public organization directory (`/api/v1/public/organizations/`); organizations still opt in individually. |
 | `WEB_ANALYTICS_SCRIPT_URL` | `''` | HTTPS Plausible manual-script URL. Supply all three backend analytics values together, or leave all empty. |
 | `WEB_ANALYTICS_COLLECT_URL` | `''` | HTTPS collection endpoint; added to backend and SPA connect-src policies. |
 | `WEB_ANALYTICS_DOMAIN` | `''` | Analytics hostname; no scheme or path. |

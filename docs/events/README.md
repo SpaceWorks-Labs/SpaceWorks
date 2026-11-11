@@ -42,7 +42,7 @@ For API integrations, use the deployment's `/docs/` or `/schema/` and the checke
 The frozen route fixtures are design contracts; the mounted route inventory supersedes
 the original lane proposals. Current mounts include C2's completion routes.
 
-All programme UI must use Space Works light/dark tokens, Gilroy 400–700, one Unbounded
+All programme UI must use Space Works light/dark tokens, Gilroy ExtraBold headings with Outfit text, one Unbounded
 accent per layout, lucide controls and the existing layouts inside AppShell. Original
 [artwork inventory](../events-programme-artwork-inventory.md) exists; runtime seed copying,
 consumer mounting, accessibility, physical QR and authoritative PDF acceptance remain

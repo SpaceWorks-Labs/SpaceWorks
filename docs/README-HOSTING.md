@@ -3,7 +3,7 @@
 Access is scoped **per makerspace and per action**. Super Admin is global; every other role is a
 per-makerspace membership.
 
-Authority comes from **actions, not role names**. Each makerspace has nine fixed built-in role
+Authority comes from **actions, not role names**. Each makerspace has ten fixed built-in role
 instances. Their names and grants cannot be edited, and roles cannot be created or deleted.
 
 | Role | What it can do |
@@ -19,7 +19,7 @@ instances. Their names and grants cannot be edited, and roles cannot be created 
 | **Member** | Uses community services without staff management actions |
 
 A membership has a primary role and optional additional roles. **Space Manager and Member must each
-stand alone**; the other seven combine freely, such as Event Manager + Booking Manager. There is one
+stand alone**; the other eight combine freely, such as Event Manager + Booking Manager. There is one
 account per person: staff roles are added to a person's own account (a staff-track membership), either
 by picking an active member of the space or by an emailed invitation the person accepts while signed in.
 Invitations snapshot the full role set and machine scopes. Only the superadmin grants, changes or revokes
@@ -82,7 +82,7 @@ in [Sign-in, identity and borrowing](sign-in-and-borrowing.md).
 ## Hosting
 
 **The goal is to self-host inside the makerspace, on your own server** — your data, your network, no
-third party. The [Quick start](../README.md#quick-start) is the recommended path. After it's up:
+third party. The [Quick start](../README.md#quickstart) is the recommended path. After it's up:
 
 | Surface | URL |
 |---|---|
@@ -125,7 +125,7 @@ makerspace's `/control/` Keys page.
 
 ### Split deployment: backend on your server, frontend on Netlify
 
-The installer can configure this split deployment: answer **No, API only** to the website question,
+The installer can configure this split deployment: answer **API-only** to the frontend question (or pass `--frontend api-only`),
 enter your HTTPS site origin(s), and choose automatic Caddy or your existing HTTPS reverse proxy.
 It sets CORS/CSRF, the first makerspace's `frontend_domain`, and a persistent API-only compose overlay.
 No website container is started or updated. Caddy publishes the API on 80/443; an existing proxy forwards
@@ -206,7 +206,7 @@ space's key -- so staff and members can sign in without a reset; a person linked
 target account keeps that account's credentials and gets staff roles only when the superadmin
 grants them. Sessions, device grants, chat endpoints and invitations never travel. Merged accounts
 travel as inert, PII-free shells and platform audit actors remain inert provenance. See the
-[account portability contract](account-portability.md) for PORTABLE, sovereign Lane D, per-space
+[account portability contract](account-portability.md) for PORTABLE, sovereign tenant dump, per-space
 restore and data export.
 
 Cloud integration: [hosting choices and operational contracts](deploy/cloud-overview.md). Full host defaults remain unchanged; managed/free is explicit and subject to release acceptance gates.

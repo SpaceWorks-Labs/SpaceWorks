@@ -65,3 +65,20 @@ needs `frontendEnv.TURNSTILE_SITE_KEY` so nginx allows the widget. `helm lint` p
 renders host, managed Redis and managed brokerless; the free profile is refused by design. Metrics use one per-pod emptyDir and the Gunicorn multi-process
 hooks; use Prometheus pod/endpoint discovery rather than one randomly balanced service scrape.
 The chart never stores Prometheus retention data or installs a monitoring stack.
+
+For optional web telemetry, put the same `WEB_TELEMETRY_ALLOWED_ORIGINS` value in the backend
+`runtimeSecret` and `frontendEnv`. Use a comma-separated list of specifically approved HTTPS origins;
+do not use wildcard hosts, paths, query strings or credentials. The list permits destinations but
+does not enable a provider or replace visitor consent. The existing `WEB_ANALYTICS_*` script and full
+collector URL remain separate. The frontend image applies its CSP policy at startup.
+
+## API-only (no website)
+
+`--set frontend.enabled=false` drops the frontend Deployment. The ingress then has no website to route to, so it
+sends `ingress.apiOnlyPaths` (default `/api`, `/embed`, `/share`, `/sitemap.xml`, `/robots.txt`, `/static`,
+`/.well-known`) to the `backend` service and `/api/v1/live` to `live`. An ingress cannot deny a sub-path by
+itself: add your controller's rule that returns 403 for `/api/v1/internal` and `/api/v1/metrics` (for ingress-nginx, a
+`configuration-snippet` annotation in `ingress.annotations`). Host the website on a static host and set the
+backend `runtimeSecret` origins as described in [choose your hosting](choose-your-hosting.md#2-api-on-your-server-website-elsewhere).
+Wallet passes: the `WALLET_*_FILE` settings need a volume shared by the web and worker pods that this chart does not
+create; enter the credentials in the console instead ([wallet passes](wallet-passes.md)).

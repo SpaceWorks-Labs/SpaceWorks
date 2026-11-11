@@ -14,7 +14,8 @@ from apps.payments.member_scope import member_payment_queryset
 from apps.payments.models import Payment
 from apps.payments.providers import PaymentsUnavailable as ProviderPaymentsUnavailable
 from apps.payments.serializers_mobile import MobilePaymentIntentResponseSerializer
-from apps.payments.services import PaymentRailConflict
+from apps.payments.checkout_coordination import PlatformRailLimitReached
+from apps.payments.services import PaymentRailConflict, PaymentSettlementPending
 from apps.payments.services_mobile import create_mobile_intent
 
 
@@ -67,6 +68,17 @@ class MemberMobilePaymentIntentView(APIView):
             payload = create_mobile_intent(payment.pk, actor=request.user)
         except Payment.DoesNotExist as exc:
             raise NotFound() from exc
+        except PaymentSettlementPending:
+            return Response(
+                {
+                    'detail': gettext('Your offline payment of this charge is waiting for staff to confirm it.'),
+                    'code': PaymentSettlementPending.code,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        except PlatformRailLimitReached as exc:
+            return Response({'detail': str(exc), 'code': PlatformRailLimitReached.code},
+                            status=status.HTTP_409_CONFLICT)
         except PaymentRailConflict:
             return Response(
                 {

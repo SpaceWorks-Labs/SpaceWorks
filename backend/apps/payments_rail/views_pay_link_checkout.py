@@ -13,13 +13,17 @@ from rest_framework.views import APIView
 
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.payments.availability import online_payments_enabled_for
+from apps.payments.checkout_coordination import settlement_in_progress
 from apps.payments.checkout_expiry import live_checkout_url
 from apps.payments.serializers import CheckoutUrlSerializer
-from apps.payments.services import PaymentRailConflict, create_checkout_url
+from apps.payments.checkout_coordination import PlatformRailLimitReached
+from apps.payments.services import PaymentRailConflict, PaymentSettlementPending, create_checkout_url
 from apps.payments.throttles_l5 import PayLinkThrottle
 from apps.payments.views_pay_links import live_link
 
 UNAVAILABLE = {"detail": "Online payment is not available for this charge.", "code": "payments_unavailable"}
+SETTLEMENT_PENDING = {"detail": "Your offline payment of this charge is waiting for staff to confirm it.",
+                      "code": "payment_settlement_pending"}
 
 
 class PublicPayLinkCheckoutView(APIView):
@@ -37,6 +41,8 @@ class PublicPayLinkCheckoutView(APIView):
         payment = link.payment
         if payment.status != "pending" or not online_payments_enabled_for(payment):
             return Response(UNAVAILABLE, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        if settlement_in_progress(payment):  # an old live page must not take a second payment
+            return Response(SETTLEMENT_PENDING, status=status.HTTP_409_CONFLICT)
         if live := live_checkout_url(payment):
             return Response({"checkout_url": live})
         from apps.tenant_migration.gate_runtime import tenant_write
@@ -44,6 +50,12 @@ class PublicPayLinkCheckoutView(APIView):
         try:
             with tenant_write(payment.makerspace_id):
                 checkout_url = create_checkout_url(payment.pk, actor=link.created_by)
+        except PaymentSettlementPending:
+            # An open offline claim or proposal: paying online too would pay twice.
+            return Response(SETTLEMENT_PENDING, status=status.HTTP_409_CONFLICT)
+        except PlatformRailLimitReached as exc:
+            return Response({"detail": str(exc), "code": PlatformRailLimitReached.code},
+                            status=status.HTTP_409_CONFLICT)
         except PaymentRailConflict:
             return Response({"detail": gettext("The charge already uses a different online rail."),
                              "code": "payment_rail_conflict"}, status=status.HTTP_409_CONFLICT)

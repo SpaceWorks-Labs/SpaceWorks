@@ -17,11 +17,24 @@ from rest_framework.views import APIView
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.payments import stripe_client
 from apps.payments.availability import online_payments_enabled_for
+from apps.payments.checkout_coordination import settlement_in_progress
 from apps.payments.checkout_expiry import live_checkout_url
 from apps.payments.member_scope import member_payment_queryset
 from apps.payments.models import Payment
 from apps.payments.serializers import CheckoutUrlSerializer
-from apps.payments.services import PaymentRailConflict, create_checkout_url
+from apps.payments.checkout_coordination import PlatformRailLimitReached
+from apps.payments.services import PaymentRailConflict, PaymentSettlementPending, create_checkout_url
+
+
+def _settlement_pending():
+    """409 while an "I paid" claim or maker-checker proposal is open (payments audit 0.12.0)."""
+    return Response(
+        {
+            "detail": gettext("Your offline payment of this charge is waiting for staff to confirm it."),
+            "code": "payment_settlement_pending",
+        },
+        status=status.HTTP_409_CONFLICT,
+    )
 
 
 class MemberPaymentCheckoutView(APIView):
@@ -35,7 +48,8 @@ class MemberPaymentCheckoutView(APIView):
             200: CheckoutUrlSerializer,
             401: OpenApiResponse(ErrorSerializer, description="Authentication required."),
             404: OpenApiResponse(ErrorSerializer, description="No pending charge of yours here."),
-            409: OpenApiResponse(ErrorSerializer, description="`payment_rail_conflict`: the charge uses the native rail."),
+            409: OpenApiResponse(ErrorSerializer, description="`payment_rail_conflict`: the charge uses the native rail; "
+                                 "`payment_settlement_pending`: an offline payment awaits staff confirmation."),
             503: OpenApiResponse(ErrorSerializer, description="`payments_unavailable`: no live online rail for this charge."),
         },
     )
@@ -46,6 +60,10 @@ class MemberPaymentCheckoutView(APIView):
         ).first()
         if payment is None:
             raise NotFound()
+        # Checked before handing back an existing page too: a link minted before the
+        # member said "I paid" would otherwise still take a second payment.
+        if settlement_in_progress(payment):
+            return _settlement_pending()
         # Either rail's live page; an expired one falls through and is regenerated.
         if live := live_checkout_url(payment):
             return Response({"checkout_url": live})
@@ -66,6 +84,11 @@ class MemberPaymentCheckoutView(APIView):
             )
         try:
             checkout_url = create_checkout_url(payment.pk, actor=request.user)
+        except PaymentSettlementPending:
+            return _settlement_pending()
+        except PlatformRailLimitReached as exc:
+            return Response({'detail': str(exc), 'code': PlatformRailLimitReached.code},
+                            status=status.HTTP_409_CONFLICT)
         except PaymentRailConflict:
             return Response(
                 {

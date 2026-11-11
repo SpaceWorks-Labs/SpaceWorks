@@ -75,6 +75,39 @@ def _razorpay_checkout(payment, source):
     return PolledCapture(False)
 
 
+def find_refund(refund, source):
+    """Locate the provider refund our row asked for when the create call's outcome was unknown.
+
+    Returns (external_id, 'succeeded'|'failed'|'pending') or None when the provider has no
+    such refund yet or could not say. Matches on the `refund_id` metadata/notes we always send.
+    """
+    try:
+        payment = refund.payment
+        wanted = str(refund.pk)
+        if refund.provider == "razorpay":
+            from apps.payments.providers import get_provider
+            rows = (get_provider("razorpay")._request(
+                source, "GET", f"/payments/{payment.external_payment_id}/refunds") or {}).get("items") or []
+            for row in rows:
+                if str((row.get("notes") or {}).get("refund_id", "")) == wanted and row.get("id"):
+                    return row["id"], {"processed": "succeeded", "failed": "failed"}.get(row.get("status") or "", "pending")
+            return None
+        from apps.payments import stripe_client
+        options = ({"stripe_account": source.connected_account_id}
+                   if source.provider == "connect" and source.connected_account_id else None)
+        listing = stripe_client.build_client(source).v1.refunds.list(
+            params={"payment_intent": payment.stripe_payment_intent_id, "limit": 100},
+            **({"options": options} if options else {}))
+        for row in _get(listing, "data") or []:
+            if str((_get(row, "metadata") or {}).get("refund_id", "")) == wanted and _get(row, "id"):
+                return _get(row, "id"), {"succeeded": "succeeded", "failed": "failed", "canceled": "failed"}.get(
+                    _get(row, "status") or "", "pending")
+        return None
+    except Exception:  # noqa: BLE001 - provider I/O is best effort by contract
+        logger.info("gateway_poll_refund_lookup_failed", extra={"refund_id": refund.pk})
+        return None
+
+
 def poll_refund(refund, source):
     """'succeeded' | 'failed' | 'pending', or None when the provider could not say."""
     try:

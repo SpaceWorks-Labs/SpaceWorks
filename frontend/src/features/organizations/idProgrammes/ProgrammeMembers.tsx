@@ -5,11 +5,11 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { Badge, ErrorBlock, OverflowMenu } from "../../../components/ui";
+import { Badge, ConfirmDialog, ErrorBlock, OverflowMenu, PagePager } from "../../../components/ui";
 import { JOB_LABELS, useStartCardJob } from "../../cards/cardJobs";
 import { SheetPreviewDialog } from "../../cards/SheetPreviewDialog";
 import { StaffPhotoDialog } from "../../cards/StaffPhotoDialog";
-import { downloadProgrammeCard, programmeJobsPath, useAddProgrammeCard, useDecide, useProgrammeCards,
+import { downloadProgrammeCard, programmeJobsPath, useAddProgrammeCard, useDecide, useDeleteProgrammeCard, useProgrammeCards,
   type Programme, type ProgrammeCard, type ProgrammeCardStatus } from "./api";
 
 const STATUS: Record<ProgrammeCardStatus, { label: string; tone: "warn" | "success" | "danger" | "neutral" }> = {
@@ -30,6 +30,8 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
   const client = useQueryClient();
   const cards = useProgrammeCards(programme.id, status, search.trim(), page);
   const decide = useDecide(programme.id);
+  const remove = useDeleteProgrammeCard(programme.id);
+  const [deleting, setDeleting] = useState<ProgrammeCard | null>(null);
   const startJob = useStartCardJob(programmeJobsPath(programme.id));
   const manage = programme.can_manage;
   const rows = cards.data?.results ?? [];
@@ -53,7 +55,7 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
       <button type="button" className="desk-button min-h-11" onClick={() => setSheetFor([])}>{t`Print sheet of all approved cards…`}</button>
     </div> : null}
     {manage && selected.length ? <div className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-surface p-2 text-sm" role="region" aria-label={t`Selected cards`}>
-      <span className="font-semibold text-ink">{selected.length} selected</span>
+      <span className="font-semibold text-ink">{t`${selected.length} selected`}</span>
       {["approve", "reject", "revoke", "renew"].map((action) => <button key={action} type="button" className="desk-button min-h-11"
         disabled={decide.isPending} onClick={() => (NEEDS_REASON.has(action) ? setPendingAction(action) : run(action, selected))}>
         {action === "approve" ? t`Approve` : action === "reject" ? t`Reject…` : action === "revoke" ? t`Revoke…` : t`Renew`}</button>)}
@@ -69,8 +71,8 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
         {pendingAction === "reject" ? t`Reject` : t`Revoke`} {selected.length}</button>
       <button type="button" className="desk-button min-h-11" onClick={() => setPendingAction(null)}>{t`Cancel`}</button>
     </form> : null}
-    {decide.error || startJob.error ? <ErrorBlock error={decide.error ?? startJob.error} /> : null}
-    {cards.isError ? <ErrorBlock error={cards.error} resource="programme cards" onRetry={() => void cards.refetch()} /> : null}
+    {decide.error || startJob.error || remove.error ? <ErrorBlock error={decide.error ?? startJob.error ?? remove.error} /> : null}
+    {cards.isError ? <ErrorBlock error={cards.error} resource={t`programme cards`} onRetry={() => void cards.refetch()} /> : null}
     <div className="overflow-x-auto rounded-card border border-line">
       <table className="w-full text-left text-sm">
         <thead className="bg-surface text-xs text-muted"><tr>
@@ -83,19 +85,21 @@ export function ProgrammeMembers({ programme }: { programme: Programme }) {
           {rows.map((card) => <MemberRow key={card.id} card={card} manage={manage} selected={selected.includes(card.id)}
             onToggle={(on) => setSelected((current) => on ? [...current, card.id] : current.filter((id) => id !== card.id))}
             onPhoto={() => setPhotoFor(card)}
-            onAction={(action) => (NEEDS_REASON.has(action) ? (setSelected([card.id]), setPendingAction(action)) : run(action, [card.id]))} />)}
+            onAction={(action) => (action === "delete" ? setDeleting(card) : NEEDS_REASON.has(action)
+              ? (setSelected([card.id]), setPendingAction(action)) : run(action, [card.id]))} />)}
         </tbody>
       </table>
     </div>
     <SheetPreviewDialog open={sheetFor !== null} onClose={() => setSheetFor(null)} jobsPath={programmeJobsPath(programme.id)}
       previewPath={`${programmeJobsPath(programme.id)}/preview`} filter={sheetFor?.length ? { card_ids: sheetFor } : {}}
       title={sheetFor?.length ? t`Print sheet: ${sheetFor.length} selected cards` : t`Print sheet: all approved cards`} />
+    <ConfirmDialog open={deleting !== null} tone="danger" pending={remove.isPending} title={t`Delete ${deleting?.name ?? ""}'s request?`}
+      message={t`This card was never issued, so the request and its photo are deleted for good. Issued cards are revoked instead.`}
+      confirmLabel={t`Delete`} onCancel={() => setDeleting(null)}
+      onConfirm={() => { if (deleting) remove.mutate(deleting.id, { onSettled: () => setDeleting(null) }); }} />
     <StaffPhotoDialog holderName={photoFor?.name ?? null} photoPath={`/admin/id-programme-cards/${photoFor?.id}/photo`}
       onClose={() => setPhotoFor(null)} onSaved={() => { setPhotoFor(null); void client.invalidateQueries({ queryKey: ["id-programme-cards", programme.id] }); }} />
-    {cards.data && cards.data.count > 24 ? <div className="flex gap-2">
-      <button type="button" className="desk-button min-h-11" disabled={page === 1} onClick={() => setPage(page - 1)}>{t`Previous`}</button>
-      <button type="button" className="desk-button min-h-11" disabled={page * 24 >= cards.data.count} onClick={() => setPage(page + 1)}>{t`Next`}</button>
-    </div> : null}
+    {cards.data ? <PagePager page={page} setPage={setPage} count={cards.data.count} /> : null}
   </div>;
 }
 
@@ -111,6 +115,9 @@ function MemberRow({ card, manage, selected, onToggle, onAction, onPhoto }: { ca
     ...(manage && card.status === "revoked" ? [{ label: t`Reinstate`, onClick: () => onAction("reinstate") }] : []),
     ...(manage && (card.status === "pending" || card.status === "approved")
       ? [{ label: card.photo_set ? t`Replace photo` : t`Take or upload photo`, confirms: true, onClick: onPhoto }] : []),
+    // Decision 219(h): only a card that was never issued is deleted; an issued one is revoked.
+    ...(manage && !card.id_number && !card.issued_at
+      ? [{ label: t`Delete request`, confirms: true, tone: "danger" as const, onClick: () => onAction("delete") }] : []),
   ];
   return <tr className="border-t border-line">
     {manage ? <td className="p-2"><input type="checkbox" className="h-5 w-5" aria-label={t`Select ${card.name}`} checked={selected}

@@ -73,7 +73,7 @@ export function ProgrammeSettings({ programme }: { programme: Programme }) {
         { key: `q${Date.now().toString(36)}`, label: "", type: "text", required: false, placement: "hidden" }])}>{t`Add a question`}</button></div> : null}
     </fieldset>
     {update.error ? <ErrorBlock error={update.error} /> : null}
-    {update.isSuccess ? <p role="status" className="text-sm text-success">{t`Saved.`}</p> : null}
+    {update.isSuccess ? <p role="status" className="text-sm text-success-ink">{t`Saved.`}</p> : null}
     <div><button type="submit" className="desk-button-primary min-h-11" disabled={update.isPending}>{update.isPending ? t`Saving…` : t`Save settings`}</button></div>
   </form>;
 }

@@ -1,4 +1,3 @@
-import { formatLocale } from "../../lib/format";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import type { PricingPublicQuote, PricingQuoteRequest } from "../../generated/api";
@@ -45,13 +44,8 @@ export function quoteErrorStatus(error: unknown) {
   return error && typeof error === "object" ? (error as { status?: number }).status : undefined;
 }
 
-export function money(amount: string | number, currency: string) {
-  try {
-    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(Number(amount));
-  } catch {
-    return `${currency.toUpperCase()} ${amount}`;
-  }
-}
+/** Kept as `money` for its callers; the formatter itself is the shared one. */
+export { formatMoney as money } from "../../lib/money";
 
 /** A `datetime-local` value as ISO, or undefined while it is blank or incomplete. */
 export function isoTime(value: string) {

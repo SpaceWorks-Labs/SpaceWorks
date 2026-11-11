@@ -1,5 +1,5 @@
 import { formatLocale } from "../../lib/format";
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { consoleSessionHref } from "../../lib/api/sessionContext";
 import type { OverviewSpace } from "./platformOverviewApi";
 
@@ -21,16 +21,6 @@ export function formatValue(unit: string, value: number | null | undefined) {
   if (unit === "percent") return `${NUMBER.format(value)}%`;
   if (unit === "hours") return `${NUMBER.format(value)} h`;
   return NUMBER.format(value);
-}
-
-/** A decimal string in one currency. Never combined with another currency. */
-export function formatMoney(currency: string, amount: string) {
-  const value = Number(amount);
-  try {
-    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(value);
-  } catch {
-    return `${currency.toUpperCase()} ${amount}`;
-  }
 }
 
 export const EXCLUDED_LABEL: Record<string, string> = {
@@ -56,5 +46,5 @@ export function drillHref(space: OverviewSpace | undefined, tab: string) {
 }
 
 export function offText(offIn: number) {
-  return offIn ? t`Off in ${offIn} ${offIn === 1 ? "space" : "spaces"}` : t`On in every space`;
+  return offIn ? plural(offIn, { one: "Off in # space", other: "Off in # spaces" }) : t`On in every space`;
 }

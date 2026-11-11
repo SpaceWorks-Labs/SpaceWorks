@@ -14,6 +14,8 @@ export type Programme = {
   validity_mode: "none" | "fixed_date" | "days"; valid_until: string | null; validity_days: number | null;
   photo_mode: "none" | "optional" | "required"; form_schema: Question[]; public_verify: boolean; email_daily_cap: number;
   counts: { all: number; pending: number; approved: number; rejected: number; revoked: number }; can_manage: boolean;
+  /** Set once archived (decision 219(h)): closed, out of the active list, every card kept. */
+  archived_at?: string | null;
   created_at: string; updated_at: string;
 };
 
@@ -38,9 +40,23 @@ const keys = {
 const json = (method: string, body: unknown) => ({ method, body: JSON.stringify(body) });
 export const programmeJobsPath = (id: number) => `/admin/id-programmes/${id}/card-jobs`;
 
-export function useProgrammes(organizationId: number | null) {
-  return useQuery({ queryKey: keys.list(organizationId ?? 0), enabled: organizationId !== null,
-    queryFn: () => staffRequest<Programme[]>(`/admin/organizations/${organizationId}/id-programmes`) });
+export function useProgrammes(organizationId: number | null, archived = false) {
+  return useQuery({ queryKey: [...keys.list(organizationId ?? 0), ...(archived ? ["archived"] : [])], enabled: organizationId !== null,
+    queryFn: () => staffRequest<Programme[]>(`/admin/organizations/${organizationId}/id-programmes${archived ? "?archived=true" : ""}`) });
+}
+
+/** Delete (never used), archive (ever approved a card) or restore a programme -- decision 219(h). */
+export function useProgrammeLifecycle(id: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (action: "archive" | "unarchive" | "delete"): Promise<Programme | undefined> => action === "delete"
+      ? staffRequest<undefined>(`/admin/id-programmes/${id}`, { method: "DELETE" })
+      : staffRequest<Programme>(`/admin/id-programmes/${id}/${action}`, { method: "POST" }),
+    onSuccess: (saved) => {
+      if (saved) client.setQueryData(keys.one(id), saved);
+      void client.invalidateQueries({ queryKey: ["id-programmes"] });
+    },
+  });
 }
 
 export function useCreateProgramme(organizationId: number) {
@@ -84,6 +100,13 @@ export function useAddProgrammeCard(id: number) {
   const refresh = useInvalidateCards(id);
   return useMutation({ mutationFn: (input: { name: string; email: string }) =>
     staffRequest<ProgrammeCard>(`/admin/id-programmes/${id}/cards`, json("POST", input)), onSuccess: refresh });
+}
+
+/** Only a card that was never issued can be deleted; an issued one answers 409 `revoke_instead`. */
+export function useDeleteProgrammeCard(id: number) {
+  const refresh = useInvalidateCards(id);
+  return useMutation({ mutationFn: (cardId: number) =>
+    staffRequest<void>(`/admin/id-programme-cards/${cardId}`, { method: "DELETE" }), onSuccess: refresh });
 }
 
 export function useDecide(id: number) {

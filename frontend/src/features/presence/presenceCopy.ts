@@ -1,6 +1,7 @@
 import { formatLocale } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { StructuredApiError } from "../../lib/api";
+import { guestRefusalMessage } from "../../lib/guestRefusalCopy";
 import type { PresenceSession, PresenceStatus } from "./api";
 
 export const STATUS_LABELS: Record<PresenceStatus, string> = {
@@ -37,19 +38,21 @@ export function timeLeftLabel(minutes: number) {
 export const clockTime = (iso: string) => new Date(iso).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit" });
 
 /** Server refusals that mean "self check-in is not possible from here": always offer the staff route. */
-const LOCATION_CODES: Record<string, string> = {
-  outside_geofence: "You're outside this makerspace's check-in area, so self check-in is refused.",
-  location_inaccurate: "Your location reading isn't precise enough to confirm you're inside. Move nearer a window or step outside briefly, then retry.",
-  location_required: "Check-in needs your location, and none was shared.",
-  location_invalid: "Your device sent an unreadable location.",
-  geofence_unconfigured: "Self check-in isn't set up for this makerspace yet.",
-};
+const LOCATION_CODES = (): Record<string, string> => ({
+  outside_geofence: t`You're outside this makerspace's check-in area, so self check-in is refused.`,
+  location_inaccurate: t`Your location reading isn't precise enough to confirm you're inside. Move nearer a window or step outside briefly, then retry.`,
+  location_required: t`Check-in needs your location, and none was shared.`,
+  location_invalid: t`Your device sent an unreadable location.`,
+  geofence_unconfigured: t`Self check-in isn't set up for this makerspace yet.`,
+});
 
 export function presenceErrorText(error: unknown): { text: string; staffRoute: boolean } {
   if (error instanceof StructuredApiError) {
-    if (error.code && LOCATION_CODES[error.code]) return { text: LOCATION_CODES[error.code], staffRoute: true };
+    if (error.code && LOCATION_CODES()[error.code]) return { text: LOCATION_CODES()[error.code], staffRoute: true };
     if (error.code === "walk_in_staff_required") return { text: error.detail ?? t`Ask staff to check you in.`, staffRoute: true };
     if (error.code === "session_expired") return { text: t`That check-in ended too long ago to renew. Check in again.`, staffRoute: false };
+    const guestCopy = guestRefusalMessage(error.code); // decision 223: pass holders, minors, guardians
+    if (guestCopy) return { text: guestCopy, staffRoute: false };
     return { text: error.detail ?? error.message, staffRoute: false };
   }
   return { text: error instanceof Error ? error.message : t`Something went wrong. Try again.`, staffRoute: false };

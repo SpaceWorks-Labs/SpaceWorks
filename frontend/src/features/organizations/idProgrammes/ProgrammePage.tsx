@@ -7,6 +7,7 @@ import { ErrorBlock, Skeleton, Tabs } from "../../../components/ui";
 import { ScreenHelp } from "../../help/HelpLink";
 import { CardJobList } from "../../cards/cardJobs";
 import { ProgrammeImport } from "./ProgrammeImport";
+import { ProgrammeArchivedBanner, RemoveProgramme } from "./ProgrammeLifecycle";
 import { ProgrammeMembers } from "./ProgrammeMembers";
 import { ProgrammeSettings } from "./ProgrammeSettings";
 import { ApprovalLevelSelect } from "../../cards/ApprovalLevelSelect";
@@ -20,7 +21,7 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
   const programme = useProgramme(programmeId);
   const [tab, setTab] = useState<TabKey>("members");
   if (programme.isLoading) return <Skeleton className="h-64 w-full" />;
-  if (programme.isError || !programme.data) return <ErrorBlock error={programme.error} resource="programme" onRetry={() => void programme.refetch()} />;
+  if (programme.isError || !programme.data) return <ErrorBlock error={programme.error} resource={t`programme`} onRetry={() => void programme.refetch()} />;
   const row = programme.data;
   const joinPath = `/o/${row.organization_slug}/ids/${row.slug}`;
   const tabs = [{ key: "members", label: t`Members`, count: row.counts.all }, ...(row.can_manage ? [{ key: "import", label: t`Import` }] : []),
@@ -40,18 +41,19 @@ export function ProgrammePage({ programmeId, onBack, sheetImport = false }: {
           onClick={() => void navigator.clipboard?.writeText(`${window.location.origin}${joinPath}`)}>{t`Copy link`}</button>
       </div> : <p className="text-sm text-muted">{t`Joining is closed. Open it in Settings.`}</p>}
     </div>
+    <ProgrammeArchivedBanner programme={row} />
     <Tabs tabs={tabs} activeKey={tab} label={t`Programme`} onChange={(key) => setTab(key as TabKey)} />
     {tab === "members" ? <><CardJobList listPath={programmeJobsPath(row.id)} /><ProgrammeMembers programme={row} /></> : null}
     {tab === "import" ? <ProgrammeImport programme={row} onDone={() => setTab("members")} sheetImport={sheetImport} /> : null}
     {tab === "design" ? <ProgrammeDesign programmeId={row.id} canManage={row.can_manage} /> : null}
-    {tab === "settings" ? <ProgrammeSettings programme={row} /> : null}
+    {tab === "settings" ? <><ProgrammeSettings programme={row} /><RemoveProgramme programme={row} onDeleted={onBack} /></> : null}
   </div>;
 }
 
 function ProgrammeDesign({ programmeId, canManage }: { programmeId: number; canManage: boolean }) {
   const design = useProgrammeDesign(programmeId);
   if (design.isLoading) return <Skeleton className="h-64 w-full" />;
-  if (design.isError || !design.data) return <ErrorBlock error={design.error} resource="card design" />;
+  if (design.isError || !design.data) return <ErrorBlock error={design.error} resource={t`card design`} />;
   return <div className="grid gap-4">
     {canManage ? <ProgrammeApproval programmeId={programmeId} /> : null}
     <CardDesigner designId={design.data.id} canEdit={design.data.can_edit} title={t`Programme card design`} />
@@ -60,7 +62,7 @@ function ProgrammeDesign({ programmeId, canManage }: { programmeId: number; canM
 
 function ProgrammeApproval({ programmeId }: { programmeId: number }) {
   const { query, save } = useProgrammeApproval(programmeId);
-  if (!query.data) return query.error ? <ErrorBlock error={query.error} resource="approval setting" /> : null;
+  if (!query.data) return query.error ? <ErrorBlock error={query.error} resource={t`approval setting`} /> : null;
   return <div className="grid max-w-md gap-1">
     <ApprovalLevelSelect label={t`Design changes for this programme`} value={query.data.required} inherited={query.data.inherited}
       inheritLabel="Follow the organisation and space" disabled={save.isPending} onChange={(value) => save.mutate(value)} />

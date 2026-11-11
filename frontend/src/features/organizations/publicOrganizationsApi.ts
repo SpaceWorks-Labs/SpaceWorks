@@ -5,7 +5,10 @@ import { hostScope, publicPagePolicy } from "../publicPages/pageApi";
 import type { SpaceCard } from "../publicPages/pageTypes";
 
 // canonical_url is added by this round's serializer change; regenerate the client with the schema.
-export type PublicOrganization = import("../../generated/api").PublicOrganization & { canonical_url: string };
+export type PublicOrganization = import("../../generated/api").PublicOrganization & { canonical_url: string;
+  /** Decision 295: present (non-null) when the organization's home space is an organization workspace. */
+  workspace?: import("./OrganizationWorkspace").OrganizationWorkspacePayload | null;
+  home_space?: SpaceCard | null };
 export type OrganizationPublicEvent = import("../../generated/api").PublicOrganizationEvent;
 export type OrganizationPastEvent = import("../../generated/api").OrganizationArchiveEvent;
 export type OrganizationEvents = import("../../generated/api").OrganizationEventCollection;

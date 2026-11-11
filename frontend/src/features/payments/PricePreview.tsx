@@ -14,20 +14,26 @@ const isQuote = (value: unknown): value is PricingPublicQuote =>
  * their inputs live. Renders nothing until there is something to price, while price lists are off
  * (404) or on any other refusal -- the price is advisory here, the submit re-checks it. `onDigest`
  * hands the quote's digest to a host that wants to send it with its submit (409 `price_changed`).
- * In a free domain (its charges off, #184) it neither fetches nor renders.
+ * In a free domain (its charges off, #184) it neither fetches nor renders. `onOwes` tells the host
+ * whether the current quote owes anything, so its success screen can say how to pay.
  */
-export function PricePreview({ makerspaceSlug, request, onDigest, className = "" }: {
-  makerspaceSlug: string; request: PricingQuoteRequest; onDigest?: (digest: string) => void; className?: string;
+export function PricePreview({ makerspaceSlug, request, onDigest, onOwes, className = "" }: {
+  makerspaceSlug: string; request: PricingQuoteRequest; onDigest?: (digest: string) => void;
+  onOwes?: (owes: boolean) => void; className?: string;
 }) {
   const id = useId();
   const chargesOn = useChargesOn(request.domain, makerspaceSlug);
   const quote = usePriceQuote(makerspaceSlug, request, 400, chargesOn);
   const digestHandler = useRef(onDigest);
   digestHandler.current = onDigest;
+  const owesHandler = useRef(onOwes);
+  owesHandler.current = onOwes;
   const data = isQuote(quote.data) ? quote.data : undefined;
   // A placeholder is the previous input's quote: never hand its digest to a submit.
   const digest = quote.ready && !quote.error && !quote.isPlaceholderData ? data?.digest : undefined;
   useEffect(() => { if (digest) digestHandler.current?.(digest); }, [digest]);
+  const owes = digest && data ? Number(data.quote.total) > 0 || Boolean(data.deposit) : undefined;
+  useEffect(() => { if (owes !== undefined) owesHandler.current?.(owes); }, [owes]);
 
   if (!quote.ready) return null;
   if (quote.error) {

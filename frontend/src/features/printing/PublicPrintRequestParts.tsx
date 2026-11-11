@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 
 import { EmptyState, ErrorBlock, Field, ListRow, ProgressBar, RelativeTime, Skeleton, StatusPill } from "../../components/ui";
@@ -73,11 +73,11 @@ function queuePositionDetail(status: PrintStatus): string {
   const awaitingReviewAhead = status.queue_awaiting_review_ahead ?? 0;
   const current = normalizeServiceStatus(status.status);
   // Only an approved job can be "next"; a pending one is still waiting for review.
-  if (current === "accepted" && approvedAhead === 0) return "You're next among approved jobs";
-  if (current === "pending" && approvedAhead === 0 && awaitingReviewAhead === 0) return "Awaiting review";
+  if (current === "accepted" && approvedAhead === 0) return t`You're next among approved jobs`;
+  if (current === "pending" && approvedAhead === 0 && awaitingReviewAhead === 0) return t`Awaiting review`;
   return [
-    `${approvedAhead} approved job${approvedAhead === 1 ? "" : "s"} ahead`,
-    `${awaitingReviewAhead} awaiting review`,
+    plural(approvedAhead, { one: "# approved job ahead", other: "# approved jobs ahead" }),
+    t`${awaitingReviewAhead} awaiting review`,
   ].join(" / ");
 }
 
@@ -87,7 +87,7 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
   const currentIndex = steps.findIndex(step => step.key === (current === "changes_requested" || current === "quoted" ? "pending" : current));
   if (current === "cancelled") return <StatusPill tone="neutral" label={t`${status.title} was cancelled. Nothing was charged.`} />;
   if (current === "uncollected") return <StatusPill tone="neutral" label={t`${status.title} wasn't collected within 14 days.`} />;
-  if (current === "rejected" || current === "failed") return <StatusPill tone="danger" label={t`${status.title} is ${current}.`} />;
+  if (current === "rejected" || current === "failed") return <StatusPill tone="danger" label={current === "rejected" ? t`${status.title} was not approved.` : t`${status.title} failed.`} />;
   return <div className="grid gap-4">
     <ProgressBar value={Math.max(0, currentIndex) / (steps.length - 1)} label={t`Print progress`} />
     <ol className="grid gap-2">{steps.map((step, index) => <li key={step.key} aria-current={index === currentIndex ? "step" : undefined}>
@@ -95,7 +95,7 @@ export function StatusStepper({ status }: { status: PrintStatus }) {
     </li>)}</ol>
     {status.queue_position != null ? <ListRow title={`#${status.queue_position} in the queue`} meta={queuePositionDetail(status)} /> : null}
     <ServiceRequestEta eta={status.eta} status={current} showLine={false} />
-    <p className="text-sm text-muted">{t`Current status: `}<span className="font-semibold text-ink">{["changes_requested", "quoted", "uncollected"].includes(current) ? serviceStatusLabel(current) : current.replace(/_/g, " ")}</span></p>
+    <p className="text-sm text-muted">{t`Current status: `}<span className="font-semibold text-ink">{serviceStatusLabel(current)}</span></p>
   </div>;
 }
 

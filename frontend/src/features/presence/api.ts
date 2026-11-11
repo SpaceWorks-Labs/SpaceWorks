@@ -19,6 +19,8 @@ export type PresenceStartInput = { duration_minutes: number; status?: "working" 
   project_id?: number | null; hide_on_display?: boolean; latitude?: number; longitude?: number; accuracy?: number };
 export type PresenceRosterRow = PresenceSession & { account_id: number; display_name: string; role_label: string };
 export type PresencePrivacy = { show_names: boolean; allow_personal_opt_out: boolean };
+/** A live guest-pass holder staff may check in (0.12.0). `id` is the holder's account id. */
+export type CheckInGuest = { id: number; display_name: string; pass_valid_until: string; waiver_on_file: boolean };
 /** The public TV row: exactly these fields, never identifiers or contacts. */
 export type PresenceTVRow = { display_name: string; status: PresenceStatus; since: string;
   project_title?: string; event_title?: string };
@@ -46,8 +48,11 @@ export const presenceApi = {
   preference: (slug: string) => memberRequest<{ hide_on_display: boolean }>(`${base(slug)}/preferences`),
   roster: (makerspaceId: number, page: number) =>
     staffRequest<Page<PresenceRosterRow>>(`/admin/makerspace/${makerspaceId}/presence-sessions/current?page=${page}`),
-  staffCheckIn: (makerspaceId: number, input: PresenceStartInput & { account_id: number }) =>
+  // Decision 223 (j): `waiver_accepted_at_desk` stamps a guest-pass holder's waiver while checking them in.
+  staffCheckIn: (makerspaceId: number, input: PresenceStartInput & { account_id: number; waiver_accepted_at_desk?: boolean }) =>
     staffRequest<PresenceSession>(`/admin/makerspace/${makerspaceId}/presence-sessions/check-in`, json(input)),
+  checkInGuests: (makerspaceId: number, q: string) =>
+    staffRequest<{ results: CheckInGuest[] }>(`/admin/makerspace/${makerspaceId}/presence-sessions/check-in-guests?${new URLSearchParams({ q })}`),
   staffCheckOut: (makerspaceId: number, accountId: number) =>
     staffRequest<PresenceCurrent>(`/admin/makerspace/${makerspaceId}/presence-sessions/check-out`, json({ account_id: accountId })),
   privacy: (makerspaceId: number) => staffRequest<PresencePrivacy>(`/admin/makerspace/${makerspaceId}/presence-sessions/privacy`),

@@ -41,7 +41,7 @@ export function OverviewBlockSection({ block, spaces }: { block: OverviewBlock; 
     { id: "total", total: true, values: block.totals },
   ];
   const columns: DataTableColumn<Row>[] = [
-    { key: "space", header: "Space", phone: "title", render: row => <SpaceCell space={row.space} tab={tab} /> },
+    { key: "space", header: t`Space`, phone: "title", render: row => <SpaceCell space={row.space} tab={tab} /> },
     ...block.metrics.map(metric => ({ key: metric.key, header: metric.label, phone: "detail" as const,
       className: "tabular-nums", render: (row: Row) => cell(metric, row) })),
   ];

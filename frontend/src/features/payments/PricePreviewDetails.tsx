@@ -1,8 +1,9 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { BadgePercent, Coins, HandCoins } from "lucide-react";
 
 import type { PricingPublicQuote } from "./usePriceQuote";
 import { money, quantityText } from "./usePriceQuote";
+import { IncludedHoursLine, type IncludedHoursSummary } from "./IncludedHoursLine";
 
 const positive = (value: string | null | undefined) => value !== null && value !== undefined && Number(value) > 0;
 const row = "flex items-baseline justify-between gap-3";
@@ -25,6 +26,8 @@ export function QuoteLines({ data }: { data: PricingPublicQuote }) {
       <span className="tabular-nums">−{money(quote.discount_total, quote.currency)}</span>
     </p> : null}
     {quote.waiver ? <p className="flex items-center gap-2 text-ink"><HandCoins aria-hidden="true" className="h-4 w-4 text-muted" />{t`Fees waived`}</p> : null}
+    {/* Decision 221(d): not yet in the generated schema; present only on a booking quote. */}
+    <IncludedHoursLine info={(quote as { included_hours?: IncludedHoursSummary | null }).included_hours} />
   </>;
 }
 
@@ -55,7 +58,7 @@ export function QuoteExtras({ data }: { data: PricingPublicQuote }) {
       ? <p className="text-muted">{t`Members pay `}<span className="tabular-nums text-ink">{money(data.members_total, currency)}</span></p> : null}
     {quote.notes.map(note => <p key={note} className="text-xs text-muted">{note}</p>)}
     {policy ? <div className="grid gap-1 text-xs text-muted">
-      {positive(policy.late_per_day) ? <p>{t`Late returns: ${money(policy.late_per_day, currency)} per day`}{policy.grace_days ? t` after ${policy.grace_days} grace day${policy.grace_days === 1 ? "" : "s"}` : ""}
+      {positive(policy.late_per_day) ? <p>{t`Late returns: ${money(policy.late_per_day, currency)} per day`}{policy.grace_days ? ` ${plural(policy.grace_days, { one: "after # grace day", other: "after # grace days" })}` : ""}
         {positive(policy.late_cap) ? t`, up to ${money(policy.late_cap!, currency)}` : ""}.</p> : null}
       {positive(policy.damage_default) ? <p>{t`Damage charge: ${money(policy.damage_default, currency)}.`}</p> : null}
       {positive(policy.lost_default) ? <p>{t`Lost item charge: ${money(policy.lost_default, currency)}.`}</p> : null}

@@ -8,8 +8,8 @@ import { ErrorBlock } from "../../../components/ui";
 import { SheetLinkField, SourcePicker, sheetLinkProblem, type ImportSource } from "../../staff/memberImport/SheetSource";
 import { useImportCommit, useImportPreview, type ImportInput, type ImportPreview, type Programme } from "./api";
 
-const REASONS: Record<string, string> = { no_name: "no name", bad_email: "email not valid", duplicate_in_file: "repeated in the file",
-  already_in_programme: "already in this programme" };
+const REASONS = (): Record<string, string> => ({ no_name: t`no name`, bad_email: t`email not valid`, duplicate_in_file: t`repeated in the file`,
+  already_in_programme: t`already in this programme` });
 
 export function ProgrammeImport({ programme, onDone, sheetImport = false }: {
   programme: Programme; onDone: () => void; sheetImport?: boolean;
@@ -54,7 +54,7 @@ export function ProgrammeImport({ programme, onDone, sheetImport = false }: {
       </fieldset>
       <p className="text-sm text-ink">{data.rows_total} rows: <strong>{data.to_create}</strong> {t` will be added,${" "}${data.skipped.length} skipped.`}</p>
       {data.skipped.length ? <ul className="max-h-32 overflow-y-auto text-xs text-muted">
-        {data.skipped.slice(0, 50).map((row) => <li key={row.row}>{t`Row ${row.row}: ${REASONS[row.reason] ?? row.reason}`}</li>)}</ul> : null}
+        {data.skipped.slice(0, 50).map((row) => <li key={row.row}>{t`Row ${row.row}: ${REASONS()[row.reason] ?? row.reason}`}</li>)}</ul> : null}
       <div className="overflow-x-auto rounded-card border border-line">
         <table className="w-full text-left text-xs"><thead className="bg-surface text-muted"><tr>
           {data.headers.map((header, index) => <th key={index} className="p-2">{header}</th>)}</tr></thead>
@@ -65,7 +65,7 @@ export function ProgrammeImport({ programme, onDone, sheetImport = false }: {
         <input type="checkbox" className="h-5 w-5" checked={approve} onChange={(event) => setApprove(event.target.checked)} />
         {t`Approve everyone added (they get their card once they accept the invite)`}</label>
       {commit.error ? <ErrorBlock error={commit.error} /> : null}
-      {commit.data ? <p role="status" className="text-sm text-success">{t`Added ${commit.data.created}. Invites are on their way.`}</p> : null}
+      {commit.data ? <p role="status" className="text-sm text-success-ink">{t`Added ${commit.data.created}. Invites are on their way.`}</p> : null}
       <div className="flex gap-2">
         <button type="button" className="desk-button-primary min-h-11" disabled={commit.isPending || mapping.name == null || mapping.email == null}
           onClick={() => commit.mutate({ ...input, mapping, approve }, { onSuccess: onDone })}>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import type { PresenceSession } from "./api";
 import { clockTime, minutesLeft } from "./presenceCopy";
@@ -37,8 +38,9 @@ export function useRenewNotification(session: PresenceSession | null, phase: Ren
     if (sent.current.has(key)) return;
     sent.current.add(key);
     const body = phase === "soon"
-      ? `Your check-in ends at ${clockTime(session.expires_at)}. Open Space Works to renew.`
-      : `Your check-in ended at ${clockTime(session.expires_at)}. Still here? Renew within ${RENEW_WINDOW_MINUTES} minutes.`;
-    void showWebNotification(`${spaceName}: check-in ${phase === "soon" ? "ending" : "ended"}`, body, `presence-${session.expires_at}`);
+      ? t`Your check-in ends at ${clockTime(session.expires_at)}. Open Space Works to renew.`
+      : t`Your check-in ended at ${clockTime(session.expires_at)}. Still here? Renew within ${RENEW_WINDOW_MINUTES} minutes.`;
+    const title = phase === "soon" ? t`${spaceName}: check-in ending` : t`${spaceName}: check-in ended`;
+    void showWebNotification(title, body, `presence-${session.expires_at}`);
   }, [session, phase, spaceName]);
 }

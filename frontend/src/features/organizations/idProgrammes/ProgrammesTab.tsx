@@ -19,11 +19,12 @@ export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspac
   const [organizationId, setOrganizationId] = useState<number | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   const chosen = organizationId ?? organizations.data?.results[0]?.id ?? null;
-  const programmes = useProgrammes(chosen);
+  const [showArchived, setShowArchived] = useState(false);
+  const programmes = useProgrammes(chosen, showArchived);
   const rows = (programmes.data ?? []).filter((row) => row.makerspace === makerspaceId);
   if (open !== null) return <ProgrammePage programmeId={open} onBack={() => setOpen(null)} sheetImport={sheetImport} />;
   if (organizations.isLoading) return <Skeleton className="h-40 w-full" />;
-  if (organizations.isError) return <ErrorBlock error={organizations.error} resource="organisations" />;
+  if (organizations.isError) return <ErrorBlock error={organizations.error} resource={t`organisations`} />;
   if (!organizations.data?.results.length) return <EmptyState title={t`No organisations yet`}
     description={t`ID programmes belong to an organisation that owns this space. Add one under Organisations first.`} />;
 
@@ -34,10 +35,13 @@ export function ProgrammesTab({ makerspaceId, sheetImport = false }: { makerspac
         {organizations.data.results.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
       </select>
     </label>
-    {chosen !== null ? <NewProgramme organizationId={chosen} makerspaceId={makerspaceId} onCreated={setOpen} /> : null}
+    {chosen !== null && !showArchived ? <NewProgramme organizationId={chosen} makerspaceId={makerspaceId} onCreated={setOpen} /> : null}
+    <label className="flex min-h-11 w-fit items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5"
+      checked={showArchived} onChange={(event) => setShowArchived(event.target.checked)} />{t`Show archived programmes`}</label>
     {programmes.isLoading ? <Skeleton className="h-24 w-full" /> : null}
-    {programmes.isError ? <ErrorBlock error={programmes.error} resource="programmes" /> : null}
-    {programmes.data && !rows.length ? <p className="text-sm text-muted">{t`No programmes yet for this organisation here.`}</p> : null}
+    {programmes.isError ? <ErrorBlock error={programmes.error} resource={t`programmes`} /> : null}
+    {programmes.data && !rows.length ? <p className="text-sm text-muted">{showArchived
+      ? t`No archived programmes for this organisation here.` : t`No programmes yet for this organisation here.`}</p> : null}
     <ul className="grid gap-3 sm:grid-cols-2">
       {rows.map((row) => <ProgrammeCardRow key={row.id} programme={row} onOpen={() => setOpen(row.id)} />)}
     </ul>
@@ -48,7 +52,8 @@ function ProgrammeCardRow({ programme, onOpen }: { programme: Programme; onOpen:
   return <li className="grid gap-2 rounded-card border border-line bg-panel p-4">
     <div className="flex items-start justify-between gap-2">
       <h3 className="text-base font-semibold text-ink">{programme.name}</h3>
-      <Badge tone={STATUS_TONE[programme.status]}>{STATUS_LABEL[programme.status]}</Badge>
+      <Badge tone={programme.archived_at ? "neutral" : STATUS_TONE[programme.status]}>
+        {programme.archived_at ? t`Archived` : STATUS_LABEL[programme.status]}</Badge>
     </div>
     <p className="text-sm text-muted">{t`${programme.counts.approved} approved · ${programme.counts.pending} waiting · ${programme.counts.all} in all`}{programme.registration_open ? t` · joining open` : ""}</p>
     <div><button type="button" className="desk-button min-h-11" onClick={onOpen}>{t`Open`}</button></div>

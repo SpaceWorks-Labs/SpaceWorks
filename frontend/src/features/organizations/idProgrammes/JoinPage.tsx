@@ -1,7 +1,7 @@
 // /o/:organizationSlug/ids/:programmeSlug — ask to join an ID programme. Needs a signed-in
 // account (the email comes from it); photo upload with consent when the programme asks for one,
 // cropped to the card's photo frame first; answers can be filled from Saved details on request.
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
@@ -91,7 +91,7 @@ export function JoinPage() {
         <button type="button" className="desk-button-ghost min-h-11" disabled={prefill.isPending} onClick={() => prefill.mutate()}>
           {prefill.isPending ? t`Filling…` : t`Fill from my Saved details`}</button>
         <span role="status" aria-live="polite" className="text-xs text-muted">{filled === null ? t`Only fills empty answers; check them before sending.`
-          : filled ? t`Filled ${filled} answer${filled === 1 ? "" : "s"}. Check them before sending.` : t`Nothing in your Saved details matches these questions.`}</span>
+          : filled ? plural(filled, { one: "Filled # answer. Check it before sending.", other: "Filled # answers. Check them before sending." }) : t`Nothing in your Saved details matches these questions.`}</span>
       </div> : null}
       {data.questions.map((question) => <label key={question.key} className="grid gap-1 text-sm font-semibold text-ink">
         <span>{question.label}{question.required ? "" : " (optional)"}</span>
@@ -103,8 +103,8 @@ export function JoinPage() {
             onChange={(event) => setAnswers({ ...answers, [question.key]: event.target.value })} />}
       </label>)}
       {data.photo_mode !== "none" ? <div className="grid gap-2">
-        <p className="text-sm font-semibold text-ink">{t`Photo${data.photo_mode === "optional" ? " (optional)" : ""}`}</p>
-        <PhotoPicker aspect={18 / 22} chooseLabel={photo ? "Change the photo" : "Choose a photo"} onPhoto={setPhoto} />
+        <p className="text-sm font-semibold text-ink">{data.photo_mode === "optional" ? t`Photo (optional)` : t`Photo`}</p>
+        <PhotoPicker aspect={18 / 22} chooseLabel={photo ? t`Change the photo` : t`Choose a photo`} onPhoto={setPhoto} />
         {photo ? <p className="text-xs text-muted">{t`Photo cropped and ready. It is only uploaded when you send this request.`}</p> : null}
         {photo ? <label className="flex min-h-11 items-center gap-2 text-sm text-ink"><input type="checkbox" className="h-5 w-5" checked={consent}
           onChange={(event) => setConsent(event.target.checked)} />{t`I agree my photo is stored privately and printed on my card.`}</label> : null}

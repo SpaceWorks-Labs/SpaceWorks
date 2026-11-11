@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { staffRequest } from "../../lib/api";
 import { DELIVERY_SETTINGS_KEY } from "./MakerspaceWebhookSettings";
 import { useChannels } from "../notifications/channelsApi";
-import { CHANNEL_LABELS } from "../notifications/channelCatalog";
+import { channelLabel } from "../notifications/channelCatalog";
 import { MATRIX_TOGGLE_CELL, STICKY_FIRST_COLUMN } from "./matrixColumns";
 import type {
   NotificationPreferenceCell,
@@ -73,21 +73,22 @@ export function NotificationChannelPreferences({ makerspaceId, rules }: Props) {
     const config = messaging.data?.results.find(row => row.channel === channel);
     if (messaging.isSuccess && (!config?.enabled || !config.personal_enabled || config.activation_hold || !config.sender_key)
       && rules.preferences.some(cell => cell.channel === channel && cell.enabled)) {
-      warnings.push(`${CHANNEL_LABELS[channel]} needs sender setup or review under Communication channels.`);
+      const name = channelLabel(channel);
+      warnings.push(t`${name} needs sender setup or review under Communication channels.`);
     }
   }
 
   return (
     <section aria-labelledby="notification-channel-heading" className="min-w-0">
       <h4 id="notification-channel-heading" className="text-sm font-semibold text-ink">
-        {t`Notification channels`}</h4>
+        {t`Notification channels per feature`}</h4>
       <p className="mt-2 text-sm text-muted">
         {t`Checked = enabled for that feature and channel. The Staff email notifications switch and per-member recipient toggles affect staff email only, not Telegram, Slack, or Mattermost.`}</p>
       {rules.channels.some(channel => channel.key === "whatsapp") ? <p className="mt-2 text-sm text-muted">{t`WhatsApp also requires an approved template binding for each event and audience. Configure bindings under Communication channels.`}</p> : null}
-      <SettingsQueryState query={settings} resource="channel setup" />
-      {hasMessaging ? <SettingsQueryState query={messaging} resource="messaging channel setup" /> : null}
+      <SettingsQueryState query={settings} resource={t`channel setup`} />
+      {hasMessaging ? <SettingsQueryState query={messaging} resource={t`messaging channel setup`} /> : null}
       <DataTable data={rules.features} getRowId={feature => feature.key} columns={[
-        { key: "feature", header: "Feature", className: `font-semibold ${STICKY_FIRST_COLUMN}`, render: feature => feature.label },
+        { key: "feature", header: t`Feature`, className: `font-semibold ${STICKY_FIRST_COLUMN}`, render: feature => feature.label },
         ...rules.channels.map(channel => ({ key: channel.key, header: channel.label, className: MATRIX_TOGGLE_CELL,
           render: (feature: NotificationRulesResponse["features"][number]) => {
             const checked = preferenceCell(rules.preferences, feature.key, channel.key)?.enabled ?? false;

@@ -7,7 +7,7 @@ import type { ReportCatalog } from "./panels/operationsReportsConfig";
 import { periodParams, type AnalyticsPeriod, type DashboardAnalytics } from "./panels/analyticsApi";
 import { ReportAreaSections } from "./panels/ReportAreaSections";
 import { DashboardAnalyticsWidgets } from "./panels/DashboardAnalyticsWidgets";
-import { TILES } from "./panels/DashboardStats";
+import { TILES, type DashboardCounts } from "./panels/DashboardStats";
 
 export function PlatformTenantAnalytics({ space, period, initialReport }: {
   space: AnalyticsMakerspace; period: AnalyticsPeriod; initialReport: string;
@@ -20,7 +20,7 @@ export function PlatformTenantAnalytics({ space, period, initialReport }: {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
   const dashboard = useQuery({ queryKey: ["platform-tenant-dashboard", space.id], enabled: showDashboard, retry: false,
-    queryFn: () => staffRequest<DashboardAnalytics>(`${base}/dashboard`) });
+    queryFn: () => staffRequest<DashboardAnalytics & DashboardCounts>(`${base}/dashboard`) });
   if (catalog.isLoading) return <p role="status">{t`Loading this makerspace's reports…`}</p>;
   if (catalog.isError) return <div role="alert"><p>{t`Access to this makerspace's analytics is blocked or unavailable.`}</p>
     <button type="button" className="desk-button" onClick={() => void catalog.refetch()}>{t`Retry`}</button></div>;

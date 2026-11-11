@@ -18,6 +18,7 @@ import {
 import { useStaffChargesOn } from "./useStaffChargesOn";
 import { formatMoney } from "./paymentsApi";
 import { MemberLifecycleDetails } from "./membershipLifecycle/MemberLifecycleDetails";
+import { StaffIncludedHours } from "./memberActivity/StaffIncludedHours";
 
 /** Mount with `key={membershipId}`; the plan choice is per dialog, not per panel. */
 export function MemberTermsDialog({
@@ -26,12 +27,15 @@ export function MemberTermsDialog({
   memberName,
   onClose,
   features = [],
+  userId,
 }: {
   makerspaceId: number;
   membershipId: number;
   memberName: string;
   onClose: () => void;
   features?: string[];
+  /** C26: the member's user id, for the included-hours line; omitted, the line is not shown. */
+  userId?: number;
 }) {
   const client = useQueryClient();
   const terms = useQuery({ queryKey: membershipPlanKeys.terms(membershipId), queryFn: () => listTerms(membershipId) });
@@ -45,6 +49,8 @@ export function MemberTermsDialog({
     // Starting a term raises the plan's charge, so the roster's payment summary changes too.
     client.invalidateQueries({ queryKey: ["members", makerspaceId] });
     client.invalidateQueries({ queryKey: ["payments", makerspaceId] });
+    // A new or cancelled term changes the included-hours pools.
+    client.invalidateQueries({ queryKey: ["included-hours", makerspaceId] });
   };
   const start = useMutation({
     mutationFn: () => startTerm(membershipId, selectedPlan!),
@@ -112,6 +118,7 @@ export function MemberTermsDialog({
       ) : null}
       {terms.isError ? <p className="mt-3 text-sm text-danger" role="alert">{planErrorText(terms.error, "Could not load terms.")}</p> : null}
       {error ? <p className="mt-3 text-sm text-danger" role="alert">{planErrorText(error, "Could not update the term.")}</p> : null}
+      {userId ? <StaffIncludedHours className="mt-4" makerspaceId={makerspaceId} userId={userId} /> : null}
       <MemberLifecycleDetails membershipId={membershipId} makerspaceId={makerspaceId} features={features} />
     </>} />
   );

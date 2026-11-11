@@ -10,7 +10,7 @@ import { adminQueryState } from "./adminPresentation";
 import { DeploymentModules, ModuleSettingsRow, type ModulesResponse } from "./ModuleSettingsRows";
 
 const errorText = (error: unknown) => error instanceof StructuredApiError
-  ? error.detail ?? error.message : t`Couldn't change this module. Try again.`;
+  ? error.detail ?? error.message : t`Couldn't change this area. Try again.`;
 
 export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
   const client = useQueryClient();
@@ -44,7 +44,7 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
       await refresh();
       if (session !== toastSession()) return;
       const label = modules.data?.groups.flatMap(group => group.modules).find(module => module.key === key)?.label ?? key;
-      toast(`${label} ${action === "install" ? "installed" : "uninstalled"}.`, {
+      toast(action === "install" ? t`${label} switched on.` : t`${label} switched off.`, {
         undoKey: `module:${makerspaceId}:${key}`,
         undo: async () => { await changeModule({ key, action: action === "install" ? "uninstall" : "install" }); await refresh(); },
       });
@@ -52,7 +52,7 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
   });
   const groups = modules.data?.groups ?? [];
   const sections: SettingsLayoutSection[] = [
-    ...groups.map(group => ({ id: `modules-${group.key}`, title: `${group.label} · ${group.always_on ? "Always on" : `${group.installed_count} of ${group.module_count}`}`,
+    ...groups.map(group => ({ id: `modules-${group.key}`, title: group.always_on ? t`${group.label} · Always on` : t`${group.label} · ${group.installed_count} of ${group.module_count}`,
       description: group.description,
       rows: <>{group.modules.map(module => <div key={module.key} className="border-t border-line first:border-0">
         <ModuleSettingsRow module={module} pending={pendingModules.has(module.key)}
@@ -61,8 +61,8 @@ export function ModulesPanel({ makerspaceId }: { makerspaceId: number }) {
       </div>)}</> })),
     ...(modules.data?.deployment ? [{ id: "deployment", title: t`Deployment`, rows: <DeploymentModules deployment={modules.data.deployment} /> }] : []),
   ];
-  return <SettingsLayout header={{ title: t`Modules`, subtitle: t`Switch feature families on for this space. Turning one off keeps its data; turning it back on restores everything. Deleting data is a separate step only the platform administrator can take.` }}
+  return <SettingsLayout header={{ title: t`Areas & add-ons`, subtitle: t`Turn whole areas (Inventory, Machines, Events, Bookings, Shop) and add-ons (SMS, chat apps, analytics) on or off for this space. Turning one off hides it and keeps its data; turning it back on restores everything. Deleting data is a separate step only the platform administrator can take.` }}
     state={adminQueryState(modules, "modules")} isEmpty={groups.length === 0}
-    empty={{ message: t`No modules are available yet. Check the deployment configuration.` }}
+    empty={{ message: t`Nothing to switch on yet. Ask whoever runs your server to check its configuration.` }}
     sections={sections} />;
 }

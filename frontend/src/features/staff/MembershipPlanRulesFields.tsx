@@ -30,11 +30,11 @@ export function rulesFromPlan(plan: MembershipPlan): PlanRules {
   };
 }
 
-const money = /^\d+(\.\d{1,2})?$/;
+const money = /^\d+(\.\d{1,3})?$/;
 export function validateRules(rules: PlanRules): string | null {
   if (rules.plan_type === "fixed_end" && !rules.fixed_end_date) return "A fixed-end plan needs its end date.";
   for (const [value, label] of [[rules.renewal_amount, "renewal price"], [rules.joining_fee, "joining fee"]] as const) {
-    if (value && !money.test(value)) return `Enter the ${label} as a non-negative amount with at most two decimals.`;
+    if (value && !money.test(value)) return `Enter the ${label} as a non-negative amount with no more decimals than the currency has.`;
   }
   if (rules.rejoin_rule === "after_lapse" && !/^[1-9]\d*$/.test(rules.rejoin_after_days)) return "Say how many days away count as a lapse.";
   if (rules.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(rules.slug)) return "Use lowercase letters, digits and single hyphens in the link name.";

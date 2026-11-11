@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { SettingsQueryState } from "./SettingsQueryState";
-import { NotificationMuteTable } from "./NotificationMuteTable";
+import { muteStreamLabel, NotificationMuteTable } from "./NotificationMuteTable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest } from "../../lib/api";
@@ -48,17 +48,17 @@ export function NotificationMuteMatrix({ makerspaceId }: { makerspaceId: number 
   });
 
   if (rules.isLoading) {
-    return <SettingsQueryState query={rules} resource="mute matrix" />;
+    return <SettingsQueryState query={rules} resource={t`mute matrix`} />;
   }
 
   if (rules.error) {
-    return <SettingsQueryState query={rules} resource="mute matrix" />;
+    return <SettingsQueryState query={rules} resource={t`mute matrix`} />;
   }
 
   if (!rules.data) return null;
 
   return (
-    <SettingsQueryState query={rules} resource="mute matrix"><div className="mt-4 grid min-w-0 gap-6">
+    <SettingsQueryState query={rules} resource={t`mute matrix`}><div className="mt-4 grid min-w-0 gap-6">
       <NotificationChannelPreferences makerspaceId={makerspaceId} rules={rules.data} />
       {/* Full width like the channel matrix above: a half-width settings row squeezed these
           recipient-by-event tables into a sideways scroll from tablet up. */}
@@ -141,13 +141,13 @@ function matchesMute(mute: RuleMute, candidate: RuleMute) {
 }
 
 function streamLabel(stream: string) {
-  return humanize(stream);
+  return muteStreamLabel(stream);
 }
 
 function audienceLabel(audience: string) {
   if (audience === "requester") return t`Requester emails`;
   if (audience === "staff") return t`Staff emails`;
-  return `${humanize(audience)} emails`;
+  return t`${humanize(audience)} emails`;
 }
 
 function humanize(value: string) {

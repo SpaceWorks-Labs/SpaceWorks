@@ -14,13 +14,14 @@ import {
   type PaymentRow,
 } from "./paymentsApi";
 import { RefundReceiptFields, useRefundReceipt } from "./RefundReceiptFields";
+import { currencyExponent, paymentMethodLabel } from "../../lib/money";
 
-// Client-side mirror of `PaymentRefundRequestSerializer` (positive, two decimals) plus the
+// Client-side mirror of `PaymentRefundRequestSerializer` (positive, at most the currency's decimals) plus the
 // balance rule the service enforces under the row lock. The server is still the authority:
 // two staff refunding at once both pass here and one of them gets `refund_exceeds_balance`.
 export function validateRefundAmount(raw: string, remaining: number): string | null {
   const trimmed = raw.trim();
-  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return "Enter an amount with at most two decimals.";
+  if (!/^\d+(\.\d{1,3})?$/.test(trimmed)) return "Enter an amount with no more decimals than the currency has.";
   const amount = Number(trimmed);
   if (amount <= 0) return "Refund amount must be greater than zero.";
   if (amount > remaining) return "Refund amount cannot exceed the remaining balance.";
@@ -42,7 +43,7 @@ export function PaymentRefundDialog({
   const queryClient = useQueryClient();
   const remaining = remainingRefundable(payment);
   const offline = payment.status === "paid_offline";
-  const [amount, setAmount] = useState(remaining.toFixed(2));
+  const [amount, setAmount] = useState(remaining.toFixed(currencyExponent(payment.currency)));
   const [reason, setReason] = useState("");
   const receiptState = useRefundReceipt();
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -66,10 +67,10 @@ export function PaymentRefundDialog({
 
   return (
     <FlowLayout presentation="dialog" open onCancel={() => { if (!mutation.isPending) onClose(); }} state={{ status: "ready" }}
-      title={`${releaseDeposit ? "Release deposit" : "Refund payment"} ${formatMoney(payment.amount, payment.currency)}`}
+      title={releaseDeposit ? t`Release deposit ${formatMoney(payment.amount, payment.currency)}` : t`Refund payment ${formatMoney(payment.amount, payment.currency)}`}
       steps={[{ key: "receipt", label: t`Refund details`, state: "current" }]} current="receipt"
       footer={{ next: { label: releaseDeposit ? t`Record deposit release` : t`Refund ${formatMoney(Number.isFinite(Number(amount)) ? amount || "0" : "0", payment.currency)}`,
-        pending: mutation.isPending, pendingLabel: "Recording refund…", disabled: remaining <= 0,
+        pending: mutation.isPending, pendingLabel: t`Recording refund…`, disabled: remaining <= 0,
         onClick: () => document.getElementById("payment-refund-form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })) } }}
       work={<>
       <p className="text-sm text-muted">
@@ -128,7 +129,7 @@ function RefundList({ refunds }: { refunds: PaymentRow["refunds"] }) {
         {refund.corrected ? t`Replaced receipt · ` : refund.amends ? t`Corrected receipt · ` : ""}
         <RelativeTime date={refund.created_at} />
         {refund.reason ? ` · ${refund.reason}` : ""}
-        {refund.method ? ` · ${refund.method.replace(/_/g, " ")}` : ""}
+        {refund.method ? ` · ${paymentMethodLabel(refund.method)}` : ""}
         {refund.reference ? ` · ${refund.reference}` : ""}
         {refund.refunded_at ? <span> {t` · Returned `}<RelativeTime date={refund.refunded_at} /></span> : null}
       </>}

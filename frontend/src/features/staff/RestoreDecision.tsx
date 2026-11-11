@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { ErrorText, StatusPill } from "../../components/ui";
 import type { RestoreOperation } from "./backupApi";
+import { deploymentRestoreStageLabel } from "./backupLabels";
 
 export function RestoreDecision({ operation, onDecide, pending = false }: {
   operation: RestoreOperation;
@@ -10,7 +11,7 @@ export function RestoreDecision({ operation, onDecide, pending = false }: {
   const waiting = operation.stage === "quiesced" && operation.decision === "pending" && operation.decision_deadline_at;
   const seconds = waiting ? Math.max(0, Math.ceil((new Date(operation.decision_deadline_at!).getTime() - Date.now()) / 1000)) : 0;
   return <section className="rounded-xl border border-danger-line bg-panel p-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="title-section">{t`Restore review`}</h3><StatusPill label={operation.stage.replace(/_/g, " ")} tone="warn" /></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="title-section">{t`Restore review`}</h3><StatusPill label={deploymentRestoreStageLabel(operation.stage)} tone="warn" /></div>
     <p className="mt-2 text-sm text-muted">{t`${operation.restore_diff.tables_compared ?? 0} tables compared; ${operation.restore_diff.tables_changed ?? 0} differ.`}</p>
     <div className="mt-4 grid max-h-72 gap-3 overflow-auto">
       {operation.restore_diff.tables?.map(table => <details key={table.table} className="rounded-control border border-line bg-surface p-3">

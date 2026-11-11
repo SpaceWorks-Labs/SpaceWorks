@@ -23,8 +23,8 @@ export function RecoveryQuarantinePanel({ state, onAcknowledged }: { state: Reco
   return <CenteredCardLayout state={{ status: "ready" }} width={480}
     media={{ icon: "TriangleAlert", tone: "danger" }} eyebrow={t`Recovery quarantine`}
     title={t`Staff access is paused`} body={state.quarantine_reason}
-    primary={{ label: t`Lift quarantine`, tone: "danger", pending: acknowledge.isPending, pendingLabel: "Acknowledging…",
-      disabled: !confirmed, disabledReason: "Review and accept the residual risk first.", onClick: () => acknowledge.mutate() }}
+    primary={{ label: t`Lift quarantine`, tone: "danger", pending: acknowledge.isPending, pendingLabel: t`Acknowledging…`,
+      disabled: !confirmed, disabledReason: t`Review and accept the residual risk first.`, onClick: () => acknowledge.mutate() }}
     content={<div className="grid gap-4">
       <div className="rounded-xl border border-danger-line bg-panel p-4 text-sm text-danger">
         <p className="font-semibold">{t`Residual risk`}</p><p className="mt-2">{state.residual_risk}</p>

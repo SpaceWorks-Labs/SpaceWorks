@@ -50,12 +50,12 @@ export function NotificationDestinations({
   const usable = CHANNELS.filter((channel) => availableChannels.includes(channel.key));
 
   return (
-    <SettingsRow label={t`Rooms`}><section className="@container mt-6">
+    <SettingsRow label={t`Alert rooms`} helper={t`Chat rooms (Telegram, Slack and others) that receive staff alerts for this space.`}><section className="@container mt-6">
 
       <p className="mt-2 text-sm text-muted">
         {t`Each room is one chat destination. A room with no machines or categories selected receives everything; narrow it to send laser faults to the laser team and printer faults to the print room. Webhook URLs are stored encrypted and never shown again.`}</p>
 
-      <SettingsQueryState query={destinations} resource="notification rooms" />
+      <SettingsQueryState query={destinations} resource={t`notification rooms`} />
 
       <ul className="mt-3 grid gap-2">
         {(destinations.data ?? []).map((destination) => (
@@ -74,7 +74,7 @@ export function NotificationDestinations({
 
       {destinations.data?.length === 0 && !destinations.isLoading ? (
         <p className="mt-3 text-sm text-muted">
-          {t`No rooms yet. Alerts still go to the webhook saved in Chat webhooks (Email & integrations) until you add one.`}</p>
+          {t`No rooms yet. Alerts still go to the chat webhook saved under Settings › Integrations › Webhooks until you add one.`}</p>
       ) : null}
 
       {creating ? (
@@ -96,7 +96,7 @@ export function NotificationDestinations({
       )}
       {usable.length === 0 ? (
         <p className="mt-2 text-sm text-muted">
-          {t`No chat modules are installed for this makerspace.`}</p>
+          {t`No chat apps are switched on for this makerspace. Turn one on under Areas & add-ons.`}</p>
       ) : null}
     </section></SettingsRow>
   );

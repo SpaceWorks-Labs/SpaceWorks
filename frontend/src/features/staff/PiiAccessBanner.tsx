@@ -47,7 +47,7 @@ export function PiiAccessBanner({ makerspaceId, compact = false }: { makerspaceI
     return <div className="grid gap-3" aria-live="polite">
       <Callout size="banner" tone="warn" lead={`Personal data is visible to you until ${time(data.active.expires_at)}.`}
         body={t`Reason: ${data.active.reason}. This space's managers can see this in their audit log.`}
-        action={{ label: t`Close now`, onClick: () => close.mutate(), pending: close.isPending, pendingLabel: "Closing…" }} />
+        action={{ label: t`Close now`, onClick: () => close.mutate(), pending: close.isPending, pendingLabel: t`Closing…` }} />
       {close.error ? <ErrorText message={close.error.message} /> : null}
     </div>;
   }

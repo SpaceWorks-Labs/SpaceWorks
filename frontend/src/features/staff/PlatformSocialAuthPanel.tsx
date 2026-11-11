@@ -83,9 +83,9 @@ export function PlatformSocialAuthPanel({ embedded = false }: { embedded?: boole
       <p className="text-sm text-muted">
         {t`Platform-wide identities link to global accounts; makerspace permissions still come from each membership.`}</p>
       {settings.data ? <div className="mt-2 text-sm text-muted">
-        {settings.data.google_enabled ? <p>{t`Google: `}{[settings.data.google_web_client_id, settings.data.google_ios_client_id, settings.data.google_android_client_id].some((id) => id.trim()) ? t`Client IDs configured` : t`Not configured`}</p> : null}
-        {settings.data.apple_enabled ? <p>{t`Apple: `}{settings.data.apple_service_id.trim() || settings.data.apple_native_app_ids.length ? t`Audiences configured` : t`Not configured`}</p> : null}
-        {settings.data.github_enabled ? <p>{t`GitHub: `}{settings.data.github_client_id.trim() && settings.data.github_client_secret_set ? t`OAuth App configured` : t`Not configured`}</p> : null}
+        {settings.data.google_enabled ? <p>{[settings.data.google_web_client_id, settings.data.google_ios_client_id, settings.data.google_android_client_id].some((id) => id.trim()) ? t`Google: Client IDs configured` : t`Google: Not configured`}</p> : null}
+        {settings.data.apple_enabled ? <p>{settings.data.apple_service_id.trim() || settings.data.apple_native_app_ids.length ? t`Apple: Audiences configured` : t`Apple: Not configured`}</p> : null}
+        {settings.data.github_enabled ? <p>{settings.data.github_client_id.trim() && settings.data.github_client_secret_set ? t`GitHub: OAuth App configured` : t`GitHub: Not configured`}</p> : null}
         {!anyProvider ? <p>{t`No social sign-in provider was installed on this deployment.`}</p> : null}
       </div> : null}
       <div className="mt-4 grid gap-5 divide-y divide-line [&>*+*]:pt-5">

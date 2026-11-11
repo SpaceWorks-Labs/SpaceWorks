@@ -26,7 +26,11 @@ import { MembershipAdmissionReview, type ReviewMembershipRequest } from "./Membe
 import { FlowLayout } from "../../components/layouts/FlowLayout";
 import { ListLayout } from "../../components/layouts/ListLayout";
 import { MemberRow } from "./MemberRow";
+import { MemberActivityDrawer } from "./memberActivity/MemberActivityDrawer";
+import { listPlans, membershipPlanKeys } from "./membershipPlansApi";
+import { activeRosterFilters, ROSTER_FILTER_DEFAULTS, RosterFilters, rosterFilterQuery } from "./memberActivity/RosterFilters";
 import { MembershipLifecycleTab, lifecycleTabs } from "./membershipLifecycle/MembershipLifecycleTabs";
+import { CommunityMemberTab, communityMemberTabs } from "../community/staff/CommunityMemberTabs";
 import { BulkDecideBar } from "./membershipLifecycle/BulkDecideBar";
 import { FinancialYearSetting } from "./membershipLifecycle/FinancialYearSetting";
 import { assignableRoles, type MembershipRoles } from "./panels/roleSets";
@@ -49,13 +53,15 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
   const client = useQueryClient();
   const [params, setParams] = useSearchParams();
   const requestedSection = params.get("section") ?? "members";
-  const lifecycle = lifecycleTabs(enabledFeatures, membershipEnabled);
+  // Decision 223: Guests, Minors and Volunteering sit beside the lifecycle tabs, each behind its capability.
+  const lifecycle = [...lifecycleTabs(enabledFeatures, membershipEnabled), ...communityMemberTabs(enabledFeatures, membershipEnabled)];
   const availableSections = ["members", "requests", ...(presenceEnabled ? ["presence"] : []), ...(membershipEnabled && canManageMakerspace ? ["plans"] : []), ...(canManageMakerspace ? ["waivers"] : []), ...lifecycle.map((item) => item.key)];
   const tab = availableSections.includes(requestedSection) ? requestedSection : "members";
   const setTab = (section: string) => { const next = new URLSearchParams(params); next.set("section", section); setParams(next, { replace: true }); };
   const [inviteOpen, setInviteOpen] = useState(false);
   const key = ["members", makerspaceId];
-  const list = useUrlListState({ id: "", q: "", status: "", ordering: "user__username", page: "1", requestPage: "1", requestState: "", requestOrdering: "-created_at" });
+  const list = useUrlListState({ id: "", q: "", ...ROSTER_FILTER_DEFAULTS, ordering: "user__username", page: "1", requestPage: "1", requestState: "", requestOrdering: "-created_at" });
+  const rosterFilters = Object.fromEntries(Object.keys(ROSTER_FILTER_DEFAULTS).map(key => [key, list.values[key as keyof typeof list.values]])) as typeof ROSTER_FILTER_DEFAULTS;
   const rosterPage = list.page;
   const setRosterPage = list.setPage;
   const requestPage = Number(list.values.requestPage);
@@ -64,7 +70,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
   const [decision, setDecision] = useState<{ id: number; kind: "member" | "request"; title: string } | null>(null);
   const roster = useQuery({
     queryKey: [...key, "roster", list.query],
-    queryFn: () => staffRequest<RosterResponse>(`/admin/memberships?makerspace_id=${makerspaceId}&page=${rosterPage}&${new URLSearchParams({ q: list.values.q, status: list.values.status, ordering: list.values.ordering, id: list.values.id })}`),
+    queryFn: () => staffRequest<RosterResponse>(`/admin/memberships?makerspace_id=${makerspaceId}&page=${rosterPage}&${new URLSearchParams([...rosterFilterQuery(rosterFilters), ["q", list.values.q], ["ordering", list.values.ordering], ["id", list.values.id]])}`),
   });
   const requests = useQuery({
     queryKey: [...key, "requests", requestPage, membershipEnabled, list.values.requestState, list.values.requestOrdering],
@@ -77,6 +83,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
   const presencePolicy = useQuery({ queryKey: ["makerspace-settings", makerspaceId],
     queryFn: () => staffRequest<{ presence_preset_minutes: number[] }>(`/admin/makerspaces/${makerspaceId}`), enabled: presenceEnabled });
   const configuredPresets = presencePolicy.data?.presence_preset_minutes;
+  const plans = useQuery({ queryKey: membershipPlanKeys.plans(makerspaceId), queryFn: () => listPlans(makerspaceId), enabled: membershipEnabled && canManageMakerspace });
   const roles = useQuery({ queryKey: [...key, "roles"], queryFn: () => staffRequest<StaffRole[]>(`/admin/makerspaces/${makerspaceId}/roles`) });
   const grantableRoles = assignableRoles(roles.data ?? [], actorActions, isSuperadmin);
   const [roleId, setRoleId] = useState<number | null>(null);
@@ -123,14 +130,14 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       ...(canManageMakerspace ? [{ key: "waivers", label: t`Waivers`, href: "#waivers" }] : []),
       ...lifecycle,
     ];
-  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: t`Couldn't load ${tab === "requests" ? "requests" : "members"}. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
+  return <ListLayout state={{ status: querySection && activeQuery.isLoading ? "loading" : querySection && activeQuery.isError ? "error" : "ready", error: tab === "requests" ? t`Couldn't load requests. Try again.` : t`Couldn't load members. Try again.`, onRetry: () => { void activeQuery.refetch(); } }}
     tabs={sectionTabs} activeTab={tab} onTabChange={setTab}
     header={{ title: t`Members`, subtitle: t`Membership, permissions and the people making things here.`, primary: { label: t`Invite member`, onClick: () => setInviteOpen(true) } }}
     stats={[{ label: t`Members`, value: roster.data?.count ?? 0 }, { label: membershipEnabled ? t`Membership requests` : t`Invitations`, value: requests.data?.count ?? 0 }, ...(presenceEnabled ? [{ label: t`Currently present`, value: presence.data?.count ?? 0 }] : [])]}
     empty={{ message: t`No members yet. Invite someone to your space.` }}
     body={{ kind: "rows", rows: <>
     {tab === "members" ? <section aria-label={t`Member roster`} className="grid gap-3">
-      <ListViewControls state={list} makerspaceId={makerspaceId} entity="members" searchLabel="Search members" sorts={[["user__username", "Username"], ["-user__username", "Username descending"], ["status", "Status"]]} activeCount={Number(Boolean(list.values.status))} controls={<label className="grid gap-1 text-sm">{t`Status`}<select className="desk-input max-w-full" value={list.values.status} onChange={(event) => list.setFilter("status", event.target.value)}><option value="">{t`All`}</option><option value="active">{t`Active`}</option><option value="revoked">{t`Revoked`}</option></select></label>} />
+      <ListViewControls state={list} makerspaceId={makerspaceId} entity="members" sorts={[["user__username", "Username"], ["-user__username", "Username descending"], ["status", "Status"], ["-created_at", "Newest members"], ["created_at", "Oldest members"]]} searchLabel="Search by name or email" activeCount={activeRosterFilters(rosterFilters)} controls={<RosterFilters values={rosterFilters} roles={roles.data ?? []} plans={plans.data ?? []} onChange={list.setFilter} />} />
       <p className="mb-4 text-sm text-muted">{t`Membership, referral and verification delegation, waiver compliance, and active presence for this makerspace.`}</p>
       {rosterRows.map((row) => <MemberRow
         key={row.id}
@@ -157,7 +164,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
     </section> : null}
     {tab === "requests" ? <Panel title={membershipEnabled ? t`Membership requests` : t`Invitations`}>
       <div className="mb-3 flex flex-wrap gap-3">
-        <label className="text-xs text-muted">{t`Request state`}<select className="desk-input max-w-full" value={list.values.requestState} onChange={(event) => list.update({ requestState: event.target.value, requestPage: "1" }, false)}><option value="">{t`All`}</option>{["requested", "invited", "awaiting_vouches", "awaiting_payment", "expired", "canceled", "active", "revoked"].map((value) => <option key={value}>{value}</option>)}</select></label>
+        <label className="text-xs text-muted">{t`Request state`}<select className="desk-input max-w-full" value={list.values.requestState} onChange={(event) => list.update({ requestState: event.target.value, requestPage: "1" }, false)}><option value="">{t`All`}</option>{["requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested", "expired", "canceled", "active", "revoked"].map((value) => <option key={value}>{value}</option>)}</select></label>
         <label className="text-xs text-muted">{t`Request sort`}<select className="desk-input max-w-full" value={list.values.requestOrdering} onChange={(event) => list.update({ requestOrdering: event.target.value, requestPage: "1" }, false)}><option value="-created_at">{t`Newest`}</option><option value="created_at">{t`Oldest`}</option><option value="state">{t`State`}</option></select></label>
       </div>
       <Field label={t`Approve as`}><select className="desk-input max-w-full" value={selectedRole ?? ""} onChange={event => setRoleId(Number(event.target.value))}>{grantableRoles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</select></Field>
@@ -168,6 +175,7 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
         manageable={canManageMakerspace || !row.assigned_role || Boolean(roles.data?.some((role) => role.id === row.assigned_role?.id))}
         canViewFinance={canViewFinance} canRecordPayment={canRecordPayment || canManageMakerspace} canWaive={canManageMakerspace}
         approvePending={approve.isPending} declinePending={revokeRequest.isPending} selectedRole={selectedRole}
+        askChanges={membershipEnabled && enabledFeatures.includes("membership.ask_changes")} onChanged={refresh}
         onApprove={() => approve.mutate(row.id)} onDecline={() => { revokeRequest.reset(); setDecision({ id: row.id, kind: "request", title: row.state === "invited" ? t`Cancel invitation` : t`Decline membership request` }); }} />)}
       {requests.isLoading ? <p className="text-sm text-muted">{t`Loading requests…`}</p> : null}
       {requests.isError ? <p role="alert" className="text-sm text-danger">{membershipErrorText(requests.error)}</p> : null}
@@ -180,13 +188,15 @@ export function MembersPanel({ makerspaceId, membershipEnabled, presenceEnabled 
       : presencePolicy.isError ? <p role="alert">{t`Couldn't load check-in durations. `}<button type="button" onClick={() => { void presencePolicy.refetch(); }}>{t`Try again`}</button></p>
       : <p role="status">{t`Loading check-in durations…`}</p> : null}
     {canManageMakerspace && tab === "waivers" ? <MembershipWaiverPanel makerspaceId={makerspaceId} /> : null}
-    {lifecycle.some((item) => item.key === tab) ? <MembershipLifecycleTab tab={tab} makerspaceId={makerspaceId} slug={makerspaceSlug} features={enabledFeatures} canManageMakerspace={canManageMakerspace} standing={params.get("standing") ?? ""} /> : null}
+    {communityMemberTabs(enabledFeatures, membershipEnabled).some((item) => item.key === tab) ? <CommunityMemberTab tab={tab} makerspaceId={makerspaceId} features={enabledFeatures} canManageMakerspace={canManageMakerspace} /> : null}
+    {lifecycle.some((item) => item.key === tab) ? <MembershipLifecycleTab tab={tab} makerspaceId={makerspaceId} slug={makerspaceSlug} features={enabledFeatures} canManageMakerspace={canManageMakerspace} standing={params.get("standing") ?? ""} canManageUnits={isSuperadmin || actorActions.includes("manage_member_units")} canManageCards={isSuperadmin || actorActions.includes("manage_member_cards")} /> : null}
     {error ? <p className="text-sm text-danger" role="alert">{membershipErrorText(error)}</p> : null}
   </> }} detail={<>
+    <MemberActivityDrawer makerspaceId={makerspaceId} />
     <FlowLayout presentation="dialog" open={inviteOpen} title={t`Invite member`} state={{ status: "ready" }} steps={[{ key: "invite", label: t`Invitation`, state: "current" }]} current="invite" onCancel={() => setInviteOpen(false)}
-      footer={{ next: { label: t`Invite`, pending: invite.isPending, disabled: !inviteEmail || !selectedRole, disabledReason: "Enter an email and choose a role.", onClick: () => invite.mutate(undefined, { onSuccess: () => setInviteOpen(false) }) } }}
+      footer={{ next: { label: t`Invite`, pending: invite.isPending, disabled: !inviteEmail || !selectedRole, disabledReason: t`Enter an email and choose a role.`, onClick: () => invite.mutate(undefined, { onSuccess: () => setInviteOpen(false) }) } }}
       work={<div className="grid gap-4"><Field label={t`Invite role`}><select className="desk-input max-w-full" value={selectedRole ?? ""} onChange={event => setRoleId(Number(event.target.value))}>{grantableRoles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</select></Field><Field label={t`Invite email`}><input className="desk-input" type="email" value={inviteEmail} onChange={event => setInviteEmail(event.target.value)} /></Field>{invite.error ? <p role="alert" className="text-danger">{membershipErrorText(invite.error)}</p> : null}</div>} />
     {decision ? <MembershipReasonDialog key={`${decision.kind}-${decision.id}`} title={decision.title} pending={revoke.isPending || revokeRequest.isPending} error={(decision.kind === "member" ? revoke.error : revokeRequest.error) ? membershipErrorText(decision.kind === "member" ? revoke.error : revokeRequest.error) : null} onClose={() => setDecision(null)} onConfirm={(reason) => (decision.kind === "member" ? revoke : revokeRequest).mutate({ id: decision.id, reason })} /> : null}
-    {termsMember ? <MemberTermsDialog key={termsMember.id} makerspaceId={makerspaceId} features={enabledFeatures} membershipId={termsMember.id} memberName={termsMember.user.display_name || termsMember.user.username} onClose={() => setTermsMember(null)} /> : null}
+    {termsMember ? <MemberTermsDialog key={termsMember.id} makerspaceId={makerspaceId} features={enabledFeatures} membershipId={termsMember.id} userId={termsMember.user.id} memberName={termsMember.user.display_name || termsMember.user.username} onClose={() => setTermsMember(null)} /> : null}
   </>} />;
 }

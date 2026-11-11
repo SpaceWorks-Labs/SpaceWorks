@@ -8,6 +8,7 @@ import { staffRequest } from "../../lib/api";
 import { useScopeOptions } from "./NotificationDestinations";
 import { EventRecipients } from "./NotificationRecipientEvent";
 import type { RecipientRulesResponse } from "./notificationDestinationTypes";
+import { notificationEventLabel } from "../notifications/notificationEventLabels";
 
 const FEATURE_LABELS: Record<string, string> = {
   events: t`Events`,
@@ -56,7 +57,7 @@ export function NotificationRecipientPicker({
 
   return (
     <section className="mt-6" aria-labelledby="notification-recipients-heading"><h3 id="notification-recipients-heading" className="title-section">{t`Who gets notified`}</h3>
-    <SettingsQueryState query={data} resource="recipient"><SettingsRow label={t`Recipients`}><div className="@container min-w-0">
+    <SettingsQueryState query={data} resource={t`recipient`}><SettingsRow label={t`Recipients`} helper={t`Which staff get each kind of alert.`}><div className="@container min-w-0">
 
       <p className="mt-2 text-sm text-muted">
         {delegated
@@ -101,7 +102,7 @@ export function NotificationRecipientPicker({
                 value={current.event}
               >
                 {events.map((event) => (
-                  <option key={event} value={event}>{event.replace(/_/g, " ")}</option>
+                  <option key={event} value={event}>{notificationEventLabel(event)}</option>
                 ))}
               </select>
             </label>

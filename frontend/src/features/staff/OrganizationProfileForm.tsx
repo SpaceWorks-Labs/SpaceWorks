@@ -39,7 +39,7 @@ export function OrganizationProfileForm({ organization }: { organization: Organi
     <form className="grid divide-y divide-line" onSubmit={submit}>
       <div className="mb-3">
         <h3 className="title-section">{t`Public profile`}</h3>
-        <p className="mt-1 text-sm text-muted">{t`Controls the organization directory page. Logo upload remains platform-managed.`}</p>
+        <p className="mt-1 text-sm text-muted">{t`Controls the organization directory page. The platform operator handles logo uploads.`}</p>
       </div>
         <SettingsRow label={t`Name`} htmlFor="organization-name">
           <input id="organization-name" className="desk-input w-full" maxLength={200} disabled={!allowed} value={values.name} onChange={(event) => setValues({ ...values, name: event.target.value })} />

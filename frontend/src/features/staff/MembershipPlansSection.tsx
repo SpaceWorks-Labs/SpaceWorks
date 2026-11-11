@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { EmptyState, Field, ListRow, StatusPill } from "../../components/ui";
@@ -23,6 +23,11 @@ import { PlanPriceNote } from "./pricing/PricingNote";
 import { useStaffChargesOn } from "./useStaffChargesOn";
 import { MembershipRenewalFields, emptyRenewal, planRenewal, renewalInput, validateRenewal } from "./MembershipRenewalFields";
 import { MembershipPlanRulesFields, emptyRules, rulesFromPlan, rulesInput, validateRules } from "./MembershipPlanRulesFields";
+import { MembershipIncludedHoursFields, emptyIncludedHours, includedHoursInput, planIncludedHours, validateIncludedHours } from "./MembershipIncludedHoursFields";
+import { StaffListContext } from "./StaffListContext";
+import { PlanUnitsField } from "./units/PlanUnitsField";
+import { PlanSacField, planSacOn, validatePlanSac } from "../finance/PlanSacField";
+import { EMPTY_JOIN_FIELDS, JoinFieldsSection, joinPlanFields, joinPlanInput, type JoinPlanFields } from "./JoinFieldsSection";
 
 type PlanForm = {
   name: string;
@@ -31,14 +36,16 @@ type PlanForm = {
   amount: string;
   currency: string;
   is_active: boolean;
+  sac_code?: string; // parity O-B3, sent only while `billing.plan_sac` is on
+  join?: JoinPlanFields; // parity O-B2, each part sent only while its switch is on
 };
 
-const EMPTY: PlanForm = { name: "", interval: "monthly", custom_days: "", amount: "0.00", currency: "usd", is_active: true };
+const EMPTY: PlanForm = { name: "", interval: "monthly", custom_days: "", amount: "0.00", currency: "usd", is_active: true, sac_code: "", join: EMPTY_JOIN_FIELDS };
 
 /** Mirrors `MembershipPlanSerializer.validate`: custom days only with the custom interval. */
 export function validatePlanForm(form: PlanForm): string | null {
   if (!form.name.trim()) return "Give the plan a name.";
-  if (!/^\d+(\.\d{1,2})?$/.test(form.amount.trim())) return "Enter a non-negative amount with at most two decimals.";
+  if (!/^\d+(\.\d{1,3})?$/.test(form.amount.trim())) return "Enter a non-negative amount with no more decimals than the currency has.";
   if (!/^[A-Za-z]{3}$/.test(form.currency.trim())) return "Use a three-letter ISO 4217 currency code.";
   if (form.interval === "custom_days" && !/^[1-9]\d*$/.test(form.custom_days.trim())) {
     return "A custom interval needs a whole number of days (1 or more).";
@@ -66,13 +73,20 @@ function toForm(plan: MembershipPlan): PlanForm {
     amount: plan.amount,
     currency: plan.currency,
     is_active: plan.is_active,
+    sac_code: plan.sac_code ?? "",
+    join: joinPlanFields(plan),
   };
 }
 
 export function MembershipPlansSection({ makerspaceId, features = [] }: { makerspaceId: number; features?: string[] }) {
   const planRulesOn = features.includes("membership.plan_rules");
   const publicPlansOn = features.includes("membership.public_plans");
+  const sacOn = planSacOn(features);
   const [rules, setRules] = useState(emptyRules);
+  const [hours, setHours] = useState(emptyIncludedHours);
+  // Included hours apply only while the space runs bookings (machine time also needs machines).
+  const modules = useContext(StaffListContext).makerspace?.enabled_modules ?? [];
+  const pools = { booking: modules.includes("bookings"), machine: modules.includes("bookings") && modules.includes("machines") };
   const client = useQueryClient();
   const plans = useQuery({ queryKey: membershipPlanKeys.plans(makerspaceId), queryFn: () => listPlans(makerspaceId) });
   const [editing, setEditing] = useState<MembershipPlan | null>(null);
@@ -80,7 +94,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
   const [problem, setProblem] = useState<string | null>(null);
   const [renewal, setRenewal] = useState(emptyRenewal);
   const refresh = () => client.invalidateQueries({ queryKey: membershipPlanKeys.plans(makerspaceId) });
-  const planInput = () => ({ ...toInput(form), ...renewalInput(renewal), ...rulesInput(rules, planRulesOn, publicPlansOn) }) as MembershipPlanInput;
+  const planInput = () => ({ ...toInput(form), ...renewalInput(renewal), ...rulesInput(rules, planRulesOn, publicPlansOn), ...includedHoursInput(hours, pools), ...(sacOn ? { sac_code: (form.sac_code ?? "").trim() } : {}), ...joinPlanInput(form.join ?? EMPTY_JOIN_FIELDS, features) }) as MembershipPlanInput;
   const save = useMutation({
     mutationFn: () => {
       const input = planInput();
@@ -91,6 +105,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
       setForm(EMPTY);
       setRenewal(emptyRenewal);
       setRules(emptyRules);
+      setHours(emptyIncludedHours);
       refresh();
     },
   });
@@ -108,7 +123,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
   // #184: with membership charges off no price is asked for or shown (stored values stay as they are).
   const chargesOn = useStaffChargesOn("membership", makerspaceId);
   const submit = async () => {
-    const next = validatePlanForm(form) ?? validateRenewal(renewal) ?? validateRules(rules);
+    const next = validatePlanForm(form) ?? validateRenewal(renewal) ?? validateRules(rules) ?? (pools.booking ? validateIncludedHours(hours) : null) ?? (sacOn ? validatePlanSac(form.sac_code ?? "") : null);
     setProblem(next);
     if (next) return;
     if (editing && !(await drop.check(`/admin/membership-plans/${editing.id}`, "PATCH", planInput()))) return;
@@ -119,6 +134,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
     setForm(toForm(plan));
     setRenewal(planRenewal(plan));
     setRules(rulesFromPlan(plan));
+    setHours(planIncludedHours(plan));
     setProblem(null);
   };
   const cancelEdit = () => {
@@ -126,6 +142,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
     setForm(EMPTY);
     setRenewal(emptyRenewal);
     setRules(emptyRules);
+    setHours(emptyIncludedHours);
     setProblem(null);
   };
   const error = problem ?? (save.error ? planErrorText(save.error, "Could not save the plan.") : null)
@@ -189,6 +206,7 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         <Field label={t`Currency`}>
           <input className="desk-input" maxLength={3} value={form.currency} onChange={(event) => set("currency", event.target.value.toLowerCase())} />
         </Field></> : null}
+        {sacOn ? <PlanSacField value={form.sac_code ?? ""} onChange={(value) => set("sac_code", value)} /> : null}
         <div className="flex flex-wrap items-end gap-2">
           <button className="desk-button-primary" type="submit" disabled={save.isPending}>
             {save.isPending ? t`Saving…` : editing ? t`Save plan` : t`Create plan`}
@@ -197,7 +215,10 @@ export function MembershipPlansSection({ makerspaceId, features = [] }: { makers
         </div>
         <MembershipRenewalFields value={renewal} chargesOn={chargesOn} onChange={(value) => { setRenewal(value); setProblem(null); }} />
         <MembershipPlanRulesFields value={rules} onChange={(value) => { setRules(value); setProblem(null); }} planRulesOn={planRulesOn} publicPlansOn={publicPlansOn} chargesOn={chargesOn} />
+        <JoinFieldsSection value={form.join ?? EMPTY_JOIN_FIELDS} features={features} onChange={(value) => set("join", value)} />
+        <MembershipIncludedHoursFields value={hours} pools={pools} onChange={(value) => { setHours(value); setProblem(null); }} />
       </form>
+      {editing && features.includes("membership.units") ? <div className="mt-4"><PlanUnitsField key={editing.id} makerspaceId={makerspaceId} planId={editing.id} planName={editing.name} /></div> : null}
       {error ? <p className="mt-2 text-sm text-danger" role="alert">{error}</p> : null}
       {drop.dialog}
     </Panel>

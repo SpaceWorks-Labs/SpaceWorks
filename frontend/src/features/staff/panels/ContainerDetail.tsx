@@ -10,6 +10,7 @@ import { staffRequest } from "../../../lib/api";
 import { WarrantySection } from "../WarrantySection";
 import { invalidateContainerViews } from "../queryInvalidation";
 import { useStaffGet } from "./shared";
+import { assetStatusLabel } from "./InventoryPanelShared";
 import { QrImage } from "./QrImage";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
 import { inventoryQueryState } from "./inventoryPresentation";
@@ -69,7 +70,7 @@ export function ContainerDetail({ container, makerspaceId, canEditInventory, kit
           <h4 className="title-section">{t`Products`}</h4>
           {contents.error instanceof Error ? <p className="text-xs text-danger">{contents.error.message}</p> : null}
           {!contents.isLoading && !contents.error && contents.data?.products.length ? contents.data.products.map((product) => (
-            <p key={product.id} className="text-xs text-muted">{product.name} - {product.available_quantity} available</p>
+            <p key={product.id} className="text-xs text-muted">{t`${product.name} - ${product.available_quantity} available`}</p>
           )) : !contents.isLoading && !contents.error ? <p className="text-xs text-muted">{t`This container is empty.`}</p> : null}
           <h4 className="title-section mt-1">{t`Asset units`}</h4>
           {!contents.isLoading && !contents.error && contents.data?.assets.length ? contents.data.assets.map((asset) => (
@@ -105,7 +106,7 @@ function AssetQrRow({ asset, canEditInventory, warrantyEnabled }: { asset: { id:
   return (
     <div className="min-w-0 rounded-md border border-line bg-surface p-2">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-        <span className="min-w-0 [overflow-wrap:anywhere]">{asset.asset_tag}</span><StatusPill label={asset.status.replace(/_/g, " ")} />
+        <span className="min-w-0 [overflow-wrap:anywhere]">{asset.asset_tag}</span><StatusPill label={assetStatusLabel(asset.status)} />
         <button type="button" className="desk-button-ghost" disabled={show.isPending} onClick={() => show.mutate()}>{qrId ? t`QR shown` : t`Show QR`}</button>
         {warrantyEnabled ? <OverflowMenu label={t`Actions for ${asset.asset_tag}`} actions={[{ label: showWarranty ? t`Hide warranty` : t`Warranty`, onClick: () => setShowWarranty(value => !value) }]} /> : null}
         {qrId ? <div className="basis-full"><div className="w-40 max-w-full"><QrImage qrId={qrId} label={asset.asset_tag} /></div></div> : null}

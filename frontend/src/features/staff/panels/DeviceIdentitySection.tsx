@@ -70,7 +70,7 @@ export function DeviceIdentitySection({ device, onGrant }: { device: Device; onG
     <p role="status">{action.isPending ? t`Saving…` : action.isSuccess ? t`Device updated.` : ""}</p>
     {action.error ? <p role="alert">{t`Device change failed. Please retry.`}</p> : null}
     <DangerZone title={t`Revoke device`} consequence="Stops signed requests immediately. Enroll the device again to reactivate it."
-      action={{ label: t`Revoke device`, disabled: action.isPending || device.status === "revoked", disabledReason: device.status === "revoked" ? "This device is already revoked." : "Wait for the current change to finish.", onClick: () => setConfirmRevoke(true) }} />
+      action={{ label: t`Revoke device`, disabled: action.isPending || device.status === "revoked", disabledReason: device.status === "revoked" ? t`This device is already revoked.` : t`Wait for the current change to finish.`, onClick: () => setConfirmRevoke(true) }} />
     <ConfirmDialog open={confirmRevoke} onCancel={() => setConfirmRevoke(false)} title={t`Revoke device`}
       onConfirm={() => action.mutate("revoke")} pending={action.isPending} tone="danger"
       message={t`This immediately stops signed requests from this device. Re-enrollment is required to activate it again.`} />

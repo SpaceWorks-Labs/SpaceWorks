@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import { plural } from "../../../lib/plural";
+import { plural, t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -40,7 +39,7 @@ export function verificationVerdict(run: VerificationRun): string {
     && !c.unattested_count && !c.mac_unavailable_count && !c.unbatched_count && !c.batch_unavailable_count
     && c.local_batch_verified_count === c.row_count && c.chain_status === "locally_verified"
     && c.anchor_status === "externally_anchored" && c.externally_anchored_count === c.row_count;
-  return full ? "All entries fully verified." : "No invalid entries found; verification coverage is incomplete.";
+  return full ? t`All entries fully verified.` : t`No invalid entries found; verification coverage is incomplete.`;
 }
 
 function gaps(c: Coverage): string[] {
@@ -114,7 +113,7 @@ export function AuditVerificationStatus({
       ) : null}
       {run?.terminal ? (
         <p className="mt-1 text-xs text-muted">
-          {t`${plural(run.coverage.row_count, "row")} · ${run.coverage.mac_valid_count} MAC-valid ·${" "}${run.coverage.local_batch_verified_count} in a verified batch · chain ${run.coverage.chain_status} · anchor ${run.coverage.anchor_status.replace("_", " ")}`}
+          {t`${plural(run.coverage.row_count, { one: "# row", other: "# rows" })} · ${run.coverage.mac_valid_count} MAC-valid ·${" "}${run.coverage.local_batch_verified_count} in a verified batch · chain ${run.coverage.chain_status} · anchor ${run.coverage.anchor_status.replace("_", " ")}`}
         </p>
       ) : null}
     </div>

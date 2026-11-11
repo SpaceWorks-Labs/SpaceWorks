@@ -13,7 +13,7 @@ export function markBoughtError(error: unknown) {
   if (error instanceof StructuredApiError) {
     if (error.status === 403) return t`You can't record spending for this item. Ask a manager who looks after this area's money.`;
     if (error.code === "ledger_source_conflict") return `This purchase is already in the finance ledger with a different amount or currency. ${error.detail ?? ""}`.trim();
-    if (error.code === "receipt_invalid") return t`${error.detail ?? "The receipt could not be used."} Choose the file again and retry.`;
+    if (error.code === "receipt_invalid") return error.detail ? t`${error.detail} Choose the file again and retry.` : t`The receipt could not be used. Choose the file again and retry.`;
     return error.message;
   }
   return error instanceof Error ? error.message : t`Couldn't mark it bought. Try again.`;
@@ -43,12 +43,12 @@ export function MarkBoughtDialog({ item, makerspaceId, vendorsEnabled, onClose, 
     onSuccess: onDone,
   });
   const set = (key: keyof typeof form) => (event: { target: { value: string } }) => setForm({ ...form, [key]: event.target.value });
-  const ready = /^\d+(\.\d{1,2})?$/.test(form.amount.trim()) && Number(form.amount) > 0 && (!needsRefill || Number(form.refill_amount) > 0);
+  const ready = /^\d+(\.\d{1,3})?$/.test(form.amount.trim()) && Number(form.amount) > 0 && (!needsRefill || Number(form.refill_amount) > 0);
   return <Modal open onClose={onClose} title={t`Mark ${item.name} bought`}>
     <form className="grid gap-4" onSubmit={event => { event.preventDefault(); if (ready) save.mutate(); }}>
       <p className="text-sm text-muted">{t`This records what was paid in the finance ledger and moves the item to Received. Nothing is paid out.`}</p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={t`Amount paid`}><input className="desk-input" inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,2})?" value={form.amount} onChange={set("amount")} /></Field>
+        <Field label={t`Amount paid`}><input className="desk-input" inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,3})?" value={form.amount} onChange={set("amount")} /></Field>
         <Field label={t`Currency`} hint={t`Leave blank for the space's currency.`}><input className="desk-input" maxLength={3} placeholder={t`e.g. INR`} value={form.currency} onChange={set("currency")} /></Field>
         <Field label={t`Paid by`}><select className="desk-input" value={form.method} onChange={set("method")}>
           {METHODS.map(method => <option key={method} value={method}>{words(method)}</option>)}</select></Field>

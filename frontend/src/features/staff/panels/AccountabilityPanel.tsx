@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useId, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -11,7 +11,9 @@ import { ProblemReportCard } from "./ProblemReportCard";
 import { ListLayout } from "../../../components/layouts";
 import { opsQueryState, opsStatusLabel, useOpsTabs } from "../opsPresentation";
 
-export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: Makerspace; isSuperadmin: boolean }) {
+export function AccountabilityPanel({ makerspace, isSuperadmin, inventoryView = false }: { makerspace: Makerspace; isSuperadmin: boolean;
+  /** IN8 (decision 248): the Inventory Manager's read-only view: overdue and repeat damage, no restrictions or problem reports. */
+  inventoryView?: boolean }) {
   const queryClient = useQueryClient();
   const restrictionFormId = useId();
   const [restrictionTarget, setRestrictionTarget] = useState<Pick<Offender, "requester_id" | "username"> | null>(null);
@@ -23,9 +25,9 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
   const tabs = useOpsTabs("section", [
     { key: "all", label: t`All` },
     { key: "overdue", label: t`Overdue`, count: data?.overdue.length },
-    { key: "problems", label: t`Problems`, count: data?.problem_reports.length },
+    ...(inventoryView ? [] : [{ key: "problems", label: t`Problems`, count: data?.problem_reports.length }]),
     { key: "offenders", label: t`Repeat offenders`, count: data?.repeat_offenders.length },
-    { key: "restricted", label: t`Restricted`, count: data?.restrictions.length },
+    ...(inventoryView ? [] : [{ key: "restricted", label: t`Restricted`, count: data?.restrictions.length }]),
   ], "all");
   const section = tabs.active;
 
@@ -36,6 +38,7 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
     refresh();
     invalidateInventoryViews(queryClient, makerspace.id, makerspace.slug);
     queryClient.invalidateQueries({ queryKey: ["needs-fix-shelf", makerspace.id] });
+    queryClient.invalidateQueries({ queryKey: ["problem-reports", makerspace.id] });
   };
   const restrict = useMutation({
     mutationFn: ({ userId, reason }: { userId: number; reason: string }) =>
@@ -72,18 +75,18 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
     offenders: "No damage or loss on record against a named person.", restricted: "No one is restricted here." }[section]!;
   const status = (value: string) => <StatusPill label={opsStatusLabel(value)} tone={value === "active" ? "success" : "danger"} />;
   return <div onClickCapture={tabs.onClickCapture}>
-    <ListLayout header={{ title: t`Accountability`, subtitle: t`Late, lost or damaged — and who it's tied to.` }}
+    <ListLayout header={{ title: t`Accountability`, subtitle: inventoryView ? t`Overdue loans and repeat damage, read-only. Restrictions are handled by whoever manages members.` : t`Late, lost or damaged — and who it's tied to.` }}
       state={opsQueryState(report, "accountability")} tabs={tabs.tabs} activeTab={section}
       stats={[
         { label: t`Overdue loans`, value: data?.overdue.length ?? 0, href: tabs.href("overdue") },
-        { label: t`Open problems`, value: data?.problem_reports.length ?? 0, href: tabs.href("problems") },
+        ...(inventoryView ? [] : [{ label: t`Open problems`, value: data?.problem_reports.length ?? 0, href: tabs.href("problems") }]),
         { label: t`Repeat offenders`, value: data?.repeat_offenders.length ?? 0, href: tabs.href("offenders") },
-        { label: t`Restricted`, value: data?.restrictions.length ?? 0, href: tabs.href("restricted") },
+        ...(inventoryView ? [] : [{ label: t`Restricted`, value: data?.restrictions.length ?? 0, href: tabs.href("restricted") }]),
       ]} isEmpty={!selectedCount && !(["all", "offenders"].includes(section) && hasAnonymous)}
       empty={{ message: empty }} body={{ kind: "rows", rows: <>
         {on("overdue") ? <>{heading("Overdue loans")}{data?.overdue.map(row => <ListRow key={row.type + "-" + row.reference_id}
           title={row.label || "(unnamed)"} identity={{ kind: "avatar", name: row.requester_username, seed: row.requester_username }}
-          meta={row.requester_username + " · " + (row.type === "direct" ? "Direct handout" : "Request")}
+          meta={row.requester_username + " · " + (row.type === "direct" ? t`Direct handout` : t`Request`)}
           right={<div className="flex flex-wrap items-center gap-3"><StatusPill label={"Overdue " + row.days_overdue + " d"} tone="danger" />
             {row.type === "request" ? <a className="desk-button" href={"/m/" + makerspace.slug + "/admin/requests?id=" + row.reference_id}>{t`Open loan`}</a> : null}</div>} />)}
           {data?.truncated.overdue ? <p className="text-sm text-muted">{t`Showing the earliest overdue loans only.`}</p> : null}</> : null}
@@ -94,7 +97,7 @@ export function AccountabilityPanel({ makerspace, isSuperadmin }: { makerspace: 
           {heading("Repeat offenders")}
           {anonymous && anonymous.total_issues > 0 ? <div className="rounded-xl border border-line bg-surface p-4">
             <h2 className="title-section">{t`Account-less loans`}</h2>
-            <p className="mt-2 text-sm">{anonymous.total_issues} {anonymous.total_issues === 1 ? "incident" : "incidents"} · {anonymous.total_quantity} {anonymous.total_quantity === 1 ? "item" : "items"}</p>
+            <p className="mt-2 text-sm">{plural(anonymous.total_issues, { one: "# incident", other: "# incidents" })} · {plural(anonymous.total_quantity, { one: "# item", other: "# items" })}</p>
             <p className="mt-1 text-sm text-muted">{t`${anonymous.damaged} damaged, ${anonymous.missing} missing. These have no person to rank or restrict, so they are reported as a total.`}</p>
           </div> : null}
           {data?.repeat_offenders.map(row => <ListRow key={row.requester_id} title={row.username}

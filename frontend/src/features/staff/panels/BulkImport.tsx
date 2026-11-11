@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import { plural } from "../../../lib/plural";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -8,6 +7,7 @@ import { staffRequest } from "../../../lib/api";
 import { getJobSession, trackJob } from "../../../components/ui/jobStore";
 import {
   fields,
+  hasQrConflicts,
   labelFor,
   mapRow,
   parseDelimited,
@@ -103,6 +103,7 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
   };
   const chooseFile = (file: File) => { setSource("file"); setSelectedFile(file); parseFileSample(file, makerspace.id).then(loadRows).catch((exc: unknown) => setError(t`We couldn't read that file${exc instanceof Error && exc.message ? `: ${exc.message}` : ""}. Save it as CSV or .xlsx and try again.`)); };
   const errors = result?.summary?.errors ?? result?.errors?.length ?? 0;
+  const qrBlocked = step === "review" && hasQrConflicts(result);
   const finish = step === "import" && !pending && Boolean(result) && activeJob?.status !== "failed";
   const preview = () => selectedFile ? startFileJob("preview") : submitRows(false, mappedRows());
   const apply = () => selectedFile ? startFileJob("apply") : source === "json" ? submitJson(true) : submitRows(true, mappedRows());
@@ -112,9 +113,9 @@ export function BulkImport({ makerspace }: { makerspace: Makerspace }) {
     onCancel={() => { setStep("upload"); setSourceRows([]); setSelectedFile(null); setJobId(null); syncMutation.reset(); jobMutation.reset(); }}
     leaveGuard={sourceRows.length && !finish ? "Leave this import? Your selected file and mapping will be cleared. A running import continues in the background." : undefined}
     footer={{ back: step === "import" && failure && !pending ? { label: t`Review and try again`, onClick: () => setStep(source === "json" ? "upload" : "map") } : step !== "upload" && step !== "import" ? { label: t`Back`, disabled: pending, onClick: () => setStep(step === "review" ? source === "json" ? "upload" : "map" : "upload") } : undefined,
-      next: { label: step === "upload" ? t`Match columns` : step === "map" ? t`Preview` : step === "review" ? errors > 0 ? t`Import ${plural(Math.max(0, (result?.summary?.total ?? sourceRows.length) - errors), "valid row")}, skip ${errors}` : t`Import ${plural(result?.summary?.total ?? sourceRows.length, "row")}` : t`Importing…`,
-        pending, pendingLabel: step === "review" ? "Importing…" : "Preparing…", disabled: step === "review" ? !result : step === "import",
-        disabledReason: step === "import" ? "Wait for the import to finish." : undefined,
+      next: { label: step === "upload" ? t`Match columns` : step === "map" ? t`Preview` : step === "review" ? errors > 0 ? plural(Math.max(0, (result?.summary?.total ?? sourceRows.length) - errors), { one: `Import # valid row, skip ${errors}`, other: `Import # valid rows, skip ${errors}` }) : plural(result?.summary?.total ?? sourceRows.length, { one: "Import # row", other: "Import # rows" }) : t`Importing…`,
+        pending, pendingLabel: step === "review" ? t`Importing…` : t`Preparing…`, disabled: step === "review" ? !result || qrBlocked : step === "import",
+        disabledReason: step === "import" ? t`Wait for the import to finish.` : qrBlocked ? t`Fix the QR code problems in your file, then preview again. QR codes are never skipped or reassigned.` : undefined,
         onClick: () => { if (step === "upload") { if (source === "json") submitJson(false); else if (selectedFile) setStep("map"); else loadRows(parseDelimited(tableText)); } else if (step === "map") preview(); else if (step === "review") { setStep("import"); apply(); } } } }}
     result={finish ? { tone: "success", title: t`Import complete`, summary: <><p>{t`Your inventory is ready to review.`}</p>{result ? <ImportSummary result={result} /> : null}</>, next: { label: t`View inventory →`, href: `/m/${makerspace.slug}/admin/inventory` } } : undefined}
     work={<div className="grid gap-6">

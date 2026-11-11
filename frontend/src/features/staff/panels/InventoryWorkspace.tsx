@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { toast } from "../../../components/ui/toastStore";
 import type { Key } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -17,15 +17,18 @@ import { useSearchParams } from "react-router-dom";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { InventoryItemDetail } from "./InventoryItemDetail";
 import { ListViewControls } from "../ListViewControls";
-import { plural } from "../../../lib/plural";
+import { InventoryCategoryFilter } from "./InventoryCategoryFilter";
 import { KitDefinitionEditor } from "../../inventory/KitChecklist";
+import { EquipmentKitManager } from "../EquipmentKitManager";
 import { capabilityOn, featureEnabled } from "../../../lib/features";
 import { useReorderSuggestions } from "./ReorderSuggestions";
 import { invalidateInventoryViews } from "../queryInvalidation";
 import { useDomainSettingsDialog } from "../useDomainSettingsDialog";
+import { useAreaPaymentsDrawer } from "../areaPayments/useAreaPaymentsDrawer";
 import { MakerspaceLoanPolicySettings } from "../MakerspaceLoanPolicySettings";
 import { LoanReservationPolicySettings } from "../LoanReservationPolicySettings";
 import { categoryResults, type CategoryListResponse, type Makerspace, useStaffGet } from "./shared";
+import { useLimitReached } from "../allowances/allowancesApi";
 import {
   adjustPayload,
   defaultToBuyQuantity,
@@ -43,10 +46,11 @@ import {
 } from "./InventoryPanelParts";
 
 export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = false, canEditInventory = false }: { makerspace: Makerspace; canViewAudit?: boolean; canUseToBuy?: boolean; canEditInventory?: boolean }) {
+  const [equipmentKitsOpen, setEquipmentKitsOpen] = useState(false);
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const kitEnabled = featureEnabled(makerspace.enabled_features ?? [], "loans.kit_checklist");
-  const list = useUrlListState({ id: "", q: "", ordering: "name", page: "1", archived: "false", low_stock: "false", out_of_stock: "false" });
+  const list = useUrlListState({ id: "", q: "", ordering: "name", page: "1", archived: "false", low_stock: "false", out_of_stock: "false", category: "" });
   const search = list.values.q;
   const [selectedIds, setSelectedIds] = useState<Key[]>([]);
   const [form, setForm] = useState<ItemForm>(emptyForm);
@@ -61,6 +65,8 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     (makerspace.enabled_modules ?? []).includes("request_workflow") ? <><MakerspaceLoanPolicySettings makerspaceId={makerspace.id} enabledFeatures={makerspace.enabled_features ?? []} />
       {["loans.pickup_windows", "loans.reservations", "loans.waitlist"].some(key => capabilityOn(makerspace, key)) ? <LoanReservationPolicySettings makerspaceId={makerspace.id} /> : null}</> : undefined,
     makerspace.public_site_enabled ?? false);
+  // Decision 242(a): loan deposits, rentals, late fees and damage/lost charges, from inside Inventory.
+  const loanPayments = useAreaPaymentsDrawer(makerspace.id, "lending");
   useQuickCreate("item", () => { setForm(emptyForm); setAddOpen(true); });
   const [fixTarget, setFixTarget] = useState<AdminProduct | null>(null);
   const [assetFixTarget, setAssetFixTarget] = useState<AdminProduct | null>(null);
@@ -88,8 +94,8 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     setBulkQrMessage("");
   }, [makerspace.id]);
   const lowStockParam = `${showLowStock ? "&low_stock=true" : ""}${outOfStock ? "&out_of_stock=true" : ""}`;
-  const inventoryQuery = `/admin/makerspace/${makerspace.id}/inventory?page=${list.page}&id=${encodeURIComponent(list.values.id)}&ordering=${encodeURIComponent(list.values.ordering)}&archived=${archivedFilter}&q=${encodeURIComponent(debouncedSearch)}${lowStockParam}`;
-  const products = useStaffGet<{ count: number; results: AdminProduct[] }>(["inventory", makerspace.id, archivedFilter, showLowStock ? "low" : "all", outOfStock, debouncedSearch, list.page, list.values.ordering, list.values.id], inventoryQuery);
+  const inventoryQuery = `/admin/makerspace/${makerspace.id}/inventory?page=${list.page}&id=${encodeURIComponent(list.values.id)}&ordering=${encodeURIComponent(list.values.ordering)}&archived=${archivedFilter}&q=${encodeURIComponent(debouncedSearch)}${lowStockParam}${list.values.category ? `&category=${encodeURIComponent(list.values.category)}` : ""}`;
+  const products = useStaffGet<{ count: number; results: AdminProduct[] }>(["inventory", makerspace.id, archivedFilter, showLowStock ? "low" : "all", outOfStock, debouncedSearch, list.page, list.values.ordering, list.values.id, list.values.category], inventoryQuery);
   useEffect(() => { setSelectedIds([]); }, [makerspace.id, list.query]);
   const categories = useStaffGet<CategoryListResponse>(["categories", makerspace.id], `/admin/makerspace/${makerspace.id}/categories`);
   const invalidate = () => {
@@ -212,9 +218,11 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
     else if (item && item !== editing) setEditing(item);
   }, [params, rows, linkedItem.data, editing, kitEnabled]);
   const reorder = useReorderSuggestions({ makerspaceId: makerspace.id, canProcure: canUseToBuy });
-  const selectedSuffix = selectedIds.length ? ` (${selectedIds.length} selected)` : "";
+  const itemsFull = useLimitReached(makerspace.id, "products");
   const columns = inventoryColumns({ openEdit, openFix, openToBuy, archive: item => archive.mutate(item), unarchive: item => unarchive.mutate(item), canUseToBuy, pending: archive.isPending || unarchive.isPending, stockTab: showLowStock || outOfStock });
-  const addItem = { label: t`Add item`, onClick: () => { setForm(emptyForm); setAddOpen(true); } };
+  // #234 addendum 3(a): a full items allowance explains itself on the button instead of failing on save.
+  const addItem = { label: t`Add item`, onClick: () => { setForm(emptyForm); setAddOpen(true); },
+    disabled: Boolean(itemsFull), disabledReason: itemsFull ?? undefined };
   const href = (archived: string, low: string, out: string) => { const next = new URLSearchParams(params); next.set("archived", archived); next.set("low_stock", low); next.set("out_of_stock", out); next.delete("page"); return `?${next}`; };
   const activeTab = showArchived ? "archived" : outOfStock ? "out" : showLowStock ? "low" : "all";
   if (addOpen) return <ItemModal title={t`Add item`} open onClose={() => setAddOpen(false)} form={form} setForm={setForm} categories={categoryRows} makerspace={makerspace} includeQuantities pending={create.isPending} error={create.error?.message} onSubmit={() => create.mutate()}>
@@ -222,12 +230,13 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
   </ItemModal>;
   return (
     <ListLayout width="wide" header={{ title: t`Inventory`, subtitle: t`Parts, tools and the stock ready for your next project.`, primary: addItem,
-      secondary: { label: t`Export`, menu: [{ label: t`Export CSV${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: t`Export Excel${selectedSuffix}`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, overflow: domainSettings.actions.length ? domainSettings.actions : undefined, meta: plural(products.data?.count ?? 0, "item") }}
-      callout={reorder.callout} state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id)}
+      secondary: { label: t`Export`, menu: [{ label: selectedIds.length ? t`Export CSV (${selectedIds.length} selected)` : t`Export CSV`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: selectedIds.length ? t`Export Excel (${selectedIds.length} selected)` : t`Export Excel`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }, overflow: [...domainSettings.actions, ...loanPayments.actions, { label: t`Equipment kits`, onClick: () => setEquipmentKitsOpen(true) }], meta: plural(products.data?.count ?? 0, { one: "# item", other: "# items" }) }}
+      callout={reorder.callout} state={inventoryQueryState(products, "inventory")} isEmpty={!rows.length} filtered={Boolean(search || showArchived || showLowStock || outOfStock || list.values.id || list.values.category)}
       empty={{ message: t`No parts added yet. Add your first item.`, action: addItem }} filteredEmpty={{ message: showArchived ? t`No archived items.` : showLowStock ? t`Nothing low on stock.` : t`Nothing matches these filters.`, action: { label: t`Clear filters`, onClick: () => list.restore({}) } }}
       tabs={[{ key: "all", label: t`All`, href: href("false", "false", "false") }, { key: "low", label: t`Low stock`, href: href("false", "true", "false") }, { key: "out", label: t`Out of stock`, href: href("false", "false", "true") }, { key: "archived", label: t`Archived`, href: href("true", "false", "false") }]} activeTab={activeTab}
       filters={{ toolbar: <ListViewControls state={list} makerspaceId={makerspace.id} entity="inventory" searchLabel="Search inventory"
-        sorts={[["name", "Name"], ["-name", "Name descending"], ["available_quantity", "Available first"], ["-available_quantity", "Available last"]]} /> }}
+        sorts={[["name", "Name"], ["-name", "Name descending"], ["available_quantity", "Available first"], ["-available_quantity", "Available last"]]}
+        activeCount={Number(Boolean(list.values.category))} controls={<InventoryCategoryFilter categories={categoryRows} value={list.values.category} onChange={value => list.setFilter("category", value)} />} /> }}
       bulkBar={{ count: selectedIds.length, onClear: () => setSelectedIds([]), actions: [{ label: t`Enable QR`, pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(true); } }, { label: t`Disable QR`, pending: bulkQr.isPending, onClick: () => { setBulkQrMessage(""); setQrConfirm(false); } }, { label: t`Export CSV`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("csv") }, { label: t`Export Excel`, pending: exportInventory.isPending, onClick: () => exportInventory.mutate("xlsx") }] }}
       body={{ kind: "table", table: <DataTable<AdminProduct> listState={list} ordering={list.values.ordering} onOrderingChange={value => list.setFilter("ordering", value)} columns={columns} data={rows} getRowId={row => row.id} selectedIds={selectedIds} onSelectionChange={setSelectedIds} /> }}
       pagination={{ page: list.page, pageSize: 24, count: products.data?.count ?? 0, onChange: list.setPage }}
@@ -258,7 +267,9 @@ export function Inventory({ makerspace, canViewAudit = false, canUseToBuy = fals
         {assetFixTarget ? <IndividualAssets productId={assetFixTarget.id} makerspaceId={makerspace.id} refreshInventory={invalidate} /> : null}
       </Modal>
       {domainSettings.dialog}
-      <ConfirmDialog open={qrConfirm !== null} title={qrConfirm ? t`Enable public QR` : t`Disable public QR`} message={t`${qrConfirm ? "Enable" : "Disable"} public self-checkout QR for ${selectedIds.length} selected items?`} confirmLabel={qrConfirm ? t`Enable` : t`Disable`} pending={bulkQr.isPending} onCancel={() => setQrConfirm(null)} onConfirm={() => { if (qrConfirm !== null) bulkQr.mutate(qrConfirm); }} />
+      {loanPayments.dialog}
+      <Modal open={equipmentKitsOpen} onClose={() => setEquipmentKitsOpen(false)} title={t`Equipment kits`}><EquipmentKitManager tenant={makerspace.id} canEdit={canEditInventory} /></Modal>
+      <ConfirmDialog open={qrConfirm !== null} title={qrConfirm ? t`Enable public QR` : t`Disable public QR`} message={qrConfirm ? plural(selectedIds.length, { one: "Enable public self-checkout QR for # selected item?", other: "Enable public self-checkout QR for # selected items?" }) : plural(selectedIds.length, { one: "Disable public self-checkout QR for # selected item?", other: "Disable public self-checkout QR for # selected items?" })} confirmLabel={qrConfirm ? t`Enable` : t`Disable`} pending={bulkQr.isPending} onCancel={() => setQrConfirm(null)} onConfirm={() => { if (qrConfirm !== null) bulkQr.mutate(qrConfirm); }} />
       </>} />
   );
 }

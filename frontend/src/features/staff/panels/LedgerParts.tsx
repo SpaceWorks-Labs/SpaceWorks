@@ -18,6 +18,10 @@ export type LedgerRow = {
   makerspace_id: number;
   reference_id: number;
   status: string;
+  /** Drill-down keys (IN7); absent on servers older than 0.12.0. */
+  request_id?: number | null;
+  product_id?: number | null;
+  holder_id?: number | null;
 };
 
 export type LedgerResponse = {
@@ -108,6 +112,7 @@ export function ledgerParams({
   search,
   source,
   overdueOnly,
+  due = "",
   sort,
 }: {
   page?: number;
@@ -115,6 +120,8 @@ export function ledgerParams({
   search: string;
   source: LedgerSourceFilter;
   overdueOnly: boolean;
+  /** The dashboard's due-back windows: `today` or `soon` (the next three days). */
+  due?: string;
   sort: string;
 }) {
   const params = new URLSearchParams();
@@ -124,6 +131,7 @@ export function ledgerParams({
   if (trimmed) params.set("search", trimmed);
   if (source) params.set("source", source);
   if (overdueOnly) params.set("overdue", "true");
+  if (due) params.set("due", due);
   params.set("sort", sort);
   return params;
 }

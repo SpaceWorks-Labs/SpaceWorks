@@ -46,16 +46,26 @@ function AnalyticsWidget({ widget, reportsHref, makerspaceId, analyticsBase }: {
   </section>;
 }
 
+/** Audit IN11 (decision 248): due today and overdue are split, and `to_record` counts pending charges for a
+ * desk that holds record_payment (0 otherwise). Hand-typed until the OpenAPI client is regenerated. */
+type HandoverQueues = NonNullable<DashboardAnalytics["queue_tiles"]> & { due_today?: number; overdue?: number; to_record?: number };
+
 export function HandoverQueueHome({ queues, slug, singleTenantLocked = false, guestOnly = false }: {
-  queues: DashboardAnalytics["queue_tiles"]; slug: string; singleTenantLocked?: boolean; guestOnly?: boolean;
+  queues?: HandoverQueues; slug: string; singleTenantLocked?: boolean; guestOnly?: boolean;
 }) {
+  const returns = "queue=active&ordering=return_due_at";
+  const split = queues?.overdue !== undefined || queues?.due_today !== undefined;
   const destinations = [
     { key: "ready_to_issue" as const, label: t`Ready to issue`, tab: "requests", query: "queue=accepted" },
-    { key: "due_returns" as const, label: t`Due returns`, tab: "requests", query: "queue=active&ordering=return_due_at" },
+    ...(split ? [{ key: "due_today" as const, label: t`Due back today`, tab: "requests", query: returns },
+      { key: "overdue" as const, label: t`Overdue`, tab: "requests", query: returns, urgent: true }]
+      : [{ key: "due_returns" as const, label: t`Due returns`, tab: "requests", query: returns }]),
     { key: "pickups" as const, label: t`Pickups`, tab: "handover", query: "" },
+    ...((queues?.to_record ?? 0) > 0 ? [{ key: "to_record" as const, label: t`Payments to record`, tab: "payments", query: "status=pending" }] : []),
   ];
   return <DashboardLayout header={{ title: t`Handover`, eyebrow: t`Physical handovers`, subtitle: t`Issue ready requests, receive returns and collect completed jobs.` }}
     state={{ status: "ready" }} stats={destinations.map(row => ({ label: row.label, value: queues?.[row.key] ?? 0,
+      tone: "urgent" in row && (queues?.[row.key] ?? 0) > 0 ? "danger" as const : "neutral" as const,
       href: consoleSessionHref(`${staffTabPath(row.tab, guestOnly, slug, singleTenantLocked)}${row.query ? `?${row.query}` : ""}`) }))}
     main={[{ title: t`Your handover queues`, content: <p>{t`Choose a queue above to continue a physical handover.`}</p>, empty: { message: t`No handovers waiting.` } }]} />;
 }

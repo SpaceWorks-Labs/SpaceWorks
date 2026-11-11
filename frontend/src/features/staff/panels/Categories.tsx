@@ -1,4 +1,6 @@
 import { t } from "@lingui/core/macro";
+import { RouteLink } from "../../../components/ui/RouteLink";
+import { useCrossLink } from "../crossLinks/staffHref";
 import { ListLayout } from "../../../components/layouts";
 import { inventoryQueryState } from "./inventoryPresentation";
 import { useState } from "react";
@@ -35,6 +37,7 @@ function categoryPayload(form: CategoryForm, includeSlug: boolean) {
 
 export function Categories({ makerspace }: { makerspace: Makerspace }) {
   const queryClient = useQueryClient();
+  const link = useCrossLink();
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<CategoryForm>(emptyCategoryForm);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -98,7 +101,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
   const columns: DataTableColumn<Category>[] = [
     {
       key: "name",
-      header: "Name",
+      header: t`Name`,
       sortable: true,
       render: (category) =>
         editingId === category.id ? (
@@ -112,10 +115,10 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
           <span className="font-semibold">{category.name}</span>
         ),
     },
-    { key: "slug", header: "Slug", sortable: true },
+    { key: "slug", header: t`Slug`, sortable: true },
     {
       key: "display_order",
-      header: "Order",
+      header: t`Order`,
       sortable: true,
       render: (category) =>
         editingId === category.id ? (
@@ -132,7 +135,7 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
     },
     {
       key: "icon",
-      header: "Icon",
+      header: t`Icon`,
       render: (category) =>
         editingId === category.id ? (
           <input
@@ -145,7 +148,11 @@ export function Categories({ makerspace }: { makerspace: Makerspace }) {
           category.icon || "-"
         ),
     },
-    { key: "product_count", header: "Products", sortable: true },
+    // IN9: the count opens the stock list narrowed to this category.
+    { key: "product_count", header: t`Products`, sortable: true, render: (category) => {
+      const href = link("inventory", { category: category.id });
+      return href ? <RouteLink className="font-semibold underline" href={href} aria-label={t`${category.product_count} items in ${category.name}`}>{category.product_count}</RouteLink> : category.product_count;
+    } },
     {
       key: "actions",
       header: "",

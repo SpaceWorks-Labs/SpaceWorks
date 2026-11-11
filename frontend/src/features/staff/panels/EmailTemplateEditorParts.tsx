@@ -8,7 +8,7 @@ export function TemplateHeader({ detail, active, typeOverride, onActive }: { det
     <label className="flex min-h-11 max-w-xs items-start gap-3 text-sm text-ink">
       <input className="mt-1 h-5 w-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" type="checkbox" checked={active} onChange={event => onActive(event.target.checked)} />
       <span><span className="font-semibold">{t`Use custom template`}</span>
-        <span className="block text-xs text-muted">{t`When off, the ${typeOverride ? "space" : "built-in"} default is sent (your text is kept). The email always sends.`}</span>
+        <span className="block text-xs text-muted">{typeOverride ? t`When off, the space default is sent (your text is kept). The email always sends.` : t`When off, the built-in default is sent (your text is kept). The email always sends.`}</span>
       </span>
     </label>
   </div>;

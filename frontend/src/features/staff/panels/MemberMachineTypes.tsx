@@ -36,9 +36,13 @@ function MachineTypeForm({ msId, scope, onAuthRefresh, onClose }: {
   const id = useId();
   const client = useQueryClient();
   const [draft, setDraft] = useState<number[] | null>(null);
+  const [machineDraft, setMachineDraft] = useState<number[] | null>(null);
   const ids = draft ?? scope.machine_type_ids;
+  // Decision 282: single machines only when the server offers them; an older server keeps the type-only body.
+  const machines = scope.available_machines ?? [];
+  const machineIds = machineDraft ?? scope.machine_ids ?? [];
   const save = useMutation({
-    mutationFn: () => setMemberMachineScope(msId, scope.membership_id, ids),
+    mutationFn: () => setMemberMachineScope(msId, scope.membership_id, ids, scope.machine_ids ? machineIds : undefined),
     onSuccess: () => { void refreshMembershipAuthority(client, msId); onAuthRefresh(); onClose(); },
     onError: (error) => {
       if (error instanceof StructuredApiError && error.status === 409) {
@@ -60,7 +64,7 @@ function MachineTypeForm({ msId, scope, onAuthRefresh, onClose }: {
         <span className="font-semibold text-ink">{t`All machine types`}</span>
       </label>
       <p id={`${id}-all`} className="text-xs text-muted">{t`The shortcut selects all currently available types. Add newly created types here later.`}</p>
-      {!ids.length && types.length ? <p className="text-sm text-danger">{t`Nothing selected: this person can manage no machines.`}</p> : null}
+      {!ids.length && !machineIds.length && types.length ? <p className="text-sm text-danger">{t`Nothing selected: this person can manage no machines.`}</p> : null}
       <div className="@container"><div className="grid gap-2 @md:grid-cols-2">
         {types.map((type) => <label key={type.id} className={card}>
           <input className={box} type="checkbox" aria-labelledby={`${id}-${type.id}`} aria-describedby={`${id}-${type.id}-kind`} checked={ids.includes(type.id)}
@@ -73,6 +77,18 @@ function MachineTypeForm({ msId, scope, onAuthRefresh, onClose }: {
       </div></div>
       {!types.length ? <p className="text-sm text-muted">{t`No machine types are available.`}</p> : null}
     </fieldset>
+    {machines.length ? <fieldset disabled={save.isPending || conflict} className="grid min-w-0 gap-2">
+      <legend className="text-sm font-semibold text-ink">{t`Single machines`}</legend>
+      <p className="text-xs text-muted">{t`Add machines one by one as well as, or instead of, whole types. A machine whose type is chosen is already covered.`}</p>
+      {types.filter(type => machines.some(machine => machine.machine_type_id === type.id)).map(type => <div key={type.id} role="group" aria-label={type.name} className="grid gap-1">
+        <p className="text-xs font-semibold text-muted">{type.name}</p>
+        {machines.filter(machine => machine.machine_type_id === type.id).map(machine => <label key={machine.id} className={card}>
+          <input className={box} type="checkbox" disabled={ids.includes(type.id)} checked={ids.includes(type.id) || machineIds.includes(machine.id)}
+            onChange={(event) => setMachineDraft(event.target.checked ? [...machineIds, machine.id] : machineIds.filter((machineId) => machineId !== machine.id))} />
+          <span className="font-semibold text-ink">{machine.name}</span>
+        </label>)}
+      </div>)}
+    </fieldset> : null}
     {save.error ? <ErrorText message={conflict ? t`Machine type assignment is no longer applicable. Assign Machine Manager first. ${save.error.message}` : save.error.message} /> : null}
     <div className="desk-actions flex flex-wrap justify-end gap-2">
       <button type="button" className="desk-button-ghost" disabled={save.isPending} onClick={onClose}>{t`Close`}</button>

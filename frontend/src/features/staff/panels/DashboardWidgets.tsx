@@ -29,7 +29,7 @@ export function DashboardActivity({ makerspace, guestOnly, singleTenantLocked, c
   if (activity.isLoading || activity.error || !readable.length) return children(undefined, [{
     title: t`Recent activity`, action: all, isEmpty: activity.isSuccess && !readable.length,
     empty: { message: t`No activity yet. New handovers and updates will appear here.` },
-    content: activity.error ? <ErrorBlock error={activity.error} resource="recent activity" onRetry={() => { void activity.refetch(); }} />
+    content: activity.error ? <ErrorBlock error={activity.error} resource={t`recent activity`} onRetry={() => { void activity.refetch(); }} />
       : <div role="status" aria-label={t`Loading recent activity`}><Skeleton className="h-24 w-full" /></div>,
   }]);
   return children({ title: t`Recent activity`, seeAll: all,
@@ -55,7 +55,7 @@ export function DashboardDueBack({ makerspace, guestOnly, singleTenantLocked, ch
     href={`${href}&id=${row.id}`} meta={`Request #${row.id} · ${row.items.map(item => `${item.product_name} × ${item.issued_quantity}`).join(", ")}`}
     right={<RelativeTime date={row.return_due_at!} />} />)}</div>;
   if (loans.isLoading || loans.error) return children([{ title: t`Due back`, empty: { message: t`No loans due in the next 3 days.` },
-    content: loans.error ? <ErrorBlock error={loans.error} resource="due loans" onRetry={() => { void loans.refetch(); }} />
+    content: loans.error ? <ErrorBlock error={loans.error} resource={t`due loans`} onRetry={() => { void loans.refetch(); }} />
       : <div role="status" aria-label={t`Loading due loans`}><Skeleton className="h-24 w-full" /></div> }]);
   return children([
     ...(overdue.length ? [{ title: t`Overdue`, action: { label: t`See all →`, href }, content: rows(overdue), empty: { message: t`No overdue loans.` } }] : []),

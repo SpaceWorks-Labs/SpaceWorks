@@ -10,6 +10,7 @@ type Props = { makerspaceId: number; slug: string; guestOnly: boolean; singleTen
 /** The read-only "Last backup" items for this makerspace. A missing archive is a warning, never a silent zero. */
 export function BackupStatusCard({ makerspaceId }: { makerspaceId: number }) {
   const status = useQuery({ queryKey: ["backup-status", makerspaceId], queryFn: () => getMakerspaceBackupStatus(makerspaceId) });
+  if (status.isError) return <StatusPill tone="warn" label={t`Couldn't check backups`} />;
   if (!status.isSuccess) return null;
   const data = status.data;
   return <KeyValueCard title={t`Backup status`} items={[

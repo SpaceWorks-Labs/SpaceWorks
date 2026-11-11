@@ -13,14 +13,14 @@ import { InventoryItemFields } from "./InventoryItemFields";
 import type { LendingFlagSpace } from "./InventoryLendingFlags";
 import { type Category, useStaffGet } from "./shared";
 import {
+  assetStatusLabel,
   formatActor,
-  humanize,
+  scanContextLabel,
   type Actor,
   type AdjustmentForm,
   type AdminProduct,
   type InventoryAssetRow,
   type ItemForm,
-  type LendingHistoryResponse,
   type QrHistoryResponse,
 } from "./InventoryPanelShared";
 
@@ -31,7 +31,7 @@ export function ItemModal({ title, open, onClose, pending, onSubmit, ...fields }
 }) {
   if (!open) return null;
   return <FormPageLayout header={{ title, subtitle: t`Add a part to your Space Works catalogue.` }} state={{ status: "ready" }}
-    form={<InventoryItemFields {...fields} />} submit={{ label: t`Add item`, pending, pendingLabel: "Adding…", disabled: !fields.form.name.trim(), disabledReason: "Enter an item name.", onClick: onSubmit }}
+    form={<InventoryItemFields {...fields} />} submit={{ label: t`Add item`, pending, pendingLabel: t`Adding…`, disabled: !fields.form.name.trim(), disabledReason: t`Enter an item name.`, onClick: onSubmit }}
     cancel={{ label: t`Cancel`, onClick: onClose }} preview={{ label: t`Public catalogue preview`, content: <InventoryPublicPreview form={fields.form} category={fields.categories.find(category => String(category.id) === fields.form.category)?.name} /> }} />;
 }
 
@@ -60,9 +60,9 @@ export function QrHistory({ title, queryKey, path, defaultOpen = false }: { titl
         <button className="desk-button-ghost" type="button" onClick={() => setOpen((value) => !value)}>{open ? t`Hide` : t`History`}</button>
       </div>
       {open && history.isLoading ? <Skeleton className="h-32" /> : null}
-      {open && history.error ? <ErrorBlock error={history.error} resource="history" onRetry={() => { void history.refetch(); }} /> : null}
+      {open && history.error ? <ErrorBlock error={history.error} resource={t`history`} onRetry={() => { void history.refetch(); }} /> : null}
       {open && !history.isLoading && !rows.length ? <EmptyState message={t`No QR scans recorded. Future scans will appear here.`} /> : null}
-      {open && rows.length ? <div className="grid gap-3">{rows.map(scan => <ListRow key={scan.id} title={humanize(scan.context)} meta={<RelativeTime date={scan.created_at} exact />} right={scan.actor ? <span className="text-sm text-muted">{t`User ${scan.actor}`}</span> : null} />)}</div> : null}
+      {open && rows.length ? <div className="grid gap-3">{rows.map(scan => <ListRow key={scan.id} title={scanContextLabel(scan.context)} meta={<RelativeTime date={scan.created_at} exact />} right={scan.actor ? <span className="text-sm text-muted">{t`User ${scan.actor}`}</span> : null} />)}</div> : null}
 
     </div>
   );
@@ -98,11 +98,11 @@ export function IndividualAssets({ productId, makerspaceId, refreshInventory }: 
   const rows = assets.data?.results ?? [];
   const selected = rows.find(asset => asset.id === editingAssetId);
   return <section className="mt-6 grid gap-4"><h3 className="title-section">{t`Individual assets`}</h3>
-    {assets.isLoading ? <Skeleton className="h-40" /> : assets.error ? <ErrorBlock error={assets.error} resource="assets" onRetry={() => { void assets.refetch(); }} /> : <DataTable data={rows} getRowId={asset => asset.id} emptyTitle={t`No asset records yet`} columns={[
-      { key: "asset_tag", header: "Asset", render: asset => <div className="min-w-0 [overflow-wrap:anywhere]"><strong>{asset.asset_tag}</strong><p className="text-xs text-muted">{asset.serial_number}</p></div> },
-      { key: "box_label", header: "Container" },
-      { key: "status", header: "Status", render: asset => <StatusBadge status={asset.status} /> },
-      { key: "qr", header: "QR", render: asset => asset.qr_code_id ? <details><summary className="desk-button-ghost">{t`Show QR`}</summary><div className="w-40 max-w-full"><QrImage qrId={asset.qr_code_id} label={asset.asset_tag} /></div><p className="break-all text-xs">{asset.qr_payload}</p></details> : "No QR linked" },
+    {assets.isLoading ? <Skeleton className="h-40" /> : assets.error ? <ErrorBlock error={assets.error} resource={t`assets`} onRetry={() => { void assets.refetch(); }} /> : <DataTable data={rows} getRowId={asset => asset.id} emptyTitle={t`No asset records yet`} columns={[
+      { key: "asset_tag", header: t`Asset`, render: asset => <div className="min-w-0 [overflow-wrap:anywhere]"><strong>{asset.asset_tag}</strong><p className="text-xs text-muted">{asset.serial_number}</p></div> },
+      { key: "box_label", header: t`Container` },
+      { key: "status", header: t`Status`, render: asset => <StatusBadge status={asset.status} label={assetStatusLabel(asset.status)} /> },
+      { key: "qr", header: t`QR`, render: asset => asset.qr_code_id ? <details><summary className="desk-button-ghost">{t`Show QR`}</summary><div className="w-40 max-w-full"><QrImage qrId={asset.qr_code_id} label={asset.asset_tag} /></div><p className="break-all text-xs">{asset.qr_payload}</p></details> : t`No QR linked` },
       { key: "actions", header: "", render: asset => <div className="flex flex-wrap items-center gap-2">
         <button className="desk-button-ghost" disabled={action.isPending || (asset.status !== "maintenance" && !["available", "damaged"].includes(asset.status))}
           onClick={() => action.mutate({ assetId: asset.id, action: asset.status === "maintenance" ? "repair" : "shelve" })}>{action.isPending && action.variables?.assetId === asset.id ? t`Updating…` : asset.status === "maintenance" ? t`Move back to inventory` : t`To fix`}</button>
@@ -115,17 +115,6 @@ export function IndividualAssets({ productId, makerspaceId, refreshInventory }: 
       {selected ? <AssetEditForm key={selected.id} asset={selected} containers={containerOptions} onSaved={saveAsset} onCancel={() => setEditingAssetId(null)} /> : null}
     </Modal>
     <Modal open={historyAssetId !== null} onClose={() => setHistoryAssetId(null)} title={t`Asset QR history`}>{historyAssetId ? <QrHistory key={historyAssetId} defaultOpen title={t`Asset QR history`} queryKey={["asset-qr-history", historyAssetId]} path={`/admin/assets/${historyAssetId}/qr-history`} /> : null}</Modal>
-  </section>;
-}
-
-export function LendingHistory({ productId }: { productId: number }) {
-  const history = useStaffGet<LendingHistoryResponse>(["lending-history", productId], `/admin/inventory/${productId}/lending-history`);
-  const last = history.data?.last_borrower;
-  const recent = history.data?.recent ?? [];
-  return <section className="grid gap-4"><h3 className="title-section">{t`Lending history`}</h3>
-    {history.isLoading ? <Skeleton className="h-40" /> : history.error ? <ErrorBlock error={history.error} resource="lending history" onRetry={() => { void history.refetch(); }} /> : !recent.length ? <EmptyState message={t`No lending history yet. Handovers will appear here.`} /> : null}
-    {last ? <p className="text-sm">{t`Last borrower: ${last.username} · `}<RelativeTime date={last.issued_at} exact /><AttributionLine acceptedBy={last.accepted_by} issuedBy={last.issued_by} /></p> : null}
-    {recent.map(entry => <ListRow key={entry.id} title={entry.username} identity={{ kind: "avatar", name: entry.username, seed: entry.username }} meta={<><RelativeTime date={entry.issued_at} exact /><AttributionLine acceptedBy={entry.accepted_by} issuedBy={entry.issued_by} /></>} right={<span className="tabular-nums">{entry.quantity} units</span>} />)}
   </section>;
 }
 

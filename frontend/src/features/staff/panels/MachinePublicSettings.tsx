@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { sentenceCase } from '../../../lib/sentenceCase';
 import { SettingsSection, SettingsRow } from '../../../components/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -11,6 +12,10 @@ import {
   type MachinePublicPreview,
 } from '../machinesApi';
 
+const previewLabel = (key: string) => ({
+  name: t`Name`, machine_type: t`Machine type`, icon: t`Icon`, image_url: t`Image`, status: t`Status`, usage_hours: t`Usage hours`,
+} as Record<string, string>)[key] ?? sentenceCase(key);
+
 function PreviewValue({ value }: { value: unknown }) {
   if (value === null) return <span className={'text-muted'}>{t`Not set`}</span>;
   if (typeof value !== 'object') return <span>{String(value)}</span>;
@@ -19,7 +24,7 @@ function PreviewValue({ value }: { value: unknown }) {
       {Object.entries(value).map(([key, child]) => (
         <div key={key} className={'grid gap-1 sm:grid-cols-[9rem_minmax(0,1fr)]'}>
           <dt className={'text-xs font-semibold text-muted'}>
-            {key.replace(/_/g, ' ')}
+            {previewLabel(key)}
           </dt>
           <dd className={'min-w-0 break-words text-sm text-ink'}>
             <PreviewValue value={child} />

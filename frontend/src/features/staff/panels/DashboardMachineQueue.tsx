@@ -12,11 +12,11 @@ import { machineTypeSegment, staffTabPath } from "../staffTabs";
 
 
 const statuses: Record<string, string> = { pending_prints: "pending", active_prints: "in_progress", prints_awaiting_collection: "completed" };
-const labels: Record<string, string> = { pending_prints: "Pending prints", active_prints: "Active prints", prints_awaiting_collection: "Ready to collect", maintenance_overdue: "Maintenance overdue" };
+const labels = (): Record<string, string> => ({ pending_prints: t`Pending prints`, active_prints: t`Active prints`, prints_awaiting_collection: t`Ready to collect`, maintenance_overdue: t`Maintenance overdue` });
 type Schedule = { id: number; machine_id: number; machine_name: string; description: string; next_due: string };
 type Job = { id: number; title: string; status: string };
 
-export function isDashboardMachineQueue(queue: string) { return Object.prototype.hasOwnProperty.call(labels, queue); }
+export function isDashboardMachineQueue(queue: string) { return Object.prototype.hasOwnProperty.call(labels(), queue); }
 export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabled }: { makerspaceId: number; slug?: string | null; single: boolean; guest: boolean; enabled: boolean }) {
   const list = useUrlListState({ work_queue: "", page: "1" });
   const queue = list.values.work_queue;
@@ -31,7 +31,7 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
   const scheduleRows = enabled && maintenance ? schedules.data?.results : undefined;
   const jobRows = enabled && !maintenance ? jobs.data : undefined;
   const loading = enabled && (types.isLoading || jobs.isLoading || schedules.isLoading);
-  return <ListLayout header={{ title: labels[queue], secondary: { label: t`All machines`, href } }}
+  return <ListLayout header={{ title: labels()[queue], secondary: { label: t`All machines`, href } }}
     state={loading ? { status: "loading" } : error ? { status: "error", error: t`Couldn't load work list. Try again.`, onRetry: () => { void types.refetch(); void jobs.refetch(); void schedules.refetch(); } } : { status: "ready" }}
     isEmpty={enabled && (scheduleRows?.length === 0 || jobRows?.length === 0)}
     empty={{ message: t`No work in this queue. Open All machines to review your equipment.` }}
@@ -42,7 +42,7 @@ export function DashboardMachineQueue({ makerspaceId, slug, single, guest, enabl
         href={consoleSessionHref(`${baseHref}?machine=${row.machine_id}&detail_tab=Maintenance`)} meta={<>{t`Due `}<RelativeTime date={row.next_due} /></>}
         right={<StatusPill label={t`Overdue`} tone="danger" />} />)}
       {jobRows?.map(row => <ListRow key={row.id} title={row.title} right={<StatusBadge status={row.status} label={machineStatusLabel(row.status)} />}
-        href={printer ? consoleSessionHref(`${staffTabPath("machines", guest, slug, single, machineTypeSegment(printer))}?view=queue&job_status=${statuses[queue]}`) : undefined}
+        href={printer ? consoleSessionHref(`${staffTabPath("machines", guest, slug, single, `${machineTypeSegment(printer)}/queue`)}?job_status=${statuses[queue]}`) : undefined}
         meta="Open printer queue" />)}
     </> }} pagination={enabled && maintenance ? { page: list.page, pageSize: 24, count: schedules.data?.count ?? 0, onChange: list.setPage } : undefined} />;
 }

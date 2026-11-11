@@ -12,7 +12,7 @@ export function ItemWaitlist({ makerspaceId, productId }: { makerspaceId: number
     <h3 className="title-section">{t`Waitlist`}</h3>
     {query.isLoading ? <Skeleton className="h-16 w-full" /> : query.error ? <ErrorText message={t`Couldn't load the waitlist. Try again.`} />
       : !rows.length ? <EmptyState message={t`Nobody is waiting for this item.`} />
-      : rows.map(entry => <ListRow key={entry.id} title={`${entry.status === "offered" ? "Offer held" : `Place ${entry.position ?? "-"}`}${entry.member_name ? ` · ${entry.member_name}` : ""}`}
+      : rows.map(entry => <ListRow key={entry.id} title={[entry.status === "offered" ? t`Offer held` : t`Place ${entry.position ?? "-"}`, entry.member_name].filter(Boolean).join(" · ")}
         identity={{ kind: "icon", icon: entry.status === "offered" ? "Clock" : "Circle", tone: entry.status === "offered" ? "info" : "neutral" }}
         meta={<><span className="tabular-nums">×{entry.quantity}</span> {t` · joined `}<RelativeTime date={entry.created_at} />
           {entry.status === "offered" && entry.offer_expires_at ? <> {t` · held until ${formatWhen(entry.offer_expires_at)}`}</> : null}</>}

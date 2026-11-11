@@ -104,9 +104,9 @@ function PricingEditor({ makerspaceId, machineType, currency, canConfigure, draf
 
   if (!canConfigure || !chargesOn) return null;
   return <div className="grid gap-2 rounded-lg bg-bg p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] md:items-end">
-    <label className="eyebrow grid gap-1">{t`Rate per unit (${currency})`}<input className="desk-input" type="number" min="0" step="0.01" value={shownRate} onChange={(event) => setRate(event.target.value)} />
+    <label className="eyebrow grid gap-1">{t`Rate per unit (${currency})`}<input className="desk-input" type="number" min="0" step="any" value={shownRate} onChange={(event) => setRate(event.target.value)} />
     </label>
-    <label className="eyebrow grid gap-1">{t`Flat fee (${currency})`}<input className="desk-input" type="number" min="0" step="0.01" value={shownFlatFee} onChange={(event) => setFlatFee(event.target.value)} />
+    <label className="eyebrow grid gap-1">{t`Flat fee (${currency})`}<input className="desk-input" type="number" min="0" step="any" value={shownFlatFee} onChange={(event) => setFlatFee(event.target.value)} />
     </label>
     <label className="eyebrow flex items-center gap-2"><input type="checkbox" checked={shownEnabled} onChange={(event) => setPaymentEnabled(event.target.checked)} /> {t` Enable payment`}</label>
     <button className="desk-button-primary" type="button" onClick={() => { void save(); }} disabled={mutation.isPending || drop.checking}>{mutation.isPending ? t`Saving...` : t`Save pricing`}</button>

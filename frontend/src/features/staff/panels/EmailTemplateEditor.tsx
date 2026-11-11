@@ -160,7 +160,7 @@ export function EmailTemplateEditor({
       state={{ status: detail.isLoading ? "loading" : detail.error ? "error" : "ready", error: t`Couldn't load the template. Try again.`, onRetry: () => { void detail.refetch(); } }}
       actions={{ primary: { label: t`Save`, pending: save.isPending, onClick: () => save.mutate(),
         // Never save before the template has loaded: an empty draft would overwrite it.
-        disabled: !detail.data, disabledReason: !detail.data ? "Wait for the template to load." : undefined },
+        disabled: !detail.data, disabledReason: !detail.data ? t`Wait for the template to load.` : undefined },
         secondary: { label: t`Preview`, onClick: () => setTab("preview") },
         overflow: [{ label: selected.machineType ? t`Fall back to space default` : t`Reset to built-in default`, onClick: () => setResetDialogOpen(true), confirms: true, disabled: reset.isPending }] }}
       tabs={["edit", "preview", "default"].map(value => { const next = new URLSearchParams(search); next.set("template_view", value); return { key: value, label: value[0].toUpperCase() + value.slice(1), href: `?${next}` }; })} activeTab={tab}

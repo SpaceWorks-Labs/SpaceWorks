@@ -8,6 +8,7 @@ import { useUrlListState } from "../../../lib/useUrlListState";
 import { ListViewControls } from "../ListViewControls";
 import { AuditLogFilters, auditFilterParams, emptyAuditFilters, type AuditFilters } from "./AuditLogFilters";
 import { AuditLogDetails } from "./AuditLogDetails";
+import { auditAreaLabel, auditAreasFor } from "./auditAreas";
 import { AuditVerificationStatus } from "./AuditVerificationStatus";
 import { useStaffGet } from "./shared";
 
@@ -18,11 +19,18 @@ type AuditLogEntry = {
 };
 type AuditLogResponse = { count: number; next: string | null; previous: string | null; results: AuditLogEntry[] };
 
-/** One space's trail, or with `platform` (#190) every space plus the platform's own rows, for the superadmin. */
-export function AuditLog({ makerspaceId, platform = false }: { makerspaceId?: number; platform?: boolean }) {
+/** One space's trail, or with `platform` (#190) every space plus the platform's own rows, for the superadmin.
+ * `actions` are the reader's effective actions in the space; without them (superadmin) the whole trail shows. */
+export function AuditLog({ makerspaceId, platform = false, actions }: { makerspaceId?: number; platform?: boolean; actions?: readonly string[] }) {
+  // #219e: a reader who is not the Space Manager sees only their own areas' rows (server-enforced).
+  const areas = platform ? null : auditAreasFor(actions);
   const list = useUrlListState({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "", platform_only: "", ordering: "-created_at", page: "1" });
   const filters: AuditFilters = list.values;
   const filterParams = auditFilterParams(filters);
+  // Verification selects by the server's audit filters; `area` is a list-only narrowing.
+  const verifyParams = Object.fromEntries(Object.entries(filterParams).filter(([key]) => key !== "area"));
+  // #219(e-1): an area reader without view_audit reads rows but cannot start verification runs.
+  const canVerify = !platform && (!actions || actions.includes("view_audit"));
   const params = new URLSearchParams(filterParams);
   params.set("page", String(list.page));
   params.set("ordering", list.values.ordering);
@@ -34,20 +42,20 @@ export function AuditLog({ makerspaceId, platform = false }: { makerspaceId?: nu
   const logs = platform ? platformLogs : spaceLogs;
   const clear = () => list.update({ ...emptyAuditFilters, makerspace: makerspaceId ? String(makerspaceId) : "", platform_only: "" });
   const chips = Object.entries(filters).filter(([key, value]) => key in emptyAuditFilters && value && !(key === "makerspace" && value === String(makerspaceId)))
-    .map(([key, value]) => ({ key, label: `${key.replace(/_/g, " ")}: ${value}`, onRemove: () => list.update({ [key]: "" }) }))
+    .map(([key, value]) => ({ key, label: key === "area" ? t`Area: ${auditAreaLabel(value)}` : `${key.replace(/_/g, " ")}: ${value}`, onRemove: () => list.update({ [key]: "" }) }))
     .concat(platform && list.values.platform_only ? [{ key: "platform_only", label: t`Platform-level only`, onRemove: () => list.update({ platform_only: "" }) }] : []);
 
   return <ListLayout width="wide"
-    header={{ title: platform ? t`Platform audit log` : t`Audit log`, subtitle: platform ? t`Every space's trail and the platform's own actions, append-only. Filter by makerspace ID, or show platform-level rows only.` : t`Every state change in this makerspace, append-only.`, meta: platform ? undefined : <AuditVerificationStatus key={new URLSearchParams(filterParams).toString()} makerspaceId={filters.makerspace} params={filterParams} /> }}
+    header={{ title: platform ? t`Platform audit log` : t`Audit log`, subtitle: platform ? t`Every space's trail and the platform's own actions, append-only. Filter by makerspace ID, or show platform-level rows only.` : areas ? t`State changes in the areas you work in, append-only. The Space Manager sees the whole trail.` : t`Every state change in this makerspace, append-only.`, meta: canVerify ? <AuditVerificationStatus key={new URLSearchParams(verifyParams).toString()} makerspaceId={filters.makerspace} params={verifyParams} /> : undefined }}
     state={{ status: logs.isLoading ? "loading" : logs.error ? "error" : "ready", error: t`Couldn't load audit entries${logs.error?.message ? ` (${logs.error.message})` : ""}. Try again.`, onRetry: () => void logs.refetch() }}
     isEmpty={Boolean(logs.data && !logs.data.results.length)} filtered={chips.length > 0}
-    empty={{ message: t`No audit entries yet. Complete a workflow to start the trail.` }}
+    empty={{ message: areas ? t`No audit entries in your areas yet.` : t`No audit entries yet. Complete a workflow to start the trail.` }}
     filteredEmpty={{ message: t`No entries match these filters. Clear filters to see the trail.`, action: { label: t`Clear filters`, onClick: clear } }}
     filters={{ sort: makerspaceId ? <ListViewControls state={list} makerspaceId={makerspaceId} entity="audit" search={false} sorts={[["-created_at", t`Newest`], ["created_at", t`Oldest`], ["action", t`Action`]]} /> : undefined,
       // Active filters stay visible (and removable) outside the closed popover.
       activeCount: chips.length, chips, controls: <>{platform ? <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(list.values.platform_only)}
         onChange={event => list.update({ platform_only: event.target.checked ? "1" : "" })} />{t`Platform-level rows only`}</label> : null}
-        <AuditLogFilters filters={filters} onChange={next => list.update(next)} /></>, onClear: clear }}
+        <AuditLogFilters filters={filters} areas={areas} onChange={next => list.update(next)} /></>, onClear: clear }}
     body={{ kind: "table", table: <DataTable data={logs.data?.results ?? []} listState={list}
       ordering={list.values.ordering} onOrderingChange={ordering => list.update({ ordering })}
       columns={[

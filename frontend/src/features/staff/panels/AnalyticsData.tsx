@@ -4,6 +4,13 @@ import { CatalogChartPanel } from "./charts/CatalogChartPanel";
 import type { ChartRecord, ChartSpec } from "./charts/chartSpec";
 import type { ReportChartSpec } from "./analyticsApi";
 import { useReportColumns } from "./OperationsReportSelection";
+import { reportFieldLabel } from "./reportFieldLabels";
+
+/** A nested value as "Label: value" pairs, so a cell never shows raw JSON keys. */
+function objectText(value: object): string {
+  if (Array.isArray(value)) return value.map(item => item !== null && typeof item === "object" ? objectText(item) : String(item)).join(", ");
+  return Object.entries(value).map(([key, item]) => `${reportFieldLabel(key)}: ${item !== null && typeof item === "object" ? objectText(item) : String(item ?? "—")}`).join(" · ");
+}
 
 /** The full source table remains available even when a chart omits null axes or shows top N. */
 export function AnalyticsData({ title, rows, spec, hint, meta }: {
@@ -27,10 +34,10 @@ export function AnalyticsData({ title, rows, spec, hint, meta }: {
     {table ? <div id={id} className="overflow-x-auto"><table tabIndex={0}
       className="w-full text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <caption>{title} {selectedFields.length ? t`selected columns` : t`full report data`}</caption>
-      <thead><tr>{fields.map(field => <th scope="col" className="p-2" key={field}>{field.replace(/_/g, " ")}</th>)}</tr></thead>
+      <thead><tr>{fields.map(field => <th scope="col" className="p-2" key={field}>{reportFieldLabel(field)}</th>)}</tr></thead>
       <tbody>{rows.map((row, index) => <tr key={index}>{fields.map((field, column) => {
         const value = row[field];
-        const text = value == null ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value);
+        const text = value == null ? "—" : typeof value === "object" ? objectText(value) : String(value);
         return column ? <td key={field} className="p-2">{text}</td> : <th key={field} scope="row" className="p-2">{text}</th>;
       })}</tr>)}</tbody>
     </table></div> : null}

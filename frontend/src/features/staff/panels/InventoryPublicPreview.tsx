@@ -5,6 +5,7 @@ import type { ItemForm } from "./InventoryPanelShared";
 export function publicPreviewAvailability(form: ItemForm): Availability {
  if (!form.is_public || form.public_availability_mode === "hidden") return null;
  const available = Number(form.available_quantity), total = Number(form.total_quantity);
+ // The API contract code, not display copy: AvailabilityBadge translates it.
  const label = available <= 0 || total <= 0 ? "Unavailable" : available <= Math.ceil(total * .2) ? "Limited" : "Available";
  return form.public_availability_mode === "exact_count" && form.show_public_count ? { mode: "exact_count", label, count: available } : { mode: "status_only", label };
 }

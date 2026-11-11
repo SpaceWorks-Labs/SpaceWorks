@@ -10,6 +10,7 @@ import { DeviceEnrollmentModal } from "./DeviceEnrollmentModal";
 import { ListLayout, DetailLayout, FlowLayout } from "../../../components/layouts";
 import { ListRow, RelativeTime, StatusPill } from "../../../components/ui";
 import { opsQueryState } from "../opsPresentation";
+import { deviceKindLabel } from "./operationsLabels";
 
 export function DevicesPanel({ makerspaceId }: { makerspaceId: number }) {
   const [page, setPage] = useState(1);
@@ -38,7 +39,7 @@ export function DevicesPanel({ makerspaceId }: { makerspaceId: number }) {
         { label: t`Revoked on this page`, value: rows.filter(device => device.status === "revoked").length }]}
       body={{ kind: "rows", rows: rows.map(device => <ListRow key={device.id} title={device.name} onClick={() => setSelectedId(device.id)}
         identity={{ kind: "icon", icon: "Settings", tone: "accent" }}
-        meta={<>{device.kind.replace(/_/g, " ")} · {device.last_seen_at ? <>{t`Last seen `}<RelativeTime date={device.last_seen_at} /></> : t`No heartbeat yet`}</>}
+        meta={<>{deviceKindLabel(device.kind)} · {device.last_seen_at ? <>{t`Last seen `}<RelativeTime date={device.last_seen_at} /></> : t`No heartbeat yet`}</>}
         right={<StatusPill label={device.status === "active" ? device.offline_since ? t`Offline` : t`Online` : machineStatusLabel(device.status)}
           tone={isOnline(device) ? "success" : device.status === "revoked" ? "danger" : "warn"} />} />) }}
       pagination={{ page, pageSize: 24, count: devices.data?.count ?? 0, onChange: next => { setSelectedId(null); setPage(next); } }}

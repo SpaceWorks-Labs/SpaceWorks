@@ -1,6 +1,5 @@
 import { formatLocale } from "../../../lib/format";
-import { t } from "@lingui/core/macro";
-import { plural } from "../../../lib/plural";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { useStaffGet } from "./shared";
@@ -68,7 +67,7 @@ export function ChainOfCustodyBlock({ productId }: { productId: number }) {
 
 function QueryState({ loading, error, retry, empty, emptyLabel }: { loading: boolean; error?: Error | null; retry: () => void; empty: boolean; emptyLabel: string }) {
   if (loading) return <p role="status" className="text-sm text-muted">{t`Loading…`}</p>;
-  if (error) return <ErrorBlock error={error} resource="loan history" onRetry={retry} />;
+  if (error) return <ErrorBlock error={error} resource={t`loan history`} onRetry={retry} />;
   if (empty) return <EmptyState message={emptyLabel} />;
   return null;
 }
@@ -88,13 +87,13 @@ function AssetGroups({ groups }: { groups: AssetGroup[] }) {
 
 function QuantitySummaryView({ summary }: { summary: QuantitySummary }) {
   const parts = [
-    plural(summary.loan_count, "reviewed loan"),
-    plural(summary.direct_loan_count, "direct loan"),
-    `${summary.issued_quantity} issued`,
-    `${summary.returned_quantity} returned`,
-    `${summary.damaged_quantity} damaged`,
-    `${summary.missing_quantity} missing`,
-    `${summary.active_quantity} active`,
+    plural(summary.loan_count, { one: "# reviewed loan", other: "# reviewed loans" }),
+    plural(summary.direct_loan_count, { one: "# direct loan", other: "# direct loans" }),
+    t`${summary.issued_quantity} issued`,
+    t`${summary.returned_quantity} returned`,
+    t`${summary.damaged_quantity} damaged`,
+    t`${summary.missing_quantity} missing`,
+    t`${summary.active_quantity} active`,
   ];
   return <p className="text-xs text-muted">{parts.join(" | ")}</p>;
 }
@@ -104,10 +103,10 @@ function EventList({ events, truncated }: { events: TimelineEvent[]; truncated: 
   return (
     <ActivityRail title={t`History`}>
       {events.map((event, index) => (
-        <ActivityItem exact key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} actor={event.actor ? formatActor(event.actor) : "Space Works"} date={event.at}>
+        <ActivityItem exact key={`${event.kind}-${String(event.detail.id ?? index)}-${event.at}`} actor={event.actor ? formatActor(event.actor) : t`Space Works`} date={event.at}>
           {/* Audit meta can carry long IDs, keys and URLs; let them break instead of widening the drawer. */}
           <span className="font-medium text-ink [overflow-wrap:anywhere]">
-            {event.kind === "audit" ? String(event.detail.action_label ?? "Audit entry") : humanize(event.kind)}
+            {event.kind === "audit" ? String(event.detail.action_label ?? t`Audit entry`) : humanize(event.kind)}
           </span>
           {event.evidence_id ? t` · evidence #${event.evidence_id}` : ""}
           {event.evidence_retention ? t` (photo ${retentionLabel(event.evidence_retention)})` : ""}
@@ -141,7 +140,7 @@ function retentionLabel(retention: NonNullable<TimelineEvent["evidence_retention
 }
 
 function formatActor(actor: Actor) {
-  return actor.role ? `${actor.username} (${actor.role})` : actor.username;
+  return actor.username;
 }
 
 function humanize(value: string) {

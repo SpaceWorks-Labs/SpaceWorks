@@ -28,6 +28,7 @@ frontendEnv:
   WEB_ANALYTICS_COLLECT_URL: ""
   WEB_ANALYTICS_DOMAIN: ""
   WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ""
+  WEB_TELEMETRY_ALLOWED_ORIGINS: ""
   TURNSTILE_SITE_KEY: ""
 service:
   type: ClusterIP
@@ -37,6 +38,8 @@ ingress:
   className: ""
   host: ""
   annotations: {}
+  # Used only when frontend.enabled=false (API only): the backend paths the ingress exposes.
+  apiOnlyPaths: [/api, /embed, /share, /sitemap.xml, /robots.txt, /static, /.well-known]
   tls: []
 resources:
   requests:

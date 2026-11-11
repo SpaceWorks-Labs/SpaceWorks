@@ -74,6 +74,17 @@
     X-Frame-Options = "DENY"
     Content-Security-Policy = "frame-ancestors 'none'"
 
+# Every 0.12 website route (/unsubscribe/<token>, /member/*, /m/<slug>/member/*, supervised
+# sessions at /member/supervised-sessions, guest-pass and join pages) is a React route and is
+# served by the /* rewrite above; none needs its own redirect. The unsubscribe link carries a
+# bearer token in its path, so it is never cached and never sent as a referrer (the browser takes
+# the last listed Referrer-Policy token).
+[[headers]]
+  for = "/unsubscribe/*"
+  [headers.values]
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
 # Hashed build output never changes under one name; the runtime config and the service
 # workers must always be revalidated, or a deploy leaves browsers on the old app.
 [[headers]]

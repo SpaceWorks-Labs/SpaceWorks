@@ -11,6 +11,7 @@ export default (request, context) => handleRequest(request, {
   CONNECT_ORIGINS: Netlify.env.get('CONNECT_ORIGINS'),
   IMAGE_ORIGINS: Netlify.env.get('IMAGE_ORIGINS'),
   MEDIA_ORIGINS: Netlify.env.get('MEDIA_ORIGINS'),
+  FRAME_ORIGINS: Netlify.env.get('FRAME_ORIGINS'),
   ANALYTICS_SCRIPT_ORIGINS: Netlify.env.get('ANALYTICS_SCRIPT_ORIGINS'),
 }, () => context.next(), fetch, context.ip);
 

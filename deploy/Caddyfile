@@ -68,7 +68,7 @@ import /etc/caddy/control-tunnel-{$CONTROL_PLANE_TUNNEL:off}.caddy
         reverse_proxy backend:8000
     }
 
-    @backend path /embed/* /share/* /sitemap.xml /robots.txt /api/* /static/* /docs* /redoc* /schema*
+    @backend path /embed/* /share/* /sitemap.xml /robots.txt /api/* /static/* /redoc* /schema*
     reverse_proxy @backend backend:8000 {
         header_up X-Forwarded-Proto https
         header_up X-Forwarded-Host {host}

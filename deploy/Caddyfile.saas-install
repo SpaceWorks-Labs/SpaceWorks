@@ -74,7 +74,7 @@ import {$STORAGE_CADDY_CONFIG:/etc/caddy/storage-disabled.caddy}
         reverse_proxy backend:8000
     }
 
-    @backend path /embed/* /share/* /sitemap.xml /robots.txt /api/* /static/* /docs* /redoc* /schema*
+    @backend path /embed/* /share/* /sitemap.xml /robots.txt /api/* /static/* /redoc* /schema*
     reverse_proxy @backend backend:8000
     reverse_proxy {$SPACEWORKS_WEB_UPSTREAM:frontend:80} {
         # Backend responses own their referrer policy (embeds and credentials use no-referrer).

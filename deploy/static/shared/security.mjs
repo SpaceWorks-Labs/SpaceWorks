@@ -37,7 +37,9 @@ export function securityHeaders(env, headers = new Headers(), { embed = false, p
       "style-src 'self' 'unsafe-inline'", "font-src 'self'", "worker-src 'self' blob:",
       `connect-src 'self' ${origins(env.CONNECT_ORIGINS)}`,
       `img-src 'self' data: blob: ${origins(env.IMAGE_ORIGINS)}`,
-      `media-src 'self' blob: ${origins(env.MEDIA_ORIGINS)}`, "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
+      `media-src 'self' blob: ${origins(env.MEDIA_ORIGINS)}`,
+      // Decision 263: embedded Metabase/Grafana dashboards; same as default-src while unset.
+      `frame-src 'self' ${origins(env.FRAME_ORIGINS)}`, "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
     ].join('; '));
   }
   if (privateResponse) {

@@ -73,6 +73,6 @@ export async function handleRequest(request, env, assets, fetcher = fetch, clien
       }
     }
     return new Response(response.body, { status: response.status,
-      headers: securityHeaders(env, output, { embed: /^\/(?:embed|docs|redoc)(?:\/|$)/.test(path) }) });
+      headers: securityHeaders(env, output, { embed: /^\/(?:embed|redoc)(?:\/|$)/.test(path) }) });
   } catch { return failure(502, 'upstream_unavailable'); }
 }

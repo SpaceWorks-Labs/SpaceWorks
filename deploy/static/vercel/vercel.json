@@ -8,7 +8,7 @@
   },
   "rewrites": [
     {
-      "source": "/((?!api(?:/|$)|assets(?:/|$)|fonts(?:/|$)|brand(?:/|$)|share(?:/|$)|embed(?:/|$)|static(?:/|$)|docs(?:/|$)|redoc(?:/|$)|schema(?:/|$)|config\\.js$|.*\\.(?:js|css|wasm|woff2?|png|jpg|svg|ico|webmanifest)$).*)",
+      "source": "/((?!api(?:/|$)|assets(?:/|$)|fonts(?:/|$)|brand(?:/|$)|share(?:/|$)|embed(?:/|$)|static(?:/|$)|redoc(?:/|$)|schema(?:/|$)|config\\.js$|.*\\.(?:js|css|wasm|woff2?|png|jpg|svg|ico|webmanifest)$).*)",
       "destination": "/index.html"
     }
   ]

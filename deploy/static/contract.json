@@ -21,6 +21,7 @@
     "ANALYTICS_SCRIPT_ORIGINS": "space-separated exact approved analytics HTTPS origins",
     "LIVE_ORIGIN": "optional exact HTTPS gthread streaming upstream in full only; absent => polling, never pin a sync web worker",
     "MEDIA_ORIGINS": "space-separated exact signed media storage HTTPS origins",
+    "FRAME_ORIGINS": "optional space-separated exact HTTPS origins of embedded analytics dashboards (Metabase, Grafana); absent => only same-origin frames",
     "PUBLIC_API_URL": "optional explicit cross-site HTTPS URL ending /api; default /api, never /api/v1; add its exact origin to CONNECT_ORIGINS",
     "PUBLIC_TENANT_TOKEN": "optional publishable tenant bootstrap token; not an account credential, exposed in config.js"
   },
@@ -35,7 +36,7 @@
   "route_order": [
     "deny control/internal/metrics",
     "no-store config.js",
-    "API/share/embed/backend static/docs/schema/robots/sitemap",
+    "API/share/embed/backend static/redoc/schema/robots/sitemap",
     "crawler page/event/booking metadata",
     "assets",
     "SPA navigation"

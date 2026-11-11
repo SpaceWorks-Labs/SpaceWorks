@@ -69,14 +69,16 @@ frontend/test-results/
 frontend/.npm-cache/
 frontend/.pwa-browser/
 
-# Kept local, not published: test suites (run with ./scripts/dev.sh test / npm test)
-backend/tests/
+# Test suites are committed (decision 244). Only run artefacts stay ignored.
 backend/.affected-tests.txt
-frontend/e2e/
-frontend/src/**/*.test.ts
-frontend/src/**/*.test.tsx
-frontend/*.vitest.config.mjs
-.github/workflows/tests.yml
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+*.log
+.env.local
+.env.*.local
+scratch/
 
 # Editor / tool state and build-programme notes
 .zed/
@@ -91,13 +93,9 @@ backend/apps/tenant_migration/RECONCILIATION-FIELDS.json
 HANDOFF.md
 backend/.claude/settings.local.json
 
-# Local-only tool configs (editor lint/type-check, test runners)
+# Local-only tool configs (editor lint/type-check)
 ruff.toml
 pyrightconfig.json
-frontend/playwright.config.ts
-frontend/vitest.config.ts
-frontend/vitest.local-junction.config.ts
-frontend/src/test/staffActor.ts
 
 # Plans, prompts, hand-offs, lane notes and research notes never enter the repo (owner
 # decision #148b). scripts/ci/check_rules.py refuses any that are tracked anyway (git add -f).
@@ -123,3 +121,23 @@ LANE-*
 research/
 docs/design-revamp/
 !frontend/src/help-content/**/*.md
+
+# Test-tree junk that must never ship (decision 244 un-ignored backend/tests/).
+# Vendored PIL/reportlab copy used by one lane to render offline; not a fixture.
+backend/tests/**/.bk_e_render_deps/
+# Build-programme reconciliation bundles (lane deltas, handoff JSON, tarballs, scratch id lists).
+backend/tests/**/_reconciliation_artifacts/
+backend/tests/**/reconciliation-*
+backend/tests/**/recon-*-test-delta.zip
+backend/tests/dec_be_local/be_ids.txt
+
+# Generated at build time from the tracked catalogues (lingui compile / msgfmt).
+frontend/src/locales/*/messages.js
+backend/locale/**/*.mo
+
+# Scratch diagnostics and build-programme part lists inside the test tree.
+backend/tests/_diag/
+backend/tests/idcards_best/*-PARTS.md
+
+# Docs copied into the frontend Docker build context by frontend/scripts/docs-snapshot.mjs (release workflow).
+frontend/docs-snapshot/

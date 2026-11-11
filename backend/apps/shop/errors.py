@@ -17,7 +17,7 @@ STATUS = {
     "guest_identity_required": 400, "order_empty": 400, "item_unavailable": 409,
     "order_not_cancellable": 409, "order_not_collectable": 409, "order_not_payable": 409,
     "return_window_closed": 409, "return_exceeds_sold": 400, "pickup_event_invalid": 400,
-    "charges_off": 409, "variant_invalid": 400, "link_invalid": 400, "not_found": 404,
+    "pickup_interrupted": 409, "idempotency_key_reused": 409, "charges_off": 409, "variant_invalid": 400, "link_invalid": 400, "not_found": 404,
 }
 
 

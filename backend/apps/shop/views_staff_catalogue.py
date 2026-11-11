@@ -50,12 +50,26 @@ def _write_data(validated):
 class ShopProductListView(APIView):
     permission_classes = [IsActiveStaff]
 
-    @extend_schema(tags=TAGS, parameters=[*PAGE, OpenApiParameter("archived", bool, OpenApiParameter.QUERY)],
+    @extend_schema(tags=TAGS, parameters=[*PAGE, OpenApiParameter("archived", bool, OpenApiParameter.QUERY),
+                               # Decision 242 (SH2): category, name search.
+                               OpenApiParameter("category", str, OpenApiParameter.QUERY),
+                               OpenApiParameter("q", str, OpenApiParameter.QUERY),
+                               # Decision 248: only products with an own-stock variant at or below its reorder point.
+                               OpenApiParameter("low_stock", bool, OpenApiParameter.QUERY)],
                    responses={200: ShopProductSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, VIEW)
         rows = ShopProduct.objects.filter(makerspace=space).prefetch_related("variants", "components")
         rows = rows.filter(archived_at__isnull=request.query_params.get("archived") != "true")
+        if category := request.query_params.get("category"):
+            rows = rows.filter(category=category[:80])
+        if term := (request.query_params.get("q") or "").strip():
+            rows = rows.filter(name__icontains=term[:100])
+        if request.query_params.get("low_stock") == "true":
+            from django.db.models import F
+            rows = rows.filter(variants__archived_at__isnull=True, variants__is_active=True,
+                               variants__linked_product__isnull=True, variants__reorder_point__gt=0,
+                               variants__on_hand__lte=F("variants__reorder_point")).distinct()
         return page(request, rows, ShopProductSerializer)
 
     @extend_schema(tags=TAGS, request=ShopProductSerializer, responses={201: ShopProductSerializer, **ERRORS})

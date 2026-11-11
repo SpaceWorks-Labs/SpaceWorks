@@ -6,13 +6,16 @@ sees them masked (`PiiMaskingSerializerMixin`, #114.1).
 
 from django.utils.translation import gettext
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.accounts.pii_presentation import PiiMaskingSerializerMixin
 
 from .models import ShopCashSession, ShopOrder, ShopProduct, ShopSettings, ShopStockMovement, ShopVariant
 from .serializers_public import ShopLineInputSerializer, ShopOrderLineSerializer
 
-MONEY = {"max_digits": 12, "decimal_places": 2}
+from .pickup_status import pickup_event_title, pickup_requires_staff_confirmation
+
+from apps.payments.money import MONEY  # noqa: E402
 
 
 class ShopStaffVariantSerializer(serializers.ModelSerializer):
@@ -41,7 +44,7 @@ class ShopProductSerializer(serializers.ModelSerializer):
     components = serializers.SerializerMethodField()
     component_input = ShopComponentSerializer(many=True, required=False, write_only=True, source="components_in")
     image_url = serializers.SerializerMethodField()
-    price = serializers.DecimalField(**MONEY, required=False, write_only=True, min_value=0)
+    price = MoneyField(**MONEY, required=False, write_only=True, min_value=0)
 
     class Meta:
         model = ShopProduct
@@ -102,7 +105,7 @@ class ShopStaffReturnSerializer(serializers.Serializer):
     line_id = serializers.IntegerField()
     quantity = serializers.IntegerField()
     disposition = serializers.CharField()
-    amount = serializers.DecimalField(**MONEY)
+    amount = MoneyField(**MONEY)
     refund_case_id = serializers.IntegerField(allow_null=True)
     created_at = serializers.DateTimeField()
 
@@ -114,12 +117,14 @@ class ShopStaffOrderSerializer(PiiMaskingSerializerMixin, serializers.ModelSeria
     buyer_email = serializers.SerializerMethodField()
     payment_status = serializers.SerializerMethodField()
     pickup_event_title = serializers.SerializerMethodField()
+    pickup_requires_staff_confirmation = serializers.SerializerMethodField()
     pii_account_fields = ("buyer_name", "buyer_email")
 
     class Meta:
         model = ShopOrder
         fields = ("id", "makerspace", "channel", "status", "buyer", "buyer_name", "buyer_email", "guest_name",
                   "guest_email", "pickup_at", "pickup_event", "pickup_event_title", "pickup_code", "currency",
+                  "pickup_requires_staff_confirmation",
                   "subtotal", "discount_total", "total", "tax_total", "amount_due", "created_at", "expires_at",
                   "paid_at", "ready_at", "collected_at", "closed_at", "close_reason", "cash_session", "lines",
                   "returns", "payment_status")
@@ -138,7 +143,10 @@ class ShopStaffOrderSerializer(PiiMaskingSerializerMixin, serializers.ModelSeria
         return payment.status if payment else "none"
 
     def get_pickup_event_title(self, order) -> str:
-        return order.pickup_event.title if order.pickup_event_id and order.pickup_event else ""
+        return pickup_event_title(order)
+
+    def get_pickup_requires_staff_confirmation(self, order) -> bool:
+        return pickup_requires_staff_confirmation(order)
 
 
 class ShopDeskPaymentSerializer(serializers.Serializer):
@@ -172,11 +180,11 @@ class ShopMemberHitSerializer(serializers.Serializer):
 
 
 class ShopCashOpenSerializer(serializers.Serializer):
-    opening_float = serializers.DecimalField(**MONEY, min_value=0)
+    opening_float = MoneyField(**MONEY, min_value=0)
 
 
 class ShopCashCloseSerializer(serializers.Serializer):
-    counted_cash = serializers.DecimalField(**MONEY, min_value=0)
+    counted_cash = MoneyField(**MONEY, min_value=0)
     note = serializers.CharField(max_length=300, allow_blank=True, required=False, default="")
 
 
@@ -206,12 +214,12 @@ class ShopReceiptLineSerializer(serializers.Serializer):
     label = serializers.CharField()
     sku = serializers.CharField(allow_blank=True)
     quantity = serializers.IntegerField()
-    unit_amount = serializers.DecimalField(**MONEY)
-    discount_amount = serializers.DecimalField(**MONEY)
-    line_total = serializers.DecimalField(**MONEY)
+    unit_amount = MoneyField(**MONEY)
+    discount_amount = MoneyField(**MONEY)
+    line_total = MoneyField(**MONEY)
     hsn_code = serializers.CharField(allow_blank=True)
     tax_rate_bps = serializers.IntegerField(allow_null=True)
-    tax_amount = serializers.DecimalField(**MONEY, allow_null=True)
+    tax_amount = MoneyField(**MONEY, allow_null=True)
 
 
 class ShopReceiptSerializer(serializers.Serializer):
@@ -226,10 +234,10 @@ class ShopReceiptSerializer(serializers.Serializer):
     channel = serializers.CharField()
     currency = serializers.CharField()
     lines = ShopReceiptLineSerializer(many=True)
-    subtotal = serializers.DecimalField(**MONEY)
-    discount_total = serializers.DecimalField(**MONEY)
-    tax_total = serializers.DecimalField(**MONEY)
-    total = serializers.DecimalField(**MONEY)
+    subtotal = MoneyField(**MONEY)
+    discount_total = MoneyField(**MONEY)
+    tax_total = MoneyField(**MONEY)
+    total = MoneyField(**MONEY)
     status = serializers.CharField()
     paid = serializers.BooleanField()
     method = serializers.CharField(allow_blank=True)

@@ -2,6 +2,7 @@
 
 from django.urls import path
 
+from . import views_event_offers as e
 from . import views_public as v
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path("m/<str:makerspace_slug>/shop/orders/", v.PublicShopOrderView.as_view(), name="public-shop-orders"),
     path("m/<str:makerspace_slug>/shop/orders/<str:token>/", v.PublicShopOrderStatusView.as_view(),
          name="public-shop-order-status"),
+    path("m/<str:makerspace_slug>/shop/events/<uuid:public_token>/offers/", e.PublicShopEventOffersView.as_view(),
+         name="public-shop-event-offers"),
 ]

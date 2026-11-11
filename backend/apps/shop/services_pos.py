@@ -86,6 +86,8 @@ def pos_sale(space, *, actor, lines, member=None, method="cash", reference="", r
             sell_shop_stock(order, basket.stock_pairs(), actor=actor, reason=f"Desk sale #{order.pk}")
         except OutOfStock as exc:
             raise out_of_stock(exc, basket.labels) from None
+        from .consumable_costs import record_sale_costs
+        record_sale_costs(order, actor=actor)
         _paid_and_collected(order, actor)
         if payment is not None:
             _settle(payment, actor, _receipt(payment, method, reference, received_at))
@@ -110,6 +112,10 @@ def collect_payment(order, *, actor, method="cash", reference="", received_at=No
         write_allowed(order.makerspace)
         if order.status not in ShopOrder.OPEN_STATUSES:
             raise ShopRefused("order_not_payable", "This order is not waiting for payment.", status=order.status)
+        from .pickup_status import pickup_requires_staff_confirmation
+        if hand_over and pickup_requires_staff_confirmation(order):  # decision 221(h), as collect() refuses
+            raise ShopRefused("pickup_interrupted", "This order's event pickup was interrupted. Move the pickup to "
+                                                    "the space before handing it over.")
         payment = order_payment(order)
         if payment is None:
             raise ShopRefused("order_not_payable", "This order has nothing to pay.")
@@ -122,4 +128,10 @@ def collect_payment(order, *, actor, method="cash", reference="", received_at=No
             "order_id": order.pk, "method": method, "handed_over": hand_over,
             "cash_session_id": getattr(session, "pk", None)})
     order.refresh_from_db()
+    if hand_over and order.status == ShopOrder.Status.COLLECTED:
+        # m10 / decision 221(h): a desk hand-over tells the buyer and signed destinations exactly as `collect()`.
+        from .notices import buyer_notice
+        from .webhooks import handover_event, order_webhook
+        buyer_notice(order, "shop_order_collected")
+        order_webhook(order, handover_event(order))
     return order

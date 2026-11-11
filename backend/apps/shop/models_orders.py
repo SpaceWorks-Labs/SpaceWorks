@@ -19,7 +19,8 @@ from django.db.models import Q
 
 from apps.encryption.mappers import ScopedPiiModelMixin
 
-MONEY = {"max_digits": 12, "decimal_places": 2}
+from apps.payments.money import MONEY  # noqa: E402  (3 decimals: money.MONEY_DECIMAL_PLACES)
+from apps.payments.money_model import MoneyDecimalField
 
 
 def new_status_secret():
@@ -64,13 +65,13 @@ class ShopOrder(ScopedPiiModelMixin, models.Model):
     #: Shown to the buyer and typed at the desk to collect. Unique per space.
     pickup_code = models.CharField(max_length=12)
     currency = models.CharField(max_length=3)
-    subtotal = models.DecimalField(**MONEY, default=0)
-    discount_total = models.DecimalField(**MONEY, default=0)
+    subtotal = MoneyDecimalField(**MONEY, default=0)
+    discount_total = MoneyDecimalField(**MONEY, default=0)
     #: The frozen quote total (tax-inclusive with `shop.tax` on).
-    total = models.DecimalField(**MONEY, default=0)
-    tax_total = models.DecimalField(**MONEY, default=0)
+    total = MoneyDecimalField(**MONEY, default=0)
+    tax_total = MoneyDecimalField(**MONEY, default=0)
     #: What the buyer owes: the charge's amount (the total plus any exclusive tax on top).
-    amount_due = models.DecimalField(**MONEY, default=0)
+    amount_due = MoneyDecimalField(**MONEY, default=0)
     #: The frozen quote (lines, discount, digest). Insert-only, like `Payment.pricing_snapshot`.
     pricing_snapshot = models.JSONField(default=dict, blank=True)
     digest = models.CharField(max_length=64, blank=True, default="")
@@ -92,12 +93,17 @@ class ShopOrder(ScopedPiiModelMixin, models.Model):
     close_reason = models.CharField(max_length=24, blank=True, default="")
     #: Q-S17: how many uncollected reminders went out (0, 1 or 2).
     reminders_sent = models.PositiveSmallIntegerField(default=0)
+    #: Payments audit 0.12.0 B-10: the client's `Idempotency-Key` for an online order, so a double
+    #: submit returns the first order instead of creating a second one (and a second charge).
+    idempotency_key = models.CharField(max_length=64, blank=True, default="")
 
     class Meta:
         ordering = ["-created_at", "-pk"]
         indexes = [models.Index(fields=["makerspace", "status", "created_at"], name="shop_order_status_idx")]
         constraints = [
             models.UniqueConstraint(fields=["makerspace", "pickup_code"], name="shop_order_unique_pickup_code"),
+            models.UniqueConstraint(fields=["makerspace", "idempotency_key"], condition=~Q(idempotency_key=""),
+                                    name="shop_order_idempotency_once"),
             models.CheckConstraint(condition=Q(subtotal__gte=0, discount_total__gte=0, total__gte=0, tax_total__gte=0,
                                                amount_due__gte=0), name="shop_order_amounts_nonnegative"),
             models.CheckConstraint(condition=Q(pickup_at="space") | Q(channel="online"),
@@ -125,14 +131,14 @@ class ShopOrderLine(models.Model):
     sku = models.CharField(max_length=64, blank=True, default="")
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     #: Frozen per-unit price, the discount on the line and the line's net amount.
-    unit_amount = models.DecimalField(**MONEY)
-    discount_amount = models.DecimalField(**MONEY, default=0)
-    line_total = models.DecimalField(**MONEY)
+    unit_amount = MoneyDecimalField(**MONEY)
+    discount_amount = MoneyDecimalField(**MONEY, default=0)
+    line_total = MoneyDecimalField(**MONEY)
     #: Q-S2 (with `shop.tax` on): the tax class used and the line's inclusive split.
     tax_rate_bps = models.PositiveIntegerField(null=True, blank=True)
     hsn_code = models.CharField(max_length=8, blank=True, default="")
-    taxable_amount = models.DecimalField(**MONEY, default=0)
-    tax_amount = models.DecimalField(**MONEY, default=0)
+    taxable_amount = MoneyDecimalField(**MONEY, default=0)
+    tax_amount = MoneyDecimalField(**MONEY, default=0)
 
     class Meta:
         ordering = ["order_id", "pk"]
@@ -158,7 +164,7 @@ class ShopOrderReturn(models.Model):
     line = models.ForeignKey(ShopOrderLine, on_delete=models.CASCADE, related_name="returns")
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     disposition = models.CharField(max_length=12, choices=Disposition.choices)
-    amount = models.DecimalField(**MONEY, default=0)
+    amount = MoneyDecimalField(**MONEY, default=0)
     refund_case = models.ForeignKey("payments.RefundCase", null=True, blank=True, on_delete=models.PROTECT,
                                     related_name="shop_returns")
     reason = models.CharField(max_length=200, blank=True, default="")

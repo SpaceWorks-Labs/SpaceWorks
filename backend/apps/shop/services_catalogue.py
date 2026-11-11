@@ -111,6 +111,9 @@ def save_product(space, data, *, actor, product=None):
     values = {name: data[name] for name in PRODUCT_FIELDS if name in data}
     _check_product(space, {**({"kind": product.kind} if product else {}), **values})
     created = product is None
+    if created:
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(space, "shop_products")  # decision 284: typed 409 shop_products_quota_reached
     product = product or ShopProduct(makerspace=space, created_by=actor)
     for name, value in values.items():
         setattr(product, name, value)

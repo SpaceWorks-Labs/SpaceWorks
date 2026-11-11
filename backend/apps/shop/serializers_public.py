@@ -1,9 +1,12 @@
 """Public and member shop shapes (release 2 L22). No storage, cost, linked item or buyer data."""
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from drf_spectacular.utils import extend_schema_field
 
-MONEY = {"max_digits": 12, "decimal_places": 2}
+from .pickup_status import pickup_event_title, pickup_requires_staff_confirmation
+
+from apps.payments.money import MONEY  # noqa: E402
 
 
 class ShopErrorSerializer(serializers.Serializer):
@@ -15,7 +18,7 @@ class ShopPublicVariantSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     options = serializers.DictField(child=serializers.CharField())
-    price = serializers.DecimalField(**MONEY, allow_null=True, coerce_to_string=False)
+    price = MoneyField(**MONEY, allow_null=True, coerce_to_string=False)
     sold_out = serializers.BooleanField()
     stock_label = serializers.ChoiceField(choices=("in_stock", "low", "sold_out"), allow_null=True)
     stock_count = serializers.IntegerField(allow_null=True)
@@ -29,8 +32,8 @@ class ShopPublicProductSerializer(serializers.Serializer):
     category = serializers.CharField(allow_blank=True)
     unit = serializers.CharField(allow_blank=True)
     image_url = serializers.CharField(allow_blank=True)
-    price_from = serializers.DecimalField(**MONEY, allow_null=True, coerce_to_string=False)
-    price_to = serializers.DecimalField(**MONEY, allow_null=True, coerce_to_string=False)
+    price_from = MoneyField(**MONEY, allow_null=True, coerce_to_string=False)
+    price_to = MoneyField(**MONEY, allow_null=True, coerce_to_string=False)
     members_only = serializers.BooleanField()
     max_per_order = serializers.IntegerField(allow_null=True)
     sold_out = serializers.BooleanField()
@@ -70,21 +73,21 @@ class ShopQuoteLineSerializer(serializers.Serializer):
     variant_id = serializers.IntegerField()
     label = serializers.CharField()
     quantity = serializers.DecimalField(max_digits=12, decimal_places=3)
-    unit_amount = serializers.DecimalField(**MONEY)
-    discount = serializers.DecimalField(**MONEY)
-    net = serializers.DecimalField(**MONEY)
+    unit_amount = MoneyField(**MONEY)
+    discount = MoneyField(**MONEY)
+    net = MoneyField(**MONEY)
     tax_rate_bps = serializers.IntegerField(allow_null=True)
-    tax = serializers.DecimalField(**MONEY, allow_null=True)
+    tax = MoneyField(**MONEY, allow_null=True)
 
 
 class ShopQuoteSerializer(serializers.Serializer):
     currency = serializers.CharField()
     lines = ShopQuoteLineSerializer(many=True)
-    subtotal = serializers.DecimalField(**MONEY)
-    discount_total = serializers.DecimalField(**MONEY)
-    total = serializers.DecimalField(**MONEY)
-    tax_total = serializers.DecimalField(**MONEY)
-    amount_due = serializers.DecimalField(**MONEY)
+    subtotal = MoneyField(**MONEY)
+    discount_total = MoneyField(**MONEY)
+    total = MoneyField(**MONEY)
+    tax_total = MoneyField(**MONEY)
+    amount_due = MoneyField(**MONEY)
     tax_inclusive = serializers.BooleanField()
     discount_name = serializers.CharField(allow_blank=True)
     digest = serializers.CharField()
@@ -108,12 +111,12 @@ class ShopOrderLineSerializer(serializers.Serializer):
     variant_id = serializers.IntegerField()
     label = serializers.CharField()
     quantity = serializers.IntegerField()
-    unit_amount = serializers.DecimalField(**MONEY)
-    discount_amount = serializers.DecimalField(**MONEY)
-    line_total = serializers.DecimalField(**MONEY)
+    unit_amount = MoneyField(**MONEY)
+    discount_amount = MoneyField(**MONEY)
+    line_total = MoneyField(**MONEY)
     hsn_code = serializers.CharField(allow_blank=True)
     tax_rate_bps = serializers.IntegerField(allow_null=True)
-    tax_amount = serializers.DecimalField(**MONEY)
+    tax_amount = MoneyField(**MONEY)
 
 
 class ShopBuyerReturnSerializer(serializers.Serializer):
@@ -121,7 +124,7 @@ class ShopBuyerReturnSerializer(serializers.Serializer):
 
     line_id = serializers.IntegerField()
     quantity = serializers.IntegerField()
-    amount = serializers.DecimalField(**MONEY)
+    amount = MoneyField(**MONEY)
     created_at = serializers.DateTimeField()
 
 
@@ -134,12 +137,13 @@ class ShopBuyerOrderSerializer(serializers.Serializer):
     pickup_code = serializers.CharField()
     pickup_at = serializers.CharField()
     pickup_event_title = serializers.SerializerMethodField()
+    pickup_requires_staff_confirmation = serializers.SerializerMethodField()
     currency = serializers.CharField()
-    subtotal = serializers.DecimalField(**MONEY)
-    discount_total = serializers.DecimalField(**MONEY)
-    total = serializers.DecimalField(**MONEY)
-    tax_total = serializers.DecimalField(**MONEY)
-    amount_due = serializers.DecimalField(**MONEY)
+    subtotal = MoneyField(**MONEY)
+    discount_total = MoneyField(**MONEY)
+    total = MoneyField(**MONEY)
+    tax_total = MoneyField(**MONEY)
+    amount_due = MoneyField(**MONEY)
     created_at = serializers.DateTimeField()
     expires_at = serializers.DateTimeField(allow_null=True)
     paid_at = serializers.DateTimeField(allow_null=True)
@@ -151,7 +155,10 @@ class ShopBuyerOrderSerializer(serializers.Serializer):
     space_name = serializers.CharField(source="makerspace.name")
 
     def get_pickup_event_title(self, order) -> str:
-        return order.pickup_event.title if order.pickup_event_id and order.pickup_event else ""
+        return pickup_event_title(order)
+
+    def get_pickup_requires_staff_confirmation(self, order) -> bool:
+        return pickup_requires_staff_confirmation(order)
 
     @extend_schema_field(ShopBuyerReturnSerializer(many=True))
     def get_returns(self, order):

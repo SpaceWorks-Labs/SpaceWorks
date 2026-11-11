@@ -48,14 +48,20 @@ def settle_paid_order(order_id):
         return settle_locked(order, actor=None)
 
 
-def order_pairs(order):
-    """The stock units an order's lines take, with the bundle rule frozen at placement."""
+def order_pairs(order, *, remaining=False):
+    """The stock units an order's lines take, with the bundle rule frozen at placement.
+
+    `remaining` leaves out units a return already took back (restocked or written off)."""
     from apps.inventory.availability import shop_stock_units
+
+    from .services_returns import returned_quantity
 
     bundles = bool((order.pricing_snapshot or {}).get("bundles"))
     pairs = []
     for line in order.lines.select_related("variant__product"):
-        pairs += shop_stock_units(line.variant, line.quantity, bundles=bundles)
+        quantity = line.quantity - (returned_quantity(line) if remaining else 0)
+        if quantity > 0:
+            pairs += shop_stock_units(line.variant, quantity, bundles=bundles)
     return pairs
 
 
@@ -80,6 +86,8 @@ def settle_locked(order, *, actor, collect=False):
         buyer_notice(order, "shop_order_unfulfilled")
         staff_notice(order.makerspace, order, "shop_order_unfulfilled")
         return order
+    from .consumable_costs import record_sale_costs
+    record_sale_costs(order, actor=actor)
     order.status, order.paid_at = (ShopOrder.Status.COLLECTED if collect else ShopOrder.Status.PAID), now
     fields = ["status", "paid_at"]
     if collect:
@@ -93,11 +101,12 @@ def settle_locked(order, *, actor, collect=False):
     return order
 
 
-def _due_full(order, actor, reason_code):
+def _due_full(order, actor, reason_code, *, less=0):
+    """Open the case for the whole charge, minus `less` (the share of units a return already took)."""
     from apps.payments.services_refund_partial import add_due_share
 
     payment = order_payment(order)
-    if payment is None:
+    if payment is None or payment.amount - less <= 0:
         return None
-    return add_due_share(payment, amount=payment.amount, reason_code=reason_code, actor=actor,
+    return add_due_share(payment, amount=payment.amount - less, reason_code=reason_code, actor=actor,
                          snapshot={"shop_order_id": order.pk})

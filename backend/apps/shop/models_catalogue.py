@@ -14,7 +14,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 
-MONEY = {"max_digits": 12, "decimal_places": 2}
+from apps.payments.money import MONEY  # noqa: E402  (3 decimals: money.MONEY_DECIMAL_PLACES)
+from apps.payments.money_model import MoneyDecimalField
 
 
 class ShopSettings(models.Model):
@@ -112,7 +113,7 @@ class ShopVariant(models.Model):
     #: Option values such as {"size": "M", "colour": "Blue"}; at most three, short strings.
     options = models.JSONField(default=dict, blank=True)
     sku = models.CharField(max_length=64, blank=True, default="")
-    price = models.DecimalField(**MONEY, validators=[MinValueValidator(0)])
+    price = MoneyDecimalField(**MONEY, validators=[MinValueValidator(0)])
     #: Own stock on the shelf, and how much of it live holds are keeping for checkouts.
     on_hand = models.PositiveIntegerField(default=0)
     held = models.PositiveIntegerField(default=0)

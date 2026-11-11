@@ -16,6 +16,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.audit import services as audit
+from apps.payments.money import quantize_money
 
 from .errors import ShopRefused
 from .models import ShopOrder, ShopOrderReturn, ShopSettings
@@ -29,7 +30,7 @@ def returned_quantity(line):
 
 
 def _share(line, quantity):
-    each = (Decimal(line.line_total) / Decimal(line.quantity)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+    each = quantize_money(Decimal(line.line_total) / Decimal(line.quantity), line.order.currency, rounding=ROUND_DOWN)
     return line.line_total if quantity == line.quantity else each * quantity
 
 
@@ -79,6 +80,8 @@ def record_return(order, *, actor, rows, reason=""):
     for row in made:
         row.refund_case = case
         row.save()
+    from .consumable_costs import reverse_return_costs
+    reverse_return_costs(order, actor=actor)  # restocked units only; a write-off keeps its cost
     if all(returned_quantity(line) >= line.quantity for line in lines.values()):
         order.status, order.closed_at, order.close_reason = ShopOrder.Status.REFUNDED, timezone.now(), "returned"
         order.save(update_fields=["status", "closed_at", "close_reason"])

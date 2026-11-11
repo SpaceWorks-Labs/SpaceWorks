@@ -1,39 +1,40 @@
 """The staff Shop reports view (#137): totals, channels, payment methods, months, top items."""
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
-MONEY = {"max_digits": 14, "decimal_places": 2}
+MONEY = {"max_digits": 15, "decimal_places": 3}
 
 
 class ShopReportTotalsSerializer(serializers.Serializer):
     orders = serializers.IntegerField()
-    sales = serializers.DecimalField(**MONEY)
-    refunds = serializers.DecimalField(**MONEY)
-    net = serializers.DecimalField(**MONEY)
-    tax = serializers.DecimalField(**MONEY)
+    sales = MoneyField(**MONEY)
+    refunds = MoneyField(**MONEY)
+    net = MoneyField(**MONEY)
+    tax = MoneyField(**MONEY)
 
 
 class ShopReportChannelSerializer(serializers.Serializer):
     channel = serializers.CharField()
     orders = serializers.IntegerField()
-    sales = serializers.DecimalField(**MONEY)
+    sales = MoneyField(**MONEY)
 
 
 class ShopReportMethodSerializer(serializers.Serializer):
     method = serializers.CharField()
-    amount = serializers.DecimalField(**MONEY)
+    amount = MoneyField(**MONEY)
 
 
 class ShopReportMonthSerializer(serializers.Serializer):
     month = serializers.CharField()
-    sales = serializers.DecimalField(**MONEY)
-    refunds = serializers.DecimalField(**MONEY)
+    sales = MoneyField(**MONEY)
+    refunds = MoneyField(**MONEY)
 
 
 class ShopReportItemSerializer(serializers.Serializer):
     label = serializers.CharField()
     quantity = serializers.IntegerField()
-    sales = serializers.DecimalField(**MONEY)
+    sales = MoneyField(**MONEY)
 
 
 class ShopReportSerializer(serializers.Serializer):

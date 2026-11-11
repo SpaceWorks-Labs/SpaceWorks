@@ -38,7 +38,10 @@ def _save_with_code(order):
 
 
 def create_order(space, basket, *, channel, status, actor, buyer=None, guest_name="", guest_email="",
-                 pickup_at=ShopOrder.Pickup.SPACE, pickup_event=None, expires_at=None):
+                 pickup_at=ShopOrder.Pickup.SPACE, pickup_event=None, expires_at=None,
+                 idempotency_key=""):
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(space, "shop_orders_monthly")  # decision 284: refuses a NEW order; paying one never reads it
     quote = basket.quote
     tax = sum((row["tax"] for row in basket.tax or ()), Decimal("0"))
     order = ShopOrder(
@@ -46,7 +49,8 @@ def create_order(space, basket, *, channel, status, actor, buyer=None, guest_nam
         guest_email=(guest_email or "")[:254], pickup_at=pickup_at, pickup_event=pickup_event,
         currency=quote.currency, subtotal=quote.subtotal, discount_total=quote.discount_total, total=quote.total,
         tax_total=q(tax, quote.currency), amount_due=quote.total, digest=quote.digest,
-        pricing_snapshot=quote.to_snapshot(bundles=basket.bundles), created_by=actor, expires_at=expires_at)
+        pricing_snapshot=quote.to_snapshot(bundles=basket.bundles), created_by=actor, expires_at=expires_at,
+        idempotency_key=idempotency_key)
     _save_with_code(order)
     rows = basket.tax or [None] * len(basket.items)
     ShopOrderLine.objects.bulk_create([
@@ -80,7 +84,7 @@ def raise_charge(order, basket, *, actor):
 
     payment = raise_priced(basket.quote, makerspace=space, subject_type=Payment.SubjectType.SHOP_ORDER,
                            subject_id=order.pk, member=order.buyer, created_by=actor, target=order,
-                           subject_label=subject_label(space), create=create)
+                           subject_label=subject_label(space), create=create, quota_gate=True)
     if payment is not None:
         figures = (payment.tax_snapshot or {}).get("figures") or {}
         order.amount_due = payment.amount

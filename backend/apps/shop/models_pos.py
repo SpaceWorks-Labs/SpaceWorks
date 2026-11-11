@@ -13,7 +13,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
-MONEY = {"max_digits": 12, "decimal_places": 2}
+from apps.payments.money import MONEY  # noqa: E402  (3 decimals: money.MONEY_DECIMAL_PLACES)
+from apps.payments.money_model import MoneyDecimalField
 
 
 class ShopCashSession(models.Model):
@@ -25,12 +26,12 @@ class ShopCashSession(models.Model):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     status = models.CharField(max_length=8, choices=Status.choices, default=Status.OPEN)
     currency = models.CharField(max_length=3)
-    opening_float = models.DecimalField(**MONEY, default=0)
+    opening_float = MoneyDecimalField(**MONEY, default=0)
     opened_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     opened_at = models.DateTimeField(auto_now_add=True)
-    counted_cash = models.DecimalField(**MONEY, null=True, blank=True)
-    expected_cash = models.DecimalField(**MONEY, null=True, blank=True)
-    variance = models.DecimalField(**MONEY, null=True, blank=True)
+    counted_cash = MoneyDecimalField(**MONEY, null=True, blank=True)
+    expected_cash = MoneyDecimalField(**MONEY, null=True, blank=True)
+    variance = MoneyDecimalField(**MONEY, null=True, blank=True)
     note = models.CharField(max_length=300, blank=True, default="")
     closed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT,
                                   related_name="+")

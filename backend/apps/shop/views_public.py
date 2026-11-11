@@ -91,7 +91,11 @@ class PublicShopEmailCodeView(_Public):
 class PublicShopOrderView(_Public):
     throttle_scope = "shop_orders"
 
-    @extend_schema(tags=TAGS, auth=[], request=ShopOrderCreateSerializer, responses={201: ShopOrderPlacedSerializer, **ERRORS},
+    # Optional auth: a member bearer token attaches the order to that account; without one
+    # it is a guest order (needs `shop.guest_checkout` and a confirmed email code).
+    @extend_schema(tags=TAGS, auth=[{"jwtAuth": []}, {}], request=ShopOrderCreateSerializer, responses={201: ShopOrderPlacedSerializer, **ERRORS},
+                   parameters=[OpenApiParameter("Idempotency-Key", str, OpenApiParameter.HEADER, required=False,
+                               description="Optional client key (up to 64 characters). A repeat with the same key returns the first order instead of placing a second.")],
                    summary="Place an order: hold the stock, then pay online or at the desk")
     def post(self, request, makerspace_slug):
         from .checkout import buyer_for, checkout_url, place_online_order
@@ -101,7 +105,8 @@ class PublicShopOrderView(_Public):
         body.is_valid(raise_exception=True)
         data = body.validated_data
         buyer = buyer_for(request, space, data)
-        order, payment = place_online_order(space, buyer, data)
+        order, payment = place_online_order(space, buyer, data,
+                                            idempotency_key=request.headers.get("Idempotency-Key", ""))
         order.refresh_from_db()
         return Response(ShopOrderPlacedSerializer({
             "order": order, "checkout_url": checkout_url(payment),

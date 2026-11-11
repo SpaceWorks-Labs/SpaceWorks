@@ -2,6 +2,7 @@
 
 from django.urls import path
 
+from . import views_event_offers as e
 from . import views_staff_catalogue as c
 from . import views_staff_images as i
 from . import views_staff_orders as o
@@ -17,9 +18,15 @@ urlpatterns = [
     path("shop/variants/<int:pk>/stock/", c.ShopVariantStockView.as_view(), name="admin-shop-variant-stock"),
     path("makerspaces/<int:makerspace_id>/shop/movements/", c.ShopMovementListView.as_view(),
          name="admin-shop-movements"),
+    path("makerspaces/<int:makerspace_id>/shop/event-offers/", e.ShopEventOfferListView.as_view(),
+         name="admin-shop-event-offers"),
+    path("makerspaces/<int:makerspace_id>/shop/event-offers/<int:event_id>/", e.ShopEventOfferDetailView.as_view(),
+         name="admin-shop-event-offer"),
     path("makerspaces/<int:makerspace_id>/shop/orders/", o.ShopOrderListView.as_view(), name="admin-shop-orders"),
     path("shop/orders/<int:pk>/", o.ShopOrderDetailView.as_view(), name="admin-shop-order"),
     path("shop/orders/<int:pk>/ready/", o.ShopOrderReadyView.as_view(), name="admin-shop-order-ready"),
+    path("shop/orders/<int:pk>/move-pickup-to-space/", o.ShopOrderMovePickupView.as_view(),
+         name="admin-shop-order-move-pickup-to-space"),
     path("shop/orders/<int:pk>/collect/", o.ShopOrderCollectView.as_view(), name="admin-shop-order-collect"),
     path("shop/orders/<int:pk>/take-payment/", o.ShopOrderTakePaymentView.as_view(),
          name="admin-shop-order-take-payment"),

@@ -8,6 +8,7 @@ still show (the buyer column stays on the shell, like `Payment.member`). Only sp
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,6 +21,15 @@ from .serializers_public import ShopBuyerOrderSerializer, ShopErrorSerializer
 
 TAGS = ["Member shop"]
 ERRORS = {code: ShopErrorSerializer for code in (400, 403, 404, 409)}
+
+
+class ShopBuyerOrderPageSerializer(serializers.Serializer):
+    """The `PageNumberPagination` envelope the list actually returns (not a bare array)."""
+
+    count = serializers.IntegerField()
+    next = serializers.URLField(allow_null=True)
+    previous = serializers.URLField(allow_null=True)
+    results = ShopBuyerOrderSerializer(many=True)
 
 
 def my_orders(user):
@@ -36,7 +46,7 @@ class MemberShopOrderListView(APIView):
 
     @extend_schema(tags=TAGS, parameters=[OpenApiParameter("makerspace_id", int, OpenApiParameter.QUERY),
                                           OpenApiParameter("page", int, OpenApiParameter.QUERY)],
-                   responses={200: ShopBuyerOrderSerializer(many=True), **ERRORS})
+                   responses={200: ShopBuyerOrderPageSerializer, **ERRORS})
     def get(self, request):
         rows = my_orders(request.user)
         if request.query_params.get("makerspace_id", "").isdigit():

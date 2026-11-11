@@ -13,7 +13,7 @@ import logging
 from dataclasses import dataclass
 from datetime import timedelta
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.audit import services as audit
@@ -85,8 +85,43 @@ def _window(space, rail):
     return timedelta(minutes=row.online_hold_minutes) if rail else timedelta(hours=row.desk_hold_hours)
 
 
-def place_online_order(space, buyer, data):
-    """Returns `(order, payment)`; the caller adds the hosted checkout after commit."""
+def _prior_order(space, buyer, key):
+    """`(order, payment)` already placed under this key by the same buyer, else None."""
+    from .orders_core import order_payment
+
+    prior = ShopOrder.objects.filter(makerspace=space, idempotency_key=key).first()
+    if prior is None:
+        return None
+    same = prior.buyer_id == getattr(buyer.account, "pk", None) and (
+        not buyer.is_guest or (prior.guest_email or "").lower() == (buyer.email or "").lower())
+    if not same:
+        raise ShopRefused("idempotency_key_reused", "That Idempotency-Key belongs to another order.")
+    return prior, order_payment(prior)
+
+
+def place_online_order(space, buyer, data, *, idempotency_key=""):
+    """Returns `(order, payment)`; the caller adds the hosted checkout after commit.
+
+    A client `Idempotency-Key` makes a double submit return the FIRST order (and its charge):
+    looked up before any work, and backed by a unique constraint so two simultaneous
+    submits cannot both insert (the loser re-reads the winner).
+    """
+    key = (idempotency_key or "").strip()[:64]
+    if key:
+        prior = _prior_order(space, buyer, key)
+        if prior is not None:
+            return prior
+    try:
+        return _place_online_order(space, buyer, data, key)
+    except IntegrityError as exc:
+        if key and "shop_order_idempotency_once" in str(exc):
+            prior = _prior_order(space, buyer, key)
+            if prior is not None:
+                return prior
+        raise
+
+
+def _place_online_order(space, buyer, data, key):
     from apps.inventory.availability import OutOfStock, hold_shop_checkout, shop_sellable
     from apps.makerspaces.guards import require_module_locked
     from apps.payments.pricing import verify_digest
@@ -110,7 +145,7 @@ def place_online_order(space, buyer, data):
         order = create_order(space, basket, channel=ShopOrder.Channel.ONLINE, status=status, actor=buyer.actor,
                              buyer=buyer.account, guest_name=buyer.name if buyer.is_guest else "",
                              guest_email=buyer.email if buyer.is_guest else "", pickup_at=pickup_at,
-                             pickup_event=event, expires_at=expires_at)
+                             pickup_event=event, expires_at=expires_at, idempotency_key=key)
         pairs = basket.stock_pairs()
         try:
             if feature_enabled(space, "shop.holds"):

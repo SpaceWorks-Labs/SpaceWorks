@@ -20,12 +20,15 @@ from .serializers_staff import (
     ShopReturnSerializer, ShopStaffOrderSerializer,
 )
 from .views_staff_catalogue import PAGE, page
+from django.utils.translation import gettext
 
 TAGS = ["Admin shop"]
 ERRORS = {code: ShopErrorSerializer for code in (400, 403, 404, 409)}
 FILTERS = [*PAGE, OpenApiParameter("status", str, OpenApiParameter.QUERY),
            OpenApiParameter("channel", str, OpenApiParameter.QUERY),
-           OpenApiParameter("code", str, OpenApiParameter.QUERY)]
+           OpenApiParameter("code", str, OpenApiParameter.QUERY),
+           # Decision 242 (SH2): buyer account and product filters.
+           OpenApiParameter("buyer", int, OpenApiParameter.QUERY), OpenApiParameter("product", int, OpenApiParameter.QUERY)]
 
 
 def order_for(request, pk, action=VIEW):
@@ -35,7 +38,7 @@ def order_for(request, pk, action=VIEW):
 
 
 def _out(request, order):
-    order = ShopOrder.objects.select_related("buyer", "pickup_event").prefetch_related("lines", "returns").get(
+    order = ShopOrder.objects.select_related("makerspace", "buyer", "pickup_event").prefetch_related("lines", "returns").get(
         pk=order.pk)
     return Response(ShopStaffOrderSerializer(order, context={"request": request}).data)
 
@@ -46,7 +49,7 @@ class ShopOrderListView(APIView):
     @extend_schema(tags=TAGS, parameters=FILTERS, responses={200: ShopStaffOrderSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_id):
         space = staff_space(request.user, makerspace_id, VIEW)
-        rows = ShopOrder.objects.filter(makerspace=space).select_related("buyer", "pickup_event").prefetch_related(
+        rows = ShopOrder.objects.filter(makerspace=space).select_related("makerspace", "buyer", "pickup_event").prefetch_related(
             "lines", "returns")
         query = request.query_params
         if query.get("status") in ShopOrder.Status.values:
@@ -55,6 +58,10 @@ class ShopOrderListView(APIView):
             rows = rows.filter(channel=query["channel"])
         if query.get("code"):
             rows = rows.filter(pickup_code=query["code"].strip().upper()[:12])
+        if str(query.get("buyer", "")).isdigit():
+            rows = rows.filter(buyer_id=int(query["buyer"]))
+        if str(query.get("product", "")).isdigit():
+            rows = rows.filter(lines__variant__product_id=int(query["product"])).distinct()
         return page(request, rows, ShopStaffOrderSerializer)
 
 
@@ -76,11 +83,28 @@ class ShopOrderReadyView(APIView):
         return _out(request, mark_ready(order_for(request, pk, SELL), actor=request.user))
 
 
+class ShopOrderMovePickupView(APIView):
+    permission_classes = [IsActiveStaff]
+
+    @extend_schema(tags=TAGS, request=None, responses={200: ShopStaffOrderSerializer, **ERRORS},
+                   auth=[{"jwtAuth": []}], summary="Move unavailable event pickup to the makerspace",
+                   description="A linked event-to-shop write: requires a staff session, never a bearer token.")
+    def post(self, request, pk):
+        from .services_orders import move_event_pickup_to_space
+        # Decision 216 item 18: linked mutations are session-only.
+        if getattr(request, "api_client", None) or getattr(request, "person_credential", None):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(gettext("This endpoint requires a staff session."))
+        return _out(request, move_event_pickup_to_space(order_for(request, pk, SELL), actor=request.user))
+
+
 class ShopOrderCollectView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(tags=TAGS, request=ShopCollectSerializer, responses={200: ShopStaffOrderSerializer, **ERRORS},
-                   summary="Hand a paid order over against its pickup code")
+                   summary="Hand a paid order over against its pickup code",
+                   description="Refused with code `pickup_interrupted` while an event pickup is moved or cancelled "
+                               "and not yet moved to the space.")
     def post(self, request, pk):
         from .services_orders import collect
         body = ShopCollectSerializer(data=request.data)

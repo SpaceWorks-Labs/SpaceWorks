@@ -17,6 +17,7 @@ from django.utils.html import format_html
 from apps.accounts.reauthentication import require_recent_reauth
 
 from . import capability_purge
+from django.utils.translation import gettext_lazy
 
 _URL_NAME = "makerspaces_makerspace_capability_purge"
 
@@ -35,7 +36,7 @@ class MakerspaceCapabilityPurgeAdminMixin:
     def get_readonly_fields(self, request, obj=None):
         return (*super().get_readonly_fields(request, obj), "capability_purge_link")
 
-    @admin.display(description="Purge capability data")
+    @admin.display(description=gettext_lazy("Purge capability data"))
     def capability_purge_link(self, obj):
         if not obj or not obj.pk:
             return "Save this makerspace first."

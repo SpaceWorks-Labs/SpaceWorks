@@ -9,9 +9,13 @@ from apps.integrations.email import email_enabled
 from apps.openapi_errors import errors
 from apps.accounts.services_device_tokens import mobile_grant_creation_enabled
 from apps.makerspaces.config_native import NativeConfigSerializer, native_config
+from apps.makerspaces.telemetry_schema import TelemetryConfigSerializer
+from apps.makerspaces.telemetry_public import platform_telemetry, legacy_allowed
 
 
 class PublicConfigSerializer(serializers.Serializer):
+    platform_telemetry = TelemetryConfigSerializer()
+    platform_telemetry_legacy_allowed = serializers.BooleanField()
     email_enabled = serializers.BooleanField()
     public_image_max_bytes = serializers.IntegerField()
     social_auth = serializers.DictField(required=False)
@@ -30,6 +34,9 @@ class PublicConfigSerializer(serializers.Serializer):
         required=False, help_text="Cloudflare Turnstile site key; present only when Turnstile is configured. "
                                   "Show the widget when a sign-in answers captcha_required.")
     native = NativeConfigSerializer(required=False)
+    landing_enabled = serializers.BooleanField(
+        help_text="The deployment's HUB_LANDING_ENABLED switch (default true). False: the main host's front "
+                  "page is the only public space's home (or the /spaces directory) instead of the product landing.")
 
 
 class PublicConfigView(APIView):
@@ -46,9 +53,12 @@ class PublicConfigView(APIView):
     def get(self, request, *args, **kwargs):
         from apps.accounts.login_methods import passkeys_enabled
         payload = {
+            "platform_telemetry": platform_telemetry(),
+            "platform_telemetry_legacy_allowed": legacy_allowed(),
             "email_enabled": email_enabled(),
             "public_image_max_bytes": settings.PUBLIC_IMAGE_MAX_BYTES,
             "passkeys_enabled": passkeys_enabled(),
+            "landing_enabled": bool(getattr(settings, "HUB_LANDING_ENABLED", True)),
         }
         from apps.accounts.login_methods import (
             password_login_enabled,
@@ -131,7 +141,7 @@ class PublicConfigView(APIView):
         from apps.hosting_requests.availability import public_available
 
         if public_available():
-            payload["hosting_requests"] = {"enabled": True}
+            payload["hosting_requests"] = {"enabled": True, "kinds": ["makerspace", "organization"]}
         from apps.managed_hosting.availability import online_billing_enabled, plans_enabled
 
         if plans_enabled():  # #187A: absent while MANAGED_PLANS_ENABLED is off (byte-for-byte unchanged)
@@ -142,4 +152,6 @@ class PublicConfigView(APIView):
             payload["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY
         if mobile_grant_creation_enabled():
             payload["native"] = native_config()
-        return Response(payload)
+        response = Response(payload)
+        response["Cache-Control"] = "no-store"
+        return response

@@ -10,6 +10,7 @@ from apps.makerspaces.models_makerspace import Makerspace
 from apps.makerspaces.models_memberships import MakerspaceMembership
 from apps.encryption.mappers import ScopedPiiModelMixin
 from apps.makerspaces.role_catalog import BUILTIN_ROLE_SLUGS
+from apps.payments.money_model import MoneyDecimalField
 
 
 class MakerspaceRole(models.Model):
@@ -90,6 +91,9 @@ class MakerspaceWaiver(models.Model):
         ordering = ["-created_at", "-id"]
 
 
+OPEN_REQUEST_STATES = ["requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested"]
+
+
 class MembershipRequest(ScopedPiiModelMixin, models.Model):
     class Kind(models.TextChoices):
         REQUEST = "request", "Request"
@@ -100,6 +104,7 @@ class MembershipRequest(ScopedPiiModelMixin, models.Model):
         INVITED = "invited", "Invited"
         AWAITING_VOUCHES = "awaiting_vouches", gettext_noop("Awaiting vouches")
         AWAITING_PAYMENT = "awaiting_payment", gettext_noop("Awaiting payment")
+        CHANGES_REQUESTED = "changes_requested", gettext_noop("Changes requested")
         EXPIRED = "expired", "Expired"
         CANCELED = "canceled", "Canceled"
         ACTIVE = "active", "Active"
@@ -109,13 +114,17 @@ class MembershipRequest(ScopedPiiModelMixin, models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="membership_requests")
     invite_email = models.CharField(max_length=254, blank=True)
     kind = models.CharField(max_length=16, choices=Kind.choices)
-    state = models.CharField(max_length=16, choices=State.choices)
+    state = models.CharField(max_length=24, choices=State.choices)
     requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="requested_memberships")
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="invited_memberships")
     decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="decided_membership_requests")
     assigned_role = models.ForeignKey("makerspaces.MakerspaceRole", null=True, blank=True, on_delete=models.PROTECT, related_name="membership_requests")
     auto_activate_on_claim = models.BooleanField(default=False)
     decision_note = models.TextField(blank=True)
+    # Parity O-B2: the one "please change this" round -- why, when, and that it was used.
+    changes_note = models.TextField(blank=True, default="")
+    changes_requested_at = models.DateTimeField(null=True, blank=True)
+    changes_rounds = models.PositiveSmallIntegerField(default=0)
     admission_managed = models.BooleanField(default=False)
     application_schema = models.JSONField(null=True, blank=True, default=None)
     application_answers = models.TextField(null=True, blank=True, default=None)
@@ -125,8 +134,8 @@ class MembershipRequest(ScopedPiiModelMixin, models.Model):
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="approved_admissions")
     expires_at = models.DateTimeField(null=True, blank=True)
     rejoining = models.BooleanField(default=False)
-    joining_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    first_term_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    joining_fee = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    first_term_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     charge_currency = models.CharField(max_length=3, default="usd")
     created_at = models.DateTimeField(auto_now_add=True)
     decided_at = models.DateTimeField(null=True, blank=True)
@@ -134,8 +143,8 @@ class MembershipRequest(ScopedPiiModelMixin, models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["makerspace", "user"], condition=Q(state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment"], user__isnull=False), name="uniq_open_membership_request_user"),
-            models.UniqueConstraint(fields=["makerspace", "invite_email"], condition=Q(state__in=["requested", "invited", "awaiting_vouches", "awaiting_payment"]) & ~Q(invite_email=""), name="uniq_open_membership_request_email"),
+            models.UniqueConstraint(fields=["makerspace", "user"], condition=Q(state__in=OPEN_REQUEST_STATES, user__isnull=False), name="uniq_open_membership_request_user"),
+            models.UniqueConstraint(fields=["makerspace", "invite_email"], condition=Q(state__in=OPEN_REQUEST_STATES) & ~Q(invite_email=""), name="uniq_open_membership_request_email"),
         ]
         ordering = ["-created_at", "-id"]
 

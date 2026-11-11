@@ -8,6 +8,7 @@ from apps.audit import services as audit
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
 from apps.makerspaces.models import Makerspace
+from django.utils.translation import gettext_lazy
 
 
 class MakerspaceAdminForm(forms.ModelForm):
@@ -45,11 +46,11 @@ class MakerspaceAdminForm(forms.ModelForm):
 
 
 class MakerspaceImageAdminMixin:
-    @admin.display(description="Logo preview")
+    @admin.display(description=gettext_lazy("Logo preview"))
     def logo_preview(self, obj):
         return self._image_preview(obj.logo_key if obj else "")
 
-    @admin.display(description="Cover preview")
+    @admin.display(description=gettext_lazy("Cover preview"))
     def cover_preview(self, obj):
         return self._image_preview(obj.cover_image_key if obj else "")
 

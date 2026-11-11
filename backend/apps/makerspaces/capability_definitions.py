@@ -4,34 +4,7 @@ from dataclasses import dataclass
 
 from apps.makerspaces.module_registry import MODULE_KEYS
 
-from .capability_definitions_modules import module_family_features
-from .capability_definitions_w7_events import event_features
-from .capability_definitions_wp3 import wp3_features
-from .capability_definitions_wp4 import definitions as wp4_definitions
-from .capability_definitions_parity import definitions as parity_definitions
-from .capability_definitions_events_programme import programme_features
-from .capability_definitions_r2_l17 import definitions as r2_l17_definitions
-from .capability_definitions_r2_l1 import definitions as r2_l1_definitions
-from .capability_definitions_r2_l2 import definitions as r2_l2_definitions
-from .capability_definitions_r2_l4 import definitions as r2_l4_definitions
-from .capability_definitions_r2_l5 import definitions as r2_l5_definitions
-from .capability_definitions_r2_l15 import definitions as r2_l15_definitions
-from .capability_definitions_r2_l10 import definitions as r2_l10_definitions
-from .capability_definitions_r2_l12 import definitions as r2_l12_definitions
-from .capability_definitions_r2_l19 import definitions as r2_l19_definitions
-from .capability_definitions_r2_l23 import definitions as r2_l23_definitions
-from .capability_definitions_r2_l3 import definitions as r2_l3_definitions
-from .capability_definitions_r2_l13 import definitions as r2_l13_definitions
-from .capability_definitions_r2_l6 import definitions as r2_l6_definitions
-from .capability_definitions_r2_l18 import definitions as r2_l18_definitions
-from .capability_definitions_r2_l21a import definitions as r2_l21a_definitions
-from .capability_definitions_r2_l21b import definitions as r2_l21b_definitions
-from .capability_definitions_hackmoney import definitions as hackmoney_definitions
-from .capability_definitions_r2_peoples_choice import definitions as r2_peoples_choice_definitions
-from .capability_definitions_r2_l24 import definitions as r2_l24_definitions
-from .capability_definitions_r2_l22 import definitions as r2_l22_definitions
-from .capability_definitions_r2_l20 import definitions as r2_l20_definitions
-from .capability_definitions_gap2 import definitions as gap2_definitions
+from .capability_definitions_extensions import extension_features
 
 
 @dataclass(frozen=True)
@@ -166,7 +139,7 @@ FEATURE_DEFINITIONS = (
     FeatureDefinition(
         "charges.loans", "request_workflow", "Track loan charges",
         "Record loan deposits and late fees. Parented to the core request workflow, so "
-        "it never drags the payments module into lending.",
+        "it never drags the payments module into Inventory.",
         default_enabled=True,
     ),
     FeatureDefinition(
@@ -252,34 +225,7 @@ FEATURE_DEFINITIONS = (
         default_enabled=False,
     ),
 )
-FEATURE_DEFINITIONS += event_features(FeatureDefinition)
-FEATURE_DEFINITIONS += programme_features(FeatureDefinition)
-FEATURE_DEFINITIONS += module_family_features(FeatureDefinition)
-FEATURE_DEFINITIONS += wp3_features(FeatureDefinition)
-FEATURE_DEFINITIONS += wp4_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += parity_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l17_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l1_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l2_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l4_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l5_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l15_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l10_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l12_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l19_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l23_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l3_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l13_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l6_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l18_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l21a_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l21b_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_peoples_choice_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l24_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l22_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += r2_l20_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += gap2_definitions(FeatureDefinition)
-FEATURE_DEFINITIONS += hackmoney_definitions(FeatureDefinition)
+FEATURE_DEFINITIONS += extension_features(FeatureDefinition)
 FEATURES = {definition.key: definition for definition in FEATURE_DEFINITIONS}
 # A feature's parent/required modules are validated against the module registry
 # rather than a hand-kept set, so adding a module can no longer leave a valid

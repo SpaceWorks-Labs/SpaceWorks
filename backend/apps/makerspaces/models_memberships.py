@@ -31,10 +31,11 @@ class MakerspaceMembership(models.Model):
         MACHINE_MANAGER = "machine_manager", gettext_noop("Machine Manager")
         EVENT_MANAGER = "event_manager", gettext_noop("Event Manager")
         BOOKING_MANAGER = "booking_manager", gettext_noop("Booking Manager")
-        HANDOVER = "handover", "Handover"
-        TECHNICIAN = "technician", "Technician"
+        HANDOVER = "handover", gettext_noop("Handover")
+        TECHNICIAN = "technician", gettext_noop("Technician")
         SHOP_MANAGER = "shop_manager", gettext_noop("Shop Manager")
-        CUSTOM = "custom", "Custom"
+        FUNDRAISING = "fundraising", gettext_noop("Fundraising")  # decision 242(m)
+        CUSTOM = "custom", gettext_noop("Custom")
 
     objects = CommunityMembershipManager()
     staff_tracks = StaffTrackManager()

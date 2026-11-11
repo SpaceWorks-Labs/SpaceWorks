@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models import F, Q
 
 from apps.makerspaces.models_membership_rules import PlanType, TermKind, TermStanding
+from apps.payments.money_model import MoneyDecimalField
 
 #: The end instant stored for a lifetime term. Far enough out that no interval reaches it,
 #: early enough that converting it to any local time zone cannot overflow `datetime`.
@@ -48,6 +49,9 @@ class MembershipTerm(models.Model):
         on_delete=models.SET_NULL,
         related_name="renewed_membership_terms",
     )
+    # Set when volunteer credit covered the whole renewal: no Payment exists (a payment is always
+    # positive and the ledger is append-only), so this marks the renewal as charged for the sweep.
+    renewal_covered_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -66,8 +70,8 @@ class MembershipTerm(models.Model):
     grace_until = models.DateTimeField(null=True, blank=True)
     kind = models.CharField(max_length=16, choices=TermKind.choices, default=TermKind.NEW)
     # Frozen at opening (X6). A null price is a term opened before release 2.
-    price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    joining_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    price = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
+    joining_fee = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     currency = models.CharField(max_length=3, blank=True, default="")
     plan_type = models.CharField(max_length=16, choices=PlanType.choices, default=PlanType.ROLLING)
     # The join request whose admission charge paid for this (first) term, if any. The

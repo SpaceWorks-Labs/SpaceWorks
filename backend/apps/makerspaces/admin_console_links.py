@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import admin
 from django.utils.html import format_html, format_html_join
+from django.utils.translation import gettext_lazy
 
 CONSOLE_TABS = (
     ("reports", "Reports and analytics"),
@@ -40,7 +41,7 @@ class MakerspaceConsoleLinksAdminMixin:
             return fieldsets
         return (*fieldsets, ("Reports and staff console", {"fields": ("console_links",)}))
 
-    @admin.display(description="Open in the staff console")
+    @admin.display(description=gettext_lazy("Open in the staff console"))
     def console_links(self, obj):
         if not obj or not obj.pk or not obj.slug:
             return "Save the makerspace first."

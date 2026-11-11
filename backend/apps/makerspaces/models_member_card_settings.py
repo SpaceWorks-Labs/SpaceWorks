@@ -17,6 +17,9 @@ class MemberCardSettings(models.Model):
     # Public "is this card valid" page: off until a manager turns it on (Q1).
     public_verify = models.BooleanField(default=False)
     verify_show_plan = models.BooleanField(default=True)
+    # O-B4 (decision 290): a new card starts with its holder's name on the public check page; the holder may hide it.
+    # Spaces that existed before 0.12.0 are written False by makerspaces migration 0145, so nothing changes for them.
+    verify_show_name = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

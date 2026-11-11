@@ -3,7 +3,7 @@ from rest_framework.exceptions import NotFound
 
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.module_registry import module_available
-from apps.makerspaces.platform import feature_enabled, module_enabled
+from apps.makerspaces.platform import feature_enabled, inventory_master_allows, module_enabled
 
 
 class SurfaceOff(NotFound):
@@ -59,6 +59,7 @@ def require_module_for_servable(makerspace, module_key):
     if (
         module_key not in set(makerspace.enabled_modules or [])
         or not module_available(module_key)
+        or not inventory_master_allows(makerspace, module_key)
     ):
         raise module_off(module_key)
     return makerspace

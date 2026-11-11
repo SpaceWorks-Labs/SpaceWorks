@@ -18,6 +18,9 @@ class MembershipInviteLink(models.Model):
     label = models.CharField(max_length=120, blank=True, default="")
     plan = models.ForeignKey("makerspaces.MembershipPlan", null=True, blank=True, on_delete=models.SET_NULL,
                              related_name="invite_links")
+    #: Parity O-B1: a link may preselect the member unit the joiner lands in.
+    unit = models.ForeignKey("makerspaces.MemberUnit", null=True, blank=True, on_delete=models.SET_NULL,
+                             related_name="invite_links")
     max_uses = models.PositiveIntegerField(default=1)
     uses = models.PositiveIntegerField(default=0)
     expires_at = models.DateTimeField(null=True, blank=True)

@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.template.response import TemplateResponse
 
 from apps.makerspaces.models import MakerspaceArchiveRequest
+from django.utils.translation import gettext_lazy
 
 
 def visible_archive_impacts(makerspaces):
@@ -21,7 +22,7 @@ def visible_archive_impacts(makerspaces):
 
 
 class MakerspaceLifecycleActionsMixin:
-    @admin.action(description="Archive selected makerspaces")
+    @admin.action(description=gettext_lazy("Archive selected makerspaces"))
     def archive_makerspaces(self, request, queryset):
         from apps.makerspaces import lifecycle
 
@@ -71,7 +72,7 @@ class MakerspaceLifecycleActionsMixin:
                     level=messages.SUCCESS,
                 )
 
-    @admin.action(description="Unarchive selected makerspaces")
+    @admin.action(description=gettext_lazy("Unarchive selected makerspaces"))
     def unarchive_makerspaces(self, request, queryset):
         from apps.makerspaces import lifecycle
 
@@ -91,7 +92,7 @@ class MakerspaceLifecycleActionsMixin:
                     level=messages.SUCCESS,
                 )
 
-    @admin.action(description="Purge selected archived makerspaces")
+    @admin.action(description=gettext_lazy("Purge selected archived makerspaces"))
     def purge_makerspaces(self, request, queryset):
         makerspaces = list(queryset)
         if "confirm_purge" not in request.POST:

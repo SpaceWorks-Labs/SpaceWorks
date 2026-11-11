@@ -26,6 +26,7 @@ from django.db.models import Q
 from apps.forms_schema.validation import validate_form_schema
 
 from apps.makerspaces.models_membership_rules import JoinMode, LateRenewal, PaymentTiming, PlanType, RejoinRule
+from apps.payments.money_model import MoneyDecimalField
 
 
 def default_renewal_reminders():
@@ -35,6 +36,10 @@ def default_renewal_reminders():
 class MembershipPlan(models.Model):
     loan_max_active = models.PositiveIntegerField(null=True, blank=True)
     loan_max_items = models.PositiveIntegerField(null=True, blank=True)
+    # Decision 221(d): hours of room booking / machine-time booking each term includes,
+    # used before the hourly price (`bookings.included_hours`). 0 = none.
+    included_booking_hours = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(8784)])
+    included_machine_hours = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(8784)])
     class Interval(models.TextChoices):
         MONTHLY = "monthly", "Monthly"
         YEARLY = "yearly", "Yearly"
@@ -49,8 +54,8 @@ class MembershipPlan(models.Model):
     interval = models.CharField(max_length=16, choices=Interval.choices)
     custom_days = models.PositiveIntegerField(null=True, blank=True)
     # The price a NEW member pays for a term.
-    amount = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)]
+    amount = MoneyDecimalField(
+        max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)]
     )
     # ISO 4217 lowercase, the way `payments.Payment.currency` stores it.
     currency = models.CharField(max_length=3, default="usd")
@@ -64,12 +69,12 @@ class MembershipPlan(models.Model):
     plan_type = models.CharField(max_length=16, choices=PlanType.choices, default=PlanType.ROLLING)
     fixed_end_date = models.DateField(null=True, blank=True)
     # Null renewal price = renewals cost the same as a new term.
-    renewal_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+    renewal_amount = MoneyDecimalField(
+        max_digits=13, decimal_places=3, null=True, blank=True, validators=[MinValueValidator(0)]
     )
     # Overrides of the space defaults; null inherits (decision 71).
-    joining_fee = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)]
+    joining_fee = MoneyDecimalField(
+        max_digits=13, decimal_places=3, null=True, blank=True, validators=[MinValueValidator(0)]
     )
     rejoin_rule = models.CharField(max_length=16, choices=RejoinRule.choices, null=True, blank=True)
     rejoin_after_days = models.PositiveIntegerField(null=True, blank=True, validators=[MaxValueValidator(3650)])
@@ -77,6 +82,12 @@ class MembershipPlan(models.Model):
     join_mode = models.CharField(max_length=16, choices=JoinMode.choices, null=True, blank=True)
     application_schema = models.JSONField(null=True, blank=True, default=None, validators=[validate_form_schema])
     late_renewal = models.CharField(max_length=16, choices=LateRenewal.choices, default=LateRenewal.BACKDATE)
+    # Parity O-B3 (`billing.plan_sac`): blank = the space-wide SAC; else 4-8 digits, frozen on the GST charge.
+    sac_code = models.CharField(max_length=8, blank=True, default="")
+    # Parity O-B2 (`membership.join_photo`, `membership.join_contact_fields`): what the join form collects.
+    join_photo = models.CharField(max_length=8, choices=[("off", "Off"), ("optional", "Optional"), ("required", "Required")], default="off")
+    join_phone = models.CharField(max_length=8, choices=[("hidden", "Hidden"), ("optional", "Optional"), ("required", "Required")], default="hidden")
+    join_state = models.CharField(max_length=8, choices=[("hidden", "Hidden"), ("optional", "Optional"), ("required", "Required")], default="hidden")
     # Public listing (X5). A plan appears on public surfaces only when `is_public`,
     # active and not archived; prices are shown with it.
     slug = models.SlugField(max_length=80, blank=True, default="")

@@ -29,6 +29,7 @@ from config.admin_access import SuperuserOnlyModelAdmin
 from apps.accounts.admin_staff_lifecycle import ReadOnlyMembershipInlineMixin
 from apps.makerspaces.admin_staff_accounts import MakerspaceStaffAccountAdminMixin
 from apps.space_controls.admin_actions import SPACE_CONTROL_ACTIONS, MakerspaceSpaceControlsAdminMixin
+from django.utils.translation import gettext_lazy
 
 
 class ArchivedFilter(admin.SimpleListFilter):
@@ -131,7 +132,7 @@ class MakerspaceAdmin(
     readonly_fields = ("logo_preview", "cover_preview", "create_staff_account_link", "messaging_status")
     inlines = (MakerspaceMembershipInline,)
 
-    @admin.display(description="Addressed messaging")
+    @admin.display(description=gettext_lazy("Addressed messaging"))
     def messaging_status(self, obj):
         from apps.integrations.messaging.settings_service import settings_payload
         if not obj.pk:
@@ -195,13 +196,13 @@ class MakerspaceAdmin(
 
         lifecycle.purge(obj, request.user)
 
-    @admin.display(boolean=True, description="Archived")
+    @admin.display(boolean=True, description=gettext_lazy("Archived"))
     def archived(self, obj):
         return obj.archived_at is not None
 
-    @admin.display(description="Frontend mode")
+    @admin.display(description=gettext_lazy("Web address"))
     def frontend_mode(self, obj):
-        return "single-tenant" if obj.frontend_domain else "central"
+        return gettext_lazy("Own domain") if obj.frontend_domain else gettext_lazy("Platform address")
 
 
 from apps.makerspaces.admin_memberships import (  # noqa: E402,F401
@@ -211,3 +212,6 @@ from apps.makerspaces.admin_memberships import (  # noqa: E402,F401
     MemberProjectAdmin,
     MembershipRequestAdmin,
 )
+
+# Role definitions, extra roles and membership plans, read-only (0.12.0).
+from apps.makerspaces import admin_roles  # noqa: E402,F401

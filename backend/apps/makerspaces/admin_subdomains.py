@@ -5,6 +5,7 @@ from unfold.admin import ModelAdmin
 from apps.makerspaces import subdomain_decisions
 from apps.makerspaces.models import SubdomainRequest
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(SubdomainRequest)
@@ -30,7 +31,7 @@ class SubdomainRequestAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         "updated_at",
     )
 
-    @admin.action(description="Approve selected subdomain requests and provision")
+    @admin.action(description=gettext_lazy("Approve selected subdomain requests and provision"))
     def approve_and_provision(self, request, queryset):
         approved = skipped = 0
         for req in queryset.select_related("makerspace", "requested_by"):
@@ -49,7 +50,7 @@ class SubdomainRequestAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
 
         self.message_user(request, f"Approved {approved}, skipped {skipped}.")
 
-    @admin.action(description="Reject selected subdomain requests")
+    @admin.action(description=gettext_lazy("Reject selected subdomain requests"))
     def reject_selected(self, request, queryset):
         rejected = 0
         for req in queryset.select_related("makerspace", "requested_by"):

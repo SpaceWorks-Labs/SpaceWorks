@@ -175,4 +175,14 @@ from .capability_purge_plans_l16 import plans as _l16_plans  # noqa: E402
 PLANS += _l16_plans(CapabilityPurgePlan)
 from .capability_purge_plans_l3 import plans as _l3_plans  # noqa: E402
 PLANS += _l3_plans(CapabilityPurgePlan)
+from .capability_purge_plans_l3a import plans as _l3a_plans  # noqa: E402
+PLANS += _l3a_plans(CapabilityPurgePlan)
+from .capability_purge_plans_guest_passes import plans as _guest_pass_plans  # noqa: E402
+PLANS += _guest_pass_plans(CapabilityPurgePlan)
+from .capability_purge_plans_r3_org_units import plans as _r3_org_units_plans  # noqa: E402
+PLANS += _r3_org_units_plans(CapabilityPurgePlan)
+from .capability_purge_plans_r3_org_b4 import plans as _r3_org_b4_plans  # noqa: E402
+PLANS += _r3_org_b4_plans(CapabilityPurgePlan)
+from .capability_purge_plans_l3b import plans as _l3b_plans  # noqa: E402
+PLANS += _l3b_plans(CapabilityPurgePlan)
 BY_KEY = {plan.key: plan for plan in PLANS}

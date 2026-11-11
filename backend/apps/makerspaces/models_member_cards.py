@@ -38,6 +38,8 @@ class MemberCard(ScopedPiiModelMixin, models.Model):
     )
     # Printed on the card; per-makerspace sequence, never the QR payload.
     card_number = models.PositiveIntegerField()
+    # O-B4: the number printed from the space's numbering scheme, frozen at issue (blank = legacy display).
+    number_text = models.CharField(max_length=32, blank=True, default="")
     printed_name = models.TextField(blank=True, default="")
     photo_object_key = models.CharField(max_length=300, blank=True, default="")
     photo_content_type = models.CharField(max_length=64, blank=True, default="")
@@ -72,6 +74,10 @@ class MemberCard(ScopedPiiModelMixin, models.Model):
                 fields=["membership"],
                 condition=models.Q(revoked_at__isnull=True, membership__isnull=False),
                 name="uniq_live_member_card_per_membership",
+            ),
+            models.UniqueConstraint(
+                fields=["makerspace", "number_text"], condition=~models.Q(number_text=""),
+                name="uniq_member_card_number_text",
             ),
             # Photo fields travel as a set: all present (with consent) or all absent.
             models.CheckConstraint(

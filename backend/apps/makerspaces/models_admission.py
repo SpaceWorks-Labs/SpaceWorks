@@ -6,6 +6,7 @@ from django.db.models import Q
 
 from apps.forms_schema.validation import validate_form_schema
 from apps.makerspaces.models_membership_rules import JoinMode, PaymentTiming, RejoinRule
+from apps.payments.money_model import MoneyDecimalField
 
 
 class MakerspaceMembershipSettings(models.Model):
@@ -30,7 +31,7 @@ class MakerspaceMembershipSettings(models.Model):
         "makerspaces.MembershipPlan", null=True, blank=True, on_delete=models.SET_NULL,
         related_name="default_for_admissions",
     )
-    joining_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    joining_fee = MoneyDecimalField(max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)])
     joining_fee_currency = models.CharField(max_length=3, default="usd")
     rejoin_dues_rule = models.CharField(max_length=16, choices=RejoinRule.choices, default=RejoinRule.ONCE)
     request_expiry_days = models.PositiveIntegerField(default=30)

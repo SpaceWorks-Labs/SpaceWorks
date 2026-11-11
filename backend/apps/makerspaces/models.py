@@ -109,6 +109,22 @@ from apps.makerspaces.models_admission import (  # noqa: E402,F401
     MembershipVouch,
 )
 from apps.makerspaces.models_loan_policy import MakerspaceLoanPolicy  # noqa: E402,F401
+from apps.makerspaces.models_guest_passes import (  # noqa: E402,F401
+    DayPassProduct,
+    GuestPass,
+    GuestPassPolicy,
+)
+from apps.makerspaces.models_community_policy import CommunityPolicy  # noqa: E402,F401
+from apps.makerspaces.models_member_units import (  # noqa: E402,F401
+    ImportedMemberUnit, MemberUnit, MemberUnitSettings, MembershipRequestUnit, MembershipUnit, PlanUnit,
+    StaffUnitScope,
+)
+from apps.makerspaces.models_minors import (  # noqa: E402,F401
+    GuardianConsent,
+    GuardianConsentTerms,
+    MinorProfile,
+)
+from apps.makerspaces.models_volunteer import VolunteerCredit, VolunteerHourEntry  # noqa: E402,F401
 from apps.makerspaces.models_space_packs import SpacePackProfile  # noqa: E402,F401
 from apps.makerspaces.models_invitation_requests import (  # noqa: E402,F401
     InvitationRequest,

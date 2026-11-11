@@ -57,7 +57,7 @@ class MakerspaceOwnerAdminMixin:
         if obj is None:
             from apps.hosting_requests.availability import admin_available
 
-            fields = ("owner_organization", "new_organization_name")
+            fields = ("kind", "owner_organization", "new_organization_name")
             if admin_available():
                 fields += ("hosting_request",)
             return (("Owner organization", {"fields": fields}), *fieldsets)
@@ -66,6 +66,11 @@ class MakerspaceOwnerAdminMixin:
     def assign_owner(self, request, obj, form):
         from apps.organizations.services_owner import assign_owner_organization
 
+        if "capabilities" not in form.changed_data:
+            # Decision 295: an untouched capability matrix on an organization workspace
+            # means "use the kind's defaults" (Events, Memberships, Bookings).
+            from apps.makerspaces.space_kind import apply_kind_defaults
+            apply_kind_defaults(request.user, obj)
         organization = form.cleaned_data.get("owner_organization")
         assign_owner_organization(
             request.user, obj.pk,

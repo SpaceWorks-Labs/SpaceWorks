@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.db.models import OuterRef, Subquery
 
 from .models import MakerspaceArchiveRequest
+from django.utils.translation import gettext_lazy
 
 
 class MakerspaceGovernanceMixin:
@@ -17,6 +18,6 @@ class MakerspaceGovernanceMixin:
             governance_request_status=Subquery(latest.values("status")[:1])
         )
 
-    @admin.display(description="Archive request")
+    @admin.display(description=gettext_lazy("Archive request"))
     def archive_request_status(self, obj):
         return obj.governance_request_status or "none"

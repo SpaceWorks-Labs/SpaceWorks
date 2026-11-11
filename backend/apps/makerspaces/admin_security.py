@@ -22,6 +22,7 @@ from apps.accounts.reauthentication import require_recent_reauth
 
 from . import security_settings
 from .security_settings_registry import REGISTRY
+from django.utils.translation import gettext_lazy
 
 ACTIONS = ("set", "lock", "unlock", "open_pii", "close_pii")
 
@@ -79,7 +80,7 @@ class MakerspaceSecurityAdminMixin:
     def get_readonly_fields(self, request, obj=None):
         return (*super().get_readonly_fields(request, obj), "security_settings_summary")
 
-    @admin.display(description="Security settings")
+    @admin.display(description=gettext_lazy("Security settings"))
     def security_settings_summary(self, obj):
         if not obj or not obj.pk:
             return "Save this makerspace first."

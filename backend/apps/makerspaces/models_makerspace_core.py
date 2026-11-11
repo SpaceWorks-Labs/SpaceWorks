@@ -39,6 +39,8 @@ from apps.makerspaces.models import (
 
 
 from .models_public_site import PublicSiteSettings
+from .loan_context_generations import new_generations, validate_generations
+from apps.payments.money_model import MoneyDecimalField
 
 
 class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
@@ -49,6 +51,12 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         # #185: a superadmin paused the space (reversible). Unservable like an archive,
         # but data, money settlement and the schedule stay; see apps.space_controls.
         SUSPENDED = "suspended", "Suspended"
+
+    class Kind(models.TextChoices):
+        # Decision 295: an organization workspace is a space whose community is an
+        # organization (events, memberships, cards, bookings), not a hardware workshop.
+        MAKERSPACE = "makerspace", "Makerspace"
+        ORGANIZATION = "organization", "Organization"
 
     class MembershipPolicy(models.TextChoices):
         REQUEST = "request", "Request"
@@ -65,6 +73,7 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         EMAIL_UNVERIFIED = "email_unverified", gettext_noop("Email unverified")
 
     name = models.CharField(max_length=200)
+    kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.MAKERSPACE)
     slug = models.SlugField(unique=True, db_index=True)
     public_code = models.CharField(
         max_length=4,
@@ -100,9 +109,9 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         choices=MembershipPolicy.choices,
         default=MembershipPolicy.REQUEST,
     )
-    membership_dues_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    membership_dues_amount = MoneyDecimalField(
+        max_digits=13,
+        decimal_places=3,
         default=0,
         validators=[MinValueValidator(0)],
     )
@@ -125,6 +134,8 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     )
     staff_notifications_enabled = models.BooleanField(default=True)
     booking_requester_notifications_enabled = models.BooleanField(default=True)
+    # Open item A44, decided: the default stays [24] (one reminder a day ahead). A 1-hour reminder is a per-space
+    # choice made here, so a default install never sends two pings per event; tests pin the default.
     event_reminder_lead_hours = models.JSONField(
         default=default_reminder_lead_hours, blank=True, validators=[validate_reminder_lead_hours],
     )
@@ -159,6 +170,7 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
         default=generate_publishable_key,
     )
     cors_allowed_origins = models.JSONField(default=list, blank=True)
+    loan_context_generations = models.JSONField(default=new_generations, editable=False, validators=[validate_generations])
     enabled_modules = models.JSONField(default=default_enabled_modules, blank=True)
     enabled_features = models.JSONField(default=default_enabled_features, blank=True)
     resource_limit_overrides = models.JSONField(default=dict, blank=True)
@@ -181,6 +193,13 @@ class Makerspace(MakerspaceSecretsMixin, PublicSiteSettings):
     # 465-only provider (e.g. Gmail implicit SSL) instead of STARTTLS on 587.
     smtp_use_ssl = models.BooleanField(default=False)
     smtp_from_email = models.EmailField(blank=True)
+    # Parity E-B8: the display name and Reply-To on every email this space sends, and proof that the space's own
+    # SMTP account delivered a test message. `smtp_verified_fingerprint` is a hash of the settings that passed; any
+    # edit changes the hash, so edited settings are unused until they pass again (never a stale "verified" flag).
+    email_from_name = models.CharField(max_length=120, blank=True)
+    email_reply_to = models.EmailField(blank=True)
+    smtp_verified_fingerprint = models.CharField(max_length=64, blank=True)
+    smtp_verified_at = models.DateTimeField(null=True, blank=True)
     # Per-makerspace chat webhooks (Slack, Slack-compatible Mattermost, and Discord).
     # Stored as Fernet ciphertext (or "") exactly like telegram_bot_token/smtp_password;
     # TextField avoids truncation after base64 expansion. Never returned by any

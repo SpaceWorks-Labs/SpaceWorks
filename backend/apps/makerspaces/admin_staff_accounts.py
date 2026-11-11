@@ -20,18 +20,24 @@ from apps.accounts.reauthentication import require_recent_reauth
 from apps.accounts.services_staff_invitations import issue
 from apps.accounts.staff_account_policy import require_authority
 from apps.accounts.staff_invitation_delivery import deliver
+from django.utils.translation import gettext_lazy
 
 
 class CreateStaffAccountForm(forms.Form):
     email = forms.EmailField()
     roles = forms.MultipleChoiceField()
     machine_type_ids = forms.TypedMultipleChoiceField(coerce=int, required=False)
+    # Individual machines (decision 282), unioned with the types. Like the types field it
+    # only applies to machine_manager/technician; ``issue`` rejects it for other roles and
+    # the acceptance path applies it through ``set_member_machine_scope``.
+    machine_ids = forms.TypedMultipleChoiceField(coerce=int, required=False)
 
     def __init__(self, space, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from apps.machines.member_scope_services import assignable_machine_types
+        from apps.machines.member_scope_services import assignable_machine_types, assignable_machines
         self.fields["roles"].choices = list(space.roles.exclude(slug="member").values_list("slug", "name"))
         self.fields["machine_type_ids"].choices = list(assignable_machine_types(space).values_list("pk", "name"))
+        self.fields["machine_ids"].choices = list(assignable_machines(space).values_list("pk", "name"))
 
 
 class MakerspaceStaffAccountAdminMixin:
@@ -39,7 +45,7 @@ class MakerspaceStaffAccountAdminMixin:
         return [path("<int:object_id>/staff-account/create/", self.admin_site.admin_view(self.create_staff_account_view),
                      name="makerspaces_makerspace_create_staff_account"), *super().get_urls()]
 
-    @admin.display(description="Staff")
+    @admin.display(description=gettext_lazy("Staff"))
     def create_staff_account_link(self, obj):
         if not obj or not obj.pk:
             return "Save this makerspace first."

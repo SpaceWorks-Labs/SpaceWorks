@@ -9,6 +9,7 @@ from apps.makerspaces import archive_requests
 from apps.makerspaces.models import MakerspaceArchiveRequest
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(MakerspaceArchiveRequest)
@@ -41,7 +42,7 @@ class MakerspaceArchiveRequestAdmin(RecentReauthenticationAdminMixin, SuperuserO
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.action(description="Approve selected archive requests")
+    @admin.action(description=gettext_lazy("Approve selected archive requests"))
     def approve_selected(self, request, queryset):
         # Approving IS archiving, so it must show the same unsettled-charge impact the direct
         # archive action shows. Without this a superadmin could archive from this changelist
@@ -90,7 +91,7 @@ class MakerspaceArchiveRequestAdmin(RecentReauthenticationAdminMixin, SuperuserO
                 level=messages.SUCCESS,
             )
 
-    @admin.action(description="Decline selected archive requests")
+    @admin.action(description=gettext_lazy("Decline selected archive requests"))
     def decline_selected(self, request, queryset):
         selected = list(queryset.select_related("makerspace"))
         if "confirm_decline" not in request.POST:

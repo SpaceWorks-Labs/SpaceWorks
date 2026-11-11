@@ -8,14 +8,15 @@ from rest_framework.exceptions import APIException
 
 from . import archive_requests, lifecycle
 from .models import MakerspaceArchiveRequest
+from django.utils.translation import gettext_lazy
 
 
 class MakerspaceLifecycleReviewMixin:
-    @admin.action(description="Approve pending archive requests")
+    @admin.action(description=gettext_lazy("Approve pending archive requests"))
     def approve_archive_requests(self, request, queryset):
         return self._review_archive_requests(request, queryset, approve=True)
 
-    @admin.action(description="Decline pending archive requests")
+    @admin.action(description=gettext_lazy("Decline pending archive requests"))
     def decline_archive_requests(self, request, queryset):
         return self._review_archive_requests(request, queryset, approve=False)
 

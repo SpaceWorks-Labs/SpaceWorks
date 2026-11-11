@@ -11,6 +11,7 @@ from apps.makerspaces.models import (
     MembershipRequest,
 )
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(MakerspaceMembership)
@@ -62,7 +63,7 @@ class MakerspaceMembershipAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, M
         "witnessed_by", "witnessed_actor_snapshot", "created_at",
     )
 
-    @admin.display(description="Additional roles")
+    @admin.display(description=gettext_lazy("Additional roles"))
     def additional_role_names(self, obj):
         from apps.accounts.rbac_roles import membership_roles
 

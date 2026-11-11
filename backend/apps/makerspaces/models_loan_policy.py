@@ -39,6 +39,8 @@ class MakerspaceLoanPolicy(models.Model):
     loan_max_items = models.PositiveIntegerField(default=0)
     loan_reminder_offsets_hours = models.JSONField(default=default_reminder_offsets, validators=[validate_reminder_offsets])
     loan_escalate_overdue_days = models.PositiveIntegerField(default=0, validators=[MaxValueValidator(365)])
+    # Decision 221(a): account-only borrowers (member accounts on, membership off) may self-renew.
+    account_self_renewal = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     @classmethod

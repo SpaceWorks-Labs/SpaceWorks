@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FormPageLayout } from "../../../components/layouts";
@@ -61,7 +61,7 @@ export function SubmissionEditor({ scope, uploadOrigins, formats, tracks = [], p
     <p className="text-sm text-muted">{t`Build your project draft, then submit a frozen version for judging. Files stay private until you choose gallery sharing and the organizer publishes it.`}</p>
     {query.data?.snapshot_id ? <p role="status" className="rounded-xl border border-line bg-success-soft p-3 text-sm text-success-ink">{t`Frozen submission receipt: ${query.data.snapshot_id}. Judging uses this submitted version.`}</p> : null}
     {stages.length ? <StageTracker stages={stages} activeId={active?.id ?? null} timezone={requirements?.timezone ?? "UTC"} /> : null}
-    {requirements ? <p className="text-sm text-muted">{stages.length ? "" : t`Submit by `} {stages.length ? "" : `${new Date(requirements.deadline).toLocaleString(formatLocale())}. `}{requirements.budget.remaining_bytes === null ? t`Storage is metered by your host.` : t`${Math.floor(requirements.budget.remaining_bytes / 1024 / 1024)} MiB remaining; ${Math.ceil(requirements.budget.reserved_bytes / 1024 / 1024)} MiB reserved.`}</p> : null}
+    {requirements ? <p className="text-sm text-muted">{stages.length ? "" : <>{t`Submit by ${formatDateTime(requirements.deadline)}.`}{" "}</>}{requirements.budget.remaining_bytes === null ? t`Storage is metered by your host.` : t`${Math.floor(requirements.budget.remaining_bytes / 1024 / 1024)} MiB remaining; ${Math.ceil(requirements.budget.reserved_bytes / 1024 / 1024)} MiB reserved.`}</p> : null}
     {query.data?.id ? <ProgrammeCharges scope={scope} isLeader={Boolean(query.data.allowed_actions.includes("submit"))} /> : null}
     {dirty ? <p role="status" className="text-sm font-semibold text-ink">{t`You have unsaved changes.`}</p> : null}
     {mutation.isError ? <Callout size="panel" tone="danger" lead="Your changes were not saved."

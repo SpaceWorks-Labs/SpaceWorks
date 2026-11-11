@@ -26,7 +26,7 @@ export function GalleryCard({ entry, onDownload, href, renderMemberCard, action 
       {entry.assets.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><caption className="py-2 text-left font-semibold">{t`Project files`}</caption>
         <thead><tr><th scope="col" className="p-2">{t`Type`}</th><th scope="col" className="p-2">{t`Size`}</th><th scope="col" className="p-2">{t`Download`}</th></tr></thead>
         <tbody>{entry.assets.map(asset => <tr key={asset.public_id} className="border-t border-line"><th scope="row" className="p-2 font-medium">{asset.kind} · {asset.mime}</th>
-          <td className="p-2">{new Intl.NumberFormat(formatLocale()).format(asset.bytes)} bytes</td><td className="p-2"><button type="button" className="desk-button min-h-11" disabled={pending} onClick={async () => {
+          <td className="p-2">{t`${new Intl.NumberFormat(formatLocale()).format(asset.bytes)} bytes`}</td><td className="p-2"><button type="button" className="desk-button min-h-11" disabled={pending} onClick={async () => {
             setPending(true); setError(null); try { await onDownload(asset); } catch (error) { setError(error); } finally { setPending(false); }
           }}><Download size={18} aria-hidden="true" /> {t` Download ${asset.kind}`}</button></td></tr>)}</tbody>
       </table></div> : null}

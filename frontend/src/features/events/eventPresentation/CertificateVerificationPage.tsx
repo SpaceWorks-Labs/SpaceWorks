@@ -45,8 +45,8 @@ export function CertificateVerificationPage() {
           <Row label={t`Date`}>{new Date(`${data.date}T00:00:00`).toLocaleDateString(formatLocale(), { day: "numeric", month: "long", year: "numeric" })}</Row>
           <Row label={t`Issued by`}>{data.issuer}</Row>
           <Row label={t`Status`}><span className={valid ? "font-semibold text-success-ink" : "font-semibold text-danger"}>{valid ? t`Valid` : t`Revoked`}</span></Row>
-          <Row label={t`Certificate ID`}><span className="font-mono text-sm">{data.serial}</span></Row>
-          <Row label={t`File fingerprint`}><span className="font-mono text-sm" title={data.sha256}>{shortFingerprint(data.sha256)}</span></Row>
+          <Row label={t`Certificate ID`}><span className="code-text text-sm">{data.serial}</span></Row>
+          <Row label={t`File fingerprint`}><span className="code-text text-sm" title={data.sha256}>{shortFingerprint(data.sha256)}</span></Row>
         </dl>
         {!data.recipient_name ? <p className="text-sm text-muted">{t`The holder has not chosen to show their name here.`}</p> : null}
         <CertificateFileCheck expected={data.sha256} />

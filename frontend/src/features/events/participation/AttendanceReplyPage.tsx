@@ -9,11 +9,11 @@ import { Card, ErrorText } from "../../../components/ui";
 type Own = { event_id: number; event_title: string; starts_at: string; registration_id: number;
   answer: "yes" | "no" | null; note: string; replied_at: string | null; effect: string; free_on_no: boolean };
 
-const EFFECTS: Record<string, string> = {
-  released: "Your place was released for someone on the waitlist.",
-  due_case: "Your place was cancelled. Any refund the event's policy allows is reviewed by the organisers.",
-  left_to_staff: "The organisers will look at your group booking.",
-};
+const EFFECTS = (): Record<string, string> => ({
+  released: t`Your place was released for someone on the waitlist.`,
+  due_case: t`Your place was cancelled. Any refund the event's policy allows is reviewed by the organisers.`,
+  left_to_staff: t`The organisers will look at your group booking.`,
+});
 
 /** The private "Are you still coming?" page: only the registered person sees and answers it. */
 export function AttendanceReplyPage() {
@@ -32,8 +32,8 @@ export function AttendanceReplyPage() {
     <h1 className="font-display text-2xl text-ink">{t`Are you still coming?`}</h1>
     <p className="text-ink">{data.event_title}, {new Date(data.starts_at).toLocaleString(formatLocale())}</p>
     {reply.error ? <ErrorText message={reply.error.message} /> : null}
-    {data.answer ? <p role="status" className="text-ink">{t`You answered: `}{data.answer === "yes" ? t`still coming` : t`not coming`}.</p> : null}
-    {settled ? <Card><p className="text-sm text-ink">{EFFECTS[data.effect]}</p></Card> : <Card><div className="grid gap-3">
+    {data.answer ? <p role="status" className="text-ink">{data.answer === "yes" ? t`You answered: still coming.` : t`You answered: not coming.`}</p> : null}
+    {settled ? <Card><p className="text-sm text-ink">{EFFECTS()[data.effect]}</p></Card> : <Card><div className="grid gap-3">
       <label className="grid gap-1 text-sm text-ink">{t`A note for the organisers (optional)`}<textarea className="desk-input min-h-20" maxLength={1000} value={note} onChange={e => setNote(e.target.value)} /></label>
       {data.free_on_no ? <p className="text-sm text-muted">{t`If you answer No, your place goes to someone else.`}</p> : null}
       <div className="flex flex-wrap gap-2">

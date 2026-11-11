@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { ListLayout } from '../../../components/layouts'
@@ -18,7 +18,7 @@ export function ShiftBrowser({ scope, assignments }: { scope: EventScope; assign
       {query.data?.results.map(row => {
         const assignment = assignments.find(x => x.posting_id === row.posting_id && ['approved', 'applied'].includes(x.state))
         return <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-4"><div>
-          <h2 className="title-section">{row.task}</h2><p className="text-sm text-muted">{new Date(row.starts_at).toLocaleString(formatLocale())} – {new Date(row.ends_at).toLocaleString(formatLocale())}</p>
+          <h2 className="title-section">{row.task}</h2><p className="text-sm text-muted">{formatDateTime(row.starts_at)} – {formatDateTime(row.ends_at)}</p>
           <p className="text-sm text-muted">{row.zone}{row.available === null ? t` · Places available` : t` · ${row.available} places available`}</p>
           {row.signup ? <p className="mt-2 text-sm">{t`Your signup: ${row.signup.state}`}</p> : null}</div>
           {!row.signup ? <ActionControl action={{ label: t`Apply to shift`, pending: command.isPending,

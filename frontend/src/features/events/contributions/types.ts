@@ -15,6 +15,8 @@ export type Shift = Omit<import('../../../generated/api').Shift, 'mentor_card' |
   mentor_card?: unknown; signup: Signup | null
 }
 export type Signup = import('../../../generated/api').Signup
+/** Staff scope only (EV-30): who the volunteer is. `member_name` is absent on servers before 0.12.0. */
+export type AdminSignup = Signup & { member_id: number; assignment_id: number; member_name?: string }
 export type HelpRequest = import('../../../generated/api').Help
 export type HelpComment = import('../../../generated/api').Comment
 export type Booking = import('../../../generated/api').Booking

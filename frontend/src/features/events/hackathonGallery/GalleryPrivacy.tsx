@@ -24,7 +24,7 @@ function GalleryPrivacyForm({ scope, teamId, snapshotId, leader, items }: {
   return <section className="grid gap-4" aria-label={t`Team gallery privacy`}>
     <h2 className="title-section">{t`Your team’s public project`}</h2>
     <p className="text-sm text-muted">{t`Any active member of the frozen team can make the project or individual items private immediately. Publishing requires the team leader’s explicit choice and an organizer’s selection.`}</p>
-    {query.isLoading ? <p role="status">{t`Loading project privacy…`}</p> : <p className="text-sm">{t`Metadata is `}{query.data?.metadata_public ? t`approved for publication` : 'private'} · {query.data?.publication_state?.replace(/_/g, ' ')}</p>}
+    {query.isLoading ? <p role="status">{t`Loading project privacy…`}</p> : <p className="text-sm">{query.data?.metadata_public ? t`Metadata is approved for publication` : t`Metadata is private`}{query.data?.publication_state ? ` · ${publicationStateLabel(query.data.publication_state)}` : ''}</p>}
     <fieldset className="grid gap-2" disabled={mutate.isPending || query.isLoading}><legend className="mb-2 text-sm font-semibold">{t`Choose individual items`}</legend>
       {items.map(item => { const key = `${item.kind}:${item.id}`; return <label key={key} className="flex min-h-11 items-center gap-3">
         <input type="checkbox" checked={checked.includes(key)} onChange={e => setChecked(e.target.checked ? [...checked, key] : checked.filter(value => value !== key))} />{item.label}
@@ -42,6 +42,9 @@ function GalleryPrivacyForm({ scope, teamId, snapshotId, leader, items }: {
     <ErrorBlock error={mutate.error} /><p role="status" className="text-sm text-muted">{message}</p>
   </section>;
 }
+
+const publicationStateLabel = (state: string) => ({ published: t`Published`, unpublished: t`Not published`,
+  amendment_required: t`Changes needed before publishing` } as Record<string, string>)[state] ?? t`Status unknown`;
 
 export function GalleryPrivacy(props: Parameters<typeof GalleryPrivacyForm>[0]) {
   return <PrivateProgrammeBoundary identity={`${props.scope.actorId}:${props.scope.makerspaceId}:${props.scope.eventId}:${props.teamId}`}><GalleryPrivacyForm {...props} /></PrivateProgrammeBoundary>;

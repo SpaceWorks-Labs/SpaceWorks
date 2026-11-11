@@ -1,6 +1,6 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { sessionScope } from '../../staff/eventProgramme/sessionScope'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ListLayout } from '../../../components/layouts'
 import { Card, ErrorText } from '../../../components/ui'
@@ -20,6 +20,8 @@ export function TeamFinderPage({ context, accountId }: { context: ProgrammeConte
     enabled: context.programme.finder_enabled, staleTime: 0, gcTime: 0, retry: false })
   const own = useQuery({ queryKey: [...key, 'me'], queryFn: () => memberRequest<FinderProfile>(base.slice('/api/v1'.length) + '/team-finder/me/'),
     enabled: context.programme.finder_enabled, staleTime: 0, gcTime: 0, retry: false })
+  // Seed the form from the saved card, or "Show my finder card" would publish an empty one over it.
+  useEffect(() => { if (own.data) { setIntro(own.data.intro ?? ''); setProfileSkills((own.data.skills ?? []).join(', ')) } }, [own.data])
   const action = useMutation({ mutationFn: ({ suffix, body, method = 'POST' }: { suffix: string; body: Record<string, unknown>; method?: 'POST' | 'PATCH' }) =>
     commands.current.send(base + suffix, method, body), onSuccess: () => client.invalidateQueries({ queryKey: key }) })
   return <ListLayout header={{ title: t`Find your next teammate` }} state={cards.isLoading ? { status: 'loading' }
@@ -45,8 +47,8 @@ export function TeamFinderPage({ context, accountId }: { context: ProgrammeConte
         {cards.data?.results.map(card => <Card key={card.kind + card.id}>
           <div className="grid gap-2"><h2 className="title-section">{card.name || card.profile?.display_name || t`Participant seeking a team`}</h2>
             <p className="whitespace-pre-wrap break-words text-sm text-ink">{card.intro}</p>
-            <p className="text-sm text-muted">{card.skills.join(' · ')}{card.slots !== undefined ? ' · ' + card.slots + ' open places' : ''}</p>
-            {card.profile?.url ? <a className="min-h-11 py-3 text-sm text-brand underline" href={card.profile.url}>{t`Public profile`}</a> : null}
+            <p className="text-sm text-muted">{card.skills.join(' · ')}{card.slots !== undefined ? ' · ' + plural(card.slots, { one: '# open place', other: '# open places' }) : ''}</p>
+            {card.profile?.url ? <a className="min-h-11 py-3 text-sm text-brand-ink underline" href={card.profile.url}>{t`Public profile`}</a> : null}
             {card.kind === 'team' ? <button className="desk-button justify-self-start" type="button" disabled={action.isPending || card.slots === 0}
               onClick={() => action.mutate({ suffix: '/teams/' + card.id + '/join-request/', body: { expected_version: card.version } })}>{t`Request to join`}</button> : null}
           </div></Card>)}

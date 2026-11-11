@@ -15,16 +15,21 @@ import { chargesOn } from "../../lib/charges";
 import { useTenant, useTenantPath } from "../../lib/tenant";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
+import { registrationStatusLabel } from "../members/registrationLabels";
 import { googleCalendarUrl, saveTicketBlob, type CalendarFields } from "./eventConfirmation";
 import { LiveTicketState } from "./eventPresentation/LiveTicketState";
+import { DesignedTicket } from "./DesignedTicket";
 import { PhotoChoice } from "./eventPresentation/PhotoChoice";
 import { TicketManageActions } from "./ticketing/TicketManageActions";
 import { AddonOnlyShop } from "./ticketing/AddonOnlyShop";
+import { EventMerchLink } from "../shop/EventShopOffers";
+import { MemberEventEquipment, memberEventEquipmentEnabled } from "./MemberEventEquipment";
+import { PayByNotice } from "./PayByNotice";
 
 export type MemberEventTicket = Omit<import('../../generated/api').ProgrammeTicket, 'event'> & {
   event: CalendarFields & { id?: number; public_token: string; timezone_name: string; status: string };
   // L1 (G3, X1): the join link only for a confirmed registrant, and the venue map link.
-  delivery_mode?: "in_person" | "online" | "hybrid" | null; join_url?: string | null; map_url?: string | null;
+  delivery_mode?: "in_person" | "online" | "hybrid" | null; join_url?: string | null; map_url?: string | null; pay_by?: string | null;
 };
 
 const confirmed = (status: string) => ["registered", "attended"].includes(status);
@@ -73,7 +78,7 @@ export function MemberEventTicketPage() {
   return <AppShell variant="member" compactNav="drawer" activeKey="ticket" nav={[{ key: 'events', items: [
     { key: 'events', label: t`Events`, href: tenantPath('events'), icon: CalendarDays },
     { key: 'ticket', label: t`Tickets and certificates`, href: tenantPath('member/events/history'), icon: CalendarDays },
-  ] }]} user={{ name: 'Your account', menu: [{ label: t`Account`, href: tenantPath('member/account') }] }}><CenteredCardLayout standalone={false} width={480} eyebrow={spaceName} title={t`Your event ticket`}
+  ] }]} user={{ name: t`Your account`, menu: [{ label: t`Account`, href: tenantPath('member/account') }] }}><CenteredCardLayout standalone={false} width={480} eyebrow={spaceName} title={t`Your event ticket`}
     state={restoring || identity.isLoading || ticket.isLoading || bootstrap.isLoading ? { status: "loading" } : { status: "ready" }}
     body={!current ? t`This ticket is not available right now.`
       : canDownload ? t`Download your ticket and bring it to event check-in.` : t`A ticket download is available once your registration is confirmed.`}
@@ -82,7 +87,11 @@ export function MemberEventTicketPage() {
       {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} /> : null}
       {current ? <>
         <LiveTicketState status={current.status} attendedAt={current.attended_at} />
-        <TicketCard organisation={spaceName} title={current.event.title}
+        <PayByNotice payBy={current.pay_by} audience="guest" />
+        {/* Parity D17: the space's designed ticket while the place is confirmed and not yet used. */}
+        <DesignedTicket registrationId={current.registration_id} eventTitle={current.event.title}
+          enabled={current.status === "registered" && canDownload && Boolean(space?.features?.includes("events.ticket_designs"))}
+          fallback={<TicketCard organisation={spaceName} title={current.event.title}
           fields={[
             { label: t`When`, value: <time dateTime={current.event.starts_at}>{new Date(current.event.starts_at).toLocaleString(formatLocale())}</time> },
             ...(current.event.location || current.map_url ? [{ label: t`Where`, value: <span className="grid gap-1">
@@ -90,22 +99,27 @@ export function MemberEventTicketPage() {
               {current.map_url ? <a className="text-brand-ink underline" href={current.map_url} target="_blank" rel="noopener noreferrer">{t`Open the map`}<span className="sr-only"> {t` (opens in a new tab)`}</span></a> : null}
             </span> }] : []),
             ...(current.join_url ? [{ label: t`Join online`, value: <a className="break-all text-brand-ink underline" href={current.join_url} target="_blank" rel="noopener noreferrer">{current.join_url}</a> }] : []),
-            { label: t`Status`, value: <StatusBadge status={current.status} /> },
+            { label: t`Status`, value: <StatusBadge status={current.status} label={registrationStatusLabel(current.status)} /> },
             { label: t`Registration`, value: `#${current.registration_id}` },
           ]}
           qr={<div className={`grid h-full place-items-center rounded-xl ${canDownload ? "bg-success-soft text-success-ink" : "bg-warn-soft text-warn-ink"}`}>
             <Icon name={canDownload ? "CheckCircle" : "Clock"} className="h-16 w-16" /></div>}
-          caption={canDownload ? t`Your check-in code is on the downloadable ticket.` : t`Your check-in code appears once the makerspace confirms your place.`} />
+          caption={canDownload ? t`Your check-in code is on the downloadable ticket.` : t`Your check-in code appears once the makerspace confirms your place.`} />} />
         <div className="flex flex-wrap gap-2">
           {confirmed(current.status) && ["published", "completed"].includes(current.event.status) ? <a className="desk-button flex-1" href={googleCalendarUrl(current.event)} target="_blank" rel="noopener noreferrer">{t`Add to Google Calendar`}</a> : null}
           <button className="desk-button flex-1" type="button" disabled={calendar.isPending} onClick={() => calendar.mutate()}>{t`Download registration calendar`}</button>
         </div>
         {makerspaceId ? <TicketManageActions makerspaceId={makerspaceId} makerspaceSlug={makerspaceSlug} registrationId={current.registration_id} status={current.status} event={current.event} /> : null}
+        {/* Decision 214: a confirmed registrant's own event equipment; hidden unless the space lends for events. */}
+        {confirmed(current.status) && makerspaceId && memberEventEquipmentEnabled(space) ? <MemberEventEquipment makerspaceId={makerspaceId} registrationId={current.registration_id}
+          requestHref={tenantPath("inventory")} historyHref={tenantPath("member/loans/history")} /> : null}
         <RouteLink className="desk-button" href={tenantPath("member/events/history")}>{t`Your event history`}</RouteLink>
         {/* Hack-money G9: a confirmed place on an approval event may buy add-ons alone. */}
         {confirmed(current.status) && makerspaceId && space?.features?.includes("events.accepted_addons") && space.features.includes("events.addons")
           ? <AddonOnlyShop makerspaceSlug={makerspaceSlug} makerspaceId={makerspaceId} publicToken={current.event.public_token} free={!chargesOn(space, "events")}
             ordersHref={orderId => tenantPath(`member/orders/${orderId}`)} /> : null}
+        {/* #135 Q-S18: shop merch for this event is its own shop order, never part of the registration. */}
+        {confirmed(current.status) ? <EventMerchLink slug={makerspaceSlug} publicToken={current.event.public_token} bootstrap={space} path={tenantPath} /> : null}
         {current.event.id && makerspaceId ? <PhotoChoice actorId={identity.data?.id} makerspaceId={makerspaceId} eventId={current.event.id} eventName={current.event.title} /> : null}
         {calendar.error ? <ErrorText message={t`Could not download this calendar.`} /> : null}
         {download.error ? <ErrorText message={download.error.message} /> : null}

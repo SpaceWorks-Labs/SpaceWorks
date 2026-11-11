@@ -48,7 +48,7 @@ export function parseProgrammeContext(value: unknown): ProgrammeContext {
   const capabilities = record(programme.capabilities)
   for (const key of ['events.hackathons', 'events.mentoring', 'events.mentor_rounds',
     'events.volunteering', 'events.project_gallery']) {
-    if (typeof capabilities[key] !== 'boolean') throw new Error(t`Invalid capability flag.`)
+    if (typeof capabilities[key] !== 'boolean') throw new Error(t`Invalid feature setting.`)
   }
   if (typeof programme.finder_enabled !== 'boolean'
       || (programme.team_mode !== null && typeof programme.team_mode !== 'string')) {

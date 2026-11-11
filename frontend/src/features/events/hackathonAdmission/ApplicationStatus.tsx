@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useQuery } from '@tanstack/react-query'
 import { Clock, Users } from 'lucide-react'
@@ -10,6 +10,7 @@ import { readMember } from './transport'
 import { AnswerDateReview } from './AnswerDateReview'
 import { HostConsentRepair } from './HostConsentRepair'
 import type { Application } from './types'
+import { applicationStateLabel } from './labels'
 
 export function ApplicationStatus({ application, pending, error, onAction, onRepair, onReapply, onDateReview }: {
   application: Application; pending: boolean; error: Error | null
@@ -22,7 +23,7 @@ export function ApplicationStatus({ application, pending, error, onAction, onRep
     refetchInterval: q => q.state.data?.state === 'pending' ? 2000 : false, staleTime: 0, gcTime: 0, retry: false })
   const offered = application.state === 'offered'
   const showPrice = useChargesOn('events', useParams().slug) // #184: free events show no quote
-  return <DetailLayout title={t`Your application`} state={{ status: 'ready' }} status={<StatusBadge status={application.state} label={application.state.replace(/_/g, ' ')} />}
+  return <DetailLayout title={t`Your application`} state={{ status: 'ready' }} status={<StatusBadge status={application.state} label={applicationStateLabel(application.state)} />}
     main={<div className="grid gap-4">
       {error ? <ErrorText message={error.message} /> : null}
       <Card><div className="flex items-start gap-3 text-ink"><Clock aria-hidden="true" className="size-5 shrink-0" /><div>
@@ -30,7 +31,7 @@ export function ApplicationStatus({ application, pending, error, onAction, onRep
         <p className="mt-1 text-sm text-muted">{offered ? t`Reply before the deadline. Offers can exceed the number of confirmed seats; a seat is reserved when your RSVP completes.`
           : application.state === 'submitted' ? t`Your application is with the event team. A decision appears here after it is released.`
           : application.state === 'waitlisted' ? t`You are on the waitlist. We will let you know when a place can be offered.` : t`Your latest application state is shown above.`}</p>
-        {application.rsvp_due_at ? <p className="mt-2 text-sm">{t`Reply by `}<time dateTime={application.rsvp_due_at}>{new Date(application.rsvp_due_at).toLocaleString(formatLocale())}</time>.</p> : null}
+        {application.rsvp_due_at ? <p className="mt-2 text-sm">{t`Reply by ${formatDateTime(application.rsvp_due_at)}.`}</p> : null}
       </div></div></Card>
       <AnswerDateReview application={application} pending={pending} onReview={onDateReview} />
       <HostConsentRepair application={application} pending={pending} onRepair={onRepair} />

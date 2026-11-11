@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime, formatTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { ListLayout } from '../../../components/layouts'
@@ -25,7 +25,7 @@ export function OfficeHours({ scope, teamId }: { scope: EventScope; teamId?: num
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>{command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
       {tab === 'slots' ? slots.data?.results.map(row => <Card key={row.id}><div className="flex flex-wrap justify-between gap-4"><div>
-        <h2 className="title-section">{row.task}</h2><p className="text-sm text-muted">{new Date(row.starts_at).toLocaleString(formatLocale())} – {new Date(row.ends_at).toLocaleTimeString(formatLocale())}</p>
+        <h2 className="title-section">{row.task}</h2><p className="text-sm text-muted">{formatDateTime(row.starts_at)} – {formatTime(row.ends_at)}</p>
         <p className="text-sm text-muted">{row.available === null ? t`Places available` : t`${row.available} places available`}</p></div>
         <ActionControl action={{ label: who === 'team' ? t`Book for our team` : t`Book a place`, pending: command.isPending, disabled: row.available === 0,
           disabledReason: row.available === 0 ? 'This slot is full.' : undefined,

@@ -34,7 +34,7 @@ export function CertificateFileCheck({ expected }: { expected: string }) {
       {state.status === "checking" ? <p className="text-sm text-muted">{t`Checking `}{state.name}…</p> : null}
       {state.status === "match" ? <p className="flex items-start gap-2 rounded-control border border-success bg-success-soft p-3 text-sm text-success-ink">
         <FileCheck2 size={18} aria-hidden="true" className="mt-0.5 shrink-0" /><span><strong>{t`This file matches the issued certificate.`}</strong> {t` It has not been changed since it was issued.`}</span></p> : null}
-      {state.status === "mismatch" ? <p className="flex items-start gap-2 rounded-control border border-danger-line bg-danger/10 p-3 text-sm text-danger">
+      {state.status === "mismatch" ? <p className="flex items-start gap-2 rounded-control border border-danger-line bg-panel p-3 text-sm text-danger">
         <FileX2 size={18} aria-hidden="true" className="mt-0.5 shrink-0" /><span><strong>{t`This file does not match.`}</strong> {t` It is not the PDF that was issued for this certificate, or it was changed afterwards.`}</span></p> : null}
       {state.status === "error" ? <p className="text-sm text-danger">{t`This browser could not read the file. Try another browser.`}</p> : null}
     </div>

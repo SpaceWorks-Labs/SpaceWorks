@@ -1,4 +1,4 @@
-import { formatLocale } from "../../../lib/format";
+import { formatDateTime, formatTime } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -32,7 +32,7 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
     state={query.isPending ? { status: 'loading' } : query.isError ? { status: 'error', error: errorText(query.error), onRetry: () => { void query.refetch() } } : { status: 'ready' }}
     main={<div className="grid gap-4"><Card><p className="whitespace-pre-wrap break-words">{row?.summary}</p>
       <p className="mt-3 text-sm text-muted">{row?.team_alias}{row?.zone?.table ? t` · Table ${row.zone.table}` : ''}</p>
-      {row?.claim_expires_at ? <p role="status" className="mt-3 text-sm text-muted">{t`Claim expires ${new Date(row.claim_expires_at).toLocaleTimeString(formatLocale())}`}</p> : null}
+      {row?.claim_expires_at ? <p role="status" className="mt-3 text-sm text-muted">{t`Claim expires ${formatTime(row.claim_expires_at)}`}</p> : null}
       {row?.organizer_contact_action ? <p className="mt-3 whitespace-pre-wrap text-sm">{row.organizer_contact_action}</p> : null}</Card>
       {command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
       {row?.allowed_actions.some(x => ['resolve', 'reopen'].includes(x)) ? <Field label={t`Resolution or follow-up note`}>
@@ -46,7 +46,7 @@ export function HelpDetail({ scope, helpId, surface = 'member', onClose }: {
       <section aria-label={t`Comments`} className="grid gap-3"><h2 className="title-section">{t`Conversation`}</h2>
         {comments.isPending ? <p role="status">{t`Loading comments…`}</p> : null}
         {comments.error ? <p role="alert" className="text-danger">{errorText(comments.error)}</p> : null}
-        {comments.data?.results.map(item => <Card key={item.id}><p className="mb-2 text-xs text-muted">{item.origin === 'team' ? t`Team` : t`Mentor`} · {new Date(item.created_at).toLocaleString(formatLocale())}</p><p className="whitespace-pre-wrap break-words">{item.body}</p></Card>)}
+        {comments.data?.results.map(item => <Card key={item.id}><p className="mb-2 text-xs text-muted">{item.origin === 'team' ? t`Team` : t`Mentor`} · {formatDateTime(item.created_at)}</p><p className="whitespace-pre-wrap break-words">{item.body}</p></Card>)}
         <Pagination page={page} totalPages={Math.ceil((comments.data?.count ?? 0) / 24)} onChange={setPage} />
         {row?.allowed_actions.includes('comment') ? <form className="grid gap-3" onSubmit={event => {
           event.preventDefault()

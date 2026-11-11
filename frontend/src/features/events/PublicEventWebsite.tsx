@@ -1,8 +1,8 @@
-import { formatLocale } from "../../lib/format";
+import { formatDateTime, formatTime } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { ProgrammeWebsiteSections } from "./ProgrammeWebsiteSections";
 import { RestrictedMarkdown } from "../../components/RestrictedMarkdown";
-import { markdownMode, orderedGroups, sectionGroup, sponsorTiers, type EventWebsite, type PublicEventWebsiteData, type WebsiteSection, type WebsiteSession } from "./websiteTypes";
+import { markdownMode, orderedGroups, sectionGroup, sponsorTierLabel, sponsorTiers, websiteSectionHeading, type EventWebsite, type PublicEventWebsiteData, type WebsiteSection, type WebsiteSession } from "./websiteTypes";
 import type { ReactNode } from "react";
 import { EventEditorialSections } from "./websiteSectionRegistry";
 import { usePageBranding } from "../publicPages/usePageBranding";
@@ -38,8 +38,8 @@ export function WebsiteProgramme({ website, links, sessions = website.sessions }
       {links ? <a className={actionLink} href={links.schedule}>{t`Full schedule`}</a> : null}</div>
     <ol className="grid gap-3">{rows.map((row) => <li className={`${card} grid gap-1`} key={row.slug}>
       <h3 className="title-section break-words">{links ? <a className={inlineLink} href={links.session(row.slug)}>{row.title}</a> : row.title}</h3>
-      <p className="text-sm font-semibold tabular-nums text-ink"><time dateTime={row.effective_starts_at ?? row.starts_at}>{new Date(row.effective_starts_at ?? row.starts_at).toLocaleString(formatLocale())}</time> – <time dateTime={row.effective_ends_at ?? row.ends_at}>{new Date(row.effective_ends_at ?? row.ends_at).toLocaleTimeString(formatLocale())}</time></p>
-      {row.effective_starts_at && row.effective_starts_at !== row.starts_at ? <p className="text-sm text-muted">{t`Planned start: ${new Date(row.starts_at).toLocaleTimeString(formatLocale())}`}</p> : null}
+      <p className="text-sm font-semibold tabular-nums text-ink"><time dateTime={row.effective_starts_at ?? row.starts_at}>{formatDateTime(row.effective_starts_at ?? row.starts_at)}</time> – <time dateTime={row.effective_ends_at ?? row.ends_at}>{formatTime(row.effective_ends_at ?? row.ends_at)}</time></p>
+      {row.effective_starts_at && row.effective_starts_at !== row.starts_at ? <p className="text-sm text-muted">{t`Planned start: ${formatTime(row.starts_at)}`}</p> : null}
       <p className="text-sm text-muted">{[title(row.track), title(row.room)].filter(Boolean).join(" · ")}</p>
       <p className="flex flex-wrap gap-x-3 text-sm">{(row.speakers ?? []).map((slug) => <span key={slug}>{links ? <a className={inlineLink} href={links.speaker(slug)}>{title(slug)}</a> : title(slug)}</span>)}</p>
       <RestrictedMarkdown text={row.body ?? ""} mode={markdownMode(row.body_rendering)} />
@@ -69,13 +69,13 @@ export function PublicEventWebsite({ website, image, links }: { website: PublicE
       if (group === "SCHEDULE") return cards.length || website.sessions.some((row) => row.visibility === "published") ? <section key={group} aria-label={t`Schedule`} className="grid gap-6">{cards.length ? <section aria-label={t`Tracks`} className="grid gap-3"><h2 className={groupHeading}>{t`Tracks`}</h2>{cards}</section> : null}{website.sessions.some((row) => row.visibility === "published") ? <WebsiteProgramme website={website} links={links} /> : null}</section> : null;
       if (group === "SPONSORS") return sections.length ? <section key={group} aria-label={t`Sponsors`} className="grid gap-4"><h2 className={groupHeading}>{t`Sponsors`}</h2>{sponsorTiers.map((tier) => {
         const sponsors = sections.filter((row) => (row.sponsor_tier ?? "community_partner") === tier);
-        return sponsors.length ? <section key={tier} aria-label={`${tier.replace(/_/g, " ")} sponsors`} className="grid gap-3"><h3 className="eyebrow">{tier.replace(/_/g, " ")}</h3><div className="grid gap-3 sm:grid-cols-2">{sponsors.map((row) => <WebsiteSectionCard key={row.slug} row={row} image={image} />)}</div></section> : null;
+        return sponsors.length ? <section key={tier} aria-label={t`${sponsorTierLabel(tier)} sponsors`} className="grid gap-3"><h3 className="eyebrow">{sponsorTierLabel(tier)}</h3><div className="grid gap-3 sm:grid-cols-2">{sponsors.map((row) => <WebsiteSectionCard key={row.slug} row={row} image={image} />)}</div></section> : null;
       })}</section> : null;
       if (group === "VENUE" && website.venue) return <Venue key={group} venue={website.venue} cards={cards} />;
-      return cards.length || group === "HERO" && (website.tagline || website.cover) ? <section key={group} aria-label={group} className="grid gap-3">
+      return cards.length || group === "HERO" && (website.tagline || website.cover) ? <section key={group} aria-label={websiteSectionHeading(group)} className="grid gap-3">
         {group === "HERO" && website.cover ? renderImage(website.cover.url, website.cover.alt) : null}
         {group === "HERO" && website.tagline ? <p className="break-words font-accent text-xl text-brand-ink md:text-2xl">{website.tagline}</p> : null}
-        {cards.length ? <><h2 className={`${groupHeading} capitalize`}>{group.toLowerCase()}</h2>{cards}</> : null}
+        {cards.length ? <><h2 className={groupHeading}>{websiteSectionHeading(group)}</h2>{cards}</> : null}
       </section> : null;
     })}
     <ProgrammeWebsiteSections rows={website.programme_sections} />

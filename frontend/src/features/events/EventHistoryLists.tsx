@@ -1,10 +1,20 @@
-import { formatLocale } from "../../lib/format";
+import { formatDateTime } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { EmptyState, ListRow, StatusBadge } from "../../components/ui";
 import type { EventHistory, HistoryEvent } from "./eventHistoryApi";
 
-const statusLabel = (status: string) => status.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
-const when = (event: HistoryEvent) => `${new Date(event.starts_at).toLocaleString(formatLocale())}${event.location ? ` · ${event.location}` : ""}`;
+function statusLabel(status: string) {
+  switch (status) {
+    case "registered": return t`Registered`;
+    case "attended": return t`Attended`;
+    case "waitlisted": return t`Waitlisted`;
+    case "pending_approval": return t`Pending approval`;
+    case "rejected": return t`Rejected`;
+    case "cancelled": return t`Cancelled`;
+    default: return t`Status unknown`;
+  }
+}
+const when = (event: HistoryEvent) => `${formatDateTime(event.starts_at)}${event.location ? ` · ${event.location}` : ""}`;
 
 /** Counts plus the registrations and talks behind them; shared by the member area and the staff member drawer. */
 export function EventHistoryLists({ history, emptyMessage, compact = false }: { history: EventHistory; emptyMessage: string; compact?: boolean }) {

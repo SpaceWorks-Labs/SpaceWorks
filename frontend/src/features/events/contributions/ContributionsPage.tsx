@@ -5,6 +5,7 @@ import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card, StatusPill } from '../../../components/ui'
 import { errorText, useProgrammeCommand, useProgrammeList } from './api'
 import type { EventScope, Posting, RoleApplication, Signup } from './types'
+import { contributionRoleLabel, contributionStateLabel, shiftActionLabel, shiftAttendanceLabel } from './labels'
 
 export function ContributionsPage({ scope, onApply, onOpenApplication, onDesk }: {
   scope: EventScope; onApply: (posting: Posting) => void; onOpenApplication: (application: RoleApplication) => void
@@ -34,15 +35,15 @@ export function ContributionsPage({ scope, onApply, onOpenApplication, onDesk }:
           <ActionControl action={{ label: t`View role and apply`, onClick: () => onApply(row) }} />
         </div></Card>) : null}
       {tab === 'applications' ? applications.data?.results.map(row => <Card key={row.id}>
-        <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="title-section capitalize">{row.role.replace(/_/g, ' ')}</h2>
-          <StatusPill label={row.state} tone={row.state === 'approved' ? 'success' : 'neutral'} /></div>
+        <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="title-section">{contributionRoleLabel(row.role)}</h2>
+          <StatusPill label={contributionStateLabel(row.state)} tone={row.state === 'approved' ? 'success' : 'neutral'} /></div>
           <div className="flex flex-wrap gap-3"><ActionControl action={{ label: t`View application`, onClick: () => onOpenApplication(row) }} />
             {onDesk && row.state === 'approved' && row.entitlement_active && ['mentor', 'judge', 'sponsor_rep'].includes(row.role) ? <ActionControl action={{ label: t`Open assigned desk`, onClick: () => onDesk(row) }} /> : null}</div></div></Card>) : null}
       {tab === 'shifts' ? shifts.data?.results.map(row => <Card key={row.id}>
         <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="title-section flex items-center gap-2"><Clock3 aria-hidden="true" className="size-5" />{t`Shift ${row.shift_id}`}</h2>
-          <p className="text-sm text-muted">{row.attendance?.replace(/_/g, ' ') ?? row.state}{row.verified_minutes !== null ? t` · ${row.verified_minutes} verified minutes` : ''}</p></div>
+          <p className="text-sm text-muted">{row.attendance ? shiftAttendanceLabel(row.attendance) : contributionStateLabel(row.state)}{row.verified_minutes !== null ? t` · ${row.verified_minutes} verified minutes` : ''}</p></div>
           <div className="flex flex-wrap gap-2">{row.allowed_actions.map(action => <ActionControl key={action} action={{
-            label: action.replace(/-/g, ' '), pending: command.isPending,
+            label: shiftActionLabel(action), pending: command.isPending,
             confirm: action === 'withdraw' ? { title: t`Withdraw from shift?`, message: t`Your place can be offered to another volunteer.` } : undefined,
             onClick: () => command.mutate({ path: `/shift-signups/${row.id}/${action}/`, version: row.version }),
           }} />)}</div></div></Card>) : null}

@@ -63,7 +63,11 @@ export function usePublicGallery(slug: string, token: string, pageNumber: number
       return { ...page(value, galleryEntry), filters: galleryFilters(value) };
     } });
 }
-export function usePublicResults(slug: string, token: string) {
-  return useQuery({ queryKey: ['public-hackathon-results', slug, token], staleTime: 0, gcTime: 0, retry: false,
-    queryFn: async () => publicResults(await tenantPublicRequest(slug, `/public/event-programmes/${encodeURIComponent(token)}/results/`, { cache: 'no-store' })) });
+/** D13: `q` narrows the awards to a project title or prize name on the server (at most 100 characters). */
+export function usePublicResults(slug: string, token: string, q = '') {
+  const search = q.trim().slice(0, 100);
+  return useQuery({ queryKey: ['public-hackathon-results', slug, token, search], staleTime: 0, gcTime: 0, retry: false,
+    placeholderData: previous => previous,
+    queryFn: async () => publicResults(await tenantPublicRequest(slug,
+      `/public/event-programmes/${encodeURIComponent(token)}/results/${search ? `?q=${encodeURIComponent(search)}` : ''}`, { cache: 'no-store' })) });
 }

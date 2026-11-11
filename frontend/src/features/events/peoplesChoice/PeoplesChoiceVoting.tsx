@@ -41,12 +41,12 @@ export function PeoplesChoiceBanner({ voting, slug, projectHref }: { voting: Peo
   const { pub, ballot } = voting;
   if (!pub) return null;
   if (pub.award) return <PeoplesChoiceAward award={pub.award} projectHref={projectHref} />;
-  const audience = pub.audience === 'attendees' ? 'Checked-in attendees' : 'Signed-in members';
+  const audience = pub.audience === 'attendees' ? t`Checked-in attendees` : t`Signed-in members`;
   const timing = pub.state === 'scheduled' ? `Voting opens ${when(pub.opens_at)}.`
     : pub.state === 'open' ? (pub.closes_at ? `Voting is open until ${when(pub.closes_at)}.` : 'Voting is open.')
       : 'Voting has closed. The result appears here once the organisers publish it.';
   return <section className="grid gap-3 rounded-xl border border-line bg-panel p-5" aria-label={t`People's choice`}>
-    <div className="flex items-start gap-3"><Heart className="mt-1 text-accent" aria-hidden="true" /><div className="grid gap-1">
+    <div className="flex items-start gap-3"><Heart className="mt-1 text-accent-ink" aria-hidden="true" /><div className="grid gap-1">
       <h2 className="title-section">{t`People’s choice`}</h2>
       <p className="text-sm">{timing} {pub.state !== 'closed' ? t`${audience} each get one vote for their favourite project, and can change it until voting closes.` : ''}</p>
       <p className="text-sm text-muted">{t`No counts are shown until the organisers publish the result. Judging is separate.`}</p></div></div>

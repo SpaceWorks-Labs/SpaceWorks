@@ -11,6 +11,7 @@ import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { EventHistoryLists } from "./EventHistoryLists";
 import { useMemberEventHistory } from "./eventHistoryApi";
+import { JoinButton } from "../community/member/JoinButton";
 
 /**
  * `member/events/history`: the events this account registered for or spoke at here. It sits
@@ -31,6 +32,7 @@ export function MemberEventHistoryPage() {
   const identity = useQuery({ queryKey: ["member", "history-account"], queryFn: () => memberRequest<{ id: number }>("/auth/me"),
     enabled: !restoring, retry: false, staleTime: 0, gcTime: 0, refetchOnMount: "always" });
   const history = useMemberEventHistory(makerspaceId ?? undefined, identity.data?.id, !restoring && Boolean(identity.data?.id));
+  const attended = history.data?.registrations.find((row) => row.status === "attended");
   const error = identity.error || history.error;
   const status = error instanceof StructuredApiError ? error.status : undefined;
   if (status === 401) return <MemberAuthPanel makerspaceSlug={makerspaceSlug}
@@ -44,6 +46,10 @@ export function MemberEventHistoryPage() {
       {status === 403 ? <EmptyState message={t`No event history here yet. Events you register for or speak at will appear here.`} /> : null}
       {error && status !== 403 ? <ErrorText message={error.message} /> : null}
       {bootstrap.error ? <ErrorText message={t`Unable to load this makerspace.`} /> : null}
+      {/* Decision 223 join funnel: an attendee who is not a member is offered a pre-filled membership request. */}
+      {makerspaceId && attended && space?.features?.includes("membership.join_funnel") ? <section className="desk-panel grid gap-2 p-5" aria-label={t`Become a member`}>
+        <h2 className="title-panel">{t`Become a member`}</h2><p className="text-sm text-muted">{t`Enjoyed the event? Join to use the space and borrow between events.`}</p>
+        <JoinButton makerspaceId={makerspaceId} source={{ registration_id: attended.registration_id }} memberHref={tenantPath("member")} /></section> : null}
       {history.data ? <EventHistoryLists history={history.data} emptyMessage={t`No event history here yet. Events you register for or speak at will appear here.`} /> : null}
     </div>}
     primary={{ label: t`See events`, href: tenantPath("events") }} />;

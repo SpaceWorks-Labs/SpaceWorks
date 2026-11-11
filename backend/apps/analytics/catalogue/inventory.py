@@ -22,6 +22,7 @@ VIEWS = (
              Col("sku", "p.sku", "Stock-keeping code."),
              Col("tracking_mode", "p.tracking_mode", "Quantity or per-asset tracking."),
              Col("is_consumable", "p.is_consumable", "Used up rather than lent."),
+             Col("event_only", "p.event_only", "Lendable only through an event context (since 3)."),
              *_QTY,
              Col("unit_cost", "p.unit_cost", "Unit cost, if recorded."),
              Col("cost_currency", "p.cost_currency", "Currency of the unit cost."),
@@ -66,7 +67,7 @@ VIEWS = (
          "FROM {hardware_requests.PublicToolLoan} l", "l.makerspace_id", (
              Col("tool_loan_id", "l.id", "Loan id."),
              Col("member_id", "l.requester_id", "Borrower (members)."),
-             Col("request_id", "l.request_id", "Linked request, if any."),
+             Col("request_id", "l.request_id", "Required canonical request; count this request once across loan views."),
              Col("target_type", "l.target_type", "Item or container."),
              Col("target_label", "l.target_label", "What was lent."),
              Col("status", "l.status", "Loan state."),

@@ -63,7 +63,7 @@ VIEWS = (
              Col("amount", "t.amount", "Price."),
              Col("currency", "t.currency", "Currency."),
              Col("created_at", "t.created_at", "Created."),
-         ), since=2),
+         ), since=2, requires=("finance.sponsors",)),
     View("sponsors", "donations", "Sponsors (organisations) with their tier and term; no contact details.",
          "FROM {payments.Sponsor} s", "s.makerspace_id", (
              Col("sponsor_id", "s.id", "Sponsor id."),
@@ -75,7 +75,7 @@ VIEWS = (
              Col("show_on_wall", "s.show_on_wall", "Shown on the sponsor wall."),
              Col("created_at", "s.created_at", "Added."),
              Col("archived_at", "s.archived_at", "Archived."),
-         ), since=2),
+         ), since=2, requires=("finance.sponsors",)),
     View("sponsor_perks", "donations", "Perks owed to sponsors and whether they were delivered.",
          "FROM {payments.SponsorPerk} k", "k.makerspace_id", (
              Col("perk_id", "k.id", "Perk id."),
@@ -84,7 +84,7 @@ VIEWS = (
              Col("due_on", "k.due_on", "Due."),
              Col("fulfilled_at", "k.fulfilled_at", "Delivered."),
              Col("created_at", "k.created_at", "Created."),
-         ), since=2),
+         ), since=2, requires=("finance.sponsors",)),
     View("sponsorship_charges", "donations", "Charges raised to sponsors.",
          "FROM {payments.SponsorshipCharge} c", "c.makerspace_id", (
              Col("sponsorship_charge_id", "c.id", "Charge id."),
@@ -92,12 +92,12 @@ VIEWS = (
              Col("amount", "c.amount", "Amount."),
              Col("currency", "c.currency", "Currency."),
              Col("created_at", "c.created_at", "Raised."),
-         ), since=2),
+         ), since=2, requires=("finance.sponsors",)),
     View("sponsor_event_links", "donations", "Which sponsors back which events.",
          "FROM {payments.SponsorEventLink} l", "l.makerspace_id", (
              Col("link_id", "l.id", "Link id."),
              Col("sponsor_id", "l.sponsor_id", "Sponsor (sponsors)."),
              Col("event_sponsor_id", "l.event_sponsor_id", "The event's sponsor entry."),
              Col("created_at", "l.created_at", "Linked."),
-         ), since=2),
+         ), since=2, requires=("finance.sponsors", "events")),
 )

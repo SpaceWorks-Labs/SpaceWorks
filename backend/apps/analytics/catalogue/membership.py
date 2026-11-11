@@ -43,7 +43,7 @@ VIEWS = (
              Col("is_active", "p.is_active", "Offered."),
              Col("is_public", "p.is_public", "Shown publicly."),
              Col("created_at", "p.created_at", "Created."),
-         )),
+         ), requires=("membership",)),
     View("membership_terms", D, "Membership terms: who held which plan, when and for how much.",
          "FROM {makerspaces.MembershipTerm} t "
          "JOIN {makerspaces.MakerspaceMembership} m ON m.id = t.membership_id", "m.makerspace_id", (
@@ -59,5 +59,5 @@ VIEWS = (
              Col("joining_fee", "t.joining_fee", "Frozen joining fee."),
              Col("currency", "t.currency", "Currency."),
              Col("created_at", "t.created_at", "Created."),
-         )),
+         ), requires=("membership",)),
 )

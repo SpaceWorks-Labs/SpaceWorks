@@ -15,6 +15,7 @@ from apps.audit.services import record
 
 from . import embedding, provisioning
 from .catalogue.registry import VIEWS_VERSION
+from .grafana_validation import uses_metabase
 from .models import AnalyticsConnection, PlatformAnalyticsConnection, validate_dashboards
 
 
@@ -40,8 +41,8 @@ def summary(scope, row=None):
     row = row or _row(scope)
     available, reason = provisioning.availability()
     return {
-        "available": available, "reason": reason, "views_version": VIEWS_VERSION,
-        "configured": bool(row.metabase_url and row.embed_secret),
+        "available": available, "reason": reason, "views_version": VIEWS_VERSION, "provider": row.provider,
+        "configured": bool(uses_metabase(row.provider) and row.metabase_url and row.embed_secret),
         "dashboards": list(row.dashboards or []),
     }
 
@@ -64,8 +65,14 @@ def describe(scope, actor):
 
 
 def update(scope, actor, data):
+    from contextlib import nullcontext
+
+    from apps.tenant_migration.gate_runtime import tenant_write
+
     changed = []
-    with transaction.atomic():
+    # A space's connection is tenant data: it participates in the tenant gate like telemetry does.
+    gate = nullcontext() if scope.platform else tenant_write(scope.makerspace.pk)
+    with gate, transaction.atomic():
         row = _row(scope, lock=True)
         if "metabase_url" in data:
             try:
@@ -73,6 +80,9 @@ def update(scope, actor, data):
             except embedding.EmbedUrlInvalid as exc:
                 raise ValidationError({"metabase_url": [str(exc)]}) from None
             if url != row.metabase_url:
+                if url and not row.metabase_url and not scope.platform:  # a NEW connection (decision 284)
+                    from apps.managed_hosting.extra_quotas import check_extra_quota
+                    check_extra_quota(scope.makerspace, "analytics_connections")
                 row.metabase_url, changed = url, [*changed, "metabase_url"]
         if "embed_secret" in data:
             secret = (data["embed_secret"] or "").strip()
@@ -85,6 +95,8 @@ def update(scope, actor, data):
             validate_dashboards(dashboards)
             if dashboards != row.dashboards:
                 row.dashboards, changed = dashboards, [*changed, "dashboards"]
+        if "provider" in data and data["provider"] != row.provider:
+            row.provider, changed = data["provider"], [*changed, "provider"]
         if "show_member_details" in data and not scope.platform:
             if bool(data["show_member_details"]) != row.show_member_details:
                 row.show_member_details, changed = bool(data["show_member_details"]), [*changed, "show_member_details"]
@@ -178,7 +190,7 @@ def revoke_login(scope, actor):
 
 def embed(scope, actor, dashboard_id):
     row = _row(scope)
-    if not (row.metabase_url and row.embed_secret):
+    if not (uses_metabase(row.provider) and row.metabase_url and row.embed_secret):
         raise AnalyticsError("analytics_not_configured", "Metabase is not connected yet.")
     if dashboard_id not in {entry["id"] for entry in row.dashboards or []}:
         raise AnalyticsError("analytics_dashboard_unknown", "That dashboard is not listed for this space.")

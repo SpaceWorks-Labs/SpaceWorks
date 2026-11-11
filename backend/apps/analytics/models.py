@@ -1,7 +1,8 @@
 """Release 2 L25 (#163B): one Metabase connection per space, and one for the platform.
+Decision 263 adds Grafana to the same row (provider, URL, token, organization, dashboards).
 
-Secrets never leave this row in clear: the Metabase embed secret and the database login's
-password are Fernet ciphertext (`makerspaces.secrets`, the per-makerspace integration
+Secrets never leave this row in clear: the Metabase embed secret, the Grafana
+service-account token and the database login's password are Fernet ciphertext (`makerspaces.secrets`, the per-makerspace integration
 pattern) and are decrypted only to sign an embed token or never again (the password is
 shown once, when it is made). Who changed what lives in the audit log, not in actor
 columns, so these rows carry no user foreign key.
@@ -12,6 +13,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.makerspaces.secrets import decrypt_value, encrypt_value
+
+from .grafana_validation import PROVIDERS, validate_grafana_dashboards
 
 
 def validate_dashboards(value):
@@ -35,10 +38,19 @@ class ConnectionFields(models.Model):
     metabase_url = models.CharField(max_length=300, blank=True, default="")
     embed_secret = models.TextField(blank=True, default="")
     dashboards = models.JSONField(default=list, blank=True, validators=[validate_dashboards])
+    telemetry_config = models.JSONField(default=dict, blank=True)
     login_role = models.CharField(max_length=63, blank=True, default="")
     login_password = models.TextField(blank=True, default="")
     login_created_at = models.DateTimeField(null=True, blank=True)
     login_rotated_at = models.DateTimeField(null=True, blank=True)
+    # Decision 263: Grafana beside (or instead of) Metabase, over the same login and views.
+    # The service-account token is Fernet ciphertext like the embed secret.
+    provider = models.CharField(max_length=16, choices=[(key, key) for key in PROVIDERS], default="metabase")
+    grafana_url = models.CharField(max_length=300, blank=True, default="")
+    grafana_token = models.TextField(blank=True, default="")
+    grafana_token_set_at = models.DateTimeField(null=True, blank=True)
+    grafana_org_id = models.PositiveIntegerField(default=1)
+    grafana_dashboards = models.JSONField(default=list, blank=True, validators=[validate_grafana_dashboards])
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -49,6 +61,12 @@ class ConnectionFields(models.Model):
 
     def get_embed_secret(self):
         return decrypt_value(self.embed_secret)
+
+    def set_grafana_token(self, raw):
+        self.grafana_token = encrypt_value(raw)
+
+    def get_grafana_token(self):
+        return decrypt_value(self.grafana_token)
 
     def set_login_password(self, raw):
         self.login_password = encrypt_value(raw)

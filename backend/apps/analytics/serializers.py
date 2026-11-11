@@ -3,6 +3,8 @@ appears in exactly one response shape (``MetabaseCredentialsSerializer``), retur
 
 from rest_framework import serializers
 
+from .grafana_validation import PROVIDERS
+
 
 class MetabaseDashboardSerializer(serializers.Serializer):
     id = serializers.IntegerField(min_value=1, max_value=2**31 - 1)
@@ -13,7 +15,8 @@ class MetabaseSummarySerializer(serializers.Serializer):
     available = serializers.BooleanField(help_text="Logins can be made on this hosting.")
     reason = serializers.CharField(allow_blank=True)
     views_version = serializers.IntegerField()
-    configured = serializers.BooleanField(help_text="A Metabase URL and embedding secret are set.")
+    provider = serializers.ChoiceField(choices=PROVIDERS, help_text="metabase, grafana or both (decision 263).")
+    configured = serializers.BooleanField(help_text="Metabase is on and its URL and embedding secret are set.")
     dashboards = MetabaseDashboardSerializer(many=True)
     can_manage = serializers.BooleanField()
 
@@ -36,6 +39,7 @@ class MetabaseConnectionSerializer(serializers.Serializer):
     available = serializers.BooleanField()
     reason = serializers.CharField(allow_blank=True)
     views_version = serializers.IntegerField()
+    provider = serializers.ChoiceField(choices=PROVIDERS)
     configured = serializers.BooleanField()
     dashboards = MetabaseDashboardSerializer(many=True)
     metabase_url = serializers.CharField(allow_blank=True)
@@ -51,6 +55,7 @@ class MetabaseConnectionUpdateSerializer(serializers.Serializer):
                                          trim_whitespace=True, help_text="Write-only; blank clears it.")
     dashboards = MetabaseDashboardSerializer(many=True, required=False)
     show_member_details = serializers.BooleanField(required=False, help_text="Ignored on the platform.")
+    provider = serializers.ChoiceField(choices=PROVIDERS, required=False)
 
 
 class MetabaseCredentialsSerializer(serializers.Serializer):

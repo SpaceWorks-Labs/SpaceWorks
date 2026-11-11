@@ -35,16 +35,51 @@ def inner_sql(view, audience):
     return f"SELECT {', '.join(columns)} {view.resolved_source()}"
 
 
+# Decision 218 (full on/off audit, 0.12.0): a view of an optional domain returns no rows while
+# that module or capability is off for the space; the rows are kept. `View.requires` overrides.
+DOMAIN_SWITCHES = {"machines": ("machines",), "bookings": ("bookings",), "events": ("events",),
+                   "tickets": ("events",), "shop": ("shop",), "donations": ("finance.donations",)}
+
+
+def switch_keys(view):
+    """`(modules, features)` the space must have on: the keys plus each feature's parents."""
+    from apps.makerspaces.capabilities import FEATURES
+
+    pending = list(DOMAIN_SWITCHES.get(view.domain, ()) if view.requires is None else view.requires)
+    modules, features = set(), set()
+    while pending:
+        key = pending.pop()
+        if "." not in key:
+            modules.add(key)
+        elif key not in features:
+            features.add(key)
+            definition = FEATURES[key]
+            modules.update(m for m in (definition.parent_module, *definition.requires_modules) if m)
+            pending.extend(definition.requires_features)
+    return sorted(modules), sorted(features)
+
+
+def _switch_sql(view):
+    modules, features = switch_keys(view)
+    return "".join([f"AND spaceworks_ms.enabled_modules ? '{key}' " for key in modules]
+                   + [f"AND spaceworks_ms.enabled_features ? '{key}' " for key in features])
+
+
 def space_filter(view):
     from apps.makerspaces.models import Makerspace
 
     active = Makerspace.LifecycleState.ACTIVE.value.replace("'", "''")
-    owned = (f"v.makerspace_id = ANY({FIXED_SCOPE}) AND EXISTS (SELECT 1 FROM {_table('makerspaces.Makerspace')} "
-             f"spaceworks_ms WHERE spaceworks_ms.id = v.makerspace_id "
-             f"AND spaceworks_ms.enabled_modules ? 'analytics' AND spaceworks_ms.archived_at IS NULL "
-             f"AND spaceworks_ms.lifecycle_state = '{active}')")
+
+    def gate(space_match):
+        return (f"EXISTS (SELECT 1 FROM {_table('makerspaces.Makerspace')} spaceworks_ms WHERE {space_match} "
+                f"AND spaceworks_ms.enabled_modules ? 'analytics' {_switch_sql(view)}"
+                f"AND spaceworks_ms.archived_at IS NULL AND spaceworks_ms.lifecycle_state = '{active}')")
+
+    owned = f"v.makerspace_id = ANY({FIXED_SCOPE}) AND {gate('spaceworks_ms.id = v.makerspace_id')}"
     if view.include_unowned:
-        return f"(v.makerspace_id IS NULL AND cardinality({FIXED_SCOPE}) > 0) OR ({owned})"
+        # Unowned rows (built-in machine types) follow the login's OWN space's switches too, so a
+        # space with analytics (or the area) off sees nothing at all (decision 263 isolation pass).
+        return f"(v.makerspace_id IS NULL AND {gate(f'spaceworks_ms.id = ANY({FIXED_SCOPE})')}) OR ({owned})"
     return owned
 
 

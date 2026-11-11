@@ -12,7 +12,7 @@ docs/analytics-views.md documents every view and column of the current version.
 
 from importlib import import_module
 
-VIEWS_VERSION = 2
+VIEWS_VERSION = 3
 
 DOMAIN_MODULES = (
     "inventory",
@@ -26,6 +26,9 @@ DOMAIN_MODULES = (
     # Catalogue version 2: release 2 L18 and L22 (L21a/L21b views joined events.py).
     "donations",
     "shop",
+    # Catalogue version 3: release 0.12 contextual loans, included hours, guest passes, incidents.
+    "lending_contexts",
+    "access_safety",
 )
 
 

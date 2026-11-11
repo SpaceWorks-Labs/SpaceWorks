@@ -49,6 +49,9 @@ class View:
     include_unowned: bool = False
     since: int = 1
     extra: dict = field(default_factory=dict)
+    # Module or capability keys that must be on for the space (decision 218: off removes it
+    # everywhere). None means the domain's own switch (`render.DOMAIN_SWITCHES`); () means none.
+    requires: tuple[str, ...] | None = None
 
     def models(self):
         return tuple(dict.fromkeys(_TABLE.findall(self.source)))

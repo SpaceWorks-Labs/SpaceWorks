@@ -12,5 +12,5 @@
     "allowSyntheticDefaultImports": true,
     "strict": true
   },
-  "include": ["vite.config.ts", "lingui.config.ts", "src/generated/locales.ts", "scripts/kiosk-pwa.ts", "scripts/member-pwa.ts"]
+  "include": ["vite.config.ts", "lingui.config.ts", "src/generated/locales.ts", "scripts/kiosk-pwa.ts", "scripts/member-pwa.ts", "scripts/docs-plugin.ts", "scripts/docs-manifest.ts", "src/features/docs/docsSource.ts", "scripts/api-reference-plugin.ts", "src/features/docs/apiReference/apiReferenceModel.ts"]
 }

@@ -3,7 +3,8 @@
 // A literal counts as user-facing copy when it is prose (see `isProse`) AND sits in one of
 // these positions: JSX text; a display attribute (`aria-label`, `alt`, `title`,
 // `placeholder`, `label`, ...); a string rendered as a JSX child; a display property of an
-// object (`label: "..."`); a value of a copy map (`const STATUS_LABELS = {...}`); a toast,
+// object (`label: "..."`); a value of a copy map (`const STATUS_LABELS = {...}`, or any object
+// literal typed `Record<string, string>` whatever its name); a toast,
 // confirm, alert or `new Error(...)` message; a message setter (`setError("...")`); or a
 // return value of a function named like a label (`statusLabel`, `emptyText`, ...); or the
 // default of a display prop (`{ title = "..." }`).
@@ -12,7 +13,7 @@
 import ts from "typescript";
 
 export const DISPLAY_ATTRIBUTE = /^(aria-(label|description|placeholder|roledescription|valuetext)|alt|title|placeholder|label|description|hint|helpText|helperText|heading|subheading|subtitle|caption|eyebrow|kicker|message|tooltip|summary|lede|emptyText|emptyLabel|emptyMessage|emptyTitle|emptyDescription|confirmLabel|cancelLabel|submitLabel|actionLabel|loadingLabel|successMessage|errorMessage|helper|body|intro|footnote|legend|prompt)$/;
-export const DISPLAY_PROPERTY = /^(label|title|description|placeholder|hint|helpText|helperText|heading|subheading|subtitle|caption|eyebrow|message|tooltip|summary|lede|emptyText|emptyLabel|emptyMessage|emptyTitle|emptyDescription|confirmLabel|cancelLabel|submitLabel|actionLabel|ariaLabel|successMessage|errorMessage|body|text|blurb|note|detail|reason|question|answer|cta|helper|error|intro|prompt)$/;
+export const DISPLAY_PROPERTY = /^(label|header|title|description|placeholder|hint|helpText|helperText|heading|subheading|subtitle|caption|eyebrow|message|tooltip|summary|lede|emptyText|emptyLabel|emptyMessage|emptyTitle|emptyDescription|confirmLabel|cancelLabel|submitLabel|actionLabel|ariaLabel|successMessage|errorMessage|body|text|blurb|note|detail|reason|question|answer|cta|helper|error|intro|prompt)$/;
 export const COPY_MAP = /(LABELS?|COPY|TEXTS?|MESSAGES?|TITLES?|DESCRIPTIONS?|HINTS?|NAMES|HEADINGS?|BLURBS?|CAPTIONS?|Labels|Copy|Messages|Titles|Descriptions|Hints|Names)$/;
 export const LABEL_FUNCTION = /(Label|Text|Message|Title|Description|Copy|Hint|Caption|Summary|Heading|Error|Reason|Notice|Blurb|Sentence|Phrase|Explanation|Status|Wording)$/;
 export const MESSAGE_SETTER = /^set\w*(Error|Message|Notice|Status|Feedback|Hint|Toast|Copy|Warning|Info|Problem|Text)$/;
@@ -89,6 +90,20 @@ function enclosingFunctionName(node) {
   return "";
 }
 
+const isStringRecordType = (type) => Boolean(type) && ts.isTypeReferenceNode(type) && name(type.typeName) === "Record"
+  && type.typeArguments?.length === 2 && type.typeArguments.every((arg) => arg.kind === ts.SyntaxKind.StringKeyword);
+
+/** An object literal typed `Record<string, string>` (annotation, `as`, or a lazy `(): Record<...> => ({...})`) is a lookup map of display words. */
+function isStringRecordMap(property) {
+  const object = property.parent;
+  if (!object || !ts.isObjectLiteralExpression(object)) return false;
+  let holder = object.parent;
+  while (holder && ts.isParenthesizedExpression(holder)) holder = holder.parent;
+  if (holder && (ts.isAsExpression(holder) || ts.isSatisfiesExpression?.(holder))) return isStringRecordType(holder.type);
+  if (holder && ts.isArrowFunction(holder)) return isStringRecordType(holder.type);
+  return Boolean(holder && ts.isVariableDeclaration(holder) && isStringRecordType(holder.type));
+}
+
 function copyMapName(node) {
   for (let current = node.parent; current; current = current.parent) {
     if (ts.isVariableDeclaration(current)) return name(current.name);
@@ -114,7 +129,7 @@ export function visitPositions(sourceFile, { onText, onLiteral }) {
       literal(node.initializer, "default-prop");
     } else if (ts.isPropertyAssignment(node)) {
       if (DISPLAY_PROPERTY.test(name(node.name))) literal(node.initializer, "property");
-      else if (COPY_MAP.test(copyMapName(node))) literal(node.initializer, "copy-map");
+      else if (COPY_MAP.test(copyMapName(node)) || isStringRecordMap(node)) literal(node.initializer, "copy-map");
     } else if (ts.isArrayLiteralExpression(node) && COPY_MAP.test(copyMapName(node)) && ts.isVariableDeclaration(node.parent)) {
       node.elements.forEach((element) => literal(element, "copy-map"));
     } else if (ts.isNewExpression(node) && name(node.expression) === "Error" && node.arguments?.length) {

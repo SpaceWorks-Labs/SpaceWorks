@@ -10,6 +10,9 @@ const PREVIEW_ASSET = /^\/assets\/(?:three\.module-[\w-]+\.js|occt-import-js-[\w
 // Same pattern as src/swPolicy.ts PATCH_ARTWORK: the mascot is banned on kiosk surfaces, so its
 // bitmaps are neither precached nor runtime-cached by the kiosk worker.
 const PATCH_ARTWORK = /^\/brand\/patch\//;
+// The in-app documentation (/docs: page bodies, the API reference, Mermaid) is never opened on a
+// kiosk, so its chunks (vite.config.ts chunkFileNames → assets/docs/) stay out of the precache.
+const DOCS_ASSET = /^\/assets\/docs\//;
 
 export function kioskPwa(): Plugin {
   let config: ResolvedConfig;
@@ -30,6 +33,7 @@ export function kioskPwa(): Plugin {
               // Lazy maker-preview vendors are runtime-cached on first use, not precached.
               if (PREVIEW_ASSET.test(`/${url}`)) continue;
               if (PATCH_ARTWORK.test(`/${url}`)) continue;
+              if (DOCS_ASSET.test(`/${url}`)) continue;
               entries.push({ url: `/${url}`, revision: createHash("sha256").update(await readFile(path)).digest("hex") });
             }
           }

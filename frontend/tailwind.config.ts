@@ -59,11 +59,13 @@ export default {
         "sidebar": "rgb(var(--color-sidebar) / <alpha-value>)",
         "sidebar-hover": "rgb(var(--color-sidebar-hover) / <alpha-value>)",
         "sidebar-active": "rgb(var(--color-sidebar-active) / <alpha-value>)",
+        "scrim": "rgb(var(--color-scrim) / <alpha-value>)",
       },
       fontFamily: {
-        display: ["Gilroy", "sans-serif"],
-        sans: ["Gilroy", "sans-serif"],
-        accent: ["Unbounded", "Gilroy", "sans-serif"],
+        // Gilroy ships only Light 300 / ExtraBold 800 (free weights); Outfit carries 400-700 text.
+        display: ["Gilroy", "Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
+        accent: ["Unbounded", "Outfit", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       fontSize: {
         display: ["4.5rem", { lineHeight: "4.75rem", letterSpacing: "-0.02em" }],
@@ -81,6 +83,7 @@ export default {
         sm: "6px", DEFAULT: "8px", md: "10px", lg: "12px",
         xl: "16px", "2xl": "20px", full: "9999px",
         control: "var(--radius-control)",
+        card: "16px", // = xl: cards and panels (brand p.16 window radius)
       },
       transitionTimingFunction: {
         "ease-out-soft": "cubic-bezier(0.32, 0.72, 0, 1)",

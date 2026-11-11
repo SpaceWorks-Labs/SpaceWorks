@@ -8,11 +8,14 @@ import type * as Api from "../../generated/api";
 export type HostingAck = Api.HostingAck;
 export type HostingRequestStatus = "invited" | "pending_verification" | "submitted" | "changes_requested" | "accepted" | "rejected" | "withdrawn";
 /** `expected_members` (1..100000) is hand-added until the OpenAPI snapshot is regenerated. */
-export type HostingRequestBody = Api.HostingRequestSubmit & { expected_members?: number };
-export type HostingInvitationSubmitBody = Api.HostingInvitationSubmit;
+/** `location` is optional for an organization workspace (decision 295); typed locally until the snapshot is regenerated. */
+export type HostingRequestBody = Omit<Api.HostingRequestSubmit, "location"> & { location?: string; expected_members?: number; requested_kind?: HostingKind };
+/** Decision 295: a request asks for a makerspace (default) or an organization workspace. */
+export type HostingKind = "makerspace" | "organization";
+export type HostingInvitationSubmitBody = Omit<Api.HostingInvitationSubmit, "location"> & { location?: string; requested_kind?: HostingKind };
 export type HostingRevision = { kind: "changes_requested" | "resubmitted"; note: string; changed_fields: string[]; created_at: string };
 /** X31 adds the review note, history and the editable fields to the applicant's status read. */
-export type HostingRequestDetails = Omit<Api.HostingRequestStatus, "status"> & { status: HostingRequestStatus;
+export type HostingRequestDetails = Omit<Api.HostingRequestStatus, "status"> & { status: HostingRequestStatus; requested_kind?: HostingKind;
   changes_note?: string; revisions?: HostingRevision[]; editable?: boolean; location?: string;
   space_website_url?: string; description?: string };
 export type HostingRequestView = HostingRequestDetails;
@@ -22,16 +25,25 @@ export type HostingInvitation = Api.HostingInvitation;
 export type HostingInvitationCreated = Api.HostingInvitationCreated;
 export type HostingInvitationCreateBody = Api.HostingInvitationCreate;
 
+type HostingConfig = { hosting_requests?: { enabled?: boolean; kinds?: string[] } };
+const hostingConfigQuery = (enabled: boolean) => ({
+  queryKey: ["public-config", "hosting"],
+  queryFn: () => publicV1Request<HostingConfig>("/config"),
+  enabled,
+  staleTime: 5 * 60_000,
+  retry: false,
+});
+
 /** `hosting_requests` is present in the public config only while the feature is available. */
 export function useHostingConfig(enabled = true) {
-  return useQuery({
-    queryKey: ["public-config", "hosting"],
-    queryFn: () => publicV1Request<{ hosting_requests?: { enabled?: boolean } }>("/config"),
-    select: (config) => config.hosting_requests?.enabled === true,
-    enabled,
-    staleTime: 5 * 60_000,
-    retry: false,
-  });
+  return useQuery({ ...hostingConfigQuery(enabled), select: (config: HostingConfig) => config.hosting_requests?.enabled === true });
+}
+
+/** The kinds the request form offers (decision 295); a config without `kinds` offers makerspaces only. */
+export function useHostingKinds(enabled = true): HostingKind[] {
+  const query = useQuery({ ...hostingConfigQuery(enabled), select: (config: HostingConfig) => config.hosting_requests?.kinds });
+  const kinds = (query.data ?? []).filter((kind): kind is HostingKind => kind === "makerspace" || kind === "organization");
+  return kinds.length ? kinds : ["makerspace"];
 }
 
 export function useHostingAvailability(enabled = true): boolean {

@@ -60,7 +60,7 @@ export function HelpPage() {
     const article = helpArticle(id);
     const section = SECTION_BY_ID.get(sectionId);
     return <>
-      <PageMetadata title={t`${article?.title ?? "Help"} · ${spaceName} help`} description={article?.summary ?? ""} path={hrefFor(id)} />
+      <PageMetadata title={article?.title ? t`${article.title} · ${spaceName} help` : t`Help · ${spaceName} help`} description={article?.summary ?? ""} path={hrefFor(id)} />
       <HelpArticleView chrome={chrome} article={article} section={section} visible={articles.some(item => item.id === id)}
         loading={readerLoading} signedIn={reader.signedIn} memberHref={memberHref}
         siblings={articles.filter(item => item.section === sectionId && item.id !== id)} hrefFor={hrefFor} />

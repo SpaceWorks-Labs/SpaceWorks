@@ -4,11 +4,11 @@ import { FlowLayout } from "../../components/layouts";
 import { Field } from "../../components/ui";
 import { useResubmitHostingRequest, type HostingRequestDetails, type HostingResubmitBody } from "./hostingApi";
 
-const FIELDS: { key: keyof HostingResubmitBody; label: string; long?: boolean }[] = [
-  { key: "space_name", label: t`Makerspace name` },
-  { key: "location", label: t`Location` },
+const FIELDS = (organization: boolean): { key: keyof HostingResubmitBody; label: string; long?: boolean }[] => [
+  { key: "space_name", label: organization ? t`Organization name` : t`Makerspace name` },
+  { key: "location", label: organization ? t`Where you meet (optional)` : t`Location` },
   { key: "space_website_url", label: t`Website (optional)` },
-  { key: "description", label: t`About the space`, long: true },
+  { key: "description", label: organization ? t`About the organization` : t`About the space`, long: true },
 ];
 
 /** X31: the applicant edits after "changes requested" and sends the request back to review. */
@@ -17,6 +17,8 @@ export function HostingResubmitFlow({ token, request, onDone }: { token: string;
   const [value, setValue] = useState<HostingResubmitBody>({ space_name: request.space_name, location: request.location ?? "",
     space_website_url: request.space_website_url ?? "", description: request.description ?? "", note: "" });
   const resubmit = useResubmitHostingRequest();
+  // Decision 295: an organization request is worded for an organization.
+  const fields = FIELDS(request.requested_kind === "organization");
   const tooShort = (value.description ?? "").trim().length < 20 || (value.space_name ?? "").trim().length < 2;
   const input = (key: keyof HostingResubmitBody) => ({ className: "desk-input", value: value[key] ?? "",
     onChange: (event: { target: { value: string } }) => setValue({ ...value, [key]: event.target.value }) });
@@ -33,12 +35,12 @@ export function HostingResubmitFlow({ token, request, onDone }: { token: string;
       next: { label: t`See the request`, onClick: onDone } } : undefined}
     work={step === "edit" ? <div className="grid gap-4">
       <div className="rounded-xl border border-line bg-info-soft p-3 text-sm"><p className="font-semibold text-ink">{t`What to change`}</p><p className="mt-1 whitespace-pre-wrap">{request.changes_note}</p></div>
-      {FIELDS.map(field => <Field key={field.key} label={field.label}>
+      {fields.map(field => <Field key={field.key} label={field.label}>
         {field.long ? <textarea {...input(field.key)} className="desk-input min-h-32" minLength={20} maxLength={2000} required />
           : <input {...input(field.key)} type={field.key === "space_website_url" ? "url" : "text"} maxLength={200} />}
       </Field>)}
       <Field label={t`A note for the reviewer (optional)`}><textarea {...input("note")} className="desk-input min-h-24" maxLength={2000} /></Field>
-    </div> : <dl className="grid gap-3 text-sm">{FIELDS.map(field => <div key={field.key} className="grid gap-1">
+    </div> : <dl className="grid gap-3 text-sm">{fields.map(field => <div key={field.key} className="grid gap-1">
       <dt className="text-muted">{field.label}</dt><dd className="whitespace-pre-wrap break-words text-ink">{value[field.key] || "—"}</dd></div>)}
       {value.note ? <div className="grid gap-1"><dt className="text-muted">{t`Your note`}</dt><dd className="whitespace-pre-wrap">{value.note}</dd></div> : null}</dl>} />;
 }

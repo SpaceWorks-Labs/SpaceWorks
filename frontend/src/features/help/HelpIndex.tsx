@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useId, useMemo, useState } from "react";
 import { PublicLayout, type PublicLayoutProps } from "../../components/layouts";
 import { ListRow } from "../../components/ui";
@@ -40,7 +40,7 @@ export function HelpIndex({ chrome, articles, sectionId, loading, signedIn, memb
         <label htmlFor={searchId} className="text-sm font-semibold text-ink">{t`Search the guide`}</label>
         <input id={searchId} type="search" className="desk-input w-full" value={query} autoComplete="off"
           placeholder={t`Try “return a tool” or “refund”`} onChange={event => setQuery(event.target.value)} />
-        <p className="text-sm text-muted" aria-live="polite">{searching ? `${results.length} ${results.length === 1 ? "article matches" : "articles match"}` : ""}</p>
+        <p className="text-sm text-muted" aria-live="polite">{searching ? plural(results.length, { one: "# article matches", other: "# articles match" }) : ""}</p>
       </div>
       {searching ? <ul className="grid gap-3" aria-label={t`Search results`}>
         {results.map(article => <li key={article.id}>

@@ -5,22 +5,23 @@ import { PublicLayout } from "../../components/layouts";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 import { NotFoundPage } from "../NotFoundPage";
-import { useHostingConfig, useSubmitHostingRequest } from "./hostingApi";
+import { useHostingConfig, useHostingKinds, useSubmitHostingRequest } from "./hostingApi";
+import { HostingKindChooser } from "./HostingKindChooser";
 import { EMPTY_HOSTING_FORM, HOSTING_ACK, hostingErrorText, hostingFieldErrors, hostingRequestBody, type HostingFormKey } from "./hostingForm";
 import { HostingRequestFields } from "./HostingRequestFields";
 
-const STEPS = [
-  "Confirm your email.",
-  "The platform team reviews your request.",
-  "We set up your space and contact you.",
+const STEPS = () => [
+  t`Confirm your email.`,
+  t`The platform team reviews your request.`,
+  t`We set up your space and contact you.`,
 ];
 
 /** The one Unbounded accent on this layout is the h1. */
-function HostingHero() {
+function HostingHero({ organizations }: { organizations: boolean }) {
   return <section aria-labelledby="hosting-title" className="mb-8 grid gap-4 md:mb-10">
-    <p className="eyebrow">{t`Managed hosting`}</p>
+    <p className="eyebrow">{t`Hosting other makerspaces`}</p>
     <h1 id="hosting-title" className="break-words font-accent text-3xl leading-10 font-semibold text-ink sm:text-4xl sm:leading-[48px]">
-      {t`Host your makerspace on Space Works`}</h1>
+      {organizations ? t`Host your makerspace or organization on Space Works` : t`Host your makerspace on Space Works`}</h1>
     <p className="max-w-2xl text-base text-muted">
       {t`Tell us about your space. The platform team runs the servers, backups and updates; you run the workshop.`}</p>
   </section>;
@@ -30,13 +31,15 @@ export function HostingRequestPage() {
   const config = useHostingConfig();
   const submit = useSubmitHostingRequest();
   const [form, setForm] = useState(EMPTY_HOSTING_FORM);
+  const kinds = useHostingKinds();
+  const organizations = kinds.includes("organization");
   if (config.data === false) return <NotFoundPage />;
 
   const errors = hostingFieldErrors(submit.error);
   const set = (key: HostingFormKey, value: string) => setForm((current) => ({ ...current, [key]: value }));
   return <PublicLayout makerspace={{ name: "Space Works", slug: "", homeHref: "/" }} chrome="canvas"
     nav={[{ label: t`Browse spaces`, href: "/" }, { label: t`About`, href: "/about" }]} headerAction={{ label: t`Sign in`, href: "/member" }}
-    liveStatus={<ThemeToggle variant="icon" />} width="narrow" hero={<HostingHero />}
+    liveStatus={<ThemeToggle variant="icon" />} width="narrow" hero={<HostingHero organizations={organizations} />}
     state={config.isError ? { status: "error", error: t`Couldn't load this page. Try again.`, onRetry: () => { void config.refetch(); } }
       : config.isLoading ? { status: "loading" } : { status: "ready" }}
     footer={{ credit: "Space Works · Made for shared workshops", links: [{ label: t`About`, href: "/about" }, { label: t`License`, href: LICENSE_URL, external: true }] }}>
@@ -44,7 +47,7 @@ export function HostingRequestPage() {
       <section aria-labelledby="hosting-next" className="rounded-2xl border border-line bg-panel p-5">
         <h2 id="hosting-next" className="title-section">{t`What happens next`}</h2>
         <ol className="mt-3 grid list-decimal gap-2 pl-5 text-sm text-ink">
-          {STEPS.map((step) => <li key={step}>{step}</li>)}
+          {STEPS().map((step) => <li key={step}>{step}</li>)}
         </ol>
         <p className="mt-4 text-sm text-muted">{t`Details from declined requests are deleted after 90 days.`}</p>
       </section>
@@ -55,6 +58,7 @@ export function HostingRequestPage() {
         if (!submit.isPending) submit.mutate(hostingRequestBody(form), { onSuccess: () => setForm(EMPTY_HOSTING_FORM) });
       }}>
         <h2 id="hosting-form-title" className="title-panel">{t`Your request`}</h2>
+        {kinds.length > 1 ? <HostingKindChooser kinds={kinds} value={form.requested_kind} onChange={kind => set("requested_kind", kind)} /> : null}
         <HostingRequestFields value={form} onChange={set} errors={errors} showExpectedMembers />
         {submit.error ? <p role="alert" className="text-sm text-danger">
           {hostingErrorText(submit.error, "Hosting requests aren't open right now.")}

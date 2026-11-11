@@ -43,7 +43,7 @@ export function TeamImportPanel({ scope, canExport = false }: { scope: EventScop
     {preview.data ? <div role="status" className="mb-4"><StatusPill label={preview.data.practice_run_id ? t`Practice` : t`Production`} tone="info" />
       <p>{t`${preview.data.mapping_count} validated mappings · Preview expires ${new Date(preview.data.expires_at).toLocaleTimeString(formatLocale())}`}</p></div> : null}
     <div className="flex flex-wrap gap-3"><ActionControl action={{ label: t`Validate and preview`, pending: preview.isPending, disabled: !file,
-      disabledReason: !file ? 'Select a mapping file first.' : undefined, onClick: () => preview.mutate() }} />
+      disabledReason: !file ? t`Select a mapping file first.` : undefined, onClick: () => preview.mutate() }} />
       {preview.data ? <ActionControl primary action={{ label: t`Commit import`, pending: commit.isPending,
         confirm: { title: preview.data.practice_run_id ? t`Start this practice session?` : t`Import production team mappings?`, message: t`The validated mapping will be checked once more before it is committed.` },
         onClick: () => { if (preview.data) commit.mutate({ path: '/teams-import/commit/', version: preview.data.version,

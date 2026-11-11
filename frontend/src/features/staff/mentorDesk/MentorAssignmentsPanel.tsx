@@ -36,7 +36,7 @@ export function MentorAssignmentsPanel({ scope, eventVersion, teams, mentors, co
     {preview.data && previewIdentity === identity ? <div role="status" className="mb-4 text-sm"><p>{t`${preview.data.assignments.length} teams covered · ${preview.data.unsatisfied_team_ids.length} still need a mentor`}</p>
       <ul>{preview.data.assignments.map(item => <li key={item.team_id}>{teams.find(x => x.id === item.team_id)?.label} → {mentors.find(x => x.id === item.mentor_assignment_id)?.label ?? t`Mentor ${item.mentor_assignment_id}`}</li>)}</ul></div> : null}
     <div className="flex flex-wrap gap-3"><ActionControl action={{ label: t`Preview assignments`, pending: preview.isPending, disabled: !selected.length,
-      disabledReason: !selected.length ? 'Select at least one team.' : undefined, onClick: () => preview.mutate() }} />
+      disabledReason: !selected.length ? t`Select at least one team.` : undefined, onClick: () => preview.mutate() }} />
       {preview.data && previewIdentity === identity ? <ActionControl primary action={{ label: t`Assign mentors`, pending: assign.isPending,
         confirm: { title: t`Assign these mentors?`, message: t`Current availability and conflicts will be checked again.` },
         onClick: () => assign.mutate({ path: '/mentor-assignments/assign/', version: eventVersion, fields }, { onSuccess: () => { preview.reset(); setSelected([]) } }) }} /> : null}</div>

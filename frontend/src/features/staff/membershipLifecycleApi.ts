@@ -12,13 +12,22 @@ export type WorklistRow = {
     standing: Standing; renewal_payment_status: string; reminded_today: boolean };
 };
 export type RegisterRow = {
+  /** Parity O-B2: the membership (bulk actions and per-row results key on it) and its unit code. */
+  membership_id: number; unit?: string | null;
   member_number: string; name: string; email: string; plan: string; standing: Standing;
   term_ends_at: string | null; source: string; joined_at: string; pii_masked?: boolean;
 };
+/** Parity O-B2: one action over many register rows; every row reports its own outcome. */
+export type RegisterBulkAction = "assign_title" | "move_unit" | "send_reminder" | "issue_cards" | "email_cards";
+/** Either explicit ids or the register's filter (which must match at most 200 members); never both. */
+export type RegisterBulkInput = { action: RegisterBulkAction; membership_ids?: number[]; filter?: Record<string, string>; title_id?: number; primary?: boolean; unit_id?: number | null };
+export type RowResult = { id: number; ok: boolean; code: string };
 export type MemberTitle = { id: number; name: string; colour: string; sort_order: number; archived_at: string | null };
 export type TitleAssignment = { id: number; title: MemberTitle; is_primary: boolean; created_at: string };
 export type InviteLink = {
   id: number; label: string; plan: number | null; plan_name: string; max_uses: number; uses: number;
+  /** Parity O-B1: the unit the link preselects (`membership.units`). */
+  unit?: number | null;
   expires_at: string | null; revoked_at: string | null; live: boolean; created_at: string; code?: string;
 };
 export type MemberRecord = { state_code: string; gstin: string; staff_notes: string; source: string; member_number: string; pii_masked?: boolean };
@@ -43,6 +52,8 @@ const json = (method: string, body: unknown) => ({ method, body: JSON.stringify(
 export const lifecycleKeys = {
   worklist: (id: number) => ["membership-l4", id, "worklist"] as const,
   register: (id: number, standing: string) => ["membership-l4", id, "register", standing] as const,
+  /** Parity O-B2: the register under the shared member-filter contract (query string as the key). */
+  registerFiltered: (id: number, query: string) => ["membership-l4", id, "register", "filtered", query] as const,
   titles: (id: number) => ["membership-l4", id, "titles"] as const,
   invites: (id: number) => ["membership-l4", id, "invites"] as const,
   erasure: (id: number) => ["membership-l4", id, "erasure"] as const,
@@ -60,11 +71,17 @@ export const lifecycleApi = {
     staffRequest(`/admin/memberships/${membershipId}/extend`, json("POST", input)),
   register: (id: number, standing: string) =>
     staffRequest<RegisterRow[]>(`${space(id)}/member-register${standing ? `?standing=${encodeURIComponent(standing)}` : ""}`),
+  /** Parity O-B2: `query` is the shared member-filter contract (q, chip, plan, title, unit, role, ...). */
+  registerFiltered: (id: number, query: string) => staffRequest<RegisterRow[]>(`${space(id)}/member-register${query ? `?${query}` : ""}`),
+  registerBulk: (id: number, input: RegisterBulkInput) =>
+    staffRequest<RowResult[]>(`${space(id)}/member-register/bulk`, json("POST", input)),
+  requestChanges: (id: number, requestId: number, reason: string) =>
+    staffRequest<{ id: number; state: string }>(`${space(id)}/join-requests/${requestId}/request-changes`, json("POST", { reason })),
   titles: (id: number) => staffRequest<MemberTitle[]>(`${space(id)}/membership-titles`),
   createTitle: (id: number, input: Partial<MemberTitle>) => staffRequest<MemberTitle>(`${space(id)}/membership-titles`, json("POST", input)),
   archiveTitle: (titleId: number) => staffRequest<MemberTitle>(`/admin/membership-titles/${titleId}`, { method: "DELETE" }),
   invites: (id: number) => staffRequest<InviteLink[]>(`${space(id)}/membership-invite-links`),
-  createInvite: (id: number, input: { label: string; plan_id: number | null; max_uses: number; expires_at: string | null }) =>
+  createInvite: (id: number, input: { label: string; plan_id: number | null; max_uses: number; expires_at: string | null; unit_id?: number | null }) =>
     staffRequest<InviteLink>(`${space(id)}/membership-invite-links`, json("POST", input)),
   revokeInvite: (linkId: number) => staffRequest<InviteLink>(`/admin/membership-invite-links/${linkId}/revoke`, { method: "POST" }),
   bulkDecide: (id: number, requestIds: number[], decision: "approve" | "reject", reason = "") =>

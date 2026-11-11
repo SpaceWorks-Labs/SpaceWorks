@@ -42,6 +42,15 @@ export type MembershipPlan = {
   sort_order?: number;
   is_public?: boolean;
   archived_at?: string | null;
+  // Decision 221(d): hours per term used before pricing (0..8784, default 0).
+  included_booking_hours?: number;
+  included_machine_hours?: number;
+  // Parity O-B3: the plan's own SAC (4-8 digits; blank = the space-wide code), used while `billing.plan_sac` is on.
+  sac_code?: string;
+  // Parity O-B2: what the join form collects besides its questions (`membership.join_photo`, `membership.join_contact_fields`).
+  join_photo?: "off" | "optional" | "required";
+  join_phone?: "hidden" | "optional" | "required";
+  join_state?: "hidden" | "optional" | "required";
   created_at: string;
   updated_at: string;
 };

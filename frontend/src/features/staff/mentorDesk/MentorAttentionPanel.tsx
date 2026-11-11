@@ -1,4 +1,5 @@
 import { formatLocale } from "../../../lib/format";
+import { sentenceCase } from '../../../lib/sentenceCase';
 import { t } from "@lingui/core/macro";
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -7,6 +8,11 @@ import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card, Field } from '../../../components/ui'
 import type { EventScope } from '../../events/contributions/types'
 import { basePath, programmeKey, requestFor, errorText, useProgrammeCommand } from '../../events/contributions/api'
+
+const nudgeText = (reason: string, minutes: number) => reason === 'long_visit' ? t`Long visit · ${minutes} minutes`
+  : reason === 'quiet' ? t`Quiet · ${minutes} minutes since the last check-in`
+  : reason === 'check_in_due' ? t`Check-in due · ${minutes} minutes since the last check-in`
+  : t`${sentenceCase(reason)} · ${minutes} minutes`
 
 interface Attention {
   scope: 'own' | 'event'; per_round: Array<{ round_id: number; completed: number; remaining: number | null }>
@@ -34,7 +40,7 @@ export function MentorAttentionPanel({ scope }: { scope: EventScope }) {
       </Card>
       {row.per_round.map(round => <Card key={round.round_id}><h2 className="title-section">{t`Round ${round.round_id}`}</h2><p>{t`${round.completed} visits complete`}{round.remaining === null ? '' : t` · ${round.remaining} teams still need a visit`}</p></Card>)}
       {row.attention.map(item => <Card key={`${item.team_id}:${item.reason}`}><h2 className="title-section">{t`Team ${item.team_id} needs a follow-up`}</h2><p>{t`${item.count} away visits`}</p></Card>)}
-      {row.nudges.map(item => <Card key={`${item.mentor_assignment_id}:${item.reason}`}><h2 className="title-section">{t`Mentor ${item.mentor_assignment_id}`}</h2><p>{item.reason.replace(/_/g, ' ')} · {item.minutes} minutes</p></Card>)}
+      {row.nudges.map(item => <Card key={`${item.mentor_assignment_id}:${item.reason}`}><h2 className="title-section">{t`Mentor ${item.mentor_assignment_id}`}</h2><p>{nudgeText(item.reason, item.minutes)}</p></Card>)}
       {row.scope === 'event' ? <Card><h2 className="title-section">{t`Private generosity diagnostic`}</h2><p className="my-3 text-sm text-muted">{t`Small samples and constant scores have no z score. These figures do not select winners or rank productivity.`}</p>
         <div className="overflow-auto"><table className="w-full text-left text-sm"><caption className="sr-only">{t`Mentor rating sample diagnostics`}</caption><thead><tr><th scope="col">{t`Mentor`}</th><th scope="col">{t`Samples`}</th><th scope="col">{t`Mean`}</th><th scope="col">{t`Z score`}</th></tr></thead><tbody>
           {row.generosity.map(item => <tr key={item.mentor_assignment_id}><th scope="row">{item.mentor_assignment_id}</th><td>{item.n}</td><td>{item.mean ?? t`No data`}</td><td>{item.z_score ?? t`Not enough variation`}</td></tr>)}

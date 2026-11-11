@@ -10,6 +10,7 @@ import {
 } from "../notificationDestinationTypes";
 import { DESTINATIONS_KEY } from "./channels";
 import { ScopePicker } from "./ScopePicker";
+import { SigningSecretReveal } from "./SigningSecretReveal";
 import { type ScopeOptions } from "./scopeOptions";
 
 export function DestinationForm({
@@ -37,10 +38,12 @@ export function DestinationForm({
   const [payloadVersion, setPayloadVersion] = useState(destination?.payload_version ?? 1);
   const [scope, setScope] = useState<DestinationScope>(destination?.scope ?? EMPTY_SCOPE);
   const [error, setError] = useState("");
+  // Parity A10: on create the server generates the webhook secret and returns it this once.
+  const [generatedSecret, setGeneratedSecret] = useState("");
 
   const save = useMutation({
     mutationFn: () =>
-      staffRequest<NotificationDestination>(
+      staffRequest<NotificationDestination & { signing_secret?: string }>(
         destination ? `${basePath}/${destination.id}` : basePath,
         {
           method: destination ? "PUT" : "POST",
@@ -58,13 +61,16 @@ export function DestinationForm({
           }),
         },
       ),
-    onSuccess: () => {
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: DESTINATIONS_KEY(makerspaceId) });
-      onDone();
+      if (saved?.signing_secret) setGeneratedSecret(saved.signing_secret);
+      else onDone();
     },
     onError: (err: unknown) =>
       setError(err instanceof Error ? err.message : t`Could not save this room.`),
   });
+
+  if (generatedSecret) return <SigningSecretReveal secret={generatedSecret} onDone={onDone} />;
 
   return (
     <form
@@ -135,20 +141,21 @@ export function DestinationForm({
       {channel === "webhook" ? (
         <label className="grid gap-1 text-sm">
           <span className="text-muted">
-            {t`Signing secret`}{destination?.signing_secret_set ? t` (leave blank to keep)` : ""}
+            {t`Signing secret`}{destination?.signing_secret_set ? t` (leave blank to keep)` : t` (optional)`}
           </span>
           <input
             autoComplete="off"
             className="desk-input"
             minLength={16}
             onChange={(event) => setSigningSecret(event.target.value)}
-            placeholder={t`At least 16 characters; your endpoint verifies X-SpaceWorks-Signature with it`}
-            required={!destination?.signing_secret_set}
+            placeholder={destination ? t`At least 16 characters` : t`Leave blank to generate one`}
             type="password"
             value={signingSecret}
           />
           <span className="text-xs text-muted">
-            {t`Every notification routed to this endpoint arrives as JSON with an HMAC-SHA256 signature over the exact body. Select the payload format below.`}</span>
+            {destination ? t`To replace the secret safely, use Rotate signing secret in the room's menu instead.`
+              : t`Leave it blank and a strong secret is generated and shown to you once after saving.`}{" "}
+            {t`Every notification routed to this endpoint arrives as JSON with an HMAC-SHA256 signature over the exact body, in the X-SpaceWorks-Signature header.`}</span>
         </label>
       ) : null}
 

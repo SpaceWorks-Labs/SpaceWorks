@@ -48,7 +48,7 @@ export function RenewalDesk({ makerspaceId }: { makerspaceId: number }) {
         <button className="desk-button" type="button" onClick={() => { extend.reset(); setExtending(row); }}>{t`Extend`}</button>
       </div>} />)}
     {remind.error ? <p role="alert" className="text-sm text-danger">{errorText(remind.error)}</p> : null}
-    <Modal open={Boolean(extending)} onClose={() => { if (!extend.isPending) setExtending(null); }} title={t`Extend ${extending?.name || "membership"}`}
+    <Modal open={Boolean(extending)} onClose={() => { if (!extend.isPending) setExtending(null); }} title={extending?.name ? t`Extend ${extending.name}` : t`Extend membership`}
       footer={<div className="flex flex-wrap justify-end gap-2">
         <button className="desk-button" type="button" onClick={() => setExtending(null)} disabled={extend.isPending}>{t`Cancel`}</button>
         <button className="desk-button-primary" type="button" disabled={extend.isPending || !reason.trim() || !/^[1-9]\d*$/.test(days)}

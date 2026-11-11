@@ -2,6 +2,7 @@ import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
 import { useEffect, useState, type ReactNode } from 'react'
 import { ListLayout } from '../../../components/layouts'
+import { mentorVisitStateLabel } from '../lifecycleLabels'
 import { ActionControl, Card, Field, StatusPill } from '../../../components/ui'
 import type { Aggregate, EventScope } from '../../events/contributions/types'
 import { errorText, useProgrammeCommand, useProgrammeDetail } from '../../events/contributions/api'
@@ -30,6 +31,7 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
   const [away, setAway] = useState(false)
   const [nominate, setNominate] = useState(false)
   const [draftError, setDraftError] = useState<unknown>(null)
+  const [nominated, setNominated] = useState<number[]>([])
   const row = query.data
   const draftScope = `mentor:${sessionId}:${scope.accountId}:${scope.makerspaceId}:${scope.eventId}:${roundId}`
   useEffect(() => () => { void clearRoundDrafts(draftScope).catch(() => {}) }, [draftScope])
@@ -71,8 +73,12 @@ export function MentorRoundsPanel({ scope, roundId, sessionId, renderForm }: {
             <ActionControl action={{ label: t`Release visit`, pending: command.isPending, onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/teams/${selected.team_id}/release/`, version: lease.version, fields: { lease_uuid: lease.lease_uuid, generation: lease.generation } }, { onSuccess: () => setLease(null) }) }} /></>}
           <ActionControl action={{ label: t`Save draft on this device`, onClick: () => { void saveRoundDraft(draftScope, selected.team_id, row.closes_at, answers).catch(setDraftError) } }} />
         </div></Card> : null}
-      {row?.teams?.map(team => <Card key={team.team_id}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="title-section">{team.team_alias}</h2><StatusPill label={team.visit_state} tone="neutral" />
-        <ActionControl action={{ label: t`Open visit`, disabled: team.visit_state === 'done' || (team.visit_state === 'busy' && !team.lease), disabledReason: team.visit_state === 'done' ? 'This round visit is complete.' : team.visit_state === 'busy' && !team.lease ? 'Another mentor has this visit.' : undefined, onClick: () => { void choose(team) } }} />
+      {row?.teams?.map(team => <Card key={team.team_id}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="title-section">{team.team_alias}</h2><StatusPill label={mentorVisitStateLabel(team.visit_state)} tone="neutral" />
+        {team.visit_state === 'done' && row ? <ActionControl action={{ label: nominated.includes(team.team_id) ? t`Nominated` : t`Nominate ${team.team_alias}`,
+          pending: command.isPending, disabled: nominated.includes(team.team_id), disabledReason: nominated.includes(team.team_id) ? t`You nominated this team in this round.` : undefined,
+          onClick: () => command.mutate({ path: `/mentor-rounds/${roundId}/nominations/`, version: row.version, fields: { team_id: team.team_id } },
+            { onSuccess: () => setNominated(ids => [...ids, team.team_id]) }) }} /> : null}
+        <ActionControl action={{ label: t`Open visit`, disabled: team.visit_state === 'done' || (team.visit_state === 'busy' && !team.lease), disabledReason: team.visit_state === 'done' ? t`This round visit is complete.` : team.visit_state === 'busy' && !team.lease ? t`Another mentor has this visit.` : undefined, onClick: () => { void choose(team) } }} />
       </div></Card>)}
     </> }} />
 }

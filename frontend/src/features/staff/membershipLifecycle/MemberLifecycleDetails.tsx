@@ -7,6 +7,7 @@ import { Field, StatusPill } from "../../../components/ui";
 import { StructuredApiError } from "../../../lib/api";
 import { lifecycleApi, lifecycleKeys } from "../membershipLifecycleApi";
 import { MembershipTimeline } from "./MembershipTimeline";
+import { MemberUnitField } from "../units/MemberUnitField";
 
 const errorText = (error: unknown) => (error instanceof StructuredApiError ? error.message : t`That did not work.`);
 const on = (features: string[], key: string) => features.includes(`membership.${key}`);
@@ -20,7 +21,7 @@ function RecordForm({ membershipId }: { membershipId: number }) {
     onSuccess: (data) => client.setQueryData(lifecycleKeys.member(membershipId, "record"), data) });
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   return <form className="grid gap-2 sm:grid-cols-2" aria-label={t`Member record`} onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
-    <p className="text-sm text-muted sm:col-span-2">{t`Member number ${record.data?.member_number || "—"} · joined via ${record.data?.source || "unknown"}`}</p>
+    <p className="text-sm text-muted sm:col-span-2">{record.data?.source ? t`Member number ${record.data?.member_number || "—"} · joined via ${record.data.source}` : t`Member number ${record.data?.member_number || "—"} · joined via unknown`}</p>
     <Field label={t`State code`} hint={t`Two digits, e.g. 29.`}><input className="desk-input" maxLength={2} inputMode="numeric" value={form.state_code} onChange={(event) => set("state_code", event.target.value)} /></Field>
     <Field label={t`GSTIN`}><input className="desk-input" maxLength={15} value={form.gstin} onChange={(event) => set("gstin", event.target.value.toUpperCase())} /></Field>
     <Field label={t`Staff notes`} hint={t`Staff only; never shown to the member.`} className="sm:col-span-2">
@@ -63,12 +64,13 @@ function ConsentList({ membershipId }: { membershipId: number }) {
     {row.notice_version ? t` (notice ${row.notice_version})` : ""}</li>)}</ul>;
 }
 
-/** X13, X16, X10, X28 for one member, each section only while its switch is on. */
+/** X13, X16, X10, X28 (and the O-B1 unit) for one member, each section only while its switch is on. */
 export function MemberLifecycleDetails({ membershipId, makerspaceId, features }: { membershipId: number; makerspaceId: number; features: string[] }) {
   const history = useQuery({ queryKey: lifecycleKeys.member(membershipId, "history"), queryFn: () => lifecycleApi.history(membershipId),
     enabled: on(features, "history") });
   return <div className="mt-6 grid gap-6">
     {on(features, "records") ? <section aria-label={t`Record`}><h3 className="title-section mb-2">{t`Record`}</h3><RecordForm membershipId={membershipId} /></section> : null}
+    {on(features, "units") ? <section aria-label={t`Unit`}><h3 className="title-section mb-2">{t`Unit`}</h3><MemberUnitField membershipId={membershipId} makerspaceId={makerspaceId} /></section> : null}
     {on(features, "titles") ? <section aria-label={t`Titles`}><h3 className="title-section mb-2">{t`Titles`}</h3><TitleChips membershipId={membershipId} makerspaceId={makerspaceId} /></section> : null}
     {on(features, "consent") ? <section aria-label={t`Consents`}><h3 className="title-section mb-2">{t`Consents`}</h3><ConsentList membershipId={membershipId} /></section> : null}
     {on(features, "history") ? <section aria-label={t`History`}><h3 className="title-section mb-2">{t`History`}</h3><MembershipTimeline entries={history.data ?? []} /></section> : null}

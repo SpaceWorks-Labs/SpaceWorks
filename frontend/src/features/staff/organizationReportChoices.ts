@@ -10,7 +10,7 @@ export const organizationReportChoices = [
   "machine-errors", "warranty-expiry", "booking-utilization", "event-attendance", "event-signups",
   "event-revenue", "event-funnel", "event-feedback-scores", "membership-growth", "member-retention",
   "membership-revenue", "member-activity", "revenue-over-time", "payments-ageing", "cash-book",
-  "payment-reconciliation", "payment-cash-book", "fablab-health", "evidence-compliance", "communications-health", "mobile-devices",
+  "payment-reconciliation", "payment-cash-book", "evidence-compliance", "communications-health", "mobile-devices",
   "mobile-auth", "device-health", "presence-activity", "audit-activity", "organization-membership",
 ];
 export const organizationReportTitle = (key: string) => key.replace(/-/g, " ").replace(/^./, letter => letter.toUpperCase());
@@ -21,7 +21,7 @@ export const organizationChartHint = (key: string) => key === "member-retention"
 
 const noGrain = new Set(["summary", "taken-items", "damaged-missing", "damaged-lost", "recently-added", "asset-usage",
   "inventory-watch-demand", "consumable-pools", "warranty-expiry", "event-attendance", "member-retention",
-  "member-activity", "payments-ageing", "payment-reconciliation", "payment-cash-book", "fablab-health"]);
+  "member-activity", "payments-ageing", "payment-reconciliation", "payment-cash-book"]);
 export function organizationReportGrains(key: string) {
   return noGrain.has(key) ? [] : key === "evidence-compliance" ? ["day", "month"] : ["day", "week", "month"];
 }

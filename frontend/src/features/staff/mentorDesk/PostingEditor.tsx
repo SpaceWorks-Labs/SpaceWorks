@@ -5,6 +5,9 @@ import type { Aggregate, EventScope } from '../../events/contributions/types'
 import { errorText, useProgrammeCommand } from '../../events/contributions/api'
 import { SetupText, Toggle, ids, iso, localDate, tags, edited } from './setupFields'
 
+const postingPermissionLabel = (permission: string) => ({ mentor_queue: t`Mentor help queue`, check_in: t`Check people in`,
+  publish_schedule: t`Publish the schedule` } as Record<string, string>)[permission] ?? permission.replace(/_/g, ' ')
+
 export interface PostingConfig extends Aggregate {
   title: string; role: 'mentor' | 'volunteer'; description: string; briefing: string; skills: string[]
   visibility: string; approval_required: boolean; opens_at: string; closes_at: string
@@ -56,7 +59,7 @@ export function PostingEditor({ scope, initial, renderFormBuilder, onSaved }: {
       <Toggle checked={waiver} onChange={setWaiver}>{t`Host waiver required`}</Toggle>
       <SetupText label={t`Required training IDs`} value={training} onChange={setTraining} />
       <SetupText label={t`Required briefing IDs`} value={briefings} onChange={setBriefings} />
-      <fieldset><legend className="font-semibold">{t`Permissions on approval`}</legend>{available.map(permission => <Toggle key={permission} checked={permissions.includes(permission)} onChange={checked => setPermissions(checked ? [...permissions, permission] : permissions.filter(x => x !== permission))}>{permission.replace(/_/g, ' ')}</Toggle>)}</fieldset>
+      <fieldset><legend className="font-semibold">{t`Permissions on approval`}</legend>{available.map(permission => <Toggle key={permission} checked={permissions.includes(permission)} onChange={checked => setPermissions(checked ? [...permissions, permission] : permissions.filter(x => x !== permission))}>{postingPermissionLabel(permission)}</Toggle>)}</fieldset>
       {renderFormBuilder({ schema, onChange: setSchema, disabled: command.isPending })}
       <Field label={t`Posting state`}><select className="desk-input min-h-11" value={state} onChange={event => setState(event.target.value)}><option value="draft">{t`Draft`}</option><option value="open">{t`Open`}</option><option value="closed">{t`Closed`}</option></select></Field>
       {error || command.error ? <p role="alert" className="text-danger">{errorText(error ?? command.error)}</p> : null}

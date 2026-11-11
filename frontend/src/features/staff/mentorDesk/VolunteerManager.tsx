@@ -3,10 +3,10 @@ import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from 'react'
 import { ListLayout } from '../../../components/layouts'
 import { ActionControl, Card, Field, StatusPill } from '../../../components/ui'
-import type { EventScope, RoleApplication, Shift, Signup } from '../../events/contributions/types'
+import type { AdminSignup, EventScope, RoleApplication, Shift } from '../../events/contributions/types'
 import { errorText, useProgrammeCommand, useProgrammeDetail, useProgrammeList } from '../../events/contributions/api'
+import { contributionRoleLabel, contributionStateLabel, shiftActionLabel, shiftAttendanceLabel } from '../../events/contributions/labels'
 
-interface AdminSignup extends Signup { member_id: number; assignment_id: number }
 interface AdminShift extends Shift { signups: AdminSignup[] }
 
 function ShiftSignups({ scope, shiftId }: { scope: EventScope; shiftId: number }) {
@@ -20,11 +20,11 @@ function ShiftSignups({ scope, shiftId }: { scope: EventScope; shiftId: number }
     <Field label={t`Corrected minutes`} hint={t`For an already verified shift. Another organizer must verify your own hours.`}><input className="desk-input" type="number" min={0} max={1440} value={minutes} onChange={event => setMinutes(event.target.value)} /></Field>
     <Field label={t`Correction reason`}><textarea className="desk-input" maxLength={2000} value={reason} onChange={event => setReason(event.target.value)} /></Field>
     {query.data?.signups.map(row => <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-3"><div>
-      <h3 className="title-section">{t`Member ${row.member_id} · Application ${row.assignment_id}`}</h3>
-      <p className="text-sm text-muted">{row.attendance ?? row.state}{row.verified_minutes !== null ? t` · ${row.verified_minutes} verified minutes` : ''}</p></div>
-      <div className="flex flex-wrap gap-2">{row.allowed_actions.map(action => <ActionControl key={action} action={{ label: action.replace(/-/g, ' '), pending: command.isPending,
+      <h3 className="title-section">{row.member_name ? t`${row.member_name} · Application ${row.assignment_id}` : t`Member ${row.member_id} · Application ${row.assignment_id}`}</h3>
+      <p className="text-sm text-muted">{row.attendance ? shiftAttendanceLabel(row.attendance) : contributionStateLabel(row.state)}{row.verified_minutes !== null ? t` · ${row.verified_minutes} verified minutes` : ''}</p></div>
+      <div className="flex flex-wrap gap-2">{row.allowed_actions.map(action => <ActionControl key={action} action={{ label: shiftActionLabel(action), pending: command.isPending,
         disabled: action === 'adjust-hours' && (!reason.trim() || minutes === ''),
-        disabledReason: action === 'adjust-hours' && (!reason.trim() || minutes === '') ? 'Enter corrected minutes and a reason.' : undefined,
+        disabledReason: action === 'adjust-hours' && (!reason.trim() || minutes === '') ? t`Enter corrected minutes and a reason.` : undefined,
         onClick: () => command.mutate({ path: `/shift-signups/${row.id}/${action}/`, version: row.version,
           fields: action === 'adjust-hours' ? { minutes: Number(minutes), reason } : {} }) }} />)}</div></div></Card>)}
   </section>
@@ -48,7 +48,7 @@ export function VolunteerManager({ scope, setupTools, renderRoleTools }: {
     pagination={{ page, pageSize: 24, count: query.data?.count ?? 0, onChange: setPage }}
     body={{ kind: 'rows', rows: <>{command.error ? <p role="alert" className="text-danger">{errorText(command.error)}</p> : null}
       {tab === 'setup' ? setupTools : tab === 'roles' ? roles.data?.results.map(row => <Card key={row.id}><div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="title-section">{t`Application ${row.id} · ${row.role.replace(/_/g, ' ')}`}</h2><StatusPill label={row.state} tone="neutral" /></div>
+        <div><h2 className="title-section">{t`Application ${row.id} · ${contributionRoleLabel(row.role)}`}</h2><StatusPill label={contributionStateLabel(row.state)} tone="neutral" /></div>
         <div className="flex gap-2">{['applied', 'proposed'].includes(row.state) ? <ActionControl action={{ label: t`Approve`, pending: command.isPending,
           onClick: () => command.mutate({ path: `/roles/${row.id}/approve/`, version: row.version }) }} /> : null}
           {['approved', 'applied', 'proposed'].includes(row.state) ? <ActionControl action={{ label: t`Revoke role`, pending: command.isPending,

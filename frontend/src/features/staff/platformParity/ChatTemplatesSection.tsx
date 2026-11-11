@@ -28,7 +28,7 @@ export function ChatTemplateList({ space, surface = "platform" }: { space: Picke
   return <div className="grid gap-3">
     <CollapsibleSection title={t`New template`} open={adding} onToggle={() => setAdding(!adding)}><ChatTemplateForm spaceId={space.id} surface={surface} /></CollapsibleSection>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
-      : list.isError ? <ErrorText resource="chat templates" onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`chat templates`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={`${space.name} uses the built-in text for every event.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id} className="grid gap-2">
         <ListRow title={`${row.feature} · ${row.event}`}

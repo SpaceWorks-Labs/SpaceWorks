@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Callout, DetailDrawer, ErrorText, KeyValueCard, RelativeTime, Skeleton } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import type { HealthCard } from "../platformSpaces/spacesApi";
-import { KEY_ACTIONS } from "./keyCopy";
+import { keyActions } from "./keyCopy";
 import { KeyJobsList } from "./KeyJobsList";
 import { useRotateKey, useSpaceKeys, type KeyAction } from "./spaceKeysApi";
 import { StaleArchivesList } from "./StaleArchivesList";
@@ -15,10 +15,10 @@ export function SpaceKeysDrawer({ card, onClose }: { card: HealthCard; onClose: 
   const rotate = useRotateKey(card.id);
   const [action, setAction] = useState<KeyAction | null>(null);
   const data = keys.data;
-  const chosen = KEY_ACTIONS.find(row => row.action === action);
+  const chosen = keyActions().find(row => row.action === action);
   return <DetailDrawer open title={t`Keys of ${card.name}`} onClose={onClose}>
     {keys.isLoading ? <Skeleton className="h-40 w-full" /> : keys.isError || !data
-      ? <ErrorText resource="this space's keys" onRetry={() => { void keys.refetch(); }} /> : <div className="grid gap-6">
+      ? <ErrorText resource={t`this space's keys`} onRetry={() => { void keys.refetch(); }} /> : <div className="grid gap-6">
       {data.rls_mode !== "enforce" ? <Callout size="inline" tone="warn" lead={`Row-level security is ${data.rls_mode}.`}
         body={t`The database does not yet stop a cross-space read on this deployment.`} /> : null}
       <KeyValueCard title={t`Keys`} items={[
@@ -32,7 +32,7 @@ export function SpaceKeysDrawer({ card, onClose }: { card: HealthCard; onClose: 
       <section aria-labelledby="space-key-actions" className="grid gap-3">
         <h3 id="space-key-actions" className="title-panel">{t`Rotate`}</h3>
         <p className="text-sm text-muted">{t`Each one asks you to type `}<code>{card.slug}</code> {t` and confirm your sign-in. It is recorded in this space's audit log.`}</p>
-        <div className="flex flex-wrap gap-2">{KEY_ACTIONS.map(row => {
+        <div className="flex flex-wrap gap-2">{keyActions().map(row => {
           const blocked = Boolean(data.running) && row.action !== "rotate_publishable_key";
           const off = Boolean(row.needsPii) && !data.pii_encryption_enabled;
           return <button key={row.action} type="button" className={row.action === "emergency_rekey" ? "desk-button-danger-outline" : "desk-button"}

@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import type { KeyAction, KeyJob } from "./spaceKeysApi";
 
-export const KEY_ACTIONS: { action: KeyAction; label: string; message: string; needsPii?: boolean }[] = [
+export const keyActions = (): { action: KeyAction; label: string; message: string; needsPii?: boolean }[] => [
   { action: "rotate_dek", label: t`Rotate the data key`, needsPii: true,
     message: t`A new data key is used for every write at once; older records are re-encrypted in the background, then the old key is retired.` },
   { action: "emergency_rekey", label: t`Emergency re-key`, needsPii: true,
@@ -12,6 +12,6 @@ export const KEY_ACTIONS: { action: KeyAction; label: string; message: string; n
     message: t`The public site gets a new browser key now. The old one keeps working for the grace period so the site can be redeployed.` },
 ];
 
-export const JOB_LABELS: Record<KeyJob["kind"], string> = {
+export const jobLabels = (): Record<KeyJob["kind"], string> => ({
   rotation: t`Key rotation`, emergency_rekey: t`Emergency re-key`, search_reindex: t`Search key rotation`,
-};
+});

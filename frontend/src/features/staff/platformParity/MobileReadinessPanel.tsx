@@ -32,7 +32,7 @@ export function MobileReadinessPanel() {
         <span className="font-medium">{row.production ? t`Production registration ${index + 1}` : t`Development registration ${index + 1}`}</span>
         <ul className="grid gap-1">{Object.entries({ ...row.login, ...row.optional }).filter(([, check]) => !check.ready).map(([name, check]) =>
           <li key={name} className="text-muted"><span className="font-medium text-ink">{name}</span>: {check.hint}</li>)}</ul>
-        {row.login_ready ? <span className="text-success">{t`Sign-in checks pass.`}</span> : null}
+        {row.login_ready ? <span className="text-success-ink">{t`Sign-in checks pass.`}</span> : null}
       </li>)}</ul> : <p className="text-sm text-muted">{t`No approved registration for this platform yet.`}</p>}
     </div>)}
   </section>;

@@ -10,7 +10,7 @@ type Props = { field: SecretField; state?: SecretState; value: string; clear: bo
 export function ProviderSecretInput({ field, state, value, clear, error, onValue, onClear }: Props) {
   const stamp = state?.last_changed;
   const hint = state?.set ? "Leave blank to keep the saved value." : field.hint;
-  const common = { className: "desk-input font-mono", value, autoComplete: "off", spellCheck: false, disabled: clear,
+  const common = { className: "desk-input code-text", value, autoComplete: "off", spellCheck: false, disabled: clear,
     onChange: (event: { target: { value: string } }) => onValue(event.target.value) };
   return <div className="grid gap-2">
     <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
@@ -18,7 +18,7 @@ export function ProviderSecretInput({ field, state, value, clear, error, onValue
       {stamp?.at ? <span>changed <RelativeTime date={stamp.at} exact />{stamp.by ? ` by ${stamp.by}` : ""}</span> : null}
     </div>
     <Field label={field.label} hint={hint} error={error}>
-      {field.multiline ? <textarea {...common} className="desk-input min-h-28 font-mono" /> : <input {...common} type="password" />}
+      {field.multiline ? <textarea {...common} className="desk-input min-h-28 code-text" /> : <input {...common} type="password" />}
     </Field>
     {state?.set ? <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
       <input type="checkbox" checked={clear} onChange={event => onClear(event.target.checked)} />{t`Remove the saved ${field.label.toLowerCase()}`}

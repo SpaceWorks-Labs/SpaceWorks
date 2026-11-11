@@ -21,7 +21,7 @@ function Reports() {
   return <section className="grid gap-3" aria-labelledby="drill-reports-heading">
     <h3 id="drill-reports-heading" className="title-section">{t`Drill reports`}</h3>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
-      : list.isError ? <ErrorText resource="drill reports" onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`drill reports`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No drills have run yet.`} />
       : <div className="grid gap-3">{rows.map(report => <ListRow key={report.id}
         title={report.makerspace_name ?? t`Space #${report.makerspace_id} (deleted)`}
@@ -40,7 +40,7 @@ export function RestoreDrillsSection() {
   const data = overview.data;
   return <div className="grid gap-6">
     {overview.isLoading ? <Skeleton className="h-32 w-full" />
-      : overview.isError || !data ? <ErrorText resource="drill settings" onRetry={() => { void overview.refetch(); }} />
+      : overview.isError || !data ? <ErrorText resource={t`drill settings`} onRetry={() => { void overview.refetch(); }} />
       : <>
         {data.configured ? null : <p role="note" className="rounded-control border border-line bg-surface px-3 py-2 text-sm text-ink">
           {t`Restore drills are not set up on this server yet, so none can run. Settings can still be saved.`}</p>}

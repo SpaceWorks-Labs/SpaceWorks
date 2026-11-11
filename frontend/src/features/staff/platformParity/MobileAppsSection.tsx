@@ -19,7 +19,7 @@ export function MobileAppsSection() {
     <p className="text-sm text-muted">{t`Only one approved app per platform and environment serves the whole deployment. Revoking an app ends every device sign-in it issued; the record stays for the audit trail.`}</p>
     <CollapsibleSection title={t`Register an app`} open={adding} onToggle={() => setAdding(!adding)}><NativeAppForm /></CollapsibleSection>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
-      : list.isError ? <ErrorText resource="mobile apps" onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`mobile apps`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No mobile app is registered yet.`} />
       : <div className="grid gap-3">{rows.map(row => <div key={row.id} className="grid gap-2">
         <ListRow title={row.app_id}

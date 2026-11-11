@@ -24,7 +24,7 @@ export function QueueDecisionDialog({ kind, id, decision, title, confirm, messag
     pending={mutation.isPending} error={mutation.error} onCancel={onClose}
     reason={note === "required" ? { label: t`Note`, min: 1, max: NOTE_MAX } : undefined}
     onSubmit={reason => mutation.mutate(note === "required" ? { note: reason } : note === "optional" ? { note: text.trim() } : {}, finish)}>
-    {note === "optional" ? <Field label={t`Note (optional)`} hint={`${text.length}/${NOTE_MAX} characters.`}>
+    {note === "optional" ? <Field label={t`Note (optional)`} hint={t`${text.length}/${NOTE_MAX} characters.`}>
       <textarea className="desk-input min-h-20" value={text} maxLength={NOTE_MAX} onChange={event => setText(event.target.value)} />
     </Field> : null}
   </ActionDialog>;

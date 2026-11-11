@@ -5,7 +5,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "../platformSpaces/ActionDialog";
 import { PAGE_SIZE } from "./parityRequest";
 import { SelfhostMoveDialog } from "./SelfhostMoveDialog";
-import { MOVE_STATUS_LABELS, useMoveDownload, useSelfhostMoves, type MoveAction, type MoveStatus, type SelfhostMove } from "./selfhostMovesApi";
+import { moveStatusLabels, useMoveDownload, useSelfhostMoves, type MoveAction, type MoveStatus, type SelfhostMove } from "./selfhostMovesApi";
 
 const TONES: Record<MoveStatus, Tone> = {
   requested: "info", approved: "accent", exporting: "warn", exported: "success", rejected: "neutral", failed: "danger", cancelled: "neutral",
@@ -25,7 +25,7 @@ function Buttons({ move, onAction }: { move: SelfhostMove; onAction: (action: Mo
   const download = useMoveDownload();
   const space = move.makerspace_name;
   return <div className="flex flex-wrap items-center gap-2">
-    <StatusPill label={move.status_label || MOVE_STATUS_LABELS[move.status]} tone={TONES[move.status] ?? "neutral"} />
+    <StatusPill label={move.status_label || moveStatusLabels()[move.status]} tone={TONES[move.status] ?? "neutral"} />
     {move.status === "requested" ? <>
       <button type="button" className="desk-button" aria-label={t`Approve the move of ${space}`} onClick={() => onAction("approve")}>{t`Approve…`}</button>
       <button type="button" className="desk-button-danger-outline" aria-label={t`Decline the move of ${space}`} onClick={() => onAction("reject")}>{t`Decline…`}</button>
@@ -49,15 +49,15 @@ export function SelfhostMovesSection() {
   const rows = list.data?.results ?? [];
   return <div className="grid gap-4">
     <p className="text-sm text-muted">
-      {t`The export is encrypted to the target server's age public key. Downloads use a one-use link that lasts five minutes.`}</p>
+      {t`The export is encrypted to the new server's encryption key (starts with age1). Downloads use a one-use link that lasts five minutes.`}</p>
     <Field label={t`Status`} className="sm:max-w-64">
       <select className="desk-input" value={status} onChange={event => { setStatus(event.target.value as MoveStatus | ""); setPage(1); }}>
         <option value="">{t`Every status`}</option>
-        {(Object.keys(MOVE_STATUS_LABELS) as MoveStatus[]).map(key => <option key={key} value={key}>{MOVE_STATUS_LABELS[key]}</option>)}
+        {(Object.entries(moveStatusLabels()) as [MoveStatus, string][]).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
       </select>
     </Field>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
-      : list.isError ? <ErrorText resource="move requests" onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`move requests`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={status ? t`No move requests with this status.` : t`No space has asked to move yet.`} />
       : <div className="grid gap-3">{rows.map(move => <ListRow key={move.id} title={move.makerspace_name} meta={<Meta move={move} />}
         right={<Buttons move={move} onAction={action => setActing({ move, action })} />} />)}</div>}

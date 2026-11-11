@@ -11,10 +11,10 @@ export type SelfhostMove = {
 };
 export type MoveAction = "approve" | "reject" | "export" | "discard";
 
-export const MOVE_STATUS_LABELS: Record<MoveStatus, string> = {
+export const moveStatusLabels = (): Record<MoveStatus, string> => ({
   requested: t`Requested`, approved: t`Approved`, exporting: t`Exporting`, exported: t`Exported`,
   rejected: t`Declined`, failed: t`Failed`, cancelled: t`Cancelled`,
-};
+});
 
 const BASE = "/admin/platform/selfhost-moves";
 const key = ["platform-selfhost-moves"] as const;

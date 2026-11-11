@@ -52,7 +52,7 @@ export function NativeAppForm({ row, onDone }: { row?: NativeApp; onDone?: () =>
     </div>
     <Field label={t`Signer digests or App ID Prefix`} hint={t`One per line. Android: 1 to 5 SHA-256 distribution digests (never the upload key). Apple: exactly one App ID Prefix.`}
       error={fieldError(save.error, "signing_identities")}>
-      <textarea className="desk-input min-h-24 font-mono" value={signers} spellCheck={false} onChange={event => setSigners(event.target.value)} />
+      <textarea className="desk-input min-h-24 code-text" value={signers} spellCheck={false} onChange={event => setSigners(event.target.value)} />
     </Field>
     {fieldError(save.error, "non_field_errors") ? <p role="alert" className="text-sm text-danger">{fieldError(save.error, "non_field_errors")}</p> : null}
     {general ? <p role="alert" className="text-sm text-danger">{general}</p> : null}

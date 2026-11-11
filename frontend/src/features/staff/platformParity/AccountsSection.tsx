@@ -1,39 +1,41 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState, type FormEvent } from "react";
 import { EmptyState, ErrorText, Field, ListRow, Skeleton, StatusPill, type Tone } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog, type ReasonSpec } from "../platformSpaces/ActionDialog";
 import { useAccountAction, useAccountLookup, type AccountAction, type PlatformAccount } from "./accountsApi";
 
-const REASON: ReasonSpec = { label: t`Reason`, min: 3, max: 300 };
-const ACCESS: Record<PlatformAccount["access_status"], [string, Tone]> = {
-  active: ["Access: active", "success"], restricted: ["Access: restricted", "warn"], suspended: ["Access: suspended", "danger"],
-};
+const getReason = (): ReasonSpec => ({ label: t`Reason`, min: 3, max: 300 });
+const accessCopy = (status: string): [string, Tone] => status === "active" ? [t`Access: active`, "success"]
+  : status === "restricted" ? [t`Access: restricted`, "warn"] : status === "suspended" ? [t`Access: suspended`, "danger"]
+  : [t`Access: ${status}`, "neutral"];
+const accountKindLabel = (kind: string) => ({ member: t`Person`, staff: t`Staff-only account`, platform: t`Platform operator` } as Record<string, string>)[kind]
+  ?? kind.replace(/_/g, " ");
 
 type Copy = { title: string; confirm: string; message: string; done: string; danger?: boolean; reason?: boolean };
-const COPY: Record<AccountAction, Copy> = {
+const getCopy = (): Record<AccountAction, Copy> => ({
   disable: { title: t`Disable this account`, confirm: t`Disable account`, done: t`Account disabled.`, danger: true, reason: true,
     message: t`Every session ends and its staff roles are revoked.` },
   enable: { title: t`Re-enable this account`, confirm: t`Re-enable account`, done: t`Account re-enabled.`,
     message: t`Staff roles stay revoked; restore them per space.` },
   "reset-two-step": { title: t`Reset two-step sign-in`, confirm: t`Reset two-step`, done: t`Two-step sign-in reset.`, danger: true, reason: true,
     message: t`Every sign-in factor is cleared and sessions end.` },
-};
+});
 
 function AccountDialog({ account, action, onClose }: { account: PlatformAccount; action: AccountAction; onClose: () => void }) {
-  const copy = COPY[action];
+  const copy = getCopy()[action];
   const mutation = useAccountAction(account.id, action);
   return <ActionDialog title={copy.title} confirmLabel={copy.confirm} tone={copy.danger ? "danger" : "default"}
     message={<><strong className="text-ink">{account.username}</strong>: {copy.message}</>}
-    reason={copy.reason ? REASON : undefined} pending={mutation.isPending} error={mutation.error} onCancel={onClose}
+    reason={copy.reason ? getReason() : undefined} pending={mutation.isPending} error={mutation.error} onCancel={onClose}
     onSubmit={reason => mutation.mutate(reason, { onSuccess: () => { toast(copy.done); onClose(); } })} />;
 }
 
 function AccountCard({ account, onAction }: { account: PlatformAccount; onAction: (action: AccountAction) => void }) {
-  const [access, tone] = ACCESS[account.access_status] ?? [`Access: ${account.access_status}`, "neutral"];
+  const [access, tone] = accessCopy(account.access_status);
   const roles = account.staff_role_count;
   return <ListRow title={account.username}
-    meta={`${account.account_kind.replace(/_/g, " ")} · ${roles} staff ${roles === 1 ? "role" : "roles"}`}
+    meta={`${accountKindLabel(account.account_kind)} · ${plural(roles, { one: "# staff role", other: "# staff roles" })}`}
     right={<div className="grid gap-2">
       <div className="flex flex-wrap gap-2">
         <StatusPill label={account.is_active ? t`Enabled` : t`Disabled`} tone={account.is_active ? "success" : "danger"} />
@@ -71,7 +73,7 @@ export function AccountsSection() {
     </form>
     {!username ? null
       : lookup.isLoading ? <Skeleton className="h-20 w-full" />
-      : lookup.isError ? <ErrorText resource="the account" onRetry={() => { void lookup.refetch(); }} />
+      : lookup.isError ? <ErrorText resource={t`the account`} onRetry={() => { void lookup.refetch(); }} />
       : !found ? <EmptyState message={t`No account is called "${username}".`} />
       : <AccountCard account={found} onAction={action => setActing({ account: found, action })} />}
     {acting ? <AccountDialog account={acting.account} action={acting.action} onClose={() => setActing(null)} /> : null}

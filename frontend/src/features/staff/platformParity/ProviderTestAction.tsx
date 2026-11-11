@@ -23,7 +23,7 @@ export function ProviderTestAction({ provider, kind }: { provider: ProviderKey; 
       <input className="desk-input sm:max-w-72" type="tel" inputMode="tel" autoComplete="off" value={to} onChange={event => setTo(event.target.value)} />
     </Field> : <p className="text-sm text-muted">{t`Checks the saved credentials with the provider. Nothing is sent to anyone.`}</p>}
     <div aria-live="polite" className="grid gap-2">
-      {ok ? <p className="text-sm text-success">{ok}</p> : null}
+      {ok ? <p className="text-sm text-success-ink">{ok}</p> : null}
       {failed ? <p role="alert" className="text-sm text-danger">{failed}</p> : null}
     </div>
     <button type="submit" className="desk-button w-full sm:w-fit" disabled={test.isPending || (kind === "send" && !to.trim())}>

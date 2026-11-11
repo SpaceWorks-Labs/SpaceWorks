@@ -37,7 +37,7 @@ export function ChatTemplateForm({ spaceId, surface = "platform", row, onDone }:
       </Field>
     </div>
     <Field label={t`Message`} hint={t`Django template syntax: {{ variable }} and {% if %} tags.`} error={fieldError(save.error, "text_body")}>
-      <textarea className="desk-input min-h-32 font-mono" value={form.text_body} onChange={event => set("text_body", event.target.value)} />
+      <textarea className="desk-input min-h-32 code-text" value={form.text_body} onChange={event => set("text_body", event.target.value)} />
     </Field>
     <label className="flex min-h-11 items-center gap-3 text-sm text-ink">
       <input type="checkbox" checked={form.is_active} onChange={event => set("is_active", event.target.checked)} />{t`In use`}</label>

@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 
 import type {
@@ -69,23 +70,23 @@ export function useSavePriceOverride(makerspaceId: number, targetType: PriceTarg
 
 /** Where an effective price comes from, in words (`effective_source` from the card). */
 export const SOURCE_WORDS: Record<string, string> = {
-  default: "space default",
-  free_default: "space is free",
-  override: "this item's price",
-  override_free: "free for this item",
-  item: "this item's own price",
-  type: "machine type price",
-  type_free: "machine type is free",
-  legacy: "not priced",
-  none: "not priced",
+  default: t`space default`,
+  free_default: t`space is free`,
+  override: t`this item's price`,
+  override_free: t`free for this item`,
+  item: t`this item's own price`,
+  type: t`machine type price`,
+  type_free: t`machine type is free`,
+  legacy: t`not priced`,
+  none: t`not priced`,
 };
 
 export const sourceWords = (source: string) => SOURCE_WORDS[source] ?? "not priced";
 
 export const UNIT_WORDS: Record<string, string> = {
-  item: "per item", item_day: "per item per day", hour: "per hour", material_unit: "per unit of material",
-  job: "per job", booking: "per booking", registration: "per registration", day: "per day", loan: "per loan",
-  term: "per membership term", once: "once",
+  item: t`per item`, item_day: t`per item per day`, hour: t`per hour`, material_unit: t`per unit of material`,
+  job: t`per job`, booking: t`per booking`, registration: t`per registration`, day: t`per day`, loan: t`per loan`,
+  term: t`per membership term`, once: t`once`,
 };
 
 export function isPriceOverrideCard(value: unknown): value is PriceOverrideCard {

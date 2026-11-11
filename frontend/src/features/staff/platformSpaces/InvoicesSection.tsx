@@ -23,7 +23,7 @@ export function InvoicesSection() {
       <button type="button" className="desk-button-primary" onClick={() => setDialog({ kind: "create" })}>{t`New invoice`}</button>
     </div>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
-      : list.isError ? <ErrorText resource="invoices" onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`invoices`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No invoices with this status.`} />
       : <div className="grid gap-3">{rows.map(invoice => <ListRow key={invoice.id} title={`${invoice.number} · ${invoice.makerspace_name}`}
         meta={`${formatMoney(invoice.amount_minor, invoice.currency)} · due ${invoice.due_on}${invoice.description ? ` · ${invoice.description}` : ""}`}

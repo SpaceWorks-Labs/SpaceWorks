@@ -44,13 +44,13 @@ export function PriceOverrideRow({ row, currency, editable, pending, onSave }: {
         : MODES.find(option => option.value === mode)?.label}</p>}
     {editable && mode === "custom" ? <div className="grid gap-3 sm:grid-cols-2">
       <div className="grid gap-1">
-        <label className="grid gap-1 text-sm font-semibold text-ink">{t`Custom amount (${code})`}<input className="desk-input" type="number" inputMode="decimal" min="0" step="0.01" value={amount} required
+        <label className="grid gap-1 text-sm font-semibold text-ink">{t`Custom amount (${code})`}<input className="desk-input" type="number" inputMode="decimal" min="0" step="any" value={amount} required
             aria-invalid={!amountOk} aria-describedby={amountOk ? undefined : `${id}-amount-error`} onChange={event => setAmount(event.target.value)} />
         </label>
         {amountOk ? null : <p id={`${id}-amount-error`} className="text-xs text-danger">{t`Enter an amount of 0 or more.`}</p>}
       </div>
       {row.has_cap ? <div className="grid gap-1">
-        <label className="grid gap-1 text-sm font-semibold text-ink">{t`Cap (${code}, optional)`}<input className="desk-input" type="number" inputMode="decimal" min="0" step="0.01" value={cap}
+        <label className="grid gap-1 text-sm font-semibold text-ink">{t`Cap (${code}, optional)`}<input className="desk-input" type="number" inputMode="decimal" min="0" step="any" value={cap}
             aria-invalid={!capOk} aria-describedby={capOk ? undefined : `${id}-cap-error`} onChange={event => setCap(event.target.value)} />
         </label>
         {capOk ? null : <p id={`${id}-cap-error`} className="text-xs text-danger">{t`Enter a cap of 0 or more, or leave it empty.`}</p>}

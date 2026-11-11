@@ -4,7 +4,8 @@ import { DetailDrawer, ErrorText, KeyValueCard, RelativeTime, Skeleton, StatusPi
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog } from "./ActionDialog";
 import { ApproveRequestDialog } from "./ApproveRequestDialog";
-import { HOSTING_STATUS_LABELS, useHostingDecision, useHostingRequest, type HostingRequestRow } from "./onboardingApi";
+import { CONSOLE_APPROVES_ORGANIZATIONS, controlRequestHref, hostingStatusLabels, requestedKind, useHostingDecision, useHostingRequest, type HostingRequestRow } from "./onboardingApi";
+import { spaceNounTitle } from "../../../lib/spaceNoun";
 
 function NoteDialog({ request, kind, onClose }: { request: HostingRequestRow; kind: "request-changes" | "reject"; onClose: () => void }) {
   const decision = useHostingDecision<HostingRequestRow>(request.id, kind);
@@ -25,18 +26,24 @@ export function HostingRequestDrawer({ id, onClose }: { id: number; onClose: () 
   const data = detail.data;
   const open = data?.status === "submitted";
   const canApprove = open || (data?.status === "accepted" && !data.created_makerspace);
+  const organization = data ? requestedKind(data) === "organization" : false;
+  // Until the console route creates organization workspaces, those are approved in /control/.
+  const approveHere = !organization || CONSOLE_APPROVES_ORGANIZATIONS;
   return <DetailDrawer open title={data?.space_name ?? t`Hosting request`} onClose={onClose}>
-    {detail.isLoading ? <Skeleton className="h-40 w-full" /> : detail.isError ? <ErrorText resource="this request" onRetry={() => { void detail.refetch(); }} /> : data ? <div className="grid gap-6">
+    {detail.isLoading ? <Skeleton className="h-40 w-full" /> : detail.isError ? <ErrorText resource={t`this request`} onRetry={() => { void detail.refetch(); }} /> : data ? <div className="grid gap-6">
       <div className="flex flex-wrap items-center gap-2">
-        <StatusPill label={HOSTING_STATUS_LABELS[data.status] ?? data.status} tone={data.status === "rejected" ? "danger" : data.status === "accepted" ? "success" : "warn"} />
-        {canApprove ? <button type="button" className="desk-button-primary" onClick={() => setDialog("approve")}>{t`Approve…`}</button> : null}
+        <StatusPill label={hostingStatusLabels()[data.status] ?? data.status} tone={data.status === "rejected" ? "danger" : data.status === "accepted" ? "success" : "warn"} />
+        {canApprove && approveHere ? <button type="button" className="desk-button-primary" onClick={() => setDialog("approve")}>{t`Approve…`}</button> : null}
+        {canApprove && !approveHere ? <a className="desk-button-primary" href={controlRequestHref(data.id)} target="_blank" rel="noopener noreferrer">
+          {t`Approve in /control/`}<span className="sr-only">{t`(opens in a new tab)`}</span></a> : null}
         {open ? <button type="button" className="desk-button" onClick={() => setDialog("request-changes")}>{t`Request changes…`}</button> : null}
         {open || data.status === "changes_requested" ? <button type="button" className="desk-button-danger-outline" onClick={() => setDialog("reject")}>{t`Reject…`}</button> : null}
       </div>
       <KeyValueCard title={t`Request`} items={[
+        { label: t`Kind`, value: spaceNounTitle(requestedKind(data)) },
         { label: t`Applicant`, value: `${data.applicant_name} · ${data.applicant_email}` },
         ...(data.applicant_phone ? [{ label: t`Phone`, value: data.applicant_phone }] : []),
-        { label: t`Location`, value: data.location },
+        { label: t`Location`, value: data.location || t`Not given` },
         { label: t`Expected members`, value: data.expected_members ?? "Not given" },
         { label: t`Suggested address`, value: data.proposed_slug || "None" },
         { label: t`Organization`, value: data.new_organization_name || data.organization_choice || "None" },
@@ -46,7 +53,7 @@ export function HostingRequestDrawer({ id, onClose }: { id: number; onClose: () 
         ...(data.created_makerspace ? [{ label: t`Created space`, value: `${data.created_makerspace.name} (/m/${data.created_makerspace.slug})` }] : []),
       ]} />
       <section aria-labelledby="request-about" className="grid gap-2">
-        <h3 id="request-about" className="title-panel">{t`About the space`}</h3>
+        <h3 id="request-about" className="title-panel">{organization ? t`About the organization` : t`About the space`}</h3>
         <p className="whitespace-pre-wrap text-sm text-ink">{data.description}</p>
       </section>
       <section aria-labelledby="request-history" className="grid gap-2">

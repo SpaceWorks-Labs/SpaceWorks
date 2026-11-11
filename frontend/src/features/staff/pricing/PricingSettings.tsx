@@ -12,8 +12,13 @@ import { staffChargesOn } from "../useStaffChargesOn";
 
 type Space = { id: number; enabled_modules?: string[]; enabled_features?: string[] };
 
-/** Settings > Pricing: the currency, one rate card per installed area, then member discounts. */
-export function PricingSettings({ makerspace, canManageMakerspace }: { makerspace: Space; canManageMakerspace: boolean }) {
+/**
+ * Settings > Pricing: the currency, one rate card per installed area, then member discounts.
+ * Only the Space Manager (or the superadmin) opens Settings, so the page edits by default;
+ * `canManageMakerspace={false}` is the delegated view (currency and discounts read-only,
+ * each rate card still follows the server's per-card `editable`).
+ */
+export function PricingSettings({ makerspace, canManageMakerspace = true }: { makerspace: Space; canManageMakerspace?: boolean }) {
   const modules = makerspace.enabled_modules ?? [];
   const domains = installedDomains(modules);
   const [active, setActive] = useState<string>(domains[0]?.domain ?? "loans");

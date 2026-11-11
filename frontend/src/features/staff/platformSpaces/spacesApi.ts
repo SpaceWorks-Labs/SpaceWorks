@@ -24,6 +24,9 @@ export type HealthCard = {
   modules: string[];
   managers: SpaceManager[];
   plan?: { key: string; name: string; trial_ends_at: string | null } | null;
+  /** Decision 236: the stored type, and whether limits/plans/billing apply now. */
+  hosting_type?: "own" | "hosted";
+  hosted?: boolean;
 };
 export type SpaceProblem = { key: string; status: CheckStatus; message: string; fix_url: string };
 export type HealthDetail = HealthCard & { problems: SpaceProblem[] };
@@ -76,7 +79,7 @@ export function percentLevel(percent: number | null): "ok" | "warning" | "limit"
   return percent >= 100 ? "limit" : percent >= 80 ? "warning" : "ok";
 }
 
-export const STATE_LABELS: Record<SpaceState, string> = {
+export const STATE_LABELS = (): Record<SpaceState, string> => ({
   active: t`Active`, read_only: t`Read-only`, suspended: t`Suspended`, archived: t`Archived`,
   scheduled: t`Scheduled`, importing: t`Importing`, aborted: t`Import aborted`,
-};
+});

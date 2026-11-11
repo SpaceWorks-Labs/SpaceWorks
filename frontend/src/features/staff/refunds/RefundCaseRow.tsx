@@ -24,8 +24,9 @@ export function policySentence(snapshot: unknown): string | null {
         return t`Membership term cancelled: the policy refunds ${band}${fee}.`;
       }
       const minutes = Number(value.minutes_before_start ?? 0);
-      const when = minutes > 0 ? `${formatDuration(minutes)} before the start` : "after the start";
-      return t`Cancelled ${when}: the policy refunds ${band}${fee}.`;
+      const duration = formatDuration(minutes);
+      return minutes > 0 ? t`Cancelled ${duration} before the start: the policy refunds ${band}${fee}.`
+        : t`Cancelled after the start: the policy refunds ${band}${fee}.`;
     }
     default: return null;
   }

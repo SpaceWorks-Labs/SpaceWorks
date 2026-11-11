@@ -4,7 +4,7 @@ import { CollapsibleSection, EmptyState, ErrorText, ListRow, Pagination, Relativ
 import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog } from "./ActionDialog";
 import { AnnouncementForm } from "./AnnouncementForm";
-import { SEVERITY_LABELS, useAnnouncements, useCancelAnnouncement, type Announcement } from "./announcementsApi";
+import { severityLabels, useAnnouncements, useCancelAnnouncement, type Announcement } from "./announcementsApi";
 import { PAGE_SIZE } from "./spacesApi";
 
 const STATUS: Record<Announcement["status"], [string, Tone]> = {
@@ -33,10 +33,10 @@ export function AnnouncementsSection() {
   return <div className="grid gap-4">
     <CollapsibleSection title={t`New announcement`} open={composing} onToggle={() => setComposing(!composing)}><AnnouncementForm /></CollapsibleSection>
     {list.isLoading ? <Skeleton className="h-24 w-full" />
-      : list.isError ? <ErrorText resource="announcements" onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`announcements`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={t`No announcements yet.`} />
       : <div className="grid gap-3">{rows.map(row => <ListRow key={row.id} title={row.title}
-        meta={<>{t`${SEVERITY_LABELS[row.severity] ?? row.severity} · ${audience(row)} · starts `}<RelativeTime date={row.starts_at} exact />
+        meta={<>{t`${severityLabels()[row.severity] ?? row.severity} · ${audience(row)} · starts `}<RelativeTime date={row.starts_at} exact />
           {row.ends_at ? <> {t` · ends `}<RelativeTime date={row.ends_at} exact /></> : null}
           {row.email_sent_at ? t` · emailed to ${row.email_recipient_count}` : row.send_email ? t` · email pending` : ""}
           {row.show_to_members ? t` · members see it` : ""}</>}

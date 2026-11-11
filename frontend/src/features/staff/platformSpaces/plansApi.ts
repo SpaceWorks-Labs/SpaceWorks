@@ -1,8 +1,7 @@
-import { formatLocale } from "../../../lib/format";
-import { t } from "@lingui/core/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { publicV1Request, staffRequest } from "../../../lib/api";
 import { healthKey, post, type Page } from "./spacesApi";
+import { limitLabel } from "./limitCopy";
 
 export type ManagedPlansConfig = { enabled: true; online_billing: boolean };
 
@@ -17,14 +16,14 @@ export function useManagedPlans() {
   return config.data?.managed_plans?.enabled === true ? config.data.managed_plans : null;
 }
 
-export const LIMIT_KEYS = ["members", "staff", "storage", "email_monthly", "sms_monthly", "whatsapp_monthly", "events_monthly",
-  "products", "assets", "machines", "bookings", "api_clients", "events"] as const;
+export const LIMIT_KEYS = ["members", "staff", "storage", "upload_bytes", "email_monthly", "sms_monthly", "whatsapp_monthly", "events_monthly",
+  "products", "assets", "machines", "bookings", "api_clients", "events", "guest_passes"] as const;
+/** Limits entered in MB and stored in bytes. */
+export const BYTE_LIMIT_KEYS: ReadonlySet<string> = new Set(["storage", "upload_bytes"]);
 export type LimitKey = typeof LIMIT_KEYS[number];
-export const LIMIT_LABELS: Record<LimitKey, string> = {
-  members: t`Members`, staff: t`Staff`, storage: t`Storage (bytes)`, email_monthly: t`Emails per month`, sms_monthly: t`SMS per month`,
-  whatsapp_monthly: t`WhatsApp per month`, events_monthly: t`Events per month`, products: t`Products`, assets: t`Assets`,
-  machines: t`Machines`, bookings: t`Bookings`, api_clients: t`API clients`, events: t`Events (total)`,
-};
+/** Plan limit names come from limitCopy.ts, the one source for limit wording (decision 285). */
+export const limitLabels = (): Record<LimitKey, string> =>
+  Object.fromEntries(LIMIT_KEYS.map(key => [key, limitLabel(key)])) as Record<LimitKey, string>;
 export type HostingPlan = {
   id: number; key: string; name: string; description: string; is_active: boolean; trial_days: number;
   price_minor: number; currency: string; billing_period: "monthly" | "yearly" | "none";
@@ -50,13 +49,7 @@ const plansKey = ["platform-hosting-plans"] as const;
 const invoicesKey = ["platform-hosting-invoices"] as const;
 const billingKey = ["platform-hosting-billing"] as const;
 
-export function formatMoney(minor: number, currency: string) {
-  try {
-    return new Intl.NumberFormat(formatLocale(), { style: "currency", currency }).format(minor / 100);
-  } catch {
-    return `${(minor / 100).toFixed(2)} ${currency}`;
-  }
-}
+export { formatMinorMoney as formatMoney } from "../../../lib/money";
 
 export function usePlans(enabled = true) {
   return useQuery({ queryKey: plansKey, queryFn: () => staffRequest<HostingPlan[] | Page<HostingPlan>>(`${P}/hosting-plans`, {}, "platform"),

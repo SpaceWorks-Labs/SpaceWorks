@@ -14,6 +14,8 @@ import { SimpleSpaceDialog, type SimpleAction } from "./SimpleSpaceDialog";
 import { SpaceDetailDrawer } from "./SpaceDetailDrawer";
 import { healthKey, listSpaceHealth, PAGE_SIZE, STATE_LABELS, type HealthCard, type SpaceState } from "./spacesApi";
 import { TransferOwnershipDialog } from "./TransferOwnershipDialog";
+import { BulkPlanAssign } from "./BulkPlanAssign";
+import { BulkLimitsApply } from "./BulkLimitsApply";
 
 function SpaceDialog({ card, kind, onClose }: { card: HealthCard; kind: DialogKind; onClose: () => void }) {
   if (kind === "transfer") return <TransferOwnershipDialog card={card} onClose={onClose} />;
@@ -45,12 +47,17 @@ export function HealthSection({ managedPlans }: { managedPlans: boolean }) {
       <Field label={t`State`}>
         <select className="desk-input" value={state} onChange={event => { setState(event.target.value); setPage(1); }}>
           <option value="">{t`Every state`}</option>
-          {(Object.keys(STATE_LABELS) as SpaceState[]).map(key => <option key={key} value={key}>{STATE_LABELS[key]}</option>)}
+          {(Object.entries(STATE_LABELS()) as [SpaceState, string][]).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
         </select>
       </Field>
     </div>
+    {rows.length ? <div className="grid gap-3">
+      {managedPlans ? <BulkPlanAssign cards={rows} /> : null}
+      {/* Decision 284: limits apply to every space, own or hosted, so the bulk editor is never gated on plans. */}
+      <BulkLimitsApply spaces={rows} />
+    </div> : null}
     {list.isLoading ? <Skeleton className="h-40 w-full" />
-      : list.isError ? <ErrorText resource="space health" onRetry={() => { void list.refetch(); }} />
+      : list.isError ? <ErrorText resource={t`space health`} onRetry={() => { void list.refetch(); }} />
       : !rows.length ? <EmptyState message={term || state ? t`No spaces match these filters.` : t`No spaces yet.`} />
       : <div className="grid gap-4 xl:grid-cols-2">{rows.map(card => <HealthCardView key={card.id} card={card} managedPlans={managedPlans}
         onOpen={kind => setDialog({ card, kind })} onDetails={() => setDetails(card)} />)}</div>}

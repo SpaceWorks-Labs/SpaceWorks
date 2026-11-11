@@ -17,20 +17,20 @@ export function cardActions(card: HealthCard, managedPlans: boolean, open: (kind
   const actions: Action[] = [];
   // Keys and capability data stay reachable in every state: rotating after a leak or purging a switched-off
   // capability must not wait for the space to be active (#190 follow-up).
-  actions.push({ label: t`Keys`, onClick: () => open("keys") }, { label: t`Capability data`, onClick: () => open("capabilities") });
+  actions.push({ label: t`Keys`, onClick: () => open("keys") }, { label: t`Feature data`, onClick: () => open("capabilities") });
   if (archived) {
-    actions.push(item("Unarchive", "unarchive"));
-    actions.push(card.schedule ? item("Cancel schedule", "schedule/cancel") : item("Schedule purge", "schedule", "danger"));
-    actions.push(item("Purge", "purge", "danger"));
+    actions.push(item(t`Unarchive`, "unarchive"));
+    actions.push(card.schedule ? item(t`Cancel schedule`, "schedule/cancel") : item(t`Schedule purge`, "schedule", "danger"));
+    actions.push(item(t`Purge`, "purge", "danger"));
     return actions;
   }
   if (!busy) {
-    actions.push(suspended ? item("Unblock", "unsuspend") : item("Suspend", "suspend", "danger"));
-    if (!suspended) actions.push(card.read_only ? item("Lift read-only", "read-only/lift") : item("Make read-only", "read-only"));
-    actions.push(item("Transfer ownership", "transfer"));
-    if (managedPlans) actions.push(item("Plan", "plan"));
-    actions.push(card.schedule ? item("Cancel schedule", "schedule/cancel") : item("Schedule archive & purge", "schedule", "danger"));
-    actions.push(item("Archive now", "archive", "danger"));
+    actions.push(suspended ? item(t`Unblock`, "unsuspend") : item(t`Suspend`, "suspend", "danger"));
+    if (!suspended) actions.push(card.read_only ? item(t`Lift read-only`, "read-only/lift") : item(t`Make read-only`, "read-only"));
+    actions.push(item(t`Transfer ownership`, "transfer"));
+    if (managedPlans) actions.push(item(t`Plan`, "plan"));
+    actions.push(card.schedule ? item(t`Cancel schedule`, "schedule/cancel") : item(t`Schedule archive & purge`, "schedule", "danger"));
+    actions.push(item(t`Archive now`, "archive", "danger"));
   }
   return actions;
 }

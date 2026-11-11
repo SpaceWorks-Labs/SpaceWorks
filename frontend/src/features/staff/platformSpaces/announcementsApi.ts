@@ -14,9 +14,9 @@ export type AnnouncementBody = Pick<Announcement, "title" | "body" | "severity" 
   makerspace_ids: number[];
 };
 
-export const SEVERITY_LABELS: Record<AnnouncementSeverity, string> = {
+export const severityLabels = (): Record<AnnouncementSeverity, string> => ({
   info: t`Information`, maintenance: t`Maintenance`, policy: t`Policy change`, warning: t`Warning`,
-};
+});
 
 const BASE = "/admin/platform/announcements";
 const key = ["platform-announcements"] as const;

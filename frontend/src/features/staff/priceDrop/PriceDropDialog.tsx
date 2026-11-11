@@ -1,5 +1,6 @@
 import { formatLocale } from "../../../lib/format";
 import { t } from "@lingui/core/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { Modal } from "../../../components/ui";
 import { ScreenHelp } from "../../help/HelpLink";
 import { formatMoney } from "../paymentsApi";
@@ -25,7 +26,7 @@ export function PriceDropDialog({ report, onConfirm, onClose }: {
   </div>}>
     <div className="grid gap-3 text-sm">
       <p className="text-ink">
-        <span className="font-semibold">{report.count} paid {report.count === 1 ? "item" : "items"}</span> {t` not used yet would cost less. Saving opens a refund case for each one, ${totals} in all.`}</p>
+        <Trans><span className="font-semibold"><Plural value={report.count} one="# paid item" other="# paid items" /></span> not used yet would cost less. Saving opens a refund case for each one, {totals} in all.</Trans></p>
       <p className="text-muted">{t`The Space Manager or a finance admin approves every refund in the refund queue. Nothing is paid back until then, and people who paid the old price are never asked for more.`}</p>
       <ul tabIndex={0} aria-label={t`Paid items that would cost less`}
         className="grid max-h-72 gap-1 overflow-y-auto rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
@@ -36,8 +37,8 @@ export function PriceDropDialog({ report, onConfirm, onClose }: {
             {when(item.starts_at) ? <span className="text-muted"> · {when(item.starts_at)}</span> : null}
           </span>
           <span className="tabular-nums text-ink">
-            {formatMoney(item.before, item.currency)} to {formatMoney(item.after, item.currency)}
-            <span className="font-semibold"> · {formatMoney(item.difference, item.currency)} back</span>
+            {t`${formatMoney(item.before, item.currency)} to ${formatMoney(item.after, item.currency)}`}
+            <span className="font-semibold"> · {t`${formatMoney(item.difference, item.currency)} back`}</span>
           </span>
         </li>)}
       </ul>

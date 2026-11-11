@@ -55,6 +55,6 @@ function BillingForm({ data }: { data: BillingSettings }) {
 export function BillingSettingsSection() {
   const settings = useBillingSettings();
   if (settings.isLoading) return <Skeleton className="h-24 w-full" />;
-  if (settings.isError || !settings.data) return <ErrorText resource="billing settings" onRetry={() => { void settings.refetch(); }} />;
+  if (settings.isError || !settings.data) return <ErrorText resource={t`billing settings`} onRetry={() => { void settings.refetch(); }} />;
   return <BillingForm key={settings.data.updated_at} data={settings.data} />;
 }

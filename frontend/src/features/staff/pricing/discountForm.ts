@@ -41,8 +41,8 @@ export function validateDiscount(form: DiscountForm): Record<string, string> {
   if (form.kind === "percent") {
     const percent = Number(value);
     if (!/^\d+(\.\d{1,2})?$/.test(value) || percent <= 0 || percent > 100) problems.value = "Enter a percentage above 0 and up to 100.";
-  } else if (!/^\d{1,10}(\.\d{1,2})?$/.test(value) || Number(value) <= 0) {
-    problems.value = "Enter an amount above 0, with at most two decimals.";
+  } else if (!/^\d{1,10}(\.\d{1,3})?$/.test(value) || Number(value) <= 0) {
+    problems.value = "Enter an amount above 0, with no more decimals than the currency has.";
   }
   if (form.starts_at && form.ends_at && new Date(form.ends_at) <= new Date(form.starts_at)) {
     problems.ends_at = "The end must be after the start.";
@@ -66,10 +66,11 @@ export function toBody(form: DiscountForm): Partial<PriceDiscount> {
 
 /** One-line summary for the list: how much, for whom, where. */
 export function describeDiscount(rule: PriceDiscount, currency: string) {
-  const amount = rule.percent_bps ? `${rule.percent_bps / 100}% off` : `${currency ? formatMoney(rule.amount_off ?? "0", currency) : rule.amount_off ?? "0"} off`;
-  const who = rule.audience === "plan" ? `Members on ${rule.plan_name ?? "a plan"}`
-    : rule.audience === "member" ? rule.member_name ?? "One member" : "All members";
+  const off = currency ? formatMoney(rule.amount_off ?? "0", currency) : rule.amount_off ?? "0";
+  const amount = rule.percent_bps ? t`${rule.percent_bps / 100}% off` : t`${off} off`;
+  const who = rule.audience === "plan" ? (rule.plan_name ? t`Members on ${rule.plan_name}` : t`Members on a plan`)
+    : rule.audience === "member" ? rule.member_name ?? t`One member` : t`All members`;
   const where = rule.components?.length ? rule.components.map(componentLabel).join(", ")
-    : rule.domains?.length ? rule.domains.map(domainLabel).join(", ") : "Every area";
+    : rule.domains?.length ? rule.domains.map(domainLabel).join(", ") : t`Every area`;
   return `${amount} · ${who} · ${where}`;
 }

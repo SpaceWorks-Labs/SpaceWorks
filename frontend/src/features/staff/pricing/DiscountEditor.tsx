@@ -37,7 +37,7 @@ export function DiscountEditor({ makerspaceId, rule, currency, domains, membersh
   return <FormPageLayout state={{ status: "ready" }} width="narrow"
     back={{ label: t`Back to discounts`, onClick: onDone }}
     header={{ title: rule ? t`Edit ${rule.name}` : t`New member discount`, subtitle: DISCOUNT_RULES, headingLevel: 2 }}
-    submit={{ label: rule ? t`Save discount` : t`Create discount`, pending: save.isPending, pendingLabel: "Saving…", onClick: submit }}
+    submit={{ label: rule ? t`Save discount` : t`Create discount`, pending: save.isPending, pendingLabel: t`Saving…`, onClick: submit }}
     cancel={{ label: t`Cancel`, onClick: onDone }}
     form={<div className="grid gap-4">
       <Field label={t`Name`} hint={t`Members see this name on their receipt.`} error={problems.name}>

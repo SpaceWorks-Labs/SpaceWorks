@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 
 import { Card, Field, StatusPill } from "../../../components/ui";
@@ -28,7 +28,7 @@ export function policyBody(membership: boolean, form: Record<"full" | "partial" 
     return [null, "The partial window must end before the full-refund window starts."];
   }
   if ((body.partial_percent ?? 0) > 100) return [null, "A percentage cannot be more than 100."];
-  if (!/^\d+(\.\d{1,2})?$/.test(body.cancellation_fee ?? "")) return [null, "Enter the fee with at most two decimals."];
+  if (!/^\d+(\.\d{1,3})?$/.test(body.cancellation_fee ?? "")) return [null, "Enter the fee with no more decimals than the currency has."];
   return [body, null];
 }
 
@@ -97,7 +97,7 @@ function PolicySummary({ policy }: { policy: RefundPolicy }) {
   if (policy.area === "membership") {
     const days = policy.full_within_days ?? 0;
     return <ul className="grid gap-1 text-sm text-muted">
-      <li><span className="text-ink">{t`Full refund`}</span> {days > 0 ? t`within ${days} day${days === 1 ? "" : "s"} of the term start` : t`before the term starts`}</li>
+      <li><span className="text-ink">{t`Full refund`}</span> {days > 0 ? plural(days, { one: "within # day of the term start", other: "within # days of the term start" }) : t`before the term starts`}</li>
       <li><span className="text-ink">{policy.partial_mode === "pro_rata" ? t`The unused part of the term` : t`${String(policy.partial_percent)}% refund`}</span> {t` after that, until the term ends`}</li>
       <li>{t`After the term ends: no refund.${fee}`}</li>
     </ul>;

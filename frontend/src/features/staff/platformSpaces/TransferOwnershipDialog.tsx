@@ -15,6 +15,7 @@ const OUTCOMES: [Outcome, string][] = [
 export const STAFF_ROLES: [string, string][] = [
   ["inventory_manager", "Inventory Manager"], ["machine_manager", "Machine Manager"], ["event_manager", "Event Manager"],
   ["booking_manager", "Booking Manager"], ["handover", "Handover"], ["technician", "Technician"], ["shop_manager", "Shop Manager"],
+  ["fundraising", "Fundraising"],
 ];
 
 export function TransferOwnershipDialog({ card, onClose }: { card: HealthCard; onClose: () => void }) {

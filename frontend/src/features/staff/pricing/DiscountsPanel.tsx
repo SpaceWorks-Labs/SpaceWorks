@@ -58,7 +58,7 @@ export function DiscountsPanel({ makerspaceId, currency, domains, membershipOn, 
           <StatusPill label={archived ? t`Archived` : rule.is_active ? t`Active` : t`Paused`}
             tone={archived ? "neutral" : rule.is_active ? "success" : "warn"} />
           {canEdit && !archived ? <ActionControl action={{ label: t`Archive`, tone: "danger", pending: archive.isPending
-            && archive.variables?.id === rule.id, pendingLabel: "Archiving…", onClick: () => archive.mutate(rule),
+            && archive.variables?.id === rule.id, pendingLabel: t`Archiving…`, onClick: () => archive.mutate(rule),
             confirm: { title: t`Archive ${rule.name}?`, confirmLabel: t`Archive discount`,
               message: t`Archived rules stop applying to new charges. Past receipts keep naming it. This cannot be undone.` } }} /> : null}
         </div>} />)}

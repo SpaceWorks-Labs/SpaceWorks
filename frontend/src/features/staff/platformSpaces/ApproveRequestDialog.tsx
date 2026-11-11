@@ -5,7 +5,7 @@ import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { staffRequest } from "../../../lib/api";
 import { ActionDialog } from "./ActionDialog";
-import { useHostingDecision, type ApproveBody, type ApproveResult, type HostingRequestRow } from "./onboardingApi";
+import { requestedKind, useHostingDecision, type ApproveBody, type ApproveResult, type HostingRequestRow } from "./onboardingApi";
 import type { Page } from "./spacesApi";
 
 const INVITATION = { sent: "The Space Manager invitation was emailed.", skipped: "No invitation was sent.",
@@ -24,7 +24,9 @@ export function ApproveRequestDialog({ request, onClose }: { request: HostingReq
   const approve = useHostingDecision<ApproveResult>(request.id, "approve");
   const canSubmit = name.trim().length >= 2 && (owner === "new" ? orgName.trim().length >= 2 : Boolean(orgId));
   const submit = () => {
+    // Decision 295: the kind travels with the approval (shown only once the route honours it).
     const body: ApproveBody = { name: name.trim(), invite_manager: invite, ...(slug.trim() ? { slug: slug.trim() } : {}),
+      ...(requestedKind(request) === "organization" ? { kind: "organization" as const } : {}),
       ...(owner === "new" ? { new_organization_name: orgName.trim() } : { organization_id: Number(orgId) }) };
     approve.mutate(body, { onSuccess: (result) => { toast(t`${result.makerspace.name} was created. ${INVITATION[result.invitation]}`); onClose(); } });
   };

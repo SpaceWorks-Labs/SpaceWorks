@@ -8,7 +8,7 @@ export type LendingDraft = { deposit_mode: "none" | "fixed" | "per_product"; dep
 export type PricingDraft = { mode: "free" | "paid"; lines: LineDraft[]; lending: LendingDraft | null };
 export type DraftProblems = Record<string, string>;
 
-const MONEY = /^\d{1,10}(\.\d{1,2})?$/;
+const MONEY = /^\d{1,10}(\.\d{1,3})?$/;
 const WHOLE = /^\d+$/;
 
 export function toDraft(card: PricingDefault): PricingDraft {
@@ -34,7 +34,7 @@ function whole(value: string, max: number) {
 /** Field problems keyed `line.<component>.<field>` or `lending.<field>`; empty means valid. */
 export function validateDraft(card: PricingDefault, draft: PricingDraft): DraftProblems {
   const problems: DraftProblems = {};
-  const money = "Enter an amount of 0 or more, with at most two decimals.";
+  const money = "Enter an amount of 0 or more, with no more decimals than the currency has.";
   for (const line of draft.lines) {
     const spec = card.lines.find(row => row.component === line.component);
     if (!spec || spec.read_only) continue;

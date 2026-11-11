@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { Modal } from "../../../components/ui";
 import { formatMoney } from "../paymentsApi";
 import { componentLabel, type PricingImpact } from "./pricingApi";
@@ -15,7 +15,7 @@ export function PricingImpactDialog({ impact, areaLabel, pending, error, onConfi
       {pending ? t`Saving…` : t`Save prices`}</button>
   </div>}>
     <div className="grid gap-3 text-sm">
-      <p className="text-muted">{t`We checked ${impact.items_checked} ${impact.items_checked === 1 ? "item" : "items"}. Items with their own price, or set to free, keep it.`}</p>
+      <p className="text-muted">{plural(impact.items_checked, { one: "We checked # item. Items with their own price, or set to free, keep it.", other: "We checked # items. Items with their own price, or set to free, keep it." })}</p>
       {impact.changed === 0 ? <p className="font-semibold text-ink">{t`No item changes price.`}</p> : <>
         <p className="font-semibold text-ink">{impact.changed} {impact.changed === 1 ? t`price changes` : t`prices change`}:</p>
         <ul tabIndex={0} className="grid max-h-72 gap-1 overflow-y-auto rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"

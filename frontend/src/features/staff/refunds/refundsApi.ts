@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import type { QueryClient } from "@tanstack/react-query";
 
 import type {
@@ -63,7 +63,12 @@ export function listRefundCases(makerspaceId: number, status: string, page: numb
   return staffRequest<RefundCaseListResponse>(`/admin/makerspace/${makerspaceId}/refund-cases?${query}`);
 }
 
-export type ApproveBody = { amount?: string; reason?: string; note?: string; receipt?: RefundReceipt; keep_membership?: boolean };
+export type ApproveBody = { amount?: string; reason?: string; note?: string; receipt?: RefundReceipt; keep_membership?: boolean;
+  /** Parity C18 (`events.refund_cancels_tickets`): also cancel the tickets an event charge paid for. */
+  cancel_tickets?: boolean };
+
+/** Charges whose approval may also cancel tickets: a ticket order or a paid registration. */
+export const EVENT_TICKET_SUBJECTS: ReadonlySet<string> = new Set(["event_order", "event_registration"]);
 
 export function approveRefundCase(makerspaceId: number, caseId: number, body: ApproveBody) {
   return staffRequest<RefundCase>(`/admin/makerspace/${makerspaceId}/refund-cases/${caseId}/approve`, {
@@ -116,28 +121,29 @@ export function invalidateRefundViews(queryClient: QueryClient, makerspaceId: nu
   invalidatePaymentViews(queryClient, makerspaceId);
 }
 
-const CASE_ERRORS: Record<string, string> = {
-  refund_case_closed: "Someone already decided this refund. The list has been refreshed.",
-  refund_exceeds_balance: "That is more than is left to refund on this charge.",
-  refund_rail_unavailable: "Online refunds are switched off on this deployment. Decline the case and return the money another way.",
-  refund_receipt_required: "Record how the money was returned: method, reference and date.",
-  refund_amount_invalid: "Enter an amount greater than zero that fits the currency.",
-};
+const CASE_ERRORS = (): Record<string, string> => ({
+  refund_case_closed: t`Someone already decided this refund. The list has been refreshed.`,
+  refund_exceeds_balance: t`That is more than is left to refund on this charge.`,
+  refund_rail_unavailable: t`Online refunds are switched off on this deployment. Decline the case and return the money another way.`,
+  refund_receipt_required: t`Record how the money was returned: method, reference and date.`,
+  refund_amount_invalid: t`Enter an amount greater than zero that fits the currency.`,
+  refund_cancel_tickets_unavailable: t`Cancelling tickets with a refund is turned off for this space. Untick it, or cancel the tickets from the event.`,
+  refund_cancel_tickets_not_event: t`Only a refund on an event ticket can cancel tickets. Untick it and approve again.`,
+});
 
 export function caseErrorMessage(error: unknown) {
-  if (error instanceof StructuredApiError && error.code && CASE_ERRORS[error.code]) return CASE_ERRORS[error.code];
+  if (error instanceof StructuredApiError && error.code && CASE_ERRORS()[error.code]) return CASE_ERRORS()[error.code];
   return error instanceof Error ? error.message : t`That did not work. Try again.`;
 }
 
 /** "2 days", "6 hours", "30 minutes": a whole unit wherever the figure allows one. */
 export function formatDuration(minutes: number) {
-  const plural = (count: number, unit: string) => `${count} ${unit}${count === 1 ? "" : "s"}`;
-  if (minutes >= 1440 && minutes % 1440 === 0) return plural(minutes / 1440, "day");
-  if (minutes >= 60 && minutes % 60 === 0) return plural(minutes / 60, "hour");
-  return plural(minutes, "minute");
+  if (minutes >= 1440 && minutes % 1440 === 0) return plural(minutes / 1440, { one: "# day", other: "# days" });
+  if (minutes >= 60 && minutes % 60 === 0) return plural(minutes / 60, { one: "# hour", other: "# hours" });
+  return plural(minutes, { one: "# minute", other: "# minutes" });
 }
 
 /** How a policy window reads back to staff: "2 days before", or "until the start". */
 export function formatWindow(minutes: number) {
-  return minutes <= 0 ? "until the start" : `${formatDuration(minutes)} before`;
+  return minutes <= 0 ? t`until the start` : t`${formatDuration(minutes)} before`;
 }

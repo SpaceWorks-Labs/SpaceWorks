@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Field } from "../../../components/ui";
 import { toast } from "../../../components/ui/toastStore";
 import { actionErrorText } from "./ActionDialog";
-import { SEVERITY_LABELS, useCreateAnnouncement, type AnnouncementBody, type AnnouncementSeverity } from "./announcementsApi";
+import { severityLabels, useCreateAnnouncement, type AnnouncementBody, type AnnouncementSeverity } from "./announcementsApi";
 import { SpacePicker, type PickedSpaces } from "./SpacePicker";
 
 const EMPTY = { title: "", body: "", severity: "info" as AnnouncementSeverity, audience: "all_spaces" as AnnouncementBody["audience"],
@@ -39,7 +39,7 @@ export function AnnouncementForm() {
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label={t`Kind`}>
         <select className="desk-input" value={form.severity} onChange={event => set("severity", event.target.value as AnnouncementSeverity)}>
-          {(Object.keys(SEVERITY_LABELS) as AnnouncementSeverity[]).map(key => <option key={key} value={key}>{SEVERITY_LABELS[key]}</option>)}
+          {(Object.entries(severityLabels()) as [AnnouncementSeverity, string][]).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
         </select>
       </Field>
       <Field label={t`Audience`}>

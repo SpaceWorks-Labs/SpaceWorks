@@ -6,6 +6,7 @@ import { toast } from "../../../components/ui/toastStore";
 import { ActionDialog } from "./ActionDialog";
 import { formatMoney, useInvoiceAction, type HostingInvoice } from "./plansApi";
 import { healthKey, listSpaceHealth } from "./spacesApi";
+import { currencyExponent } from "../../../lib/money";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const METHODS = [["bank_transfer", "Bank transfer"], ["cash", "Cash"], ["cheque", "Cheque"], ["card_offline", "Card (offline)"], ["other", "Other"]];
@@ -18,7 +19,7 @@ export function CreateInvoiceDialog({ onClose }: { onClose: () => void }) {
   const canSubmit = Boolean(form.space) && Number(form.amount) > 0 && /^[A-Za-z]{3}$/.test(form.currency) && form.description.trim() !== "" && Boolean(form.due);
   return <ActionDialog title={t`New invoice`} confirmLabel={t`Create invoice`} pending={action.isPending} error={action.error} canSubmit={canSubmit}
     message={t`The Space Manager sees it under Usage & limits and can pay it online when online billing is on.`} onCancel={onClose}
-    onSubmit={() => action.mutate({ path: "", body: { makerspace_id: Number(form.space), amount_minor: Math.round(Number(form.amount) * 100),
+    onSubmit={() => action.mutate({ path: "", body: { makerspace_id: Number(form.space), amount_minor: Math.round(Number(form.amount) * 10 ** currencyExponent(form.currency)),
       currency: form.currency.toUpperCase(), description: form.description.trim(), due_on: form.due,
       ...(form.start ? { period_start: form.start } : {}), ...(form.end ? { period_end: form.end } : {}) } },
     { onSuccess: () => { toast(t`Invoice created.`); onClose(); } })}>
@@ -29,7 +30,7 @@ export function CreateInvoiceDialog({ onClose }: { onClose: () => void }) {
       </select>
     </Field>
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label={t`Amount`}><input className="desk-input" type="number" min={0} step="0.01" value={form.amount} onChange={event => set("amount", event.target.value)} /></Field>
+      <Field label={t`Amount`}><input className="desk-input" type="number" min={0} step="any" value={form.amount} onChange={event => set("amount", event.target.value)} /></Field>
       <Field label={t`Currency`}><input className="desk-input" maxLength={3} value={form.currency} onChange={event => set("currency", event.target.value)} /></Field>
       <Field label={t`Due on`}><input className="desk-input" type="date" value={form.due} onChange={event => set("due", event.target.value)} /></Field>
       <Field label={t`Period start (optional)`}><input className="desk-input" type="date" value={form.start} onChange={event => set("start", event.target.value)} /></Field>

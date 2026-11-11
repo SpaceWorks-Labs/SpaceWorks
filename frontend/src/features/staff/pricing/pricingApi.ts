@@ -9,7 +9,7 @@ export type PricingDomain = PricingDomainEnum;
 
 /** One tab per area; `module` is what must be installed (lending is core, so always shown). */
 export const PRICING_DOMAINS: { domain: PricingDomain; label: string; module: string | null }[] = [
-  { domain: "loans", label: t`Lending`, module: null },
+  { domain: "loans", label: t`Inventory`, module: null },
   { domain: "machines", label: t`Machines`, module: "machines" },
   { domain: "bookings", label: t`Bookings`, module: "bookings" },
   { domain: "events", label: t`Events`, module: "events" },
@@ -45,9 +45,9 @@ export function componentLabel(key: string) {
 }
 
 export const UNIT_WORDING: Record<string, string> = {
-  item: "per item", item_day: "per item per day", hour: "per hour", material_unit: "per unit of material",
-  job: "per job", booking: "per booking", registration: "per registration", day: "per day", loan: "per loan",
-  term: "per membership term", once: "once, when joining",
+  item: t`per item`, item_day: t`per item per day`, hour: t`per hour`, material_unit: t`per unit of material`,
+  job: t`per job`, booking: t`per booking`, registration: t`per registration`, day: t`per day`, loan: t`per loan`,
+  term: t`per membership term`, once: t`once, when joining`,
 };
 
 const space = (id: number) => `/admin/makerspace/${id}/pricing`;
@@ -84,10 +84,10 @@ export const pricingApi = {
 };
 
 export const REFUSALS: Record<string, string> = {
-  setting_not_delegated: "Only the Space Manager, or a manager they have handed these settings to, can change them.",
-  setting_locked: "The Space Manager has locked these prices, so only they can change them.",
-  component_not_allowed: "One of these prices does not apply to this area.",
-  discount_invalid: "The discount is not valid.",
+  setting_not_delegated: t`Only the Space Manager, or a manager they have handed these settings to, can change them.`,
+  setting_locked: t`The Space Manager has locked these prices, so only they can change them.`,
+  component_not_allowed: t`One of these prices does not apply to this area.`,
+  discount_invalid: t`The discount is not valid.`,
 };
 
 export const isNotFound = (error: unknown) => error instanceof StructuredApiError && error.status === 404;

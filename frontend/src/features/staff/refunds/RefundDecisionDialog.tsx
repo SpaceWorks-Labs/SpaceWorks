@@ -8,7 +8,7 @@ import { formatMoney } from "../paymentsApi";
 import { validateRefundAmount } from "../PaymentRefundDialog";
 import { RefundReceiptFields, useRefundReceipt } from "../RefundReceiptFields";
 import {
-  REASON_LABELS, approveRefundCase, caseErrorMessage, declineRefundCase, invalidateRefundViews, type RefundCase,
+  EVENT_TICKET_SUBJECTS, REASON_LABELS, approveRefundCase, caseErrorMessage, declineRefundCase, invalidateRefundViews, type RefundCase,
 } from "./refundsApi";
 import { PolicySnapshotLine } from "./RefundCaseRow";
 import { MembershipRefundExtras } from "./MembershipRefundExtras";
@@ -17,14 +17,17 @@ type Mode = "approve" | "decline";
 
 /** The amount staff start from: what the policy owes, else everything still refundable. */
 export function suggestedAmount(row: Pick<RefundCase, "due_amount" | "refundable_balance">) {
+  // Hand back the server's own string so a KWD fils (12.345) is never rounded to two places.
   const balance = Number(row.refundable_balance);
   const due = Number(row.due_amount);
-  return (due > 0 ? Math.min(due, balance) : balance).toFixed(2);
+  return due > 0 && due < balance ? row.due_amount : row.refundable_balance;
 }
 
 /** Mount with `key={case.id}` so each case starts from its own suggestion. */
-export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
+export function RefundDecisionDialog({ makerspaceId, refundCase, onClose, cancelTicketsAvailable = false }: {
   makerspaceId: number; refundCase: RefundCase; onClose: () => void;
+  /** The space's `events.refund_cancels_tickets` switch; the tick shows only on an event ticket charge. */
+  cancelTicketsAvailable?: boolean;
 }) {
   const queryClient = useQueryClient();
   const offline = refundCase.payment.status === "paid_offline";
@@ -33,6 +36,8 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
   const [amount, setAmount] = useState(() => suggestedAmount(refundCase));
   const [note, setNote] = useState("");
   const [keepMembership, setKeepMembership] = useState(false);
+  const [cancelTickets, setCancelTickets] = useState(false);
+  const ticketCharge = cancelTicketsAvailable && EVENT_TICKET_SUBJECTS.has(refundCase.payment.subject_type);
   // A price-difference refund never ends the term (lane L24), so it has no keep-membership choice.
   const membership = refundCase.area === "membership" && refundCase.reason_code !== "price_drop";
   const receipt = useRefundReceipt();
@@ -44,6 +49,7 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
       : approveRefundCase(makerspaceId, refundCase.id, {
         amount: amount.trim(), note: note.trim(), ...(offline ? { receipt: receipt.receipt() } : {}),
         ...(membership ? { keep_membership: keepMembership } : {}),
+        ...(ticketCharge && cancelTickets ? { cancel_tickets: true } : {}),
       }),
     onSuccess: () => { invalidateRefundViews(queryClient, makerspaceId); onClose(); },
     onError: () => invalidateRefundViews(queryClient, makerspaceId),
@@ -62,7 +68,7 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
   return <FlowLayout presentation="dialog" open onCancel={() => { if (!mutation.isPending) onClose(); }}
     state={{ status: "ready" }} title={t`Refund for ${refundCase.payment.member_name || "a member"}`}
     steps={[{ key: "decide", label: t`Decision`, state: "current" }]} current="decide"
-    footer={{ next: { label, pending: mutation.isPending, pendingLabel: "Saving decision…", onClick: submit,
+    footer={{ next: { label, pending: mutation.isPending, pendingLabel: t`Saving decision…`, onClick: submit,
       disabled: mode === "approve" && balance <= 0 } }}
     work={<div className="grid gap-4">
       <KeyValueCard title={refundCase.payment.subject_label} items={[
@@ -84,6 +90,14 @@ export function RefundDecisionDialog({ makerspaceId, refundCase, onClose }: {
         </Field>
         {membership ? <MembershipRefundExtras makerspaceId={makerspaceId} caseId={refundCase.id}
           keepMembership={keepMembership} onKeepMembership={setKeepMembership} /> : null}
+        {ticketCharge ? <div className="grid gap-1">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <input className="h-4 w-4" type="checkbox" checked={cancelTickets} onChange={(event) => { setCancelTickets(event.target.checked); setProblem(null); }} />
+            {t`Also cancel the tickets this payment bought`}</label>
+          <p className="text-sm text-muted">{cancelTickets
+            ? t`The places are freed and the waitlist moves up. If cancelling fails, the refund still stands and you can cancel the tickets from the event.`
+            : t`Unticked, the money goes back and the tickets stay valid.`}</p>
+        </div> : null}
         {offline ? <>
           <p className="text-sm text-muted">{t`This charge was paid in person, so the money goes back the same way. Record how it was returned; the receipt is permanent.`}</p>
           <RefundReceiptFields state={receipt} onEdit={() => setProblem(null)} />

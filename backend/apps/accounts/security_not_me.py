@@ -71,7 +71,9 @@ def mfa_reset_contacts(user):
     from apps.accounts.rbac import is_space_manager_identity
     from apps.makerspaces.models import MakerspaceMembership
     spaces = []
-    memberships = (MakerspaceMembership.all_tracks.filter(user=user, status="active")
+    # Community or staff rows: the person's whole relation to each space (never all_tracks,
+    # which is reserved for capture, migration and purge).
+    memberships = (MakerspaceMembership.both_tracks().filter(user=user, status="active")
                    .select_related("makerspace").order_by("makerspace__name"))
     for membership in memberships[:20]:
         space = membership.makerspace

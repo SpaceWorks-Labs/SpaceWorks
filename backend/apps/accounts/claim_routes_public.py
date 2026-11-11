@@ -52,6 +52,7 @@ PUBLIC_CLAIM_ROUTES = {
     ('member-booking-checkout', 'OPTIONS'): AnonymousRead(),
     **_anonymous("public-event-venue"),
     **_anonymous("public-membership-admission"),
+    **_anonymous("public-member-units"),  # parity O-B1: the join page unit picker
     **_anonymous("public-machines"),
     **_anonymous("public-machine-intake"),
     **_anonymous("public-machine-details"),
@@ -84,6 +85,7 @@ PUBLIC_CLAIM_ROUTES = {
     # The organization directory is deployment-global read-only presentation; a walk-in
     # claim session reads it exactly like any anonymous visitor.
     **_anonymous("public-organization-detail"),
+    **_anonymous("public-organization-directory"),
     **_anonymous("public-organization-events"),
     **_anonymous("public-event-calendar"),
     **_anonymous("public-event-calendar-feed"),
@@ -160,6 +162,15 @@ PUBLIC_CLAIM_ROUTES = {
     ),
     ("hardware_requests:public-tool-return", "OPTIONS"): AnonymousRead(),
     **_anonymous("hardware_requests:request-status"),
+    # Published equipment kits are a signed-in member read of the slug's tenant; the
+    # contextual self-request writes exactly like request-submit.
+    **{(name, method): ReadOnly(tenant=SLUG)
+       for name in ("hardware_requests:equipment-kit-public-list", "hardware_requests:equipment-kit-public-detail")
+       for method in ("GET", "HEAD")},
+    ("hardware_requests:equipment-kit-public-list", "OPTIONS"): AnonymousRead(),
+    ("hardware_requests:equipment-kit-public-detail", "OPTIONS"): AnonymousRead(),
+    ("hardware_requests:contextual-request-self", "POST"): Allowed(tenant=SLUG, audited=True),
+    ("hardware_requests:contextual-request-self", "OPTIONS"): AnonymousRead(),
 }
 
 # Release 2 L5 pay links: the link itself is the only credential. The views carry no

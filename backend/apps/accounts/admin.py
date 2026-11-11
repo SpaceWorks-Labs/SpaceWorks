@@ -35,6 +35,7 @@ from apps.audit import services as audit
 from apps.makerspaces import limits
 from apps.makerspaces.models import MakerspaceMembership
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class RestrictAccessForm(forms.Form):
@@ -157,7 +158,7 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
             )
         )
 
-    @admin.action(description="Reset selected user passwords")
+    @admin.action(description=gettext_lazy("Reset selected user passwords"))
     def reset_password_selected(self, request, queryset):
         self._refuse_lifecycle_bulk(queryset)
         succeeded, skipped = 0, 0
@@ -184,7 +185,7 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
             level=messages.SUCCESS if succeeded else messages.WARNING,
         )
 
-    @admin.action(description="Restrict selected users")
+    @admin.action(description=gettext_lazy("Restrict selected users"))
     def restrict_access(self, request, queryset):
         self._refuse_lifecycle_bulk(queryset)
         if "apply" not in request.POST:
@@ -233,6 +234,7 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
                         "reason": user.restriction_reason,
                     },
                 )
+                __import__("apps.card_designs.staff_card_hooks", fromlist=["x"]).after_user_access_changed(request.user, user)
                 success_count += 1
 
         self.message_user(
@@ -242,7 +244,7 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
         )
         return None
 
-    @admin.action(description="Restore selected users")
+    @admin.action(description=gettext_lazy("Restore selected users"))
     def restore_access(self, request, queryset):
         self._refuse_lifecycle_bulk(queryset)
         success_count = 0
@@ -284,7 +286,7 @@ class UserAdmin(PersonPiiRevealAdminMixin, PiiMaskingAdminMixin, StaffLifecycleA
 admin.site.unregister(Group)
 
 from apps.accounts import admin_claim, admin_social, admin_tokens  # noqa: E402,F401
-from apps.accounts import admin_password_reset, admin_attestation  # noqa: E402,F401
+from apps.accounts import admin_password_reset, admin_attestation, admin_invitations  # noqa: E402,F401
 from apps.accounts import admin_ip_access  # noqa: E402,F401 -- IP rules and automatic blocks (S-C)
 from apps.accounts.admin_native_apps import NativeAppRegistrationAdmin  # noqa: E402,F401
 

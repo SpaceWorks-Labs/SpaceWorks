@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 
+from apps.integrations.fanout_jobs import deferred_fanout
 from apps.makerspaces.models import Makerspace
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,7 @@ def deliver(invitation, raw):
     return {"delivery_status": status}
 
 
+@deferred_fanout(feature="members", event="invitation")
 def _tell_rooms(invitation, roles):
     from apps.integrations.notify import LifecyclePayload, notify_lifecycle
 

@@ -69,7 +69,8 @@ def start_factor(request, parent, subject):
                                  text_body=gettext('Your identity verification code is {code}. It expires in 10 minutes.').format(code=code),
                                  stream="account", event="reauth_email_code", audience="staff", connection="platform",
                                  persist_body=False, sync=True)
-            if log.status not in {"sent", "delivered"}:
+            from apps.integrations.transient_mail import accepted
+            if not accepted(log):
                 raise ProviderUnavailable()
         elif method == "phone":
             phone, sent = _issue(request.user, request.user.phone_e164, PhoneChallengePurpose.REAUTH)

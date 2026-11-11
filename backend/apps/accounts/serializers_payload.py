@@ -110,6 +110,9 @@ def user_payload(user, request=None, *, session_authority=None):
         "is_platform": is_platform(user),
         "has_staff_role": person and has_staff_role(user),
         "has_elevated_authority": person and has_elevated_authority(user),
+        # 0.12.0 audit row 9: the console shows its cross-venue Organizations group only to a
+        # person who belongs to an organization. Native and claim sessions carry no org authority.
+        "has_organizations": person and include_organizations and claim_context is None and _has_organizations(user),
         "staff_roles": staff_role_entries(staff),
         "makerspaces": entries + org_only,
         # A platform account has no memberships; the console reads its per-space actions here.
@@ -131,6 +134,13 @@ def _effective_locale(user, request):
     if request is None:
         return resolve(user=user)[0]
     return resolve(explicit=explicit_from_request(request), user=user, ambient=ambient_from_request(request))[0]
+
+
+def _has_organizations(user):
+    """One indexed EXISTS: an ACTIVE membership of an active organization (what the
+    Organizations list itself shows, `organizations.access.visible_organizations`)."""
+    from apps.organizations.access import visible_organizations
+    return visible_organizations(user).exists()
 
 
 def _merge_suggested(user):

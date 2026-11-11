@@ -14,6 +14,7 @@ class StaffInvitation(models.Model):
     granted_actions = models.JSONField(default=list)
     role_snapshot = models.JSONField(default=list)
     machine_scope_snapshot = models.JSONField(default=list)
+    machine_ids_snapshot = models.JSONField(default=list)
     credential_generation = models.PositiveIntegerField(default=0)
     token_digest = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()

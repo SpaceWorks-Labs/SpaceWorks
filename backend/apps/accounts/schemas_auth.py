@@ -77,6 +77,10 @@ class AuthUserPayload(serializers.Serializer):
         help_text="The person holds an active staff role in at least one servable makerspace.")
     has_elevated_authority = serializers.BooleanField(
         help_text="A staff role, organization authority or a resource grant anywhere; staff MFA keys on it.")
+    has_organizations = serializers.BooleanField(
+        help_text="The person holds an active membership of at least one active organization. The console "
+                  "shows its Organizations group (organizations, organized events, organization analytics) "
+                  "only when true. False for the superadmin, native device sessions and claim sessions.")
     staff_roles = serializers.ListField(
         child=StaffRoleEntrySerializer,
         help_text="Staff authority THIS session may exercise, per makerspace. Native member grants and claim "

@@ -10,6 +10,7 @@ from apps.accounts.models_social import PlatformSocialAuthSettings, SocialIdenti
 from apps.accounts.social_lockout import CONFIG_FIELDS, disabling_lockout_message
 from config.admin_access import SuperuserOnlyModelAdmin
 from config.admin_audit import AuditedControlChangeMixin
+from django.utils.translation import gettext_lazy
 
 
 class PlatformSocialAuthSettingsForm(forms.ModelForm):
@@ -118,7 +119,7 @@ class PlatformLoginMethodsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdm
             "are under Accounts.")}),
     )
 
-    @admin.display(description="CAPTCHA and breached passwords")
+    @admin.display(description=gettext_lazy("CAPTCHA and breached passwords"))
     def sign_in_protection(self, obj):
         from apps.accounts.login_methods_status import protection_summary
 

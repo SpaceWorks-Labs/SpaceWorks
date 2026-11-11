@@ -27,6 +27,8 @@ L21A_ROUTES = (
     ('events-programme-admin-checkin-list-detail', ('PATCH',), 'event'),
     ('events-programme-admin-checkin-list-lookup', ('GET', 'HEAD'), 'event'),
     ('events-programme-admin-checkin-list-scan', ('POST',), 'event'),
+    ('events-programme-admin-checkin-list-reorder', ('POST',), 'event'),
+    ('events-programme-admin-checkin-list-scan-undo', ('POST',), 'event'),
     ('events-programme-member-attendance', ('GET', 'HEAD', 'POST'), 'event'),
     ('events-programme-member-crew-signup', ('GET', 'HEAD', 'POST'), 'event'),
     ('events-programme-member-crew-withdraw', ('POST',), 'event'),

@@ -74,6 +74,16 @@ class Action:
     # Space Manager's (rbac.is_space_manager_identity), who holds this through
     # MANAGE_MAKERSPACE below, so no stored role changes.
     VIEW_ANALYTICS = "view_analytics"
+    # Decision 242(m): run the space's donations and sponsors (campaigns, gifts, pledges,
+    # donor list, receipts) and nothing else of its money. The built-in Fundraising role
+    # holds exactly this; the Space Manager through MANAGE_MAKERSPACE below, so no stored
+    # role changes. Never organization-grantable: donor money stays inside ONE space.
+    MANAGE_DONATIONS = "manage_donations"
+    # Parity O-B1: member units (districts, chapters, branches) inside one space. MANAGE edits the tree,
+    # assigns members and staff scopes; VIEW reads the tree (the unit picker). Role- and org-grantable.
+    # Unit SCOPE is not an action: it narrows local membership authority (`member_unit_scope.py`).
+    MANAGE_MEMBER_UNITS = "manage_member_units"
+    VIEW_MEMBER_UNITS = "view_member_units"
 
 
 IMPLIED_ACTIONS = {
@@ -94,6 +104,12 @@ IMPLIED_ACTIONS[Action.SELL_SHOP] = {Action.VIEW_SHOP}
 IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_SHOP}
 # Release 2 L25: the Space Manager sees the space's analytics dashboards.
 IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.VIEW_ANALYTICS}
+# Decision 242(m): the Space Manager runs donations.
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_DONATIONS}
+# Parity O-B1: the Space Manager manages member units; whoever manages members can read the unit tree.
+IMPLIED_ACTIONS[Action.MANAGE_MEMBER_UNITS] = {Action.VIEW_MEMBER_UNITS}
+IMPLIED_ACTIONS[Action.MANAGE_MEMBERS] = IMPLIED_ACTIONS[Action.MANAGE_MEMBERS] | {Action.VIEW_MEMBER_UNITS}
+IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] = IMPLIED_ACTIONS[Action.MANAGE_MAKERSPACE] | {Action.MANAGE_MEMBER_UNITS}
 
 
 def expand_implied_actions(actions) -> set:
@@ -180,6 +196,8 @@ ORGANIZATION_GRANTABLE_ACTIONS = frozenset(
     - {Action.WORK_REPAIRS, Action.RUN_MAINTENANCE, Action.SET_SERVICE_STATE}
     # L22: a shop's till and stock are money and goods inside ONE space.
     - {Action.MANAGE_SHOP, Action.SELL_SHOP, Action.VIEW_SHOP}
+    # Decision 242(m): donor money and donor details stay inside ONE space.
+    - {Action.MANAGE_DONATIONS}
 )
 ROLE_SUPERADMIN_ASSIGNABLE_ACTIONS = frozenset({Action.MANAGE_MAKERSPACE})
 # What counts as handover-only work: taking an accepted request or a finished machine job

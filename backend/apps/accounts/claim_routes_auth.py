@@ -42,6 +42,9 @@ AUTH_CLAIM_ROUTES = {
     **_refused("social-oidc", ("POST",), "claim sessions cannot change identity"),
     **_refused("social-github-browser-start", ("POST",), "claim sessions cannot change identity"),
     **_refused("social-github-browser-callback", ("POST",), "claim sessions cannot change identity"),
+    **_refused("social-github-link-start", ("POST",), "claim sessions cannot link identity providers"),
+    **_refused("social-oidc-link-start", ("POST",), "claim sessions cannot link identity providers"),
+    **_refused("social-link-callback", ("POST",), "claim sessions cannot link identity providers"),
     ("social-oidc-browser-start", "POST"): ControlRoute(),
     ("social-oidc-browser-start", "OPTIONS"): AnonymousRead(),
     ("social-oidc-browser-callback", "POST"): ControlRoute(),
@@ -118,4 +121,6 @@ AUTH_CLAIM_ROUTES = {
     ("auth-login-code-resend", "OPTIONS"): AnonymousRead(),
     ("auth-security-alerts-not-me", "POST"): ControlRoute(),
     ("auth-security-alerts-not-me", "OPTIONS"): AnonymousRead(),
+    # No authentication classes: reports cookie PRESENCE only, never reads a claim token.
+    **{("auth-browser-state", method): AnonymousRead() for method in ("GET", "HEAD", "OPTIONS")},
 }

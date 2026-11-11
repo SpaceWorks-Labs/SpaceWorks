@@ -18,6 +18,8 @@ L21B_ROUTES = (
     ('events-programme-admin-prize-payouts-reverse', ('POST',), 'event'),
     ('events-programme-admin-staff-list', ('GET', 'HEAD'), 'event'),
     ('events-programme-admin-staff-list-export', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-staff-list-presets', ('GET', 'HEAD'), 'event'),
+    ('events-programme-admin-hackathon-mlh-presets', ('GET', 'HEAD'), 'event'),
     ('events-programme-member-teams-charges', ('GET', 'HEAD'), 'event'),
     ('events-programme-member-teams-entry-fee', ('POST',), 'event'),
 )

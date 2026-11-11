@@ -18,6 +18,9 @@ admin-makerspace-provision-subdomain user-restrict user-restore-access
 admin-organization-list admin-organization-detail admin-organization-links admin-organization-email-sender
 admin-organization-link-delete admin-organization-memberships admin-organization-membership-detail
 admin-organization-invitations admin-organization-invitation-revoke
+admin-organization-review admin-organization-review-queue admin-organization-resubmit
+admin-organization-member-rollup
+admin-organization-hours-bank admin-organization-hours-ledger
 tenant-migration-disclosure-closure tenant-migration-disclosure-approvals
 tenant-migration-disclosure-revoke tenant-migration-exports tenant-migration-export-detail
 tenant-migration-export-download-url tenant-migration-source-quiesce

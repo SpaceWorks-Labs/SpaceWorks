@@ -17,7 +17,7 @@ ROUTES = (
     ('member-event-payout-detail', ('GET', 'HEAD'), 'obligation', 'member'),
     ('member-event-payout-payee', ('DELETE', 'GET', 'HEAD', 'PUT'), 'obligation', 'member'),
     ('member-event-payee-reveal', ('POST',), 'obligation', 'member'),
-    ('member-event-payee-file-create', ('POST',), 'obligation', 'member'),
+    ('member-event-payee-file-create', ('GET', 'HEAD', 'POST'), 'obligation', 'member'),
     ('member-event-payee-file-detail', ('DELETE', 'GET', 'HEAD'), 'obligation', 'member'),
     ('member-event-payee-file-complete', ('POST',), 'obligation', 'member'),
     ('finance-event-payout-list', ('GET', 'HEAD'), 'tenant', 'membership'),
@@ -73,6 +73,7 @@ ROUTES = (
     ('admin-event-reimbursement-request-list', ('GET', 'HEAD'), 'event', 'delegable'),
     ('admin-event-reimbursement-request-decide', ('POST',), 'event', 'delegable'),
     ('admin-event-reimbursement-crew-pool', ('POST',), 'event', 'membership'),  # hack-money G14
+    ('admin-event-reimbursement-staff-claim', ('POST',), 'event', 'delegable'),  # parity C17
     ('admin-event-reimbursement-direct-booking', ('POST',), 'event', 'membership'),  # hack-money G12
     ('admin-event-reimbursement-direct-booking-cancel', ('POST',), 'event', 'membership'),
     ('admin-event-reimbursement-claim-list', ('GET', 'HEAD'), 'event', 'delegable'),

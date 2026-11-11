@@ -44,10 +44,36 @@ def revoke_authentication(user, *, now, revoke_invitations=True):
     # S-B: every remembered device is forgotten with the sessions it signed in.
     from apps.accounts.device_memory import revoke_all
     counts["known_devices"] = revoke_all(user, now=now)
+    counts.update(revoke_person_credentials(user, now=now))
     if revoke_invitations:
         counts["staff_invitations"] = StaffInvitation.objects.filter(
             account=user, accepted_at__isnull=True, revoked_at__isnull=True,
         ).update(revoked_at=now)
+    return counts
+
+
+# Library-owned OAuth rows, dependants first (AccessToken points at RefreshToken and IDToken).
+_OAUTH_TOKEN_LABELS = ("oauth2_provider.RefreshToken", "oauth2_provider.AccessToken",
+                       "oauth2_provider.IDToken", "oauth2_provider.Grant", "oauth2_provider.DeviceGrant")
+
+
+def revoke_person_credentials(user, *, now):
+    """#196 bearers that act as the person: PATs end; app connections are disconnected."""
+    from django.apps import apps
+    counts = {"personal_access_tokens": 0, "oauth_tokens": 0, "oauth_consents": 0}
+    if apps.is_installed("apps.apiclients"):
+        from apps.apiclients.models_tokens import OAuthConsent, PersonalAccessToken
+        counts["personal_access_tokens"] = PersonalAccessToken.objects.filter(
+            user=user, revoked_at__isnull=True,
+        ).update(revoked_at=now)
+        counts["oauth_consents"] = OAuthConsent.objects.filter(user=user).delete()[0]
+    if apps.is_installed("oauth2_provider"):
+        for label in _OAUTH_TOKEN_LABELS:
+            try:
+                model = apps.get_model(label)
+            except LookupError:
+                continue
+            counts["oauth_tokens"] += model.objects.filter(user=user).delete()[0]
     return counts
 
 

@@ -213,7 +213,7 @@ ROUTES = (
     ('events-programme-member-profile-photo-options', ('GET', 'HEAD'), 'event'),
     ('events-programme-member-presentation-detail', ('GET', 'HEAD', 'PATCH'), 'event'),
     ('events-programme-public-member-card-photo', ('GET', 'HEAD'), 'public_event'),
-    ('events-programme-admin-broadcasts-detail', ('GET', 'HEAD', 'PATCH'), 'event'),
+    ('events-programme-admin-broadcasts-detail', ('GET', 'HEAD', 'PATCH', 'DELETE'), 'event'),
     ('events-programme-admin-broadcasts-preview', ('POST',), 'event'),
     ('events-programme-admin-broadcasts-test', ('POST',), 'event'),
     ('events-programme-admin-broadcasts-schedule', ('POST',), 'event'),
@@ -268,5 +268,17 @@ NATIVE_DECISIONS = {**NATIVE_DECISIONS, **PEOPLES_CHOICE_NATIVE_DECISIONS}
 from .programme_route_catalog_certificates import CERTIFICATE_ROUTES, CERTIFICATE_NATIVE_DECISIONS  # noqa: E402
 ROUTES += CERTIFICATE_ROUTES
 NATIVE_DECISIONS = {**NATIVE_DECISIONS, **CERTIFICATE_NATIVE_DECISIONS}
+# Parity E-B3: team handover/removal/moderation and crew edit/reorder (all native).
+from .programme_route_catalog_parity_eb3 import EB3_ROUTES, EB3_NATIVE_DECISIONS  # noqa: E402
+ROUTES += EB3_ROUTES
+NATIVE_DECISIONS = {**NATIVE_DECISIONS, **EB3_NATIVE_DECISIONS}
+# Parity E-B4: scores CSV, results unpublish and submission reinstate (all native).
+from .programme_route_catalog_e_b4 import E_B4_NATIVE_DECISIONS, E_B4_ROUTES  # noqa: E402
+ROUTES += E_B4_ROUTES
+NATIVE_DECISIONS = {**NATIVE_DECISIONS, **E_B4_NATIVE_DECISIONS}
+# Parity E-B7: space and organisation event insights (web-only).
+from .programme_route_catalog_e_b7 import E_B7_NATIVE_DECISIONS, E_B7_ROUTES  # noqa: E402
+ROUTES += E_B7_ROUTES
+NATIVE_DECISIONS = {**NATIVE_DECISIONS, **E_B7_NATIVE_DECISIONS}
 
 BY_NAME = {name: (methods, target) for name, methods, target in ROUTES}

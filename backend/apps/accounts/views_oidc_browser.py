@@ -183,6 +183,7 @@ class OidcBrowserCallbackView(APIView):
                 "access": tokens["access"],
                 "user": user_payload(user, request=request, session_authority=attempt.surface),
                 "outcome": outcome,
+                **({"next": attempt.next_path} if attempt.next_path else {}),
             }
         )
         set_refresh_cookies(response, tokens["refresh"], request)

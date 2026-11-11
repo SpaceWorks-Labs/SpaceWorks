@@ -12,6 +12,7 @@ from rest_framework.exceptions import APIException
 
 from apps.accounts import mfa_reset
 from apps.accounts.reauthentication import require_recent_reauth
+from django.utils.translation import gettext_lazy
 
 
 class MfaResetForm(forms.Form):
@@ -19,7 +20,7 @@ class MfaResetForm(forms.Form):
 
 
 class MfaResetAdminMixin:
-    @admin.action(description="Reset two-step sign-in (one person)")
+    @admin.action(description=gettext_lazy("Reset two-step sign-in (one person)"))
     def reset_two_step(self, request, queryset):
         try:
             require_recent_reauth(request)

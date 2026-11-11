@@ -29,7 +29,8 @@ def send_restore_link(recipient, token):
         stream="account", event="account_restore", audience="user", connection="platform",
         persist_body=False, sync=True,
     )
-    return log.status == log.Status.SENT
+    from apps.integrations.transient_mail import accepted
+    return accepted(log)
 
 
 def confirm_email(email, token, new_password):

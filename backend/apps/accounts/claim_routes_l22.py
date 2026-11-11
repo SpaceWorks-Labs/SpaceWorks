@@ -17,6 +17,7 @@ _ROUTES = (
 _ANONYMOUS = {
     "public-shop": ("GET", "HEAD"), "public-shop-products": ("GET", "HEAD"), "public-shop-product": ("GET", "HEAD"),
     "public-shop-order-status": ("GET", "HEAD"), "public-shop-quote": ("POST",), "public-shop-email-code": ("POST",),
+    "public-shop-event-offers": ("GET", "HEAD"),
 }
 
 L22_CLAIM_ROUTES = {

@@ -22,6 +22,7 @@ from apps.accounts.pii_presentation import person_pii_visible
 from apps.accounts.platform_authority import is_platform_superadmin
 from apps.accounts.reauthentication import require_recent_reauth
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class PiiReasonForm(forms.Form):
@@ -52,7 +53,7 @@ class PersonPiiRevealAdminMixin:
     def get_readonly_fields(self, request, obj=None):
         return (*super().get_readonly_fields(request, obj), "pii_reveal_link")
 
-    @admin.display(description="Personal data")
+    @admin.display(description=gettext_lazy("Personal data"))
     def pii_reveal_link(self, obj):
         if not obj or not obj.pk:
             return "-"
@@ -95,7 +96,7 @@ class PlatformPiiAccessGrantAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     fields = readonly_fields
     actions = ["close_own_windows"]
 
-    @admin.display(description="Person")
+    @admin.display(description=gettext_lazy("Person"))
     def subject_account(self, obj):
         return obj.subject.username if obj.subject_id else "-"
 
@@ -112,7 +113,7 @@ class PlatformPiiAccessGrantAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.action(description="Close my selected open windows")
+    @admin.action(description=gettext_lazy("Close my selected open windows"))
     def close_own_windows(self, request, queryset):
         closed = 0
         for grant in queryset.filter(actor=request.user, closed_at__isnull=True):

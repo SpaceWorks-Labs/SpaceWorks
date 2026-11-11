@@ -126,7 +126,8 @@ def deliver(alert_id):
             html_body=render_to_string(f"email/security_{row.kind}.html", context),
             makerspace=None, stream="account", event=EVENTS[row.kind], audience="user",
             connection="platform", persist_body=False, sync=True, recipient_id=row.user_id)
-        sent = getattr(log, "status", "") == "sent"
+        from apps.integrations.transient_mail import accepted
+        sent = accepted(log)
     except Exception:
         logger.exception("security_alert_send_failed", extra={"kind": row.kind})
         sent = False
@@ -152,4 +153,5 @@ def send_login_code(user_id, code):
         html_body=render_to_string("email/security_login_code.html", context),
         makerspace=None, stream="account", event=LOGIN_CODE_EVENT, audience="user",
         connection="platform", persist_body=False, sync=True, recipient_id=user.pk)
-    return getattr(log, "status", "") == "sent"
+    from apps.integrations.transient_mail import accepted
+    return accepted(log)

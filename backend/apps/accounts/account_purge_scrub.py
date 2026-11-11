@@ -98,7 +98,7 @@ def scrub_tenant(user, makerspace_id, *, username, address, journal_user=None, a
                                 delivery_log__makerspace_id=makerspace_id).delete()
     # CASCADE removes member deliveries through either the inbox row or device,
     # including rows whose other endpoint now belongs to a different account.
-    for label in ("integrations.PushDevice", "notifications.NotificationInboxRow"):
+    for label in ("integrations.PushDevice", "notifications.NotificationInboxRow", "notifications.BrowserFirebaseRegistration"):
         rows = _rows(label, user=user, makerspace_id=makerspace_id)
         if hasattr(rows, "delete"):
             rows.delete()

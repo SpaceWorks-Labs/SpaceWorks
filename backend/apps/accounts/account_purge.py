@@ -135,6 +135,9 @@ def _global_rows(user):
     from apps.accounts.models import (EmailVerificationChallenge, PhoneVerificationChallenge,
                                      PasswordResetEnvelope, SocialIdentity, MFAChallenge, AccountRestoreIntent,
                                      DeviceActivityDay)
+    installation = _model("notifications.BrowserFirebaseInstallation")
+    if installation is not None:
+        every_row(installation).filter(user=user).delete()
     address = recorded_address(user)
     EmailVerificationChallenge.objects.filter(user=user).delete()
     PhoneVerificationChallenge.objects.filter(user=user).delete()
@@ -145,6 +148,13 @@ def _global_rows(user):
     for label in ("accounts.WebAuthnCredential", "accounts.WebAuthnCeremony", "accounts.StaffMfaGrace",
                   "accounts.KnownDevice", "accounts.KnownNetwork", "accounts.SecurityAlert"):  # S-B
         every_row(_model(label)).filter(user=user).delete()
+    # #196 person bearers (already revoked at departure) and their library-owned OAuth rows.
+    for label in ("apiclients.PersonalAccessToken", "apiclients.OAuthConsent",
+                  "oauth2_provider.RefreshToken", "oauth2_provider.AccessToken", "oauth2_provider.IDToken",
+                  "oauth2_provider.Grant", "oauth2_provider.DeviceGrant"):
+        model = _model(label)
+        if model is not None:
+            every_row(model).filter(user=user).delete()
     # Includes unselected (NULL-makerspace) activity. Wait for every tenant gate
     # before removing this grant-owned history; the revoked grants themselves stay.
     DeviceActivityDay.objects.filter(grant__user=user).delete()

@@ -17,6 +17,7 @@ from apps.accounts.ip_rule_edits import LOCKOUT_MESSAGE, unblock, would_lock_out
 from apps.accounts.models import IPAccessRule, IPAutoBlock
 from apps.audit import services as audit
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class IPAccessRuleForm(forms.ModelForm):
@@ -91,11 +92,11 @@ class IPAutoBlockAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     exclude = ("ip_key",)
     actions = ("unblock_selected",)
 
-    @admin.display(boolean=True, description="Blocking now")
+    @admin.display(boolean=True, description=gettext_lazy("Blocking now"))
     def is_active(self, obj):
         return obj.blocked_until > timezone.now()
 
-    @admin.action(description="Unblock the selected addresses now")
+    @admin.action(description=gettext_lazy("Unblock the selected addresses now"))
     def unblock_selected(self, request, queryset):
         count = unblock(request.user, queryset)
         self.message_user(request, f"Unblocked {count} address(es).", level=messages.SUCCESS)

@@ -17,6 +17,7 @@ messaging-twilio-status messaging-twilio-inbound messaging-meta-platform messagi
 NON_ACCOUNT_ROUTES = frozenset("""
 backup-archive-download data-export-download internal-tls-check cron-return-reminders
 event-check-in-station-session event-check-in-station-roster event-check-in-station-sync
+event-check-in-station-badge event-check-in-station-badge-receipts
 device-enrollment-challenge device-enrollment-complete device-heartbeat device-command-lease
 device-command-ack device-printer-job-telemetry device-printer-job-result
 device-label-command-content device-label-command-result kiosk-replay-prepare
@@ -27,13 +28,15 @@ integration-booking-resource-reservations integration-booking-list integration-b
 """.split())
 
 PUBLIC_ROUTES = frozenset("""
-website-discover public-config health readiness announcement-feed one-click-unsubscribe api-redoc-ui
+website-discover public-legal-page public-config health readiness announcement-feed one-click-unsubscribe api-redoc-ui
 """.split())
 
 # Release 2 L10: signed device-protocol routes of the (off-by-default) machine-integration foundation.
 NON_ACCOUNT_ROUTES |= {"device-integration-queue", "device-integration-job-report"}
 # Release 2 L3: Apple's pass web service, authenticated by the pass's own token (PassKit protocol).
 NON_ACCOUNT_ROUTES |= {"wallet-apple-registration", "wallet-apple-serials", "wallet-apple-pass", "wallet-apple-log"}
+# Decision 223: the guest pass .pkpass download; the signed one-minute link in the URL is the credential.
+NON_ACCOUNT_ROUTES |= {"wallet-guest-pass-download"}
 # Release 2 L6: signed server reads of ticket orders (`orders:read`).
 NON_ACCOUNT_ROUTES |= {"integration-order-list", "integration-order-detail"}
 # Release 2 L21a: signed server reads of application counts (`applications:read`).

@@ -38,7 +38,7 @@ STRICT_ROUTES = frozenset({
     "data-export-list-create", "data-export-detail", "data-export-download-url",
     # Credential resets and role changes.
     "admin-staff-roles", "admin-staff-roles-detail", "admin-staff-roles-revoke", "admin-staff-roles-restore",
-    "admin-staff-roles-mfa-reset", "admin-staff-invitations", "admin-staff-invitation-revoke",
+    "admin-staff-roles-mfa-reset", "admin-staff-roles-bulk-invite", "admin-staff-invitations", "admin-staff-invitation-revoke",
     "admin-staff-invitation-resend",
 })
 

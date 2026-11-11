@@ -59,6 +59,54 @@ ROUTE_CLASSES = MappingProxyType({
     **dict.fromkeys(PERSON_CREDENTIAL_ROUTES, MEMBER_ONLY),
     **dict.fromkeys(OAUTH_APP_ROUTES, MEMBERSHIP_ONLY),
     **dict.fromkeys(OAUTH_PROTOCOL_ROUTES, SIGNED_PROTOCOL),
+    # Contextual equipment routes share the existing tenant staff boundary;
+    # their views separately scope inventory actions and event/booking grants.
+    "contextual-request-staff": DELEGABLE,
+    "equipment-kit-list": DELEGABLE,
+    "equipment-kit-detail": DELEGABLE,
+    "equipment-kit-version": DELEGABLE,
+    "equipment-kit-publication": DELEGABLE,
+    "equipment-kit-archive": DELEGABLE,
+    "admin-consumable-equipment-sources": DELEGABLE,
+    "event-equipment-request-products": DELEGABLE,
+    "event-equipment-kits": DELEGABLE,
+    # Event-day desk: event VIEW and issue_request are each re-checked in the view.
+    "event-equipment-desk": DELEGABLE,
+    # 221b: window availability and bulk per-person planning re-check event + inventory authority.
+    "event-equipment-availability": DELEGABLE,
+    "event-equipment-plan": DELEGABLE,
+    "booking-equipment-request-products": DELEGABLE,
+    "booking-equipment-kits": DELEGABLE,
+    "admin-request-event-context": DELEGABLE,
+    "admin-direct-loan-event-context": DELEGABLE,
+    "admin-request-booking-context": DELEGABLE,
+    "admin-direct-loan-booking-context": DELEGABLE,
+    # Decision 216 item 13: event/booking grants reach the subject; each section
+    # (presence, machine sessions) re-checks its own tenant action and scope.
+    "admin-related-facts-event": DELEGABLE,
+    "admin-related-facts-booking": DELEGABLE,
+    # Decision 216: tenant-wide events + bookings roles, session only; the staff price
+    # preview shares the staff booking-create boundary.
+    "admin-event-booking-link": MEMBERSHIP_ONLY,
+    "admin-event-booking-replacement": MEMBERSHIP_ONLY,
+    # P2-1 workshop machine links: the same tenant-wide roles plus machine authority.
+    "admin-event-workshop-machines": MEMBERSHIP_ONLY,
+    "admin-event-workshop-machine-replacement": MEMBERSHIP_ONLY,
+    "admin-event-workshop-machine-link": MEMBERSHIP_ONLY,
+    "admin-space-booking-quote": MEMBERSHIP_ONLY,
+    # Decision 216 item 4: the read-only admission readiness beside the same form.
+    "admin-space-booking-readiness": MEMBERSHIP_ONLY,
+    "admin-booking-readiness": MEMBERSHIP_ONLY,
+    # The free/busy picker beside the same form (event hall booking).
+    "admin-space-booking-availability": MEMBERSHIP_ONLY,
+    # Browser push proves installation ownership through the personal account surface.
+    "browser-firebase-global-may-resume": MEMBER_ONLY,
+    "browser-firebase-config": MEMBER_ONLY,
+    "browser-firebase-may-resume": MEMBER_ONLY,
+    "browser-firebase-challenge": MEMBER_ONLY,
+    "browser-firebase-confirm": MEMBER_ONLY,
+    # Anonymous first-party session-presence metadata, never identity or a token.
+    "auth-browser-state": SHARED_ACCOUNT_UTILITY,
 })
 
 

@@ -9,6 +9,7 @@ the meantime is dropped. Delivery failures never touch the role change.
 import logging
 
 from django.db import transaction
+from apps.integrations.fanout_jobs import deferred_fanout
 
 logger = logging.getLogger(__name__)
 SOURCE = "accounts.staff_role"
@@ -32,6 +33,7 @@ def eligible(envelope):
 
 
 def _emit(row):
+    from django.utils.translation import gettext
     from apps.accounts.staff_account_policy import role_keys
     from apps.integrations.notification_outbox import emit
     from apps.makerspaces.models import MakerspaceRole
@@ -45,14 +47,16 @@ def _emit(row):
             emit(makerspace=space, recipient=row.user, feature="members", stream="account", event=EVENT,
                  audience="member", source_kind=SOURCE, source_id=str(row.pk), revision=revision,
                  dedup_key=f"staff-role:{row.pk}:{revision}:{row.status}", context={"membership_id": row.pk},
-                 rendered={"subject": f"You have a staff role at {space.name}",
-                           "text": f"You were given the {roles} role at {space.name}. Open the staff "
-                                   "console from your account. Staff screens need two-step sign-in: "
-                                   "set it up within three days."})
+                 rendered=lambda: {
+                     "subject": gettext("You have a staff role at %(space)s") % {"space": space.name},
+                     "text": gettext("You were given the %(roles)s role at %(space)s. Open the staff "
+                                     "console from your account. Staff screens need two-step sign-in: "
+                                     "set it up within three days.") % {"roles": roles, "space": space.name}})
     except Exception:
         logger.warning("staff_role_notice_failed", extra={"membership_id": row.pk})
 
 
+@deferred_fanout()
 def notify_granted(row):
     """After commit; ``row`` is a staff-track membership."""
     from apps.makerspaces.models import MakerspaceMembership

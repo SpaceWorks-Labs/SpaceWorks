@@ -23,9 +23,12 @@ MEMBER_CLAIM_ROUTES = {
            ("member-admission-export", ("GET", "HEAD")),
            ("member-admission-cancel", ("POST",)),
            ("member-admission-vouch", ("POST",)),
+           ("member-admission-photo", ("POST",)),  # parity O-B2
+           ("membership-request-resubmit", ("PATCH",)),  # parity O-B2
        ) for method in methods},
     **{(name, "OPTIONS"): AnonymousRead() for name in (
         "member-admission", "member-admission-export", "member-admission-cancel", "member-admission-vouch",
+        "member-admission-photo", "membership-request-resubmit",
     )},
     **{(name, method): Refused(gettext_noop("claim sessions cannot manage an account or end membership"))
        for name, methods in (
@@ -95,6 +98,9 @@ MEMBER_CLAIM_ROUTES = {
     ("member-my-usage", "GET"): LocallyFiltered(tenant=ID),
     ("member-my-usage", "HEAD"): LocallyFiltered(tenant=ID),
     **_options("member-my-usage"),
+    ("member-allowances", "GET"): LocallyFiltered(tenant=ID),
+    ("member-allowances", "HEAD"): LocallyFiltered(tenant=ID),
+    **_options("member-allowances"),
     ("hardware_requests:member-loan-renew", "POST"): Allowed(
         tenant=ID, audited=True, ownership=RowOwnership.LOCAL_OWNER_ENFORCED,
     ),
@@ -215,6 +221,11 @@ MEMBER_CLAIM_ROUTES = {
         ownership=RowOwnership.MIXED_REFUSED,
     ) for name in ("member-event-ticket", "member-event-ticket-png")
        for method in ("GET", "HEAD")},
+    **{("member-event-equipment", method): Refused(
+        gettext_noop("event equipment lists the holder's own loans for a registration"),
+        ownership=RowOwnership.MIXED_REFUSED,
+    ) for method in ("GET", "HEAD")},
+    **_options("member-event-equipment"),
     **_options("member-event-ticket"),
     **_options("member-event-ticket-png"),
     **{("member-event-registration-calendar", method): Refused(

@@ -1,4 +1,5 @@
 from django.urls import path
+from apps.accounts.views_browser_state import BrowserStateView
 
 from apps.accounts.views import (
     ChangePasswordView,
@@ -50,6 +51,7 @@ from apps.accounts.views_account_restore import (
     AccountRestoreEmailView, AccountRestorePhoneView, AccountRestoreSocialStartView, AccountRestoreSocialCompleteView,
 )
 from apps.accounts.views_github import GithubBrowserCallbackView, GithubBrowserStartView
+from apps.accounts.views_social_link_browser import GithubLinkStartView, OidcLinkStartView, SocialLinkCallbackView
 from apps.organizations.views_redeem import OrganizationInvitationRedeemView
 from apps.organizations.views_self_service import OrganizationSelfServiceView
 
@@ -70,6 +72,10 @@ urlpatterns = [
     path("social/apple", AppleSocialLoginView.as_view(), name="social-apple"),
     path("social/github/authorize", GithubBrowserStartView.as_view(), name="social-github-browser-start"),
     path("social/github/callback", GithubBrowserCallbackView.as_view(), name="social-github-browser-callback"),
+    # Linking from a signed-in session: session-bound attempts that never mint a session.
+    path("social/github/link/authorize", GithubLinkStartView.as_view(), name="social-github-link-start"),
+    path("social/oidc/<slug:slug>/link/authorize", OidcLinkStartView.as_view(), name="social-oidc-link-start"),
+    path("social/link/callback", SocialLinkCallbackView.as_view(), name="social-link-callback"),
     path(
         "social/oidc/callback",
         OidcBrowserCallbackView.as_view(),
@@ -106,6 +112,7 @@ urlpatterns = [
         name="auth-organization-invitation-redeem",
     ),
     path("refresh", RefreshView.as_view(), name="auth-refresh"),
+    path("browser-state", BrowserStateView.as_view(), name="auth-browser-state"),
     path("logout", LogoutView.as_view(), name="auth-logout"),
     path("logout-all", LogoutAllView.as_view(), name="auth-logout-all"),
     path("me", MeView.as_view(), name="auth-me"),

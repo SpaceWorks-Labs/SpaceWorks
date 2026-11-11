@@ -10,12 +10,14 @@ from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.template.response import TemplateResponse
 from rest_framework.exceptions import APIException
 
 from apps.accounts import staff_account_lifecycle as lifecycle
 from apps.accounts.reauthentication import require_recent_reauth
 from apps.accounts.staff_identity import is_person, person_q
+from django.utils.translation import gettext_lazy
 
 
 class DisableAccountForm(forms.Form):
@@ -34,15 +36,24 @@ class StaffLifecycleAdminMixin:
     def has_delete_permission(self, request, obj=None):
         return bool((obj is None or is_person(obj)) and super().has_delete_permission(request, obj))
 
+    @transaction.atomic
     def delete_model(self, request, obj):
-        if not is_person(obj):
+        locked = type(obj)._base_manager.select_for_update().get(pk=obj.pk)
+        if not is_person(locked):
             raise PermissionDenied("Platform accounts and inert shells cannot be deleted.")
-        return super().delete_model(request, obj)
+        from .booking_decision_deletion import clear_booking_decision_creators
+        clear_booking_decision_creators([locked.pk])
+        return super().delete_model(request, locked)
 
+    @transaction.atomic
     def delete_queryset(self, request, queryset):
-        if queryset.exclude(person_q()).exists():
+        ids = list(queryset.order_by("pk").values_list("pk", flat=True))
+        locked = list(queryset.model._base_manager.select_for_update().filter(pk__in=ids).order_by("pk"))
+        if len(locked) != len(ids) or any(not is_person(user) for user in locked):
             raise PermissionDenied("Platform accounts and inert shells cannot be deleted.")
-        return super().delete_queryset(request, queryset)
+        from .booking_decision_deletion import clear_booking_decision_creators
+        clear_booking_decision_creators(ids)
+        return super().delete_queryset(request, queryset.filter(pk__in=ids))
 
     def _refuse_lifecycle_bulk(self, queryset):
         """The bulk reset/restrict/restore actions act on personal accounts only; a platform
@@ -70,7 +81,7 @@ class StaffLifecycleAdminMixin:
         self.message_user(request, success, level=messages.SUCCESS)
         return None
 
-    @admin.action(description="Disable account (one person)")
+    @admin.action(description=gettext_lazy("Disable account (one person)"))
     def disable_account(self, request, queryset):
         person = self._one_person(request, queryset)
         if person is None:
@@ -89,7 +100,7 @@ class StaffLifecycleAdminMixin:
             request.user, person.pk, reason=form.cleaned_data["reason"]),
             "Account disabled. Every session has ended and its staff roles are revoked.")
 
-    @admin.action(description="Re-enable account (one person)")
+    @admin.action(description=gettext_lazy("Re-enable account (one person)"))
     def enable_account(self, request, queryset):
         person = self._one_person(request, queryset)
         if person is None:

@@ -39,9 +39,10 @@ def authority(actor, space, roles=None):
     require_authority(actor, space, roles=roles)
 
 
-def snapshot(roles, machine_type_ids):
+def snapshot(roles, machine_type_ids, machine_ids=()):
     return {"role_snapshot": sorted(role.slug for role in roles),
             "machine_scope_snapshot": sorted(machine_type_ids),
+            "machine_ids_snapshot": sorted(machine_ids),
             "granted_actions": sorted(set().union(*(set(role.granted_actions) for role in roles)))}
 
 
@@ -59,9 +60,9 @@ def _normalize(email):
     return email
 
 
-def issue(actor, space_id, *, email, roles, machine_type_ids=(), expires_in_days=7):
+def issue(actor, space_id, *, email, roles, machine_type_ids=(), machine_ids=(), expires_in_days=7):
     """Create an email invitation; returns ``(row, raw_token)``. Deliver after commit."""
-    from apps.accounts.staff_account_services import resolve_machine_types, resolve_roles
+    from apps.accounts.staff_account_services import resolve_machine_types, resolve_machines, resolve_roles
 
     email = _normalize(email)
     if type(expires_in_days) is not int or not 1 <= expires_in_days <= 30:
@@ -71,19 +72,20 @@ def issue(actor, space_id, *, email, roles, machine_type_ids=(), expires_in_days
         roles = resolve_roles(space, roles)
         authority(actor, space, roles)
         scopes = resolve_machine_types(space, roles, machine_type_ids)
-        row, raw = _create(actor, space, email, roles, scopes, expires_in_days)
+        machines = resolve_machines(space, roles, machine_ids)
+        row, raw = _create(actor, space, email, roles, scopes, expires_in_days, machines)
     return row, raw
 
 
-def _create(actor, space, email, roles, scopes, expires_in_days):
+def _create(actor, space, email, roles, scopes, expires_in_days, machines=()):
     raw = secrets.token_urlsafe(32)
     row = StaffInvitation.objects.create(
         account=None, makerspace=space, role=roles[0], email_ciphertext=encrypt_value(email),
         token_digest=digest(raw), expires_at=timezone.now() + timedelta(days=expires_in_days),
-        created_by=actor, credential_generation=0, **snapshot(roles, scopes),
+        created_by=actor, credential_generation=0, **snapshot(roles, scopes, machines),
     )
     record(actor, "staff_invitation.sent", makerspace=space, target=row,
-           meta={"roles": row.role_snapshot, "machine_type_ids": row.machine_scope_snapshot,
+           meta={"roles": row.role_snapshot, "machine_type_ids": row.machine_scope_snapshot, "machine_ids": row.machine_ids_snapshot,
                  "email_hash": audit_events.fingerprint(email), "expires_at": row.expires_at.isoformat()})
     return row, raw
 
@@ -104,7 +106,7 @@ def resend(actor, space_id, invitation_id):
         authority(actor, space, roles)
         row.revoked_at = timezone.now()
         row.save(update_fields=["revoked_at"])
-        new, raw = _create(actor, space, row.email, roles, row.machine_scope_snapshot, 7)
+        new, raw = _create(actor, space, row.email, roles, row.machine_scope_snapshot, 7, row.machine_ids_snapshot)
     return new, raw
 
 

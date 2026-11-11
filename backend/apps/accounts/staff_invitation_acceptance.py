@@ -158,7 +158,8 @@ def _grant(user, row):
         raise StaffRoleRefused(ALREADY_STAFF, "You already have a staff role here.")
     check_staff_quota(space)
     membership = grant_staff_role(makerspace=space, user=user, roles=roles, actor=creator,
-                                  machine_type_ids=list(row.machine_scope_snapshot))
+                                  machine_type_ids=list(row.machine_scope_snapshot),
+                                  machine_ids=list(row.machine_ids_snapshot))
     row.accepted_at, row.accepted_by = timezone.now(), user
     row.save(update_fields=["accepted_at", "accepted_by"])
     record(user, "staff_invitation.accepted", makerspace=space, target=row,

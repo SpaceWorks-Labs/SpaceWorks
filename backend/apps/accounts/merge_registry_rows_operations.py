@@ -6,6 +6,10 @@ Rows only (hot file). See ``accounts.merge_registry`` for the dispositions.
 from .merge_registry_types import KEEP_ON_SHELL as K, REPOINT as R, UNIQUE_RESOLVE as U
 
 ROWS = (
+    (K, "events.EventBookingDecision", "creator", "Original actor anchors the retained decision intent."),
+    (K, "inventory.EquipmentProposalReceipt", "borrower creator", "Original people anchor the immutable operation fingerprint."),
+    (K, "inventory.EquipmentConsumableUseReceipt", "creator", "Original actor anchors the immutable use operation fingerprint."),
+    (K, "inventory.EquipmentConsumablePlan", "borrower", "Historical plan identity stays on the verified merge shell."),
     (R, "hardware_requests.HardwareRequest", "accepted_by closed_by issued_by requester", "Mutable ownership or attribution; moves to the survivor."),
     (R, "hardware_requests.PublicProblemReport", "requester resolved_by", "Mutable ownership or attribution; moves to the survivor."),
     (R, "hardware_requests.PublicToolLoan", "requester", "Mutable ownership or attribution; moves to the survivor."),

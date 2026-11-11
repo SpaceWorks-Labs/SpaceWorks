@@ -31,6 +31,8 @@ CLAIM_REACHABLE_PREFIXES = (
 from .claim_routes_profiles import PROFILE_CLAIM_ROUTES
 from .claim_routes_public_pages import PUBLIC_PAGE_CLAIM_ROUTES
 from .claim_routes_membership_l4 import L4_CLAIM_ROUTES
+from .claim_routes_guest_passes import GUEST_PASS_CLAIM_ROUTES
+from .claim_routes_l3b import L3B_CLAIM_ROUTES
 from .claim_routes_r2 import R2_CLAIM_ROUTES
 from .claim_routes_l3 import L3_CLAIM_ROUTES
 from .claim_routes_l6 import L6_CLAIM_ROUTES
@@ -50,6 +52,8 @@ CLAIM_ROUTES = {
     **PUBLIC_CLAIM_ROUTES,
     **MEMBER_CLAIM_ROUTES,
     **L4_CLAIM_ROUTES,
+    **GUEST_PASS_CLAIM_ROUTES,
+    **L3B_CLAIM_ROUTES,
     **R2_CLAIM_ROUTES,
     **L3_CLAIM_ROUTES,
     **L6_CLAIM_ROUTES,

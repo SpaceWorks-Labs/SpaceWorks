@@ -33,6 +33,20 @@ class MfaResetNotAllowed(PermissionDenied):
 
 
 def _authority_only_in(person, makerspace_id):
+    """Whether every elevated authority ``person`` holds is in ``makerspace_id``.
+
+    The request is bound to that one tenant, and row-level security would hide the
+    person's roles and grants in every other space, so the check reads open (the
+    same pattern as ``hardware_requests.permissions``); the binding returns after.
+    """
+    from apps.tenant_rls.context import bind
+    from apps.tenant_rls.wrapper import release_connections
+    release_connections()
+    with bind(None):
+        return _authority_only_in_open(person, makerspace_id)
+
+
+def _authority_only_in_open(person, makerspace_id):
     from apps.accounts.rbac import has_any_org_authority
     from apps.makerspaces.models import Makerspace, MakerspaceMembership
     from apps.makerspaces.resource_grant_sources import has_authority
@@ -93,6 +107,10 @@ def reset(actor, person, reason, makerspace=None, *, rule=None):
     reason = str(reason or "").strip()
     if not 3 <= len(reason) <= 300:
         raise PermissionDenied({"detail": gettext("Give a reason (3 to 300 characters)."), "code": "invalid_reason"})
+    # A caller-supplied rule is never authority: only the host command (no actor, no
+    # request) may name RULE_HOST; every other path computes the rule from the actor.
+    if rule is not None and (rule != RULE_HOST or actor is not None):
+        raise MfaResetNotAllowed()
     rule = rule or rule_for(actor, person, makerspace)
     if rule is None:
         raise MfaResetNotAllowed()

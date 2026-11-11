@@ -234,7 +234,8 @@ def start_email(request):
                              + origin + gettext("/reauth/confirm#token=") + raw,
                              stream="account", event="reauth_enrollment", audience="staff", connection="platform",
                              persist_body=False, sync=True)
-        if log.status not in {"sent", "delivered"}:
+        from apps.integrations.transient_mail import accepted
+        if not accepted(log):
             raise ProviderUnavailable()
     except Exception as exc:
         MFAChallenge.objects.filter(pk=intent.pk, consumed_at__isnull=True).update(consumed_at=timezone.now())

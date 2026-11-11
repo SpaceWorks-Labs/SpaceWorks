@@ -119,7 +119,8 @@ class GithubBrowserCallbackView(APIView):
         record_success(request, user, method="social", web=True)  # Q4: recorded, never stepped up
         response = Response({"access": tokens["access"],
                              "user": user_payload(user, request=request, session_authority="member"),
-                             "outcome": outcome})
+                             "outcome": outcome,
+                             **({"next": attempt.next_path} if attempt.next_path else {})})
         set_refresh_cookies(response, tokens["refresh"], request)
         device_memory.attach(response, request)
         return response

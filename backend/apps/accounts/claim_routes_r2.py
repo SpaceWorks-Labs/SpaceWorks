@@ -29,6 +29,14 @@ _REFUSED = (
         ("member-machine-session-preview", ("GET", "HEAD")), ("member-machine-session-start", ("POST",)),
         ("member-machine-sessions", ("GET", "HEAD")), ("member-machine-session-stop", ("POST",)),
     )),
+    ("claim sessions cannot lead supervised sessions or list member machines", (
+        ("member-machines", ("GET", "HEAD")), ("member-supervised-session-open", ("POST",)),
+        ("member-supervised-sessions", ("GET", "HEAD")), ("member-supervised-session", ("GET", "HEAD")),
+        ("member-supervised-supervisees", ("POST",)), ("member-supervised-supervisee-remove", ("DELETE",)),
+        ("member-supervised-people", ("GET", "HEAD")), ("member-supervised-use-start", ("POST",)),
+        ("member-supervised-use-end", ("POST",)), ("member-supervised-session-close", ("POST",)),
+    )),
+    ("claim sessions cannot report or read incidents (L3a)", (("member-incidents", ("GET", "HEAD", "POST")),)),
     ("claim sessions cannot report problems or read reports (L16)", (
         ("member-issues", ("GET", "HEAD", "POST")), ("member-issue-photo-upload", ("POST",)),
         ("member-issue-loan-items", ("GET", "HEAD")),

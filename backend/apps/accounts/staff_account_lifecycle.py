@@ -36,6 +36,8 @@ def _revoke_row(actor, space, row, reason):
     revoke_staff_grants(row.user, space.pk, reason="staff_role.revoked", actor=actor)
     record(actor, "staff_role.revoked", makerspace=space, target=row.user,
            meta={"membership_id": row.pk, "reason": reason})
+    from apps.card_designs.staff_card_hooks import after_access_ended  # O-B4: the staff card ends with the access
+    after_access_ended(actor, row)
 
 
 def revoke(actor, space_id, membership_id, *, reason=""):
@@ -65,6 +67,8 @@ def restore(actor, space_id, membership_id):
         row.status, row.revoked_at, row.revoked_by, row.revocation_reason = "active", None, None, ""
         row.save(update_fields=["status", "revoked_at", "revoked_by", "revocation_reason"])
         record(actor, "staff_role.restored", makerspace=space, target=user, meta={"membership_id": row.pk})
+        from apps.card_designs.staff_card_hooks import after_roles_changed  # O-B4: auto-issue when switched on
+        after_roles_changed(actor, row)
     from apps.accounts.staff_role_notices import notify_granted
     notify_granted(row)
     return target_row(space, row.pk)

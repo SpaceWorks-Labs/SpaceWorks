@@ -15,11 +15,23 @@ class StaffInvitationSerializer(PiiMaskingSerializerMixin, serializers.ModelSeri
     roles = serializers.ListField(source="role_snapshot", child=serializers.CharField(), read_only=True)
     machine_type_ids = serializers.ListField(source="machine_scope_snapshot", child=serializers.IntegerField(),
                                              read_only=True)
+    machine_ids = serializers.ListField(source="machine_ids_snapshot", child=serializers.IntegerField(),
+                                        read_only=True)
+    machine_types = serializers.SerializerMethodField()
+    machines = serializers.SerializerMethodField()
     pii_masked = serializers.BooleanField(read_only=True, required=False)
+
+    def get_machine_types(self, obj) -> list[dict]:
+        from apps.machines.member_scope_names import named_machine_types
+        return named_machine_types(obj.machine_scope_snapshot)
+
+    def get_machines(self, obj) -> list[dict]:
+        from apps.machines.member_scope_names import named_machines
+        return named_machines(obj.machine_ids_snapshot)
 
     class Meta:
         model = StaffInvitation
-        fields = ["id", "email", "makerspace", "role", "role_name", "roles", "machine_type_ids", "expires_at",
+        fields = ["id", "email", "makerspace", "role", "role_name", "roles", "machine_type_ids", "machine_ids", "machine_types", "machines", "expires_at",
                   "accepted_at", "revoked_at", "created_at", "pii_masked"]
 
 

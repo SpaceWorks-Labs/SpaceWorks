@@ -1,4 +1,4 @@
-# Lane P private Saved details provider
+# Private saved details provider
 
 This package has no Events import, tenant FK, public-profile writer or login-identity
 writer. Its six account models and two encryption models are listed field by field
@@ -100,15 +100,9 @@ adapters are in `apps.events.answer_derivations/manifest.py`.
   returns 409. Intents erase payload immediately on completion or after seven days;
   safe receipts expire after thirty days. Owner ZIP archives expire after 24 hours.
 
-## Verification before integration acceptance
+## Tests
 
-No Docker/Django/pytest run was allowed in this lane. Execute the exact backend
-files in `scratchpad/ev/P-rerun-files.txt` after G's migrations/registries exist.
-`test_http.py` checks every frozen P route/OpenAPI method;
-`test_prefill_contract.py` replays G's bootstrap and compound emergency bytes;
-`test_concurrency.py` uses real PostgreSQL sessions for intent races and fences.
-F/G/A/C must additionally run actual form-validator/subject adapters together,
-including save-disabled availability, hidden-answer omission, date-review/staff
-disclosure, account erase/source freeze, tenant round trip and deployment recovery.
-Real storage/scanner fault and live stream-revocation acceptance must run with G/B's
-configured adapters. No syntax check here claims that backend integration passed.
+The backend tests for this provider live beside the other accounts tests:
+`test_http.py` checks every route and its OpenAPI method, `test_prefill_contract.py`
+replays the bootstrap and compound emergency payloads, and `test_concurrency.py` uses
+real PostgreSQL sessions for intent races and fences.

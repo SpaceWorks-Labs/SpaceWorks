@@ -35,7 +35,7 @@ class StartedOidcAttempt:
 
 
 def start_attempt(request, provider, document, *, redirect_uri, email="", makerspace_slug="",
-                  surface=SocialSurface.MEMBER):
+                  surface=SocialSurface.MEMBER, link_binding="", next_path=""):
     if surface != SocialSurface.MEMBER:
         raise OidcAttemptRejected()
     origin = request_origin(request)
@@ -53,10 +53,11 @@ def start_attempt(request, provider, document, *, redirect_uri, email="", makers
             provider=provider.provider_key,
             surface=surface,
             state_digest=_digest("state", state),
-            nonce_digest=_digest("nonce", nonce),
+            nonce_digest=nonce_digest(nonce, link_binding),
             code_verifier=verifier,
             redirect_uri=redirect_uri,
             origin=origin,
+            next_path=next_path,
             intended_user_id=user_id,
             intended_membership_id=membership_id,
             expires_at=timezone.now() + timedelta(seconds=settings.OIDC_ATTEMPT_TTL_SECONDS),
@@ -91,7 +92,7 @@ def start_attempt(request, provider, document, *, redirect_uri, email="", makers
     )
 
 
-def consume_attempt(request, *, state, nonce, provider=None):
+def consume_attempt(request, *, state, nonce, provider=None, link_binding=""):
     now = timezone.now()
     failure = None
     resolved = None
@@ -108,7 +109,7 @@ def consume_attempt(request, *, state, nonce, provider=None):
             and row.expires_at > now
             and row.origin == request_origin(request)
             and (provider is None or row.provider == provider)
-            and hmac.compare_digest(row.nonce_digest, _digest("nonce", nonce))
+            and hmac.compare_digest(row.nonce_digest, nonce_digest(nonce, link_binding))
         )
         if row is not None and row.consumed_at is None:
             row.consumed_at = now
@@ -167,6 +168,14 @@ def _valid_redirect(value, origin):
         and candidate == origin
         and (parsed.scheme == "https" or parsed.hostname in {"localhost", "127.0.0.1", "::1"})
     )
+
+
+def nonce_digest(nonce, link_binding=""):
+    """A link attempt binds its nonce to the signed-in session (social_link_browser), so a
+    sign-in callback can never consume it and no other session can finish it."""
+    if link_binding:
+        return _digest("link-nonce", f"{link_binding}\0{nonce}")
+    return _digest("nonce", nonce)
 
 
 def _digest(role, raw):

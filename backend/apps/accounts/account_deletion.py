@@ -168,7 +168,7 @@ def _depart(user, spaces, organizations, now):
     # Cancel as the applicant before membership revocation closes applications as
     # revoked; this is the exact service used by MemberAdmissionCancelView.
     for row in MembershipRequest.objects.select_for_update().filter(
-        user=user, state__in=("requested", "invited", "awaiting_vouches"),
+        user=user, state__in=("requested", "invited", "awaiting_vouches", "changes_requested"),
     ).order_by("makerspace_id", "pk"):
         close_admission(user, row)
     by_id = {space.pk: space for space in spaces}

@@ -14,7 +14,7 @@ from apps.accounts.login_methods import social_login_enabled
 from apps.accounts.member_identity import member_login_allowed
 from apps.accounts.models_oidc_browser import OidcBrowserAttempt
 from apps.accounts.models_social import PlatformSocialAuthSettings
-from apps.accounts.oidc_browser_attempts import OidcAttemptRejected, _digest, _valid_redirect
+from apps.accounts.oidc_browser_attempts import OidcAttemptRejected, _digest, _valid_redirect, nonce_digest
 from apps.accounts.social_lockout import provider_configured
 from apps.accounts.social_nonces import request_origin
 from apps.audit import services as audit
@@ -38,7 +38,7 @@ def github_settings():
     return row
 
 
-def start_github_attempt(request, row, *, redirect_uri, nonce):
+def start_github_attempt(request, row, *, redirect_uri, nonce, link_binding="", next_path=""):
     origin = request_origin(request)
     if not member_origin_is_registered(origin) or not _valid_redirect(redirect_uri, origin):
         raise OidcAttemptRejected()
@@ -47,8 +47,8 @@ def start_github_attempt(request, row, *, redirect_uri, nonce):
     with transaction.atomic():
         attempt = OidcBrowserAttempt.objects.create(
             provider="github", state_digest=_digest("state", state),
-            nonce_digest=_digest("nonce", nonce), code_verifier=verifier,
-            redirect_uri=redirect_uri, origin=origin,
+            nonce_digest=nonce_digest(nonce, link_binding), code_verifier=verifier,
+            redirect_uri=redirect_uri, origin=origin, next_path=next_path,
             expires_at=timezone.now() + timedelta(seconds=settings.OIDC_ATTEMPT_TTL_SECONDS),
         )
         # The event names describe the shared attempt ledger; provider distinguishes OAuth.

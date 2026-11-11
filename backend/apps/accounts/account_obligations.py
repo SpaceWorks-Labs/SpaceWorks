@@ -19,11 +19,11 @@ class AccountDeletionPending(APIException):
         super().__init__({"code": self.default_code, "detail": self.default_detail})
 
 
-def lock_obligation_owner(user):
+def lock_obligation_owner(user, *, nowait=False):
     """Lock the owner until commit and refuse an already archived account."""
     if user is None:
         return None
-    locked = User.objects.select_for_update(no_key=True).get(pk=user.pk)
+    locked = User.objects.select_for_update(no_key=True, nowait=nowait).get(pk=user.pk)
     if locked.deletion_requested_at is not None:
         raise AccountDeletionPending()
     # Return the caller's instance refreshed from the locked row: it may carry

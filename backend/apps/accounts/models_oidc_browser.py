@@ -13,6 +13,8 @@ class OidcBrowserAttempt(models.Model):
     code_verifier = models.CharField(max_length=128)
     redirect_uri = models.CharField(max_length=2048)
     origin = models.CharField(max_length=512)
+    # Same-origin relative path the SPA wanted after sign-in (validated in `safe_next`); echoed by the callback.
+    next_path = models.CharField(max_length=512, blank=True, default="")
     intended_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,

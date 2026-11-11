@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.accounts.models_social import SocialSurface
+from apps.accounts.safe_next import NextPathField
 
 
 class OidcBrowserStartSerializer(serializers.Serializer):
@@ -7,6 +8,12 @@ class OidcBrowserStartSerializer(serializers.Serializer):
     redirect_uri = serializers.URLField(max_length=2048)
     email = serializers.EmailField(required=False, allow_blank=True)
     makerspace_slug = serializers.SlugField(required=False, allow_blank=True)
+    next = NextPathField()
+
+
+class SocialLinkStartSerializer(serializers.Serializer):
+    """Linking binds to the signed-in session; no surface, email or makerspace selector."""
+    redirect_uri = serializers.URLField(max_length=2048)
 
 
 class OidcBrowserStartResponseSerializer(serializers.Serializer):
@@ -26,3 +33,4 @@ class OidcBrowserLoginResponseSerializer(serializers.Serializer):
     access = serializers.CharField()
     user = serializers.DictField()
     outcome = serializers.CharField()
+    next = serializers.CharField(required=False, help_text="The validated `next` path given at start, when any.")

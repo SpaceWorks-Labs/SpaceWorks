@@ -8,6 +8,8 @@ file ceiling; the guard logic that reads these allowlists still lives there.
 # configured on claim-reachable routes. Exact class+method matching makes a new hook a
 # build failure instead of silently trusting executable pre-auth code.
 POLICY_OVERRIDE_ALLOWLIST = {
+    # Release 0.12.0 L3a: runs after authentication; refuses a claim session and any non-member account.
+    "apps.accounts.permissions_member.MemberPersonOnly": {"has_permission"},
     # Presence TV throttles only declare a scope/rate; DRF owns every hook.
     "apps.presence.views_public.PresenceTVThrottle": set(),
     "apps.presence.views_public.PresenceTVUserThrottle": set(),
@@ -97,6 +99,8 @@ POLICY_OVERRIDE_ALLOWLIST = {
     "apps.card_designs.views_holder_photo.HolderPhotoAttachThrottle": {"allow_request"},
     # Keys the member command budget on the principal (or IP before login); grants nothing.
     "apps.events.hackathons.api_base.ProgrammeCommandThrottle": {"get_cache_key"},
+    # The browser-state probe budget only declares a scope/rate.
+    "apps.accounts.views_browser_state.BrowserStateThrottle": set(),
 }
 
 # Reviewed lifecycle overrides on claim-reachable views, keyed by the class that defines
@@ -133,4 +137,6 @@ LIFECYCLE_OVERRIDE_ALLOWLIST = {
     # #196: the token and app-connection routes. ``initial`` calls ``super().initial()``
     # first, then demands a recent re-authentication for every unsafe method.
     "apps.accounts.reauthentication_permissions.RecentReauthenticationMixin": {"initial"},
+    # finalize_response: no-store and Vary headers on the cookie-presence probe.
+    "apps.accounts.views_browser_state.BrowserStateView": {"finalize_response"},
 }

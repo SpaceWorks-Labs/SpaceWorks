@@ -21,6 +21,7 @@ _ROUTES = (
     ("member-card-photo-accept", ("POST",)),
     ("member-card-photo-discard", ("POST",)),
     ("member-card-wallet", ("POST",)),
+    ("member-guest-pass-wallet", ("POST",)),
     ("member-card-job", ("GET", "HEAD")),
     ("member-card-job-result", ("GET", "HEAD")),
     ("member-id-programme-invite-accept", ("POST",)),

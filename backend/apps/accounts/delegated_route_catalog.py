@@ -52,8 +52,9 @@ auth-phone-unlink auth-reset-password device-attestation-challenge device-login 
 machine-material-detail machine-materials machine-type-intake maintenance-feed
 maintenance-feed-calendar notifications-list notifications-read notifications-read-all
 notifications-unread-count operations-dashboard social-apple social-github-browser-callback
-social-github-browser-start social-google social-nonce social-oidc social-oidc-browser-callback
-social-oidc-browser-start social-provider-detail social-providers
+social-github-browser-start social-github-link-start social-google social-link-callback social-nonce
+social-oidc social-oidc-browser-callback social-oidc-browser-start social-oidc-link-start
+social-provider-detail social-providers
 tenant-migration-deployment-identity tenant-migration-disclosure-approvals
 tenant-migration-disclosure-closure tenant-migration-disclosure-revoke
 tenant-migration-export-detail tenant-migration-export-download-url tenant-migration-exports
@@ -110,7 +111,8 @@ admin-event-series-cancel admin-event-series-collaboration-inbox
 admin-event-series-collaboration-remove admin-event-series-collaboration-respond
 admin-event-series-collaborators admin-event-series-complete admin-event-series-detail
 admin-event-series-extend admin-event-series-image admin-event-series-list-create
-admin-event-series-occurrences admin-event-series-publish admin-event-speaker-candidates
+admin-event-series-occurrences admin-event-series-publish admin-event-series-invites
+admin-event-series-invite-revoke admin-event-speaker-candidates
 admin-event-speaker-invite admin-event-speaker-remove admin-event-speakers
 admin-event-staff-grant-detail admin-event-staff-grant-revoke admin-event-staff-grants
 admin-event-staff-invite-revoke admin-event-staff-invites admin-event-ticket-detail
@@ -148,7 +150,9 @@ admin-organization-hosting-invitation-cancel admin-organization-hosting-invitati
 admin-organization-invitation-revoke admin-organization-invitations admin-organization-link-delete
 admin-organization-email-sender admin-organization-links admin-organization-list
 admin-organization-membership-detail
-admin-organization-memberships admin-organized-event-list admin-presence-end admin-presence-privacy
+admin-organization-review admin-organization-review-queue admin-organization-resubmit
+admin-organization-member-rollup
+admin-organization-memberships admin-organized-event-attendance admin-organized-event-list admin-presence-check-in-guests admin-presence-end admin-presence-privacy
 admin-presence-sessions-current admin-presence-start admin-recurring-bookings admin-reorder-draft
 admin-reorder-suggestions admin-return-policy admin-role-list-create admin-saved-view-detail
 admin-saved-views admin-search admin-series-staff-grants admin-series-staff-invites
@@ -176,9 +180,9 @@ notification-timing-policy organization-analytics payment-billing-settings payme
 payment-reconciliation-bulk-mark-offline payment-reconciliation-bulk-waive
 payment-reconciliation-list payment-reconciliation-mark-offline payment-reconciliation-refund
 payment-reconciliation-refund-offline payment-reconciliation-waive payment-refund-amend
-payment-settlement-amend pending-requests problem-report-resolve problem-report-triage qr-boxes
+payment-settlement-amend pending-requests problem-report-list problem-report-resolve problem-report-triage qr-boxes
 qr-containers qr-print qr-print-batch-detail qr-print-batch-download qr-print-batch-items
-qr-print-batches qr-rebind-target qr-resolve qr-revoke qr-scan qr-tools report-catalog
+qr-print-batches qr-rebind-target qr-resolve qr-revoke qr-scan qr-tools qr-external-assign report-catalog
 report-catalog-aggregate report-export report-export-aggregate report-schedule-detail
 report-schedule-run-now report-schedules request-accept request-assign-box request-history
 request-issue request-reject request-return request-return-due request-timeline
@@ -197,7 +201,7 @@ auth-change-password auth-logout auth-me auth-mfa auth-mfa-confirm auth-mfa-disa
 auth-mfa-recovery auth-mfa-verify auth-reauth auth-reauth-enrollment-confirm
 auth-reauth-enrollment-email auth-reauth-social-complete auth-reauth-social-start auth-refresh
 contract-deliveries contract-endpoint-revoke contract-endpoint-start contract-endpoint-verify
-contract-endpoints contract-preferences device-grant-detail device-grants device-logout inbox-count
+contract-endpoints contract-preferences device-grant-detail device-grants device-logout inbox-count inbox-families
 inbox-list inbox-read inbox-read-all inbox-snooze inbox-archive inbox-restore browser-alert-key
 browser-alert-subscriptions live member-account-profile member-account-session-detail
 member-account-sessions member-preferences push-device-detail push-device-list-create
@@ -248,7 +252,7 @@ DELEGABLE_ROUTES |= {
 # S-A (MFA reset) and U-C (account merge) classify nothing themselves.
 STAFF_ROLE_ROUTES = frozenset({
     "admin-staff-roles", "admin-staff-roles-detail", "admin-staff-roles-revoke",
-    "admin-staff-roles-restore", "admin-staff-roles-mfa-reset",
+    "admin-staff-roles-restore", "admin-staff-roles-mfa-reset", "admin-staff-roles-bulk-invite",
 })
 # U-B: a person redeems their own staff invitation (signed in, before any staff role).
 MEMBER_ROUTES |= {"auth-staff-invitation-accept"}

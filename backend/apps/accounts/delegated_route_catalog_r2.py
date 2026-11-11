@@ -25,12 +25,25 @@ MEMBERSHIP_ROUTES |= {
 # (view_finance, record_payment or the area manager's action through `finance_scope`).
 MEMBERSHIP_ROUTES |= {
     "billing-tax", "billing-tax-gstin", "billing-tax-preview", "billing-tax-gstr1-json",
+    "billing-collection-sheet", "billing-cash-handover",  # parity O-B3: record_payment, `billing.collection_sheet`
     "paid-claim-list", "paid-claim-confirm", "paid-claim-reject",
     "settlement-confirmations", "settlement-confirm", "settlement-reject",
     "capture-flag-list", "capture-flag-resolve", "dispute-list", "dispute-detail", "payment-pay-link",
     "finance-access", "finance-summary", "finance-entries", "finance-entry", "finance-entry-void",
     "finance-entry-receipt", "finance-receipt-upload", "finance-opening-balances", "finance-event",
-    "finance-event-budget",
+    "finance-event-budget", "finance-event-linked",
+    # Decision 241: grouped area views (finance, To-Buy, consumables, repairs, warranties);
+    # each section re-checks its own list's authority, payouts stay session-only.
+    "admin-area-overview",
+    # Decision 242: the own-area Payments queue (subject-owner authority, no record_payment grant).
+    "payment-area-queue", "payment-area-queue-summary", "payment-area-claims", "payment-area-claim-confirm",
+    "payment-area-claim-reject", "payment-area-pay-link", "payment-area-reminder",
+    # Decision 242: the "Waiting on me" counters, narrowed per action inside the view.
+    "operations-attention", "operations-schedule",
+    # Decision 242: member 360 (manage_members, rows narrowed per area) and the all-or-nothing bulk decisions
+    # (each row re-checks the single route's authority).
+    "admin-member-activity", "admin-member-included-hours", "admin-org-hours-bank", "admin-org-hours-bank-ledger", "admin-bulk-requests", "admin-bulk-bookings", "admin-bulk-event-registrations",
+    "admin-bulk-refund-cases", "admin-machine-bookings",
 }
 
 # Release 2 L15, pricing: each view re-checks its own authority -- the settings layer for
@@ -62,6 +75,10 @@ MEMBERSHIP_ROUTES |= frozenset("""admin-machine-sessions admin-machine-session-s
 admin-machine-session-assign admin-machine-session-confirm admin-machine-type-session-settings""".split())
 # Release 2 L26 (#170): Settings › Public stats, a Space-Manager-only settings group.
 DELEGABLE_ROUTES |= {"admin-makerspace-public-stats-settings"}
+# B13: an organization admin READS their own organization's hours bank; the view re-checks governance.
+DELEGABLE_ROUTES |= {"admin-organization-hours-bank", "admin-organization-hours-ledger"}
+# Decision 242(g): an event's loans and guest passes, read-only for whoever manages THAT event (event grants included).
+DELEGABLE_ROUTES |= {"admin-event-loans", "admin-event-guest-passes"}
 # Release-2 lane L16: issues, repairs, technicians, service state and item/room maintenance.
 # Per-makerspace staff authority only (the Technician actions are never organization-grantable);
 # every service re-checks the area manager's action or the Technician's assignment/coverage.
@@ -71,6 +88,10 @@ admin-issue-detail admin-issue-triage admin-issue-reject admin-issue-assign admi
 admin-issue-start admin-issue-work-log admin-issue-parts admin-issue-quote admin-issue-approve admin-issue-payout
 admin-issue-fix admin-issue-close admin-technician-detail admin-technician-opt-in-link admin-technician-consent
 admin-subject-maintenance-detail admin-subject-maintenance-run admin-machine-maintenance-run""".split())
+# Decision 216 item 7/18: a loan's damaged lines and their repair handoff (session-only write).
+MEMBERSHIP_ROUTES |= {"admin-loan-repairs"}
+# Decision 216 event conflicts: the read-only room outage impact preview (same gate as service state).
+MEMBERSHIP_ROUTES |= {"admin-room-outage-impact"}
 # Release-2 lane L3, ID cards: card designs, their designer resources and card jobs are reached
 # by member-card staff, ID-programme managers (organisation branch) and event organisers alike,
 # so they are delegable; every view re-checks the design's own authority (card_designs.authority)
@@ -85,7 +106,28 @@ admin-card-design-font-file admin-card-job admin-card-job-cancel admin-card-job-
 DELEGABLE_ROUTES |= frozenset("""admin-card-design-revisions admin-card-design-revision admin-card-design-restore
 admin-card-design-holders admin-card-design-calibration admin-id-programme-card-job-preview
 admin-event-card-job-preview""".split())
+# Owner decision 219(h): archive/restore a card-design override and an ID programme (the views
+# re-check card_designs.authority and the programme's MANAGE_ID_PROGRAMMES respectively).
+DELEGABLE_ROUTES |= frozenset("""admin-card-design-archive admin-card-design-unarchive admin-id-programme-archive
+admin-id-programme-unarchive""".split())
 MEMBERSHIP_ROUTES |= frozenset({"admin-member-card-job-preview"})
+# O-B4 (parity C21): the organisation default member-card design; the view re-checks MANAGE_MEMBER_CARDS in every owned space.
+DELEGABLE_ROUTES |= frozenset({"admin-organization-member-card-design"})
+# O-B4: titles list, numbering schemes (space routes), the staff verify panel (token only; the view re-checks
+# SCAN_MEMBER_CARDS and answers a uniform 404) and desk print-face (a card id, like download).
+MEMBERSHIP_ROUTES |= frozenset("""admin-card-design-titles admin-card-number-schemes admin-card-number-scheme-title
+admin-member-card-print-face""".split())
+DELEGABLE_ROUTES |= frozenset({"admin-card-verification-staff"})
+# O-B4 part 2: staff ID cards. Space routes are membership-module routes; the id routes re-check
+# `staff_card_services.can_manage` (MANAGE_MEMBER_CARDS or MANAGE_STAFF) and answer 404 otherwise.
+MEMBERSHIP_ROUTES |= frozenset("""admin-staff-cards admin-staff-cards-bulk-issue admin-staff-card-settings
+admin-staff-card-design admin-staff-card-jobs""".split())
+DELEGABLE_ROUTES |= frozenset("""admin-staff-card admin-staff-card-reissue admin-staff-card-revoke
+admin-staff-card-print-face admin-staff-card-download""".split())
+# E-B1: the badge designer. Design routes re-check card_designs.authority; event routes the event's edit permission.
+DELEGABLE_ROUTES |= frozenset("""admin-event-badge-designs admin-event-badge-design-role admin-card-design-badge-export
+admin-card-design-badge-import admin-card-design-badge-convert
+admin-event-badge-desk admin-event-badge-print-receipts""".split())
 MEMBERSHIP_ROUTES |= frozenset("""admin-member-card-settings admin-card-designs admin-member-card-jobs
 admin-member-card-download admin-member-card-email admin-member-card-photo-request admin-member-card-presence
 admin-card-approval-levels admin-member-card-photo""".split())
@@ -108,6 +150,13 @@ admin-event-orders admin-event-order-detail admin-event-registration-collect-pay
 admin-event-registration-pay-link""".split())
 MEMBERSHIP_ROUTES |= frozenset("""admin-event-refund-policy admin-event-venue-fee admin-event-venue-fee-charge
 admin-event-series-pass-types admin-event-pass-type-detail""".split())
+# Decision 223 G6: the read-only venue panel reaches co-organizers and delegates (publish_schedule,
+# re-checked by event_authority); creating an event with a room step is tenant staff (manage_events).
+DELEGABLE_ROUTES |= frozenset({"admin-event-venue"})
+# Open items A22: the cross-event registration queue serves every holder of an event's registration
+# grant too; the view keeps only the events `event_authority` lets the caller manage registrations on.
+DELEGABLE_ROUTES |= frozenset({"admin-event-registration-queue"})
+MEMBERSHIP_ROUTES |= frozenset({"admin-event-create-with-room", "admin-event-room-choices"})
 # Release-2 lane L18, donations and sponsors: finance money of the space (view_finance, plus
 # record_payment for every write), never delegated to an event or resource grant.
 MEMBERSHIP_ROUTES |= frozenset("""admin-donations admin-donation-settings admin-donation-campaigns
@@ -116,11 +165,17 @@ admin-donation-tax-receipt admin-sponsors admin-sponsor-tiers admin-sponsor-tier
 admin-sponsor-perk-fulfil admin-sponsor-charge-return admin-sponsor-event-link admin-sponsor admin-sponsor-archive
 admin-sponsor-restore admin-sponsor-logo admin-sponsor-charges admin-sponsor-event-links
 admin-sponsor-event-sponsors""".split())
+# Decision 242(m): the Donations area -- same authority (manage_donations or view_finance; writes add
+# manage_donations or record_payment), never delegated to an event or resource grant.
+MEMBERSHIP_ROUTES |= frozenset("""admin-donation-donors admin-donation-export admin-donation-receipt-reissue
+admin-donation-claim-confirm admin-donation-claim-reject""".split())
 # Release-2 lane L22, the shop: its till, stock and money stay inside ONE space, so every route
 # needs a staff role in the target space (the shop actions are never organization-grantable).
 MEMBERSHIP_ROUTES |= frozenset("""admin-shop-settings admin-shop-products admin-shop-product admin-shop-product-image
-admin-shop-variant admin-shop-variant-stock admin-shop-movements admin-shop-orders admin-shop-order
-admin-shop-order-ready admin-shop-order-collect admin-shop-order-take-payment admin-shop-order-cancel
+admin-shop-variant admin-shop-variant-stock admin-shop-movements admin-shop-event-offers admin-shop-event-offer
+admin-shop-orders admin-shop-order
+admin-shop-order-ready admin-shop-order-move-pickup-to-space admin-shop-order-collect admin-shop-order-take-payment
+admin-shop-order-cancel
 admin-shop-order-returns admin-shop-order-receipt admin-shop-pos-quote admin-shop-pos-sale admin-shop-member-lookup
 admin-shop-cash-sessions admin-shop-cash-session-close admin-shop-cash-session-confirm
 admin-shop-report""".split())
@@ -129,15 +184,73 @@ admin-shop-report""".split())
 # the space's own Space Manager or the superadmin (membership-only); the platform connection is
 # the superadmin's (platform-only). Every view re-checks its own authority (analytics.access).
 DELEGABLE_ROUTES |= frozenset("""admin-makerspace-analytics admin-makerspace-analytics-embed""".split())
+DELEGABLE_ROUTES |= frozenset({"admin-makerspace-telemetry"})
 MEMBERSHIP_ROUTES |= frozenset("""admin-makerspace-analytics-connection admin-makerspace-analytics-login
 admin-makerspace-analytics-login-rotate""".split())
 PLATFORM_ONLY_ROUTES = frozenset("""admin-platform-analytics admin-platform-analytics-connection
 admin-platform-analytics-login admin-platform-analytics-login-rotate admin-platform-analytics-embed""".split())
 # Release-2 lane r2-platform-overview (#183A): the superadmin platform overview and its CSV.
 PLATFORM_ONLY_ROUTES |= frozenset({"platform-overview", "platform-overview-export"})
+PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-telemetry"})
+# Decision 263, Grafana beside Metabase: viewing is delegable like the Metabase viewer routes,
+# managing (connection, token, test, bundle) membership-only, the platform set platform-only.
+DELEGABLE_ROUTES |= frozenset("""admin-makerspace-grafana admin-makerspace-grafana-embed
+admin-makerspace-grafana-render""".split())
+MEMBERSHIP_ROUTES |= frozenset("""admin-makerspace-grafana-connection admin-makerspace-grafana-token
+admin-makerspace-grafana-test admin-makerspace-grafana-bundle""".split())
+PLATFORM_ONLY_ROUTES |= frozenset("""admin-platform-grafana admin-platform-grafana-connection
+admin-platform-grafana-token admin-platform-grafana-test admin-platform-grafana-bundle
+admin-platform-grafana-embed admin-platform-grafana-render""".split())
 # The superadmin insights page (G8) reads platform-wide aggregates behind require_platform; it was
 # filed with the programme's membership-only routes, so no platform route list named it.
 PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-insights"})
 # Hack-money (#180 G13, #181 G7): the space's prize-tax proposal and accepted payee templates are
 # the Space Manager's own finance settings, never delegated.
 MEMBERSHIP_ROUTES |= frozenset({"admin-event-money-settings"})
+# Decision 223, guest passes: the desk needs manage_members, the policy and products manage_makerspace;
+# each view re-checks its own action and the `membership.guest_passes` / `membership.day_passes` switch.
+MEMBERSHIP_ROUTES |= frozenset({
+    "admin-guest-passes", "admin-guest-pass-sale", "admin-guest-pass-revoke", "admin-guest-pass-waiver",
+    "admin-guest-pass-policy", "admin-day-pass-products", "admin-day-pass-product",
+    "admin-day-pass-product-archive",
+})
+# Decision 223(k)/(l), wallet passes: the Space Manager's own signing credentials (manage_makerspace) and the
+# desk's read-only guest-pass scan (manage_members); each view re-checks its action and the capability.
+MEMBERSHIP_ROUTES |= frozenset({"admin-wallet-credentials", "admin-guest-pass-scan"})
+# Release 0.12.0 lane L3b (decision 223 (k)): minors and guardian consent, volunteer hours and credits, and
+# organization bookings. Each view re-checks its own action (manage_members, manage_makerspace for the policy
+# and the consent text, manage_reservations for bookings) and its capability switch; none is delegable.
+MEMBERSHIP_ROUTES |= frozenset("""admin-community-policy admin-minors admin-minor-clear admin-minor-consent-record
+admin-guardian-consent-revoke admin-guardian-terms admin-volunteer-hours admin-volunteer-hours-import
+admin-volunteer-hours-decide admin-volunteer-credits admin-volunteer-credit-void
+admin-space-organization-booking admin-space-organization-booking-choices""".split())
+# Parity O-B1, member units: each view re-checks its own action (view_member_units, manage_member_units,
+# manage_members) and the `membership.units` / `membership.unit_scoped_staff` switch; none is delegable.
+MEMBERSHIP_ROUTES |= frozenset("""admin-member-units admin-member-unit-levels admin-member-unit admin-member-unit-move
+admin-member-unit-archive admin-member-unit-restore admin-membership-unit admin-staff-unit-scope admin-plan-units
+admin-member-import-reviews admin-member-import-review-approve admin-member-import-review-reject""".split())
+# Parity O-B2: bulk register actions and "ask for changes" re-check manage_members (+ manage_member_cards for the
+# card actions), the unit scope and their own `membership.*` switch; neither is delegable.
+MEMBERSHIP_ROUTES |= frozenset({"admin-member-register-bulk", "admin-membership-request-changes"})
+# The platform credentials are the superadmin's alone (recent re-authentication on every write).
+PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-wallet-credentials"})
+# Decision 242(l): superadmin cross-space queues, snapshot, unread inbox and platform search (counts only).
+PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-queues", "admin-platform-space-snapshot", "admin-platform-inbox",
+                                    "admin-platform-search"})
+# Open item C13: read-only module defaults and the platform admin list (superadmin only).
+PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-module-defaults", "admin-platform-admins"})
+
+# Release 0.12.0 lane L3a (decision 223): induction events, guest certifications and the incident
+# register. Each view re-checks its own authority (machine-type certification authority, or the
+# area-narrowed incident reach); none is delegable.
+MEMBERSHIP_ROUTES |= frozenset("""admin-induction-events-upcoming admin-event-induction admin-event-induction-grant admin-event-induction-unlink
+admin-guest-certification-revoke admin-incidents admin-incident-detail admin-incident-actions
+admin-incident-action-detail admin-incident-assignees""".split())
+# Open-items batch 2 (C25): upcoming events/bookings short of planned consumables. view_inventory plus a
+# per-activity event/booking view re-check; not delegable.
+MEMBERSHIP_ROUTES |= frozenset({"admin-consumable-planned-shortages"})
+# Parity E-B8: webhook secret rotation, the own-SMTP test and a space's own privacy / terms text are the
+# Space Manager's transport/settings authority (MANAGE_MAKERSPACE); the operator's legal pages are superadmin only.
+MEMBERSHIP_ROUTES |= frozenset("""admin-notification-destination-rotate-secret admin-makerspace-email-test
+admin-makerspace-legal-page""".split())
+PLATFORM_ONLY_ROUTES |= frozenset({"admin-platform-legal-page"})

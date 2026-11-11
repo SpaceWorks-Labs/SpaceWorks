@@ -21,7 +21,8 @@ def _send(address, subject, body, event):
         log = dispatch_email(to_email=address, subject=subject, text_body=body, stream="account",
                              event=event, audience="user", connection="platform",
                              persist_body=False, sync=True)
-        return log.status in {"sent", "delivered"}
+        from apps.integrations.transient_mail import accepted
+        return accepted(log)
     except Exception as exc:
         logger.warning("account_merge_mail_failed", extra={"event": event, "error_type": type(exc).__name__})
         return False

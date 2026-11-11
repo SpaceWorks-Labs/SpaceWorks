@@ -17,8 +17,8 @@ admin-space-schedule admin-space-schedule-cancel admin-space-archive admin-space
 admin-space-transfer-ownership admin-platform-hosting-requests admin-platform-hosting-request
 admin-platform-hosting-request-approve admin-platform-hosting-request-changes admin-platform-hosting-request-reject
 admin-platform-announcements admin-platform-announcement admin-platform-announcement-cancel
-admin-platform-hosting-plans admin-platform-hosting-plan admin-space-plan admin-platform-hosting-invoices
-admin-platform-hosting-invoice-payment admin-platform-hosting-invoice-void admin-platform-hosting-billing-settings
+admin-platform-hosting-plans admin-platform-hosting-plan admin-space-plan admin-platform-space-plan-bulk admin-platform-hosting-invoices
+admin-platform-hosting-invoice-payment admin-platform-hosting-invoice-void admin-platform-hosting-billing-settings admin-platform-hosting-switch admin-space-limits admin-platform-space-limits-bulk admin-space-hosting-type admin-platform-request-limits admin-platform-request-limit
 admin-platform-ip-rules admin-platform-ip-rule admin-platform-ip-blocks admin-platform-ip-block-unblock
 admin-platform-restore-drills admin-platform-restore-drill-settings
 admin-platform-accounts admin-platform-account-disable admin-platform-account-enable
@@ -28,6 +28,7 @@ admin-platform-api-key-requests admin-platform-api-key-request-approve admin-pla
 admin-platform-subdomain-requests admin-platform-subdomain-request-approve admin-platform-subdomain-request-reject
 admin-platform-chat-templates admin-platform-chat-template
 admin-platform-sms-settings admin-platform-sms-settings-test admin-platform-push-settings
+admin-platform-firebase-web-settings
 admin-platform-push-settings-test admin-platform-whatsapp-settings admin-platform-whatsapp-settings-test
 admin-platform-attestation-settings admin-platform-login-methods admin-platform-native-apps admin-platform-native-app
 admin-platform-space-keys admin-platform-space-key-rotate admin-platform-space-archive-key
@@ -38,6 +39,7 @@ admin-platform-selfhost-move-export admin-platform-selfhost-move-discard admin-p
 
 MEMBERSHIP_ROUTES = frozenset("""
 admin-makerspace-hosting-plan admin-makerspace-hosting-invoices admin-makerspace-hosting-invoice-checkout
+admin-makerspace-allowances
 """.split())
 
 SHARED_ROUTES = frozenset({"platform-notices"})

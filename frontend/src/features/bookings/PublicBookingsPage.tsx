@@ -20,13 +20,13 @@ import { BookingConfirmation } from "./BookingConfirmation";
 import { PublicBookingForm } from "./PublicBookingForm";
 import { usePublicSpaces, type PublicBookableSpace } from "./publicBookingsApi";
 
-const KIND_LABELS: Record<PublicBookableSpace["kind"], string> = {
+const KIND_LABELS = (): Record<PublicBookableSpace["kind"], string> => ({
   dev_room: t`Development room`,
   bench: t`Bench`,
   meeting: t`Meeting room`,
   other: t`Other`,
   machine: t`Machine time`,
-};
+});
 
 export function PublicBookingsPage() {
   const { slug } = useParams();
@@ -42,7 +42,7 @@ export function PublicBookingsPage() {
   const discovery = useDiscoveryState(bootstrap?.makerspace.timezone);
   const visibleSpaces = (spaces.error ? [] : spaces.data ?? []).filter((space) =>
     `${space.name} ${space.description} ${space.location}`.toLowerCase().includes(discovery.query.trim().toLowerCase())
-    && (!Object.keys(KIND_LABELS).includes(discovery.facet) || space.kind === discovery.facet));
+    && (!Object.keys(KIND_LABELS()).includes(discovery.facet) || space.kind === discovery.facet));
   const [params, setParams] = useSearchParams();
   const activeToken = params.get("space");
   const setActiveToken = (token: string | null) => { const next = new URLSearchParams(params); if (token) next.set("space", token); else next.delete("space"); setParams(next); };
@@ -54,8 +54,8 @@ export function PublicBookingsPage() {
     breadcrumb={[{ label: t`All spaces`, href: tenantPath("bookings") }, { label: selectedSpace.name }]}>
     <PublicDetailLayout title={selectedSpace.name} state={{ status: "ready" }}
       cover={selectedSpace.image_url ? { src: selectedSpace.image_url, alt: "" } : undefined}
-      chips={[{ label: KIND_LABELS[selectedSpace.kind] }, { label: selectedSpace.approval_mode === "approve" ? t`Needs approval` : t`Instant when available`, tone: selectedSpace.approval_mode === "approve" ? "warn" : "success" }]}
-      facts={selectedSpace.location ? [{ identity: { kind: "icon", icon: "Info", tone: "neutral" }, primary: selectedSpace.location, secondary: selectedSpace.capacity ? `Capacity ${selectedSpace.capacity}` : "Capacity not specified" }] : []}
+      chips={[{ label: KIND_LABELS()[selectedSpace.kind] }, { label: selectedSpace.approval_mode === "approve" ? t`Needs approval` : t`Instant when available`, tone: selectedSpace.approval_mode === "approve" ? "warn" : "success" }]}
+      facts={selectedSpace.location ? [{ identity: { kind: "icon", icon: "Info", tone: "neutral" }, primary: selectedSpace.location, secondary: selectedSpace.capacity ? t`Capacity ${selectedSpace.capacity}` : t`Capacity not specified` }] : []}
       sections={[...photosSection(selectedSpace), { id: "about", label: t`About this space`, content: <p className="whitespace-pre-wrap leading-7">{selectedSpace.description}</p> },
         { id: "availability", label: t`Availability`, content: <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={selectedSpace.public_token} /> }]}
       actionCard={{ title: t`Choose a time`, state: "open", form: <PublicBookingForm key={selectedSpace.public_token} makerspaceSlug={makerspaceSlug} space={selectedSpace} showCalendar={false} />,
@@ -66,16 +66,16 @@ export function PublicBookingsPage() {
     <PageMetadata title={t`Bookings · ${displayName}`} description={t`Discover public bookable rooms and benches at ${displayName}.`} path={canonicalPath} image={bootstrap?.makerspace.cover_image_url || bootstrap?.makerspace.logo_url} siteName={displayName} />
     <PublicLayout {...publicPageChrome(makerspaceSlug, displayName, tenantPath, bootstrap)}
       header={{ title: t`Book a makerspace`, subtitle: t`Book a space at ${displayName}`, primary: { label: t`My bookings`, href: tenantPath("member/bookings") } }}
-      state={spaces.isLoading ? { status: "loading" } : spaces.error ? publicErrorState(spaces.error, { noun: "Bookings" }, () => { void spaces.refetch(); }) : { status: "ready" }}>
+      state={spaces.isLoading ? { status: "loading" } : spaces.error ? publicErrorState(spaces.error, { surface: "bookings" }, () => { void spaces.refetch(); }) : { status: "ready" }}>
       {confirmationToken ? <BookingConfirmation slug={makerspaceSlug} token={confirmationToken} /> : null}
-      <DiscoveryControls state={discovery} searchLabel="Search spaces" filters={Object.entries(KIND_LABELS).map(([value, label]) => ({ value, label }))} />
+      <DiscoveryControls state={discovery} searchLabel={t`Search spaces`} filters={Object.entries(KIND_LABELS()).map(([value, label]) => ({ value, label }))} />
       <p role="status" className="mb-4 text-sm text-muted">{t`${visibleSpaces.length} matching space(s)`}</p>
       {!visibleSpaces.length ? <EmptyState message={spaces.data?.length ? t`No spaces match these filters. Try another search.` : t`No bookable spaces yet. Check back soon.`} /> : null}
       <div className="grid gap-4">{visibleSpaces.map(space => {
         const open = activeToken === space.public_token;
         return <article key={space.public_token}>
           <ListRow title={space.name} onClick={() => setActiveToken(space.public_token)} identity={space.image_url ? { kind: "image", src: space.image_url } : { kind: "icon", icon: "Calendar", tone: "neutral" }}
-            meta={<>{space.location}<span className="mt-1 block">{space.description}</span><span className="mt-2 block">{t`Capacity `}{space.capacity === 0 ? t`not specified` : space.capacity} · {KIND_LABELS[space.kind]}</span></>}
+            meta={<>{space.location}<span className="mt-1 block">{space.description}</span><span className="mt-2 block">{space.capacity === 0 ? t`Capacity not specified` : t`Capacity ${space.capacity}`} · {KIND_LABELS()[space.kind]}</span></>}
             right={<div className="grid justify-items-end gap-3"><StatusPill label={space.approval_mode === "approve" ? t`Needs approval` : t`Instant when available`} tone={space.approval_mode === "approve" ? "warn" : "success"} />
               <div className="flex flex-wrap justify-end gap-2"><RouteLink className="desk-button-ghost" href={tenantPath(`bookings/${space.public_token}`)}>{t`Resource details`}</RouteLink>
               <button className="desk-button" type="button" aria-expanded={open} onClick={() => setActiveToken(open ? null : space.public_token)}>{open ? t`Close booking form` : t`Choose a time`}</button></div></div>} />

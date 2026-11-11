@@ -1,6 +1,8 @@
+import { freezeBeforeAuthMutation } from "../../lib/api/authFreeze";
 import { t } from "@lingui/core/macro";
 import type { MfaChallenge } from "./mfaApi";
 import { publicV1Request } from "../../lib/api";
+import { safeReturnPath } from "../inventory/publicInventory/cartHandoff";
 
 export type SocialProvider = "google" | "apple";
 export type SocialSurface = "member" | "staff";
@@ -8,6 +10,8 @@ export type SocialLoginResult = {
   access: string;
   user: Record<string, unknown>;
   outcome: "created" | "existing" | "auto_linked";
+  /** 0.12.0: the validated `next` given at the browser-redirect start, echoed by its callback. */
+  next?: string;
 };
 export type SocialConfig = {
   google?: { enabled: boolean; web_client_id: string };
@@ -26,6 +30,53 @@ type OidcStartResult = {
 
 const OIDC_NONCE_PREFIX = "spaceworks.oidc.nonce.";
 const GITHUB_NONCE_PREFIX = "spaceworks.github.nonce.";
+const RETURN_PREFIX = "spaceworks.social.next.";
+const RETURN_PENDING = "spaceworks.social.next";
+const MAX_NEXT_LENGTH = 512; // backend safe_next.MAX_NEXT_LENGTH
+
+/**
+ * 0.12.0 row 29: a sign-in started on `member?next=<path>` must land on that path. The provider round
+ * trip returns to the bare page (the registered redirect URI carries no query), so the same-origin
+ * relative `next` rides in session storage under the attempt's state. Never an absolute URL.
+ */
+function rememberReturnPath(state: string) {
+  const next = pageReturnPath();
+  if (next) window.sessionStorage.setItem(`${RETURN_PREFIX}${state}`, next);
+}
+
+/** This page's `next`, when it is a same-origin relative path the server will also accept. */
+function pageReturnPath() {
+  const next = safeReturnPath(new URLSearchParams(window.location.search).get("next"));
+  return next && next.length <= MAX_NEXT_LENGTH ? next : undefined;
+}
+
+/** The start body's `next`: the server binds it to the attempt and echoes it from the callback. */
+function nextField() {
+  const next = pageReturnPath();
+  return next ? { next } : {};
+}
+
+/** The `next` a finished provider sign-in should go to, once; re-validated as a same-origin relative path. */
+export function takeSocialReturnPath(): string | undefined {
+  try {
+    const value = window.sessionStorage.getItem(RETURN_PENDING);
+    window.sessionStorage.removeItem(RETURN_PENDING);
+    return safeReturnPath(value);
+  } catch {
+    return undefined;
+  }
+}
+
+/** True on the page load that carries a provider callback this browser started (so its sign-in panel can finish it). */
+export function hasPendingSocialCallback(): boolean {
+  const state = new URLSearchParams(window.location.search).get("state")?.trim();
+  if (!state) return false;
+  try {
+    return Boolean(window.sessionStorage.getItem(`${OIDC_NONCE_PREFIX}${state}`) || window.sessionStorage.getItem(`${GITHUB_NONCE_PREFIX}${state}`));
+  } catch {
+    return false;
+  }
+}
 
 declare global {
   interface Window {
@@ -48,7 +99,7 @@ declare global {
 
 const scripts = new Map<string, Promise<void>>();
 
-function loadScript(src: string) {
+export function loadScript(src: string) {
   const existing = scripts.get(src);
   if (existing) return existing;
   const pending = new Promise<void>((resolve, reject) => {
@@ -64,7 +115,7 @@ function loadScript(src: string) {
   return pending;
 }
 
-async function requestNonce(provider: SocialProvider, surface: SocialSurface) {
+export async function requestNonce(provider: SocialProvider, surface: SocialSurface) {
   return publicV1Request<{ nonce: string }>("/auth/social/nonce", {
     method: "POST",
     body: JSON.stringify({
@@ -154,14 +205,17 @@ export async function beginOidcBrowser(
         surface,
         ...(email.trim() ? { email: email.trim() } : {}),
         ...(makerspaceSlug ? { makerspace_slug: makerspaceSlug } : {}),
+        ...nextField(),
       }),
     },
   );
   try {
     window.sessionStorage.setItem(`${OIDC_NONCE_PREFIX}${started.state}`, started.nonce);
+    rememberReturnPath(started.state);
   } catch {
     throw new Error(t`Browser storage is required for secure identity-provider sign-in.`);
   }
+  await freezeBeforeAuthMutation("/auth/social/redirect", "POST");
   window.location.assign(started.authorization_url);
 }
 
@@ -171,14 +225,16 @@ export async function beginGithubBrowser() {
   const started = await publicV1Request<Omit<OidcStartResult, "nonce">>(
     "/auth/social/github/authorize",
     { method: "POST", body: JSON.stringify({
-      redirect_uri: `${window.location.origin}${window.location.pathname}`, nonce,
+      redirect_uri: `${window.location.origin}${window.location.pathname}`, nonce, ...nextField(),
     }) },
   );
   try {
     window.sessionStorage.setItem(`${GITHUB_NONCE_PREFIX}${started.state}`, nonce);
+    rememberReturnPath(started.state);
   } catch {
     throw new Error(t`Browser storage is required for secure identity-provider sign-in.`);
   }
+  await freezeBeforeAuthMutation("/auth/social/redirect", "POST");
   window.location.assign(started.authorization_url);
 }
 
@@ -199,16 +255,26 @@ export async function completeOidcBrowserCallback(): Promise<SocialLoginResult |
     provider = githubNonce ? "github" : "oidc";
     nonce = window.sessionStorage.getItem(`${prefix}${state}`) ?? "";
     window.sessionStorage.removeItem(`${prefix}${state}`);
+    const next = window.sessionStorage.getItem(`${RETURN_PREFIX}${state}`);
+    window.sessionStorage.removeItem(`${RETURN_PREFIX}${state}`);
+    if (next) window.sessionStorage.setItem(RETURN_PENDING, next);
   } catch {
     // The backend still refuses the callback because the nonce is mandatory.
   }
   clearOidcQuery();
   if (!nonce) throw new Error(t`Identity-provider sign-in expired. Please try again.`);
-  return publicV1Request<SocialLoginResult | MfaChallenge>(`/auth/social/${provider}/callback`, {
+  const result = await publicV1Request<SocialLoginResult | MfaChallenge>(`/auth/social/${provider}/callback`, {
     method: "POST",
     credentials: "include",
     body: JSON.stringify({ code, state, nonce }),
   });
+  // The server's `next` wins over the copy kept locally; an MFA challenge carries none, so the
+  // local copy stays as the fallback for that path. Re-validated: never an off-site target.
+  const serverNext = "next" in result && typeof result.next === "string" ? safeReturnPath(result.next) : undefined;
+  if (serverNext) {
+    try { window.sessionStorage.setItem(RETURN_PENDING, serverNext); } catch { /* storage refused: no return path */ }
+  }
+  return result;
 }
 
 function clearOidcQuery() {

@@ -57,7 +57,7 @@ export function PasskeyList({ onRecoveryCodes, onSignedOut }: {
     <p role="status" className="text-sm text-ink empty:hidden">{notice}</p>
     {failure ? <ErrorText message={authErrorMessage(failure, "Couldn't change your passkeys. Try again.")} /> : null}
     <ConfirmDialog open={Boolean(removing)} title={t`Remove this passkey?`} tone="danger" confirmLabel={t`Remove passkey`} pending={remove.isPending}
-      message={t`${removing?.name ?? "This passkey"} will stop working, and your other devices will be signed out. Remove it from your device's password manager too.`}
+      message={removing?.name ? t`${removing.name} will stop working, and your other devices will be signed out. Remove it from your device's password manager too.` : t`This passkey will stop working, and your other devices will be signed out. Remove it from your device's password manager too.`}
       onCancel={() => setRemoving(undefined)} onConfirm={() => { if (removing) remove.mutate(removing.id); }} />
   </div>;
 }

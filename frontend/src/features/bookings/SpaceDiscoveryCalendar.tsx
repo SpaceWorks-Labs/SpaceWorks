@@ -43,10 +43,13 @@ export function SpaceDiscoveryCalendar({ slug, space, month, timeZone = "UTC" }:
   const combined = [...(availability.data.availability ?? []), ...(split ? remainder.data?.availability ?? [] : [])];
   const intervals = [...new Map(combined.map((interval) => [`${interval.starts_at}-${interval.ends_at}`, interval])).values()];
   const label = `${space.name} published bookings`;
-  const entries = intervals.map((interval, index) => ({
-    id: `${interval.starts_at}-${index}`, startsAt: interval.starts_at, endsAt: interval.ends_at,
-    label: t`Booked ${new Date(interval.starts_at).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit", timeZone })}–${new Date(interval.ends_at).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit", timeZone })}${space.show_public_booker_names && interval.booker_name ? ` · ${interval.booker_name}` : ""}`,
-  }));
+  const time = (at: string) => new Date(at).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit", timeZone });
+  const entries = intervals.map((interval, index) => {
+    // A pending event hold is labelled "Tentative" and never carries a name (its booker_name is null).
+    const label = interval.tentative ? t`Tentative ${time(interval.starts_at)}–${time(interval.ends_at)}`
+      : t`Booked ${time(interval.starts_at)}–${time(interval.ends_at)}${space.show_public_booker_names && interval.booker_name ? ` · ${interval.booker_name}` : ""}`;
+    return { id: `${interval.starts_at}-${index}`, startsAt: interval.starts_at, endsAt: interval.ends_at, label };
+  });
   return <div className="mt-5">
     <p className="mb-3 text-sm text-muted">{t`Confirmed bookings only. Empty dates do not guarantee a bookable time; rules are checked when you submit.`}</p>
     {!intervals.length ? <EmptyState message={t`No confirmed bookings are published in this month.`} /> : null}

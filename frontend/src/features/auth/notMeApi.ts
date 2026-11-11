@@ -1,3 +1,4 @@
+import { freezeBeforeAuthMutation } from "../../lib/api/authFreeze";
 import type { NotMeResult } from "../../generated/api";
 import { API_V1_URL } from "../../lib/api";
 import { apiError } from "../../lib/api/errors";
@@ -9,6 +10,7 @@ import { apiError } from "../../lib/api/errors";
 export type { NotMeResult };
 
 export async function reportNotMe(token: string): Promise<NotMeResult> {
+  await freezeBeforeAuthMutation("/auth/security-alerts/not-me", "POST");
   const response = await fetch(`${API_V1_URL}/auth/security-alerts/not-me`, {
     method: "POST", credentials: "omit", referrerPolicy: "no-referrer",
     headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }),

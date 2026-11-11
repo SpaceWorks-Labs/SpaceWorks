@@ -9,7 +9,11 @@ import { StructuredApiError, tenantPublicRequest } from "../../lib/api";
 /** Hand-typed until the integrator regenerates the OpenAPI client. */
 export type EventVenue = {
   host: { name: string; slug: string; location: string; map_url: string; logo_url: string };
-  space: { public_token: string; name: string; kind: string; location: string; capacity: number } | null;
+  space: {
+    public_token: string; name: string; kind: string; location: string; capacity: number;
+    /** True when the room is out of service during part of the event; nothing more is disclosed (decision 219c). */
+    venue_update_pending?: boolean;
+  } | null;
   photos: GalleryPhoto[];
 };
 
@@ -40,6 +44,7 @@ export function EventVenueBlock({ venue, spaceHref }: { venue: EventVenue; space
           <p className="text-sm text-muted">{t`Hosted at`}</p>
           <p className="font-semibold">{place}</p>
           {address ? <p className="text-sm text-muted">{address}</p> : null}
+          {space?.venue_update_pending ? <p className="mt-1 text-sm text-warn-ink" role="note">{t`Venue update pending. Check with the organizers before you travel.`}</p> : null}
           <div className="mt-2 flex flex-wrap gap-3 text-sm">
             {space && spaceHref ? <RouteLink className="desk-button-ghost" href={spaceHref(space.public_token)}>{t`About this space`}</RouteLink> : null}
             {host.map_url ? <a className="desk-button-ghost" href={host.map_url} target="_blank" rel="noreferrer noopener">{t`Open map`}</a> : null}

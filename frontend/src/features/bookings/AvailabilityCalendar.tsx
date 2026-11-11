@@ -58,6 +58,18 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
         <p className="font-semibold">{t`Opening times (${availability.data.timezone})`}</p>
         {availability.data.opening_intervals.length === 0 ? <p>{t`The makerspace is closed in this window.`}</p> : <ul>{availability.data.opening_intervals.map((interval) => <li key={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</li>)}</ul>}
       </div> : null}
+      {/* Closed time is already the gaps in the opening times above; list only the other blocks,
+          and only where the room publishes its availability (decision 219c; the server enforces it). */}
+      {availability.data?.availability != null && availability.data.unavailable?.some((block) => block.kind === "unavailable") ? (
+        <ul className="mt-3 grid gap-2" aria-label={t`Unavailable times`}>
+          {(availability.data.unavailable ?? []).filter((block) => block.kind === "unavailable").map((block) => (
+            <li className="break-words rounded-lg border border-warn bg-warn-soft px-3 py-2 text-sm text-ink" key={"unavailable" + block.starts_at + block.ends_at}>
+              <span className="mr-2 font-semibold">{t`Unavailable`}</span>
+              <time className="tabular-nums" dateTime={block.starts_at}>{intervalLabel(block.starts_at, block.ends_at, availability.data?.timezone)}</time>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {availability.data?.availability === null ? (
         <p className="mt-3 text-sm text-muted">{t`Availability is not published. You may still submit your selected time for the makerspace to check.`}</p>
       ) : null}
@@ -66,9 +78,15 @@ export function AvailabilityCalendar({ makerspaceSlug, publicToken }: {
       ) : null}
       {availability.data?.availability?.length ? (
         <ul className="mt-3 grid gap-2">
-          {availability.data.availability.map((interval) => (
+          {/* A pending event hold reads like an unavailable block, labelled, and never names anyone. */}
+          {availability.data.availability.map((interval) => interval.tentative ? (
+            <li className="break-words rounded-lg border border-warn bg-warn-soft px-3 py-2 text-sm text-ink" key={interval.starts_at + interval.ends_at}>
+              <span className="mr-2 font-semibold">{t`Tentative`}</span>
+              <time className="tabular-nums" dateTime={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data?.timezone)}</time>
+            </li>
+          ) : (
             <li className="break-words rounded-lg border border-success bg-success-soft px-3 py-2 text-sm text-ink" key={interval.starts_at + interval.ends_at}>
-              <time className="tabular-nums" dateTime={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data.timezone)}</time>
+              <time className="tabular-nums" dateTime={interval.starts_at}>{intervalLabel(interval.starts_at, interval.ends_at, availability.data?.timezone)}</time>
               {interval.booker_name !== null ? <span className="ml-2 font-semibold">{interval.booker_name}</span> : null}
             </li>
           ))}

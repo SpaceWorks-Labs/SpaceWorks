@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PublicLayout } from "../../components/layouts";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { EmptyState, ErrorText, ListRow, Skeleton } from "../../components/ui";
+import { EmptyState, ErrorText, ListRow, Skeleton, PagePager } from "../../components/ui";
 import { publicV1Request } from "../../lib/api";
 import { LICENSE_URL } from "../inventory/PublicPageChrome";
 
@@ -42,12 +42,8 @@ export function BookingDiscoverPage() {
           identity={{ kind: "icon", icon: "Calendar", tone: "info" }}
           meta={<><span>{[row.makerspace_name, row.location].filter(Boolean).join(" · ")}</span>
             {row.description ? <span className="mt-1 block line-clamp-2">{row.description}</span> : null}</>} />)}
-        {!query.data.count ? <EmptyState message={t`No matching resources.`} /> : null}
-        <nav aria-label={t`Resource discovery pages`} className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted">
-          <button type="button" className="desk-button" disabled={!query.data.previous} onClick={() => setPage(page - 1)}>{t`Previous`}</button>
-          <span>{t`Page ${page}`}</span>
-          <button type="button" className="desk-button" disabled={!query.data.next} onClick={() => setPage(page + 1)}>{t`Next`}</button>
-        </nav>
+        {!query.data.count ? <EmptyState message={t`No bookable rooms or machines match. Try another search, place or kind.`} /> : null}
+        <PagePager page={page} setPage={setPage} next={query.data.next} />
       </section> : null}
     </div>
   </PublicLayout>;

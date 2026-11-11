@@ -71,7 +71,7 @@ export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", i
     && newPassword === confirmPassword
     && !pending;
   const titles = { request: "Reset password", confirm: "Enter your recovery code", success: "Password updated", unavailable: "Password recovery unavailable" };
-  const body = step === "request" ? recoveryContext ? "Enter your account username or email to request a six-digit recovery code." : "Enter your account email to request a six-digit recovery code."
+  const body = step === "request" ? recoveryContext ? t`Enter your account username or email to request a six-digit recovery code.` : t`Enter your account email to request a six-digit recovery code.`
     : step === "confirm" ? acknowledgement || "Enter your username or email and the six-digit recovery code from your email."
     : step === "success" ? `Your password has been updated. You can now sign in.${recoveryContext ? " Authenticator verification is still required if enabled for your account." : ""}`
     : "Password recovery is unavailable on this deployment — contact your makerspace staff";
@@ -80,7 +80,7 @@ export function PasswordRecoveryFlow({ recoveryContext, signInHref = "/admin", i
     title={titles[step]} body={<p role={step === "unavailable" ? "alert" : undefined}>{body}</p>}
     primary={step === "success" || step === "unavailable" ? { label: step === "success" ? t`Go to sign in` : t`Back to sign in`, href: signInHref } : {
       label: step === "request" ? t`Request recovery code` : t`Update password`, pending,
-      pendingLabel: step === "request" ? "Requesting…" : "Updating…", disabled: step === "confirm" && !canConfirm,
+      pendingLabel: step === "request" ? t`Requesting…` : t`Updating…`, disabled: step === "confirm" && !canConfirm,
       disabledReason: "Enter the six-digit code and matching passwords.",
       onClick: () => (document.getElementById("password-recovery-form") as HTMLFormElement)?.requestSubmit(),
     }}

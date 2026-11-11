@@ -1,3 +1,4 @@
+import { freezeBeforeAuthMutation } from "../../lib/api/authFreeze";
 import { t } from "@lingui/core/macro";
 import type { FactorsEnum, LoginCodeResent, MFAChallengeResponse } from "../../generated/api";
 import { API_V1_URL } from "../../lib/api";
@@ -20,6 +21,7 @@ export function isMfaChallenge(value: unknown): value is MfaChallenge {
 // A challenge never travels as a full account Authorization header, and must never
 // trigger the shared client's refresh retry when a verification attempt gets a 401.
 export async function mfaRequest<T>(path: string, body: object, headers: Record<string, string> = {}): Promise<T> {
+  await freezeBeforeAuthMutation(path, "POST");
   const response = await fetch(`${API_V1_URL}${path}`, {
     method: "POST", credentials: "include", headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),

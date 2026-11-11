@@ -14,6 +14,7 @@ import { MfaRecoveryCodes } from "./MfaRecoveryCodes";
 import { MfaFlow } from "./MfaFlow";
 import type { MfaChallenge } from "./mfaApi";
 import { KnownDevicesList } from "./KnownDevicesList";
+import { LinkedSignInList } from "./LinkedSignInList";
 import { PasskeyList } from "./passkeys/PasskeyList";
 import { listPasskeys } from "./passkeys/passkeyApi";
 import { passkeysKey } from "./securityQueries";
@@ -82,6 +83,7 @@ export function MfaAccountPage() {
       ...(person ? [
         { id: "passkeys", title: t`Passkeys`, rows: <PasskeyList onRecoveryCodes={setCodes} onSignedOut={() => signedOut("You removed the passkey this browser signed in with. Sign in again to continue.")} /> },
         { id: "devices", title: t`Remembered devices`, rows: <KnownDevicesList /> },
+        { id: "linked", title: t`Linked sign-in accounts`, rows: <LinkedSignInList /> },
       ] : []),
       { id: "sessions", title: t`Sessions`, rows: <div className="grid gap-4">
         <SignOutEverywhere signInHref={person ? "/member/account" : signInHref} onSignedOut={() => setReady(false)} />{links}</div> },

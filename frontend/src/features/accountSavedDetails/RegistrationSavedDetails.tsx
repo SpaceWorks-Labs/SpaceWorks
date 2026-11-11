@@ -29,7 +29,7 @@ export function AgeReview({ asOfDate, value, locked, onSourceChange, onReviewed 
   return <fieldset className="grid gap-3"><legend className="font-semibold">{t`Age at event start`}</legend>
     <p>{t`The organiser receives your computed age. Your date of birth is privately retained as the source unless the form separately asks you to disclose it.`}</p>
     {!locked ? <Field label={t`Private date of birth`}><input className="desk-input" type="date" value={dob} onChange={e => { setDob(e.target.value); onSourceChange(e.target.value); }} /></Field> : null}
-    <p role="status">{value === null ? t`Enter a valid date of birth to review your age.` : t`Age ${value} as of ${asOfDate}${locked ? " · fixed at answer lock" : ""}.`}</p>
+    <p role="status">{value === null ? t`Enter a valid date of birth to review your age.` : (locked ? t`Age ${value} as of ${asOfDate} · fixed at answer lock.` : t`Age ${value} as of ${asOfDate}.`)}</p>
     <button type="button" className="desk-button" disabled={value === null} onClick={onReviewed}>{t`Confirm age and event date`}</button>
   </fieldset>;
 }

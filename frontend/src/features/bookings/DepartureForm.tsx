@@ -51,7 +51,7 @@ export function DepartureForm({ onSubmit, pending = false, error, submitLabel = 
         </div>
       </fieldset>
       <label htmlFor={`${id}-remark`} className="grid gap-1 text-sm">
-        <span>{t`Remark${needsRemark ? " (required)" : " (optional)"}`}</span>
+        <span>{needsRemark ? t`Remark (required)` : t`Remark (optional)`}</span>
         <textarea id={`${id}-remark`} className="desk-input min-h-24" maxLength={2000} value={remark}
           aria-invalid={touched && missing} aria-describedby={touched && missing ? `${id}-hint` : undefined}
           placeholder={needsRemark ? t`What was wrong? Staff will follow up.` : t`Anything staff should know?`}

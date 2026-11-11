@@ -27,8 +27,13 @@ export type PublicAvailability = {
   ends_at: string;
   timezone: string;
   opening_intervals: { starts_at: string; ends_at: string }[];
-  availability: { starts_at: string; ends_at: string; booker_name: string | null }[] | null;
+  /** `tentative`: a pending event hold (decision 223 m); its `booker_name` is always null. */
+  availability: { starts_at: string; ends_at: string; booker_name: string | null; tentative?: boolean }[] | null;
+  /** Time the room cannot be booked; never detailed. Absent on servers that predate it. */
+  unavailable?: PublicBusyBlock[];
 };
+
+export type PublicBusyBlock = { starts_at: string; ends_at: string; kind: "unavailable" | "closed" };
 
 export type PublicBookingInput = {
   starts_at: string;
@@ -39,7 +44,7 @@ export type PublicBookingInput = {
   quote_digest?: string;
 };
 
-export type PublicBookingResult = { status: "pending" | "confirmed"; public_token?: string; confirmation_available?: boolean };
+export type PublicBookingResult = { status: "pending" | "confirmed"; public_token?: string; confirmation_available?: boolean; amount_due?: string | null; currency?: string | null; pay_online?: boolean };
 
 const SPACES_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/";
 const AVAILABILITY_PATH: ApiPath = "/api/v1/public/{makerspace_slug}/spaces/{public_token}/availability/";

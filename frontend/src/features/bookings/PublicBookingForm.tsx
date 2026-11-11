@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { Field } from "../../components/ui";
 import { StructuredApiError } from "../../lib/api";
+import { eligibilityMessage } from "../../lib/eligibilityCopy";
 import { CustomFormFields } from "../forms/CustomFormFields";
 import {
   customAnswerErrors,
@@ -12,7 +13,9 @@ import {
 import { BookingConfirmation } from "./BookingConfirmation";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { useSubmitPublicBooking, type PublicBookableSpace } from "./publicBookingsApi";
+import { PayNextStep } from "../payments/PayNextStep";
 import { PricePreview } from "../payments/PricePreview";
+import { tenantPath, useOptionalTenant } from "../../lib/tenant";
 import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
 import { isoTime } from "../payments/usePriceQuote";
 
@@ -30,11 +33,8 @@ function failureMessage(error: StructuredApiError | null) {
   if (error.status === 409) return t`That time now overlaps a confirmed booking. Choose another slot and try again.`;
   if (error.status === 429) return t`Too many booking attempts were made. Please wait before trying again.`;
   if (error.status === 401) return t`Sign in to submit a booking.`;
-  if (error.status === 403) {
-    if (error.code === "membership_required") return t`Join this makerspace before booking.`;
-    if (error.code === "waiver_acceptance_required") return t`Accept the current waiver before booking.`;
-    if (error.code === "presence_required") return t`Start a presence session before booking.`;
-  }
+  const eligibility = eligibilityMessage(error);
+  if (eligibility) return eligibility;
   if (error.status === 400) return error.detail ?? t`Review the highlighted fields and try again.`;
   return error.detail ?? t`The booking service is unavailable. Please try again.`;
 }
@@ -49,6 +49,9 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [website, setWebsite] = useState("");
   const [quoteDigest, setQuoteDigest] = useState("");
+  // Set only by a live quote, which PricePreview fetches only while booking charges are on (#184).
+  const [owes, setOwes] = useState(false);
+  const paymentsHref = tenantPath(useOptionalTenant()?.mode ?? "central", makerspaceSlug, "member/payments");
   const [standardErrors, setStandardErrors] = useState<StandardErrors>({});
   const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const successRef = useRef<HTMLDivElement>(null);
@@ -63,11 +66,13 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
   if (booking.data) {
     const pending = booking.data.status === "pending";
     return (
-      <div ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn-soft" : "border-success bg-success-soft"} p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`} role="status" tabIndex={-1}>
+      <div data-replay-block ref={successRef} className={`rounded-lg border ${pending ? "border-warn bg-warn-soft" : "border-success bg-success-soft"} p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`} role="status" tabIndex={-1}>
         <h3 className="title-section">{pending ? t`Booking request received` : t`Space booked`}</h3>
         <p className="mt-1 text-sm text-muted">
           {pending ? t`Staff must approve this request before the slot is confirmed.` : t`Your selected slot is confirmed and booked.`}
         </p>
+        {/* The server's recorded amount wins over the client's live quote when it sent one. */}
+        {(booking.data.amount_due === undefined ? owes : Number(booking.data.amount_due ?? 0) > 0) ? <PayNextStep paymentsHref={paymentsHref} pending={pending} /> : null}
         {booking.data.public_token && booking.data.confirmation_available ? <BookingConfirmation slug={makerspaceSlug} token={booking.data.public_token} /> : null}
       </div>
     );
@@ -97,7 +102,7 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
   const errorFor = (field: keyof StandardErrors) => standardErrors[field] || apiFieldError(apiError, field);
 
   return (
-    <div className="grid gap-4">
+    <div data-replay-block className="grid gap-4">
       {showCalendar ? <AvailabilityCalendar makerspaceSlug={makerspaceSlug} publicToken={space.public_token} /> : null}
       <form className="@container grid min-w-0 gap-4 rounded-lg border border-brand bg-bg p-4" onSubmit={submit} noValidate>
         <div>
@@ -113,7 +118,7 @@ export function PublicBookingForm({ makerspaceSlug, space, showCalendar = true }
         <CustomFormFields schema={space.custom_form} answers={answers} onChange={setAnswers} errors={{ ...answerErrors, ...serverAnswerErrors }} disabled={booking.isPending} />
         <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">{t`Website`}<input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} />
         </label>
-        <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "bookings", space_token: space.public_token, starts_at: isoTime(startsAt), ends_at: isoTime(endsAt) }} onDigest={setQuoteDigest} />
+        <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "bookings", space_token: space.public_token, starts_at: isoTime(startsAt), ends_at: isoTime(endsAt) }} onDigest={setQuoteDigest} onOwes={setOwes} />
         {isPriceChanged(booking.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={booking.error} />
           : booking.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
         <button className="desk-button-brand" type="submit" disabled={booking.isPending}>

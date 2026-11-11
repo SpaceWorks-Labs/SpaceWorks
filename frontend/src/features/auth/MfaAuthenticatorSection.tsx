@@ -42,7 +42,7 @@ export function MfaAuthenticatorSection({ status, hasPasskey, passkeysOffered, p
     {available ? <div className="flex flex-wrap gap-3">
       <ActionControl primary action={{
         label: enabled ? t`Regenerate recovery codes` : t`Enroll authenticator`, pending: busy, disabled: needsPassword && !password,
-        disabledReason: passwordAvailable ? "Confirm your current password to continue." : "Managing an enrolled authenticator requires a current password.",
+        disabledReason: passwordAvailable ? t`Confirm your current password to continue.` : t`Managing an enrolled authenticator requires a current password.`,
         onClick: () => enabled ? onRegenerate() : onEnroll() }} />
       {!enabled && passkeysOffered ? <a href="#passkeys" className="desk-button min-h-11 gap-2"><Fingerprint aria-hidden="true" size={20} />{t`Add a passkey instead`}</a> : null}
     </div> : null}

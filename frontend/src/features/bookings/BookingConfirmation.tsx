@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, ErrorText, Skeleton, TicketCard } from "../../components/ui";
 import { memberRequestBlob } from "../../lib/api";
+import { bookingStatusLabel } from "./bookingStatusLabel";
 import { confirmationPath, downloadBookingFile, useBookingConfirmation } from "./bookingConfirmationApi";
 
 function ConfirmationQr({ slug, token, revision }: { slug: string; token: string; revision: string }) {
@@ -24,7 +25,7 @@ function ConfirmationQr({ slug, token, revision }: { slug: string; token: string
     : <div role="status" aria-label={t`Loading private QR...`} className="h-full"><Skeleton className="h-full w-full" /></div>;
 }
 
-const statusWords = (status: string) => status.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
+const statusWords = bookingStatusLabel;
 
 export function BookingConfirmation({ slug, token, onClose }: { slug: string; token: string; onClose?: () => void }) {
   const { detail, rotate } = useBookingConfirmation(slug, token);

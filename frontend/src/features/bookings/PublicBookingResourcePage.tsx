@@ -11,6 +11,7 @@ import { publicPageChrome } from "../inventory/PublicPageChrome";
 import { formatSlug } from "../inventory/PublicInventoryParts";
 import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { chargesOn } from "../../lib/charges";
+import { formatMoney } from "../../lib/money";
 import { MemberAuthPanel } from "../members/MemberAuthPanel";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 import { PublicBookingForm } from "./PublicBookingForm";
@@ -71,7 +72,8 @@ export function PublicBookingResourcePage() {
         actionCard={{ title: t`Choose a time`, state: "open",
           summary: resource ? <div className="flex flex-wrap items-end gap-6">
             <dl><dt className="eyebrow">{t`Capacity`}</dt><dd className="font-semibold tabular-nums text-ink">{resource.capacity || t`Not specified`}</dd></dl>
-            {showPrice ? <dl><dt className="eyebrow">{t`Flat price`}</dt><dd className="font-semibold tabular-nums text-ink">{resource.payment_amount} {resource.currency.toUpperCase()}</dd></dl> : null}
+            {/* The flat per-booking price only; hourly rate cards and member discounts show in the quote once a time is chosen. */}
+            {showPrice && Number(resource.payment_amount) > 0 ? <dl><dt className="eyebrow">{t`Price per booking`}</dt><dd className="font-semibold tabular-nums text-ink">{formatMoney(resource.payment_amount, resource.currency)}</dd></dl> : null}
           </div> : null,
           form: !resource ? null : session === "restoring" ? <p role="status" className="text-sm text-muted">{t`Restoring your session...`}</p>
             : session === "anonymous" ? <MemberAuthPanel embedded context={<p className="text-sm text-muted">{t`Sign in to submit a booking.`}</p>}

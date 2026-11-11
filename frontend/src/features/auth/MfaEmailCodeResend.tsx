@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { MailCheck } from "lucide-react";
@@ -21,7 +21,8 @@ export function MfaEmailCodeResend({ challenge, initialResends = 2, turnstileSit
     onSuccess: result => {
       const next = result.resends_left;
       setLeft(next);
-      setNotice(t`We sent a new code. ${next === 0 ? "That was the last resend." : `${next} ${next === 1 ? "resend" : "resends"} left.`}`);
+      setNotice(next === 0 ? t`We sent a new code. That was the last resend.`
+        : plural(next, { one: "We sent a new code. # resend left.", other: "We sent a new code. # resends left." }));
       captcha.reset();
     },
     onError: error => { if (!captcha.catchError(error)) setNotice(""); },
@@ -34,7 +35,7 @@ export function MfaEmailCodeResend({ challenge, initialResends = 2, turnstileSit
       <MailCheck aria-hidden="true" size={20} />{resend.isPending ? t`Sending…` : t`Send a new code`}
     </button>
     <p id="mfa-resend-left" className="text-sm text-muted">
-      {left > 0 ? `${left} ${left === 1 ? "resend" : "resends"} left.` : t`No resends left. Restart sign-in to get a new code.`}</p>
+      {left > 0 ? plural(left, { one: "# resend left.", other: "# resends left." }) : t`No resends left. Restart sign-in to get a new code.`}</p>
     {captcha.slot}
     <p role="status" aria-live="polite" className="text-sm text-ink empty:hidden">{notice}</p>
     {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}

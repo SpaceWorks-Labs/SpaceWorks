@@ -114,3 +114,16 @@ def test_the_admin_and_member_routes_round_trip():
     stranger = APIClient()
     stranger.force_authenticate(user("ob2-stranger"))
     assert stranger.patch(reverse("membership-request-resubmit", args=[row.pk]), {}, format="json").status_code == 404
+
+
+def test_the_changes_notice_is_translated_text_with_the_note_and_a_link_to_the_member_page():
+    from apps.makerspaces.notifications_p2_members_changes import changes_body
+
+    space, actor, applicant, row = _open_application()
+    sent = changes.request_changes(actor, row, "Please explain your skills.")
+    notice = changes_body(sent, "changes_requested")
+    rendered = repr(notice)
+    assert "Please explain your skills." in rendered
+    assert notice["link"].endswith("/member")
+    staff = repr(changes_body(sent, "resubmitted"))
+    assert "/members" in staff

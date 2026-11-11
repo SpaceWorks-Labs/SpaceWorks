@@ -192,7 +192,8 @@ class MachineSerializer(serializers.ModelSerializer):
             warranty = obj.warranty
         except Warranty.DoesNotExist:
             return STATUS_UNKNOWN
-        return warranty_status(warranty, timezone.localdate())
+        from apps.makerspaces.local_time import to_local
+        return warranty_status(warranty, to_local(obj.makerspace, timezone.now()).date())  # the space's own day
 
     def _capabilities(self, obj):
         from apps.machines import access

@@ -28,10 +28,12 @@ class MachineRecord:
     group: tuple
     is_active: bool
     status: str
+    # Maintenance lockout (machines D6): a running job finishes, but nothing new starts.
+    locked_out: bool = False
 
     @property
     def has_capacity(self):
-        return self.is_active and self.status in CAPACITY_STATUSES
+        return self.is_active and not self.locked_out and self.status in CAPACITY_STATUSES
 
 
 @dataclass(frozen=True)

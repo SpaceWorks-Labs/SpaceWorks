@@ -6,6 +6,8 @@ manage that machine type, so they can check and correct the time before confirmi
 No room broadcast: a session is one person's machine time.
 """
 
+from django.utils.translation import gettext, gettext_noop
+
 from apps.accounts import rbac
 from apps.hardware_requests.notifications_p2 import fanout, revision, safe_adapter
 from apps.integrations.destinations import NotificationScope
@@ -14,8 +16,8 @@ from apps.integrations.notification_sources import NotificationSource, register_
 
 KIND = "machines.session"
 EVENT = "session_auto_stopped"
-REASONS = {"max_length": "the maximum length was reached", "check_out": "the member checked out",
-           "closing": "the space closed"}
+REASONS = {"max_length": gettext_noop("the maximum length was reached"),
+           "check_out": gettext_noop("the member checked out"), "closing": gettext_noop("the space closed")}
 
 
 def _version(row):
@@ -44,15 +46,16 @@ def eligible(envelope):
 
 @safe_adapter
 def notify_auto_stopped(row):
-    reason = REASONS.get(row.stop_reason, "it was stopped automatically")
+    reason = gettext(REASONS.get(row.stop_reason, gettext_noop("it was stopped automatically")))
     name, minutes = row.machine.name, row.duration_minutes
-    own = {"subject": f"Your session on {name} stopped",
-           "text": f"Your session on {name} stopped after {minutes} minutes because {reason}. Staff check the "
-                   "time before any charge is final.",
+    values = {"name": name, "minutes": minutes, "reason": reason}
+    own = {"subject": gettext("Your session on %(name)s stopped") % values,
+           "text": gettext("Your session on %(name)s stopped after %(minutes)s minutes because %(reason)s. Staff "
+                           "check the time before any charge is final.") % values,
            "link": local_link(row.makerspace, "member")}
-    staff = {"subject": f"Machine session #{row.pk} needs a check",
-             "text": f"A session on {name} stopped after {minutes} minutes because {reason}. Check the time and "
-                     "confirm it in Machines > Sessions."}
+    staff = {"subject": gettext("Machine session #%(id)s needs a check") % {"id": row.pk},
+             "text": gettext("A session on %(name)s stopped after %(minutes)s minutes because %(reason)s. Check "
+                             "the time and confirm it in Machines > Sessions.") % values}
     return fanout(space=row.makerspace, feature="printing", stream="printing", event=EVENT, kind=KIND,
                   source=row.pk, version=_version(row), subject=row, owner=row.member, own=own, staff=staff,
                   rooms=False, scope=NotificationScope(machine=row.machine, machine_type=row.machine_type),

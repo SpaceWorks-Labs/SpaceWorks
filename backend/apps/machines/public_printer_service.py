@@ -79,6 +79,8 @@ def resolve_queue(makerspace, queue_id, *, compatibility=False):
 
 def stage_upload(makerspace, data, actor, *, compatibility=False, legacy_presigner=None):
     queue = resolve_queue(makerspace, data.get("queue_id"), compatibility=compatibility)
+    from apps.machines.job_intake import require_member_job_gate
+    require_member_job_gate(makerspace, actor, queue.machine_type)
     try:
         content_type = validate_print_upload(data["kind"], data["filename"], data.get("content_type", ""))
     except ValueError as exc:
@@ -145,6 +147,9 @@ def submit_request(makerspace, data, actor, *, compatibility=False):
     from apps.machines.job_intake import require_member_job_gate
     require_member_job_gate(makerspace, actor, queue.machine_type)
     with transaction.atomic():
+        from apps.makerspaces.models import Makerspace
+        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
+        require_member_job_gate(makerspace, actor, queue.machine_type)
         from apps.machines.job_rules import require_open_job_limit
         require_open_job_limit(makerspace, actor, queue.machine_type)
         limits.check_quota(makerspace, "print", adding=1)

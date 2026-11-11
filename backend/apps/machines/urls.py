@@ -17,6 +17,9 @@ from .views_materials import MaterialListView, MaterialDetailView, PublicTypeInt
 from .views_intake import MachineTypeIntakeView
 from . import views_jobs as jobs, views_jobs_member as job_actions
 from . import views_sessions_member as sessions
+from . import views_supervised as supervised
+from .views_supervised_people import SupervisedPeoplePickerView
+from .views_member_machines import MemberMachineListView
 
 urlpatterns = [
     # Lane L12: the uniform job flow (#140/#141).
@@ -34,6 +37,7 @@ urlpatterns = [
     path("admin/makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/intake", MachineTypeIntakeView.as_view(), name="machine-type-intake"),
     path("public/<slug:makerspace_slug>/machines/details", PublicMachineDetailListView.as_view(), name="public-machine-details"),
     path("public/<slug:makerspace_slug>/machines/<int:pk>", PublicMachineDetailView.as_view(), name="public-machine-detail"),
+    path("member/makerspaces/<int:makerspace_id>/machines", MemberMachineListView.as_view(), name="member-machines"),
     path("member/makerspaces/<int:makerspace_id>/certifications", MemberCertificationsView.as_view(), name="member-certifications"),
     path(
         'public/<slug:makerspace_slug>/machines',
@@ -58,4 +62,14 @@ urlpatterns = [
     path("member/machines/<int:machine_id>/sessions/start", sessions.MemberSessionStartView.as_view(), name="member-machine-session-start"),
     path("member/machine-sessions", sessions.MemberSessionListView.as_view(), name="member-machine-sessions"),
     path("member/machine-sessions/<int:pk>/stop", sessions.MemberSessionStopView.as_view(), name="member-machine-session-stop"),
+    # Release 0.12.0 (decision 223): supervised workshop sessions, behind `machines.supervised_sessions`.
+    path("member/machines/<int:machine_id>/supervised-sessions", supervised.SupervisedSessionOpenView.as_view(), name="member-supervised-session-open"),
+    path("member/makerspaces/<int:makerspace_id>/supervised-sessions", supervised.SupervisedSessionListView.as_view(), name="member-supervised-sessions"),
+    path("member/supervised-sessions/<int:pk>", supervised.SupervisedSessionDetailView.as_view(), name="member-supervised-session"),
+    path("member/supervised-sessions/<int:pk>/supervisees", supervised.SupervisedSuperviseeView.as_view(), name="member-supervised-supervisees"),
+    path("member/supervised-sessions/<int:pk>/people", SupervisedPeoplePickerView.as_view(), name="member-supervised-people"),
+    path("member/supervised-sessions/<int:pk>/supervisees/<int:user_id>", supervised.SupervisedSuperviseeRemoveView.as_view(), name="member-supervised-supervisee-remove"),
+    path("member/supervised-sessions/<int:pk>/uses", supervised.SupervisedUseStartView.as_view(), name="member-supervised-use-start"),
+    path("member/supervised-uses/<int:pk>/end", supervised.SupervisedUseEndView.as_view(), name="member-supervised-use-end"),
+    path("member/supervised-sessions/<int:pk>/close", supervised.SupervisedSessionCloseView.as_view(), name="member-supervised-session-close"),
 ]

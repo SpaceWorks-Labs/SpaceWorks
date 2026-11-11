@@ -1,6 +1,5 @@
 """The uniform "Request a job" routes (#140/#141): types, uploads, submit, and my jobs."""
 
-from django.utils.translation import gettext
 from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import serializers, status
@@ -41,10 +40,8 @@ class JobUploadResponseSerializer(serializers.Serializer):
 def _space(slug):
     space = get_public_makerspace(slug)
     require_module_for_servable(space, "machine_service")
-    from apps.makerspaces.platform import feature_enabled
-    if not feature_enabled(space, job_policy.JOB_REQUESTS):
-        from rest_framework.exceptions import NotFound
-        raise NotFound({"detail": gettext("Job requests are switched off here."), "code": "capability_disabled"})
+    from apps.machines.public_intake_access import require_public_intake_available
+    require_public_intake_available(space)  # `machines.job_requests` first, then membership + presence
     return space
 
 

@@ -15,12 +15,14 @@ from .models_service import (
 # Training/certification records. String FK references throughout, so import order
 # relative to MachineType below does not matter.
 from .models_certifications import CertificationGrant, CertificationType
+from .models_induction import EventInductionLink, GuestCertificationGrant  # noqa: F401
+from .models_supervised import SupervisedParticipant, SupervisedSession, SupervisedUse  # noqa: F401
 from .models_policy import MakerspaceMachineTypePolicy
 from .printing_cutover_models import PrintingCutoverRepair, PrintingCutoverState
 
 # Per-membership type scope links. String FK references make import order independent
 # of the MachineType/Machine declarations below.
-from .models_membership_scope import MembershipMachineTypeScope
+from .models_membership_scope import MembershipMachineScope, MembershipMachineTypeScope
 from .models_catalog import (
     Machine,
     MachineOperator,
@@ -40,6 +42,11 @@ __all__ = [
     'ConsumableCostRecord',
 
     "CertificationGrant",
+    "EventInductionLink",
+    "GuestCertificationGrant",
+    "SupervisedParticipant",
+    "SupervisedSession",
+    "SupervisedUse",
     "CertificationType",
     "Machine",
     "MachineConsumable",
@@ -50,6 +57,7 @@ __all__ = [
     "MachineOperator",
     "MachineServiceRequest",
     "MachineType",
+    "MembershipMachineScope",
     "MembershipMachineTypeScope",
     "MachineUsageEntry",
     "MachineUsageEntryQuerySet",

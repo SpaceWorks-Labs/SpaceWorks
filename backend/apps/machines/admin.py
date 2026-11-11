@@ -25,6 +25,7 @@ from apps.machines.models import (
     ServiceRequestFile,
 )
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(MachineType)
@@ -88,15 +89,15 @@ class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         if done:
             self.message_user(request, f"{label} {done} machine(s).")
 
-    @admin.action(description="Retire selected machines")
+    @admin.action(description=gettext_lazy("Retire selected machines"))
     def retire_selected(self, request, queryset):
         self._run(request, queryset, services.retire_machine, "Retired")
 
-    @admin.action(description="Reactivate selected machines")
+    @admin.action(description=gettext_lazy("Reactivate selected machines"))
     def unretire_selected(self, request, queryset):
         self._run(request, queryset, services.unretire_machine, "Reactivated")
 
-    @admin.action(description="Set status: maintenance")
+    @admin.action(description=gettext_lazy("Set status: maintenance"))
     def mark_maintenance(self, request, queryset):
         self._run(
             request, queryset,
@@ -104,7 +105,7 @@ class MachineAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             "Set maintenance on",
         )
 
-    @admin.action(description="Set status: idle")
+    @admin.action(description=gettext_lazy("Set status: idle"))
     def mark_idle(self, request, queryset):
         self._run(
             request, queryset,
@@ -232,3 +233,7 @@ class ServiceRequestConsumptionAdmin(_ReadOnlyMachineChildAdmin):
     list_filter = ("outcome", "measurement", "machine_consumable__machine")
     search_fields = ("service_request__title", "machine_consumable__label", "machine_consumable__machine__name")
     raw_id_fields = ("service_request", "machine_consumable", "product", "created_by")
+
+
+# Per-machine and per-machine-type scope (decision 282), read-only (0.12.0).
+from apps.machines import admin_scope  # noqa: E402,F401

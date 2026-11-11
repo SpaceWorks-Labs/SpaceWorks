@@ -27,6 +27,8 @@ from .role_scope_resolution import (
     _scope_for_membership,
     covers_machine,
     covers_type,
+    link_reach,
+    link_scope_for,
     manage_scope_for,
     manage_scopes_for,
     manage_scopes_for_memberships,

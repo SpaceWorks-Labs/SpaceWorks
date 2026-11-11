@@ -6,6 +6,8 @@ to people who can manage that machine type. Contents carry no bearer link and no
 code -- the member reads the code in their member area.
 """
 
+from django.utils.translation import gettext, gettext_noop
+
 from apps.accounts import rbac
 from apps.hardware_requests.notifications_p2 import fanout, revision, safe_adapter
 from apps.integrations.notification_links import local_link
@@ -18,17 +20,17 @@ KIND = "machines.job"
 OWNER_ONLY = {"quote_reminder", "pickup_reminder"}
 STAFF_ONLY = {"resubmitted", "quote_declined", "no_show_flagged"}
 COPY = {
-    "changes_requested": "needs changes before it can go ahead. See what to change in your member area.",
-    "resubmitted": "was resubmitted by the member and is ready for review.",
-    "quoted": "has a quote waiting for your approval.",
-    "quote_reminder": "still has a quote waiting for you; it expires soon.",
-    "quote_approved": "quote was approved.",
-    "quote_declined": "quote was declined by the member.",
-    "quote_expired": "quote expired without an answer, so the job was cancelled.",
-    "requeued": "failed and was put back at the front of the queue, at no charge.",
-    "pickup_reminder": "is ready and waiting for you to collect it.",
-    "uncollected": "was not collected in time and is now the space's to recycle.",
-    "no_show_flagged": "belongs to a member who has not collected three jobs in six months.",
+    "changes_requested": gettext_noop("needs changes before it can go ahead. See what to change in your member area."),
+    "resubmitted": gettext_noop("was resubmitted by the member and is ready for review."),
+    "quoted": gettext_noop("has a quote waiting for your approval."),
+    "quote_reminder": gettext_noop("still has a quote waiting for you; it expires soon."),
+    "quote_approved": gettext_noop("quote was approved."),
+    "quote_declined": gettext_noop("quote was declined by the member."),
+    "quote_expired": gettext_noop("quote expired without an answer, so the job was cancelled."),
+    "requeued": gettext_noop("failed and was put back at the front of the queue, at no charge."),
+    "pickup_reminder": gettext_noop("is ready and waiting for you to collect it."),
+    "uncollected": gettext_noop("was not collected in time and is now the space's to recycle."),
+    "no_show_flagged": gettext_noop("belongs to a member who has not collected three jobs in six months."),
 }
 EVENTS = frozenset(COPY)
 
@@ -62,12 +64,12 @@ def notify_job(row, event):
     if event not in EVENTS:
         raise ValueError("Unknown machine job event")
     from .notifications_p2_service import scope_for
-    sentence = COPY[event]
+    values = {"id": row.pk, "sentence": gettext(COPY[event])}
     own = None if event in STAFF_ONLY else {
-        "subject": f"Your job #{row.pk}", "text": f"Your job #{row.pk} {sentence}",
+        "subject": gettext("Your job #%(id)s") % values, "text": gettext("Your job #%(id)s %(sentence)s") % values,
         "link": local_link(row.makerspace, "member")}
     staff = None if event in OWNER_ONLY else {
-        "subject": f"Machine job #{row.pk}", "text": f"Machine job #{row.pk} {sentence}"}
+        "subject": gettext("Machine job #%(id)s") % values, "text": gettext("Machine job #%(id)s %(sentence)s") % values}
     return fanout(space=row.makerspace, feature="printing", stream="printing", event=event, kind=KIND,
                   source=row.pk, version=_version(row, event), subject=row,
                   owner=(row.member or row.requester) if own else None, own=own, staff=staff,

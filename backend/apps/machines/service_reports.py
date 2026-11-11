@@ -7,11 +7,13 @@ from django.db.models import Count, DecimalField, ExpressionWrapper, F, FloatFie
 from django.db.models.functions import Coalesce
 
 from apps.machines import role_scope
+from apps.machines.report_actor_scope import actor_machine_scope as _actor_machine_scope
 from apps.machines.models import Machine, MachineServiceRequest, MachineUsageEntry, ServiceRequestConsumption
 from apps.machines.printer_capabilities import resolve_global_printer_type
 from apps.payments.models import Payment
 from apps.operations.report_registry import ReportResult
 from apps.operations.report_scope import scoped_ids
+from apps.payments.money import MONEY, trim_money
 
 
 CENT = Decimal("0.01")
@@ -45,7 +47,7 @@ def _request_scope_q(machine_scope, prefix=""):
     )
 
 
-def build_machine_service_report(makerspace_id, *, limit=None, date_range=None, machine_scope=None):
+def build_machine_service_report(makerspace_id, *, limit=None, date_range=None, machine_scope=None, actor=None):
     """Build flat rows so registry JSON/export consumers share one report source.
 
     ``machine_scope`` is a resolved `role_scope` scope for a staff caller whose
@@ -53,6 +55,8 @@ def build_machine_service_report(makerspace_id, *, limit=None, date_range=None, 
     report registry and the superadmin aggregate, where there is no single actor to scope
     by -- and an exempt actor resolves to an empty Q, so their report is unchanged.
     """
+    if machine_scope is None:
+        machine_scope = _actor_machine_scope(actor, makerspace_id)
     aggregate = makerspace_id is None
     ids = scoped_ids(makerspace_id, "machine_service")
     status_rows = _status_rows(ids, aggregate, date_range, machine_scope)
@@ -68,12 +72,14 @@ def build_machine_service_report(makerspace_id, *, limit=None, date_range=None, 
     return ReportResult(fields, records)
 
 
-def build_printer_service_report(makerspace_id, *, limit=None, date_range=None, machine_scope=None):
+def build_printer_service_report(makerspace_id, *, limit=None, date_range=None, machine_scope=None, actor=None):
     """Type-pack projection for printer hours, filament and payment snapshots.
 
     It is intentionally a report-registry builder seam, not a printer endpoint:
     the generic service report remains unchanged for non-printer machines.
     """
+    if machine_scope is None:
+        machine_scope = _actor_machine_scope(actor, makerspace_id)
     ids = scoped_ids(makerspace_id, "printing")
     aggregate = makerspace_id is None
     terminal = Q(status__in=COMPLETED) | Q(status=MachineServiceRequest.Status.FAILED)
@@ -87,7 +93,7 @@ def build_printer_service_report(makerspace_id, *, limit=None, date_range=None, 
         ).filter(_request_scope_q(machine_scope)).filter(terminal).order_by()
     if date_range:
         requests = requests.filter(_date_filter("completed_at", date_range) | _date_filter("failed_at", date_range))
-    payment_totals = defaultdict(lambda: [Decimal("0.00"), Decimal("0.00")])
+    payment_totals = defaultdict(lambda: [Decimal("0.000"), Decimal("0.000")])
     request_machines = {
         request_id: ((space_id, machine_id) if aggregate else machine_id)
         for request_id, space_id, machine_id in requests.values_list("id", "makerspace_id", "assigned_machine_id")
@@ -105,8 +111,8 @@ def build_printer_service_report(makerspace_id, *, limit=None, date_range=None, 
         completed_minutes=Coalesce(Sum("actual_minutes", filter=Q(status__in=COMPLETED)), Value(0)),
         failed_minutes=Coalesce(Sum(ExpressionWrapper(F("actual_minutes") * F("fail_percent_complete") / Value(100.0), output_field=FloatField()), filter=Q(status=MachineServiceRequest.Status.FAILED)), Value(0.0)),
         grams=Coalesce(Sum("actual_consumed_grams"), Value(Decimal("0.00"), output_field=DecimalField(max_digits=12, decimal_places=2))),
-        payment_due=Coalesce(Sum("payment_amount", filter=Q(payment_status="pending")), Value(Decimal("0.00"), output_field=DecimalField(max_digits=12, decimal_places=2))),
-        payment_paid=Coalesce(Sum("payment_amount", filter=Q(payment_status="paid")), Value(Decimal("0.00"), output_field=DecimalField(max_digits=12, decimal_places=2))),
+        payment_due=Coalesce(Sum("payment_amount", filter=Q(payment_status="pending")), Value(Decimal("0.000"), output_field=DecimalField(**MONEY))),
+        payment_paid=Coalesce(Sum("payment_amount", filter=Q(payment_status="paid")), Value(Decimal("0.000"), output_field=DecimalField(**MONEY))),
     )
     if printer_type is None:
         manual = MachineUsageEntry.objects.none()
@@ -115,7 +121,7 @@ def build_printer_service_report(makerspace_id, *, limit=None, date_range=None, 
             machine__makerspace_id__in=ids,
             machine__machine_type=printer_type,
             source=MachineUsageEntry.Source.TYPED_MANUAL,
-        ).order_by()
+        ).filter(role_scope.scope_q_for(machine_scope, machine_id_paths=("machine_id",), type_id_paths=("machine__machine_type_id",)) if machine_scope is not None else Q()).order_by()
     if date_range:
         manual = manual.filter(_date_filter("created_at", date_range))
     manual_values = ["machine_id"] + (["machine__makerspace_id"] if aggregate else [])
@@ -285,7 +291,7 @@ def _hours(minutes):
 
 
 def _amount(value):
-    return Decimal(value or 0).quantize(CENT, rounding=ROUND_HALF_UP)
+    return trim_money(Decimal(value or 0))
 
 
 def _sort_key(row, aggregate):

@@ -11,8 +11,8 @@ from apps.machines.public_service_serializers import PublicMachineServiceStatusS
 from apps.machines.public_service_status import public_service_status
 
 STATUS_ERRORS = {
-    400: OpenApiResponse(ErrorSerializer, description="The job's makerspace has machine service (or printing) disabled."),
-    404: OpenApiResponse(description="Unknown, unservable or edition-hidden tracking token."),
+    404: OpenApiResponse(description=("Unknown, unservable or edition-hidden tracking token, or the job's "
+                                      "makerspace has machine service (or printing) disabled.")),
     429: OpenApiResponse(ErrorSerializer, description="Status lookup rate limit exceeded."),
 }
 

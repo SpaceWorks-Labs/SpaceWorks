@@ -30,13 +30,42 @@ from apps.machines.service_workflow_helpers import (
 )
 
 
-def _choose_machine(locked, queue, candidate_scope, machine_id):
-    if machine_id is None and queue and queue.allocation_policy == ServiceQueue.AllocationPolicy.FIRST_IDLE:
-        return Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace", "machine_type").filter(
+def _first_free(locked, queue, candidate_scope):
+    """FIRST_IDLE in id order, falling through a machine that is locked out, booked by someone
+    else or in a live session to its free sibling: those block THAT machine, never the whole
+    queue (machines audit 0.12.0). Locks stay in id order. With no free machine the first idle
+    one is returned, so the caller's checks raise their usual typed refusal."""
+    from apps.machines.booking_gate import live_bookings
+    from apps.machines.lockout import blocking_schedules
+    person, skipped, first = locked.member_id or locked.requester_id, [], None
+    while True:
+        machine = Machine.objects.select_for_update(no_key=True, of=("self",)).select_related("makerspace", "machine_type").filter(
             candidate_scope,
             makerspace_id=locked.makerspace_id, machine_type_id=queue.machine_type_id,
             is_active=True, status=Machine.Status.IDLE,
-        ).order_by("id").first()
+        ).exclude(pk__in=skipped).order_by("id").first()
+        if machine is None:
+            return first
+        first = first or machine
+        booked = live_bookings(machine)
+        if not (blocking_schedules(machine) or _in_session(machine)
+                or (booked is not None and booked.exclude(member_id=person).exists())):
+            return machine
+        skipped.append(machine.pk)
+
+
+def _in_session(machine):
+    """A live member/staff session or an open supervised session holds the machine (device
+    sessions are the job's own run and never block it)."""
+    from apps.machines.models import MachineSession
+    from apps.machines.supervised import open_session_for
+    return (MachineSession.objects.filter(machine_id=machine.pk, ended_at__isnull=True)
+            .exclude(source=MachineSession.Source.DEVICE).exists() or open_session_for(machine) is not None)
+
+
+def _choose_machine(locked, queue, candidate_scope, machine_id):
+    if machine_id is None and queue and queue.allocation_policy == ServiceQueue.AllocationPolicy.FIRST_IDLE:
+        return _first_free(locked, queue, candidate_scope)
     if machine_id is None:
         raise ServiceMachineUnavailable("A machine is required to start service.")
     if not locked.queue_id:
@@ -61,8 +90,9 @@ def _require_machine_free(locked, machine, batch):
     ).exclude(pk=locked.pk)
     if batch is None:
         _require_available(machine)
-        if others.exists():
-            # C8: a coherent in-progress row governs availability whatever the flag says.
+        if others.exists() or _in_session(machine):
+            # C8: a coherent in-progress row governs availability whatever the flag says; a live
+            # member or supervised session holds the machine the same way (audit 0.12.0).
             raise ServiceMachineUnavailable("Machine is not available for service requests.")
         return
     if not machine.is_active or batch.machine_id != machine.pk or others.exclude(batch_id=batch.pk).exists():

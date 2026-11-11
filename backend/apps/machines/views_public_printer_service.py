@@ -1,18 +1,20 @@
 from types import SimpleNamespace
 import uuid
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.apiclients.throttling import ClientTierRateThrottle
+from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.machines.models import MachineServiceRequest
 from apps.machines.public_printer_service import public_pools, public_queues, public_status, stage_upload, submit_request
 from apps.machines.public_printer_service_serializers import PublicPrinterPoolSerializer, PublicPrinterQueueSerializer, PublicPrinterStatusSerializer, PublicPrinterSubmitResponseSerializer, PublicPrinterSubmitSerializer, PublicPrinterUploadSerializer
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.platform import module_enabled
+from apps.machines.public_intake_access import require_job_requests
 from apps.machines.views_public_service import require_public_machine_requester
 from apps.machines.views_public_service_status import STATUS_ERRORS
 from apps.machines.permissions import IsActiveRequester
@@ -45,6 +47,7 @@ class PublicPrinterQueuesView(APIView):
     def get(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         _require_printer_module(makerspace)
+        require_job_requests(makerspace)  # discovery follows the intake switch (dec 221e)
         return Response(PublicPrinterQueueSerializer(public_queues(makerspace), many=True).data)
 
 
@@ -57,6 +60,7 @@ class PublicPrinterPoolsView(APIView):
     def get(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         _require_printer_module(makerspace)
+        require_job_requests(makerspace)  # discovery follows the intake switch (dec 221e)
         return Response(PublicPrinterPoolSerializer(public_pools(makerspace), many=True).data)
 
 
@@ -65,7 +69,9 @@ class PublicPrinterUploadView(APIView):
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "print_request_submit"
 
-    @extend_schema(tags=["Public machine service"], request=PublicPrinterUploadSerializer, responses={201: PublicPrinterSubmitResponseSerializer})
+    @extend_schema(tags=["Public machine service"], request=PublicPrinterUploadSerializer,
+                   responses={201: PublicPrinterSubmitResponseSerializer, 403: OpenApiResponse(ErrorSerializer),
+                              404: OpenApiResponse(ErrorSerializer, description="Public machine intake unavailable or module off.")})
     def post(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         _require_printer_module(makerspace)
@@ -80,7 +86,9 @@ class PublicPrinterRequestView(APIView):
     throttle_classes = [ClientTierRateThrottle]
     throttle_scope = "print_request_submit"
 
-    @extend_schema(tags=["Public machine service"], request=PublicPrinterSubmitSerializer, responses={201: PublicPrinterSubmitResponseSerializer})
+    @extend_schema(tags=["Public machine service"], request=PublicPrinterSubmitSerializer,
+                   responses={201: PublicPrinterSubmitResponseSerializer, 403: OpenApiResponse(ErrorSerializer),
+                              404: OpenApiResponse(ErrorSerializer, description="Public machine intake unavailable or module off.")})
     def post(self, request, makerspace_slug):
         makerspace = get_public_makerspace(makerspace_slug)
         _require_printer_module(makerspace)

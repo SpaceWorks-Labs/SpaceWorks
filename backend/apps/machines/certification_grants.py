@@ -18,7 +18,8 @@ from .notifications_certifications import notify_certification
 
 
 @transaction.atomic
-def issue_grant(certification_type, membership, *, actor, expires_at=None, notes="", previous=None):
+def issue_grant(certification_type, membership, *, actor, expires_at=None, notes="", previous=None,
+                source_event=None):
     row = rbac.scope_by_makerspace(actor, CertificationType.objects.select_for_update()).get(pk=certification_type.pk)
     require_module(row.makerspace, "machines")
     if not access.can_create_machine(actor, row.makerspace_id, row.machine_type):
@@ -48,6 +49,8 @@ def issue_grant(certification_type, membership, *, actor, expires_at=None, notes
     )
     meta = {"certification_type_id": row.pk, "membership_id": membership.pk,
             "expires_at": expiry.isoformat() if expiry else None}
+    if source_event is not None:
+        meta["source_event_id"] = source_event.pk
     if previous is not None:
         meta["previous_grant_id"] = previous.pk
     record(actor, "certification.renewed" if previous else "certification.granted",

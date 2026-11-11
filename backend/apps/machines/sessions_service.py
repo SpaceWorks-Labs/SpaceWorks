@@ -48,6 +48,10 @@ def start(machine, member, *, actor, source, digest=None, now=None):
         machine = Machine.objects.select_for_update(no_key=True, of=("self",)).select_related(
             "makerspace", "machine_type").get(pk=machine.pk)
         require_can_start(machine, member, now=now)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        # Decision 284: refuses the START of a member/staff session; a DEVICE-reported session is a fact
+        # about a job that already ran (sessions_device) and is counted, never refused.
+        check_extra_quota(machine.makerspace, "machine_sessions_monthly")
         rate = billing.start_quote(machine, member) if billing.billing_active(machine.makerspace) else None
         if rate is not None and digest:
             verify_digest(rate, digest)

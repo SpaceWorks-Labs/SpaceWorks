@@ -15,7 +15,7 @@ Money never moves here: a charge is a pending `Payment` staff or the member sett
 
 import logging
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from apps.payments.models import Payment
 
@@ -52,6 +52,11 @@ def _raise_frozen(job, actor, quote):
                                    member=job.member or job.requester,
                                    created_by=actor or job.accepted_by or job.handled_by, target=job,
                                    create=create_payment)
+    except IntegrityError:
+        # A concurrent raise won payment_one_per_subject: that row is this job's one charge.
+        payment = payment_for(job)
+        if payment is None:
+            logger.exception("machine_job_charge_not_recorded", extra={"service_request_id": job.pk})
     except Exception:
         logger.exception("machine_job_charge_not_recorded", extra={"service_request_id": job.pk})
         return None
@@ -60,14 +65,9 @@ def _raise_frozen(job, actor, quote):
 
 
 def _offer_checkout(job, payment):
-    """Same as the L15 seam: an online checkout only where the rail is live; never blocks."""
-    from apps.payments.availability import online_payments_enabled
-    from apps.payments.services import create_checkout
-    if payment is not None and online_payments_enabled(job.makerspace, "machines"):
-        try:
-            create_checkout(payment)
-        except Exception:
-            logger.warning("machine_job_checkout_not_created", extra={"service_request_id": job.pk})
+    """Same as the L15 seam: post-commit, pending only, where the rail is live; never blocks."""
+    from apps.machines.service_payments import offer_checkout
+    offer_checkout(payment, job.pk)
 
 
 def raise_prepay(job, actor):

@@ -39,10 +39,16 @@ class MachineStatusEvent(TrackingFact):
         indexes = [models.Index(fields=["machine", "at"], name="machine_status_timeline_idx")]
 
 
+#: Shop sources key on the `shop.ShopStockMovement` that moved a linked inventory consumable:
+#: `shop_sale` prices a sale, `shop_return` REVERSES part of one (a restock) at the sale's own
+#: frozen price, so a report nets it (subtracts) rather than adding it (decision 216 item 11).
+SHOP_COST_REVERSAL_KINDS = frozenset({"shop_return"})
+
+
 class ConsumableCostRecord(TrackingFact):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE)
     source_kind = models.CharField(max_length=32, choices=[(s, s) for s in (
-        "pooled_service", "manual_adjustment", "non_pool_consumption",
+        "pooled_service", "manual_adjustment", "non_pool_consumption", "shop_sale", "shop_return",
     )])
     source_id = models.PositiveBigIntegerField()
     quantity = models.DecimalField(max_digits=12, decimal_places=2)

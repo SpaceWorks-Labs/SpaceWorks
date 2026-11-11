@@ -25,14 +25,18 @@ class SessionRefused(APIException):
 
 
 def _person(machine, member):
-    from apps.presence.guard import (
-        MemberPresenceRequired, PresenceRequired, WaiverAcceptanceRequired, require_active_member_presence,
-    )
+    from apps.presence.guard import MemberPresenceRequired, PresenceRequired, WaiverAcceptanceRequired
+    from apps.presence.guest_guard import require_member_or_guest
     if member is None or getattr(member, "access_status", "active") != "active" or not member.is_active:
         raise SessionRefused("member_restricted", "This account is restricted or suspended, so it cannot "
                              "start a machine session.", status_code=403)
+    from apps.makerspaces.minors_guard import require_minor_clearance  # decision 223 (k)
+    require_minor_clearance(member, machine.makerspace, "machine")
     try:
-        require_active_member_presence(member, machine.makerspace)
+        active = require_member_or_guest(member, machine.makerspace)
+        if active.guest_pass is not None:  # decision 223 (d): the pass's machine mode decides
+            from apps.machines.guest_access import require_guest_machine
+            require_guest_machine(active.guest_pass, member, machine.makerspace, machine=machine)
     except WaiverAcceptanceRequired:
         raise SessionRefused("waiver_acceptance_required", "Accept the space's current waiver first.",
                              status_code=403)
@@ -41,6 +45,12 @@ def _person(machine, member):
     except MemberPresenceRequired:
         raise SessionRefused("membership_required", "Only active members of this space can use its machines.",
                              status_code=403)
+
+
+def _is_member(machine, member):
+    from apps.makerspaces.models import MakerspaceMembership
+    return MakerspaceMembership.objects.filter(
+        makerspace_id=machine.makerspace_id, user=member, status="active").exists()
 
 
 def missing_certifications(machine, member, now=None):
@@ -68,6 +78,9 @@ def _machine(machine, member, now):
     if not machine.is_active or machine.status in DOWN:
         raise SessionRefused("machine_unavailable", "This machine is down or under maintenance.")
     require_not_locked_out(machine)
+    from apps.machines.supervised import open_session_for
+    if open_session_for(machine) is not None:
+        raise SessionRefused("machine_in_use", "A supervised workshop session is using this machine.")
     booking_gate.check(machine, member, purpose="session", at=now)
     live = MachineSession.objects.filter(machine_id=machine.pk, ended_at__isnull=True).first()
     if live is not None and live.member_id == getattr(member, "pk", None):
@@ -82,7 +95,7 @@ def _machine(machine, member, now):
 def require_can_start(machine, member, *, now=None):
     now = now or timezone.now()
     _person(machine, member)
-    missing = missing_certifications(machine, member, now)
+    missing = missing_certifications(machine, member, now) if _is_member(machine, member) else []
     if missing:
         raise SessionRefused("certification_required", "You need the certification for this machine first.",
                              status_code=403, certifications=missing)

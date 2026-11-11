@@ -30,13 +30,24 @@ RUNNING = MachineServiceRequest.Status.IN_PROGRESS
 LIVE = frozenset((*WAITING, RUNNING))
 
 
-def _unattended():
+def _policy(field):
     from django.db.models import OuterRef, Subquery
 
     from apps.machines.models import MakerspaceMachineTypePolicy
     return Subquery(MakerspaceMachineTypePolicy.objects.filter(
         makerspace_id=OuterRef("makerspace_id"), machine_type_id=OuterRef("machine_type_id"),
-    ).values("runs_unattended")[:1])
+    ).values(field)[:1])
+
+
+def _lockout_rows():
+    """Maintenance lockout (machines D6) rides on the machine SELECT, so the budget holds."""
+    from django.db.models import IntegerField, Value
+
+    from apps.separability.registry import runtime_active
+    if not runtime_active("maintenance"):
+        return Value(None, output_field=IntegerField())
+    from apps.machines.lockout_batch import schedules_annotation
+    return schedules_annotation()
 
 
 def _runs_unattended(slug, stored):
@@ -79,13 +90,18 @@ class _TenantSnapshot:
         queues = list(rbac.scope_verified_tenant(ServiceQueue.objects.all(), makerspace_id).values_list(
             "id", "machine_type_id", "is_active", "capacity"))
         # The opening-hours calendar and each type's attended flag ride on this same SELECT
-        # (#142 OQ-11), so the four-query budget holds.
+        # (#142 OQ-11), so the four-query budget holds. So do maintenance lockout's schedules,
+        # meter readings, grace days and the space's capability columns.
         rows = list(rbac.scope_verified_tenant(Machine.objects.all(), makerspace_id).annotate(
-            unattended=_unattended()).values_list(
+            unattended=_policy("runs_unattended"), grace=_policy("grace_days"), lockout=_lockout_rows(),
+        ).values_list(
             "id", "machine_type_id", "is_active", "status", "service_buckets__id", "service_buckets__is_active",
-            "machine_type__slug", "unattended", "makerspace__opening_hours", "makerspace__timezone"))
+            "machine_type__slug", "unattended", "makerspace__opening_hours", "makerspace__timezone",
+            "grace", "lockout", "makerspace__lifecycle_state", "makerspace__enabled_modules",
+            "makerspace__enabled_features"))
         machines = [row[:6] for row in rows]
         self.calendar = SimpleNamespace(opening_hours=rows[0][8], timezone=rows[0][9]) if rows else None
+        locked = self._locked_out(rows, now)
         self.attended = {row[1] for row in rows if not _runs_unattended(row[6], row[7])}
         queue_type = {row[0]: row[1] for row in queues}
         machine_type = {row[0]: row[1] for row in machines}
@@ -104,7 +120,7 @@ class _TenantSnapshot:
             group = (makerspace_id, type_id)
             if mid not in seen:
                 seen.add(mid)
-                self.machine_records.append(MachineRecord(mid, group, active, status))
+                self.machine_records.append(MachineRecord(mid, group, active, status, locked_out=mid in locked))
             if bucket_id is not None:
                 self.scope_records.append(ScopeRecord(("bucket", bucket_id), group, bool(bucket_active), machine_id=mid))
         for qid, type_id, active, capacity in queues:
@@ -116,6 +132,19 @@ class _TenantSnapshot:
         self.jobs = {job.id: job for job in (*self.running, *self.waiting)}
         self.timeline = Timeline(now, self.machine_records, self.scope_records, self.running, self.waiting,
                                  probe_ids=[row.pk for row in targets])
+
+    @staticmethod
+    def _locked_out(rows, now):
+        """Machine ids an overdue blocking schedule locks out (`lockout.schedule_blocks`), query-free."""
+        from apps.machines.lockout_batch import locked_out
+        if not rows:
+            return set()
+        space = SimpleNamespace(lifecycle_state=rows[0][12], enabled_modules=rows[0][13],
+                                enabled_features=rows[0][14])
+        # The space's local date, as `lockout.blocking_schedules` uses (decision 220(d)).
+        from apps.makerspaces.local_time import to_local
+        today = to_local(SimpleNamespace(timezone=rows[0][9]), now).date()
+        return {row[0] for row in rows if locked_out(space, row[11], today, row[10])}
 
     def _load_jobs(self, types):
         rows = rbac.scope_verified_tenant(MachineServiceRequest.objects.all(), self.makerspace_id)

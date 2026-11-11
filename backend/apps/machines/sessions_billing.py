@@ -18,7 +18,7 @@ from dataclasses import replace
 from decimal import Decimal
 from types import SimpleNamespace
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from apps.audit import services as audit
 
@@ -120,6 +120,9 @@ def raise_charge(session, *, minutes, member, actor):
                                    "amount": str(payment.amount),
                                    "currency": payment.currency, "minutes": int(minutes)})
             return payment
+    except IntegrityError:
+        # A concurrent stop raised the one charge first (payment_one_per_subject).
+        return payment_for(session)
     except Exception:
         # The stop must not fail on a charge error, but a debt that silently vanishes is
         # lost money: always leave a trace.

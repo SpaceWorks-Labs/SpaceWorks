@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 
 class _ScopedSerializer(serializers.Serializer):
@@ -66,8 +67,8 @@ class PrinterServiceReportRowSerializer(_ScopedSerializer):
     failed_partial_hours = serializers.FloatField()
     manual_hours = serializers.FloatField()
     consumed_grams = serializers.DecimalField(max_digits=12, decimal_places=2)
-    payment_due = serializers.DecimalField(max_digits=12, decimal_places=2)
-    payment_paid = serializers.DecimalField(max_digits=12, decimal_places=2)
+    payment_due = MoneyField(max_digits=13, decimal_places=3)
+    payment_paid = MoneyField(max_digits=13, decimal_places=3)
 
 
 class PrinterServiceReportSerializer(serializers.Serializer):

@@ -1,4 +1,5 @@
 """Machine-service parity on the existing printing notification category."""
+from django.utils.translation import gettext
 from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.hardware_requests.notifications_p2 import content, fanout, revision
@@ -96,11 +97,15 @@ def notify_service(row, event):
         staff = content(render(row.makerspace, "printing", "staff", event,
                                context, machine_type=machine_type(row)))
     else:
-        label = "Print" if _is_printer_request(row) else "Machine service"
-        own = {"subject": f"{label} request #{row.pk}",
-               "text": f"Your {label.lower()} request #{row.pk}: {event.replace('_', ' ')}.", "link": link}
-        staff = {"subject": f"{label} request #{row.pk}",
-                 "text": f"{label} request #{row.pk} {event.replace('_', ' ')}."}
+        printer = _is_printer_request(row)
+        v = {"id": row.pk, "event": event.replace("_", " ")}
+        subject = (gettext("Print request #%(id)s") if printer else gettext("Machine service request #%(id)s")) % v
+        own = {"subject": subject, "link": link,
+               "text": (gettext("Your print request #%(id)s: %(event)s.") if printer
+                        else gettext("Your machine service request #%(id)s: %(event)s.")) % v}
+        staff = {"subject": subject,
+                 "text": (gettext("Print request #%(id)s %(event)s.") if printer
+                          else gettext("Machine service request #%(id)s %(event)s.")) % v}
     owner, own_content = row.member or row.requester, own
     if event in OWNER_MILESTONES:
         # Exactly-once owner intent keyed on the immutable marker; repeated calls are no-ops.
@@ -109,7 +114,8 @@ def notify_service(row, event):
         owner = own_content = None
     # The fallback summary stays bounded; authored staff chat templates render separately.
     room_staff = dict(staff)
-    room_staff["text"] = f"Machine service request #{row.pk} {event.replace('_', ' ')}. Review in the staff console."
+    room_staff["text"] = gettext("Machine service request #%(id)s %(event)s. Review in the staff console.") % {
+        "id": row.pk, "event": event.replace("_", " ")}
     return fanout(space=row.makerspace, feature="printing", stream="printing", event=event,
         kind=KIND, source=row.pk, version=version(row), subject=row,
         owner=owner, own=own_content, staff=staff,

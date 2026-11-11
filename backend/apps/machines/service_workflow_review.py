@@ -76,6 +76,17 @@ def request_changes(service_request, actor, *, code, message):
         return locked
 
 
+def _require_intake_gates(row, member):
+    """Decision 230 (d): a resubmit re-runs the intake gates (job_requests, guest/minors rule, type open,
+    certification), because the member's standing may have changed since the job was admitted."""
+    from apps.machines.certifications import require_certification_for_member
+    from apps.machines.job_intake import require_member_job_gate
+    machine_type = row.queue.machine_type if row.queue_id else row.bucket.machine.machine_type
+    makerspace = row.makerspace
+    require_member_job_gate(makerspace, member, machine_type)
+    require_certification_for_member(makerspace, member, machine_type, purpose="service", actor=member)
+
+
 def resubmit(service_request, member, *, note="", file_ids=()):
     with transaction.atomic():
         locked = _open(service_request)
@@ -84,6 +95,7 @@ def resubmit(service_request, member, *, note="", file_ids=()):
         if locked.status != Status.CHANGES_REQUESTED:
             raise ServiceInvalidTransition("Only a job that needs changes can be resubmitted.")
         _lock_scope(locked)
+        _require_intake_gates(locked, member)
         locked.queued_at = answered_anchor(locked, locked.changes_requested_at)
         locked.status, locked.member_note = Status.PENDING, str(note or "").strip()[:4000]
         locked.save()

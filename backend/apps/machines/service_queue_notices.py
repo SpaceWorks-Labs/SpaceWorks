@@ -22,6 +22,7 @@ from apps.integrations.notification_outbox import emit
 
 from .models import MachineServiceRequest
 from .notifications_p2_service_notices import MARKERS, WAITING, default_content, milestone_revision
+from apps.integrations.fanout_jobs import deferred_fanout
 
 KIND = "machines.service"
 
@@ -64,6 +65,7 @@ def _emit(row, event, owner, *, marker, initiator):
     )
 
 
+@deferred_fanout()
 def reserve_milestone(row, event, *, initiator):
     """Mark and reserve one started/completed/cancelled intent; idempotent per row.
 
@@ -82,6 +84,7 @@ def reserve_milestone(row, event, *, initiator):
     return _emit(row, event, owner, marker=now, initiator=initiator)
 
 
+@deferred_fanout()
 def reevaluate_head(row, *, initiator):
     """Reserve the once-only ``next`` intent for the accepted head of ``row``'s scope."""
     head = head_queryset(row).select_related(

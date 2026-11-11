@@ -66,6 +66,8 @@ def submit(bucket_or_machine, requester, *, requester_name, contact_email, conta
             requester = owner
         limits.check_quota(makerspace, "machine_service_open", adding=1)
         limits.check_quota(makerspace, "machine_service_submit", adding=1)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(makerspace, "machine_jobs_monthly")  # decision 284: typed 409; a job already queued is never read
         if isinstance(target, ServiceQueue):
             if not target.is_active:
                 raise ServiceMachineUnavailable("Service queue is inactive.")

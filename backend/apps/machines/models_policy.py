@@ -7,6 +7,7 @@ settings (`charges.*` keys in the settings-authority layer).
 
 from django.utils.translation import gettext_noop
 from django.db import models
+from apps.payments.money_model import MoneyDecimalField
 
 
 class MakerspaceMachineTypePolicy(models.Model):
@@ -36,7 +37,7 @@ class MakerspaceMachineTypePolicy(models.Model):
     # #140: on/off per machine type (default on: today every active queue accepts jobs).
     accepts_job_requests = models.BooleanField(default=True)
     quote_mode = models.CharField(max_length=8, choices=QuoteMode.choices, default=QuoteMode.AUTO)
-    quote_above_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    quote_above_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     payment_timing = models.CharField(max_length=12, choices=PaymentTiming.choices,
                                       default=PaymentTiming.COMPLETION)
     # #142 OQ-8: what a member/file fault costs (a space or machine fault is always free).

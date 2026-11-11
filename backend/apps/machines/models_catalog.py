@@ -15,6 +15,7 @@ from apps.machines.service_file_policies import (
 from apps.machines.printer_capabilities import validate_machine_payload, validate_printer_config
 
 from .intake import validate_intake_schema
+from apps.payments.money_model import MoneyDecimalField
 
 
 class MachineType(models.Model):
@@ -76,8 +77,8 @@ class MakerspaceMachineTypePricing(models.Model):
 
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.PROTECT, related_name="machine_type_pricing")
     machine_type = models.ForeignKey("machines.MachineType", on_delete=models.PROTECT, related_name="makerspace_pricing")
-    rate_per_unit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    flat_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    rate_per_unit = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    flat_fee = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
     payment_enabled = models.BooleanField(default=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")

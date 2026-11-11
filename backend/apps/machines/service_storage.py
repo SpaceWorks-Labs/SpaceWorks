@@ -68,6 +68,7 @@ def create_staged_file(service_request, *, actor, filename, content_type):
         machine = Machine.objects.get(pk=service_request.bucket.machine_id)
         queue, policy, context_id, makerspace = None, policy_for_machine(machine), machine.pk, machine.makerspace
     validate_upload_declaration(policy, filename, content_type)
+    limits.check_upload_headroom(makerspace)  # #234: storage full refuses before the upload
     upload = ServiceRequestFile.objects.create(
         makerspace=makerspace, machine=machine, queue=queue,
         kind=ServiceRequestFile.Kind.ATTACHMENT,
@@ -98,6 +99,7 @@ def create_staged_queue_file(queue, *, actor, filename, content_type, kind=Servi
     """
     policy = policy_for_queue(queue)
     validate_upload_declaration(policy, filename, content_type)
+    limits.check_upload_headroom(queue.makerspace)  # #234
     upload = ServiceRequestFile.objects.create(
         makerspace=queue.makerspace, queue=queue,
         kind=kind,

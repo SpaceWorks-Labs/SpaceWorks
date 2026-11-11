@@ -12,6 +12,7 @@ from django.db.models import Q
 from apps.encryption.mappers import ScopedPiiModelMixin, ScopedPiiQuerySet
 from apps.machines.metering import MeteringUnit
 from apps.machines.models_job_fields import JobFlowFields
+from apps.payments.money_model import MoneyDecimalField
 
 
 class ServiceQueue(models.Model):
@@ -186,7 +187,7 @@ class MachineServiceRequest(ScopedPiiModelMixin, JobFlowFields, models.Model):
         "machines.MachineConsumablePool", null=True, blank=True, on_delete=models.PROTECT,
         related_name="run_service_requests",
     )
-    payment_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    payment_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     payment_status = models.CharField(max_length=16, default="none")
     paid_at = models.DateTimeField(null=True, blank=True)
     run_machine_name = models.CharField(max_length=200, blank=True)

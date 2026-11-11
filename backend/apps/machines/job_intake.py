@@ -12,20 +12,19 @@ shares the same gate, queue, quote rule, files and timeline:
 
 from django.utils.translation import gettext
 from django.db import transaction
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import ValidationError
 
 from apps.machines import job_policy
 from apps.machines.models import ServiceQueue
-from apps.makerspaces.platform import feature_enabled
 
 ACKNOWLEDGEMENTS = ("pickup_policy", "failure_policy", "own_content")
 
 
 def require_member_job_gate(makerspace, user, machine_type):
+    from apps.machines.public_intake_access import require_guest_job
     from apps.machines.views_public_service import require_public_machine_requester
-    if not feature_enabled(makerspace, job_policy.JOB_REQUESTS):
-        raise NotFound({"detail": gettext("Job requests are switched off here."), "code": "capability_disabled"})
-    require_public_machine_requester(user, makerspace)
+    active = require_public_machine_requester(user, makerspace)  # `machines.job_requests` first (feature_off 404)
+    require_guest_job(active, user, makerspace, machine_type)  # decision 223 (d)
     if not job_policy.accepts_jobs(makerspace, machine_type):
         raise ValidationError({"queue_id": gettext("This machine type is not taking job requests."), "code": "type_closed"})
 
@@ -61,7 +60,8 @@ def submit_job(makerspace, member, data):
     payload = _payload(queue, data)
     with transaction.atomic():
         # Same lock order as `submit`: the makerspace first, so the limit count is stable.
-        Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
+        makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
+        require_member_job_gate(makerspace, member, queue.machine_type)
         require_open_job_limit(makerspace, member, queue.machine_type)
         if payload is not None and "requested_material" in payload:
             from apps.makerspaces import limits

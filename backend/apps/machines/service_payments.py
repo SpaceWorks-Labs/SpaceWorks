@@ -14,7 +14,7 @@ cancelled while running is never charged (#58/#61): nothing here is called for i
 import logging
 from decimal import Decimal, InvalidOperation
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from apps.payments.availability import charge_tracking_enabled, online_payments_enabled
 from apps.payments.models import Payment
@@ -80,6 +80,14 @@ def _raise(service_request, actor, *, outcome, failure_charge=None):
                 # blank keeps the live lookup (which still shows the title while the request
                 # exists) and degrades to the generic display once the request is gone.
             )
+    except IntegrityError:
+        # A concurrent completion raised the one charge first (payment_one_per_subject):
+        # that row IS this job's charge, not a lost debt.
+        payment = Payment.objects.filter(
+            makerspace=service_request.makerspace, subject_type=Payment.SubjectType.MACHINE_SERVICE_REQUEST,
+            subject_id=service_request.pk).first()
+        if payment is None:
+            logger.exception("machine_service_charge_not_recorded", extra={"service_request_id": service_request.pk})
     except Exception:
         # Fulfilment must not fail on a charge error, but a debt that silently vanishes
         # is lost money: always leave a trace.
@@ -87,12 +95,28 @@ def _raise(service_request, actor, *, outcome, failure_charge=None):
             "machine_service_charge_not_recorded", extra={"service_request_id": service_request.pk}
         )
         return None
-    if payment is not None and online_payments_enabled(service_request.makerspace, "machines"):
+    offer_checkout(payment, service_request.pk)
+    return payment
+
+
+def offer_checkout(payment, service_request_id):
+    """The optional rail, after the job's transaction commits and only for a pending debt.
+
+    Never inside the caller's locked job transaction: provider I/O must not hold the job
+    row, and a session must not be minted for a charge whose transaction then rolls back.
+    """
+    if payment is None or payment.status != Payment.Status.PENDING:
+        return
+    if not online_payments_enabled(payment.makerspace, "machines"):
+        return
+
+    def create_safely():
         try:
             create_checkout(payment)
         except Exception:
-            pass
-    return payment
+            logger.warning("machine_service_checkout_not_created", extra={"service_request_id": service_request_id})
+
+    transaction.on_commit(create_safely)
 
 
 def _decimal(value):

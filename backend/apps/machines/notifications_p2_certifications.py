@@ -1,5 +1,6 @@
 """Member certification notices and type-scoped staff notices."""
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_noop
 
 from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
@@ -14,6 +15,8 @@ from apps.makerspaces.local_time import to_local
 from .models import CertificationGrant, CertificationType
 
 KIND = "machines.certification"
+GUEST_KIND = "machines.guest_certification"
+GRANT_WORDS = {"granted": gettext_noop("granted"), "revoked": gettext_noop("revoked")}
 DIGEST = "machines.certification_summary"
 
 
@@ -71,8 +74,10 @@ def notify(grant, event, *, include_staff=True):
     if event in {"expiring", "expired"}:
         own = content(render(space, "certifications", "requester", event, context))
     else:
-        own = {"subject": f"Certification {event}",
-               "text": f"Your certification {certification.name[:160]}: {event}. Expiry: {expiry}."}
+        what = gettext(GRANT_WORDS.get(event, event))
+        own = {"subject": gettext("Certification %(what)s") % {"what": what},
+               "text": gettext("Your certification %(name)s: %(what)s. Expiry: %(expiry)s.") % {
+                   "name": certification.name[:160], "what": what, "expiry": expiry}}
     own["link"] = local_link(space, "member")
     return fanout(space=space, feature="certifications", stream="certifications",
         event=event, kind=KIND, source=grant.pk, version=version(grant), subject=grant,
@@ -109,13 +114,49 @@ def notify_digest(space, reminder, message):
             "event_name": "expiring", "subject": bag(id=certification.pk, name=certification.name[:160], expires_at="")})
 
 
+def guest_version(grant):
+    return revision(grant.granted_at, grant.expires_at, grant.revoked_at)
+
+
+def eligible_guest(envelope):
+    """A guest-pass holder's induction certificate: still theirs, same revision, in a live machines space."""
+    from apps.makerspaces.platform import module_enabled
+
+    from .models import GuestCertificationGrant
+    grant = rbac.scope_notification_policy(GuestCertificationGrant.objects.all(),
+        makerspace_id=envelope.makerspace_id).select_related("certification_type").filter(
+        pk=envelope.source_id, user_id=envelope.recipient_id, certification_type__is_active=True).first()
+    return bool(grant and envelope.audience == "requester" and guest_version(grant) == envelope.revision
+                and (grant.revoked_at is not None) == (envelope.event == "revoked")
+                and module_enabled(envelope.makerspace, "machines"))
+
+
+@safe_adapter
+def notify_guest(grant, event):
+    """Decision 223 (d): a guest-pass holder certified after an induction (or revoked) hears it, like a member.
+
+    Owner leg only: staff already made the decision and the audit row records it."""
+    space, certification = grant.makerspace, grant.certification_type
+    expiry = to_local(space, grant.expires_at).isoformat() if grant.expires_at else ""
+    what = gettext(GRANT_WORDS[event])
+    own = {"subject": gettext("Certification %(what)s") % {"what": what},
+           "text": gettext("Your certification %(name)s: %(what)s. Expiry: %(expiry)s.") % {
+               "name": certification.name[:160], "what": what, "expiry": expiry},
+           "link": local_link(space, "member")}
+    return fanout(space=space, feature="certifications", stream="certifications", event=event, kind=GUEST_KIND,
+        source=grant.pk, version=guest_version(grant), subject=grant, owner=grant.user, own=own, staff=None,
+        scope=NotificationScope(machine_type=certification.machine_type_id),
+        context={"guest_certification_grant_id": grant.pk})
+
+
 def register():
     register_source(KIND, NotificationSource(eligible))
+    register_source(GUEST_KIND, NotificationSource(eligible_guest))
     register_source(DIGEST, NotificationSource(eligible_digest, render_digest))
 
 
 def render_digest(envelope):
     from .reminders_certification_digest import counts
     count = counts(envelope.makerspace, envelope.scope["machine_type_id"], timezone.now())
-    return {"subject": "Expiring certifications",
-            "text": f"{count} certification(s) expire soon; review and renew training."}
+    return {"subject": gettext("Expiring certifications"),
+            "text": gettext("%(count)s certification(s) expire soon; review and renew training.") % {"count": count}}

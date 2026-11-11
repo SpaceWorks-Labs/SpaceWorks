@@ -82,7 +82,8 @@ class MemberSessionSerializer(serializers.ModelSerializer):
         if not obj.billable or obj.service_request_id:
             return None
         total = billing.final_quote(obj.quote_snapshot, self.get_minutes(obj)).total
-        return str(total.quantize(Decimal("0.01")))
+        from apps.payments.money import quantize_money
+        return str(quantize_money(total, (obj.quote_snapshot or {}).get("currency")))
 
     @extend_schema_field(SessionPaymentSerializer(allow_null=True))
     def get_payment(self, obj):

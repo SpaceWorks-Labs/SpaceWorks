@@ -105,10 +105,12 @@ services:
       EVENT_ASSET_CLAMAV_PORT: "${EVENT_ASSET_CLAMAV_PORT:-3310}"
       UI_DELIGHT_ENABLED: "${UI_DELIGHT_ENABLED:-True}"
       UI_EASTER_EGGS_ENABLED: "${UI_EASTER_EGGS_ENABLED:-True}"
+      HUB_LANDING_ENABLED: "${HUB_LANDING_ENABLED:-True}"
       SPACEWORKS_EDITION: ${SPACEWORKS_EDITION:-makerspace}
       WEB_ANALYTICS_SCRIPT_URL: ${WEB_ANALYTICS_SCRIPT_URL:-}
       WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
       WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
+      WEB_TELEMETRY_ALLOWED_ORIGINS: ${WEB_TELEMETRY_ALLOWED_ORIGINS:-}
       NOTIFICATION_SLACK_REDIRECT_URI: ${NOTIFICATION_SLACK_REDIRECT_URI:-}
       NOTIFICATION_MATTERMOST_REDIRECT_URI: ${NOTIFICATION_MATTERMOST_REDIRECT_URI:-}
       NOTIFICATION_DISCORD_REDIRECT_URI: ${NOTIFICATION_DISCORD_REDIRECT_URI:-}
@@ -290,7 +292,8 @@ services:
     container_name: spaceworks-worker
     restart: unless-stopped
     environment: *backend-env
-    command: ["--role", "worker", "celery", "-A", "config", "worker", "-l", "info"]
+    # Celery defaults to one child per CPU; cap it like docker-compose.prod.yml.
+    command: ["--role", "worker", "celery", "-A", "config", "worker", "-l", "info", "--concurrency", "${CELERY_CONCURRENCY:-4}"]
     volumes:
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/work:/var/lib/spaceworks/ops/work
       - ${SPACEWORKS_OPS_HOST_DIR:-/var/lib/spaceworks/ops}/operation.lock:/var/lib/spaceworks/ops/operation.lock
@@ -338,6 +341,7 @@ services:
       WEB_ANALYTICS_COLLECT_URL: ${WEB_ANALYTICS_COLLECT_URL:-}
       WEB_ANALYTICS_DOMAIN: ${WEB_ANALYTICS_DOMAIN:-}
       WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS: ${WEB_ANALYTICS_EXTRA_CONNECT_ORIGINS:-}
+      WEB_TELEMETRY_ALLOWED_ORIGINS: ${WEB_TELEMETRY_ALLOWED_ORIGINS:-}
       # Public site key only: it lets the SPA's CSP load Cloudflare Turnstile (S-C).
       TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
     container_name: spaceworks-frontend

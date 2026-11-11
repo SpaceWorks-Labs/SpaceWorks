@@ -1,0 +1,35 @@
+# No bundled PostgreSQL: the database is an outside server (Supabase, Neon, RDS, your own).
+# SPACEWORKS_DATABASE=external selects this overlay (scripts/compose-deployment.sh). The
+# one-shot orchestration and migrate jobs use the owner/maintenance login from
+# SPACEWORKS_MAINTENANCE_DATABASE_URL; resident services use the narrow runtime login from the
+# atomic database pointer, exactly as with the bundled database. Dependencies are removed with
+# !reset so this overlay stacks with the storage and Redis overlays.
+services:
+  db:
+    profiles: [database-disabled]
+  orchestration-init:
+    environment:
+      DATABASE_URL: ${SPACEWORKS_MAINTENANCE_DATABASE_URL:?set SPACEWORKS_MAINTENANCE_DATABASE_URL}
+    depends_on:
+      db: !reset null
+  migrate:
+    environment:
+      DATABASE_URL: ${SPACEWORKS_MAINTENANCE_DATABASE_URL:?set SPACEWORKS_MAINTENANCE_DATABASE_URL}
+  orchestration-ready:
+    environment:
+      DATABASE_URL: ${SPACEWORKS_MAINTENANCE_DATABASE_URL:?set SPACEWORKS_MAINTENANCE_DATABASE_URL}
+  backend:
+    depends_on:
+      db: !reset null
+  live:
+    depends_on:
+      db: !reset null
+  worker:
+    depends_on:
+      db: !reset null
+  beat:
+    depends_on:
+      db: !reset null
+  candidate-backend:
+    depends_on:
+      db: !reset null

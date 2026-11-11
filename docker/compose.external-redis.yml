@@ -1,0 +1,22 @@
+# No bundled Redis: the broker, cache and live-event channel are an outside Redis (Upstash,
+# Redis Cloud, ElastiCache, your own). SPACEWORKS_REDIS=external selects this overlay;
+# CELERY_BROKER_URL (and optionally CACHE_URL / LIVE_REDIS_URL) in .env carry the rediss:// URL.
+# A deployment that wants no Redis at all uses docker-compose.managed-brokerless.yml instead.
+services:
+  redis:
+    profiles: [redis-disabled]
+  backend:
+    depends_on:
+      redis: !reset null
+  live:
+    depends_on:
+      redis: !reset null
+  worker:
+    depends_on:
+      redis: !reset null
+  beat:
+    depends_on:
+      redis: !reset null
+  candidate-backend:
+    depends_on:
+      redis: !reset null

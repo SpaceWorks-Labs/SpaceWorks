@@ -12,6 +12,7 @@ Live source check: the invitation is still open (not redeemed, revoked or expire
 U-B wires staff-role invites to this same helper.
 """
 
+from django.utils.translation import gettext
 import logging
 from hashlib import sha256
 
@@ -52,7 +53,8 @@ def dispatch_invite_chat(makerspace, *, feature, invite, email, label, link, inv
                 audience="member", dedup_key=f"invite:{invite_kind or feature}:{invite.pk}:{sha256(link.encode()).hexdigest()[:24]}",
                 source_kind=SOURCE, source_id=str(invite.pk), revision=feature,
                 context={"invite_feature": invite_kind or feature},
-                rendered={"subject": label, "text": f"{label}. Accept it here: {link}", "html": "", "link": link})
+                rendered=lambda: {"subject": label, "text": gettext("%(label)s. Accept it here: %(link)s") % {
+                    "label": label, "link": link}, "html": "", "link": link})
             NotificationDelivery.objects.get_or_create(envelope=envelope, channel="email", defaults={
                 "makerspace": makerspace, "target_key": "email", "provider": "builtin",
                 "state": "skipped", "last_error": "sent_directly"})

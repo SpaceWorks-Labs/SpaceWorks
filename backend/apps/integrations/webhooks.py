@@ -155,6 +155,16 @@ def sign_webhook_body(secret: str, body: bytes, timestamp: int) -> str:
     return f"t={timestamp},{SIGNATURE_VERSION}={digest}"
 
 
+def signature_header_for(destination, body: bytes, timestamp: int) -> str:
+    """The signature header value: one `v1=` per live secret, newest first (current, then a retiring one)."""
+    from apps.integrations.webhook_secrets import live_previous_secret
+    header = sign_webhook_body(destination.get_signing_secret(), body, timestamp)
+    previous = live_previous_secret(destination)
+    if previous:
+        header += "," + sign_webhook_body(previous, body, timestamp).split(",", 1)[1]
+    return header
+
+
 def webhook_event_body(log) -> dict:
     """The JSON a signed webhook receives: exactly the notification a chat room would get,
     plus the ids the matrix already attached. No `meta`, no contact fields."""
@@ -185,7 +195,7 @@ def send_signed_webhook(log) -> bool:
     body = json.dumps(webhook_event_body(log), separators=(",", ":"), sort_keys=True).encode("utf-8")
     timestamp = int(time.time())
     headers = {
-        SIGNATURE_HEADER: sign_webhook_body(secret, body, timestamp),
+        SIGNATURE_HEADER: signature_header_for(destination, body, timestamp),
         EVENT_HEADER: log.event,
         DELIVERY_HEADER: str(log.pk),
         "User-Agent": "SpaceWorks-Webhook/1",

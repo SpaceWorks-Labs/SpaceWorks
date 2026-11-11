@@ -6,7 +6,7 @@ from apps.operations.cloud_jobs import bounded
 from apps.operations.cloud_jobs.contracts import BudgetExpired, ChunkResult, GuardLost
 from .outbox import delivery_deadline, drain
 
-PHASES = ("media", "personal", "mail", "channels")
+PHASES = ("media", "personal", "mail", "channels", "firebase")
 
 
 def drain_chunk(context):
@@ -41,6 +41,12 @@ def drain_chunk(context):
 
 
 def _phase(phase, context, cursor):
+    if phase == "firebase":
+        from django.apps import apps
+        if not apps.is_installed("apps.notifications"):
+            return {"remaining": False, "cursor": 0, "processed": 0}
+        from apps.notifications.browser_firebase_delivery import drain_chunk as drain_firebase
+        return drain_firebase(context, cursor)
     if phase == "channels":
         from .channel_chunks import drain_channels
         return drain_channels(context, cursor)

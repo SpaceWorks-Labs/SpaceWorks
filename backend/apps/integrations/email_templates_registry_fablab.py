@@ -85,7 +85,8 @@ MAKERSPACE_FIELDS = [
     {"name": "makerspace.name", "description": "Makerspace name."},
     {"name": "makerspace.location", "description": "Makerspace location label."},
     {"name": "makerspace.map_url", "description": "Google Maps link for the makerspace."},
-    {"name": "event_name", "description": "Lifecycle event that triggered this email."},
+    {"name": "event_name", "description": "Lifecycle event key that triggered this email (for comparisons)."},
+    {"name": "event_label", "description": "The same lifecycle event in readable words."},
     {"name": "now", "description": "Current render time."},
 ]
 

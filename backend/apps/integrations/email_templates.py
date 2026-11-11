@@ -7,6 +7,7 @@ from django.utils.translation import gettext
 from config.locale_resolution import override_for
 
 from apps.integrations.email_templates_registry import bag, get_entry
+from apps.integrations.event_labels import with_event_label
 from apps.integrations.models import EmailTemplate, MachineTypeEmailTemplate
 
 logger = logging.getLogger(__name__)
@@ -183,6 +184,7 @@ def render_preview(stream, audience, key, subject, text_body, html_body):
 
 
 def _render_strings(subject, text_body, html_body, context, *, use_tz=None):
+    context = with_event_label(context)
     return {
         "subject": _render_string(subject, context, use_tz=use_tz).strip(),
         "text_body": _render_string(text_body, context, use_tz=use_tz),

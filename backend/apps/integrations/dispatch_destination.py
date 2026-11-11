@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from apps.integrations.dispatch_channels import (
     _channel_configured,
+    ChannelModuleUnavailable,
     channel_module_blocks,
     sanitize_notification_error,
 )
@@ -58,7 +59,13 @@ def deliver_text_to_destination(
     channel = destination.channel
     if channel not in ChatNotificationChannel.values:
         return False, "notification_channel_unsupported"
-    if channel_module_blocks(makerspace, channel):
+    try:
+        blocked = channel_module_blocks(makerspace, channel, strict=True)
+    except ChannelModuleUnavailable:
+        # This synchronous room leg has no outbox row to retry from, so an unknown
+        # module state fails closed before quota; independent legs still proceed.
+        return False, "channel_module_unavailable"
+    if blocked:
         return False, "notification_channel_module_disabled"
     if not _channel_configured(makerspace, channel, destination):
         return False, "notification_channel_not_configured"

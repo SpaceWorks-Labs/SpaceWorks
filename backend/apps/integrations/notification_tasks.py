@@ -62,6 +62,13 @@ def runnable_deliveries(rows):
 
 @shared_task
 def sweep_notification_outbox():
+    from django.apps import apps
+    if apps.is_installed("apps.notifications"):
+        from apps.notifications.browser_firebase_delivery import sweep_pending
+        try:
+            sweep_pending()
+        except Exception:
+            logger.exception("browser_firebase_recovery_failed")
     from .notification_ingress import recover
     recover()
     from .notification_media import cleanup_grants
@@ -73,7 +80,7 @@ def sweep_notification_outbox():
     legs = NotificationDelivery.objects.filter(envelope_id=OuterRef("pk"))
     due = NotificationEnvelope.objects.filter(
         Q(available_at=None) | Q(available_at__lte=now),
-    ).exclude(source_kind="legacy.lifecycle", message_body="").alias(
+    ).exclude(Q(source_kind="legacy.lifecycle", message_body="") & ~Q(context__has_key="fanout")).alias(
         has_legs=Exists(legs), has_unheld_legs=Exists(legs.exclude(state="held")),
         runnable=Exists(runnable_deliveries(legs)),
     ).filter(

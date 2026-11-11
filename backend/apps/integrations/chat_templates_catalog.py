@@ -22,6 +22,9 @@ EVENTS = {
     ("members", "joined"): ("subject.id", "subject.status"),
     ("members", "verified"): ("subject.id", "subject.status"),
     ("members", "vouched"): (),
+    # Decision 223: guest-pass notices carry no personal fields beyond the pass window.
+    **{("members", event): () for event in ("guest_pass_issued", "guest_pass_expiring", "guest_pass_sponsor_notice")},
+    ("members", "join_followup"): (),
     ("stock", "scheduled"): (),
     ("stock", "completed"): (),
     # Machine-service cancellation fans out to staff and rooms (notify_service); the
@@ -35,6 +38,8 @@ EVENTS = {
     **{(feature, event): ("issue_id",) for feature in ("hardware_requests", "bookings", "maintenance")
        for event in ("issue_reported", "repair_quote_pending")},
     ("maintenance", "repair_dispatched"): (),
+    # Release 0.12.0 (decision 223): a reported safety incident (id and area only).
+    ("maintenance", "incident_reported"): ("incident_id",),
     # GAP2 M2: item and room maintenance reminders (ids only).
     **{(feature, event): ("schedule_id",) for feature in ("hardware_requests", "bookings")
        for event in ("maintenance_due_soon", "maintenance_overdue")},
@@ -48,9 +53,23 @@ EVENTS = {
     # Release 2 L18: a sponsor perk coming due fans out to staff and rooms (no giver details).
     ("payments", "perk_due"): (),
     # Release 2 L22: the shop staff's alerts to `manage_shop` holders (ids only; never the buyer).
-    **{("payments", event): () for event in ("shop_order_new", "shop_order_unfulfilled", "shop_low_stock")},
+    **{("payments", event): () for event in ("shop_order_new", "shop_order_unfulfilled", "shop_low_stock",
+                                                    "shop_order_ready_for_pickup", "shop_order_picked_up", "shop_order_delivered", "shop_order_pickup_moved")},
     # Release 2 L21a: a member's attendance reply is organiser-facing (catalogued; no producer yet).
     ("events", "attendance_replied"): (),
+    # Decision 216: linked event/booking changes and room outages (ids only; never a booker or the
+    # event's title, which a booking manager may not be allowed to see).
+    ("bookings", "linked_event_changed"): ("booking_id",),
+    ("bookings", "room_outage"): ("space_id",),
+    ("events", "linked_booking_changed"): ("event_id",),
+    # Interconnection 18: link-change webhooks (ids only; destinations alone, no chat copy).
+    ("events", "event_booking_linked"): ("event_id", "booking_id"),
+    **{("events", name): ("event_id", "request_id") for name in ("event_loan_linked", "event_loan_unlinked")},
+    **{("bookings", name): ("booking_id", "request_id") for name in ("booking_loan_linked", "booking_loan_unlinked")},
+    # Notifications audit 0.12.0: the organization's hours bank (staff only; ids and the level, no names).
+    ("bookings", "hours_bank_low"): ("organization_id", "level"),
+    # Decision 221(f): a self-renewal tells staff (ids only); the pickup reminder is personal-only below.
+    ("hardware_requests", "renewed"): ("request.id", "request.status"),
 }
 
 # These producers explicitly disable staff/room fan-out. Their personal content
@@ -82,21 +101,34 @@ RELEASE_2_PERSONAL_EVENTS = frozenset({
     *(("events", event) for event in (
         "order_confirmed", "order_payment_reminder", "order_abandoned", "ticket_type_changed",
         "pass_occurrence_cancelled", "ticket_claim_invite", "ticket_transfer_received", "ticket_pay_link",
-        "registration_updated")),
+        "registration_updated", "pay_window_opened", "pay_window_expired")),
     # L21a: stage advanced, "are you still coming?" and crew notices (notices_r2_l21a).
     *(("events", event) for event in (
         "application_stage_advanced", "attendance_confirmation", "attendance_reminder", "crew_invited",
         "crew_decided")),
     # L21b, #178-#181: judging-source member notices and the winner's payout notice.
     *(("events", event) for event in (
-        "finalists_announced", "prize_payout_recorded", "peoples_choice_open", "stage_deadline_reminder",
+        "finalists_announced", "prize_payout_recorded", "prize_split_proposed", "prize_claim_verified",
+        "prize_forfeited", "prize_recovery_opened", "peoples_choice_open", "stage_deadline_reminder",
         "stage_shortlisted", "stage_not_shortlisted", "stage_promoted", "judge_reminder")),
     # L18: the giver's receipt and pledge reminder (fanout staff=False, or a guest's direct email).
     ("payments", "donation_received"), ("payments", "pledge_due"),
     # L22: the shop buyer's order notices (staff=False); the staff alerts are in EVENTS above.
     *(("payments", event) for event in (
         "shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
+        "shop_order_pickup_moved_to_space", "shop_order_collected",
         "shop_order_cancelled", "shop_order_reminder", "shop_order_receipt")),
+    # Decision 216: a borrower told their linked event moved or was cancelled (no staff leg).
+    ("hardware_requests", "linked_event_changed"),
+    # Interconnection 18: webhook-only link changes have no staff chat or room leg.
+    ("events", "event_booking_linked"), ("events", "event_loan_linked"), ("events", "event_loan_unlinked"),
+    ("bookings", "booking_loan_linked"), ("bookings", "booking_loan_unlinked"),
+    # Decision 221(f): the borrower's pickup-expiring reminder (no staff leg).
+    ("hardware_requests", "pickup_expiring"),
+    # Notifications audit 0.12.0: the named guardian's consent request (owner only; never names the minor).
+    ("members", "guardian_consent_requested"),
+    # Decision 221(f): the reporter's repair-closed notice (owner only; rooms=False, staff=False).
+    *((feature, "repair_closed") for feature in ("hardware_requests", "bookings", "maintenance")),
 })
 PERSONAL_ONLY_EVENTS = PERSONAL_ONLY_EVENTS | RELEASE_2_PERSONAL_EVENTS
 

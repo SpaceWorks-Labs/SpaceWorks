@@ -1,17 +1,16 @@
 """Durable callback inbox: insert first, process in a savepoint, retry early events."""
 import logging
-from datetime import datetime, timedelta, timezone as dt_timezone
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
-from django.db import DatabaseError, transaction
-from django.utils import timezone
+from django.db import transaction
 
 from apps.integrations.models import MessagingDelivery, MessagingWebhookEvent
-from apps.tenant_migration.gate_errors import SourceMigrationGateError
-from apps.tenant_migration.gate_runtime import assert_write_allowed, tenant_write
+from apps.tenant_migration.gate_runtime import tenant_write
+
 from .correlation import confirm_probe
-from .locks import lock_whatsapp_sender
 from .outcomes import observe, save_outcome
-from .stops import annotate_stop, process_stop, suppress_recipient
+from .stops import annotate_stop, suppress_recipient
 
 logger = logging.getLogger(__name__)
 

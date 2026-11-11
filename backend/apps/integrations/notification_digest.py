@@ -1,4 +1,5 @@
 """Email-only batching; each constituent is re-authorized when the batch is sent."""
+from django.utils.translation import gettext
 import hashlib
 
 from django.db import transaction
@@ -33,7 +34,7 @@ def render_digest(summary):
         from .notification_links import external_links
         content = external_links(row.makerspace, content)
         lines.append(f"{content.get('subject', row.event)}\n{content.get('text', '')}")
-    return {"subject": "Your Space Works notification digest", "text": "\n\n".join(lines)}
+    return {"subject": gettext("Your Space Works notification digest"), "text": "\n\n".join(lines)}
 
 
 def collect_digest(envelope):

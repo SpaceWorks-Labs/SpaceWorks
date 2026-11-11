@@ -35,11 +35,14 @@ def configure(space, actor, channel, data):
             raise ValidationError({"room_enabled": gettext("This channel has no staff rooms.")})
         if data.get("personal_enabled") and channel == "webhook":
             raise ValidationError({"personal_enabled": gettext("Webhooks are staff destinations.")})
-        if data.get("use_platform_sender") and channel not in {"sms", "whatsapp"}:
-            raise ValidationError({"use_platform_sender": gettext("Platform notification senders are addressed channels only.")})
+        platform_channels = {"sms", "whatsapp", "email", "native_push"}
+        if data.get("use_platform_sender") and channel not in platform_channels:
+            raise ValidationError({"use_platform_sender": gettext("This channel has no platform sender to switch.")})
         validate_configuration(row, data)
         old_sender = row.sender_key
-        rotate = any(key in data for key in ("credentials", "integration_identity", "provider", "use_platform_sender"))
+        # Email and push have no sender identity to rotate: their switch (decision 281) only gates the fallback.
+        rotate = any(key in data for key in ("credentials", "integration_identity", "provider")) or (
+            "use_platform_sender" in data and channel in {"sms", "whatsapp"})
         if rotate and (row.credentials or row.integration_identity):
             preserve_configuration(row, retired=True)
         for key, value in data.items():

@@ -84,6 +84,8 @@ def person_object_filter(memberships, scope, feature=None):
             return True
         if type_id is not None and type_id in resolved[0]:
             return True
+        if scope.machine_id is not None and scope.machine_id in resolved[1]:
+            return True
         if managing_action and managing_action in stored_actions_for_membership(membership):
             return True
         return membership.user_id in operator_ids or membership.user_id in room_viewers

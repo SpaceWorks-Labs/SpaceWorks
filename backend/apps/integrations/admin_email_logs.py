@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django.contrib import admin, messages
 from django.conf import settings
 from unfold.admin import ModelAdmin
@@ -34,7 +35,7 @@ class EmailLogAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
     )
     fields = readonly_fields
 
-    @admin.display(description="Recipient")
+    @admin.display(description=gettext_lazy("Recipient"))
     def recipient_display(self, obj):
         if obj.makerspace_id or not settings.PII_ENCRYPTION_ENABLED:
             return obj.to_email
@@ -42,7 +43,7 @@ class EmailLogAdmin(PiiMaskingAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
 
     # permissions=["view"] keeps the action available on this read-only admin
     # (has_change_permission is False), tied to view access rather than edit.
-    @admin.action(description="Retry selected failed emails", permissions=["view"])
+    @admin.action(description=gettext_lazy("Retry selected failed emails"), permissions=["view"])
     def retry_selected(self, request, queryset):
         succeeded, skipped = 0, 0
         for log in queryset:

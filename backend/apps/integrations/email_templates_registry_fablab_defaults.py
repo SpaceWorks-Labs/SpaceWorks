@@ -16,8 +16,8 @@ from django.utils.translation import gettext_noop
 
 # --- events ---------------------------------------------------------------------------
 
-EVENTS_STAFF_SUBJECT = gettext_noop("{{ makerspace.name }} event #{{ event.id }} {{ event_name }}")
-EVENTS_STAFF_TEXT = gettext_noop("""Event #{{ event.id }} {{ event_name }}.
+EVENTS_STAFF_SUBJECT = gettext_noop("{{ makerspace.name }} event #{{ event.id }} {{ event_label }}")
+EVENTS_STAFF_TEXT = gettext_noop("""Event #{{ event.id }} {{ event_label }}.
 Title: {{ event.title }}
 Time: {{ event.when }}
 Status: {{ event.status }}
@@ -106,9 +106,9 @@ Time: {{ event.when }}
 # --- bookings -------------------------------------------------------------------------
 
 BOOKINGS_STAFF_SUBJECT = (
-    gettext_noop("{{ makerspace.name }} booking #{{ booking.id }} {{ event_name }}")
+    gettext_noop("{{ makerspace.name }} booking #{{ booking.id }} {{ event_label }}")
 )
-BOOKINGS_STAFF_TEXT = gettext_noop("""Booking #{{ booking.id }} {{ event_name }}.
+BOOKINGS_STAFF_TEXT = gettext_noop("""Booking #{{ booking.id }} {{ event_label }}.
 Space: {{ booking.space.name }}
 Time: {{ booking.when }}
 Status: {{ booking.status }}
@@ -158,9 +158,9 @@ Status: {{ booking.status }}
 # --- maintenance ----------------------------------------------------------------------
 
 MAINTENANCE_STAFF_SUBJECT = (
-    gettext_noop("{{ makerspace.name }} maintenance {{ event_name }}: {{ machine.name }}")
+    gettext_noop("{{ makerspace.name }} maintenance {{ event_label }}: {{ machine.name }}")
 )
-MAINTENANCE_STAFF_TEXT = gettext_noop("""Maintenance {{ event_name }}.
+MAINTENANCE_STAFF_TEXT = gettext_noop("""Maintenance {{ event_label }}.
 Machine: {{ machine.name }}
 {% if schedule %}Schedule: #{{ schedule.id }}
 Description: {{ schedule.description }}

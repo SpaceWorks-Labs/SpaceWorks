@@ -9,17 +9,34 @@ from apps.integrations.smtp_validation import smtp_timeout_seconds, validate_smt
 logger = logging.getLogger(__name__)
 
 
-def makerspace_mail_connection(makerspace):
+class PlatformCredentialsDisabled(Exception):
+    """The space has no mail account of its own and switched the platform fallback off (decision 281)."""
+
+
+def _space_platform_mail(makerspace):
+    from apps.managed_hosting.platform_switch import platform_allowed
+    if not platform_allowed(makerspace, "email"):
+        raise PlatformCredentialsDisabled()
+    return platform_mail_connection()
+
+
+def makerspace_mail_connection(makerspace, *, skip_smtp_gate=False):
     from .mail_providers.connections import connection_for
     from .mail_providers.selection import stored_config
+    from .space_smtp_gate import own_smtp_in_use, smtp_verified
+    # Parity E-B8: a space's own SMTP account is used only once a test message from it was accepted. Until then
+    # the space sends as it would with no account (platform fallback, still subject to decision 281's switch).
+    # Only the test itself (`skip_smtp_gate`) may reach an unverified account.
+    if own_smtp_in_use(makerspace) and not skip_smtp_gate and not smtp_verified(makerspace):
+        return _space_platform_mail(makerspace)
     # Explicit inheritance ignores stale SMTP fields; explicit broken config raises.
     provider = getattr(makerspace, "email_provider", "")
     if provider:
         config = stored_config(makerspace, tenant=True)
-        return connection_for(config, makerspace) if config else platform_mail_connection()
+        return connection_for(config, makerspace) if config else _space_platform_mail(makerspace)
     smtp_host = (makerspace.smtp_host or "").strip()
     if not smtp_host:
-        return platform_mail_connection()
+        return _space_platform_mail(makerspace)
     # use_ssl (implicit SSL, port 465) and use_tls (STARTTLS, port 587) are
     # mutually exclusive in Django's SMTP backend; prefer SSL when both are set.
     validate_smtp_endpoint(smtp_host, makerspace.smtp_port)
@@ -156,7 +173,8 @@ def send_password_reset_email(recipient, reset_url):
         persist_body=False,
         sync=True,
     )
-    return 1 if log.status == log.Status.SENT else 0
+    from apps.integrations.transient_mail import accepted
+    return 1 if accepted(log) else 0
 
 
 def send_password_reset_otp(recipient, code, *, expires_in_minutes, reset_url="", account_label=""):
@@ -185,7 +203,8 @@ def send_password_reset_otp(recipient, code, *, expires_in_minutes, reset_url=""
         persist_body=False,
         sync=True,
     )
-    return 1 if log.status == log.Status.SENT else 0
+    from apps.integrations.transient_mail import accepted
+    return 1 if accepted(log) else 0
 
 
 def send_email_verification_otp(recipient, code):
@@ -205,7 +224,8 @@ def send_email_verification_otp(recipient, code):
         persist_body=False,
         sync=True,
     )
-    return 1 if log.status == log.Status.SENT else 0
+    from apps.integrations.transient_mail import accepted
+    return 1 if accepted(log) else 0
 
 
 def send_makerspace_email(

@@ -23,10 +23,10 @@ def build_entries():
                 label=event.replace("_", " ").capitalize(),
                 description=f"{audience.capitalize()} notice for membership: {event}.",
                 fields=[{"name": name, "description": "Bounded event snapshot."}
-                        for name in ("makerspace.name", "event_name", "subject.id", "subject.status", "decision.note")],
+                        for name in ("makerspace.name", "event_name", "event_label", "subject.id", "subject.status", "decision.note")],
                 default_subject=f"Membership: {event.replace('_', ' ')}",
                 default_text=text if audience == "requester"
-                else gettext_noop("Erasure request #{{ subject.id }}: {{ event_name }}."),
+                else gettext_noop("Erasure request #{{ subject.id }}: {{ event_label }}."),
                 default_html="",
                 sample_context={"makerspace": bag(name="Demo workshop"), "event_name": event,
                                 "subject": bag(id=12, status="approved"), "decision": bag(note="")},

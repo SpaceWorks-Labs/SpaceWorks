@@ -1,4 +1,5 @@
 """Operator-owned WhatsApp credentials and platform templates only."""
+from django.utils.translation import gettext_lazy
 from django import forms
 from django.contrib import admin
 from rest_framework.exceptions import ValidationError as ApiValidationError
@@ -60,7 +61,7 @@ class PlatformWhatsAppSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyMode
               "app_secret_raw", "clear_app_secret", "webhook_verify_token", "callback_url", "updated_at")
     readonly_fields = ("webhook_verify_token", "callback_url", "updated_at")
 
-    @admin.display(description="Webhook callback")
+    @admin.display(description=gettext_lazy("Webhook callback"))
     def callback_url(self, obj):
         from apps.integrations.messaging.resolver import webhook_urls
         return webhook_urls("whatsapp")["callback"]

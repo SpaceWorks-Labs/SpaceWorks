@@ -22,6 +22,22 @@ def _create_email_log(**values):
         return EmailLog.objects.create(**values)
 
 
+def _create_platform_counted(makerspace, values):
+    """Create a platform-path email row, reserving the month's allowance (decision 281).
+
+    The row is stamped ``provider_source="platform"`` AT ENQUEUE, so queued-but-undelivered mail counts
+    toward the limit and a burst cannot overshoot it. The space row lock serialises the check and the
+    insert; a skipped or failed row stops counting, which releases the reservation.
+    """
+    from apps.managed_hosting import platform_limits
+    with transaction.atomic():
+        type(makerspace).objects.select_for_update(no_key=True).get(pk=makerspace.pk)
+        refusal = platform_limits.channel_refusal(makerspace, "email")
+        if refusal:
+            return _create_email_log(**values, status=EmailLog.Status.SKIPPED, error=refusal)
+        return _create_email_log(**values, provider_source="platform")
+
+
 def dispatch_email(
     *,
     to_email,
@@ -76,8 +92,24 @@ def dispatch_email(
             error=reason or "Email is disabled for this makerspace.",
         )
 
+    platform_path = False
+    if makerspace is not None and connection == "makerspace":
+        # Decisions 240/281: a space without its own mail account uses the platform's ONLY while its
+        # Space Manager allows it; the monthly allowance is reserved below, when the row is created.
+        from apps.managed_hosting import platform_limits
+        from apps.managed_hosting.platform_switch import platform_allowed
+        platform_path = not platform_limits.uses_own_email(makerspace)
+        if platform_path and not platform_allowed(makerspace, "email"):
+            return _create_email_log(
+                makerspace=makerspace, to_email=to_email, subject=subject,
+                text_body=text_body if persist_body else "", html_body=html_body if persist_body else "",
+                stream=stream, event=event, audience=audience, connection_kind=connection,
+                recipient_id=recipient_id, feature=feature, source_kind=source_kind, source_id=source_id,
+                source_metadata=source_metadata or {}, status=EmailLog.Status.SKIPPED,
+                error="platform_email_disabled",
+            )
     if (
-        not domain_verification.is_self_host()
+        domain_verification.hosts_other_spaces()
         and makerspace is not None
         and connection == "makerspace"
     ):
@@ -142,7 +174,7 @@ def dispatch_email(
     # reset emails embed a live recovery token in the body - persisting it would leave a
     # usable token in the DB + Django admin until expiry). We still deliver the real body:
     # it's set on the in-memory instance below and _deliver never re-saves the body fields.
-    log = _create_email_log(
+    log_values = dict(
         makerspace=makerspace,
         to_email="" if platform_minimized else to_email,
         subject=gettext("Platform email") if platform_minimized else subject,
@@ -156,6 +188,7 @@ def dispatch_email(
         feature=feature,
         source_kind=source_kind, source_id=source_id, source_metadata=source_metadata or {},
     )
+    log = _create_platform_counted(makerspace, log_values) if platform_path else _create_email_log(**log_values)
     if not persist_body:
         # In-memory only - _deliver's save(update_fields=...) excludes the body fields,
         # so the stored row stays redacted while delivery uses the real content.
@@ -173,6 +206,11 @@ def dispatch_email(
     if not enqueue_inline_allowed(sync=sync, persist_body=persist_body):
         return log
     if sync:
+        if not persist_body:
+            # Secret-bearing mail leaves the request cycle too: sealed payload -> Celery worker (transient_mail).
+            from .transient_mail import queue_email
+            if queue_email(log, to_email=to_email, subject=subject, text_body=text_body, html_body=html_body):
+                return log
         return _deliver(log)
     transaction.on_commit(lambda lid=log.id: _enqueue(lid))
     return log

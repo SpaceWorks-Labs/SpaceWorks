@@ -18,6 +18,7 @@ A dotted key is a capability, a bare key a module, and `a|b` is live while eithe
 """
 import logging
 
+from .notification_catalog_events_programme import MENTOR_HELP_PERSONAL_EVENT
 from .notification_enums import NotificationFeature as F
 
 logger = logging.getLogger(__name__)
@@ -35,9 +36,14 @@ def _many(feature, events, source):
 EVENT_SOURCES = {
     # Lending: optional loan features each have their own switch.
     (_HW, "waitlist_offer"): "loans.waitlist",
+    (_HW, "renewed"): "loans.renewals",
+    (_HW, "repair_closed"): "inventory.issue_reporting|inventory.repairs",
+    (_MT, "repair_closed"): "machines.issue_reporting|machines.repairs",
+    (_HW, "pickup_expiring"): "loans.pickup_windows",
     (_HW, "back_available"): "inventory.notify_when_back",
     (_HW, "fees_waived"): "loans.fee_waivers",
-    (_HW, "issue_reported"): "inventory.issue_reporting",
+    # 221(c): a damaged-return handoff raises this under inventory.repairs alone.
+    (_HW, "issue_reported"): "inventory.issue_reporting|inventory.repairs",
     (_HW, "repair_quote_pending"): "inventory.repairs",
     **_many(_HW, ("maintenance_due_soon", "maintenance_overdue"), "inventory.maintenance"),
     # Machine jobs: quotes and sessions are capabilities under their machine modules.
@@ -48,40 +54,66 @@ EVENT_SOURCES = {
     (_BK, "issue_reported"): "bookings.issue_reporting",
     (_BK, "repair_quote_pending"): "bookings.room_repairs",
     (_BK, "invitation"): "bookings.staff_grants",
+    (_BK, "hours_bank_low"): "bookings.organization_bookings",
     **_many(_BK, ("maintenance_due_soon", "maintenance_overdue"), "bookings.room_maintenance"),
+    # Decision 216: each linked-change notice needs the OTHER side's module too.
+    (_BK, "linked_event_changed"): "events",
+    (_HW, "linked_event_changed"): "events",
+    (_EV, "linked_booking_changed"): "bookings",
+    # Interconnection 18: link-change webhooks need the other side's module as well.
+    (_EV, "event_booking_linked"): "bookings",
+    **_many(_EV, ("event_loan_linked", "event_loan_unlinked"), "request_workflow"),
+    **_many(_BK, ("booking_loan_linked", "booking_loan_unlinked"), "request_workflow"),
+    (_BK, "room_outage"): "bookings.room_repairs|bookings.room_maintenance",
     # Machine maintenance family: problem reports and repairs are not maintenance.
     (_MT, "issue_reported"): "machines.issue_reporting",
     **_many(_MT, ("repair_quote_pending", "repair_dispatched"), "machines.repairs"),
+    # Release 0.12.0 (decision 223): the incident register is its own capability.
+    (_MT, "incident_reported"): "safety.incidents",
     # Events: each optional programme feature.
     **_many(_EV, ("order_confirmed", "order_payment_reminder", "order_abandoned"), "events.orders"),
     (_EV, "ticket_type_changed"): "events.ticket_types",
+    **_many(_EV, ("pay_window_opened", "pay_window_expired"), "events.pay_window"),
     (_EV, "pass_occurrence_cancelled"): "events.series_passes",
     (_EV, "ticket_transfer_received"): "events.transfers",
     (_EV, "approval_digest"): "events.approval_digest",
     (_EV, "mentor_help_alert"): "events.mentor_chat_alerts",
+    (_EV, MENTOR_HELP_PERSONAL_EVENT): "events.mentoring",
     **_many(_EV, ("application_submitted", "application_offered", "application_waitlisted",
                   "application_rejected", "application_confirmed", "application_declined",
-                  "application_expired", "application_withdrawn"), "events.applications"),
+                  "application_expired", "application_withdrawn"),
+            # Decision 296: a hackathon runs admission on `events.hackathons` alone (admission_feature).
+            "events.applications|events.hackathons"),
     (_EV, "application_stage_advanced"): "events.application_stages",
     **_many(_EV, ("attendance_confirmation", "attendance_reminder", "attendance_replied"),
             "events.attendance_confirmation"),
     **_many(_EV, ("crew_invited", "crew_decided"), "events.crew"),
     (_EV, "finalists_announced"): "events.finalists",
-    (_EV, "prize_payout_recorded"): "events.prize_payouts",
+    **_many(_EV, ("prize_payout_recorded", "prize_split_proposed", "prize_claim_verified", "prize_forfeited",
+                  "prize_recovery_opened"), "events.prize_payouts"),
     # Submission stages (#178-#180) live inside hackathon programmes; People's choice has its own switch (#181).
     **_many(_EV, ("stage_deadline_reminder", "stage_shortlisted", "stage_not_shortlisted", "stage_promoted",
                   "judge_reminder"), "events.hackathons"),
     (_EV, "peoples_choice_open"): "events.peoples_choice",
+    # Decision 301: team notices live and die with the hackathons switch (218).
+    **_many(_EV, ("team_invited", "team_join_requested", "team_join_declined", "team_membership_updated",
+                  "team_reopened", "team_disbanded", "team_leadership_transferred", "team_member_removed",
+                  "team_eligibility_changed"), "events.hackathons"),
     # Members.
     (_MB, "broadcast"): "membership.broadcasts",
     (_MB, "vouched"): "membership.vouching",
+    **_many(_MB, ("guest_pass_issued", "guest_pass_expiring", "guest_pass_sponsor_notice"), "membership.guest_passes"),
+    (_MB, "join_followup"): "membership.join_funnel",
     **_many(_MB, ("erasure_approved", "erasure_rejected"), "membership.erasure"),
+    (_MB, "guardian_consent_requested"): "membership.minors",
     (_MB, "programme_card_decided"): "membership.id_programmes",
     (_MB, "event_card_issued"): "events.id_cards",
     # Money: the ledger is core; the optional money features are not.
     **_many(_PAY, ("shop_order_placed", "shop_order_paid", "shop_order_ready", "shop_order_lapsed",
+                   "shop_order_pickup_moved_to_space", "shop_order_collected",
                    "shop_order_cancelled", "shop_order_unfulfilled", "shop_order_reminder",
-                   "shop_order_receipt", "shop_order_new", "shop_low_stock"), "shop"),
+                   "shop_order_receipt", "shop_order_new", "shop_low_stock",
+                   "shop_order_ready_for_pickup", "shop_order_picked_up", "shop_order_delivered", "shop_order_pickup_moved"), "shop"),
     (_PAY, "donation_received"): "finance.donations",
     (_PAY, "pledge_due"): "finance.recurring_donations",
     (_PAY, "perk_due"): "finance.sponsors",

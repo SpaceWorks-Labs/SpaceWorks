@@ -45,7 +45,8 @@ class MetaWhatsAppProvider:
         envelope = delivery.envelope
         if envelope.recipient_id != endpoint.user_id or envelope.makerspace_id != config.makerspace_id:
             return failure("invalid_endpoint")
-        return self._send(endpoint, envelope.event, envelope.audience, envelope.context,
+        from .notification_projection import whatsapp_template_context
+        return self._send(endpoint, envelope.event, envelope.audience, whatsapp_template_context(envelope),
                           rendered.get("text", ""), reference=client_reference(config, delivery))
 
     def _send(self, endpoint, event, audience, context, text, *, reference=""):

@@ -54,7 +54,7 @@ def _deliver(log):
     # Re-checked at delivery, not just at dispatch: a queued row can sit in Celery
     # across a module uninstall, and the retry path re-enters here too. Gating only
     # `dispatch_email` would let everything already in flight through.
-    from apps.integrations.email_preferences import blocked_reason, unsubscribe_headers
+    from apps.integrations.email_preferences import blocked_reason, unsubscribe_headers, with_unsubscribe_footer
     reason = blocked_reason(log.makerspace, recipient_address(log), user_id=log.recipient_id,
                             feature=log.feature, stream=log.stream, event=log.event)
     if reason or email_module_blocks(log.makerspace, log.stream, log.event):
@@ -63,6 +63,16 @@ def _deliver(log):
         log.save(update_fields=["status", "error", "updated_at"])
         finished(log)
         return log
+
+    if log.connection_kind == "makerspace" and log.makerspace_id:
+        # Decision 281: no own mail account + platform fallback switched off -> skipped, never sent.
+        from apps.managed_hosting.platform_limits import uses_own_email
+        from apps.managed_hosting.platform_switch import platform_allowed
+        if not uses_own_email(log.makerspace) and not platform_allowed(log.makerspace, "email"):
+            log.status, log.error, log.provider_source = EmailLog.Status.SKIPPED, "platform_email_disabled", ""
+            log.save(update_fields=["status", "error", "provider_source", "updated_at"])
+            finished(log)
+            return log
 
     from apps.integrations.timing_dispatch import defer_log
     try:
@@ -99,17 +109,21 @@ def _deliver(log):
             elif connection is not None:
                 connection.timeout = seconds / 2
         rendered = content(log)
+        text_body, html_body = with_unsubscribe_footer(log, rendered.text_body, rendered.html_body)
         msg = EmailMultiAlternatives(
             subject=rendered.subject,
-            body=rendered.text_body,
+            body=text_body,
             from_email=from_email,
             to=[rendered.to_email],
             connection=connection,
             headers=unsubscribe_headers(log),
         )
-        if rendered.html_body:
-            msg.attach_alternative(rendered.html_body, "text/html")
+        if html_body:
+            msg.attach_alternative(html_body, "text/html")
         if log.makerspace_id:
+            # Parity E-B8: the space's own display name and Reply-To (the organisation's, below, wins for its events).
+            from apps.integrations.space_sender import apply as apply_space_sender
+            apply_space_sender(log, msg)
             # R2 L2 (X2): a co-hosting organisation's display name and Reply-To only.
             from apps.integrations.org_sender import apply as apply_org_sender
             apply_org_sender(log, msg)

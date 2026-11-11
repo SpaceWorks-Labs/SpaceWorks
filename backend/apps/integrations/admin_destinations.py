@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django import forms
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
@@ -109,6 +110,6 @@ class NotificationDestinationAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     search_fields = ("label",)
     readonly_fields = ("created_at", "updated_at")
 
-    @admin.display(boolean=True, description="Credential set")
+    @admin.display(boolean=True, description=gettext_lazy("Credential set"))
     def credential_set(self, obj):
         return bool(obj.webhook_url or obj.telegram_chat_id)

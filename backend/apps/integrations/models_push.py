@@ -12,6 +12,7 @@ class PlatformPushSettings(models.Model):
 
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     fcm_service_account = models.TextField(blank=True, default="")
+    firebase_web_config = models.JSONField(default=dict, blank=True)
     apns_private_key = models.TextField(blank=True, default="")
     apns_team_id = models.CharField(max_length=64, blank=True, default="")
     apns_key_id = models.CharField(max_length=64, blank=True, default="")

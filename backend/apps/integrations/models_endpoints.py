@@ -19,7 +19,7 @@ class ChannelConfiguration(models.Model):
     provider = models.CharField(max_length=32)
     integration_identity = models.CharField(max_length=255, blank=True)
     generation = models.PositiveIntegerField(default=1)
-    use_platform_sender = models.BooleanField(default=False)
+    use_platform_sender = models.BooleanField(default=True)
     sender_key = models.CharField(max_length=255, blank=True)
     credential_version = models.PositiveIntegerField(default=0)
     activation_hold = models.BooleanField(default=False)

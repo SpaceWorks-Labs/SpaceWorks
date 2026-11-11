@@ -161,5 +161,7 @@ def _digest(space, row, now):
                                   {'email': failed} if failed else {})
 
 
-DEFERRED_SOURCE = ReminderSource('notifications.deferred', 'request_workflow', discover, build,
+# Decision 254: not `request_workflow` -- that module answers off while the Inventory switch is off, which would
+# strand every deferred (quiet-hours, digest) email in a space that does not lend.
+DEFERRED_SOURCE = ReminderSource('notifications.deferred', 'staff_admin', discover, build,
                                  dispatch=dispatch, requires_notifications=False)

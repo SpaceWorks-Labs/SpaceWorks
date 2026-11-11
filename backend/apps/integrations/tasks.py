@@ -140,3 +140,5 @@ def _claim_notification_log(log_id):
 from .tasks_messaging_settings import wipe_messaging_credentials_task  # noqa: F401
 
 from .tasks_messaging import canonical_retention_task, deliver_messaging_task, sweep_messaging_task  # noqa: F401
+
+from .tasks_transient import deliver_transient_email_task, deliver_transient_sms_task  # noqa: F401

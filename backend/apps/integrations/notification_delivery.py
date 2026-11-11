@@ -9,6 +9,7 @@ from .models_contract import NotificationDelivery as Delivery
 from .notification_providers import ProviderResult, provider_for, safe_error
 from .notification_resolution import eligible, resolve, target_eligible
 from .notification_cutover import guarded, state as cutover_state
+from .notification_locale import recipient_locale
 from apps.operations.cloud_jobs import bounded
 from apps.operations.cloud_jobs.contracts import BudgetExpired, GuardLost
 
@@ -45,6 +46,13 @@ def _ensure_deliveries(envelope, *, fallback=False):
             from .notification_sender import sms_sender
             config = ChannelConfiguration.objects.get(makerspace=envelope.makerspace, channel="sms")
             sender = sms_sender(config)
+        elif target.channel == "whatsapp" and config is not None:
+            # Stamp the real source AT ENQUEUE so a queued platform WhatsApp counts toward the limit.
+            from .notification_sender import canonical_sender
+            try:
+                sender = canonical_sender(envelope.makerspace, "whatsapp")
+            except Exception:
+                sender = None
         from .notification_sender import configuration_sender_key
         from .messaging.protections import recipient_hash
         Delivery.objects.get_or_create(envelope=envelope, channel=target.channel, defaults={
@@ -117,7 +125,7 @@ def send(delivery_id):
     tenant_id = Delivery.objects.filter(pk=delivery_id).values_list("makerspace_id", flat=True).first()
     if tenant_id is None:
         return
-    with boundary_tenant_write(tenant_id):
+    with boundary_tenant_write(tenant_id), recipient_locale(delivery_id, tenant_id):
         return _send(delivery_id)
 
 
@@ -229,8 +237,7 @@ def record_result(row, result):
         if (getattr(settings, "SPACEWORKS_DEPLOYMENT_PROFILE", "full") == "free"
                 and current.channel == "email" and result.error_code == "email_deferred"
                 and current.state not in SUCCESS):
-            # The durable EmailLog owns actual provider attempts/reservations.
-            # Waiting for quota is not another personal transport attempt.
+            # The durable EmailLog owns provider attempts; waiting for quota is not a personal attempt.
             bounded.check()
             current.state, current.retryable = "retrying", True
             current.claim_until, current.last_error = None, "email_deferred"
@@ -242,8 +249,7 @@ def record_result(row, result):
         # A callback can win the race with the send response.
         if current.state in SUCCESS or (current.state == "failed" and not current.retryable):
             return current
-        # A sweep can quarantine this very attempt while its provider call is
-        # still running. Only proved success from that attempt can settle it.
+        # A sweep can quarantine this attempt mid-call; only proved success from it can settle it.
         if current.state == "held" and not result.accepted:
             return current
         if result.error_code == "skipped":

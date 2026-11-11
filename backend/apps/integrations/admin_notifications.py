@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
@@ -39,7 +40,7 @@ class NotificationDeliveryLogAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
     list_filter = ("makerspace", "channel", "feature", "status")
     actions = ("requeue_failed_deliveries",)
 
-    @admin.action(description="Re-queue failed deliveries", permissions=["view"])
+    @admin.action(description=gettext_lazy("Re-queue failed deliveries"), permissions=["view"])
     def requeue_failed_deliveries(self, request, queryset):
         from apps.integrations.delivery_services import retry_delivery
         from apps.integrations.notification_enums import NotificationDeliveryStatus

@@ -9,10 +9,12 @@ from .notification_cutover import guarded, sending_allowed
 
 
 def persist(makerspace, feature, event, payload, event_key, occurred_at):
-    return NotificationEnvelope.objects.create(makerspace=makerspace, feature=feature,
+    # get_or_create: a retried fan-out job reaches the SAME shell (stable event key) and its leg markers.
+    return NotificationEnvelope.objects.get_or_create(dedup_key=f"legacy:{event_key}", defaults=dict(
+        makerspace=makerspace, feature=feature,
         stream="hardware" if feature == "hardware_requests" else feature, event=event,
-        audience="staff", source_kind="legacy.lifecycle", dedup_key=f"legacy:{event_key}",
-        context={"occurred_at": occurred_at}, revision="1")
+        audience="staff", source_kind="legacy.lifecycle",
+        context={"occurred_at": occurred_at}, revision="1"))[0]
 
 
 def snapshot(envelope, payload):
@@ -70,7 +72,7 @@ def dispatch(envelope, build, sync, occurred_at, event_key):
         from .notify import NotificationResult
         return NotificationResult(True)
     result = _run_guarded(envelope.makerspace, envelope.feature, envelope.event,
-                          materialize, sync, occurred_at, event_key)
+                          materialize, sync, occurred_at, event_key, envelope=envelope)
     if free():
         check()
         if result.failed_counts:
@@ -80,6 +82,10 @@ def dispatch(envelope, build, sync, occurred_at, event_key):
 
 
 def recover(envelope):
+    if envelope.context.get("fanout"):
+        # A deferred fan-out job (fanout_jobs): re-run the registered entry point by ids.
+        from .fanout_jobs import run
+        return run(envelope)
     if not envelope.message_body:
         # Legacy closures cannot be serialized. Phase-2 adapters replace these shells
         # with source-backed emit() calls, whose content is durable before commit.

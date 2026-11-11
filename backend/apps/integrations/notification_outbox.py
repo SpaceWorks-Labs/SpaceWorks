@@ -45,6 +45,11 @@ def emit(*, makerspace, recipient, feature, stream, event, audience, dedup_key,
         raise ValueError("Invalid notification scope identifier")
     # Context is for safe template variables. Bearers and private content belong
     # neither in this JSON nor in append-only audit metadata.
+    if callable(rendered):
+        # Built in the RECIPIENT's language, not the sender's request language.
+        from config.locale_resolution import override_for
+        with override_for(user=recipient, makerspace=makerspace):
+            rendered = {key: (str(value) if value is not None else value) for key, value in rendered().items()}
     context = context or {}
     if not isinstance(context, dict) or not isinstance(rendered or {}, dict):
         raise ValueError("Notification content must be an object")

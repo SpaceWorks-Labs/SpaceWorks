@@ -117,3 +117,5 @@ __all__ += ["NotificationProviderReference"]
 # Release 2 L2: a co-hosting organisation's sender name and reply-to for event email.
 from .models_org_sender import OrganizationEmailSender  # noqa: E402
 __all__ += ["OrganizationEmailSender"]
+from .models_legal import PlatformLegalPage  # noqa: E402,F401  (parity E-B8)
+__all__ += ["PlatformLegalPage"]

@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 
 from apps.integrations.email_templates_registry import get_entry
 from apps.integrations.notification_catalog import FEATURE_EVENTS
+from apps.integrations.notification_catalog_events_programme import MENTOR_HELP_PERSONAL_EVENT
 
 STREAMS = {"hardware_requests": "hardware", "members": "membership", "api_access": "api"}
 AUDIENCES = {"member": "requester", "staff": "staff"}
@@ -50,11 +51,28 @@ INBOX_ONLY_PROJECTIONS.update({
 })
 # Lane L16: the technician send binds an approved WhatsApp template naming the space only.
 INBOX_ONLY_PROJECTIONS[("maintenance", "repair_dispatched", "staff")] = ("makerspace.name",)
+INBOX_ONLY_PROJECTIONS[("events", MENTOR_HELP_PERSONAL_EVENT, "member")] = ("makerspace.name",)
 INBOX_ONLY_PROJECTIONS.update({
     ("hardware_requests", "back_available", "member"): ("makerspace.name",),
     ("api_access", "api_key_request_resolved", "member"): ("makerspace.name", "api_key_request.id", "api_key_request.status"),
     ("api_access", "api_key_request_resolved", "staff"): ("makerspace.name", "api_key_request.id", "api_key_request.status"),
 })
+# Open item A43: member notices that had inbox + email only. Addressed SMS/WhatsApp carry reviewed scalar ids
+# alone (the space name and, where the notice names a loan, its request id) -- never a body, title or label.
+# `maintenance.repair_closed` stays out: `maintenance` is not a member family, so its reporter notice is
+# delivered through the hardware/bookings families' own `repair_closed` (decision 221f).
+INBOX_ONLY_PROJECTIONS.update({
+    ("hardware_requests", "renewed", "member"): ("makerspace.name", "request.id"),
+    ("hardware_requests", "pickup_expiring", "member"): ("makerspace.name", "request.id"),
+    ("hardware_requests", "repair_closed", "member"): ("makerspace.name",),
+    ("bookings", "repair_closed", "member"): ("makerspace.name",),
+    ("payments", "shop_order_collected", "member"): ("makerspace.name",),
+})
+# 0.12.0 notifications audit: the guardian's personal ask to sign (space name only: never the minor's name,
+# age or any detail). It reaches SMS/WhatsApp only through the same consent, sender, platform-limit and
+# switch checks as every addressed message. `hours_bank_low` and `attendance_replied` are staff notices with
+# no email-registry entry and no entry here, so they have NO addressed projection by design.
+INBOX_ONLY_PROJECTIONS[("members", "guardian_consent_requested", "member")] = ("makerspace.name",)
 
 
 def email_event(feature, event, audience):
@@ -85,7 +103,7 @@ PROJECTION_KEYS = {(feature, event, audience): keys
     if (keys := allowed_keys(feature, event, audience)) is not None}
 EVENT_NAME_MAPPING = {key: email_event(*key) for key in PROJECTION_KEYS}
 SMS_DEFAULT_TEXTS = {key: "{makerspace.name}: " + key[0].replace("_", " ") + " " + key[1].replace("_", " ")
-                     + ". Please check your account." for key in PROJECTION_KEYS}
+                     + ". Please check your account." for key in PROJECTION_KEYS if key[1] != MENTOR_HELP_PERSONAL_EVENT}
 
 
 def project_context(feature, event, audience, context):

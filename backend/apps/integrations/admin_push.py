@@ -5,6 +5,20 @@ from unfold.admin import ModelAdmin
 from apps.integrations.models_push import PlatformPushSettings, PushDevice
 from config.admin_access import SuperuserOnlyModelAdmin
 from config.admin_audit import AuditedControlChangeMixin
+from apps.audit import services as audit
+
+
+def _save_push_fields(row, form):
+    if row._state.adding:
+        row.save()
+        return
+    fields = set(form.changed_data) & {"apns_team_id", "apns_key_id", "apns_topic"}
+    if form.cleaned_data.get("clear_fcm_credentials") or form.cleaned_data.get("fcm_service_account_raw"):
+        fields.add("fcm_service_account")
+    if form.cleaned_data.get("clear_apns_credentials") or form.cleaned_data.get("apns_private_key_raw"):
+        fields.add("apns_private_key")
+    if fields:
+        row.save(update_fields=sorted(fields | {"updated_at"}))
 
 
 class PlatformPushSettingsForm(forms.ModelForm):
@@ -34,7 +48,7 @@ class PlatformPushSettingsForm(forms.ModelForm):
         elif self.cleaned_data.get("apns_private_key_raw"):
             row.set_apns_private_key(self.cleaned_data["apns_private_key_raw"])
         if commit:
-            row.save()
+            _save_push_fields(row, self)
         return row
 
 
@@ -48,6 +62,12 @@ class PlatformPushSettingsAdmin(AuditedControlChangeMixin, SuperuserOnlyModelAdm
         "apns_team_id", "apns_key_id", "apns_topic", "updated_at",
     )}),)
     readonly_fields = ("updated_at",)
+
+    def save_model(self, request, obj, form, change):
+        _save_push_fields(obj, form)
+        # Literal action (== audit_action) so the presentation catalogue sees this site.
+        audit.record(request.user, "platform.push_settings_updated", target=obj,
+                     meta={"via": "control", "created": not change, "changed_fields": sorted(form.changed_data)})
 
     def has_add_permission(self, request):
         return not PlatformPushSettings.objects.exists()

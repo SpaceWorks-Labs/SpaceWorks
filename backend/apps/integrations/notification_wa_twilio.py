@@ -93,9 +93,10 @@ class TwilioWhatsAppProvider:
                 return ProviderResult(False, error_code="provider_error")
             payload = {"Body": body}
         else:
+            from .notification_projection import whatsapp_template_context
             envelope = delivery.envelope
             payload = template_payload(config, envelope.event, envelope.audience,
-                envelope.context.get("locale", "en"), envelope.context)
+                envelope.context.get("locale", "en"), whatsapp_template_context(envelope))
             if payload is None:
                 return ProviderResult(False, error_code="template_required")
         return self._send(endpoint.destination, payload, delivery.pk)

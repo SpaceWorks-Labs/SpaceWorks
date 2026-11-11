@@ -77,7 +77,11 @@ def _channel_configured(makerspace, channel, destination=None) -> bool:
         return False
 
 
-def channel_module_blocks(makerspace, channel) -> bool:
+class ChannelModuleUnavailable(Exception):
+    """The channel's module state could not be read."""
+
+
+def channel_module_blocks(makerspace, channel, *, strict=False) -> bool:
     """True when this channel's module is uninstalled for the makerspace.
 
     An additive AND in front of the credential check that already existed: enabling the
@@ -85,7 +89,8 @@ def channel_module_blocks(makerspace, channel) -> bool:
     the stored webhook survives, so re-enabling needs no credential re-entry.
 
     Fails OPEN on an unexpected error, matching every other guard in this file: a broken
-    capability lookup must not silently mute a makerspace's alerts.
+    capability lookup must not silently mute a makerspace's alerts. A `strict` caller
+    with no retryable row of its own gets ChannelModuleUnavailable instead and must not send.
     """
     from apps.integrations.models import CHANNEL_MODULE_KEYS
 
@@ -101,6 +106,8 @@ def channel_module_blocks(makerspace, channel) -> bool:
             "notification_channel_module_check_failed",
             extra={"makerspace_id": getattr(makerspace, "pk", None), "channel": channel},
         )
+        if strict:
+            raise ChannelModuleUnavailable() from None
         return False
 
 

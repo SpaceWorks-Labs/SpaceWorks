@@ -30,7 +30,7 @@ def build_entries():
                 label=event.replace("_", " ").capitalize(),
                 description=f"{audience.capitalize()} notice for cards: {event}.",
                 fields=[{"name": name, "description": "Bounded event snapshot."}
-                        for name in ("makerspace.name", "event_name", "subject.id", "subject.status")],
+                        for name in ("makerspace.name", "event_name", "event_label", "subject.id", "subject.status")],
                 default_subject=f"Cards: {event.replace('_', ' ')}",
                 default_text=requester_text if audience == "requester" else staff_text,
                 default_html="",

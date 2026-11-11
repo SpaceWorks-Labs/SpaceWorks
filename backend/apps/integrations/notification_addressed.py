@@ -1,8 +1,17 @@
 """Addressed checks are independent of the optional member inbox."""
 from .models_endpoints import ChannelConfiguration
+from .notification_catalog_events_programme import (
+    MENTOR_HELP_PERSONAL_EVENT, MENTOR_HELP_SOURCE, MENTOR_WHATSAPP_MARKER, MENTOR_WHATSAPP_VERSION,
+)
 
 
 def eligible(envelope, channel, endpoint=None):
+    if envelope.event == MENTOR_HELP_PERSONAL_EVENT and not (
+        channel == "whatsapp" and envelope.feature == envelope.stream == "events"
+        and envelope.source_kind == MENTOR_HELP_SOURCE and envelope.audience == "member"
+        and envelope.context.get(MENTOR_WHATSAPP_MARKER) == MENTOR_WHATSAPP_VERSION
+    ):
+        return False
     from apps.makerspaces.platform import module_enabled
     from .messaging.ties import has_tenant_tie
     from .messaging.consent import live_consent

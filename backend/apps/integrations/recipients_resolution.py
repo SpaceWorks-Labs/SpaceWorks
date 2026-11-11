@@ -49,8 +49,8 @@ def _role_scope_admits(membership_scopes, membership, scope) -> bool:
     resolved = membership_scopes.get(membership.pk, machine_role_scope.NOTHING)
     if resolved is machine_role_scope.EXEMPT:
         return True
-    type_ids, _ = resolved
-    return scope.machine_type_id in type_ids
+    type_ids, machine_ids = resolved
+    return scope.machine_type_id in type_ids or (scope.machine_id is not None and scope.machine_id in machine_ids)
 
 
 def reach_filter_for(memberships, scope):
@@ -85,11 +85,11 @@ def reach_filter_for(memberships, scope):
         resolved = scopes.get(membership.pk, machine_role_scope.EXEMPT)
         if resolved is machine_role_scope.EXEMPT:
             return True
-        type_ids, _ = resolved
-        if not type_ids:
+        type_ids, machine_ids = resolved
+        if not type_ids and not machine_ids:
             # Unconfigured, not narrowed -- fail open.
             return True
-        return scope.machine_type_id in type_ids
+        return scope.machine_type_id in type_ids or (scope.machine_id is not None and scope.machine_id in machine_ids)
 
     return admits
 

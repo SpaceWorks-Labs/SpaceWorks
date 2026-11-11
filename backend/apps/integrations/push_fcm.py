@@ -29,7 +29,7 @@ def fcm_message(token, title, body, data):
     return message
 
 
-def fcm_access_token(settings_row):
+def fcm_access_token(settings_row, *, timeout=10):
     """Sign in to FCM with the stored service account: ``(access_token, project_id)``.
 
     Shared by every send and by the console's credential check (#190), so the check proves
@@ -58,7 +58,7 @@ def fcm_access_token(settings_row):
         oauth = requests.post(required["token_uri"], data={
             "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
             "assertion": assertion,
-        }, timeout=10)
+        }, timeout=timeout)
         payload = oauth.json() if oauth.status_code == 200 else {}
     except (requests.RequestException, ValueError, TypeError) as exc:
         raise PushProviderError("FCM request failed.") from exc

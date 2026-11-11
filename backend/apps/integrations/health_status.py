@@ -105,6 +105,12 @@ def _smtp_section(makerspace):
         selected = stored_config(makerspace, tenant=True)
         if selected is not None and selected.provider == "smtp" and makerspace.smtp_password:
             makerspace.get_smtp_password()  # an unreadable tenant secret is a warning, not "ok"
+        from .space_smtp_gate import own_smtp_in_use, smtp_verified
+        # An own SMTP account that has not passed its test sends nothing (parity E-B8): mail is on the platform path.
+        unverified = own_smtp_in_use(makerspace) and not smtp_verified(makerspace)
+        if unverified:
+            return {"status": "warn", "configured": platform_email_configured(), "provider": "platform",
+                    "smtp_verified": False}
         return {"status": "ok", "configured": selected is not None or platform_email_configured(),
                 "provider": selected.provider if selected else "platform"}
     except Exception:

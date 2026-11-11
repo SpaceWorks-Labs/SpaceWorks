@@ -31,7 +31,13 @@ HARDWARE_REQUESTER_DEFAULTS = {
     },
     "request_returned": {
         "subject": gettext_noop("{{ makerspace.name }} request returned"),
-        "text": gettext_noop("Your makerspace request #{{ request.id }} has been returned and closed."),
+        "text": gettext_noop(
+            "{% if request.status == 'partially_returned' %}We recorded a partial return for your makerspace "
+            "request #{{ request.id }}. Some items are still out; return them by the due date."
+            "{% elif request.status == 'closed_with_issue' %}Your makerspace request #{{ request.id }} was "
+            "closed with an issue (an item was lost or damaged). The space will contact you about next steps."
+            "{% else %}Your makerspace request #{{ request.id }} has been returned and closed.{% endif %}"
+        ),
     },
     "return_reminder": {
         "subject": gettext_noop("{{ makerspace.name }} return reminder"),

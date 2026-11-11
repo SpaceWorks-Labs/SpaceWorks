@@ -60,6 +60,9 @@ def deliver_native_push(log):
 
     if log.makerspace_id and not feature_enabled(log.makerspace, "mobile.push"):
         return False
+    from apps.managed_hosting.platform_switch import platform_allowed
+    if log.makerspace_id and not platform_allowed(log.makerspace, "native_push"):
+        return False  # decision 281: the Space Manager turned the platform push fallback off
     settings_row = PlatformPushSettings.load()
     if not (settings_row.fcm_configured or settings_row.apns_configured):
         return False

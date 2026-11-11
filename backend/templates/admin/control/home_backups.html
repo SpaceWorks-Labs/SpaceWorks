@@ -1,0 +1,22 @@
+{% load i18n unfold %}{% comment %}/control/ home: backup health (config.control_dashboard_panels.backup_status).{% endcomment %}
+{% component "unfold/components/card.html" with title=_("Backups") %}
+    <div data-testid="control-home-backups">
+    {% if not control_backups.ok %}
+        <p class="text-sm">{% translate "Backup status could not be read just now." %}</p>
+    {% else %}
+        <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            <dt>{% translate "Last whole-platform backup" %}</dt>
+            <dd class="font-semibold">{% if control_backups.platform_at %}{{ control_backups.platform_at|date:"j M Y, H:i" }}{% else %}<span class="sw-badge sw-badge--warning">{% translate "None yet" %}</span>{% endif %}</dd>
+            <dt>{% translate "Last backup run" %}</dt>
+            <dd>{% if control_backups.run %}{% with status=control_backups.run.status %}<span class="sw-badge {% if status == 'complete' %}sw-badge--success{% elif status == 'failed' %}sw-badge--danger{% else %}sw-badge--warning{% endif %}">{% if status == 'complete' %}{% translate "Complete" %}{% elif status == 'failed' %}{% translate "Failed" %}{% else %}{% translate "In progress" %}{% endif %}</span>{% endwith %}
+                {{ control_backups.run.started_at|date:"j M Y, H:i" }}{% else %}{% translate "No run yet" %}{% endif %}</dd>
+            <dt>{% translate "Last restore drill" %}</dt>
+            <dd>{% if control_backups.drill %}{% if control_backups.drill.outcome == 'passed' %}<span class="sw-badge sw-badge--success">{% translate "Passed" %}</span>{% else %}<span class="sw-badge sw-badge--danger">{% translate "Failed" %}</span>{% endif %}
+                {{ control_backups.drill.started_at|date:"j M Y, H:i" }}{% else %}{% translate "No drill yet" %}{% endif %}</dd>
+            <dt>{% translate "Off-site destinations" %}</dt>
+            <dd>{{ control_backups.destinations }}{% if control_backups.upload_state %} &middot; {% translate "last upload:" %} {{ control_backups.upload_state }}{% endif %}</dd>
+        </dl>
+        {% if control_backups.link %}<p class="text-sm mt-3"><a class="underline" href="{{ control_backups.link }}">{% translate "Open the backup console" %}</a></p>{% endif %}
+    {% endif %}
+    </div>
+{% endcomponent %}

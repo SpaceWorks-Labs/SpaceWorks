@@ -47,11 +47,21 @@ def _arguments(argv):
     return parser.parse_args(argv)
 
 
+def _sql_role(parsed):
+    """The SQL role behind a wire login: a Supabase shared pooler logs in as ``role.projectref``."""
+    user = unquote(parsed.username)
+    if (parsed.hostname or "").lower().endswith((".pooler.supabase.com", ".pooler.supabase.co")):
+        role, separator, project = user.rpartition(".")
+        if separator and role and project.isascii() and project.isalnum():
+            return role
+    return user
+
+
 def _credentials(url):
     parsed = urlparse(url)
     if parsed.scheme not in {"postgres", "postgresql"} or not parsed.username or parsed.password is None:
         raise RuntimeError("Runtime database URL must contain a PostgreSQL user and password.")
-    return unquote(parsed.username), unquote(parsed.password)
+    return _sql_role(parsed), unquote(parsed.password)
 
 
 def _operation(path, current):

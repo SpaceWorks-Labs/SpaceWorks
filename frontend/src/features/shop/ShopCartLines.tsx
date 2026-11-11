@@ -14,7 +14,7 @@ export function ShopCartLines({ lines, currency, onQuantity, onRemove, disabled 
     {lines.map(line => <li key={line.variantId} className="flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-line p-3">
       <span className="grid min-w-0 flex-1 basis-40 gap-0.5">
         <span className="break-words font-semibold text-ink">{line.label}</span>
-        <span className="text-sm tabular-nums text-muted">{shopMoney(line.price, currency)} each</span>
+        <span className="text-sm tabular-nums text-muted">{t`${shopMoney(line.price, currency)} each`}</span>
       </span>
       <span className="flex items-center gap-1">
         <button type="button" className="desk-button min-h-11 min-w-11 px-0" aria-label={t`One fewer ${line.label}`} disabled={disabled}

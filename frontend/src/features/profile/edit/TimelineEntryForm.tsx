@@ -27,7 +27,7 @@ export function TimelineEntryForm({ entry, kind, pending, error, onCancel, onSav
   const copy = TIMELINE_COPY[kind];
   const id = (field: string) => `timeline-${field}`;
   const submit = () => { if (ready) onSave({ ...draft, title: draft.title.trim(), end: draft.end || null }); };
-  return <Modal open onClose={onCancel} title={`${entry ? "Edit" : "Add"} ${copy.title.toLowerCase()}`} footer={
+  return <Modal open onClose={onCancel} title={entry ? t`Edit ${copy.title.toLowerCase()}` : t`Add ${copy.title.toLowerCase()}`} footer={
     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
       <button type="button" className="desk-button w-full sm:w-auto" disabled={pending} onClick={onCancel}>{t`Cancel`}</button>
       <button type="submit" form="timeline-entry-form" className="desk-button-primary w-full sm:w-auto" disabled={!ready || pending}>{pending ? t`Saving…` : t`Save`}</button>

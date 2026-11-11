@@ -1,4 +1,4 @@
-import { formatLocale } from "../../lib/format";
+import { formatMoney } from "../../lib/money";
 import { t } from "@lingui/core/macro";
 import type {
   ShopBuyerOrder, ShopLineInput, ShopOrderCreate, ShopOrderPlaced, ShopPublicProduct, ShopPublicVariant, ShopQuote,
@@ -11,8 +11,8 @@ export type { ShopBuyerOrder, ShopLineInput, ShopPublicProduct, ShopPublicVarian
 export type Paged<T> = { count: number; next: string | null; previous: string | null; results: T[] };
 export type OrderRequest = Omit<ShopOrderCreate, "lines"> & { lines: ShopLineInput[] };
 
-const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.stringify(body),
-  headers: { "Content-Type": "application/json" } });
+const post = (body: unknown, headers: Record<string, string> = {}): RequestInit => ({ method: "POST", body: JSON.stringify(body),
+  headers: { "Content-Type": "application/json", ...headers } });
 const base = (slug: string) => `/public/m/${encodeURIComponent(slug)}/shop`;
 
 export const shopKeys = {
@@ -35,15 +35,17 @@ export const fetchProduct = (slug: string, productSlug: string) =>
   tenantPublicRequest<ShopPublicProduct>(slug, `${base(slug)}/products/${encodeURIComponent(productSlug)}/`);
 
 /** A signed-in buyer goes through the member session (refresh-and-retry) so member prices apply. */
-function shopPost<T>(slug: string, path: string, body: unknown, signedIn: boolean) {
-  return signedIn ? tenantMemberRequest<T>(slug, path, post(body)) : tenantPublicRequest<T>(slug, path, post(body));
+function shopPost<T>(slug: string, path: string, body: unknown, signedIn: boolean, headers?: Record<string, string>) {
+  const init = post(body, headers);
+  return signedIn ? tenantMemberRequest<T>(slug, path, init) : tenantPublicRequest<T>(slug, path, init);
 }
 export const quoteCart = (slug: string, lines: ShopLineInput[], signedIn: boolean) =>
   shopPost<ShopQuote>(slug, `${base(slug)}/quote/`, { lines }, signedIn);
 export const requestEmailCode = (slug: string, email: string) =>
   tenantPublicRequest<void>(slug, `${base(slug)}/email-code/`, post({ email }));
-export const placeShopOrder = (slug: string, body: OrderRequest, signedIn: boolean) =>
-  shopPost<ShopOrderPlaced>(slug, `${base(slug)}/orders/`, body, signedIn);
+/** SH-3: `idempotencyKey` is one per checkout attempt, so a double submit or a retry returns the first order. */
+export const placeShopOrder = (slug: string, body: OrderRequest, signedIn: boolean, idempotencyKey: string) =>
+  shopPost<ShopOrderPlaced>(slug, `${base(slug)}/orders/`, body, signedIn, { "Idempotency-Key": idempotencyKey });
 export const fetchOrderStatus = (slug: string, token: string) =>
   tenantPublicRequest<ShopBuyerOrder>(slug, `${base(slug)}/orders/${encodeURIComponent(token)}/`);
 
@@ -51,16 +53,18 @@ export function listMemberShopOrders(makerspaceId: number, page: number) {
   const query = new URLSearchParams({ makerspace_id: String(makerspaceId), page: String(page) });
   return memberRequest<Paged<ShopBuyerOrder>>(`/member/shop/orders/?${query}`);
 }
+// An active event pickup may be interrupted or moved to the space while the order is open.
+export function eventPickupRefreshInterval(order?: Partial<Pick<ShopBuyerOrder, "pickup_at" | "status">>): number | false {
+  return order?.pickup_at === "event"
+    && ["held", "awaiting_payment", "paid", "ready"].includes(order.status ?? "") ? 60_000 : false;
+}
+
 export const fetchMemberShopOrder = (orderId: number) => memberRequest<ShopBuyerOrder>(`/member/shop/orders/${orderId}/`);
 export const cancelMemberShopOrder = (orderId: number) =>
   memberRequest<ShopBuyerOrder>(`/member/shop/orders/${orderId}/cancel/`, post({}));
 
 /** Money exactly as the server computed it: the browser never re-prices. */
-export function shopMoney(amount: string | number | null | undefined, currency: string) {
-  const value = Number(amount ?? 0);
-  try { return new Intl.NumberFormat(formatLocale(), { style: "currency", currency: currency.toUpperCase() }).format(value); }
-  catch { return `${value.toFixed(2)} ${currency.toUpperCase()}`; }
-}
+export const shopMoney = formatMoney;
 
 export function priceRange(product: Pick<ShopPublicProduct, "price_from" | "price_to">, currency: string) {
   if (product.price_from === null || product.price_from === undefined) return "";

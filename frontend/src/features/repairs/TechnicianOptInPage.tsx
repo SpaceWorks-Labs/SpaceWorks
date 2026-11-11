@@ -37,7 +37,7 @@ export function TechnicianOptInPage() {
             onChange={() => setChannels(current => current.includes(channel) ? current.filter(item => item !== channel) : [...current, channel])} />
           {channel === "whatsapp" ? t`WhatsApp` : "SMS"}{data.consent[channel] ? " (agreed)" : ""}</label>)}
       </fieldset> : <p className="text-sm text-muted">{t`The space has no phone number for you, so only Telegram and email are possible.`}</p>}
-      <p className="text-sm">{t`For Telegram, send `}<span className="font-mono">{data.telegram_start}</span> {t` to the space's Telegram bot${data.consent.telegram ? " (done)" : ""}.`}</p>
+      <p className="text-sm">{t`For Telegram, send `}<span className="code-text">{data.telegram_start}</span> {data.consent.telegram ? t` to the space's Telegram bot (done).` : t` to the space's Telegram bot.`}</p>
       {agreed.length ? <p role="status" className="text-sm text-success-ink">{t`Thanks, you agreed to ${agreed.join(" and ")}.`}</p> : null}
       {accept.error ? <p role="alert" className="text-sm text-danger">{accept.error.message}</p> : null}
     </div> : null}

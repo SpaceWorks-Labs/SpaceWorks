@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { ErrorBlock, Skeleton } from "../../components/ui";
 import { ContributionGrid } from "./ContributionGrid";
 import { skillLevelLabel } from "./profileFormat";
@@ -33,14 +33,14 @@ function SpaceWorksActivity({ handle }: { handle: string }) {
   if (activity.isLoading) return <Skeleton className="h-36" />;
   if (activity.error) return <ErrorBlock error={new Error(t`Couldn't load activity. Try again.`)} onRetry={() => { void activity.refetch(); }} />;
   if (!activity.data?.days.length) return null;
-  return <ContributionGrid title={t`Activity on Space Works`} days={activity.data.days} tone="brand" unit={["activity", "activities"]} />;
+  return <ContributionGrid title={t`Activity on Space Works`} days={activity.data.days} tone="brand" describe={(total, days) => plural(total, { one: `# activity in the past ${days} days`, other: `# activities in the past ${days} days` })} />;
 }
 
 /** Labelled separately: GitHub's numbers are GitHub's, not this platform's. Absent endpoint = no graph. */
 function GithubActivity({ handle }: { handle: string }) {
   const github = usePublicProfileGithub(handle, true);
   if (!github.data?.days.length) return null;
-  return <ContributionGrid title={t`GitHub contributions`} days={github.data.days} tone="success" unit={["contribution", "contributions"]} />;
+  return <ContributionGrid title={t`GitHub contributions`} days={github.data.days} tone="success" describe={(total, days) => plural(total, { one: `# contribution in the past ${days} days`, other: `# contributions in the past ${days} days` })} />;
 }
 
 export function ProfileOverviewTab({ profile, preview }: { profile: PublicProfile; preview: boolean }) {

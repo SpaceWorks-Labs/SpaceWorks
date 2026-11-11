@@ -18,7 +18,7 @@ export function ShopOrderPlaced({ placed, path }: { placed: Placed; path: (part?
     <p>{due ? t`Pay ${shopMoney(order.amount_due, order.currency)} at the desk when you collect.` : t`Nothing to pay. Collect it at the desk.`}</p>
     <div className="rounded-xl border border-line bg-surface p-4">
       <p className="text-sm text-muted">{t`Your pickup code`}</p>
-      <p className="font-mono text-3xl font-semibold tracking-widest text-ink">{order.pickup_code}</p>
+      <p className="code-text text-3xl font-semibold tracking-widest text-ink">{order.pickup_code}</p>
       {order.expires_at ? <p className="mt-1 text-sm text-muted">{t`Held until ${new Date(order.expires_at).toLocaleString(formatLocale(), { dateStyle: "medium", timeStyle: "short" })}.`}</p> : null}
     </div>
     <p className="text-sm text-muted">{placed.signedIn ? t`Your orders are listed in your member area.` : t`We emailed you this code and a link to follow your order.`}</p>

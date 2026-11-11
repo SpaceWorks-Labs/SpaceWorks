@@ -36,7 +36,7 @@ export function PublicStatsSettingsPanel({ makerspaceId, slug, area }: { makersp
       ? <p role="note" className="text-sm text-muted">{t`You can change what appears for your areas. The Space Manager controls the overall page.`}</p>
       : <Callout size="inline" tone="warn" lead={t`These public stats settings are read-only for your account.`} />}</div> : null}
     {!area ? <>
-    <SettingsRow label={t`Public stats page`} helper={t`Event, community and headline counts below 3 show as “fewer than 3”. Borrower names follow the lending privacy setting.`}>
+    <SettingsRow label={t`Public stats page`} helper={t`Event, community and headline counts below 3 show as “fewer than 3”. Borrower names follow the Inventory privacy setting.`}>
       <div className="grid gap-3">
         <StatusPill label={value.enabled ? t`On` : t`Off`} tone={value.enabled ? "success" : "neutral"} />
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={value.enabled}

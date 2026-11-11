@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { lazy } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { CenteredCardLayout, PublicLayout } from "../../components/layouts";
 import { useTenant } from "../../lib/tenant";
 import { publicFamilies, publicHome } from "../../lib/publicHome";
@@ -26,6 +26,9 @@ export function FamilyHome() {
   }
   // Old home links that opened a space (?space=, ?confirmation=) still land on the bookings page.
   if ((params.has("space") || params.has("confirmation")) && publicFamilies(bootstrap).includes("bookings")) return <PublicBookingsPage />;
+  // Decision 295: an organization workspace's home is its organization page while that page is public.
+  const organizationPage = tenant.mode === "central" ? bootstrap.makerspace.organization_page_slug : null;
+  if (bootstrap.makerspace.kind === "organization" && organizationPage) return <Navigate replace to={`/o/${encodeURIComponent(organizationPage)}`} />;
   if (publicHome(bootstrap) === "makerspace") return <MakerspacePage />;
   return <PublicLayout state={{ status: "ready" }} isEmpty empty={{ message: t`${bootstrap.branding.display_name || bootstrap.makerspace.name} hasn't published anything yet. Check back soon.` }}
     makerspace={{ name: bootstrap.branding.display_name || bootstrap.makerspace.name, slug, homeHref }} headerAction={{ label: t`Sign in`, href: memberHref }} nav={[]}

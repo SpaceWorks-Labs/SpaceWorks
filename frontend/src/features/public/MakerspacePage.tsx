@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { ClosedNoticeBanner } from "./ClosedNoticeBanner";
+import { OpenNowIndicator } from "./OpenNowIndicator";
 import { useParams } from "react-router-dom";
 import { PublicLayout } from "../../components/layouts";
 import { PageMetadata } from "../../components/PageMetadata";
@@ -13,6 +14,7 @@ import { useTenantBootstrap } from "../inventory/usePublicInventory";
 import { FeaturedActivities } from "./FeaturedActivities";
 import { MakerspaceHeader } from "./MakerspaceHeader";
 import { ContactSection, MachinesSection, MembershipSection, SpacesSection } from "./MakerspaceMoreSections";
+import { PublicDayPasses } from "../guestPasses/public/PublicDayPasses";
 import { MakerspaceAreas } from "./MakerspaceAreas";
 import { usePublicPage } from "../publicPages/pageApi";
 import { PublicPageHero } from "../publicPages/PublicPageHero";
@@ -23,6 +25,7 @@ import { usePageBranding } from "../publicPages/usePageBranding";
 import { NotFoundPage } from "../NotFoundPage";
 import { StructuredApiError } from "../../lib/api";
 import { ErrorBlock } from "../../components/ui";
+import { nounTitleOf, spaceKindOf } from "../../lib/spaceNoun";
 
 /**
  * The public makerspace overview keeps published content and enabled activities together.
@@ -44,7 +47,7 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   // The route chooses this page only once bootstrap is known; nothing to compose before then.
   if (!bootstrap) return null;
   const families = new Set(publicFamilies(bootstrap));
-  const name = bootstrap.branding.display_name || bootstrap.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
+  const name = bootstrap.branding.display_name || bootstrap.makerspace.name || formatSlug(makerspaceSlug) || nounTitleOf(bootstrap.makerspace);
   const chrome = publicPageChrome(makerspaceSlug, name, path, bootstrap);
   const preferred = preferredPublicFamily(bootstrap);
   const shortcuts: Record<PublicFamily, Action> = {
@@ -58,11 +61,13 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   const actions = ordered.map(family => shortcuts[family]);
   const functional = <div className="grid gap-8">
     <ClosedNoticeBanner bootstrap={bootstrap} />
+    <OpenNowIndicator bootstrap={bootstrap} />
     {families.has("events") ? <FeaturedActivities slug={makerspaceSlug} path={path} timeZone={bootstrap.makerspace.timezone} /> : null}
     <MakerspaceAreas links={chrome.nav.filter(link => link.href !== path())} />
     {families.has("machines") ? <MachinesSection path={path} /> : null}
     {families.has("bookings") ? <SpacesSection slug={makerspaceSlug} path={path} /> : null}
     {families.has("membership") ? <MembershipSection policy={bootstrap.makerspace.membership_policy} path={path} /> : null}
+    {families.has("membership") && bootstrap.features?.includes("membership.day_passes") ? <PublicDayPasses slug={makerspaceSlug} memberHref={path("member")} /> : null}
   </div>;
   const page = <PublicLayout {...chrome} width="wide" state={{ status: "ready" }}
     hero={published ? <PublicPageHero page={published} slug={makerspaceSlug} actions={actions} bannerUrl={bootstrap.makerspace.cover_image_url} /> : <MakerspaceHeader name={name} bootstrap={bootstrap} actions={actions} />}>
@@ -76,7 +81,7 @@ export function MakerspacePage({ profileSlug, profileOnly = false }: { profileSl
   if (profileOnly && !published && pageQuery.error) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: t`Public page` }} state={{ status: "ready" }}><ErrorBlock error={pageQuery.error} onRetry={() => { void pageQuery.refetch(); }} /></PublicLayout>;
   if (profileOnly && !published) return <PublicLayout {...publicPageChrome(makerspaceSlug, name, path, bootstrap)} header={{ title: name }} state={{ status: "loading" }}><span /></PublicLayout>;
   return <div style={published ? pageStyle : brandStyle}>
-    <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || t`Events, tools and spaces at ${name}.`)} path={published?.canonical_url ?? path()}
+    <PageMetadata title={published?.title ?? name} description={published?.description ?? (bootstrap.branding.welcome_body || (spaceKindOf(bootstrap.makerspace) === "organization" ? t`Events, rooms and membership with ${name}.` : t`Events, tools and spaces at ${name}.`))} path={published?.canonical_url ?? path()}
       image={published?.cover?.url ?? (published ? null : bootstrap.makerspace.cover_image_url || bootstrap.makerspace.logo_url)} imageAlt={published?.cover?.alt} siteName={name} />
     {page}
   </div>;

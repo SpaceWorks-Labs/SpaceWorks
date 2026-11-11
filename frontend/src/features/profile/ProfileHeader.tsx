@@ -1,9 +1,9 @@
 import { t } from "@lingui/core/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { ArrowUpRight, BadgeCheck, Pencil, Share2 } from "lucide-react";
 import { Avatar } from "../../components/ui";
 import { RouteLink } from "../../components/ui/RouteLink";
-import { plural } from "../../lib/plural";
 import { domainIcon, linkPresentation } from "./profileFormat";
 import type { PublicProfile } from "./publicProfileApi";
 
@@ -18,13 +18,14 @@ async function shareProfile(name: string, url: string) {
 
 function VouchLine({ profile }: { profile: PublicProfile }) {
   if (!profile.vouched_by.length && !profile.vouched_count) return null;
+  const vouchers = profile.vouched_by.map((voucher, index) => <span key={voucher.handle}>
+    {index ? ", " : ""}<RouteLink href={`/${voucher.handle}`} className="inline-flex items-center gap-0.5 font-semibold text-ink underline-offset-2 hover:underline">
+      {voucher.display_name}<ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" /></RouteLink>
+  </span>);
   return <p className="text-sm text-muted">
-    {profile.vouched_by.length ? <>{t`Vouched by${" "}`}{profile.vouched_by.map((voucher, index) => <span key={voucher.handle}>
-      {index ? ", " : ""}<RouteLink href={`/${voucher.handle}`} className="inline-flex items-center gap-0.5 font-semibold text-ink underline-offset-2 hover:underline">
-        {voucher.display_name}<ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" /></RouteLink>
-    </span>)}</> : null}
+    {profile.vouched_by.length ? <Trans>Vouched by {vouchers}</Trans> : null}
     {profile.vouched_by.length && profile.vouched_count ? " · " : null}
-    {profile.vouched_count ? <>{t`Vouched for `}<span className="font-semibold text-ink">{plural(profile.vouched_count, "maker")}</span></> : null}
+    {profile.vouched_count ? <Trans>Vouched for <span className="font-semibold text-ink"><Plural value={profile.vouched_count} one="# maker" other="# makers" /></span></Trans> : null}
   </p>;
 }
 
@@ -45,7 +46,7 @@ export function ProfileHeader({ profile, editHref, preview = false }: {
         {profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-24 w-24 rounded-full border border-line object-cover" />
           : <span className="inline-flex h-24 w-24 items-center justify-center [&>span]:h-24 [&>span]:w-24 [&>span]:text-2xl"><Avatar name={profile.display_name} seed={profile.handle} size="lg" /></span>}
         {profile.verified ? <span role="img" aria-label={t`Verified member`} title={t`Verified member`}
-          className="absolute -right-1 bottom-1 inline-flex rounded-full bg-panel text-info"><BadgeCheck aria-hidden="true" className="h-7 w-7" /></span> : null}
+          className="absolute -right-1 bottom-1 inline-flex rounded-full bg-panel text-info-ink"><BadgeCheck aria-hidden="true" className="h-7 w-7" /></span> : null}
       </div>
       {preview ? null : <div className="flex flex-wrap gap-2">
         {editHref ? <RouteLink href={editHref} className="desk-button gap-2"><Pencil aria-hidden="true" className="h-4 w-4" />{t`Edit profile`}</RouteLink> : null}

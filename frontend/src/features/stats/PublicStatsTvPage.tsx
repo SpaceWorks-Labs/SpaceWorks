@@ -15,7 +15,7 @@ import { HeadlineRow, formatMetric, metricsFor } from "./StatsMetrics";
 import { formatDate } from "./StatsParts";
 
 const SECTION_TITLES: Record<StatsSectionKey, string> = {
-  events: t`Events`, machines: t`Machines`, printing: t`Printing`, lending: t`Lending`, community: t`Community`,
+  events: t`Events`, machines: t`Machines`, printing: t`Printing`, lending: t`Inventory`, community: t`Community`,
 };
 
 /**
@@ -44,14 +44,14 @@ export function PublicStatsTvPage() {
         {logo ? <img src={logo} alt={name} className="h-16 w-auto max-w-[min(60vw,20rem)] object-contain" />
           : <SpaceWorksLogo variant="symbol" size={64} />}
         <div className="min-w-0 flex-[1_1_14rem]">
-          <h1 className={logo ? "sr-only" : "break-words font-accent text-4xl font-semibold xl:text-5xl"}>{name}</h1>
+          <h1 className={logo ? "sr-only" : "break-words font-accent text-3xl font-semibold sm:text-4xl xl:text-5xl"}>{name}</h1>
           {stats ? <p className="mt-2 text-2xl text-muted">{stats.period.label}</p> : null}
         </div>
         {query.dataUpdatedAt ? <p className="text-xl tabular-nums text-muted">
           {t`Updated ${new Date(query.dataUpdatedAt).toLocaleTimeString(formatLocale(), { hour: "2-digit", minute: "2-digit" })}`}</p> : null}
       </header>
       <QueryContent state={query.isLoading ? { status: "loading" } : query.isError
-        ? publicErrorState(query.error, { noun: "Public stats", missing: "Stats are not available for this makerspace." }, () => { void query.refetch(); })
+        ? publicErrorState(query.error, { surface: "stats", missing: t`Stats are not available for this makerspace.` }, () => { void query.refetch(); })
         : { status: "ready" }}
         isEmpty={Boolean(stats && !stats.tv.enabled)}
         empty={{ message: t`TV mode is off for this makerspace. A Space Manager can turn it on in Settings › Public stats.` }}>

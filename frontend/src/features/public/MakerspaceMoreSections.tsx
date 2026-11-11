@@ -69,7 +69,7 @@ export function ContactSection({ bootstrap }: { bootstrap: TenantBootstrap }) {
   if (!location && !mapUrl && !email && !supportUrl) return null;
   const link = "font-semibold text-brand-ink underline-offset-2 hover:underline rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
   return <MakerspaceSection id="contact" title={t`Contact`}>
-    <address className="desk-panel grid gap-3 p-5 text-sm not-italic">
+    <address data-replay-block className="desk-panel grid gap-3 p-5 text-sm not-italic">
       {location || mapUrl ? <p className="flex min-w-0 items-start gap-2"><MapPin aria-hidden="true" size={18} className="shrink-0 text-muted" />
         <span className="min-w-0 [overflow-wrap:anywhere]">{location}{mapUrl ? <>{location ? " · " : null}<a className={link} href={mapUrl} target="_blank" rel="noopener noreferrer">{t`Open in Google Maps`}</a></> : null}</span></p> : null}
       {email || supportUrl ? <p className="flex min-w-0 flex-wrap items-start gap-2"><Mail aria-hidden="true" size={18} className="shrink-0 text-muted" />

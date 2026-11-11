@@ -1,5 +1,4 @@
-import { t } from "@lingui/core/macro";
-import { plural } from "../../lib/plural";
+import { plural, t } from "@lingui/core/macro";
 import { publicWidgetVisible, type PublicStatsCurrentLoan, type PublicStatsHardware, type PublicStatsPrinting, type PublicStatsVisibility } from "./api";
 import { DataTable, EmptyState, ListRow, RelativeTime, StatusPill } from "../../components/ui";
 import { ImageThumbnail } from "../../components/ui/ImageThumbnail";
@@ -31,23 +30,23 @@ export function PrintingSection({ printing, visibility }: { printing: PublicStat
     {shown("per_printer") ? <div><h3 className="title-section mb-4">{t`Per printer`}</h3><DataTable data={printing.per_printer.map((row, rowId) => ({ ...row, rowId }))} getRowId={row => row.rowId}
       emptyTitle={t`No printer activity yet.`} emptyDescription={t`Printer totals appear as jobs are recorded.`}
       columns={[
-        { key: "name", header: "Printer", render: row => <div className="flex min-w-0 items-center gap-3"><ImageThumbnail src={row.image_url} alt={row.name} /><span className="min-w-0 break-words">{row.name}{row.model ? <span className="block text-sm text-muted">{row.model}</span> : null}</span></div> },
-        { key: "jobs", header: "Completed jobs", className: "tabular-nums md:text-right" },
-        { key: "hours", header: "Hours", className: "tabular-nums md:text-right", render: row => formatNumber(row.hours) },
-        { key: "grams", header: "Filament (g)", className: "tabular-nums md:text-right", render: row => formatNumber(row.grams) },
+        { key: "name", header: t`Printer`, render: row => <div className="flex min-w-0 items-center gap-3"><ImageThumbnail src={row.image_url} alt={row.name} /><span className="min-w-0 break-words">{row.name}{row.model ? <span className="block text-sm text-muted">{row.model}</span> : null}</span></div> },
+        { key: "jobs", header: t`Completed jobs`, className: "tabular-nums md:text-right" },
+        { key: "hours", header: t`Hours`, className: "tabular-nums md:text-right", render: row => formatNumber(row.hours) },
+        { key: "grams", header: t`Filament (g)`, className: "tabular-nums md:text-right", render: row => formatNumber(row.grams) },
       ]} /></div> : null}
   </Section>;
 }
 
 export function HardwareSection({ hardware, visibility }: { hardware: PublicStatsHardware; visibility?: PublicStatsVisibility }) {
   const shown = (key: string) => publicWidgetVisible(visibility, `lending.${key}`);
-  return <Section title={t`Lending`}>
+  return <Section title={t`Inventory`}>
     <div className="grid gap-4 sm:grid-cols-3">
       {shown("library") && hardware.library.library_size !== null ? <StatTile label={t`Public library`} value={hardware.library.library_size} /> : null}
       {shown("available") && hardware.library.available_count !== null ? <StatTile label={t`Available now`} value={hardware.library.available_count} /> : null}
       {shown("currently_out") && hardware.library.currently_out_count !== null ? <StatTile label={t`Currently out`} value={hardware.library.currently_out_count} /> : null}</div>
     <div className="grid gap-6 lg:grid-cols-3">
-      {shown("most_popular") ? <div><h3 className="title-section">{t`Most popular`}</h3><CompactList empty="No lending history yet. Loans will appear here as tools are borrowed." rows={hardware.most_popular.map(row => ({ label: row.name, value: `${plural(row.times_lent, "loan")} / ${row.total_quantity_lent} total` }))} /></div> : null}
+      {shown("most_popular") ? <div><h3 className="title-section">{t`Most popular`}</h3><CompactList empty={t`No loan history yet. Loans will appear here as tools are borrowed.`} rows={hardware.most_popular.map(row => ({ label: row.name, value: plural(row.times_lent, { one: `# loan / ${row.total_quantity_lent} total`, other: `# loans / ${row.total_quantity_lent} total` }) }))} /></div> : null}
       {shown("tools_out") ? <div><h3 className="title-section">{t`Tools out`}</h3><CompactList empty="No tools are out. Browse inventory to find your next tool." rows={hardware.tools_out.map(row => ({ label: row.name, value: `${row.quantity_out} out` }))} /></div> : null}
       {shown("recently_added") ? <div><h3 className="title-section">{t`Recently added`}</h3><div className="mt-3 grid gap-3">{hardware.recently_added.length ? hardware.recently_added.map((row, index) => <ListRow key={`${row.name}-${index}`} title={row.name} right={<RelativeTime date={row.created_at} />} />) : <EmptyState message={t`No new public gear this month. Check back for new tools.`} />}</div></div> : null}
     </div>

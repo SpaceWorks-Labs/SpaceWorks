@@ -9,7 +9,7 @@ export function ShopQuoteSummary({ quote, title = t`Your order` }: { quote: Shop
   const hasTax = Number(quote.tax_total) > 0;
   return <section aria-label={title} className="grid gap-3 rounded-xl border border-line bg-surface p-4">
     <h3 className="title-section">{title}</h3>
-    <table className="w-full text-sm">
+    <div className="overflow-x-auto"><table className="w-full text-sm">
       <caption className="sr-only">{title}</caption>
       <thead className="sr-only"><tr><th scope="col">{t`Item`}</th><th scope="col">{t`Amount`}</th></tr></thead>
       <tbody>
@@ -22,7 +22,7 @@ export function ShopQuoteSummary({ quote, title = t`Your order` }: { quote: Shop
           <td className="py-1 text-right tabular-nums">{money(line.net)}</td>
         </tr>)}
       </tbody>
-    </table>
+    </table></div>
     <dl className="grid gap-1 border-t border-line pt-3 text-sm">
       <div className="flex justify-between gap-3"><dt className="text-muted">{t`Subtotal`}</dt><dd className="tabular-nums">{money(quote.subtotal)}</dd></div>
       {Number(quote.discount_total) > 0 ? <div className="flex justify-between gap-3">

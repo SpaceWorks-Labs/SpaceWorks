@@ -6,9 +6,9 @@ import { Modal } from "../../components/ui";
 import { memberRequest } from "../../lib/api";
 import { uploadToStorage, type PrintUpload } from "../printing/publicApi";
 
-/** Where the report comes from: the member's own loan, booking or machine job (#103). */
+/** Where the report comes from: the member's own loan, booking, machine job or machine session (#103, 220(d)2). */
 export type ReportSource = { makerspace_id?: number; makerspace_slug?: string }
-  & ({ loan_id: number } | { booking_token: string } | { machine_job_id: number });
+  & ({ loan_id: number } | { booking_token: string } | { machine_job_id: number } | { machine_session_id: number });
 type LoanItem = { product_id: number; asset_id: number | null; name: string };
 
 async function uploadPhoto(source: ReportSource, file: File) {

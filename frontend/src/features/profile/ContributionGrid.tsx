@@ -1,4 +1,3 @@
-import { plural } from "../../lib/plural";
 
 type Day = { date: string; count: number };
 const TONES = {
@@ -26,12 +25,14 @@ export function weekColumns(days: Day[]) {
  * Counts only: the graph shows how much happened on a day, never what. The summary is the
  * accessible name; the cells are decorative with a hover title for pointer users.
  */
-export function ContributionGrid({ title, days, tone, unit }: {
-  title: string; days: Day[]; tone: keyof typeof TONES; unit: [string, string];
+export function ContributionGrid({ title, days, tone, describe }: {
+  title: string; days: Day[]; tone: keyof typeof TONES;
+  /** The whole summary sentence, so each language words its own plural ("12 activities in the past 365 days"). */
+  describe: (total: number, days: number) => string;
 }) {
   const total = days.reduce((sum, row) => sum + Math.max(0, row.count), 0);
   const max = days.reduce((highest, row) => Math.max(highest, row.count), 0);
-  const summary = `${plural(total, unit[0], unit[1])} in the past ${days.length} days`;
+  const summary = describe(total, days.length);
   return <section aria-label={title} className="grid gap-3">
     <div className="flex flex-wrap items-baseline justify-between gap-2">
       <h3 className="title-section">{title}</h3>

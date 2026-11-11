@@ -14,7 +14,7 @@ happens to its data.
 ## Areas used by setup
 
 Setup first asks whether to enable every area (default no). Yes selects all eight areas and still
-asks their normal follow-ups in order; no asks yes/no about each area. Inventory & lending, Machines
+asks their normal follow-ups in order; no asks yes/no about each area. Inventory, Machines
 and Reports default to yes; the other five default to no. An existing events/bookings edition defaults to its corresponding
 area plus Membership, Online payments and Reports, preserving plans, checkout and reporting;
 Inventory and Machines are off. Areas enable every child feature supported by the selected
@@ -27,18 +27,18 @@ govern sign-in availability. Membership adds plans, vouching, renewals and the m
 
 | Area | Modules | Features |
 | --- | --- | --- |
-| Inventory & lending | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
-| Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.sessions`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
-| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes`, `events.orders`, `events.seat_holds`, `events.addons`, `events.series_passes`, `events.transfers`, `events.desk_collect`, `events.refund_override`, `events.venue_fees`, `events.applications`, `events.application_stages`, `events.attendance_confirmation`, `events.crew`, `events.crew_claims`, `events.checkin_lists`, `events.calendar_feed`, `events.shifts_feed`, `events.public_feed` |
-| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `bookings.calendar_feed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
-| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `mobile.watch_actions`, `charges.membership`; `payments.membership` with Online payments; `membership.id_programmes`, `membership.wallet_passes`; `membership.import_sheets`, `membership.id_programmes_import_sheets` |
+| Inventory | `public_inventory`, `request_workflow`, `staff_admin`, `scanner`, `evidence_uploads`, `qr_management` (core); `guest_handover`, `asset_units`, `containers`, `bulk_import`, `stock_transfers`, `qr_print_batches`, `stocktake`, `devices` | `loans.enabled`, `loans.limits`, `loans.renewals`, `loans.kit_checklist`, `loans.reservations`, `loans.pickup_windows`, `loans.waitlist`, `loans.withdrawals`, `inventory.notify_when_back`, `inventory.expected_back`, `inventory.consumables`, `inventory.vendors`, `inventory.tobuy`, `inventory.warranty`, `inventory.self_checkout`, `inventory.contact_self_checkout`, `inventory.kiosk`, `stocktake.discipline`, `packs.import`, `charges.loans`; `payments.loans` with Online payments |
+| Machines | `machines`, `machine_service`, `printing` | `machines.job_requests`, `machines.job_quotes`, `machines.batch_start`, `machines.pay_before_pickup`, `machines.time_booking`, `machines.sessions`, `machines.induction_events`, `machines.supervised_sessions`, `machines.maintenance`, `machines.tobuy`, `machines.warranty`, `machines.certifications`, `machines.certification_reminders`, `machines.public_detail`, `machines.material_catalogue`, `machines.structured_intake`, `maintenance.reminders`, `maintenance.meters`, `maintenance.calendar_feed`, `charges.machines`, `notifications.delegated_recipients`; `payments.machines` with Online payments |
+| Events | `events` | `events.api_read`, `events.certificate_designer`, `events.website`, `events.embed`, `events.short_links`, `events.online_delivery`, `events.anonymous_feedback`; `events.broadcasts` with Notifications and Email; `events.organization_audience`, `events.offline_checkin`, `events.invites`, `events.account_registration`, `events.ticket_types`, `events.promo_codes`, `charges.events`; `payments.events` with Online payments; `events.id_cards`, `events.ticket_designs`, `events.wallet_passes`, `events.guest_passes`, `events.orders`, `events.seat_holds`, `events.addons`, `events.series_passes`, `events.transfers`, `events.desk_collect`, `events.refund_override`, `events.venue_fees`, `events.applications`, `events.application_stages`, `events.attendance_confirmation`, `events.crew`, `events.crew_claims`, `events.checkin_lists`, `events.calendar_feed`, `events.shifts_feed`, `events.public_feed` |
+| Bookings | `bookings` | `bookings.recurring`, `bookings.staff_grants`, `bookings.clone`, `bookings.staff_tools`, `bookings.confirmations`, `bookings.checkin`, `bookings.passes`, `bookings.organization_bookings`, `bookings.api_read`, `bookings.website`, `bookings.embed`, `bookings.calendar_feed`, `charges.bookings`; `bookings.broadcasts` with Notifications and Email; `bookings.analytics`, `bookings.utilization_pdf`, `bookings.exports` with Reports; `payments.bookings` with Online payments |
+| Membership | `membership`, `mobile` | `membership.auto_renew`, `membership.lifecycle_mail`, `membership.self_service`, `membership.self_export`, `membership.vouching`, `membership.application_form`, `membership.broadcasts`, the 14 release-2 lifecycle switches (`membership.plan_rules` … `membership.monthly_summary`), `mobile.push`, `mobile.watch_actions`, `charges.membership`; `payments.membership` with Online payments; `membership.id_programmes`, `membership.wallet_passes`; `membership.guest_passes`, `membership.day_passes`, `membership.minors`, `membership.volunteer_credit`, `membership.join_funnel`; `membership.import_sheets`, `membership.id_programmes_import_sheets` |
 | Online payments | `payments` | `payments.enabled` plus the online-payment feature of each selected domain |
 | Reports | `reports` | `reports.saved_views`; `reports.event_pdf`, `reports.event_exports` with Events |
 | Chat alerts | `telegram`, `slack`, `mattermost`, `discord`, `webhook` | Idle until URLs/tokens are configured |
 | Always on | Six core modules, `notifications`, `email`, `member_accounts` | Every satisfiable child of `notifications`, `email` and `member_accounts`, `billing.reminders`, `charges.enabled`, `charges.donations`, `billing.documents`, `staff.invitations`, `presence.geofence`, `ui.delight`, `ui.easter_eggs` |
 
 The source is `makerspaces/setup_areas.py`; registry module keys/defaults are unchanged. Inventory
-off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Charges,
+off clears `loans.enabled` while keeping core. Optional-module uninstall retains all data. Since 0.12.0 this area is called **Inventory** everywhere you read it (it was "Lending"); the keys (`loans.*`), routes, environment names and the `lending` CLI profile keep their old spelling so nothing already installed breaks. The Inventory switch is on by default for new and existing spaces, and turning it off hides every inventory screen and API route while keeping the data; the loan safety models (requests, handovers, evidence, QR, accountability) are never uninstalled. See `loans.enabled` in [the feature table](#features-the-level-below-a-module). Area managers and the Space Manager read their money, To-Buy, consumables, repairs and warranties as grouped views, by area and, for machines, by type then machine; rule in `docs/INVARIANTS.md` (Grouped area views). Charges,
 receipts and offline settlement work without Online payments. See the
 [follow-up questions and defaults](setup-for-makerspaces.md#area-follow-up-questions).
 
@@ -630,6 +630,11 @@ append-only encrypted remark; non-all_good outcomes require a remark and open an
 Requester notifications now default on; the upgrade preserves audit-recorded tenant choices and
 resource overrides. Bookings purge includes departure/issue rows and gallery objects.
 
+**Plan-included hours (release 0.12.0).** A membership plan can include booking and machine hours per term.
+Each booking draws them down through an insert-only ledger (`IncludedHoursUsage`) that is reversed on a
+rejection or an in-policy cancellation. Without the `membership` module there are no plans, so nothing is
+included and every booking is charged as before. A bookings purge deletes the ledger with the bookings.
+
 Bookings accepts authenticated active accounts without installing `membership`. Existing
 memberships retain their waiver requirement; booking in advance never requires presence.
 
@@ -823,6 +828,14 @@ organization. Subject-filtered saved views recheck both owner and reader. Featur
 refuses its export; it retains event history. Manual PDF files are generated on demand
 and add no stored objects; events purge removes the underlying history, not the core ledger.
 
+A co-organizer who holds registration management on one event gets that event's analytics (and, with
+`reports.event_exports` on, its registration export) in the drawer; the PDF stays with the event manager.
+Release 0.12.0 also adds eleven per-space table reports for area managers: inventory valuation, inventory
+utilisation by category, overdue inventory by borrower, the incidents register, the machine jobs register,
+certification holders, and the member, guest-pass, volunteer-hours, minors-consent and staff roster exports.
+Each needs its own area action (never audit access), is never scheduled or combined across spaces, and the
+people exports are identity-bearing. Without `reports` none of them is listed.
+
 Membership reports add counts-only join-month cohorts and retention at 3/6/12 months (or a chosen
 anniversary), plus per-currency MRR/ARR from recurring terms. Reports require `membership`;
 MRR also requires `VIEW_FINANCE`. Months follow the makerspace timezone. MRR is a plan projection,
@@ -836,7 +849,7 @@ state/sharing and drop schedules, so neither restores source disclosure rules.
 
 ### analytics
 
-Per-space Metabase analytics (release 2, lane L25; owner decision #163B). **Off by default**; no
+Per-space Metabase and Grafana analytics (release 2, lane L25; owner decisions #163B and #263). **Off by default**; no
 module requires it and it requires none. It adds:
 
 - **A read-only database login per space.** The Space Manager (or the superadmin) creates, rotates
@@ -849,13 +862,30 @@ module requires it and it requires none. It adds:
   tickets and orders, membership, the payments ledger (amounts only) and To-Buy. They carry no
   secrets, tokens, evidence keys, contact fields or free text; member names and emails appear only
   in `members`, and only when the space turns **Show member details** on. The list, columns and
-  version are in [Analytics views](analytics-views.md).
+  version are in [Analytics views](analytics-views.md). A view of an optional area follows that
+  area's switch (decision 218): machines, bookings, events and tickets, shop, donations, sponsors,
+  membership plans and terms, guest passes, induction certifications, incidents, event or booking
+  loan context and included hours return no rows while their module or feature is off.
 - **Embedded dashboards.** The Space Manager pastes the Metabase site URL and its embedding secret
   (encrypted at rest) and lists the dashboards to show. Staff holding `view_analytics` (the Space
   Manager always does) open them inside the console through a signed embed URL that expires after
   ten minutes; the secret never reaches the browser.
 - **One platform-wide Metabase** (superadmin only, not per space): its own login over the
   `spaceworks_analytics_platform` schema, which sees every space and never member details.
+- **Grafana, beside or instead of Metabase** (decision 263; choose Metabase, Grafana or both). The
+  same login and views feed a Grafana data source. The Space Manager (or the superadmin, for the
+  platform) saves the Grafana URL, organization and a service-account token (encrypted at rest,
+  never shown again), tests the connection, downloads a provisioning bundle (data source plus one
+  starter dashboard per area that is on; the password is always a placeholder) and lists the
+  dashboards to show: Grafana public dashboards are framed, others are rendered to an image on the
+  server with the token. Every view, change, token save/rotate/remove, test, bundle download and
+  dashboard opened is audited. Setup: [Grafana setup](grafana-setup.md).
+- **Optional web telemetry.** A space manager can select one page-analytics provider and separate
+  replay and diagnostics settings. Each remains off until configured and the visitor consents.
+  Session replay is limited to the anonymous public `/about` page.
+  Platform settings are separate, and turning off the space module disables its telemetry. Provider
+  setup, privacy limits and browser-notification distinctions are in [Monitoring and private web
+  analytics](monitoring-and-analytics.md#web-telemetry-in-reports--analytics).
 
 Every create, rotate, revoke and view of the credentials, every connection change and every
 dashboard opened is audited (`analytics.*`).
@@ -996,6 +1026,9 @@ its parent module is off.
 | `machines.pay_before_pickup` | `machine_service` (needs `machines.job_requests`) | | A finished job is handed over only once its charge is settled | Pickup never waits on payment |
 | `machines.time_booking` | `machines` (needs `bookings`) | | Book a machine's time through bookings; types that require a booking can then only be used by the booker, and nobody starts a job while someone else holds it | Nothing is enforced; machine resources are kept |
 | `machines.sessions` | `machines` | | Metered machine sessions: a checked-in, certified member scans the machine's QR, sees the rate, starts and stops; staff start, stop, correct and confirm; integrated machines report their own. Forgotten sessions stop at the type's maximum length, check-out or closing (flagged for a staff check). Bills the type's hourly rate, frozen at start, only while `charges.machines` is on. A purge deletes sessions and their corrections; charges and usage entries stay | Every session route answers 404 and no sweep runs; the manual-hours usage log is unchanged; sessions are kept |
+| `machines.induction_events` | `machines` (needs `events`) | | Mark an event as an induction for one or more machine certifications. After the event, staff who may grant that certification see who checked in and grant it to the people they pick in one action: one audited grant each, naming the event as its source, never automatic. Guest-pass holders (no membership) get a separate guest certification the guest machine mode reads through `holds_certification`. A purge deletes the induction links and guest certifications; member certifications stay | No induction marking or attendee grant route; certifications are granted one member at a time as before; links and guest certifications are kept |
+| `machines.supervised_sessions` | `machines` | | A certified instructor (a staff operator of the machine, or a member holding its certification) opens a supervised session on one machine, optionally for an event, and adds supervisees. A supervisee may use the machine only while the session is open (`may_use_supervised`), each use is recorded under the instructor, and the machine is exclusive: no member session starts while it is open, and the maintenance lockout still applies. A purge deletes supervised sessions, supervisees and uses | Every supervised-session route answers 404 and no one can use a machine under supervision; sessions already recorded are kept |
+| `safety.incidents` | none (served by the maintenance app) | | A space-level register of safety incidents and near misses: who, what, where (machine, room, event), severity, status and follow-up actions, with optional links to a loan, booking, event, guest pass or repair. Members report and see their own reports; staff triage. The Space Manager reads all; an area manager reads only the incidents of their own area (the audit-area rule). Other modules record into it through `record_incident` (for example a guest's incident on the sponsor's record). A purge deletes incidents and their actions | The register has no surface: reporting and triage answer 404 and `record_incident` writes nothing; incidents already recorded are kept |
 | `loans.fee_waivers` | `request_workflow` | ● | Staff waive a loan's rental, late, damage or lost fees with a recorded reason; a fee already paid opens a refund case for approval; the deposit is never waived | No waive tool; waivers already written keep their loans free |
 | `charges.machines` | `machines` | ● | Record a charge when a priced machine job completes or a metered session stops; quotes and prepay apply only while it is on | Machine use is free: no quote is sent, no job waits on a payment, sessions do not bill, and no machine price shows |
 | `machines.integrations` | `machines` (needs `devices`, `machine_service`) | | **Foundation only; the integration is deferred (#76).** An enrolled printer device bound to a machine whose type has an enabled printer-agent binding may pull its approved jobs, report start/completion/failure through the machine-service workflow (failures held for staff) and send a bounded status snapshot. Superadmin `/control/` only; no console screen | Every integration route answers 404; bindings and snapshots are kept |
@@ -1021,8 +1054,8 @@ its parent module is off.
 | `membership.register_tools` | `membership` | | Register filters by standing and the member-register CSV export (needs `reports`) | Plain roster only |
 | `membership.insights` | `membership` | | Renewal, collection, bridge, breakdown, expiry-calendar, win-back and funnel reports (needs `reports`) | Those reports refuse |
 | `membership.monthly_summary` | `membership` | | Monthly staff summary email as a scheduled-report preset, opt-out per person (needs `reports`) | The schedule is skipped while off; kept |
-| `charges.loans` | `request_workflow` | ● | Record loan deposits, rental, late, damage and lost charges (amounts are set in Settings › Pricing › Lending, or the payment settings) | Lateness is recorded but never charged |
-| `loans.enabled` | `staff_admin` | On | Public loan catalogue, borrow submission and staff loan consoles; disabling preserves core and data | Loan surfaces are hidden and new public borrowing is refused |
+| `charges.loans` | `request_workflow` | ● | Record loan deposits, rental, late, damage and lost charges (amounts are set in Settings › Pricing › Inventory, or the payment settings) | Lateness is recorded but never charged |
+| `loans.enabled` | `staff_admin` | On | The Inventory area switch (label "Inventory"): public catalogue, borrowing, self-checkout, kiosk, staff inventory, requests, ledger, stocktake, transfers, containers and QR-tool screens, inventory reports, tiles and notifications; disabling preserves core data | Every inventory surface is hidden and its API routes answer the typed module-off 404; machine consumables, events and bookings keep working without their equipment pickers |
 | `payments.enabled` | `payments` | ● | Master switch for all online payments | Every `payments.<area>` switch below is inert |
 | `payments.machines` | `machines` | | Card rail for machine-job charges | Charges are still recorded and settled offline |
 | `payments.bookings` | `bookings` | | Card rail for booking charges | Charges are still recorded and settled offline |
@@ -1042,6 +1075,10 @@ its parent module is off.
 | `notifications.inbox_snooze` | `notifications` | | Snooze and archive inbox messages | Every message shows; snooze and archive states kept |
 | `notifications.web_push` | `notifications` | | Opt-in browser notifications (needs deployment VAPID keys) | No browser notifications; subscriptions kept |
 | `notifications.escalation` | `notifications` | | One re-ping when an urgent staff notice is unseen for 30 minutes | No re-ping |
+| `notifications.member_inbox` | `notifications` | | Personal lifecycle messages and read state for members (**Notices**, and **Announcements** with `membership.broadcasts`) | Inbox sections hidden and inbox routes answer 404 `feature_disabled`; personal in-app delivery stops; rows and read state kept |
+| `notifications.member_preferences` | `notifications` | | Members mute optional families per personal channel and use one-click unsubscribe; safety mail stays on | **Preferences** hidden and its routes answer 404; stored opt-outs still apply |
+| `notifications.quiet_hours` | `notifications` | | Defer non-urgent deliveries to the end of the space's quiet hours, in its time zone | No new deferrals; already scheduled deliveries still wait; the policy is kept |
+| `notifications.digests` | `notifications` | | A daily digest option that batches a member's optional emails into one summary | Digest option hidden and new batching stops; opt-ins kept |
 | `public_site.closed_notice` | standalone | | A Space Manager "closed for now" banner with an optional reopening date on the public page | No banner; the text is kept |
 | `bookings.api_read` | `bookings` | | Minimal resource/reservation reads for operator-granted, tenant-bound HMAC server clients; arrivals need a separate scope | Integration reads refuse; booking and audit history stays |
 | `bookings.passes` | `bookings` (needs `bookings.confirmations`) | | Answer-free pass designer, owner downloads and staff printing after active arrival | Pass routes refuse; stored layouts retained |
@@ -1080,7 +1117,14 @@ its parent module is off.
 | `inventory.kiosk` | — | | Scanner and handover Stations at `/m/<slug>/kiosk/<station>`: a Station PIN opens the channel, and a signed-in staff operator lease attributes every online handover to a real person | No Station sessions, operator leases, work packages or kiosk commands; the public desk at `/kiosk/<slug>` is unaffected |
 | `membership.id_programmes` | `membership` | | Organisation ID programmes hosted by this space: a join page, CSV import, approvals, numbered cards (`PREFIX-YYYY-0001`), a card design and the public check page | Programme pages and routes answer 404; programmes, cards and designs are kept |
 | `membership.id_programmes_import_sheets` | `membership` (needs `membership.id_programmes`) | | ID-programme import from a public Google Sheet link, fetched once per preview/commit and parsed exactly like a CSV; covers event and programme member IDs (L13) | CSV only; a sheet request answers 404 |
-| `membership.wallet_passes` | `membership` | | Apple and Google Wallet passes for member and programme cards, updated when the card changes; shown only once the platform pass credentials are set | No wallet buttons; issued passes stop updating |
+| `membership.wallet_passes` | `membership` | | Apple and Google Wallet passes (setup and offline verification: [wallet-passes.md](wallet-passes.md)) for member and programme cards, updated when the card changes, and (with `membership.guest_passes`) static expiring passes for guest passes; the Space Manager can save the space's own signing credentials, otherwise the platform's are used, and with neither the buttons stay hidden. Credentials are encrypted, write-only and never exported or moved with a space. Changing the Apple Pass Type ID makes passes already in wallets unverifiable: the save response carries `reissue_needed: true` and holders re-add them from My passes | No wallet buttons; issued passes stop updating; saved credentials are kept |
+| `membership.guest_passes` | `membership` | | Guest passes (decision 223): a dated permit held by an existing account, issued by a member sponsor (present on site, with tenure, within a guest limit), by staff, or for an event. A pass is never a membership: not on the roster, not counted as a member, no member card. What a pass unlocks (on-site check-in, borrowing, machine use) is a per-space setting; a waiver is required before a non-member is on site by default | No new passes; live passes stop unlocking anything; recorded passes, loans and charges keep their normal return and settlement paths |
+| `membership.day_passes` | `membership` (needs `membership.guest_passes`) | | A one-day pass a guest buys or staff sell at the desk; the price is recorded as money owed under `charges.membership` (never depends on the payments rail) and is payable online only when online payments are on; staff may waive it; a paid day pass gives no joining credit | No day-pass sale or purchase; sold passes stay |
+| `events.guest_passes` | `events` (needs `membership.guest_passes`) | | Non-member registrants receive an event pass (event start minus one hour to event end plus the return buffer) when they check in | No event passes are issued; issued passes keep their own validity |
+| `membership.minors` | `membership` | | Record people under the age of majority (a birth date or an 'under age' declaration; the date and the guardian's contact are encrypted when scoped PII encryption is on) and require a guardian's e-signed consent, versioned like a waiver, before membership, event registration, a guest pass, on-site check-in, borrowing or machine use as the space's minors settings decide (admitted or not, minimum age, guardian present at check-in, may borrow, may use machines). Refusals carry a code such as `guardian_consent_required`. Door access is not involved. A purge deletes minor records, consents and consent texts; accounts stay | No minors surface and no minor check anywhere; records already kept stay |
+| `membership.volunteer_credit` | `membership` | | Members log volunteer hours, staff approve them (event shift hours can be offered with `events.volunteering`), and approved hours convert into a credit: a discount amount or free days applied to the next membership term charge as a recorded, audited reduction of that charge, never a silent price change. Works with `charges.membership` and without the payments rail. A purge deletes hours and credits; the charges stay | No volunteer routes; no credit is applied to any charge; hours and credits already recorded stay |
+| `membership.join_funnel` | `membership` | | The 'Join' call to action pre-filled from an event ticket or a guest pass, an opt-in follow-up notice after an event to attendees who are not members, and the `join-funnel` report (attendees, guests, joined) | No pre-fill route, no follow-up notice and no funnel report |
+| `bookings.organization_bookings` | `bookings` | | Staff book a space for an organization's partner event: made for the organization's contact member (no organization ledger exists), recorded against the organization, and drawing none of the contact's plan hours. Staff may give the organization an hours bank per space (an allowance that optionally resets monthly or yearly, plus grants and adjustments); its bookings use those hours first and only the remainder is charged, cancelling returns them, and organization admins can read the balance and ledger. The organization shows on the booking, the reservation export and the calendar. A purge deletes the organization links and hours banks; the bookings stay | No organization booking route; links already recorded stay |
 | `events.id_cards` | `events` | | An ID card for every confirmed registrant, designed and published by the event's organisers (no approval by default), valid until the day after the event; the door scan identifies the card | No event cards; issued cards and designs are kept |
 | `events.ticket_designs` | `events` | | Design tickets per event and ticket type; one check-in QR; the PDF can go with the confirmation email | Tickets use no custom design |
 | `events.wallet_passes` | `events` (needs `events.id_cards`) | | Wallet passes for event ID cards | No wallet buttons on event cards |
@@ -1107,6 +1151,10 @@ its parent module is off.
 | `events.application_stages` | `events` (needs `events.applications`) | | Review stages: a panel per stage, at most ten criteria scored 1 to 5, blind review, 1 to 20 reviews per application, a seeded BALANCED or RANDOM assignment and an "advance" decision; an optional stage-advanced email per event | One review round per application; stages, panels and reviews are kept |
 | `events.attendance_confirmation` | `events` | | Staff ask registered people "Are you still coming?" (12 hours apart, never automatic); replies show in the guest list, at the desk and in the export; per event, a No can free the place | No attendance emails or reply page; replies are kept |
 | `events.crew` | `events` | | The event crew: a reviewed sign-up link (dietary needs can be filled from Saved details when the member asks), free crew places outside capacity, a catering count, an opt-in public crew section (per event, and as a Crew section on the event's page), and a crew chip (Mentor or the crew role) on event ID cards, tickets and badges; crew gain no staff access | No crew screens or sign-up; no chip; the page section renders nothing; crew rows and places are kept |
+| `events.team_moderation` | `events` (needs `events.hackathons`) | on | Team leaders hand the team to another member, remove a member, or leave and cancel their place; organisers rename a team, move a member to another open team (honouring the maximum size and any sealed cohort) and delete a team with a five-minute undo | Those routes answer 404; teams and rosters are kept |
+| `events.crew_kinds` | `events` (needs `events.crew`) | on | A crew kind (organiser, volunteer, mentor, judge) beside the free role; staff can also edit, reorder and hide crew; the kind shows on the roster, the public crew section and the crew chip | A kind cannot be set or filtered; the chip uses the role label; stored kinds are kept |
+| `events.refund_cancels_tickets` | `events` (needs `events.orders`) | | Staff who approve a refund on an event ticket charge can also cancel the tickets it paid for: seats are freed, the waitlist moves and each attendee is told. The refund amount is exactly what staff approved | The approve call refuses `cancel_tickets` with `refund_cancel_tickets_unavailable`; refunds work as before |
+| `events.staff_claims` | `events` (needs `event_reimbursements`) | | Staff file a travel expense claim for themselves or for a speaker or volunteer who has a live registration; it is funded from the event's pool like a crew claim and cannot exceed what the pool has left | Filing answers 404; filed claims and their awards are kept |
 | `events.crew_claims` | `events` (needs `events.crew` and `event_reimbursements`) | | Crew members claim expenses through event reimbursements; money out goes through the expense ledger | Crew expense requests are refused |
 | `events.checkin_lists` | `events` | | Swag, meal and workshop lists beside entry check-in, optionally only after entry or only for buyers of an add-on (counted by quantity); online only | No lists; scans are kept |
 | `events.finalists` | `events` (needs `events.hackathons`) | | Advance the top N (ties kept) or hand-picked projects of a finalized round into a draft round, then publish them separately: a finalists block on the public results page, an optional finalists email and finalist certificates; results and prizes come from the final round | Finalist routes answer 404; advances and announcements are kept |
@@ -1245,7 +1293,7 @@ Each changed key is audited as `settings.changed` with its actual area and grant
 
 A hidden widget is removed from the **server's public response**, metrics and headline,
 not merely hidden in the browser. Module, edition, public-item and capability gates still
-apply; a visibility switch never enables another source. Lending follows the canonical
+apply; a visibility switch never enables another source. The Inventory section follows the canonical
 public catalogue gate, including `loans.enabled`. Current loans, popularity and loan period
 figures additionally require `request_workflow`; product counts/lists remain available when
 only that workflow is off and the public catalogue is still readable. Events remain listed
@@ -1256,7 +1304,7 @@ are omitted; a page with no visible section returns 404. Existing below-three su
 public availability/count settings and the independent borrower-name opt-in stay intact.
 Event/community/period counts below three still say “fewer than 3”, zero included; legacy
 figures keep their established projection. Current-loan names still require the separate
-Space Manager opt-in. New spaces keep the page off, machines/printing/lending selected,
+Space Manager opt-in. New spaces keep the page off, machines/printing/inventory selected,
 and events/community unselected. The public page builder's stats section remains separate.
 
 ## The platform overview (superadmin, not a module)
@@ -1276,7 +1324,7 @@ Modules section names it. Each block says "Off in N spaces".
 | Block | Needs | Shows |
 |---|---|---|
 | People | always | active members, new sign-ups, active staff by role; platform-wide person accounts (not split by space, since one person can belong to several) |
-| Lending | `loans.enabled` | catalogue items, loans issued, out now, overdue now, returned, requests awaiting review |
+| Inventory | `loans.enabled` | catalogue items, loans issued, out now, overdue now, returned, requests awaiting review |
 | Machines | `machines` | active machines, jobs by status, sessions, session hours, utilisation (session hours over machines x period hours; none for all time) |
 | Events | `events` | events held, upcoming, registrations, people checked in, hackathon submissions |
 | Bookings | `bookings` | bookings, booked hours, no-shows, cancellations, awaiting approval |

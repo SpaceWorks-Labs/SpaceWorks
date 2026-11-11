@@ -69,10 +69,10 @@ verified private account-link proofs, never workflow decisions. Two architectura
   is a step-up on the person fixed to one space (platform native grants stay forbidden).
   Accounts `0032_account_context` is a development-data role reset, never an authorized
   live-authority migration. Resource helpers and organization delegates are the person's.
-  Super Admin is global; each makerspace has nine fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
-  Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager and Member. No custom roles or role
+  Super Admin is global; each makerspace has ten fixed built-in `MakerspaceRole` instances: Space Manager, Inventory
+  Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member. No custom roles or role
   editing. A membership holds a primary role plus combinable additional roles; Space Manager and Member
-  must each stand alone, and the other seven combine. Authority is the union of the valid role set's actions. Machine Manager reach is
+  must each stand alone, and the other eight combine. Authority is the union of the valid role set's actions. Machine Manager reach is
   assigned per person by machine type; no type links means no machines, and a type covers machines added
   later. Space Manager is exempt. Inventory Manager covers the full hardware lifecycle but not printing,
   staff or makerspace settings. Also blocks restricted/suspended users. Interface:
@@ -120,6 +120,20 @@ accepted → issued → {partially_returned | returned | closed_with_issue}
 accepted → {cancelled | expired}
 ```
 
+```mermaid
+stateDiagram-v2
+  [*] --> draft
+  draft --> pending_approval
+  pending_approval --> rejected
+  pending_approval --> accepted
+  accepted --> issued
+  issued --> partially_returned
+  issued --> returned
+  issued --> closed_with_issue
+  partially_returned --> returned
+  partially_returned --> closed_with_issue
+```
+
 The workflow module enforces *allowed* transitions only. `closed_with_issue` and the
 accountability/access-restriction flow (PRD §6.5) are how lost/damaged hardware ties back to a requester's
 `access_status`. `cancelled` (the requester with `loans.withdrawals`, or staff) and `expired` (an accepted
@@ -130,7 +144,7 @@ lifecycle in `machines/service_workflow*` -- see **Machines and loans depth** in
 ## Multi-Tenancy (Makerspace Scoping)
 
 Every domain entity is scoped to a `makerspace_id`. A makerspace owns its inventory, public URL, Space
-Managers, Inventory Managers, its nine built-in role instances, Telegram group chat ID, QR
+Managers, Inventory Managers, its ten built-in role instances, Telegram group chat ID, QR
 namespace, and audit-log scope. **Any list/query for makerspace-scoped staff actors must be scoped through
 the Auth module** — forgetting this is a cross-tenant data leak, not just a bug. **Postgres RLS is the
 backstop; Auth-module scoping stays mandatory**: generated policies (`apps/tenant_rls/`) refuse another space's
@@ -192,6 +206,9 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   security settings** in `docs/INVARIANTS.md`.
 - Inventory Managers can run the full hardware lifecycle but **cannot** manage printing, staff, or
   makerspace settings.
+- **Each role sees only what it manages**: list/detail/report/search/feed endpoints narrow to the
+  actor's area through `rbac`, not only makerspace; `view_audit` alone never opens another area's
+  report; payout money is session-only (decision 224).
 - Evidence endpoints require per-makerspace `UPLOAD_EVIDENCE` plus active status; QR management also checks
   active status.
 - **Every presigned upload lands on the staging key; the final object key is never client-writable.** A workflow promotes it exactly once, so an accepted evidence photo cannot be replaced through a still-valid presign. Before retention expiry, read paths — the evidence endpoint, the admin preview, and backup/tenant-migration object capture — therefore fall back to the staging key, or an uploaded-but-unconsumed photo reads as missing. A terminal expired state returns 410 and never consults storage.
@@ -239,9 +256,10 @@ rows inside a request or job bound to a makerspace, but views must still scope e
   feed, all served by the one `membership`-gated activity endpoint. Its notices are **derived
   from the member's own rows**, never from `notifications.Notification` — that table is
   makerspace-wide with no recipient and one shared `read_at`. **Payment visibility is NOT behind
-  that gate**: `member_may_see_own_charges` admits a live, unrestricted account that owns a
-  charge here and holds no membership, so an account-only loan borrower can read their own debt;
-  a REVOKED member is still refused.
+  that gate**: `member_may_see_own_charges` admits a live account that owns a charge here —
+  including a restricted or suspended one, since paying is how a restriction clears (decision 260
+  G-1) — and holds no membership, so an account-only loan borrower can read and pay their own debt;
+  a REVOKED or inactive member is still refused.
 - **A paused (suspended) or read-only space is refused in ONE place** (#185): `space_controls.write_policy`,
   called from the source gate's single `_assert_gate_state`, which every tenant write already passes. Never
   add a per-view or per-task check. The live platform superadmin is admitted there and audited (#195,
@@ -403,8 +421,14 @@ a build.** These are the rules you must not violate without having read it:
 
   A historical isolated run on 2026-09-07 at `6629e60a` had **1559 passed, 0 failed** in ~59 minutes,
   proving that the host's `PostgresClientUnavailable` failures above are purely environmental.
+- **All tests live in the repo, are committed and are never deleted** (decision 244): backend in
+  `backend/tests/<app>/`, frontend `*.test.ts(x)` beside the code, Playwright in `frontend/e2e/`. A test for
+  a feature that is not in the release is skip-marked with a reason (backend module-level `pytest.skip`
+  before the imports; frontend `it.skip` or the `legacy-worktree-imports` folder that `vite.config.ts`
+  excludes), never removed. Commands and detail: **Where tests live** in `docs/DEV-WORKFLOW.md`.
 - **Chain every new migration off the ACTUAL leaf** — `ls backend/apps/<app>/migrations/`, never the number
   a spec quotes.
+- **Every merge or push to main must bump VERSION (strictly higher semver), with matching version strings and `docs/release-<version>.md`; CI refuses otherwise.** Use `sh scripts/bump-version.sh <new-version>`; see `docs/project/release-process.md`.
 - **Commits sit local and unpushed on `dev`; pushing is the owner's call alone.** Ask
   `git rev-list --count origin/dev..dev` rather than trusting a count written anywhere.
 - **MERGING IS THE OWNER'S ACT ALONE — never merge a branch yourself.** This covers every merge,
@@ -464,8 +488,8 @@ Stack (in use):
   The theme follows the OS theme until the user chooses (`frontend/src/lib/theme.ts`); the choice is
   persisted locally and an OS change is followed only while there is no choice (#77).
 - **Design system:** Space Works brand guidelines v1 (`docs/brand/`) for all colour, type, logo and icons;
-  UX patterns from the owner's design reference boards. Fonts (approved brand kit, 2026-10-15): Gilroy 400–700 for all text
-  and headings, Unbounded for one accent per layout — no other family. Icons: `lucide-react`. Every screen composes one layout from
+  UX patterns from the owner's design reference boards. Fonts (owner decision 2026-11-09, AGPL: only free/OFL faces ship): Gilroy ExtraBold 800 for headings
+  and display, Outfit 400–700 for body/UI text, Unbounded for one accent per layout — never commit commercial Gilroy 400–700 files. Icons: `lucide-react`. Every screen composes one layout from
   `frontend/src/components/layouts/` inside the sidebar `AppShell` (`components/shell/`); shared UI
   primitives are exported from `frontend/src/components/ui/index.ts`.
 - **API documentation:** drf-spectacular / OpenAPI (snapshot `frontend/openapi-schema.json` + generated

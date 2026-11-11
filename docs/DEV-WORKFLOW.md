@@ -189,6 +189,32 @@ A failure keeps the containers and prints a `dev.sh logs <svc>` hint. A later `u
 - Public Inventory page: `http://localhost:5000/m/makerspace/inventory` (makerspace overview: `http://localhost:5000/m/makerspace`)
 - API: `http://localhost:8000/api` — Swagger UI at `/docs/`, ReDoc at `/redoc/`, schema at `/schema/`.
 
+## Where tests live (decision 244)
+
+Every test is part of the repository and is committed. None is ever deleted to make a run pass.
+
+| Kind | Location | Run with |
+| --- | --- | --- |
+| Backend | `backend/tests/<app>/`, one package (with `__init__.py`) per app under `backend/apps/` | `./scripts/dev.sh test tests/<app>` |
+| Frontend unit and component | `*.test.ts` / `*.test.tsx` beside the code they cover, under `frontend/src/` | `npm test -- <file> --pool=forks --maxWorkers=1` from `frontend/` |
+| End to end | `frontend/e2e/` | `./scripts/dev.sh e2e` |
+
+The layout stays under `backend/tests/` rather than inside each app because the shared `conftest.py` fixtures
+and the path-pinned guard tests depend on it.
+
+A test that cannot pass in this release because its feature is not in this release is **skip-marked with a
+reason that names the missing feature**, never removed:
+
+- Backend: a module-level `pytest.skip("Not in release X: <feature>", allow_module_level=True)` placed
+  before the imports that would fail.
+- Frontend: `it.skip(...)` / `describe.skip(...)`, or the file lives under `frontend/legacy-worktree-imports/`,
+  which `frontend/vite.config.ts` excludes from the run.
+
+Each feature gets condition coverage: module or capability on and off, each role allowed and refused, the
+happy path, validation errors, idempotency or concurrency where relevant, cross-space isolation, and money and
+session rules where money is involved. Run the changed and affected areas, not the whole suite, while
+working; run the full suite once before a release.
+
 ## The `live` service (SSE)
 
 `docker-compose.yml` and `docker-compose.prod.yml` run a second backend process, `live`
@@ -230,8 +256,12 @@ when the requirements change and weekly.
 
 The **Checks** workflow runs on every PR into `main` or `dev`, on pushes to `dev`, and by hand. It runs
 **checks only** (owner decision #108): the pytest and vitest suites stay local and gitignored, so a green
-Checks run is not a test run. Its four jobs are the required status checks on `main`; keep their names:
+Checks run is not a test run. Its four jobs are the required status checks on `main`, plus `version-bump` (below, PRs into `main` only); keep their names:
 
+- **`version-bump`** — pull requests into `main` only: `scripts/ci/check_version_bump.py` requires `VERSION` to be strictly higher than `main`'s, 
+  the settings/OpenAPI/README version strings to match, `docs/release-<VERSION>.md` to exist and no `v<VERSION>` tag to exist yet. 
+  `release.yml` repeats the "VERSION changed" check on every push to `main`. Bump with `sh scripts/bump-version.sh <new-version>`; 
+  see `docs/project/release-process.md`.
 - **`frontend`** — `npm ci`, then `npx tsc -b` and `npm run lint` side by side (ESLint,
   `frontend/eslint.config.js`: the recommended JS and typescript-eslint rules plus the rules of
   hooks; `exhaustive-deps` only warns, and the gitignored test suites are not linted), then

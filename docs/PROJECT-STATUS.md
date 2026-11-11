@@ -11,17 +11,22 @@ GitHub member sign-in is available through browser OAuth with PKCE, verified pri
 > integrations and overall implementation status. The rules these areas impose live in
 > `docs/INVARIANTS.md`; when a feature landed is in `docs/PROJECT-HISTORY.md`.
 
-## 0.11.0 release candidate (2026-11-08)
+## 0.12.0 release (in preparation, 2026-11-09)
 
-`VERSION` is `0.11.0` on the release integration branch. It is a candidate, not a published release: the
-full backend and frontend regressions, the live flow audit and publication are release gates recorded
-outside this file. Counted from the code on 2026-11-08:
+`VERSION` is `0.12.0` on the release integration branch (`codex/release-0.11.0-integration`). It is not
+yet published: the full backend and frontend regressions, the browser suite, the live flow audit and
+publication are release gates recorded outside this file. The 0.11.0 candidate was never published and is
+folded into 0.12.0; the last published release is 0.9.3. 0.12.0 adds the decision-216 module
+interconnections (event/booking loan context, equipment kits, the event–booking link, related facts,
+linked finance and loan-context reports) — see the [0.12.0 notes](release-0.12.0.md). Counted from the
+code on 2026-11-08 unless noted:
 
 - **Modules and features.** 37 module keys in 12 console areas (6 core); 209 feature keys, of which the
   staff console shows 208 (`machines.integrations` is control-plane only).
-- **Roles.** Nine built-in roles: Space Manager, Inventory Manager, Machine Manager, Event Manager,
-  Booking Manager, Handover, Technician, Shop Manager and Member.
-- **API.** 1,790 OpenAPI paths in `frontend/openapi-schema.json`, schema version `0.11.0`.
+- **Roles.** Ten built-in roles: Space Manager, Inventory Manager, Machine Manager, Event Manager,
+  Booking Manager, Handover, Technician, Shop Manager, Fundraising and Member.
+- **API.** 1,827 OpenAPI paths (2026-11-09); schema version `0.12.0` once `frontend/openapi-schema.json`
+  is regenerated.
 - **Audit.** 1,311 reviewed audit actions plus 59 shared-service prefixes
   ([audit action reference](audit-action-reference.md)).
 - **Help.** 122 English in-app help articles in 13 role sections ([user manuals](USER-MANUALS.md)).
@@ -32,10 +37,10 @@ across areas, own-history links and the uploaded tenant logo in the public heade
 
 ## Release 2 (combined tree, 2026-11-05)
 
-Every release-2 lane is merged into one combined tree that became the 0.11.0 candidate above. What it
-adds, in short:
+Every release-2 lane is merged into one combined tree that became the 0.11.0 candidate, now part of
+0.12.0 above. What it adds, in short:
 
-- **Accounts.** One account per person; nine built-in roles (Technician and Shop Manager are new); staff
+- **Accounts.** One account per person; ten built-in roles (Technician, Shop Manager and Fundraising are new); staff
   roles granted to people or by emailed invitation; mandatory staff two-step sign-in with a 3-day grace;
   passkeys, unusual-sign-in checks, security alerts, IP blocking, Turnstile and breached-password checks;
   per-space security rows with platform locks. Native apps get a clean break (see the
@@ -67,7 +72,11 @@ The **Unfold Django admin is the Super Admin's server-side power tool and fallba
 Day-to-day platform work is in the web superadmin console, which has a path for every `/control/` write
 except host-only ones (`config/control_parity.py`, #190; after the r2-parity-followups lane only
 platform/server backup key rotation and the platform-wide re-encryption, the RLS sync, axes recovery and raw
-plumbing rows remain host-only). Its sidebar is thirteen ordered sections built
+plumbing rows remain host-only). Since 0.12.0 the web console groups that work into platform pages that
+open without choosing a space: Platform dashboard, Spaces (with Create makerspace and the requests queue),
+Platform analytics, People & access, Platform security, Data & recovery (including offsite backup
+destinations, previously `/control/`-only) and Platform settings (`features/staff/platformConsole/`).
+The `/control/` sidebar is fourteen ordered groups (Overview, Spaces, People & roles, Inventory, Machines, Events, Bookings, Shop, Money, Messaging & notifications, Integrations & analytics, Limits & hosting, Data & recovery, Security & audit) built
 from one catalogue (`config/control_catalog.py`, #188) and its home is a dashboard of totals, items needing
 attention and quick links. **It is server-only by default (#189/#191):** with `CONTROL_PLANE_PROXY=false`
 `config/control_plane_access.py` answers 404 to everything but loopback and the SSH tunnel, and the website
@@ -180,6 +189,9 @@ space as an ordinary restore point (docs/self-hosting.md, "Restore one space").
 **Non-technical install:** the root `install.sh` curl flow on supported Linux families or Windows Git Bash
 (preflight → tagged source archive → published-image pull → `setup.sh` secrets/instance/live module ticks →
 version marker), with `SPACEWORKS_DIR` override and an existing-install update/module menu.
+The frontend question is **Full** (web app + API) or **API-only** (backend for mobile apps and
+integrations; optional website elsewhere), also `--frontend full|api-only`; it is recorded once as
+`SPACEWORKS_RUN_FRONTEND=yes|no`, which compose, update and rollback already follow.
 Fresh installs pin the newest published, non-draft, non-prerelease GitHub release built from `main`.
 Reruns stage that release's updater/helpers, back up the database, then install the closed host runtime
 bundle with previous files retained in `backups/host-config-*`. A normal user's install and optional
@@ -344,6 +356,6 @@ the host beat wrapper adds observation with the same persistent schedule.
 
 This is not an AO24/AO25 or launch acceptance pass. Incoming Pages, Events submission runtime and
 reimbursement packages are absent here, so those programme entries remain inactive. Real Docker/provider/
-VM/browser/recovery evidence remains required. The orchestrator regenerates OpenAPI/client/catalogue hash
+VM/browser/recovery evidence remains required. The release process regenerates OpenAPI/client/catalogue hash
 in Docker; those generated artifacts were deliberately left untouched. See [hosting](deploy/cloud-overview.md),
 [free limits](deploy/cloud-free.md) and [recovery](deploy/cloud-recovery.md).

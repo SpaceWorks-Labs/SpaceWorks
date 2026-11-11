@@ -8,6 +8,17 @@
 
 ## Current source map (real paths)
 
+Equipment context keeps optional associations inside their owning domains: `events/models_loan_context.py`
+and `bookings/models_loan_context.py` point to the canonical hardware request. Their `loan_context_services.py`
+files own scoped reads and mutations. Core `hardware_requests/loan_context_access.py` authorizes the existing
+request source; `accounts/loan_context_identity.py` resolves historical verified merge aliases.
+`makerspaces/loan_context_generations.py` invalidates stale edit versions across purge and restore.
+`data_export/loan_context_integrity.py` validates imported links. Frontend `features/staff/loanContext/`
+owns the scoped editor and TanStack Query state. Schema-only context command bodies and parameter bounds live in
+`hardware_requests/openapi_loan_context.py`; serializer instance annotations preserve per-field bounds. Operational report definitions/builders remain under
+`operations/`; see [equipment context](equipment-contexts.md) and [equipment reports](equipment-reports.md).
+
+
 Django loads `backend/config/settings.py`. The adjacent `settings_*.py` sections hold runtime,
 database and middleware, storage, delivery, recovery, scheduling, credentials, DRF, security,
 schema and logging settings. The entry point applies cloud and API overlays in order.
@@ -22,6 +33,23 @@ helpers remain for replay pending the independent
 Reports have their own map: [SOURCE-MAP-REPORTS.md](SOURCE-MAP-REPORTS.md) holds the report registry,
 the output allowlist and the measurement notes of every report family (it replaces the old
 report-builder notes).
+
+Web telemetry configuration is separate from Metabase: `analytics/telemetry_api.py` and
+`telemetry_service.py` own scoped staff settings; `makerspaces/telemetry_schema.py`,
+`telemetry_defaults.py` and `telemetry_public.py` validate and project public configuration into
+the tenant bootstrap or platform config without tenant-to-platform fallback. The nonrotating
+`accounts/views_browser_state.py` reports browser credential presence for telemetry admission.
+Frontend `components/WebTelemetry.tsx` and `lib/telemetry/` own consent, route/session fences and
+provider adapters; `features/staff/analytics/WebTelemetrySettings.tsx` owns the settings form.
+
+Firebase browser notifications use `notifications/models_browser_firebase.py`,
+`browser_firebase_challenge.py`, `browser_firebase_delivery.py` and the `views_browser_firebase*`
+siblings for possession proof, owner-epoch fence, opaque hints and scoped configuration/resume.
+`integrations/firebase_web_config.py`, `views_firebase_web_settings.py` and
+`push_firebase_browser.py` own public web settings and the typed FID send using the existing
+encrypted platform credential. Frontend `features/notifications/firebase/` and the isolated
+`public/firebase-alerts-sw.js` own the browser bridge; the existing W3C browser-alert and native
+push paths remain separate. See the notification map for the canonical addressed delivery pipeline.
 
 The [Events programme map](SOURCE-MAP-EVENTS-PROGRAMME.md) covers application/team,
 upload/retention, contributor/Mentor Desk, judging/gallery, credential/certificate,
@@ -388,7 +416,9 @@ signed links), pledges `pledges.py`, 80G `tax_receipts.py` + `tax_receipt_pdf.py
 (from `payments/admission_settlement.py`), returns `refunds.py`, sponsors `sponsors.py`, the wall `wall.py`,
 notices `notices.py`, beat jobs `tasks.py`, report builders `reports.py` + `reports_sponsors.py` (registered in
 `operations/report_definitions_donations.py`; the `finance-donations` area is in `payments/reports_finance_ledger.py`); routes `urls.py`, views `views_public|guest|member|staff|sponsors|
-sponsor_logo.py`). Calendar: `events/models_calendar_personal.py`, `calendar_feed_tokens.py`,
+sponsor_logo.py`); decision 242(m) adds the non-profit profile `nonprofit.py` (schemes, live exemptions, the
+public Donate entry) and the Donations area's donors/export/receipt-resend/paid-claim routes `views_staff_area.py`;
+the staff console's own tab is `features/staff/sponsors/DonationsArea.tsx`). Calendar: `events/models_calendar_personal.py`, `calendar_feed_tokens.py`,
 `calendar_feed_shifts.py`, `calendar_feed_combined.py`, `views_calendar_feeds_r2.py`; the feed switches in
 `bookings/views_feed.py` and `events/views_calendar.py`. The Pages `sponsors` section is in
 `makerspaces/public_page_*`. Frontend: `features/donations/`, `features/staff/sponsors/`,
@@ -1077,6 +1107,12 @@ identity normalization and production minimum-version comparison. `mobile_associ
   announcements, plans, invoices, billing settings), `features/platformNotices/` (banners, the paused
   page, the public `PausedTenantGate` and `SuperadminSpaceGuard`, which sets `lib/api/requests.setStaffWriteGuard`), `features/staff/hostingPlan/` (the Space Manager's plan usage
   and invoices inside `TenantUsagePanel`).
+- Frontend, 0.12.0 platform console IA: `features/staff/platformConsole/` holds the platform pages that
+  open without a chosen space (`staffTabs.SUPERADMIN_GLOBAL_TABS`): **People & access**
+  (`platform-access`), **Platform security** (`platform-security`), **Data & recovery** (`platform-data`,
+  including the offsite-destination UI in `offsite/`), plus routing for **Platform settings** and
+  **Platform analytics**; `PlatformSectionPage` is the shared `?section=` page, and `PlatformSettingsPanel`
+  redirects the sections that moved out of it. **Spaces** gained Create makerspace and the requests queue.
 
 ### Release 2 L9 (internationalisation, phase 8)
 

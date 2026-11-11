@@ -36,7 +36,7 @@ modules.
 |---|---|---|
 | `minimal` | 6 | Core only; nothing published publicly |
 | `workshop` | 12 | A machine shop: machines, service queue, and `machines.maintenance` switched on — deliberately without `member_accounts` |
-| `lending` | 16 | A tool library: the full lending lifecycle, no machines |
+| `lending` | 16 | A tool library: the full loan lifecycle, no machines |
 | `recommended` | 19 | Core plus the inventory lifecycle, reports and machines (the default) |
 | `cloud` | 23 | A managed box: everything that runs on a single Django process, no worker or beat |
 | `everything` / `full` | 37 | All modules, including the opt-in SMS and WhatsApp channels |

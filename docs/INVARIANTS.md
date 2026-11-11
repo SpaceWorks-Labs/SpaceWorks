@@ -525,13 +525,53 @@ database/table totals remain global. Optional route metrics use
 bounded compiled route/method/status labels and Prometheus multi-process files,
 never raw paths/queries/credentials. Per-master directories are cleared at master
 start, with a separate directory for each standard container or pod. Prometheus owns
-retention. The existing metrics token gate is unchanged. Optional analytics supports
-only trusted Plausible manual scripts, route-template URLs and empty referrers.
-Unknown/private/bearer routes never inject; credential-boundary navigation removes
-script/queue, cancels collection and reloads the document. Disabled analytics installs
-no navigation guard. Strict-origin applies site-wide and configured origins alone
-extend CSP. See `docs/monitoring-and-analytics.md` and `docs/helm.md`; Helm retains H1
+retention. The existing metrics token gate is unchanged. Optional web telemetry is
+off until configured and independently consented for its purpose. Select at most one
+page-view provider; replay and diagnostics are separate. The existing trusted
+Plausible manual-script/collector configuration remains compatible. Application page
+events use approved route templates and empty referrers; a vendor replay SDK can still
+observe permitted public DOM/URL and pseudonymous transport metadata, so prove its
+payload controls rather than claiming it sees nothing. No secrets, private content,
+raw query/hash, credential links, customer PII or network bodies/headers may enter
+telemetry. Unknown, loading, authenticated, private and bearer routes fail closed;
+positive anonymous state and safe public route are required before collection.
+Credential-boundary transitions fence collection before target rendering and use a
+full document navigation where isolation requires it. Session replay currently admits
+only anonymous `/about`; expanding public coverage requires route/component projection
+and actual emitted-payload proof. Strict-origin applies site-wide and only explicitly
+approved provider origins extend CSP. A disabled provider must not collect; do not
+assume disabling collection removes every boundary guard. Provider endpoints
+(`makerspaces/telemetry_schema.approved_url`) refuse any whitespace, backslash, `?` or `#`
+(`urlsplit` would silently drop or tolerate them) and store the canonical origin that was
+checked, never the raw input. PostHog analytics and replay share one SDK instance only for the
+same project and origin: the serializer refuses a mismatch and `lib/telemetry/providers.ts`
+drops replay for a stale mismatched row rather than sending it into the analytics project.
+See `docs/monitoring-and-analytics.md` and `docs/helm.md`; Helm retains H1
 admission and requires externally prepared state, never inventing recovery authority.
+
+**Firebase browser notifications.** Browser Firebase identities are separate from native
+device grants and W3C browser-alert subscriptions; Analytics and Notifications have
+independent gates. Public web project identifiers and VAPID public key are not the
+encrypted platform service-account credential, and the browser project must match the
+authorized server project. Before any registration can become active, a short-lived
+nonce is delivered to the claimed FID; confirmation must bind the same authenticated
+person, space, project and FID, with HMAC-only short-lived proof state and no nonce or
+FID in logs or audit. Scoped encrypted registrations remain tenant-RLS scoped; a
+platform-owned HMAC installation-owner fence and random epoch change only after proven
+possession, preventing an old account's other-space registrations from delivering after
+an account switch. The same person may own subscriptions in multiple spaces.
+
+The isolated browser worker handles native `PushEvent` data directly; do not import an
+SDK handler that broadcasts to uncontrolled clients. An incoming wake-up carries only
+a generic kind and the owner epoch, never private notification content or recipient
+identity; a stale epoch is ignored before any display or content access, and the fixed
+inbox route enforces authentication and tenant scope. Freeze/suspend and resume use a
+bounded, client/revision-bound protocol and current server owner check. Optional worker
+failure must not brick sign-in, sign-out or ordinary workflows: bounded fallback fences
+notification display, and no code may claim a JavaScript timeout guarantees immediate
+worker termination. Existing native push and W3C workers stay independent. Worker
+coexistence, stale/in-flight account-switch handling and actual delivery require browser
+and provider verification; a configured project is not delivery proof.
 
 **Makerspace local days** go through `makerspaces.local_time`; never derive a tenant's day from deployment UTC or the browser zone. Opening hours are advisory (empty = always open; dated exceptions replace a day), and public bootstrap exposes timezone/hours only. Country remains staff-only. The profile currency is `MakerspacePaymentSettings.default_currency`; existing charge currencies never change with it.
 
@@ -1255,11 +1295,11 @@ distinct `vendor_contact` value into an encrypted vendor row, and a sweep test o
 — should be built only if the owner decides vendors can be named individuals. Until then, do not
 re-raise the question from a grep for "contact" columns; this entry is the answer.
 
-**Fixed per-makerspace roles (replaces Part L; seven at first, nine since release 2 added Technician and Shop Manager).** `makerspaces/role_catalog.py` defines
+**Fixed per-makerspace roles (replaces Part L; seven at first, nine since release 2 added Technician and Shop Manager, ten since 0.12.0 added Fundraising).** `makerspaces/role_catalog.py` defines
 Space Manager, Inventory Manager, Machine Manager, Event Manager, Booking Manager, Handover, Technician,
-Shop Manager and Member. Names, slugs and grants are immutable; role CRUD and the capabilities editor/API
+Shop Manager, Fundraising and Member. Names, slugs and grants are immutable; role CRUD and the capabilities editor/API
 are removed. Each membership has a primary `assigned_role` plus `MembershipAdditionalRole` rows. Space
-Manager and Member stand alone; the other seven combine freely. `accounts/rbac_roles.py` shares the validity predicate
+Manager and Member stand alone; the other eight combine freely. `accounts/rbac_roles.py` shares the validity predicate
 between object and SQL readers: additional rows contribute only when the primary and additional role
 belong to the membership's tenant and both have combinable canonical slugs. Account-kind/context
 validation also applies; null primary or foreign/obsolete roles fail closed. Authority is
@@ -1288,7 +1328,7 @@ restores a narrowed canonical Space Manager rather than demoting the administrat
 legacy six handout actions to Handover, adding direct `collect_service_request`. Every gained/dropped
 action is reported. Foreign references become Member; null-primary legacy memberships stay untouched. Its reverse (`migration_support/fixed_roles_reverse.py`) is schema-only and runs only while nothing relies on the catalogue -- no additional role, no per-person machine link, and no membership, request, invitation, recipient rule or report schedule naming Event Manager, Booking Manager or Handover; it then deletes just those three unused rows. Anything else refuses, and the backup is the rollback.
 
-Migration refuses `NotificationRecipient(kind=role)` references to obsolete/custom roles: operators
+Migration refuses `NotificationRecipient(kind=role)` references to obsolete roles (including roles that were custom before the fixed-role upgrade): operators
 must repoint them to a built-in or named users, or remove them in the old console, then rerun preview.
 There is no automatic conversion to user rules. ReportSchedule pruning only narrows; empty schedules
 are deactivated and audited. Rejected pending staff invitations are revoked AND repointed to Member;
@@ -1493,8 +1533,10 @@ makerspace-wide, has no recipient column and shares one `read_at`, so serving it
 alerts and let one member's read mark speak for everyone. Payment/receipt visibility sits OUTSIDE
 the gate — `member_may_see_own_charges` admits an account with no membership that owns a charge
 here, because a loan deposit is raised against a BORROWER who needs an active account rather than
-a membership. It preserves every account-status clause and still refuses a revoked member, which
-is a deliberate pre-existing contract.
+a membership. A restricted or suspended (but `is_active`) account can SEE and PAY its own
+charges (decision 260, G-1: paying is how a restriction is cleared; `active_member_memberships(
+allow_restricted=True)` is used by the payments surfaces only). It still refuses a revoked member,
+which is a deliberate pre-existing contract.
 
 **Personal usage (analytics 1f-4)** is `GET /member/makerspaces/<id>/my-usage`, next to
 activity. It accepts no target member: every source is filtered by `request.user` and
@@ -1892,6 +1934,33 @@ unpinned; each now has a test under `tests/payments/`:
   for JPY/KRW and the rest of Stripe's zero-decimal list, three for BHD/JOD/KWD/OMR/TND. Checkout,
   the provider seam, native intents, refunds, the Connect fee and refund-webhook matching all use it;
   `int(amount * 100)` anywhere in a money path is a bug.
+- **Money columns store thousandths (0.001); a charge moves at the provider's capturable precision**
+  (open items F4, decision 261). Every money `DecimalField` is `max_digits=13, decimal_places=3`
+  (`payments.money.MONEY`; percentages, rates and quantities keep their own places), so KWD/BHD/OMR/
+  JOD/TND keep their fils and a USD/JPY value is the same number with trailing zeros (migration is
+  value-preserving). Stripe and Razorpay both require the last digit of a three-decimal currency to be
+  0, so `money.rail_exponent`/`quantum`/`quantize_money` give 0 places for JPY, 2 for USD and **2 for
+  KWD** -- quote (tax engine `q`), charge, refund, receipt and report round ONCE at that grid, and
+  `to_provider_minor_units` refuses (`AmountNotCapturable`, surfaced as `PaymentsUnavailable`) an amount
+  with a stray fils instead of rounding it silently. Rates and ledger entries (offline, expenses) keep
+  the full three places. API money uses `money_fields.MoneyField`, which renders `"12.35"` when the third
+  decimal is 0 and `"1.255"` when it is not; exports use `money.money_text`. Never write
+  `quantize(Decimal("0.01"))` on a money amount that has a currency in scope.
+- **Settling a charge closes what no longer applies** (payments audit R-9/R-12): every terminal
+  settlement (online capture, offline receipt, waiver) rejects the charge's open "I paid" claims and
+  awaiting maker-checker proposals through `settlement_supersede.supersede_open_settlements`, writing
+  `payment.paid_claim_superseded`/`payment.settlement_superseded`; the claim or proposal being confirmed
+  is named with `keeping(...)` and finished by its own step. `payment.paid_after_terminal` and
+  `payment.double_paid_refund_required` are written once per provider payment id (R-7/R-8).
+- **Loan rental is priced at issue** (A-5, decided as intended): the quote frozen when the loan is issued
+  is what the borrower owes; returning early does not re-price it (late fees are the only return-time
+  charge). **Booking money** (A-6): included plan hours are applied at quote time, frozen at the decision
+  and restored by an append-only ledger row on cancel or move, never recomputed from a fresh allowance.
+  **Event money** (B-8/B-11): an event's ticket charges are raised at order time and its venue fee at
+  publish, with `events/venue_fee_retry.py` re-raising a fee that stayed `configured` for ten minutes;
+  a pending gift is never a debt and the 10-minute donation dedupe is the only double-submit guard.
+- **Shop orders take an `Idempotency-Key`** (B-10): `ShopOrder.idempotency_key` is unique per space when
+  set, so a double submit returns the first order and its charge; another buyer's key is a 409.
 - **Purges delete `Refund` rows before `Payment`.** `Refund.payment` is PROTECT, so both the
   makerspace purge and `machines.service_lifecycle.delete_for_makerspace` raised ProtectedError for
   any space that had ever refunded. Manual settlements still cascade.
@@ -2221,6 +2290,14 @@ Apple, GitHub and OIDC all authenticate member accounts only. Provider removal/u
 checks protect member credentials; none can replace a staff/platform password.
 Both settings surfaces refuse clearing a GitHub credential when it would strand a GitHub-only member. Provider-issued GitHub sessions
 use the same version-bound MFA provider proof as other social sign-ins.
+**Linking GitHub/OIDC from a signed-in session never signs anyone in.** `social/github/link/authorize`,
+`social/oidc/<slug>/link/authorize` and `social/link/callback` (`accounts/social_link_browser.py`)
+reuse the attempt ledger, origin-bound redirect, PKCE and code exchange, but the attempt's nonce
+digest is bound to `user.pk` + the token's `sid` (`nonce_digest(..., link_binding)`), so the sign-in
+callbacks cannot consume a link attempt, the link callback cannot consume a sign-in attempt, and no
+other session can finish it. The link is `resolve_social_identity(explicit_user=...)`: identity owned
+elsewhere → 409 `identity_conflict`, second subject → 409 `provider_already_linked`. Staff/platform
+accounts, device grants and sessionless tokens are refused before any attempt exists.
 
 **Maker profiles hang off `MakerspaceMembership`, and are deliberately NOT PII-encrypted (phase 12).**
 `User` is platform-global and scoped encryption is per-makerspace, which is why `accounts.User` is
@@ -2341,6 +2418,11 @@ enabling a key cannot make an unconfigured channel send, and disabling it stops 
   SKIPPED as **neither** delivered nor failed, because `bool(delivered_counts)` must not read a
   suppressed channel as a reminder that went out. It fails **open** on a lookup error: a broken
   capability check must not silently mute a space's alerts.
+- **The direct one-room send fails CLOSED** (`dispatch_destination.deliver_text_to_destination`, the
+  scheduled-report leg). It calls `channel_module_blocks(..., strict=True)`, which raises
+  `ChannelModuleUnavailable` on a lookup error instead of answering False; that leg has no outbox row
+  to retry from, so an unknown module state returns `channel_module_unavailable` before the quota is
+  reserved and nothing is sent. Every other caller keeps the default fail-open behaviour.
 - **`makerspaces/0056` backfills `slack`+`mattermost` UNCONDITIONALLY onto existing rows** — the
   `0050` email precedent. Both were previously governed by webhook presence alone, so the opt-in
   default would have muted every upgrading space silently. Unconditional (not "only spaces that
@@ -2370,6 +2452,8 @@ Never infer a personal destination from an email/name, route requester/campaign 
 or treat the new personal preference as the existing tenant matrix. Authentication mailbox proofs
 stay synchronous/redacted email; the five mandatory-mail module exemptions, separate
 closed-with-issue opt-out exception and bounce/complaint suppression remain independent.
+
+**Notice copy is gettext, built for the recipient.** Every user-visible notice string uses gettext with named placeholders, and a body passed to `emit()` or a `fanout` helper may be a zero-argument builder that runs under `config.locale_resolution.override_for(user, makerspace)` (explicit user, makerspace default, system). `notification_delivery.send` also runs in `notification_locale.recipient_locale`. `tests/open_items_0120/test_notifications_followup_0120.py` scans every module importing `emit`, `fanout` or `NotificationSource`. Publishing guardian terms asks guardians again once per version (`notifications_guardian.notify_terms_changed`, gated on `membership.minors`); `guardian_consent_requested` has a space-name-only SMS/WhatsApp projection, `hours_bank_low` and `attendance_replied` have none.
 
 **Personal delivery (2026-10-17).** Domain transactions reserve explicit-recipient
 `NotificationEnvelope` intents; outbox enqueue waits for commit and a sweeper recovers broker loss.
@@ -2630,12 +2714,17 @@ the backend contrast guard parses those blocks. Tailwind maps each colour token 
   panel/danger-line/danger. Issued and checked-out are accent. Limited stock is emphasis;
   unavailable is neutral. Neutral statistic panels have ink numbers; emphasis is an orange pill
   with its ink label. Colour assignment follows meaning or stable identity, never randomness.
-- **Exactly two font families** (approved brand kit, 2026-10-15): Gilroy 400/500/600/700 for all
-  text — headings, titles and display numbers at 600 (inline emphasis 700), body 400, labels and
-  meta 500 — and Unbounded 500-600 for one accent phrase per layout. Outfit and the free Gilroy
-  300/800 weights are retired. `font-synthesis: none` prevents fake weights. Stacks end in the
-  generic sans-serif only.
-  Native `code`, `kbd`, `samp`, `pre` use Gilroy with tabular/slashed-zero numerals, 0.02em tracking
+- **Three font families, only redistributable files** (owner decision 2026-11-09 — the repo is
+  AGPL, so the commercial Gilroy Regular/Medium/SemiBold/Bold files were removed and must never be
+  re-committed): Gilroy **ExtraBold 800** for `h1`–`h6`, titles and display numbers (Gilroy Light 300
+  only for large light display text), **Outfit** (OFL, variable) for all body and UI text at 400–700,
+  and Unbounded 500-600 for one accent phrase per layout. `font-synthesis: none` prevents fake
+  weights; a Gilroy request at 400–500 snaps to Light and at 600+ to ExtraBold. Stacks fall back to
+  Outfit, then system sans. `frontend/src/styles/typography.test.ts` guards the kit. Print output
+  keeps the stored `"Gilroy"` design token but renders it in Outfit (ReportLab cannot embed the CFF
+  ExtraBold; see `backend/apps/events/certificates/fonts/README.md`). The Gilroy free EULA's
+  redistribution risk is recorded in `frontend/public/fonts/README.md`.
+  Native `code`, `kbd`, `samp`, `pre` use Outfit with tabular/slashed-zero numerals, 0.02em tracking
   and 1em size; `pre` wraps. `.code-text` carries the same features for machine strings. Neither
   a monospace family nor `font-mono`/`font-code` utilities exist. The shared `.title-page`,
   `.title-panel`, `.title-section`, `.eyebrow` and `.col-header` classes own the spec type scale.
@@ -2935,6 +3024,40 @@ tenant-migration uniqueness policy moved from `field:membership` to that constra
   update, the runner's `_skip_reason`, every deployment-wide catalogue/analytics/export view). `audit-trail`
   is CSV-only, export-only, unschedulable, excluded from organization and deployment aggregation, and its
   builder refuses `makerspace_id=None`.
+- **Audit rows are narrowed per area (owner decision 219(e), supersedes 217(e)).** Every audit action
+  belongs to an area by its namespace (`apps/audit/areas.py`: lending, handover, machines, events,
+  bookings, shop, repairs, finance, people, platform; a few exact overrides); an unplaced namespace is
+  `platform` (fail closed), and `tests/test_audit_area_scope.py` refuses any catalogued action or dynamic
+  prefix without an explicit entry. The superadmin and a holder of `manage_makerspace` read the whole
+  space; any other audit reader reads, per space, only the areas their effective actions open
+  (`AREA_ACTIONS`, twin `frontend/.../panels/auditAreas.ts`). A bare `view_audit` grant opens no area.
+  **An audit reader does not need `view_audit` (219(e-1), owner-delegated 2026-11-09).** A holder of
+  any `areas.READER_ACTIONS` action (every area action except the handover desk's, plus the
+  Technician's) is a reader too (`area_scope.audit_reader_spaces` / `can_read_audit`, twin
+  `auditAreas.ts` `AUDIT_READER_ACTIONS` / `canReadAudit`), so the Machine, Event, Booking and Shop
+  Managers and the Technician read their own area's rows with no grant change. That admission is
+  confined to `/admin/audit-logs` (`scope_audit_tenants`), its `audit` saved views
+  (`staff_list_scope.ENTITY_ACTIONS`), and the four audit reports through `alternate_actions` (run,
+  preview, export, catalog). Scheduling, organization and dashboard paths key on `required_action`
+  and still need `view_audit`, and so does every other `view_audit` gate: other reports, verification
+  runs, the request timeline and chain of custody, accountability, and the event and booking answer and
+  identity gates. Handover-only staff stay out.
+  Repair rows split by subject: issue and work-order rows follow `report_scope.visible_issues` /
+  `visible_work_orders` (machine-type scope and a Technician's own jobs included), other repair rows
+  their `area` / `subject_type` metadata, and a row with neither is the Space Manager's.
+  **Machine-area rows are narrowed per machine type too** (`apps/audit/area_scope_machines.py`, journey
+  0.12.0): a scope-EXEMPT reader keeps them all; any other reader keeps a row only when its target is
+  a machine they reach (or that machine's session, downtime, bound pool, schedule, log or document),
+  a type they manage (its certification types and grants, policy, pricing), a job on those machines
+  or types (the `scoped_service_requests` paths), or its meta names such a `machine_id` /
+  `machine_type_id`. A per-machine operator reaches that machine, never its type. Anything else
+  fails closed to the Space Manager, so an Inventory + laser-scoped Machine Manager never reads the
+  printer team's jobs, sessions or certifications.
+  `apps/audit/area_scope.scope_audit_rows` is applied AFTER the audit-reader tenant scope in
+  `/admin/audit-logs` (plus its list-only `area` filter, never inherited by verification requests), the
+  `audit-trail` CSV and the `audit-activity`/`-hours`/`audit-top-actors` reports (`viewer=` on every
+  report, schedule and organization path); the request timeline and chain of custody need the inventory
+  area (`makerspaces_for_area`). Verification runs still count the whole selection.
 
 **Connected device monitoring (forward-plan phase 7d lane).** Both Celery beat and the beatless
 scheduler register `apps.devices.tasks.scan_offline_devices_task` every minute and omit it when
@@ -3457,6 +3580,20 @@ RBAC action `view_analytics`. The view list and its version are in [analytics-vi
   off: every per-space route is 404 and the space views return no rows; data and login are kept.
 - **Audit.** `analytics.credentials_viewed`, `connection_updated`, `login_created`, `login_rotated`,
   `login_revoked`, `dashboard_viewed`; metadata never carries a URL, secret or password.
+- **Grafana (decision 263) shares the row, the login and the views.** `provider` (metabase |
+  grafana | both, default metabase) hides the other tool's viewer and embeds. The service-account
+  token is Fernet ciphertext, write-only, and is decrypted only to call THIS scope's Grafana
+  (`grafana_client.fetch`: no redirects, no proxy env, size and time caps, a space's host must
+  resolve to public addresses unless `GRAFANA_ALLOW_PRIVATE_HOSTS`; the platform may be private).
+  The provisioning bundle names only this scope's login and schema, reads curated views only (no
+  payout view), carries one panel set per area whose module is on, and its password is always a
+  placeholder; the browser may fill it only from the once-shown create/rotate response. Embeds are
+  public-dashboard URLs or server-rendered PNGs, only for uids listed on this scope's row. Audit:
+  `analytics.grafana_*` (credentials viewed, connection updated, token created/rotated/revoked,
+  connection tested, bundle downloaded, dashboard viewed), never a URL or token.
+- **Unowned lookup rows follow the login's own space (263 isolation pass).** Built-in machine
+  types are listed only while the login's space has `analytics` and the area switch on, so a space
+  with the module off sees no row in any view.
 - **Neither connection travels.** Both models are omitted from exports and tenant dumps.
 
 ## Settings authority (release 2, lane L17; #101, #128 C-11)
@@ -3571,6 +3708,7 @@ RBAC action `view_analytics`. The view list and its version are in [analytics-vi
   (`Booking.pricing_snapshot`, insert-only) and approval charges exactly that (#159); only a
   pre-#159 request falls back to the approval-day quote, audited `booking.price_quoted_at_approval`. The model refuses a change and a Postgres trigger backs it. Ids inside the
   snapshot are source-local history, never live references.
+- **Required money seams are atomic; only the provider rail is best-effort.** Dues, staff-term and every other debt seam writes its `Payment` (or `record_free` row) inside the caller's transaction, so the debt commits or rolls back with the action that raised it. Only the optional online rail (`create_checkout`, scheduled on commit) may fail, and it fails safe: it logs and leaves the pending debt payable offline. A public submit response reports what was recorded (`amount_due`, `currency`, `pay_online` on the booking response), never the client's own quote.
 - **No second ledger.** The pricing tables (`PricingDefault`, `PricingDefaultLine`, `PriceOverride`,
   `PriceDiscount`, `LoanFeeWaiver`) hold configuration and waivers only; money owed is one `Payment`
   per charge through `create_payment`. A total of 0 raises NO `Payment`; a priced charge that came to
@@ -3692,7 +3830,9 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   that booking, the owner of that machine job (`repairs/reporting.py`). An account-less borrower
   or guest booker proves their email with the borrow-request code first (`consume_code`, before
   any eligibility answer, so an unproven caller learns nothing). Everything else is
-  `reporter_not_eligible` (403); claim sessions are refused.
+  `reporter_not_eligible` (403); claim sessions are refused. A booking of one machine's time
+  (`BookableSpace.machine`) reports on THAT machine (area machines, its type-scoped manager) while
+  `machines.issue_reporting` is on, else on the room as before (`reporting.booking_subject`).
 - **Technician role (8th default).** `technician` holds exactly `work_repairs`,
   `run_maintenance`, `set_service_state`: never inventory editing, money, settings, staff or
   members, and none of the three is organization-grantable. Scope (Q-T1 a): the jobs assigned to
@@ -3756,6 +3896,16 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   `repair.*`, `dispatch.sent`, `technician.*`, `service_state.changed`, `maintenance.subject_*`).
   Photos are private, presigned to the STAGING key and promoted once on attach, and charge managed
   storage. The fixed notice reaches the reporter by email.
+- **Loan return → repair handoff (item 5).** A damaged return line (`RequesterAccountability`,
+  `issue_type=damaged`) is handed to repairs only by the item-area manager (`EDIT_INVENTORY`, Space
+  Manager) while `inventory.repairs` is on (`repairs/loan_handoff.py`, `POST|GET
+  /api/v1/admin/makerspaces/{id}/requests/{request_id}/repairs`). It opens ONE triaged issue per line
+  (`IssueReport.return_line`, unique; a replay answers the same issue), source `loan`, with L12's work
+  order and a `repair.loan_handoff` step. The return photo is referenced through the line by id and is
+  never copied into `IssuePhoto`. Off means no handoff and no context route (404); the return itself
+  never depends on it, and damage charges stay with `loan_charges_damage`. The GET is a read-only view
+  of the line's repair: work order, parts, the To-Buy rows the viewer may see
+  (`procurement.access.scope_items`), quote and payout amount.
 - **Per-parent switches and purge.** Off answers 404 and keeps every row. Purging `*.repairs` deletes
   that area's issues and their whole record; `*.issue_reporting` owns no rows; the technician
   directory is shared and goes only with a tenant purge.
@@ -3766,6 +3916,17 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   package's authority (`repairs/report_scope.py`): a Technician sees only their own jobs (and covered
   scheduled maintenance orders), a Machine Manager only their machine types. Tenant-local: unschedulable,
   no deployment aggregate, excluded from organization dashboards.
+
+```mermaid
+flowchart LR
+  sm["Space Manager"] --> all["Every area in the space"]
+  im["Inventory Manager"] --> inv["Inventory"]
+  mm["Machine Manager"] --> mt["Their linked machine types"]
+  bm["Booking Manager"] --> bk["Bookings and rooms"]
+  tech["Technician"] --> jobs["Jobs assigned to them"]
+  tech --> cov["Maintenance and service state for the types, items and rooms their coverage names"]
+  ho["Handover"] --> ctr["Counter work: issue, collect, return, evidence"]
+```
 
 ## Machines and loans depth (release 2, lane L12; #76, #77, #94, #140–#142)
 
@@ -3779,6 +3940,16 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   waiver signed when waivers are on -- `require_public_machine_requester`). Members only; staff
   still create jobs for a member from the console. Per-type `max_open_jobs` is counted under the
   makerspace lock (409 `job_limit_reached`).
+- Public intake additionally requires both `membership` and `presence` to be available: when either
+  is off or presence is tombstoned, the job types and real upload/submit surfaces return typed 404
+  `machine_intake_unavailable` and direct the person to staff. **`machines.job_requests` gates every
+  member intake on the server, matching the UI (decision 221e):** `public_intake_access.require_job_requests`
+  runs first inside `require_public_intake_available`, so the machine-jobs routes, the per-machine
+  `machine-service-requests` submit and the 3D-printer queues, pools, upload and request all answer the
+  typed `feature_off` 404 (`feature_disabled`, `feature: machines.job_requests`) before membership or
+  presence is consulted. Status tracking by public token stays open. This does not gate borrowing, staff
+  machine work, or retained owner job history. Submission rechecks the fresh makerspace at the
+  existing lock; membership and check-in remain point-in-time checks, not a new locking guarantee.
 - **A claim session never submits or acts on a job (#174).** Job requests come from checked-in
   members (#140); a walk-in goes through staff. `accounts/claim_routes_r2.py` refuses the job
   upload, submit and every member job route to a claim session.
@@ -3860,6 +4031,11 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   open-hours calculator for ETAs and session auto-stop; a space with no hours is always open.
 - **Lockout.** A maintenance schedule with `blocks_use`, overdue past the type's `grace_days`,
   refuses `start` with 409 `machine_locked_out` (`machines/lockout.py`; sessions use the same).
+  `lockout.schedule_blocks` is the ONE rule (calendar due past grace, or a usage meter while
+  `maintenance.meters` is on). `blocking_schedules` feeds it live rows; the queue-ETA snapshot feeds
+  it schedules and meter readings that `lockout_batch.schedules_annotation` loads on the machine
+  SELECT, so a locked-out machine contributes no ETA capacity and the four-query budget holds. Never
+  restate the rule in a second place.
 - **Downtime ledger.** `change_status` opens a `MachineDowntime` period when a machine goes to
   maintenance/offline and closes it when it returns (one open period per machine, DB-enforced);
   rows are never deleted and a closed row is final. Public machine detail shows only the expected-
@@ -3896,16 +4072,74 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
 - **Pickup windows.** With `loans.reservations` the member picks a window (up to
   `reservation_max_days_ahead`); the reservation is held from accept as before (no time-ranged
   availability). The deadline is the window end, else accept + `pickup_window_hours` (0 = never).
+- **Due instants respect opening hours (P1-4).** `hardware_requests/due_policy` is the ONE roll-forward:
+  every COMPUTED return due -- issue default, direct handout, self-checkout, renewal -- that falls while
+  the space is closed becomes the next opening instant PLUS a fixed one-hour grace via `effective_due`
+  (decision 219b; capped at that session's close if it is shorter; no grace setting; the closing
+  instant itself counts as open), while the computed accept-time pickup deadline rolls to the CLOSE of the
+  next open session via `effective_pickup_deadline` so it stays collectable. Reminders and overdue read the
+  stored instant, so they follow automatically. A STAFF-ENTERED due (and a member's own pickup window end)
+  is never moved: `closed_notice` surfaces it as `return_due_notice` on `AdminRequestSerializer` and the
+  Set-due dialog warns (its `next_open_at` is the bare opening, without the grace). No hours recorded = always open = unchanged; never restate the rule elsewhere.
 - **Waitlist (`loans.waitlist`).** Strict FIFO per item; when stock rises the head entry is
   offered and the units are HELD through `availability.hold_for_waitlist` until claimed, left or
   lapsed (`waitlist_offer_hours`); accepting the claiming request converts the hold into its
   reservation in one transaction. Holds never drive a bucket below zero (row locks in pk order).
   Renewal refuses while someone waits.
+- **Withdraw and the waitlist are borrower-scoped, not membership-scoped.** The member
+  loan-depth routes (`loan_depth_views._member_space` / `_own`) admit any live, unrestricted
+  owner through `rbac.scope_by_borrower`, so an account-only borrower (member accounts on,
+  membership off) can withdraw their own request and join, list and leave a waitlist; joining
+  still passes `waitlist.require_waitlist_member`. Member self-renewal still requires `membership`.
 - **Expected-back date** (`inventory.expected_back` + the item's opt-in): only the local DATE of
   the earliest due-back of an unavailable, non-hidden item; never who holds it or how many are out.
 - **#77 standing notes.** The offline (kiosk) queue keeps REFUSING new direct handouts (9c); a
   direct handout that failed is redone online with fresh evidence (9e). Inductions before a first
   loan are not built (#96, #128 C-19).
+
+### External QR labels (owner request, inventory)
+
+Labels printed outside SpaceWorks (a migrated system's unique IDs, a pre-printed UUID batch) are
+registered against inventory instead of reprinting. **An external label is an ordinary
+`boxes.QrCode` row** with `source=external`: revocation, active-target uniqueness
+(`uniq_active_qr_per_target`), the immutable `QrScanEvent` history, `inventory_qr_codes()` and
+the public "never expose QR" rule are the ones every QR has. Do not regress:
+
+- **The printed value lives in `external_value`, never in `payload`.** `payload` stays a random,
+  never-printed, deployment-unique token so the tenant-migration `field:payload`
+  preserve-unless-collision policy can still regenerate it without breaking a physical label;
+  `external_value` is unique **per makerspace across every status**
+  (`uniq_external_qr_value_per_makerspace`) — a revoked label stays retired, like a revoked
+  payload — and the same value in another makerspace is a different, invisible label. A check
+  constraint ties the two fields to the source. Values are trimmed, case preserved, at most 64
+  printable characters (the serializer cap of every scan route).
+- **Every scan surface resolves both** through `boxes/qr_lookup.py` (`scanned_q`/`scanned_in_q`/
+  `by_scanned_key`/`pick_scanned`): scanner resolve and scan, stocktake, public self-checkout,
+  direct handout and return, reviewed-request unit issue, kiosk resolve and both kit previews. A
+  lookup not already pinned to one makerspace (`qr-resolve`, `qr-scan`) matches external values
+  **only when the body pins `makerspace_id`**, which also bounds the payload match and is the
+  origin-scope target; unpinned it is the old payload-only lookup. Printing, the admin previews,
+  the asset `qr_payload` field and print-batch ZIPs render `label_value(qr)` — an external label
+  reprints its own value, never the internal payload.
+- **Registration never reassigns.** `POST /admin/qr/external` (`qr-external-assign`,
+  `boxes/external_qr.py`) needs `manage_qr` + active status (creating an item or unit also needs
+  `edit_inventory` and `staff_admin`) and links a value to an existing product/unit or to a
+  product/unit created in the same transaction. A value held by another item is 409
+  `already_assigned` with that item; a revoked one is 409 `revoked`; an item that already has an
+  active QR is 409 `target_has_qr` (revoke first); a SpaceWorks payload of another makerspace is
+  refused (one sticker never names two items). Re-linking the same value to the same item is a
+  200 no-op. Each link audits `qr.external_assigned` with `qr_id`/`target_type`/`source` — never
+  the value. Quantity products and asset units only, as for SpaceWorks tool QRs; no
+  `asset_units` gate (core unit QRs never had one).
+- **Bulk import `qr_code` column** (`admin_api/bulk_import_qr.py`): every problem — a value
+  repeated in the file, already linked elsewhere or revoked here, an update row whose item already
+  has a different active QR, an individual-tracked row, a caller without `manage_qr` — is a
+  preview row error, and **apply refuses while any exists, even for an async job that otherwise
+  skips bad rows**. A conflict that appears between preview and apply raises out of the row
+  savepoint and rolls the whole import back. The staff console disables Import on a QR error.
+- **The staff scanner** offers an unrecognised code (404) to `manage_qr` holders only: create an
+  item (code linked on save) or link an existing item/unit after an explicit confirm; a 409 shows
+  the item the code already belongs to.
 
 ## Machine sessions (release 2, lane L23; #158)
 
@@ -3961,6 +4195,30 @@ Release 2 lane L16 (#93, #94, #98, #100, #102, #103, #128 C-3/C-4/C-5/C-6b/C-9, 
   scanning a machine id gets 404.
 - **Purge** (`machines.sessions` capability purge): sessions and amendments only. Charges stay in the
   ledger and usage entries stay with the machine.
+
+### Induction events, supervised workshop sessions and the incident register (decision 223 (k), release 0.12.0)
+
+- **No grant without a staff click.** `machines/induction.py` links an event to certification types
+  (`machines.induction_events`); only `grant_from_induction`, called by staff holding that type's
+  authority (`access.can_create_machine`), certifies anyone, and only people with an `ATTENDED`
+  registration. One audited `certification.granted` (member, with `source_event_id`) or
+  `certification.guest_granted` row per person; a refusal for one person never undoes another's grant.
+- **Guests are certified through a narrow path, never by loosening membership.** `CertificationGrant` stays
+  keyed by membership. A guest-pass holder gets a `GuestCertificationGrant` (same append-only shape, stored
+  expiry capped at the pass end), and only while `guest_pass_queries.active_pass_for` finds a live pass.
+  `holds_certification(user, machine_type, makerspace, at, include_guest=True)` is the one predicate guest
+  machine mode `after_induction_cert` reads; it never checks the pass itself.
+- **Supervised sessions are exclusive and inert when off.** `machines/supervised.py`: a staff operator or a
+  member certified on the type opens one `SupervisedSession` per machine; supervisees use the machine only
+  while it is open (`may_use_supervised`, read by guest machine mode `supervised`), each use recorded under
+  the instructor. It refuses over a live member session, and `sessions_rules._machine` refuses a member
+  session while one is open. The maintenance lockout and down states apply to it too.
+- **Incident register reach follows the audit areas (219 (e)).** `maintenance/incidents/scope.py`: the Space
+  Manager reads every incident; an area manager reads only incidents whose `area` their effective actions
+  open (a type-scoped Machine Manager only their machines); `other` is the Space Manager's alone. A member
+  sees only their own reports and may link only what they own. Incident AUDIT rows sit in the platform area
+  (the register, not the audit log, is what area managers read). Other modules record through
+  `services.record_incident`, which is a no-op while `safety.incidents` is off.
 
 ## Account deletion
 
@@ -4181,6 +4439,193 @@ The `guest-admin/` **URL paths** in `hardware_requests/urls.py` remain the hando
 Print Manager remains retired (`makerspaces/0046` reassigned it to Machine Manager). Its string
 survives only in `_MEMBERSHIP_ROLE_ACTIONS` as the frozen null-primary legacy fallback.
 
+### Per-role access matrix (decision 217, release 0.12.0)
+
+The fixed catalogue's stored grants are unchanged by #217 and pinned, with their effective
+(implied-expanded) sets, by `tests/fixed_roles/test_role_access_matrix.py`; the console twin is
+`frontend/src/features/staff/staffAccess.roleMatrix.test.ts`. The rules it records:
+
+- **Only the Space Manager holds money, staff, member-roster, device or settings authority.** No
+  area role gains `view_finance`, `record_payment`, `record_reimbursement_payout`,
+  `manage_makerspace`, `manage_members` or `manage_devices`. Area money stays domain-scoped
+  (`payments/finance_scope.py`, #100) and refund/settlement authority stays per charge subject
+  (`reconciliation_authority.SUBJECT_ACTIONS`).
+- **Area roles do not cross.** Event, Booking, Machine, Technician and Shop roles hold no lending
+  action (#214b); Handover holds no decision, catalogue or QR administration; the Inventory Manager
+  never resolves a person from a member card. Combining roles is how a person gets both.
+- **The console mirrors the server, and the server stays the authority.** A tab is shown when the
+  server admits at least one of its reads: Reports for any action some report definition requires
+  (including `manage_shop`, `work_repairs`, `edit_inventory`, `view_inventory`, `manage_members`,
+  `scan_member_cards`); Finance for the Shop Manager's shop domain; Refunds (and deciding a case)
+  for the loan-charge (`issue_request`, `return_request`) and shop (`manage_shop`) subject owners.
+  Payments stays finance staff plus the Event Manager's event-filtered list; Settings, Security,
+  Users and Members stay the Space Manager's, with module managers reaching their own module
+  settings inside the module (`useDomainSettingsDialog`, #101).
+- **Landing.** The dashboard when the server serves one; otherwise Shop, then Repairs, then the
+  first permitted tab (`staffAccess.staffLandingTab`, applied again after module filtering).
+  Handover keeps the narrow counter console (`rbac.is_handout_only`).
+- **Fundraising (decision 242(m)).** A tenth fixed, combinable role holding only `manage_donations`
+  (`makerspaces/0141`-`0142`); the Space Manager holds it through `manage_makerspace`. It admits the
+  Donations area (`payments/donations/gates.py`), the ledger's `donations` domain
+  (`finance_scope.DOMAIN_ACTIONS`), gift/sponsorship settlement and refund cases
+  (`SUBJECT_ACTIONS`) and the donation reports -- never `view_finance`, any other area's money or
+  a setting: the non-profit profile stays a Space Manager finance setting. It is not
+  organization-grantable, and no area role holds it, so donation money never reaches an area
+  manager's Finance, area-overview or own-area Payments queue (`area_queue.FINANCE_ONLY`).
+- **Audit is per area (219(e) supersedes the 217(e) follow-up).** `view_audit` is no longer
+  space-wide for area roles: the Inventory Manager reads lending, handover and inventory-repair
+  audit rows only, and only the Space Manager and superadmin read the whole space. Stored grants are
+  unchanged (no role gains or loses `view_audit`); see "Audit rows are narrowed per area".
+  219(e-1) (clarified 2026-11-09, owner-delegated): the Machine, Event, Booking and Shop Managers and
+  the Technician also open the Audit tab and the four audit reports, narrowed to their own area,
+  WITHOUT `view_audit` (`staffAccess` `canReadAuditLog`). Accountability, timelines, verification
+  and every other `view_audit` surface stay closed to them. Handover gets no Audit tab. Pinned by
+  `tests/test_audit_area_admission.py` and the role-matrix twins.
+
+### Each role sees only what it manages (decision 224, release 0.12.0)
+
+Enforced at the API, not only in the console: a list, detail, report, search or feed narrows to the
+actor's AREA through `rbac`, never to the makerspace alone. The console hides what the server
+refuses (`staffAccess.ts`), but the server is the authority. Sources:
+`handover/reports/API-ROLE-SCOPING-AUDIT-0.12.0.md` and `handover/reports/ROLE-SCREEN-AUDIT-0.12.0.md`.
+
+- **Reports are keyed to their own area (224a; supersedes 219(e-1)'s "unchanged" clause for
+  reports).** Each `ReportDefinition` names its area action (`operations/report_types.py`
+  `required_action` / `alternate_actions`): `fablab-health`, `printer-service` and
+  `certification-coverage` need `manage_machines`; member-activity, membership growth/retention,
+  community-engagement and join-funnel need `manage_members`; the Inventory Manager keeps the
+  inventory/lending reports; the Space Manager reads all. **`view_audit` alone never opens another
+  area's report.** The Accountability page (`operations` `accountability-dashboard`) is the people
+  area's: `manage_members`, which the console mirrors. The Reports screen renders only the
+  catalogue the server returns.
+- **Linking an induction needs authority on the event too (224b).** `admin_api/views_machine_induction.py`
+  POST requires `event_authority.can_manage_grants` (Event Manager, organizer or co-organizer) on top
+  of type-narrowed `manage_machines`; attendees are listed only through a link the reader may grant.
+  The console offers "Mark as induction" only when the event's `can_manage_staff` is true.
+- **Payee/payout money is session-only everywhere (224c, extends 219d).** One predicate,
+  `payments/payout_session.py`: API clients, personal access tokens and OAuth app connections get
+  403 `full_session_required` on payout reports (`prizes-owed`, `event-finance`, any report with a
+  payout field), event finance and reimbursement routes, and lose `payouts`/`money_out`/`net`/
+  `budget_left` from finance summaries and the linked event-finance view. Never re-derive it per view.
+- **Handout-only roles get a counter-only API (224d).** When `rbac.is_handout_only`, the report
+  catalogue, every inventory-wide report and export are refused (`operations/views_report_helpers.py`);
+  item lookup, availability and the role's own issue/return lists remain.
+- **Feeds and streams narrow per area (224e).** The legacy staff feed and its inbox mirror filter rows
+  by the reader's audit areas (`notifications/legacy_feed_scope.py`, `legacy_inbox.py`); read/read-all
+  touch only visible rows. The live SSE stream keeps `kind`/`target_type` for cache invalidation but
+  drops `actor_id`/`target_id` outside the reader's areas (`operations/live_scope.py`); the Space
+  Manager, superadmin and the actor's own hints stay unredacted.
+- **Report schedules are owned.** A schedule is listed, edited, run or deleted only by its creator or
+  the Space Manager (`operations/report_schedule_reach.py`, else 404), and an actor-narrowed report
+  reaches only recipients whose authority is at least the creator's (`recipient_reaches`).
+
+- **Grouped area views (decision 241).** `GET admin/makerspace/<id>/area-overview/<section>`
+  (`operations/views_area_overview.py`; section is `finance`, `tobuy`, `consumables`, `repairs` or `warranties`) is
+  one read-only, unaudited endpoint behind every "what do I manage" screen. It adds **no authority**: each section
+  reads the same scoped source the matching list already uses (`finance_scope`, the machine role scope, procurement
+  and repairs authority), so an area manager sees only their own area's rows and the Space Manager sees all of them
+  combined. Grouping is a presentation of those rows: by area, then for machines type then machine, for inventory
+  item category, with per-group totals per currency (never summed across currencies). Donation money appears only to
+  the Fundraising role and the Space Manager. Handout-only desks are refused (224d) and payout fields are
+  session-only (224c). The console side is `frontend/src/features/staff/areaOverview/`; a new area must be added to
+  `AREAS` in the view and to `areaLabel` in `areaGrouping.ts` together, or it renders under "General".
+
+## Guest passes (decision 223, release 0.12.0)
+
+A guest pass is a **dated permit on an existing account, never a membership**. It is not on the roster,
+not counted as a member in any report, gets no member card and no member-only discount. Models live in
+`apps.makerspaces` (`models_guest_passes.py`: `GuestPass`, `DayPassProduct`, `GuestPassPolicy`); core never imports
+events, the events adapter calls the services.
+
+- **Switches.** `membership.guest_passes` (master; needs `membership`), `membership.day_passes` and
+  `events.guest_passes` (both need the master). Off means a live pass stops unlocking anything
+  (`guest_pass_queries.active_pass_for` returns None); rows, loans and charges keep their normal return and
+  settlement paths. A capability purge of `membership.guest_passes` deletes passes, products and the policy; the
+  `Payment` rows of paid day passes stay (the ledger is core).
+- **Frozen entitlements.** A pass copies `{presence, borrow, machines}` from the policy when it is issued; a later
+  policy edit never rewrites a live pass. A product template may only narrow it.
+- **Limits.** One live pass per holder per space per local day (DB partial unique on `pass_date`), the sponsor's
+  tenure and guest limit, the sponsor must be on site (presence) when the policy says so, the day-pass daily caps and
+  an optional hard visit cap. Issuance runs under the makerspace lock (`require_membership_feature_locked`).
+- **Money.** A day pass is a `Payment.SubjectType.GUEST_PASS` charge (`subject_id` = the pass) recorded under
+  `charges.membership` FIRST (`charge_tracking_enabled`), independent of the rail; the online checkout is
+  best-effort and only when `online_payments_enabled`. A priced pass does not unlock until its charge is paid or
+  waived (`payment_cleared`). With charges off a priced product cannot be sold or created. A paid day pass gives no
+  joining credit. Revoking a paid pass opens a refund case through `cancel_or_hold`.
+- **Privacy.** The holder sees their own passes; a sponsor sees only guest display name, date, status and an
+  items-outstanding flag; staff (`manage_members`) see the roster. The sponsor route answers the same 202 whether or
+  not the e-mail has an account (no enumeration). Audit entries hold ids, kinds and the waiver VERSION, never the
+  waiver body, a revocation reason or a price.
+- **Waiver.** The acceptance triple (`accepted_waiver`, `waiver_version`, `waiver_accepted_at`) is all-or-none and
+  stamped by the holder (explicit `accepted: true`) or by staff at the desk (`at_desk`). `require_waiver` re-asks
+  whenever the space publishes a new version.
+- **Conversion.** `mark_converted` (called from the one membership activation path) closes a joining guest's passes
+  as `converted` and sets `converted_membership`.
+- **Not built (owner 2026-11-10).** No door, keyfob or access-controller integration: on-site check-in is the
+  existing location-based presence check-in plus staff desk check-in.
+
+```mermaid
+stateDiagram-v2
+  [*] --> issued: issued by staff, a sponsor or a day-pass purchase
+  issued --> active: waiver accepted, payment cleared, pass starts
+  issued --> expired: pass date passes
+  active --> expired: pass date passes
+  issued --> revoked: staff revoke
+  active --> revoked: staff revoke
+  issued --> converted: guest joins as a member
+  active --> converted: guest joins as a member
+```
+
+## Guest-pass integration (decision 223)
+
+How a live pass (see **Guest passes** above) behaves in the paths that already exist. The rule for all of them:
+a pass changes WHO may act and WHAT they may do; it never adds a new way in. Every rule below is inert while
+`membership.guest_passes` is off.
+
+- **Presence and waiver (non-members).** On-site check-in for a pass holder is the existing location presence
+  session plus the staff desk, exactly as for members. No door, keyfob or access-controller call exists and none
+  may be added. `presence/guest_guard.require_member_or_guest` is the one entry: a member runs the unchanged member
+  guards, a non-member is admitted only by a live, payment-cleared pass (`active_pass_for`), and a minor passes
+  `minors_guard` first. `require_guest_waiver` (decision 223(j), closes the account-only self check-in gap) demands
+  the CURRENT waiver on the pass or on a live event registration (`host_waiver`) when
+  `GuestPassPolicy.waiver_required_on_site` is true (default). Do not re-implement the check in a caller.
+- **Planning needs no presence.** `require_member_or_guest(..., planning=True)` uses `planning_pass_for`: a pass that
+  is issued but not yet started still counts, with no presence session and no waiver, because both belong to the
+  moment of being on site. This is what lets a registrant be planned for (event equipment, a reviewed request)
+  before the event. Planning never lets anyone issue or take an item.
+- **Borrowing modes (c)**, frozen onto the pass as `entitlements.borrow` (`none | on_site | full_with_deposit`) and
+  enforced only in `hardware_requests/guest_lending.py` (request submit, contextual intake, self-checkout, desk
+  handout, reviewed issue) through `presence/guest_guard.require_borrowing`. `none` refuses; `on_site` clamps the due
+  date to the pass end (`cap_due`) and refuses a staff-entered later one; `full_with_deposit` needs the item's own
+  deposit settled before issue, and an item with no deposit cannot be taken away by a guest. The pass holder stays
+  the requester of record, so per-person accountability is unchanged.
+- **Machine modes (d)**, frozen as `entitlements.machines` (`none | supervised | after_induction_cert`) and enforced
+  only in `machines/guest_access.py`. Supervised use is recorded by the instructor inside an open supervised session
+  (`machines/supervised.py`); self-service and job requests are refused. `after_induction_cert` needs a
+  certification for the machine's type that was granted from an induction event (`machines/induction.py`).
+- **Sponsor liability and incident record (f).** Charges for a loan covered by a SPONSORED pass follow
+  `hardware_requests/guest_liability.liable_member`: the guest by default, the sponsor when the space set
+  `sponsored_liability=sponsor` (each redirect audited as `membership.guest_pass_charge_redirected`). The loan and
+  the `RequesterAccountability` row never move off the guest. A new damage/loss row records an incident on the
+  sponsor's and guest's record and notifies the sponsor; a sponsored pass that ends with items out gets the same,
+  once per (pass, loan).
+- **Sweeps.** No beat entry: `tasks_membership.run_membership_renewals_task` (hourly) calls
+  `guest_pass_sweeps.run_guest_pass_sweeps` (expiry, "ends within the hour" notice, outstanding-items incident) and
+  then `apps.events.join_followup.send_join_followups` (decision 223(k) post-event join notice). Each runs per space
+  inside `fanout_tenant_write`, so a frozen tenant is skipped and counted; both are declared in
+  `tenant_migration/gate_policy_r2_l12.FANOUT` and the cloud-job `task_sources` entry of the membership task. A
+  failure in either is logged and never hides the renewal result. Reading never depends on a sweep: `active_pass_for`
+  checks the window itself.
+- **Registration-time issuing (a)(b).** `events/guest_pass_registration.py` listens to `EventRegistration.post_save`
+  (the one place every admission path meets: public form, staff add, waitlist promotion, approval, a settled ticket
+  order seating a person, team admission). When a registration with an account becomes `registered` it schedules
+  `ensure_event_pass` through a `robust` `on_commit`; staff check-in and equipment planning still call the same
+  function as fallbacks. The pass `operation_id` is `event-<event>-reg-<registration>`, so every repeat returns the
+  same pass and a revoked one is never silently re-issued. Only non-members, only while `events.guest_passes` is on.
+  Cancelling the registration revokes that pass unless the holder has already checked in (a presence session since the
+  pass began) or has items out: then it is kept and audited as `membership.guest_pass_kept_on_cancel`. A failure never
+  affects the registration or the cancellation.
+
 ## Separability and tombstoning
 
 **Separability: two registries, and the gap that fails OPEN (Phase 7, `apps/separability/`).**
@@ -4376,6 +4821,14 @@ not module keys** (one app can own several keys — `printing`/`machines`/`machi
 
 ## Machine scoping — `MANAGE_MACHINES` is per person by type, and fails CLOSED
 
+- **0.12.0 supersedes the type-only wording below: reach is types UNION machines.**
+  `MembershipMachineScope(membership, machine)` (machines migration 0038) sits beside the type table and
+  `role_scope_resolution.link_reach` returns both as the `(type ids, machine ids)` pair every consumer already
+  unpacked. A machine link reaches that machine only, never its type (`scope_covers_type` stays type-only, so a
+  per-machine person cannot create machines). Nothing listed still means nothing. Both `machine_manager` and
+  `technician` are scoped roles (`member_scope_services.SCOPED_ROLE_SLUGS`); the Technician reads its links
+  through `maintenance/repairs/authority.membership_reach`, unioned with its in-house contact's coverage.
+  Staff invitations snapshot both lists (`machine_scope_snapshot` types, `machine_ids_snapshot` machines).
 - **Tier 1 is per-person, type-only scope.** `machines/role_scope.py` resolves
   `MembershipMachineTypeScope(membership, machine_type)`. A Machine Manager reaches machines whose
   types are linked to that membership, including machines added to those types later. **No links means
@@ -4406,6 +4859,20 @@ not module keys** (one app can own several keys — `printing`/`machines`/`machi
     check and the list filter **must stay in step** — disagreeing is how a row lists and then 403s
     on click, which is why `capabilities_for_machines`' `_type_mgr` carries the same check.
   - **Tier 3 (per-machine operators) is untouched** — an operator row already names one machine.
+  - **Machines audit 0.12.0 (per type and per machine).** Per-type settings reads follow TYPE
+    authority (`access.can_create_machine`): `machine-types/<id>/job-settings` and
+    `.../session-settings` answer 404 for a type outside the reader's links (writes were already
+    gated by `settings_authority`). Audit rows of a pool bound to a machine TYPE follow that type
+    (only a pool bound to neither machine nor type is shared, as `scoped_pools`). The live stream
+    gives a type-scoped Machine Manager and a coverage-scoped Technician no `actor_id`/`target_id`
+    for machine or repair hints (hints carry no type). `service-state` accepts an `issue_id` only
+    for an issue the actor may read and about the same subject. Per machine: lockout, another
+    member's live booking, or a live member/supervised session blocks THAT machine only — the
+    `FIRST_IDLE` queue falls through to the next idle sibling in id order, and a staff-chosen
+    machine in a live session refuses the start. Supervised sessions refuse a machine running a
+    job and recheck down/lockout on every use. A retired machine's time is not bookable, and booking
+    a machine's time runs the minors rule and the guest pass machine mode (`bookings/admission.
+    _require_machine_person`, lazy imports). Pinned by `tests/machines/test_machine_scope_audit_0120.py`.
   - **A MACHINE-TYPE SLUG IS NOT UNIQUE, and three surfaces assumed it was.** Uniqueness is
     *scoped* (`uniq_global_machinetype_slug` among globals, `uniq_lab_machinetype_slug` per
     makerspace), so a makerspace may legally create a local type carrying a built-in's slug — and
@@ -5180,7 +5647,7 @@ The rules here are binding; a rule's presence does not claim every adapter is in
   Events module and withdrawal still gate. Historical opt-in defaults false. Private certificate
   PDFs may use authorized personal attachment delivery; bearer badge/QR PDFs never do.
 
-UI acceptance includes Space Works tokens in both themes, approved Gilroy/one Unbounded
+UI acceptance includes Space Works tokens in both themes, approved Gilroy ExtraBold/Outfit/one Unbounded
 accent, lucide controls, AppShell layouts, original artwork, keyboard/44px/reduced motion/
 real contrast checks. Account and retention mechanisms survive optional Events removal;
 runtime providers/pages/reports do not. Reimbursement (decision 34) and full staged forms
@@ -5263,8 +5730,8 @@ check-in and payment routes never show easter eggs.
   ReportLab remains authoritative:
   text shrinks no lower than 6 pt, then overflow refuses with a typed validation error.
   Shared `operations/printable_*` geometry, serializers, fonts and PDF primitives
-  never import events or bookings. Noto fonts ship in the backend image; CJK uses
-  the standard PDF CID fallback. RTL wraps logical lines before bidi reordering.
+  never import events or bookings. Noto fonts ship in the backend image; CJK fonts are
+  fetched at image build (pinned commit and SHA-256) by `scripts/bundle_cjk_fonts.py`. RTL wraps logical lines before bidi reordering.
 - Legacy display badges never contain email, phone or a bearer check-in QR. The separate
   v2 desk-badge workflow permits only its typed opaque event-bound registration credential
   QR, resolved by an authorized authenticated online scanner. Confirmation rechecks live
@@ -5627,6 +6094,25 @@ Existing booking module/tenant purge and owned-image collection cover clones, wh
 the core payment ledger remains retained. Target undo still needs live authority,
 current admission and its server clock; portable provenance is never permission.
 
+**Staff price confirmation** (decision 216, `bookings/staff_price_confirmation.py`). The staff
+preview (`views_admin_booking_quote.py`, no write, no audit) authorizes `manage_reservations` on the
+room and an active local member first, then returns the quote plus a SHA-256 digest over room,
+member, UTC window, charge mode (`tracked`/`off`, so flipping charge tracking forces a fresh
+confirmation) and the pricing quote digest. `create_booking` verifies it AFTER locked admission and
+quota; a mismatch is 409 `price_changed` with the fresh preview and no booking or debt is written,
+and the verified quote is the one frozen on a pending booking. Only the single staff create accepts
+it (optional there; recurring creation keeps the unconfirmed contract); the event-linked replacement
+requires it. No pricing lives in the module -- the amount is always `service_payments.booking_quote`.
+
+**Booking readiness** (`bookings/admission_readiness.py`, the `.../bookings/readiness/` routes) shows
+what a staff booking would meet before submit. Every blocking answer comes from CALLING the
+admission seams (`_refuse_room_outage`, `_refuse_machine_under_repair`, `_require_certification`
+with no override reason, so no override audit) and catching their refusal -- never restate a rule
+here, and never write. A WARN-mode room outage and a maintenance lockout are warnings, not
+refusals, because admission does not refuse on them. `maintenance_link` is offered only while
+`machines.maintenance` is on and to an actor `machines.access.can_manage_machine` admits for that
+exact machine.
+
 ### Booking resource analytics and exports (BK-E)
 
 Booking reports extend the always-present report registry and subject/PDF infrastructure;
@@ -5853,6 +6339,32 @@ resource and date predicate. It returns `arrived_reservations` and
 `confirmed_without_recorded_arrival`; these counts never imply measured-use duration or
 replace calendar reservation utilisation.
 
+### Unified busy overlay (P1-3, P3-1, P3-4, 2026-11-09)
+
+- **One read-only overlay, three owners.** `bookings/busy_overlay.busy_blocks(space, lo, hi, staff=...)`
+  projects room outages (`maintenance.repairs.room_outages.open_outage`, block or warn), the repair
+  window of the machine a room books (`machines.booking_gate.repair_window`) and closures (the gaps in
+  `published_open_intervals`, only when `opening_hours.has_hours`). It refuses nothing; admission still
+  calls the same seams. Each layer disappears with its owner (maintenance tombstoned, machines
+  tombstoned, no hours recorded).
+- **Public sees only `unavailable` / `closed`.** Never a reason, never `room_outage`/`machine_repair`, and
+  never a warn-mode outage (it refuses nothing). Decision 219c: the public availability read
+  (`public_busy_blocks`) carries `unavailable` ONLY when the room has `show_public_availability`
+  (`closed` is the published hours and always shows); the public event venue carries no blocks at all,
+  only a neutral `space.venue_update_pending` boolean when the room is out of service during the event
+  (no windows, times or reasons; no closures: events may run outside hours). Staff
+  (`manage_reservations`, the staff availability read) see kind, severity and the outage reason.
+- **Feeds stay personal.** The member booking feed and the combined feed add opaque (`TRANSP:OPAQUE`)
+  `Unavailable` / `Space closed` VEVENTs only where a block overlaps one of the reader's OWN next 50 live
+  bookings (`busy_overlay_ics`); no other room's state ever enters a personal feed.
+- **Maintenance in the combined feed (P3-1)** reuses `maintenance.calendar_feed.schedule_components`: only
+  with `machines.maintenance` on, both apps active, and only the machines in the reader's machine scope
+  (fails closed: a member with no machine scope gets none). It does not require
+  `maintenance.calendar_feed`, which governs the separate maintenance bearer feed.
+- **Open now (P3-4).** The bootstrap's `makerspace.open_status` is emitted only when hours are recorded
+  (byte-identical otherwise). A client past `closes_at` / `next_opens_at` holds a stale status and shows
+  nothing rather than guess.
+
 ### Event-scoped staff grants
 
 `events/event_authority.py` is the staff event authority API: tenant `MANAGE_EVENTS`,
@@ -5862,6 +6374,12 @@ unchanged organization organizer authority, relevant series authority and live s
 actions or widens `scope_by_makerspace`; list predicates admit only its event or series
 occurrences. Grant management, station PINs, collaboration, payments, deletion,
 certificate issue/revoke and analytics PDFs remain tenant/organizer operations.
+The one delegated exception is decision 15 helper invitations: an event (never series) grant
+holding live event-wide `manage_team` reaches the event's `staff-invites`/`staff-grants` routes
+and the grant detail/revoke routes (`views_staff_grants.py`); its lists contain only rows it
+issued (`created_by`/`granted_by`), and every write is still decided by
+`contributions.authority.subset_validator` (one helper role, held permissions, old+new scope).
+The drawer's Team section renders only `EventHelperInvites` for such a holder.
 
 Concrete `EventStaffGrant` and `EventStaffGrantInvite` rows belong to events and use typed
 event/series FKs, exactly one target, and partial uniqueness for live grants. The abstract
@@ -6336,7 +6854,8 @@ responsibility; local purges never delete shared global organizations or foreign
   organisation's contact) pays `pricing.quote("events", event, params={"venue_fee": row})`: the row's
   Free/Custom amount (flat or per hour), else the room's price override, else the space rate card
   (`venue_fee`, `venue_fee_per_hour`). Charged once on publish or by "Charge now"; then frozen. A 0 quote
-  raises nothing. Refunds and waivers are staff decisions only.
+  raises nothing. Refunds and waivers are staff decisions only. An event linked to a booking has no
+  venue fee: the booking owns the room charge (see **Event–booking links** below).
 - **Confirmation emails carry calendar invites (#169).** Registration (and booking) confirmations attach
   an `.ics` (METHOD:PUBLISH, UID `event-<uid>-r<registration>@spaceworks` / `booking-<token>@spaceworks`,
   SEQUENCE = the sources' calendar sequences), cancellations METHOD:CANCEL, an event change re-sends
@@ -6345,6 +6864,110 @@ responsibility; local purges never delete shared global organizations or foreign
   (`events.ticket`, `id_cards_tickets.render_ticket`) when `events.ticket_designs` is on.
 - **`orders:read`** is a signed server read (tenant-bound, `events.api_read` + `events.orders`),
   keyset-paginated, with totals, lines and seat counts and never buyer or attendee contacts.
+
+### Event–booking links, linked facts and linked reports (decision 216, 2026-11-09)
+
+- **Events and Bookings own their charges independently.** The event keeps its registration/order
+  charges; a linked booking keeps its room charge. Free/paid event × free/paid room are all valid,
+  and there is at most ONE room charge. Linking (`events/booking_decision_service.create_decision`)
+  writes an `EventBookingDecision` (`billing_owner="booking"`, DB-checked) only for a draft/published
+  event and a pending/confirmed booking of an active non-machine room; it refuses while an event
+  venue fee is configured (409 `venue_fee_unresolved`) or the event has any venue-fee payment or
+  history (`venue_debt_history_requires_review`). Once linked, `venue_fees.configure` and `charge`
+  refuse (`venue_owned_by_booking`), so neither linking nor publishing collects a second venue fee.
+  The decision is immutable (`save` on an existing row and `delete` raise; `revision=1` checked).
+- **Replacement is a new booking, never an edit** (`bookings/services_replacement.replace_booking`,
+  `events/booking_decision_replacement.py`). Only a rejected or cancelled booking is replaceable, at
+  most once (`Booking.replaces` is one-to-one, set only on insert -- `save` restores it), and the
+  replacement goes through ordinary `create_booking` admission with a staff price confirmation. The
+  original's status, frozen price, `Payment`, receipts and audit are untouched; the decision keeps
+  naming the original and the current reservation is the chain's tail (bounded walk). Event
+  authority and `manage_reservations` on the current and the replacement room are checked
+  independently; a booking that is itself a replacement cannot be newly linked.
+- **Related facts are side-by-side, read-only** (`operations/related_facts*.py`, `admin-related-
+  facts-event|booking`). Registration, attendance, booking arrival, presence and machine sessions
+  are independent facts, each read from one source, labelled with its model, gated by that source's
+  own module and authority and OMITTED (never empty) when hidden; nothing derives one from another
+  or writes. Presence gives counts only (`MANAGE_MEMBERS`), and a named person's own presence reads
+  `withheld` whenever the display privacy rules (names off, honoured opt-out) would hide them.
+  Machine sessions need `machines.sessions`, `MANAGE_MACHINES` and per-type role reach.
+- **Event linked finance** (`payments/event_linked_finance*.py`) is read-only, records nothing and
+  builds each section from its own owner and authority (registration charges, venue fee, the
+  Booking-owned room charge, reimbursements, payouts, budget), omitting hidden ones. Amounts are
+  grouped per currency and never summed across currencies; the room charge is labelled
+  Booking-owned and counted once, never folded into the event's registration or budget totals.
+  **Payee money is session-only (decision 219d):** the `reimbursements` and `payouts` sections are
+  omitted, and every reimbursement route (`event_reimbursements/http.check_read`,
+  `transactions.authorize`) refuses `full_session_required`, for any bearer -- `api_client` OR
+  `person_credential` (PAT / OAuth app connection); an account session still sees both.
+- **Loan-context reports** (`operations/reports_loan_context*.py`, `reports_loan_timeline.py`,
+  `loan_context_report_common.py`) count each canonical request ONCE, in exactly one mutually
+  exclusive context (event-and-booking is its own bucket), with quantities summed per request so no
+  join multiplies them; never-issued requests are excluded. The timeline reads only workflow-written
+  history (request timestamps, `ReturnEvent`, the `request.rejected` audit row). Per-activity
+  consumables (`reports_consumable_context.py`) read inventory-owned use receipts, each attributed
+  through its single source; nothing reserves, consumes or adjusts stock.
+- **Linked mutations are session-only.** A bearer (`api_client` or `person_credential`) is refused
+  on shop move-pickup, the loan repair handoff POST and event/booking loan-context PUT/DELETE (their
+  reads stay token-readable); the booking-link view is JWT-session-only for reads and writes.
+- **An event's hall uses the Bookings calendar** (`bookings/staff_availability.py`,
+  `admin-space-booking-availability`). The staff picker beside the booking form (create-then-link
+  and replacement, prefilled with the event's window) is read-only and computes nothing new: opening
+  hours from `published_open_intervals`, busy time from `confirmed_occupancy` + `occupied_window`
+  (the reads the public availability view shares), the verdict from `enforce_booking_rules` and
+  `confirmed_overlap`; submit still goes through ordinary admission. A pending booking holds nothing
+  (listed separately, as admission treats it); only confirmed ones block. A booking holding a room
+  for an event -- the decision booking or any replacement descending from it -- is labelled by
+  `events/booking_calendar_labels.py` with the event's title only for a viewer with event `VIEW`;
+  anyone else sees `reserved`. Bookings reaches it only through `bookings/event_labels.py`, which
+  answers nothing while the events app is tombstoned or the space's `events` module is off.
+- **Workshop machines are separate links, never a second room decision (P2-1).** An event may also
+  hold any number (at most 50) of `EventMachineBookingLink` rows (`events/machine_booking_links.py`,
+  `admin-event-workshop-machines`), each naming one pending/confirmed booking of ONE machine's time
+  (`BookableSpace.machine`). A link records no money: the machine booking keeps the Booking-owned
+  charge its own admission priced, the single room charge and venue-fee rules above are untouched,
+  and a room booking can never be a machine link (or the reverse). Linking checks event authority
+  (`authorized_event` + the `machines` module), `manage_reservations` on the booking and
+  `machines.access.can_manage_machine` on its machine (per-type reach) independently; it re-runs the
+  booker's certification (override only for type authority, audited) and the repair gate, while a
+  lockout stays a warning (`admission_readiness`). Rows are immutable, a purged booking leaves the link
+  naming nothing, replacement mirrors the room rules (`.../workshop-machines/<id>/replacement`), and
+  `booking_calendar_labels` labels the chain for event viewers. A viewer lacking booking or machine
+  authority sees only a `withheld` count.
+- **Event drift and cancellation are flagged, never applied.** The booking-link GET reports
+  `coverage` (`not_covered` once the event's start/end leave the current reservation's window) and
+  `event_status`; the panel points staff at the booking in Bookings to reschedule (or replace it once
+  rejected/cancelled). A cancelled event never cancels its booking or debt.
+- **Linked changes are told, never applied** (P1-1/P2-4). An event time change or cancellation
+  (`events/linked_change_notices.py`, called from `update_event` and `cancel`, series cancels too)
+  sends `bookings.linked_event_changed` to the current reservation's booker and booking staff
+  (copy never names the event) and `hardware_requests.linked_event_changed` to each open
+  `EventLoanContext` borrower ("due date unchanged"); registrants keep the existing
+  `registration_updated`/`cancelled` notices, none added. A move, cancellation or rejection of a
+  linked booking (Bookings' seam `bookings/event_link_notices.py`, silent while Events is off or
+  tombstoned) sends `events.linked_booking_changed` to event staff and `publish_schedule`
+  delegates, never naming the booker. A room outage over bookings sends `bookings.room_outage`
+  (`maintenance/repairs/room_outage_notices.py`): one envelope per account booker, one count-only
+  staff summary; guests keep the direct email. All go through the outbox with a live source
+  check and one intent per revision (event `version`, booking `calendar_sequence`, outage id).
+- **Venue conflicts are flagged, never applied** (`events/venue_conflicts.py`). The booking-link GET
+  and each workshop-machine row carry `conflicts` read from `bookings.busy_overlay` over the event's
+  (room) or the booking's (machine) live window: `room_out_of_service`/`machine_under_repair` (block),
+  `room_outage_warning` and `space_closed` (warning -- staff events may run after hours). Each layer
+  vanishes with its switch (`room_outages_apply`, `machine_repairs_apply`, recorded hours); window and
+  reason only for `manage_reservations` on the room or `set_service_state`. Linking a booking to an
+  event re-runs the block-outage admission seam over the EVENT's window (409 `room_out_of_service`);
+  a warn outage still links. A new outage over a linked booking tells the event's staff and
+  `publish_schedule` delegates once per outage and event (`events/linked_outage_notices.py`, reusing
+  the `events.linked_booking_changed` catalog event, re-checked live). The outage dialog previews
+  impact first (`admin-room-outage-impact`: count for all, booking rows with `manage_bookings`, event
+  titles only through `bookings.event_labels`). The equipment desk's `equipment_warnings` read stored
+  counters and asset statuses only (under repair, reserved units off the shelf, awaiting-review
+  shortfall by the acceptance check); nothing reserves, cancels or moves.
+- **Eligibility copy is client presentation only.** `frontend/src/lib/eligibilityCopy.ts` maps the
+  server's member-eligibility and delegated-authority refusal codes to "what is wrong + what to do";
+  unknown codes return null so each surface keeps its fallback. Server behaviour is unchanged --
+  never move a decision into this helper.
 
 ### Donations, sponsors and calendar sync (release 2 L18; #94, #96, #128 C-14)
 
@@ -6388,6 +7011,10 @@ responsibility; local purges never delete shared global organizations or foreign
   SHA-256 digest, rotation and revocation kill the old link, a lapsed account reads as an unknown
   token, and the token paths are redacted from request logs. The public events feed lists only
   `listed_q()` published events (unlisted, private, offline and draft never appear).
+  In the member UI a private feed link is pinned to the session owner it was fetched for
+  (`features/members/calendarFeeds/ownerScope.tsx`): an owner change remounts the subtree and a
+  response landing after the change is dropped (`admitted()`), so one account's link never renders
+  for another. This is cache privacy only; the API still authorizes every call.
 
 ### Applications, review stages, attendance, crew and check-in lists (release 2 L21a; #128 C-32..C-36, #173)
 
@@ -6425,6 +7052,14 @@ responsibility; local purges never delete shared global organizations or foreign
   once the application stands (submitted, offered, waitlisted or confirmed) in that stage or later.
   Crew requests (`GrantRequest.kind="crew"`, from a crew place) need `events.crew_claims` and skip the
   participant rules; money out still goes through the L5 ledger via payouts.
+- **Staff claims and refund-cancelled tickets (parity E-B6).** A staff claim is `GrantRequest.kind="staff"`
+  (`events.staff_claims`): it binds to a LIVE registration (the beneficiary's, or the filer's own), is funded
+  from the crew pool when there is one, and is refused with 409 `budget_exhausted` when the pool cannot cover
+  it; the filer is only in the append-only audit row, never a column. A refund approved with
+  `cancel_tickets` (`events.refund_cancels_tickets`) voids the order's seats BEFORE it cancels their
+  registrations, so `orders_refunds.seat_cancelled` finds them void and opens no second share: the approved
+  amount is the whole refund. It runs after the approval commits, outside the Payment lock; a failure is
+  audited and never undoes the refund. `payments.test_mode` is derived from the PUBLIC key prefix only.
 - **Attendance No never moves money (C-35, #59/#60).** Staff send "Are you still coming?" only by hand,
   at most every 12 hours (429). With "free the place on No" (off by default): a free place is cancelled
   through `cancel_registration` (which promotes the waitlist); a paid place is cancelled the same way,
@@ -6464,6 +7099,22 @@ responsibility; local purges never delete shared global organizations or foreign
   records a native decision per route. Since L21b the crew desk and the per-event review workspace are
   `native`: an `event` device grant reaches them for its own event. Only the cross-event "my application
   reviews" list stays `web_only`. Member grants still refuse delegated authority.
+
+### Plan-included booking and machine hours (decision 221(d), 2026-11-10)
+
+- **Usage is a ledger, never a counter.** `bookings.IncludedHoursUsage` holds insert-only `consume` rows
+  (the included minutes one booking took from one `MembershipTerm`) and `reverse` rows pointing at the
+  consume row they undo (rejection, or cancellation inside the refund policy). A restored booking takes
+  a NEW consume row with the next `generation`, so one booking holds at most one live consumption.
+  Remaining hours are always computed as the term's allowance minus the sum of the rows
+  (`bookings/included_hours_ledger.py`); nothing else may keep a second tally.
+- **The allowance lives on the plan** (`MembershipPlan.included_booking_hours` / `included_machine_hours`)
+  and is read through the term's plan (`allowance_minutes`), so editing a plan changes the allowance of
+  its live terms from then on; the ledger rows already written are never rewritten. Included minutes
+  reduce the room or machine charge before it is recorded; the charge is still recorded first and the online rail added
+  second, like every other charge seam.
+- The ledger is tenant data: it is classified in `tenant_migration` (`catalog_p2_bookings.py`) and
+  travels with the bookings; deleting a booking cascades its rows.
 
 ### Judging extras, hackathon money, staff lists and the gallery (release 2 L21b; X40, X50-X54, #128 C-37..C-39, #173)
 
@@ -7413,6 +8064,26 @@ change with chunked upload. It accommodates an 8 MiB chunk, not the legacy whole
 
 ## Organization accounts and organization-derived authority
 
+### Organization review, directory and derived membership (O-B5, decision 293)
+
+`Organization.review_status` (default `approved`; existing rows unchanged) is the standing,
+`OrganizationReview` the append-only history. With `ORGANIZATION_REVIEW_REQUIRED`, self-created
+organizations are `pending_review` and **inert**: every public projection (detail, builder page,
+share sitemap, linked spaces, events), the audience predicate, new links and invitations check
+`review_status == "approved"`. Only a superadmin decides, behind recent re-authentication; decline
+sets `is_active=False` and the declined row holds the slug 30 days (released lazily by
+`services_review.assert_slug_available`). `suspended` is NOT `is_active=False`: members keep their
+data rights. The public directory needs the deployment switch AND `is_discoverable` AND
+`public_profile_enabled` AND approved AND active. Review rows are global platform data, never in a
+tenant dump.
+
+`organizations/derived_membership.py` is the one resolver for "is this person in the organization":
+an explicit active `OrganizationMembership` OR an active community membership in a servable space
+the organization OWNS (owner link only), computed live over `audience.eligible_accounts`, one person
+counted once. It grants no governor seat and no action (`rbac`/`governance` never import it) and
+exposes counts only; the governor roll-up returns no per-person field. There is no organization card:
+the home space's member card serves.
+
 ### Organization self-service and governance (Lane F)
 
 Self-creation is a global platform switch, default OFF, never a makerspace module.
@@ -7651,7 +8322,11 @@ object key or purge ownership is introduced by these adapters.
   `/control/` routes and on credential/security console routes. Staff scopes bind to exactly one space
   and reach only routes whose resolved targets are that space. Creating a token or consenting to an
   app needs a recent re-authentication; PKCE is mandatory and refresh tokens rotate with reuse
-  protection. Platform (superadmin) accounts cannot hold either.
+  protection. Platform (superadmin) accounts cannot hold either. They end with the person:
+  `revoke_authentication` (logout-all, password change/reset, not-me, account lifecycle) calls
+  `credential_revocation_helpers.revoke_person_credentials`, which revokes live PATs and deletes the
+  person's `OAuthConsent` and library-owned OAuth rows (refresh, access, ID tokens, grants, device
+  grants); account purge then deletes every remaining PAT, consent and OAuth row of the user.
 - **The OpenAPI contract is a guard, not a convention (#193).** `manage.py openapi_contract_check` (CI
   `contracts` job) fails on an operation without an area tag, security requirement, error response,
   typed success body or (for a write) a request body, on an untyped body outside
@@ -7659,6 +8334,8 @@ object key or purge ownership is introduced by these adapters.
   component name (`openapi_contract/component_names.py` names them apart by exact class).
 
 ## Container / deployment invariants
+
+**`ffprobe` in the backend image is source-built, pinned and bumped with releases (#222b).** `backend/Dockerfile` compiles a static, minimal `ffprobe` in the `ffprobe-build` stage from an FFmpeg release tarball pinned by `FFMPEG_VERSION` and verified by `FFMPEG_SHA256`, and copies only that binary to `/usr/local/bin/ffprobe`. The image must never `apt-get install ffmpeg` (or any `libav*`/`libxml2` consumer of it) again: that returned ~150 packages and the libxml2 critical finding. The configure line is `--disable-everything --disable-autodetect --disable-network` plus only the mov and matroska demuxers, the file and pipe protocols and the codec parsers; widening it needs the probe's `-format_whitelist`/`-protocol_whitelist` in `events/submissions/probing.py` and `probe_sandbox.py` to still match. Bump the version and checksum together on every release and record it in `docs/security/backend-image-cve-notes-0.12.0.md`; `tests/test_ffprobe_dockerfile_guard.py` pins these rules. There is no `ffmpeg` binary in the image, so nothing may probe for one.
 
 **Django enforces the server-only default itself (#189 as revised by #191).** `config.control_plane_access.ControlPlaneReachMiddleware` runs before sessions and logins and answers a plain 404 for `/control`, `/control/*`, `/mfa/control/*` and `/mfa/reauth/*` unless `CONTROL_PLANE_PROXY` is true, the peer is loopback with no `X-Forwarded-For`/`X-Real-IP`/`Forwarded` header, or the request carries `X-SpaceWorks-Control-Tunnel: 1` from a private peer while `CONTROL_PLANE_TUNNEL=on` (set only by `docker/compose.control-tunnel.yml`). Only `control-tunnel-on.caddy` may stamp that header; the opt-in website route strips a client's copy. With the route off, `control-plane-false.caddy` and the website nginx answer 404 for the same paths instead of serving the SPA. `CONTROL_PLANE_PROXY=true` keeps the website route exactly as before (no forced migration). The superadmin, MFA, re-authentication and axes checks behind it never change.
 
@@ -7945,6 +8622,32 @@ releases would therefore not just lose history, it would eventually strand that 
   See `docs/self-hosting.md#security` for the required operator settings.
 
 
+- **One installer, one signed release (decision 232).** The curl installer is `scripts/installer/standalone-install.sh`,
+  published as the release asset `install.sh`; `scripts/release-assets.sh` builds the four files a release carries
+  (`install.sh`, the deploy bundle `spaceworks-<version>.tar.gz`, `release.json`, `SHA256SUMS`) and the release
+  workflow adds a keyless cosign signature of `SHA256SUMS` (`SHA256SUMS.sig`, `SHA256SUMS.pem`). The installer always
+  checks the bundle against `SHA256SUMS`; when `cosign` is present it also verifies the signature against this
+  repository's release workflow identity and refuses a release whose signature assets are missing. The whole script body
+  runs inside `main()`, so a download cut short never executes half a script. Installs live in `SPACEWORKS_DIR`
+  (default `/opt/spaceworks`); a re-run over an existing install is an update and only moves forward. Operator view:
+  [install-and-update.md](install-and-update.md).
+- **Hybrid hosting: every component is a separate, local-by-default choice (decision 239).** The database, Redis, file
+  storage and email can each be bundled or outside, independently, and the website can be on this server, elsewhere or
+  absent (API-only). The choice is recorded as `SPACEWORKS_DATABASE`, `SPACEWORKS_REDIS` and `SPACEWORKS_STORAGE`
+  (`bundled` or `external`) and applied with the matching Compose overlay in `docker/` (`compose.external-db.yml`,
+  `compose.external-redis.yml`, `compose.external-storage.yml`, `compose.api-only.yml`). Every outside service is
+  probed before anything starts (`scripts/installer/outside-checks.sh`, `probe-external.py`). An outside database must
+  be empty on first install, is reached through a direct or session connection (a transaction pooler is refused because
+  of advisory locks, migrations and `pg_dump`), and the running services never receive the owner login. Storage carries
+  a capability profile (`limited` or `full`) and the application never treats a limited store as the stronger kind.
+  Backup, restore and tenant migration must keep working against an outside database with a client whose major version
+  matches the server. Operator view: **Hybrid setup** in [install-and-update.md](install-and-update.md).
+- **The backend image base is a build choice, Ubuntu 24.04 by default (decision 262).** `backend/Dockerfile` takes
+  `BASE_OS=ubuntu-noble|debian-trixie|debian-forky`; the published image uses `ubuntu-noble`. Changing the default or
+  adding a base needs the same Trivy scan and smoke checks recorded in
+  [backend-image-cve-notes-0.12.0.md](security/backend-image-cve-notes-0.12.0.md). The PostgreSQL client apt source is
+  derived from the base's codename, so a new base must have a PGDG suite.
+
 ## Addressed messaging channels
 
 Canonical `NotificationEnvelope`/`NotificationDelivery` and `ChannelConfiguration`
@@ -8209,7 +8912,7 @@ handles to `/share/pages/` and short events to `/share/e/`, preserving legacy ev
 QR rows. Public responses are no-store and draft previews are private/noindex.
 
 Everything uses the Space Works theme, CSS-variable light/dark tokens, existing layouts/AppShell,
-Gilroy 400–700, one Unbounded accent and lucide icons. Published cover/palette overrides precede
+Gilroy ExtraBold headings, Outfit text, one Unbounded accent and lucide icons. Published cover/palette overrides precede
 legacy owner artwork/theme; inherit preserves legacy values and explicit none removes a cover.
 Brand seed choices go through accessible token derivation and never recolor fixed focus/status/staff
 tokens. No new makerspace-page, organization or hackathon module key is introduced.
@@ -8283,8 +8986,8 @@ reconciliation may release it. Full never consults free accounting caps or free 
   holder accepts the result (Q-I3).
 - **Fonts never load from Google in the browser.** The catalogue manifest lists the Google Fonts
   families; the server fetches a family into private storage (`CARD_FONT_DOWNLOADS_ENABLED`) and the
-  designer loads the bytes through the authenticated design route. Gilroy, Unbounded and Noto are
-  bundled.
+  designer loads the bytes through the authenticated design route. The `"Gilroy"` token (bundled as
+  Outfit static files), Unbounded and Noto are bundled.
 - **No fee on any ID card (C-20).** No card route raises a charge.
 - **Barcodes follow the two-codes rule (r2-idcards-best).** A `barcode` layer is Code128 of either the
   printed number or the DESK code (the same staff-only payload as the desk QR, for USB scanners at the
@@ -8319,6 +9022,13 @@ reconciliation may release it. Full never consults free accounting caps or free 
   membership (Q-I7); a "new photo" request keeps the card valid with one reminder after 7 days (Q-I4).
 - **Tokens, wallet passes, extras, jobs and fonts are omitted from exports and tenant moves**; tokens
   re-mint after a move. Designs, cards and programmes travel.
+- **Wallet-pass signing credentials (decision 223(l)) are write-only and never travel.** A space's own
+  (`MakerspaceWalletCredentials`) wins over the platform's (`PlatformWalletCredentials`, superadmin), which
+  wins over the deployment `WALLET_*` files; none = the feature is off and nothing is shown. Secrets are Fernet-
+  encrypted, never returned (only configured/fingerprint/expiry), never exported or carried by a tenant move,
+  and every save, rotation and removal is audited with the public fingerprint only. A guest-pass wallet pass is
+  static (expiry, no update service); its QR is an HMAC token resolved against the live `GuestPass`, so
+  revoking the pass stops it scanning.
 
 ### Google Sheets import source (release 2 L13)
 
@@ -8343,6 +9053,22 @@ reconciliation may release it. Full never consults free accounting caps or free 
 - **Switches.** `membership.import_sheets` (needs `membership.import`) and
   `membership.id_programmes_import_sheets` (needs `membership.id_programmes`), both off by default; off
   answers 404 to a sheet request and leaves file uploads unchanged.
+- **O-B4 card parity (0.12.0): ONE member card, a richer card.** A member of an organisation's home space
+  holds a single card (one number, one QR, one verify page) that serves as both the space and the
+  organisation membership card; the design may show the organisation's name next to the space's. There is no
+  separate organisation card type. Printed numbers come from `CardNumberScheme` (live pair + draft pair that
+  only goes live when its design is published, `numbering_publish`), are allocated under a `select_for_update`
+  counter (`CardNumberCounter`, no advisory lock) and frozen on `MemberCard.number_text`; reissue and renewal
+  keep them, and an exhausted scheme or a card limit makes auto-issue log `member_card.auto_issue_skipped`
+  rather than undo an activation. An organisation default design (`CardDesign.organization` on `member_cards`,
+  anchored on the first owned space) resolves title -> plan -> organisation -> space default, and editing it
+  needs `MANAGE_MEMBER_CARDS` in EVERY owned space. A primary-title change reissues the live card under
+  `membership.title_card_reissue`. Only questions marked `printable` in a v2 join form (never sensitive or
+  compound ones) can print, as `{{field:<key>}}`. The staff panel behind a scanned verify link
+  (`admin/card-verifications/<token>/staff`) answers a uniform 404 outside `SCAN_MEMBER_CARDS` scope and only
+  links to the existing renew, record-payment and revoke routes. `MemberCardSettings.verify_show_name`
+  defaults True for new spaces and False for existing ones; a new card copies it and its holder may hide it.
+  Wave 3 hooks: `numbering.unit_codes`, `holders_member.unit_values`, `views_verify_staff.in_member_scope`.
 
 ## Shop (release 2 L22; #128 C-7, #129, #135-#137)
 
@@ -8357,6 +9083,16 @@ reconciliation may release it. Full never consults free accounting caps or free 
   inventory item consumable (`shop.consumable_link`) -- the inventory's own `adjust_quantities` then
   moves that count, so workshop use and sales stay one number; lendable tools are never sold. A bundle
   kit (`shop.bundles`) takes its parts' stock.
+- **A linked sale records its consumable cost once** (decision 216 item 11, `shop/consumable_costs.py`).
+  Right after the sale (`settle_locked`, `pos_sale`) each linked SALE `ShopStockMovement` gets one
+  `ConsumableCostRecord` `shop_sale` (source_id = that movement, so the existing unique key makes a
+  replayed settlement a no-op), priced through `machines.consumable_costs.record_cost` at the item's
+  price at sale time -- only with `shop` AND `inventory.consumables` on, never blocking the sale. A
+  restock (recorded return or uncollected cancellation) writes one `shop_return` per RETURNED movement
+  at the SALE's frozen unit price, the last one taking the exact remainder; it follows the sale record,
+  not the switches. A write-off keeps the cost. Records are non-negative, so readers NET `shop_return`
+  (`SHOP_COST_REVERSAL_KINDS`; `operations/reports_shop_consumable_costs.py`, shown with `shop` on to
+  `manage_shop` or an upstream boundary). Shop purge deletes them; tenant moves remap them to the movement.
 - **Every sale is in the ledger.** One `Payment` per order (subject `shop_order`, domain `shop`), raised
   through `create_payment` with the L15 quote frozen on it (`pricing.quote(..., "shop")`; preview =
   charge, 409 `price_changed`). A desk sale records its `ManualSettlement` (cash, UPI or card on an
@@ -8371,8 +9107,20 @@ reconciliation may release it. Full never consults free accounting caps or free 
   orders the stock could not fill open (or grow) the charge's refund case (`add_due_share`, area `shop`);
   the direct refund routes refuse `shop_order` (`refund_via_case_only`). The Shop Manager decides shop
   cases and records shop cash refunds (`reconciliation_authority.CASH_RECORD_ACTIONS`) -- nothing else.
+  Cancelling an uncollected order after a partial return (`services_orders.cancel_uncollected`)
+  restocks only the units no return took back (`settlement.order_pairs(remaining=True)`) and opens the
+  case for the charge LESS the amounts already returned (`_due_full(less=...)`, none when nothing is
+  left): a returned unit is never restocked, written off or refunded twice.
 - **Pickup only.** At the space or at one of its events (`shop.event_pickup`); no shipping. Collection is
   by the order's pickup code, audited with who handed it over; no evidence photo.
+- **Event merch is a link, not a bundle** (#135 Q-S18 follow-up, `shop/event_offers.py`). A Shop-owned
+  `ShopEventOffer` (space, event, variant; CASCADE from each) lists which live variants an upcoming event
+  shows. `manage_shop` replaces the list (`PUT .../shop/event-offers/<event_id>/`, audited
+  `shop.event_offers_set` once per real change); it needs the `shop` module, `shop.event_pickup` and the
+  `events` module, else 404 with the rows kept. The public list (`public-shop-event-offers`, by the event's
+  public token, published + public + not ended) links into the normal shop with that event preselected as
+  pickup. A purchase is an ordinary shop order and `shop_order` charge; the registration, its ticket
+  order and its charge are never touched, and event add-ons (`events.addons`) stay a separate Events thing.
 - **Shop money is the Shop Manager's.** Finance domain `shop` is seen by the Space Manager, the Shop
   Manager (`manage_shop`) and `view_finance`; the `finance-shop` and `shop-sales` reports need only
   `manage_shop`. The shop actions are never organization-grantable.
@@ -8434,7 +9182,7 @@ English is the only catalogue, and every screen is ready for translation. The co
   byte-for-byte and never goes through gettext.
 - **Never translated:** audit `action`/`meta`, API error `code`s, module, feature, report and
   notification-event keys, QR target types, object keys, enum values, routes and query keys.
-  Tenant- and user-authored text (names, descriptions, custom roles, remarks, form questions and
+  Tenant- and user-authored text (names, descriptions, remarks, form questions and
   answers, chat-template bodies, edited templates) is never translated either. Only display labels
   are marked. The parity route map (`config/control_parity_entries*.py`) and the /control/ Django
   templates are not marked: the first is a technical route map, the second keeps Django's and
@@ -8465,3 +9213,129 @@ English is the only catalogue, and every screen is ready for translation. The co
 - **Formatting goes through `src/lib/format.ts`.** `formatLocale()` keeps the browser's regional
   variant of the active language (an en-GB browser keeps day-first dates). No call passes
   `undefined` to Intl. CSV and API timestamps are never formatted.
+
+## Minors, volunteer credit, the join funnel and organization bookings (decision 223 (k), lane L3b)
+
+- **One question, one guard.** Every path that admits a minor asks `makerspaces/minors_guard.require_minor_clearance(user, space, purpose)`
+  with a purpose of `membership`, `event`, `guest_pass`, `presence`, `borrow` or `machine`; it returns silently while
+  `membership.minors` is off or the account is not a minor, so no caller keeps its own switch check. Call sites: membership activation,
+  `events/registration_access`, `guest_pass_issue.check_holder`, `presence/services._start`, `presence/guest_guard.require_member_or_guest`
+  (borrow), `machines/sessions_rules._person` and `machines/public_intake_access`. Do not add a second copy of the rule.
+- **Minimum stored.** A `MinorProfile` holds a birth date OR an "under age" declaration plus the guardian (an account, or name and contact).
+  Birth date, guardian contact and the typed signature are scoped PII (`encryption/registry_l3b.py`); audit meta carries ids, versions and
+  field names only. Consent text is versioned like `MakerspaceWaiver` and a consent counts only for the CURRENT version. A guardian consent
+  row is never deleted by a request path; only a purge removes it.
+- **Self check-in.** When `guardian_must_be_present` is set a minor never checks themselves in: the staff desk check-in is the attestation.
+- **Volunteer credit is a recorded reduction, never a silent price change.** `volunteer_credit.reduce_charge` runs inside the two membership
+  charge seams (`membership_term_charges`, `membership_renewal_charges`) before the debt is recorded; each used credit is stamped with the
+  payment and audited. A renewal keeps a minimum charge (the sweep reads "no renewal payment" as "not charged yet"). Free days apply as a
+  prorated reduction, not a date change.
+- **Join funnel.** The converted link (`GuestPass.converted_membership`) is written only by `guest_pass_lifecycle.mark_converted`, called from
+  membership activation. The funnel report counts distinct people, so it is excluded from the organization aggregate.
+- **Organization bookings.** Organizations have no ledger account: the booking is made for the organization's contact member and linked by
+  `BookingOrganizationLink`, which draws none of the contact's plan hours. The link references a deployment-global organization, so it is omitted
+  from tenant exports (like `EventOrganizer`).
+- **The organization hours bank (open item B13).** An organization booking draws its included hours from the ORGANIZATION's pool at that space,
+  never from the contact's plan, then charges only the remainder. `OrganizationHoursAllowance` (one per organization and space: minutes, period
+  `none|monthly|yearly`) is the staff-set base; `OrganizationHoursLedger` is append-only (`consume` negative, `release` positive and pointing at
+  the consume row it undoes, staff `grant` positive, staff `adjust` signed; no deletes, no edits). **The balance is never stored**: it is the
+  allowance plus grants and adjustments minus net consumption over the rows of ONE `period_key` (`all`, `YYYY-MM`, `YYYY`, UTC), and a booking
+  draws from the period its start falls in, so unused hours never roll over. `bookings/organization_hours.py` is the only writer of
+  consume/release rows and the only place the pool is read by the price path: `included_hours.quote_allowance` delegates to it whenever
+  `params["organization"]` is set, `included_hours_ledger.consume/release` and `booking_move_hours.retake_hours_for_move` dispatch to it for a
+  booking with a `BookingOrganizationLink`, and `booking_quote` resolves the organization from that link for saved bookings. Every writer locks the
+  allowance row first (`lock_bank`). A time edit releases and re-takes; a different period, or more hours than were held, needs the same staff price
+  confirmation as a member move (409 `price_changed`). Cancel and reject release; restore consumes again as the next generation. Staff routes
+  (`admin-org-hours-bank`, `admin-org-hours-bank-ledger`) need `manage_bookings` or `manage_members` in the space and answer 404 across tenants or
+  for an organization not linked to the space; organization admins (governance action) READ their own balance and ledger through
+  `admin-organization-hours-bank` / `admin-organization-hours-ledger` and never see staff names. The rows reference the deployment-global
+  organization, so both models are omitted from tenant exports (`classification_l3b`), listed for the field snapshot only, and removed by the
+  bookings module purge and the `bookings.organization_bookings` capability purge.
+  How a booking moves hours in and out of the bank (every arrow is one append-only row):
+
+  ```mermaid
+  flowchart LR
+    quote["Quote: balance for the booking's period"] --> consume["consume (negative row)"]
+    consume --> charge["Charge only the remainder, if any"]
+    consume -- "cancel or reject" --> release["release (positive row pointing at the consume)"]
+    consume -- "time edit" --> retake["release, then consume again"]
+    release -- "restore" --> consume2["consume again (next generation)"]
+    staff["Staff grant or adjust"] --> balance[("Balance = allowance + grants - net consumption, per period")]
+    consume --> balance
+    release --> balance
+  ```
+
+
+**One mode: "Hosting other makerspaces" is a console switch (#234).** `managed_hosting.availability.hosting_enabled()`
+is the only gate for plans, fair-use limits (`limits.is_self_host()` is now `domain_verification.is_self_host() and
+not hosting_enabled()`), hosting requests and NEW Stripe Connect charges (`domain_verification.hosts_other_spaces()`). Decision 240: the platform
+credential fallbacks (SMS, push, WhatsApp, app attestation, wallet, analytics telemetry) apply on EVERY install and never
+consult the switch; a per-space credential always wins. Decision 260: a configured Connect platform keeps settling, refunding
+and expiring EXISTING charges with the switch off (`source_for_payment` has no switch clause); only
+`resolve_payment_source` (new charges), Connect onboarding and the platform Connect settings page are gated.
+Owner 2026-11-11: `managed_hosting/platform_limits.py` caps monthly use of the PLATFORM credentials per space (keys
+`platform_*_monthly`, `platform_payments_monthly_count|amount` in `resource_limit_overrides`, in `KNOWN_LIMIT_KEYS` but NOT
+`NUMERIC_LIMIT_KEYS`, so own spaces are covered). Null/absent = unlimited (the default); own-credential sends are never
+counted; enforced at `reserve_notification_quota` (sms/whatsapp/native_push), `dispatch_email`, wallet `request_pass`
+and `PlatformRailLimitReached` (409 `platform_rail_limit_reached`) in checkout and the mobile intent.
+`PlatformHostingBillingSettings.hosting_enabled` (default off) is the switch; `MANAGED_PLANS_ENABLED`, when set, forces it
+and is `None` when unset. Domain/CORS TRUST still keys on `PLATFORM_DOMAIN_SUFFIX` (`is_self_host`), never on the switch,
+and the built-in `MANAGED_RESOURCE_LIMITS` values are never enforced (#236 addendum): they are only `suggested_limit()`
+hints in the console. Off hides everything and deletes nothing. DRF throttle rates are overridable per scope in
+`PlatformThrottleRate` (bounded to 10x either side of the env default, cached, cache cleared on save/delete);
+`throttle_rates.install()` wraps `SimpleRateThrottle.get_rate` once. Wallet passes do NOT follow the gate (decision 240): a space with no
+credentials of its own falls back to `PlatformWalletCredentials` on every install.
+
+**Own vs hosted space (#236).** `managed_hosting.hosting_type.is_hosted(space)` is asked FIRST by `resource_limit`,
+`plan_limit`, `disallowed_modules`, `custom_domain_allowed`, plan assignment, hosting invoices, trial sweeps and overdue
+enforcement. An OWN space (the default; no `SpaceHostingType` row means own) is unlimited and has no plan, trial or hosting
+bill; a HOSTED space follows override > plan > unlimited. Hosting off (`hosts_other_spaces()` false) makes every space own
+without touching the stored type. A host-your-makerspace request's space is marked hosted in `link_created_makerspace`.
+Storage bytes are counted for every space while hosting is on, so a later switch to hosted starts from the real figure.
+Upload caps (`limits_uploads`): `check_upload_headroom` at presign, `charge_upload` (per-file `upload_bytes` cap, then
+`add_storage`) at finalize, for person uploads only -- server-made objects keep calling `add_storage`. Remaining
+allowance per role is `limits_role.allowance_rows` (Space Manager: all limited rows; area managers: their `AREAS` only).
+The test suite treats a row-less space as hosted (`tests/conftest.py`); tests of the real default use `own_by_default`.
+
+## Open-items batch 1 (release 0.12.0, decisions 261 and 264)
+
+- **Event report access for grantees (EB1, 248).** An event's `report_features` list is built per viewer. A grantee holding
+  `manage_registrations` on that event gets `analytics` and, with `reports.event_exports` on, `exports`; the PDF stays with the
+  event manager (its authority is the manager's alone). A tenant-wide reader keeps the full list. The report routes re-check the
+  grant per event, so the list is a hint for the UI, never the authority. Everything is empty while `reports` is off.
+- **Role-completeness reports (decision 248, 11 keys).** `inventory-valuation`, `inventory-utilisation-by-category`,
+  `overdue-by-borrower`, `incidents-register`, `machine-jobs`, `certification-holders`, `roster-export`, `guest-passes-export`,
+  `volunteer-hours-export`, `minors-consent-export`, `staff-roster-export` (`report_definitions_completeness.py`). Each is keyed to
+  its own area action, per space (`deployment_aggregate=False`), never scheduled and excluded from organization totals; the five
+  people exports are identity-bearing (a superadmin reads them only inside an open PII window). Titles go through `gettext_noop`
+  so the catalogue extracts them. `ReportDefinition.required_action` now defaults to `MANAGE_MAKERSPACE`: a definition that forgets
+  its action is Space-Manager-only (fail closed), and a registry test pins that every definition names one.
+- **Shop and Safety are display families.** Shop notices are stored and routed under `payments` (one matrix cell, one set of
+  destinations, the existing template keys) and the incident register's under `maintenance`; the inbox carves "Shop" and "Safety"
+  out at read time (`notifications/inbox_families.py`). Muting the Payments cell therefore mutes shop alerts; to silence only the
+  shop, mute the `shop_*` events in the per-event matrix.
+- **Scoped reads that must not reveal existence.** Related facts answer 404 (never 403) for an event or booking the actor has no
+  authority over. A workshop machine link whose booking is gone can be unlinked only with tenant-wide machine authority. The request
+  timeline narrows its audit rows with `scope_audit_rows`. The legacy staff feed narrows `machine_service.*` rows by the request
+  named in `url_path` for a machine-type-scoped reader (a row naming no request fails closed for them; a reader who also holds
+  `manage_printing` keeps all). A scheduled report's local recipient of a technician-created file must cover the creator's coverage.
+- **Incident alerts** go to the maintenance family and, for an incident placed in lending, events or bookings, also to that
+  area's staff (resolved through the area's own staff-feature action, so mutes and `receives_notifications` still apply).
+- **Guest-pass waiver gate without passes (B12).** `GuestPassPolicy.waiver_gate_without_passes` (default off) keeps the non-member
+  on-site waiver requirement in force after guest passes are switched off. It is edited while passes are on; with passes off and no
+  accepted waiver or event-registration consent, an on-site non-member is refused.
+- **Event-linked loan notices** carry `notice_kind="event_loan"`, the event title, window and desk link in their context and text.
+  The default `event_reminder_lead_hours` stays `[24]` (a 1-hour reminder is a per-space choice).
+- **Organizer attendance.** `GET /api/v1/admin/organized-events/attendance/` returns per-event registered and attended counts for the
+  events the actor's organizations run, across venues, using exactly the organized-events list's authority; counts only.
+- **Included hours, staff view.** `GET /api/v1/admin/makerspace/<id>/members/<user_id>/included-hours` (manage_members or
+  manage_bookings) returns the member's current pools from the same ledger the quote reads. Organization/house bookings still draw
+  no plan hours from the member's plan; an organization's own hours come from its hours bank (see **The organization hours bank** above).
+
+## Quotas never block settling or recording money
+
+Per-space limits (`resource_limit_overrides`, set only by the superadmin, default none, applied to own and hosted spaces alike) refuse only the START of something new, with a typed 409 (`event_quota_reached`, `booking_quota_reached`, `payment_quota_reached`, `platform_rail_limit_reached`). They must never block reading or exporting data, paying or settling an existing charge (online on any rail, offline, claimed or awaiting maker-checker), refunds, returning issued items, recording a debt in the ledger (`payments.services.create_payment` is never gated) or member privacy requests. The platform rail refuses only a charge raised after its quota was reached. Every key in `makerspaces/limit_registry.py` names its enforcement point, and a guard test checks it.
+
+## Unit scope reaches money and reports (parity O-B3 over O-B1)
+
+A staff member narrowed by `StaffUnitScope` (`makerspaces/member_unit_scope.py`) is narrowed in money too, through ONE helper, `payments/unit_payer_scope.py`: `reconcile_payments` (so single records, waives, maker-checker proposals and every collection-sheet row) answers "Payment not found." for a charge whose member is outside the scope or has no member at all, and `list_payments` hides those charges. The maker-checker confirm/reject step and the settlement-confirmations list are unit-narrowed the same way: a scoped actor confirming or rejecting a proposal on an out-of-scope charge gets "Payment not found.", and the list omits those rows. Cash in hand shows a scoped actor only their own receipts on in-scope charges; a scoped actor may record a cash hand-over only for themselves. The renewal forecast, approval times, collected revenue by plan and the unit/level leagues take the same narrowing (`manage_members` / `view_finance` as the action). The leagues are counts only -- never a name or an amount. Per-unit payment instructions reach only the charge's OWN member (`payments/unit_instructions.py`, resolved with `viewer=`); pay links, donations and staff views keep the space-wide text, and a unit's own instructions replace the space's UPI QR.

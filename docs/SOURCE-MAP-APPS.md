@@ -71,7 +71,7 @@ Continuation of [SOURCE-MAP.md](SOURCE-MAP.md).
   without importing event policy.
   `role_services.py` re-exports `role_authority.py` (locked grant validation),
   and `role_assignments.py` (staff and community role-set assignment); role CRUD is removed.
-  `role_catalog.py` fixes the nine built-ins (Technician and Shop Manager joined in release 2); `role_membership_writes.py` owns complete-set writes.
+  `role_catalog.py` fixes the ten built-ins (Technician and Shop Manager joined in release 2, Fundraising in 0.12.0); `role_membership_writes.py` owns complete-set writes.
   `accounts/rbac_roles.py` shares valid-role union rules between object and SQL readers.
   Per-person type scope lives in `machines/models_membership_scope.py` and `member_scope_services.py`. The RBAC vocabulary remains in `accounts/rbac_actions.py`.
   The tenant-migration authority guard scans the split role-authority/assignment modules.

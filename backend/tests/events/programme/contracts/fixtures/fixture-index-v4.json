@@ -1,0 +1,17 @@
+{
+ "contract_version": 4,
+ "base_index": "fixture-index-v3.json",
+ "summary": "v4 pins only the files that changed after the v3 checkpoint; every v3 file keeps its v3 pin.",
+ "files": [
+  {
+   "path": "public-url-bootstrap-v4.json",
+   "sha256": "e0656b2b83082fa5f196a1bdbcb75a03b65442892102b5ea0ae120d7cd534e8b",
+   "bytes": 12644
+  },
+  {
+   "path": "routes-v4.json",
+   "sha256": "83afe7ad2a6d5454dede53ec648b1df23d0a98a9bde2de4fb90b24511a3b4592",
+   "bytes": 6799
+  }
+ ]
+}

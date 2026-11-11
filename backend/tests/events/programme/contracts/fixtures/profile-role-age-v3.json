@@ -1,0 +1,101 @@
+{
+  "contract_version": 3,
+  "registry_owner": "F",
+  "registry": "apps.forms_schema.profile_fields",
+  "saved_keys": [
+    "name",
+    "phone",
+    "institution",
+    "organization",
+    "study_level",
+    "country",
+    "skills",
+    "github_url",
+    "linkedin_url",
+    "portfolio_url",
+    "resume",
+    "shirt_size",
+    "dietary_needs",
+    "accessibility_needs",
+    "emergency_contact",
+    "date_of_birth"
+  ],
+  "sensitive_default_off": [
+    "date_of_birth",
+    "resume",
+    "dietary_needs",
+    "accessibility_needs",
+    "emergency_contact"
+  ],
+  "derived_not_saved": [
+    "age_at_event"
+  ],
+  "subjects": [
+    "registration",
+    "application",
+    "role_assignment"
+  ],
+  "exactly_one_subject_fk": true,
+  "partial_uniques": [
+    [
+      "registration",
+      "question_id"
+    ],
+    [
+      "application",
+      "question_id"
+    ],
+    [
+      "role_assignment",
+      "question_id"
+    ]
+  ],
+  "role_only_fixture": {
+    "subject_kind": "role_assignment",
+    "subject_id": 81,
+    "event_id": 42,
+    "owner_member_id": 17,
+    "registration_id": null,
+    "role": "mentor"
+  },
+  "derivation_source": {
+    "age": {
+      "source": {
+        "kind": "inline_dob",
+        "date_of_birth": "2004-05-12"
+      },
+      "reviewed_event_date_revision": 7,
+      "reviewed_as_of_date": "2026-12-01"
+    }
+  },
+  "canonical_age": {
+    "id": "age",
+    "type": "age_at_event",
+    "derivation_id": 19
+  },
+  "organizer_age": {
+    "id": "age",
+    "type": "age_at_event",
+    "value": 22,
+    "as_of_date": "2026-12-01",
+    "locked": false
+  },
+  "date_error": {
+    "code": "event_date_changed",
+    "detail": "Review age at the revised event start.",
+    "fields": {},
+    "event_date_revision": 8,
+    "as_of_date": "2026-12-02"
+  },
+  "lock_points": {
+    "registration": "successful_submission",
+    "application": "first_released_decision_or_close",
+    "role_assignment": "first_approve_decline_or_posting_close"
+  },
+  "leap_day_nonleap_birthday": "March 1",
+  "as_of": "event starts_at converted to event timezone",
+  "persisted_numeric_age": false,
+  "age_gating": false,
+  "selected_dob_is_owner_only": true,
+  "vault_delete_removes_event_source": false
+}

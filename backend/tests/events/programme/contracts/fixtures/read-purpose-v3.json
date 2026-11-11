@@ -1,0 +1,69 @@
+{
+  "contract_version": 3,
+  "purposes": [
+    "team_original",
+    "owner_history",
+    "application_review",
+    "judge_submission",
+    "organizer_asset",
+    "sponsor_track",
+    "sponsor_resume",
+    "help_attachment",
+    "public_gallery",
+    "public_member_photo",
+    "saved_resume",
+    "saved_details_export",
+    "personal_data_export",
+    "certificate_pdf",
+    "badge_pdf",
+    "print_resource",
+    "template_artwork",
+    "provider_pdf"
+  ],
+  "selector": "server_route_actor_only",
+  "unknown": "fail_closed",
+  "default_transport": "gated_stream",
+  "exceptions": {
+    "template_artwork": {
+      "transport": "bounded_bearer_get",
+      "max_seconds": 60,
+      "participant_bytes_allowed": false
+    },
+    "provider_pdf": {
+      "transport": "one_use_gateway",
+      "bound_to": [
+        "recipient",
+        "delivery",
+        "integration",
+        "certificate_revision"
+      ]
+    }
+  },
+  "all_finite_ttl_bounds": [
+    "object.expires_at",
+    "event_asset_expiry",
+    "grant.valid_until",
+    "entitlement.valid_until",
+    "assignment.ends_at",
+    "round.closes_at",
+    "consent.expires_at",
+    "print_job.expires_at",
+    "provider_window_end",
+    "session_credential_expiry"
+  ],
+  "bytes_between_policy_checks": 1048576,
+  "seconds_between_policy_checks": 2,
+  "recheck_before_releasing_chunk": true,
+  "head_authorization_identical": true,
+  "range_statuses": [
+    200,
+    206,
+    416
+  ],
+  "multirange": false,
+  "expired_authorized_before_storage": 410,
+  "foreign_hidden": 404,
+  "cache_control": "private, no-store",
+  "nosniff": true,
+  "storage_redirect": false
+}

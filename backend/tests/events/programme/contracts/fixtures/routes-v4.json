@@ -1,0 +1,236 @@
+{
+  "contract_version": 4,
+  "base": "routes-v3.json",
+  "enabled": false,
+  "summary": "Delta over routes-v3 (and the C2 rows of integration/fixtures/routes-gf1.json): G-final part 4 organizer team and submission reads, and the help-type detail route without the retired POST. Rows here replace a base row of the same name; v3 bytes stay frozen.",
+  "routes": [
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/",
+      "name": "events-programme-admin-teams",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/teams/{team_id}/",
+      "name": "events-programme-admin-team-detail",
+      "scope": "admin",
+      "owner": "A",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/submissions/",
+      "name": "events-programme-admin-submissions",
+      "scope": "admin",
+      "owner": "B",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/submissions/{submission_id}/",
+      "name": "events-programme-admin-submission-detail",
+      "scope": "admin",
+      "owner": "B",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_hackathon",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        }
+      }
+    },
+    {
+      "path": "/api/v1/admin/events/{pk}/help-types/{type_id}/",
+      "name": "events-programme-admin-help-types-detail",
+      "scope": "admin",
+      "owner": "C2",
+      "enabled": false,
+      "schema_scope": "shared_envelope_plus_lane_owned_domain_fields",
+      "operations": {
+        "GET": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "HEAD": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            401,
+            403,
+            404,
+            429
+          ]
+        },
+        "PATCH": {
+          "authentication": "active_staff",
+          "authority": "event_authority:manage_team",
+          "legacy_v1": false,
+          "api_client": "not reachable by API clients",
+          "request_example": null,
+          "response_example": null,
+          "success": 200,
+          "binary": false,
+          "error_statuses": [
+            400,
+            401,
+            403,
+            404,
+            409,
+            429
+          ]
+        }
+      }
+    }
+  ]
+}

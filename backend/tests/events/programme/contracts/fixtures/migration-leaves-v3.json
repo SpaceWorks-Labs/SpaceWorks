@@ -1,0 +1,92 @@
+{
+  "contract_version": 3,
+  "method": "stdlib AST local dependency graph; Django loader validation at integration",
+  "head": "01ac3decc0d3f32817cbf8956bf8b26cc5d7e7e7",
+  "leaves": {
+    "accounts": [
+      "0037_governance_recovery_context"
+    ],
+    "admin_api": [
+      "0001_initial"
+    ],
+    "apiclients": [
+      "0008_import_approval_append_only"
+    ],
+    "audit": [
+      "0009_audit_verification_runs"
+    ],
+    "backup": [
+      "0026_backfill_backup_module"
+    ],
+    "bookings": [
+      "0020_p2_bookings"
+    ],
+    "boxes": [
+      "0011_kit_components"
+    ],
+    "data_export": [
+      "0001_initial"
+    ],
+    "devices": [
+      "0004_offline_event_choices"
+    ],
+    "encryption": [
+      "0007_tenant_import_fence_operation"
+    ],
+    "events": [
+      "0036_event_speakers"
+    ],
+    "evidence": [
+      "0007_abandoned_evidence_upload_cleanup"
+    ],
+    "hardware_requests": [
+      "0029_kit_checklists"
+    ],
+    "integrations": [
+      "0039_bd_r2_notification_media"
+    ],
+    "inventory": [
+      "0015_watch_pending_index"
+    ],
+    "machines": [
+      "0028_drop_role_machine_scope"
+    ],
+    "maintenance": [
+      "0003_meters_and_feed"
+    ],
+    "makerspaces": [
+      "0096_enable_existing_presence"
+    ],
+    "notifications": [
+      "0004_notification_preferences"
+    ],
+    "operations": [
+      "0013_stocktake_discipline"
+    ],
+    "organizations": [
+      "0004_organization_is_discoverable"
+    ],
+    "payments": [
+      "0022_bd_r1_bills_branding"
+    ],
+    "presence": [
+      "0003_presence_programme"
+    ],
+    "printing": [
+      "0022_retire_legacy_models"
+    ],
+    "procurement": [
+      "0008_reorder_source_product"
+    ],
+    "roadmap": [
+      "0001_initial"
+    ],
+    "tenant_migration": [
+      "0012_brokerless_import_run"
+    ],
+    "warranty": [
+      "0003_remove_printer_host"
+    ]
+  },
+  "new_migrations": []
+}

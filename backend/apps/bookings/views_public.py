@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from apps.apiclients.throttling import ClientTierRateThrottle
 from apps.bookings import services_bookings
 from apps.bookings.models import BookableSpace, Booking
-from apps.bookings.services_schedule import occupied_window, published_open_intervals
+from apps.bookings.services_schedule import confirmed_occupancy, occupied_window, published_open_intervals
 from apps.bookings.serializers_public import (
     PublicBookableSpaceSerializer,
     PublicBookingInputSerializer,
@@ -95,25 +95,24 @@ class PublicSpaceAvailabilityView(APIView):
         availability = None
         if space.show_public_availability:
             # Busy windows contain occupancy only; cleanup settings remain private.
-            from datetime import timedelta
-
-            bookings = Booking.objects.filter(
-                space=space,
-                status=Booking.Status.CONFIRMED,
-                starts_at__lt=ends_at + timedelta(minutes=space.buffer_before_minutes),
-                ends_at__gt=starts_at - timedelta(minutes=space.buffer_after_minutes),
-            ).only('starts_at', 'ends_at', 'name').order_by('starts_at', 'id')
+            bookings = confirmed_occupancy(space, starts_at, ends_at).only('starts_at', 'ends_at', 'name', 'status')
             availability = [
                 {
                     'starts_at': occupied_window(space, booking.starts_at, booking.ends_at)[0],
                     'ends_at': occupied_window(space, booking.starts_at, booking.ends_at)[1],
+                    # A pending event hold is tentative: it never names its booker, even where
+                    # the room publishes booker names (the request is not yet approved).
                     'booker_name': (
-                        booking.name if space.show_public_booker_names else None
+                        booking.name
+                        if space.show_public_booker_names and booking.status == Booking.Status.CONFIRMED
+                        else None
                     ),
+                    'tentative': booking.status != Booking.Status.CONFIRMED,
                 }
                 for booking in bookings
             ]
 
+        from .busy_overlay import public_busy_blocks
         payload = {
             'public_token': space.public_token,
             'starts_at': starts_at,
@@ -121,6 +120,9 @@ class PublicSpaceAvailabilityView(APIView):
             'timezone': makerspace.timezone,
             'opening_intervals': published_open_intervals(makerspace, starts_at, ends_at),
             'availability': availability,
+            # Closures always show; an outage's bare `unavailable` only where the room publishes
+            # its availability (decision 219c).
+            'unavailable': public_busy_blocks(space, starts_at, ends_at),
         }
         return Response(PublicSpaceAvailabilitySerializer(payload).data)
 

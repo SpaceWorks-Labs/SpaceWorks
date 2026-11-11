@@ -41,7 +41,7 @@ def edit_booking_details(booking, *, actor, **changes):
     return _refresh(locked)
 
 
-def move_locked_booking(space, locked, *, actor, starts_at, ends_at, now):
+def move_locked_booking(space, locked, *, actor, starts_at, ends_at, now, price_confirmation=None):
     """Used by staff and owner moves, with one clock for both cutoff comparisons.
 
     Arrival checks and credential rotation share the resource/booking lock and
@@ -62,19 +62,23 @@ def move_locked_booking(space, locked, *, actor, starts_at, ends_at, now):
     locked.calendar_sequence += 1
     locked.calendar_updated_at = now
     locked.save(update_fields=["starts_at", "ends_at", "calendar_sequence", "calendar_updated_at"])
+    from .booking_move_hours import retake_hours_for_move  # decision 226(d)
+    retake_hours_for_move(space, locked, actor=actor, price_confirmation=price_confirmation)
     _audit(space, actor, "booking.rescheduled", locked, {
         "old_starts_at": old_start.isoformat(), "old_ends_at": old_end.isoformat(),
         "starts_at": starts_at.isoformat(), "ends_at": ends_at.isoformat(),
     })
     from .notifications import notify_booking_status
     notify_booking_status(locked, "confirmed" if locked.status == "confirmed" else "created")
+    from .event_link_notices import booking_changed
+    booking_changed(locked, "moved")
     return _refresh(locked)
 
 
 @transaction.atomic
-def edit_booking_time(booking, *, actor, starts_at, ends_at):
+def edit_booking_time(booking, *, actor, starts_at, ends_at, price_confirmation=None):
     space, locked = _locked_booking(booking)
     booking_authority.require(actor, space, "manage_reservations")
     require_feature(space, "bookings.staff_tools")
-    return move_locked_booking(space, locked, actor=actor, starts_at=starts_at,
-                               ends_at=ends_at, now=timezone.now())
+    return move_locked_booking(space, locked, actor=actor, starts_at=starts_at, ends_at=ends_at,
+                               now=timezone.now(), price_confirmation=price_confirmation)

@@ -171,6 +171,8 @@ class BookableSpaceImagePresignView(APIView):
         content_type = serializer.validated_data['content_type']
         ext = storage.ext_for(content_type, serializer.validated_data['filename'])
         object_key = storage.build_object_key(space.makerspace_id, space.pk, ext)
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(space.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = storage.presigned_upload(object_key, content_type)
         except StorageUnavailable:

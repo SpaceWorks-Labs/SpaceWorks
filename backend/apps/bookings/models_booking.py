@@ -58,6 +58,14 @@ class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields)
     # Lane L15 (#159): the quote frozen when a booking awaiting approval was requested;
     # approval charges exactly this. `{}` for instant or legacy bookings. Insert-only.
     pricing_snapshot = models.JSONField(default=dict, blank=True)
+    # Decision 216: an authorized replacement of a rejected or cancelled reservation names
+    # the original, which keeps its own debt, receipts and history. One replacement each;
+    # insert-only (save() below keeps the original value).
+    replaces = models.OneToOneField("self", null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name="replaced_by", editable=False)
+    # Decision 223 (h): a staff-only booking for a space-run event or the space itself: no member
+    # booker, never charged, consumes no plan hours. Insert-only (save() keeps the original value).
+    is_house = models.BooleanField(default=False, editable=False)
     calendar_sequence = models.PositiveIntegerField(default=0)
     calendar_updated_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -68,6 +76,10 @@ class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields)
             models.CheckConstraint(
                 condition=Q(ends_at__gt=F("starts_at")),
                 name="booking_end_after_start",
+            ),
+            models.CheckConstraint(
+                condition=Q(is_house=False) | Q(member__isnull=True),
+                name="booking_house_has_no_member",
             ),
         ]
         indexes = [
@@ -95,11 +107,13 @@ class Booking(ScopedPiiModelMixin, BookingArrivalFields, BookingDepartureFields)
         if errors:
             raise ValidationError(errors)
         if self.pk:
-            original = type(self).objects.only("public_token", "space_id", "pricing_snapshot").get(
-                pk=self.pk
-            )
+            original = type(self).objects.only(
+                "public_token", "space_id", "pricing_snapshot", "replaces_id", "is_house",
+            ).get(pk=self.pk)
             self.public_token = original.public_token
             self.space_id = original.space_id
+            self.replaces_id = original.replaces_id
+            self.is_house = original.is_house
             if original.pricing_snapshot != self.pricing_snapshot:
                 raise ValidationError(gettext("A booking's requested price is frozen."))
         super().save(*args, **kwargs)

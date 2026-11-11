@@ -80,7 +80,16 @@ def _refresh(instance):
 def create_booking(
     space, *, starts_at, ends_at, member=None, name=None, email=None, phone=None,
     custom_answers=None, note='', actor=None, certification_override_reason='',
+    price_confirmation=None, replaces=None, house=False, organization=None,
 ):
+    """`price_confirmation`: a staff preview digest verified after locked admission
+    (`staff_price_confirmation`); a stale one raises 409 before anything is written.
+    `replaces`: the locked rejected/cancelled booking this one replaces
+    (`services_replacement`); its own debt and history are left untouched.
+    `house` (decision 223 (h)): a staff-only booking with no member booker, no charge and no
+    plan hours; it needs `manage_reservations` and is confirmed straight away."""
+    if house and (member is not None or actor is None or replaces is not None):
+        raise serializers.ValidationError({'house': gettext('A house booking has no member and needs a staff actor.')})
     if member is not None:
         require_member_account(member)
     from apps.bookings.admission import admission_status, validate_admission
@@ -89,7 +98,10 @@ def create_booking(
     assert_mapped_write_allowed(space.makerspace_id)
     locked_space = _locked_space(space.pk)
     member = lock_obligation_owner(member)
-    if actor is not None and getattr(member, "pk", None) != actor.pk:
+    if house:
+        from .booking_authority import require
+        require(actor, locked_space, "manage_reservations")
+    elif actor is not None and getattr(member, "pk", None) != actor.pk:
         from .booking_authority import require
         from apps.presence.guard import require_active_member
         from apps.makerspaces.models import MakerspaceMembership
@@ -101,8 +113,11 @@ def create_booking(
             raise PermissionDenied(gettext("Staff booking requires an active local member."))
         require_active_member(member, locked_space.makerspace)
     now = timezone.now()
-    status = admission_status(locked_space)
-    if member is not None:
+    status = Booking.Status.CONFIRMED if house else admission_status(locked_space)
+    if house:
+        name = (name or '').strip() or gettext('House booking')
+        email, phone = actor.email or f'house+{locked_space.makerspace_id}@spaceworks.invalid', ''
+    elif member is not None:
         name = member.display_name or member.get_full_name() or member.username
         email = member.email
         phone = member.phone
@@ -116,6 +131,7 @@ def create_booking(
         ends_at=ends_at,
         note=note,
         status=status,
+        is_house=house,
     )
     validate_admission(locked_space, booking, now=now, actor=actor,
                        override_reason=certification_override_reason)
@@ -124,11 +140,29 @@ def create_booking(
     )
     require_module_locked(locked_space.makerspace, 'bookings')
     limits.check_quota(locked_space.makerspace, 'bookings', adding=1)
+    # Decision 221(d): serialise this member's term allowance BEFORE any quote reads it, so the
+    # price verified/frozen below is the price the ledger row written after the save matches.
+    from apps.bookings import included_hours
+    exempt = included_hours.event_venue_exempt(locked_space, member, actor, replaces)
+    # Decision 223 (k): an organization's partner-event booking draws nothing from its contact's plan hours.
+    exempt = exempt or organization is not None
+    included_hours.lock_term(locked_space.makerspace, member, locked_space, starts_at)
+    if organization is not None:  # B13: the organization's hours bank is locked before any quote reads it
+        from apps.bookings import organization_hours
+        organization_hours.lock_bank(locked_space.makerspace, organization)
+    verified = None
+    if price_confirmation is not None:
+        from apps.bookings.staff_price_confirmation import verify
+        verified = verify(locked_space, member, starts_at, ends_at, price_confirmation, exempt, organization)
     if status == Booking.Status.PENDING:
         # L15 (#159): approval charges the price quoted now, never a re-quote.
         from apps.bookings.service_payments import requested_snapshot
-        booking.pricing_snapshot = requested_snapshot(booking)
+        booking.pricing_snapshot = requested_snapshot(booking, priced=verified, exempt=exempt, organization=organization)
+    booking.replaces = replaces
     booking.save()
+    if organization is not None:
+        from apps.bookings.organization_booking import link_organization
+        link_organization(booking, organization, member, actor)
     _audit(
         locked_space,
         actor,
@@ -136,11 +170,16 @@ def create_booking(
         booking,
         {'booking_id': booking.pk, 'status': status},
     )
-    notifications.notify_booking_status(booking, 'created')
+    if house:
+        _audit(locked_space, actor, 'booking.house_created', booking, {'booking_id': booking.pk})
+    else:
+        notifications.notify_booking_status(booking, 'created')
+    from apps.bookings.included_hours_ledger import consume
+    consume(booking, actor=actor, exempt=exempt)  # pending holds its hours too; reject/cancel give them back
     if status == Booking.Status.CONFIRMED:
         from apps.bookings.service_payments import create_for_confirmed_booking
 
-        create_for_confirmed_booking(booking, actor)
+        create_for_confirmed_booking(booking, actor, priced=verified)
     return _refresh(booking)
 
 
@@ -193,6 +232,8 @@ def approve_booking(booking, *, actor):
     from apps.bookings.service_payments import create_for_confirmed_booking
 
     create_for_confirmed_booking(locked, actor, approval=True)
+    from .event_link_notices import booking_changed
+    booking_changed(locked, 'confirmed')  # decision 223 G4: the event's organizers hear the venue is confirmed
     return _refresh(locked)
 
 
@@ -225,6 +266,10 @@ def reject_booking(booking, *, actor, reason=""):
         },
     )
     notifications.notify_booking_status(locked, 'rejected')
+    from .included_hours_ledger import release
+    release(locked, actor)
+    from .event_link_notices import booking_changed
+    booking_changed(locked, 'rejected')
     return _refresh(locked)
 
 

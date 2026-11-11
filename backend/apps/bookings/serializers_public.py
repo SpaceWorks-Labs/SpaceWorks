@@ -7,6 +7,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.bookings import storage
+from apps.bookings.busy_overlay import PublicBusyBlockSerializer
 from apps.bookings.models import BookableSpace, Booking
 
 
@@ -98,6 +99,7 @@ class PublicAvailabilityIntervalSerializer(serializers.Serializer):
     starts_at = serializers.DateTimeField(read_only=True)
     ends_at = serializers.DateTimeField(read_only=True)
     booker_name = serializers.CharField(allow_null=True, read_only=True)
+    tentative = serializers.BooleanField(read_only=True, default=False, help_text='A pending event hold; never names its booker.')
 
 
 class PublicOpeningIntervalSerializer(serializers.Serializer):
@@ -118,6 +120,12 @@ class PublicSpaceAvailabilitySerializer(serializers.Serializer):
         many=True,
         allow_null=True,
         read_only=True,
+    )
+    unavailable = PublicBusyBlockSerializer(
+        many=True, read_only=True,
+        help_text='Time the room cannot be booked: `closed` outside opening hours, `unavailable` '
+                  'otherwise (room out of service or its machine under repair, never detailed). '
+                  '`unavailable` is listed only when the room shows public availability.',
     )
 
 
@@ -156,3 +164,22 @@ class PublicBookingResponseSerializer(serializers.Serializer):
         choices=(Booking.Status.PENDING, Booking.Status.CONFIRMED),
         read_only=True,
     )
+    amount_due = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
+    pay_online = serializers.SerializerMethodField()
+
+    def _money(self, booking):
+        from apps.bookings.response_money import booking_money
+        return booking_money(booking)
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_amount_due(self, booking):
+        return self._money(booking)["amount_due"]
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_currency(self, booking):
+        return self._money(booking)["currency"]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_pay_online(self, booking):
+        return self._money(booking)["pay_online"]

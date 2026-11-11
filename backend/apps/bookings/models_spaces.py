@@ -8,6 +8,7 @@ from django.db import models
 from django.db.models import F, Q
 
 from apps.forms_schema.validation import validate_form_schema
+from apps.payments.money_model import MoneyDecimalField
 
 
 class BookableSpace(models.Model):
@@ -70,9 +71,9 @@ class BookableSpace(models.Model):
         blank=True,
         default=None,
     )
-    payment_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    payment_amount = MoneyDecimalField(
+        max_digits=13,
+        decimal_places=3,
         default=0,
         validators=[MinValueValidator(0)],
     )

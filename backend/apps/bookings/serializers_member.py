@@ -18,6 +18,22 @@ class MemberBookingSerializer(serializers.ModelSerializer):
     departed_at = serializers.DateTimeField(read_only=True, allow_null=True)
     can_checkout = serializers.SerializerMethodField()
     departure_outcome = serializers.SerializerMethodField()
+    machine_time = serializers.SerializerMethodField(
+        help_text="True when this books one machine's time; a problem report then goes to that machine.")
+    hosts_event = serializers.SerializerMethodField(
+        help_text="Decision 223 (m): `{kind: 'event', title, ...}` or `{kind: 'reserved'}` when this room "
+                  "is held for an event, else null. Cancelling it needs `confirm_event_room: true`.")
+
+    @extend_schema_field(serializers.JSONField(allow_null=True))
+    def get_hosts_event(self, booking):
+        if booking.member_id is None or booking.status not in (Booking.Status.PENDING, Booking.Status.CONFIRMED):
+            return None
+        from apps.bookings.event_host_guard import hosted_event_label
+        return hosted_event_label(booking.member, booking)
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_machine_time(self, booking):
+        return booking.space.machine_id is not None
 
     @extend_schema_field(serializers.BooleanField())
     def get_can_checkout(self, booking):
@@ -37,7 +53,8 @@ class MemberBookingSerializer(serializers.ModelSerializer):
         model = Booking
         fields = ('public_token', 'space_name', 'timezone', 'starts_at', 'ends_at',
                   'status', 'cancellation_cutoff_at', 'can_cancel', 'confirmation_available',
-                  'decision_reason', 'departed_at', 'can_checkout', 'departure_outcome')
+                  'decision_reason', 'departed_at', 'can_checkout', 'departure_outcome', 'machine_time',
+                  'hosts_event')
         read_only_fields = fields
 
     @extend_schema_field(serializers.DateTimeField())
@@ -47,6 +64,17 @@ class MemberBookingSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.BooleanField())
     def get_can_cancel(self, booking):
         return booking.arrived_at is None and member_can_cancel(booking, now=self.context.get('now') or timezone.now())
+
+
+class MemberBookingCancelSerializer(serializers.Serializer):
+    confirm_event_room = serializers.BooleanField(
+        default=False, help_text="Required (409 `booking_hosts_event` otherwise) when the room is held for an event.")
+
+    def to_internal_value(self, data):
+        unknown = set(data) - set(self.fields) if hasattr(data, "keys") else set()
+        if unknown:
+            raise serializers.ValidationError({field: 'Unexpected field.' for field in sorted(unknown)})
+        return super().to_internal_value(data)
 
 
 class MemberBookingListSerializer(serializers.Serializer):

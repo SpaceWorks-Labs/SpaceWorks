@@ -3,6 +3,7 @@
 from django.http import Http404
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from .serializers_website import BookingPublicRulesSerializer
 
@@ -21,7 +22,7 @@ class IntegrationBookingPublicSectionSerializer(serializers.Serializer):
 class IntegrationBookingPublicPageSerializer(serializers.Serializer):
     public_url = serializers.URLField()
     embed_path = serializers.CharField()
-    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    payment_amount = MoneyField(max_digits=13, decimal_places=3)
     currency = serializers.CharField()
     rules = BookingPublicRulesSerializer()
     sections = IntegrationBookingPublicSectionSerializer(many=True)

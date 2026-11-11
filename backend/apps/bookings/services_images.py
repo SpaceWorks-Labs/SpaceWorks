@@ -94,7 +94,7 @@ def set_space_image(
         raise serializers.ValidationError(
             {'image': gettext('The existing image was not found in storage.')}
         )
-    limits.add_storage(locked.makerspace, size_bytes)
+    limits.charge_upload(locked.makerspace, size_bytes)
     locked.image_key = object_key
     locked.save(update_fields=['image_key', 'updated_at'])
     audit.record(

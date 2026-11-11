@@ -9,3 +9,9 @@ from .models_broadcasts import BookingBroadcast, BookingBroadcastDelivery
 from .models_website import BookingResourcePage, BookingResourcePageAsset, BookingResourcePageSection
 from .models_gallery import BookableSpacePhoto
 from .models_departure import BookingDepartureEvent, BookingIssue
+
+from .models_loan_context import BookingLoanContext
+from .models_consumable_plan_context import BookingConsumablePlanContext
+from .models_included_hours import IncludedHoursUsage
+from .models_organization import BookingOrganizationLink
+from .models_organization_hours import OrganizationHoursAllowance, OrganizationHoursLedger

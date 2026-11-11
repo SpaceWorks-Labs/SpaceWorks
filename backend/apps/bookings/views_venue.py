@@ -1,9 +1,11 @@
 """Public "Hosted at" venue block for a public event: host makerspace + place photos.
 
-Events carry a free-text location, not a resource link, so the venue is resolved by
-matching that label against the host's PUBLIC, active bookable spaces (name first, then
-the space's own location label). Without a match the block still names the host and
-falls back to the host's public cover image. Only already-public fields are returned.
+The venue is the room held by the event's live linked booking when that room is public
+and active (decision 221(g)); otherwise the free-text location is matched against the
+host's PUBLIC, active bookable spaces (name first, then the space's own location label). Without a match the block still names the host and
+falls back to the host's public cover image. Only already-public fields are returned, plus
+one neutral `venue_update_pending` flag when the matched room is out of service during the
+event (decision 219c): no windows, times or reasons.
 """
 
 from django.shortcuts import get_object_or_404
@@ -19,6 +21,7 @@ from apps.makerspaces.guards import require_module_for_servable
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.platform import module_enabled
 
+from .busy_overlay import venue_update_pending
 from .serializers_public import PublicSpacePhotoSerializer
 from .services_gallery import public_photos
 from .views_public import PUBLIC_BOOKING_ERRORS
@@ -39,6 +42,9 @@ class VenueSpaceSerializer(serializers.Serializer):
     kind = serializers.CharField()
     location = serializers.CharField(allow_blank=True)
     capacity = serializers.IntegerField()
+    venue_update_pending = serializers.BooleanField(help_text=(
+        "True when the room is out of service during part of the event. Nothing else is disclosed "
+        "(no windows, times or reasons); closures never set it, since events may run after hours."))
 
 
 class PublicEventVenueSerializer(serializers.Serializer):
@@ -47,16 +53,24 @@ class PublicEventVenueSerializer(serializers.Serializer):
     photos = PublicSpacePhotoSerializer(many=True)
 
 
-def venue_space(makerspace, label):
-    label = (label or "").strip()
-    if not label or not module_enabled(makerspace, "bookings"):
+def venue_space(makerspace, label, event=None):
+    if not module_enabled(makerspace, "bookings"):
         return None
     spaces = public_spaces(makerspace).prefetch_related("photos")
+    if event is not None:
+        from apps.events.venue_room import linked_room_id
+        room_id = linked_room_id(event)
+        linked = room_id and spaces.filter(pk=room_id).first()
+        if linked:
+            return linked
+    label = (label or "").strip()
+    if not label:
+        return None
     return spaces.filter(name__iexact=label).first() or spaces.filter(location__iexact=label).first()
 
 
-def venue_payload(makerspace, label):
-    space = venue_space(makerspace, label)
+def venue_payload(makerspace, label, starts_at=None, ends_at=None, event=None):
+    space = venue_space(makerspace, label, event)
     photos = public_photos(space) if space else []
     if not photos and makerspace.cover_image_key:
         photos = [{"id": 0, "url": public_url(makerspace.cover_image_key), "caption": makerspace.name}]
@@ -64,7 +78,9 @@ def venue_payload(makerspace, label):
         "host": {"name": makerspace.name, "slug": makerspace.slug, "location": makerspace.location,
                  "map_url": makerspace.map_url, "logo_url": public_url(makerspace.logo_key) if makerspace.logo_key else ""},
         "space": space and {"public_token": space.public_token, "name": space.name, "kind": space.kind,
-                            "location": space.location, "capacity": space.capacity},
+                            "location": space.location, "capacity": space.capacity,
+                            "venue_update_pending": bool(starts_at and ends_at)
+                            and venue_update_pending(space, starts_at, ends_at)},
         "photos": photos,
     }
 
@@ -86,4 +102,5 @@ class PublicEventVenueView(APIView):
         makerspace = get_public_makerspace(makerspace_slug)
         require_module_for_servable(makerspace, "events")
         event = get_object_or_404(public_events(makerspace), public_token=public_token)
-        return Response(PublicEventVenueSerializer(venue_payload(makerspace, event.location)).data)
+        payload = venue_payload(makerspace, event.location, event.starts_at, event.ends_at, event=event)
+        return Response(PublicEventVenueSerializer(payload).data)

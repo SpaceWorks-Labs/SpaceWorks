@@ -1,6 +1,7 @@
 """Resource metadata and dedicated booking-rule write contracts."""
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.bookings.exceptions import BookerNamesRequiresAvailability
 from apps.bookings.models import BookableSpace
@@ -36,9 +37,9 @@ class BookableSpaceWriteSerializer(serializers.Serializer):
         default=None,
         required=False,
     )
-    payment_amount = serializers.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    payment_amount = MoneyField(
+        max_digits=13,
+        decimal_places=3,
         min_value=0,
         default=0,
         required=False,

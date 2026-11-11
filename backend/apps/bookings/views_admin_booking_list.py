@@ -56,6 +56,8 @@ class SpaceBookingListView(StaffBookingCreateMixin, APIView):
             Payment.SubjectType.BOOKING,
             [booking.pk for booking in page],
         )
+        from .event_labels import event_labels
+        context['event_labels'] = event_labels(request.user, space.makerspace, [booking.pk for booking in page])
         return Response(
             {
                 'count': paginator.page.paginator.count,

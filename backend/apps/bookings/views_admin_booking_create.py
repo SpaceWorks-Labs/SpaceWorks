@@ -15,10 +15,10 @@ from apps.bookings import services
 from apps.bookings.serializers_admin import BookingAdminSerializer
 from apps.bookings.serializers_staff_booking import (
     BookingEligibleMemberListSerializer, BookingEligibleMemberSerializer,
-    StaffBookingInputSerializer,
+    StaffSingleBookingInputSerializer,
 )
 from apps.bookings.views_admin_spaces import manageable_space
-from apps.hardware_requests.view_helpers import ERROR_401, ERROR_403, ERROR_404, ERROR_409
+from apps.hardware_requests.view_helpers import ERROR_401, ERROR_403, ERROR_404
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.models import MakerspaceMembership
 from apps.payments.models import Payment
@@ -46,20 +46,27 @@ def _members(actor, space):
 class StaffBookingCreateMixin:
     @extend_schema(
         tags=['Admin bookings'], summary='Book a space on behalf of an active member',
-        request=StaffBookingInputSerializer,
-        responses={201: BookingAdminSerializer, **ERRORS, 409: ERROR_409,
+        request=StaffSingleBookingInputSerializer,
+        responses={201: BookingAdminSerializer, **ERRORS,
+                   409: OpenApiResponse(ErrorSerializer, description='Conflict, or `price_changed`: the '
+                                        'confirmed staff price moved; nothing was created.'),
                    423: OpenApiResponse(ErrorSerializer, description='Tenant frozen for migration.'),
                    503: OpenApiResponse(ErrorSerializer, description='Tenant write gate unavailable.')},
     )
     def post(self, request, pk, *args, **kwargs):
         space = manageable_space(request.user, pk, "manage_reservations")
-        serializer = StaffBookingInputSerializer(data=request.data)
+        serializer = StaffSingleBookingInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)
-        membership = get_object_or_404(_members(request.user, space), user_id=values.pop('member_id'))
-        # Booking ahead is allowed; membership, active standing and current waiver remain mandatory.
-        require_active_member(membership.user, space.makerspace)
-        booking = services.create_booking(space, member=membership.user, actor=request.user, **values)
+        if values.pop('house', False):
+            values.pop('certification_override_reason', None)  # no member, so no certification to override
+            values.pop('price_confirmation', None)  # a house booking is never priced
+            booking = services.create_booking(space, actor=request.user, house=True, **values)
+        else:
+            membership = get_object_or_404(_members(request.user, space), user_id=values.pop('member_id'))
+            # Booking ahead is allowed; membership, active standing and current waiver remain mandatory.
+            require_active_member(membership.user, space.makerspace)
+            booking = services.create_booking(space, member=membership.user, actor=request.user, **values)
         context = scoped_payment_context(
             request.user, rbac.Action.MANAGE_BOOKINGS, Payment.SubjectType.BOOKING, [booking.pk],
         )

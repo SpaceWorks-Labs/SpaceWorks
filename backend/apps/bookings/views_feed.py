@@ -132,7 +132,9 @@ class PublicBookingFeedView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(tags=['Member bookings'], auth=[], responses={
-        (200, 'text/calendar'): OpenApiResponse({'type': 'string'}, description='Own reservations as RFC 5545 ICS.'),
+        (200, 'text/calendar'): OpenApiResponse({'type': 'string'}, description=(
+            'Own reservations as RFC 5545 ICS, plus opaque `Unavailable` / `Space closed` blocks only where '
+            'a room outage, machine repair or closure overlaps one of the owner\'s upcoming bookings.')),
         **errors(400, 403, 404, 429),
     })
     def get(self, request, makerspace_slug, raw_token):
@@ -148,10 +150,12 @@ class PublicBookingFeedView(APIView):
         require_active_account(row.user, space)
         if rbac.personal_notification_membership_refused(row.user, space.pk):
             raise NotFound()
+        from .busy_overlay_ics import busy_components
         from .calendar_render import booking_calendar
         rows = rbac.scope_personal_bookings(row.user, Booking.objects.select_related('space').filter(
             member=row.user, space__makerspace=space,
         ), makerspace_id=space.pk)
+        busy = busy_components(rows)  # only where unavailable time meets the owner's own bookings
         # Bound the response without letting years of old reservations crowd out
         # upcoming ones. Fill spare slots with the most recent history.
         now = timezone.now()
@@ -159,7 +163,7 @@ class PublicBookingFeedView(APIView):
             history=Case(When(ends_at__lt=now, then=Value(1)), default=Value(0), output_field=IntegerField()),
             upcoming_start=Case(When(ends_at__gte=now, then=F('starts_at')), output_field=DateTimeField()),
         ).order_by('history', 'upcoming_start', '-starts_at', 'pk')
-        response = HttpResponse(booking_calendar(rows[:1000]), content_type='text/calendar; charset=utf-8')
+        response = HttpResponse(booking_calendar(rows[:1000], busy), content_type='text/calendar; charset=utf-8')
         response['Cache-Control'] = 'private, no-store'
         response['Referrer-Policy'] = 'no-referrer'
         return response

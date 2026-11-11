@@ -57,12 +57,23 @@ def _transition(booking, actor, new_status, action, event, *, require_ended=Fals
         },
     )
     notifications.notify_booking_status(locked, event)
+    if cancelling:
+        # Decision 221(d): a member may only cancel before the cutoff and staff cancellations are
+        # never the member's fault, so a cancelled booking's plan hours always go back.
+        from .included_hours_ledger import release
+        release(locked, actor)
+        from .event_link_notices import booking_changed
+        booking_changed(locked, "cancelled")
     return _refresh(locked)
 
 
 @transaction.atomic
-def cancel_booking(booking, *, actor, member_cancel=False, reason=""):
+def cancel_booking(booking, *, actor, member_cancel=False, reason="", confirm_event_room=False):
     from .services_decisions import clean_reason
+    hosted = None
+    if member_cancel:  # decision 223 (m): a booker is told when the room hosts an event, and must confirm
+        from .event_host_guard import require_confirmation
+        hosted = require_confirmation(booking, actor, confirm_event_room)
     cancelled = _transition(
         booking, actor, Booking.Status.CANCELLED, 'booking.cancelled', 'cancelled',
         member_cancel=member_cancel, reason=clean_reason(reason, required=False),
@@ -71,6 +82,8 @@ def cancel_booking(booking, *, actor, member_cancel=False, reason=""):
 
     # Staff cancelling a member's booking owe the full amount (decision 72); a member's
     # own cancellation follows the bookings policy.
+    from .event_host_guard import record_confirmed
+    record_confirmed(cancelled, actor, hosted)
     by_staff = not member_cancel and getattr(actor, "pk", None) != cancelled.member_id
     cancel_for_booking(cancelled, actor, by_staff=by_staff)
     return cancelled

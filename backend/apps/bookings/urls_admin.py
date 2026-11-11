@@ -28,6 +28,10 @@ from apps.bookings.views_admin_bookings import (
 )
 from apps.bookings.views_admin_rules import BookableSpaceBookingRulesView
 from apps.bookings.views_admin_booking_create import BookingEligibleMembersView
+from apps.bookings.views_organization_booking import OrganizationBookingChoicesView, OrganizationBookingCreateView
+from apps.bookings.views_admin_booking_quote import StaffBookingQuoteView
+from apps.bookings.views_admin_booking_readiness import BookingReadinessView, StaffBookingReadinessView
+from apps.bookings.views_admin_booking_availability import StaffBookingAvailabilityView
 from apps.bookings.views_admin_machine_types import BookingMachineTypeListView
 from apps.bookings.views_admin_spaces import (
     BookableSpaceDeactivateView,
@@ -47,12 +51,28 @@ from .urls_arrival import urlpatterns as arrival_patterns
 from .urls_passes import urlpatterns as pass_patterns
 from .urls_p2 import admin_patterns as p2_patterns
 
-urlpatterns = [*p2_patterns, *staff_grant_patterns, *arrival_patterns, *pass_patterns, *broadcast_patterns, *website_patterns,
+from .views_loan_context import BookingLoanContextView
+from .views_equipment_picker import BookingEquipmentKitsView, BookingEquipmentProductsView
+from .views_included_hours import MemberIncludedHoursView
+from .views_organization_hours import OrganizationHoursBankView, OrganizationHoursLedgerView
+
+urlpatterns = [
+    path("makerspace/<int:makerspace_id>/spaces/<int:space_id>/equipment-request-products", BookingEquipmentProductsView.as_view(), name="booking-equipment-request-products"),
+    path("makerspace/<int:makerspace_id>/spaces/<int:space_id>/equipment-kits", BookingEquipmentKitsView.as_view(), name="booking-equipment-kits"),
+    path("makerspace/<int:makerspace_id>/requests/<int:request_id>/booking-context", BookingLoanContextView.as_view(), name="admin-request-booking-context"),
+    path("makerspace/<int:makerspace_id>/direct-loans/<int:loan_id>/booking-context", BookingLoanContextView.as_view(), name="admin-direct-loan-booking-context"),*p2_patterns, *staff_grant_patterns, *arrival_patterns, *pass_patterns, *broadcast_patterns, *website_patterns,
     path("spaces/<int:pk>/clone/", BookingCloneView.as_view(), name="admin-bookable-space-clone"),
     path("bookings/<int:pk>/details/", BookingDetailsEditView.as_view(), name="admin-booking-details-edit"),
     path("bookings/<int:pk>/time/", BookingTimeEditView.as_view(), name="admin-booking-time-edit"),
     path("bookings/<int:pk>/restore/", BookingRestoreView.as_view(), name="admin-booking-restore"),
+    path("makerspace/<int:makerspace_id>/members/<int:user_id>/included-hours", MemberIncludedHoursView.as_view(), name="admin-member-included-hours"),
+    path("makerspace/<int:makerspace_id>/organizations/<int:organization_id>/hours-bank/", OrganizationHoursBankView.as_view(), name="admin-org-hours-bank"),
+    path("makerspace/<int:makerspace_id>/organizations/<int:organization_id>/hours-bank/ledger/", OrganizationHoursLedgerView.as_view(), name="admin-org-hours-bank-ledger"),
     path('spaces/<int:pk>/recurring-bookings/', StaffRecurringBookingView.as_view(), name='admin-recurring-bookings'),
+    path('spaces/<int:pk>/bookings/quote/', StaffBookingQuoteView.as_view(), name='admin-space-booking-quote'),
+    path('spaces/<int:pk>/bookings/readiness/', StaffBookingReadinessView.as_view(), name='admin-space-booking-readiness'),
+    path('spaces/<int:pk>/bookings/availability/', StaffBookingAvailabilityView.as_view(), name='admin-space-booking-availability'),
+    path('bookings/<int:pk>/readiness/', BookingReadinessView.as_view(), name='admin-booking-readiness'),
     path(
         'makerspaces/<int:makerspace_id>/booking-machine-types/',
         BookingMachineTypeListView.as_view(), name='admin-booking-machine-types',
@@ -92,6 +112,10 @@ urlpatterns = [*p2_patterns, *staff_grant_patterns, *arrival_patterns, *pass_pat
         SpaceBookingListView.as_view(),
         name='admin-space-booking-list',
     ),
+    path('spaces/<int:pk>/organization-bookings/', OrganizationBookingCreateView.as_view(),
+         name='admin-space-organization-booking'),
+    path('spaces/<int:pk>/organization-bookings/choices/', OrganizationBookingChoicesView.as_view(),
+         name='admin-space-organization-booking-choices'),
     path(
         'spaces/<int:pk>/eligible-members/',
         BookingEligibleMembersView.as_view(),

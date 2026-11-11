@@ -24,6 +24,10 @@ class BookingDetailsInputSerializer(StrictInputSerializer):
 class BookingTimeInputSerializer(StrictInputSerializer):
     starts_at = serializers.DateTimeField()
     ends_at = serializers.DateTimeField()
+    price_confirmation = serializers.CharField(
+        required=False, allow_blank=False, max_length=128,
+        help_text="Digest from a 409 `price_changed` answer: required when the move changes the plan term "
+                  "the included hours come from, or needs more included hours than the booking held.")
 
     def validate(self, attrs):
         if attrs["ends_at"] <= attrs["starts_at"]:

@@ -3,6 +3,7 @@
 from django.utils.translation import gettext
 from datetime import timedelta
 
+from django.db.models import Q
 from rest_framework import serializers
 
 from apps.bookings.models import Booking
@@ -37,13 +38,35 @@ def confirmed_overlap(space, starts_at, ends_at, *, exclude=None):
     # Both reservations carry the same space's before/after buffers. The summed
     # gap compares their occupied windows without backend-specific SQL arithmetic.
     gap = timedelta(minutes=space.buffer_before_minutes + space.buffer_after_minutes)
+    from .event_holds import tentative_booking_ids  # decision 223 (m): a pending event venue holds its slot
+    holds = list(tentative_booking_ids(space, starts_at, ends_at))
+    if exclude is not None:
+        # First request wins: two pending holds on one slot must not block each other's approval,
+        # so a booking being admitted is blocked only by holds raised before it (lower id).
+        holds = [pk for pk in holds if pk < exclude]
     queryset = Booking.objects.filter(
-        space=space, status=Booking.Status.CONFIRMED,
-        starts_at__lt=ends_at + gap, ends_at__gt=starts_at - gap,
+        Q(status=Booking.Status.CONFIRMED) | Q(pk__in=holds),
+        space=space, starts_at__lt=ends_at + gap, ends_at__gt=starts_at - gap,
     )
     if exclude is not None:
         queryset = queryset.exclude(pk=exclude)
     return queryset.exists()
+
+
+def confirmed_occupancy(space, starts_at, ends_at):
+    """Confirmed bookings whose occupied window (buffers included) meets the range.
+
+    The one busy-time read shared by the public availability view and the staff
+    availability view. Pending bookings occupy nothing, matching admission, except a pending
+    booking that holds a room for an event (decision 223 (m): tentative hold).
+    """
+    from .event_holds import tentative_booking_ids
+    return Booking.objects.filter(
+        Q(status=Booking.Status.CONFIRMED) | Q(pk__in=tentative_booking_ids(space, starts_at, ends_at)),
+        space=space,
+        starts_at__lt=ends_at + timedelta(minutes=space.buffer_before_minutes),
+        ends_at__gt=starts_at - timedelta(minutes=space.buffer_after_minutes),
+    ).order_by('starts_at', 'id')
 
 
 def published_open_intervals(makerspace, starts_at, ends_at):

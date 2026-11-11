@@ -38,6 +38,7 @@ def require_room(space):
 
 def presign_photo(space, *, filename, content_type):
     require_room(space)
+    limits.check_upload_headroom(space.makerspace)  # #234
     ext = storage.ext_for(content_type, filename)
     object_key = storage.build_object_key(space.makerspace_id, space.pk, ext)
     return object_key, storage.presigned_upload(object_key, content_type)
@@ -63,7 +64,7 @@ def attach_photo(space, *, actor, object_key, size_bytes, caption=""):
     if locked.photos.count() >= MAX_PHOTOS_PER_SPACE:
         raise serializers.ValidationError(
             {"photos": gettext('A space can show at most {MAX_PHOTOS_PER_SPACE} photos. Remove one first.').format(MAX_PHOTOS_PER_SPACE=MAX_PHOTOS_PER_SPACE)})
-    limits.add_storage(locked.makerspace, size_bytes)
+    limits.charge_upload(locked.makerspace, size_bytes)
     position = (locked.photos.aggregate(top=Max("position"))["top"] or 0) + 1
     photo = BookableSpacePhoto.objects.create(space=locked, object_key=object_key, size_bytes=size_bytes,
                                               caption=caption.strip(), position=position, uploaded_by=actor)

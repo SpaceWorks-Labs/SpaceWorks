@@ -3,6 +3,7 @@
 from django.utils.translation import gettext
 from collections.abc import Mapping
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from .models import BookableSpace
 from .models_website import BookingResourcePageSection
@@ -83,7 +84,7 @@ class PublicBookingResourceSerializer(PublicBookableSpaceSerializer):
     # detail() already projects model-backed gallery rows into this allow-list.
     photos = PublicSpacePhotoSerializer(many=True, read_only=True)
     image_url = serializers.CharField(allow_blank=True)
-    payment_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    payment_amount = MoneyField(max_digits=13, decimal_places=3)
     currency = serializers.CharField()
     rules = BookingPublicRulesSerializer()
     website = BookingWebsiteSerializer(allow_null=True)

@@ -86,3 +86,5 @@ def register_notification_sources():
     register_source(GRANT_SOURCE, NotificationSource(grant_eligible))
     register_source(REMINDER_SOURCE, NotificationSource(reminder_eligible))
     register_source(BROADCAST_SOURCE, NotificationSource(broadcast_eligible))
+    from .organization_hours_notice import register as register_hours_bank
+    register_hours_bank()

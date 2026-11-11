@@ -16,7 +16,7 @@ def prepare(log):
     from apps.makerspaces.servability import is_servable
     row = rbac.scope_notification_policy(Booking.objects.all(), makerspace_id=log.makerspace_id,
         field="space__makerspace_id").select_related("space__makerspace").filter(pk=log.source_id).first()
-    if (row is None or row.member_id is not None or log.audience != "requester"
+    if (row is None or row.member_id is not None or row.is_house or log.audience != "requester"
             or str(row.calendar_sequence) != log.source_metadata.get("revision")
             or row.status != log.source_metadata.get("status") or not row.email
             or row.email != log.to_email or not requester_enabled(row, log.event)):

@@ -15,8 +15,11 @@ BOOKING_SUBMISSION_RESPONSE = {
                 "status": {"type": "string", "enum": ["pending", "confirmed"]},
                 "public_token": {"type": "string", "format": "uuid"},
                 "confirmation_available": {"type": "boolean"},
+                "amount_due": {"type": "string", "nullable": True},
+                "currency": {"type": "string", "nullable": True},
+                "pay_online": {"type": "boolean"},
             },
-            "required": ["status", "public_token", "confirmation_available"],
+            "required": ["status", "public_token", "confirmation_available", "amount_due", "currency", "pay_online"],
         },
     ],
 }

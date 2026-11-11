@@ -112,6 +112,8 @@ def create_space(
     locked_makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
     from .booking_authority import require_tenant
     require_tenant(actor, locked_makerspace)
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(locked_makerspace, "bookable_spaces")  # decision 284: typed 409
     machine = _machine(locked_makerspace, machine)
     machine_type = machine.machine_type if machine else _machine_type(locked_makerspace, machine_type)
     space = BookableSpace(

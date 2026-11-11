@@ -3,6 +3,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from apps.admin_api.serializers_payment_summary import PaymentSummaryMixin
+from .event_labels import LINKED_EVENT_FIELD
 from .models import Booking
 from .serializers_departure import BookingDepartureSerializer
 
@@ -20,6 +21,22 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
     departures = serializers.SerializerMethodField()
     open_issue_id = serializers.SerializerMethodField()
     requested_price = serializers.SerializerMethodField()
+    linked_event = serializers.SerializerMethodField()
+    organization_name = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField(allow_null=True, help_text=(
+        "Decision 223 (k): the organization a partner-event booking was made for; null otherwise.")))
+    def get_organization_name(self, obj):
+        link = getattr(obj, "organization_link", None) if obj.pk else None
+        if link is None:
+            return None
+        from .organization_booking import organization_bookings_on  # decision 218: off hides the name
+        return link.organization_name if organization_bookings_on(obj.space.makerspace) else None
+
+    @LINKED_EVENT_FIELD
+    def get_linked_event(self, obj):
+        # Batched by the list view (`event_labels`); every other projection omits it as null.
+        return self.context.get("event_labels", {}).get(obj.pk)
 
     @extend_schema_field(serializers.DictField(allow_null=True, help_text=(
         "L15 (#159): {total, currency, discount_total} frozen when a booking awaiting approval was "
@@ -62,6 +79,7 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
             'id',
             'public_token',
             'space_id',
+            'member_id',  # decision 242 (BK2): the requester's account, for the member link
             'name',
             'email',
             'phone',
@@ -75,7 +93,7 @@ class BookingAdminSerializer(PaymentSummaryMixin, serializers.ModelSerializer):
             'created_at',
             'payment',
             'space_name', 'decision_reason', 'departed_at', 'departures', 'open_issue_id',
-            'requested_price',
+            'requested_price', 'linked_event', 'is_house', 'organization_name',
         )
         read_only_fields = fields
 

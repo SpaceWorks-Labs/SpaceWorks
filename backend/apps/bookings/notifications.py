@@ -16,6 +16,8 @@ toggle, grant) before every send, retry and deferred release.
 """
 
 import logging
+
+from apps.integrations.fanout_jobs import deferred_fanout
 from django.db import transaction
 
 from apps.integrations.notification_links import local_link
@@ -140,6 +142,7 @@ def _emit(row, event, recipient_id, audience, source_kind, rendered):
         logger.warning("booking_envelope_emit_failed", extra={"booking_id": row.pk, "event": event, "audience": audience})
 
 
+@deferred_fanout(feature="bookings")
 def notify_booking_status(booking, event, *, sync=False):
     if event not in BOOKING_NOTIFICATION_EVENTS:
         from apps.integrations.notify import NotificationResult
@@ -170,7 +173,7 @@ def notify_booking_status(booking, event, *, sync=False):
             Booking.objects.all(), makerspace_id=makerspace.pk, field="space__makerspace_id",
         ).select_related("space__makerspace").get(pk=row.pk)
         if (live.calendar_sequence == row.calendar_sequence and live.status == row.status
-                and live.member_id is None and requester_enabled(live, event) and live.email):
+                and live.member_id is None and not live.is_house and requester_enabled(live, event) and live.email):
             member = requester_content(live, event, bookings_context(live, event,
                 next_steps=BOOKINGS_REQUESTER_BODIES.get(event, "")))
             emails = (EmailDelivery(to_email=live.email, subject=member["subject"],

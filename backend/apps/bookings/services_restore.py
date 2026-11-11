@@ -26,13 +26,13 @@ def annotate_restore_history(queryset):
     )))
 
 
-@transaction.atomic
 def _priced(booking):
     # Lane L15: the booking's price comes from the pricing kernel (per booking + per hour).
     from .service_payments import charged_quote
     return charged_quote(booking, None).total > 0
 
 
+@transaction.atomic  # the resource -> booking row locks below need a transaction
 def restore_booking(booking, *, actor):
     space, locked = _locked_booking(booking)
     locked.member = lock_obligation_owner(locked.member)
@@ -56,7 +56,8 @@ def restore_booking(booking, *, actor):
     require_exact_restore(previous, admitted)
     locked.status = admitted
     validate_admission(space, locked, now=now, actor=actor)
-    limits.check_quota(space.makerspace, "bookings", adding=1)
+    # The booking already counted toward `bookings_monthly` when it was created, so only the active cap applies.
+    limits.check_quota(space.makerspace, "bookings", adding=1, count_monthly=False)
     locked.cancelled_at = None
     locked.status_before_cancel = ""
     # The cancellation reason stays in the audit history; the live booking no longer has one.
@@ -66,6 +67,12 @@ def restore_booking(booking, *, actor):
     locked.save(update_fields=["status", "cancelled_at", "status_before_cancel", "decision_reason",
                                "calendar_sequence", "calendar_updated_at"])
     _audit(space, actor, "booking.restored", locked, {"booking_id": locked.pk, "status": admitted})
+    from .included_hours import lock_term
+    from .included_hours_ledger import consume
+    lock_term(space.makerspace, locked.member, space, locked.starts_at)
+    consume(locked, actor=actor)  # the undone cancellation takes its hours again (next generation)
     from .notifications import notify_booking_status
     notify_booking_status(locked, "restored")
+    from .event_link_notices import booking_changed  # decision 221(f): a linked event's organizers hear
+    booking_changed(locked, "restored")
     return _refresh(locked)

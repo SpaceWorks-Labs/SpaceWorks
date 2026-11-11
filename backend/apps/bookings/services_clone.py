@@ -27,6 +27,8 @@ def clone_space(space, *, actor, copy_booking_rules=False):
         source = _locked_space(space.pk)
         booking_authority.require_tenant(actor, source.makerspace)
         require_feature(source, "bookings.clone")
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(source.makerspace, "bookable_spaces")  # decision 284: a copy is a new bookable space
         values = copy_fields(source, COPY_FIELDS)
         values["name"] = source.name[:193].rstrip() + " (copy)"
         values["custom_form"] = _canonical_form(values["custom_form"])

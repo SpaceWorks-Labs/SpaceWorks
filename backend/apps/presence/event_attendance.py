@@ -12,6 +12,20 @@ from .policy import presets, require_account, require_enabled
 logger = logging.getLogger(__name__)
 
 
+def ended_event_registrations(now):
+    """Registrations whose event has ended: a subquery, so the sweeper never joins or locks events."""
+    from apps.events.models import EventRegistration
+    return EventRegistration.objects.filter(event__ends_at__lte=now).values("pk")
+
+
+def event_end_times(rows, now):
+    """`{session_pk: event end}` for event-linked sessions whose event has ended by `now`."""
+    from apps.events.models import EventRegistration
+    linked = {row.event_registration_id: row.pk for row in rows if row.event_registration_id}
+    ends = EventRegistration.objects.filter(pk__in=linked, event__ends_at__lte=now).values_list("pk", "event__ends_at")
+    return {linked[pk]: ends_at for pk, ends_at in ends}
+
+
 def event_attendance(registration):
     """Only fresh server-recorded QR/station tickets, never marks or offline replay.
 

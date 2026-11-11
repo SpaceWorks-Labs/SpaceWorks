@@ -35,6 +35,8 @@ class ActiveMemberPresence:
     accepted_waiver: MakerspaceWaiver | None
     # Also None for the identity-only request path; no current caller reads it there.
     session: PresenceSession | None
+    # Decision 223: the live guest pass that admitted a non-member, else None.
+    guest_pass: object | None = None
 
 
 def require_active_account(user, makerspace):

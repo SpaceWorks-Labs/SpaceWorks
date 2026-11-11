@@ -39,6 +39,8 @@ class PresenceStartSerializer(PresenceRenewSerializer):
 
 class StaffPresenceStartSerializer(PresenceStartSerializer):
     account_id = serializers.IntegerField(min_value=1)
+    # Decision 223 (j): staff witnessed the guest accept the waiver; stamped on their pass, audited.
+    waiver_accepted_at_desk = serializers.BooleanField(required=False, default=False)
 
 
 class StaffPresenceEndSerializer(StrictSerializer):

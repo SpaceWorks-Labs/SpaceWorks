@@ -2,6 +2,7 @@
 from datetime import timedelta
 
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import APIException
 
 from apps.integrations.notification_outbox import emit
@@ -28,8 +29,8 @@ def remind(row):
     return emit(makerspace=row.makerspace, recipient=row.account, feature="presence", stream="presence",
         event="expired", audience="member", source_kind=KIND, source_id=row.pk,
         revision=str(row.revision), dedup_key=f"presence:expired:{row.pk}:{row.revision}", subject=row,
-        rendered={"subject": "Your presence check-in has expired",
-                  "text": "Still here? Renew your presence check-in to stay on the display."})
+        rendered={"subject": gettext("Your presence check-in has expired"),
+                  "text": gettext("Still here? Renew your presence check-in to stay on the display.")})
 
 
 def register():

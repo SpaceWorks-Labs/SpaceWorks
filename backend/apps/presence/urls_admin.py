@@ -13,9 +13,11 @@ from django.urls import path
 
 from apps.presence.views import PresenceRosterView
 from .views_staff import StaffPresenceStartView, StaffPresenceEndView, PresencePrivacyView
+from .views_staff_guests import StaffCheckInGuestSearchView
 
 urlpatterns = [
     path("makerspace/<int:makerspace_id>/presence-sessions/check-in", StaffPresenceStartView.as_view(), name="admin-presence-start"),
+    path("makerspace/<int:makerspace_id>/presence-sessions/check-in-guests", StaffCheckInGuestSearchView.as_view(), name="admin-presence-check-in-guests"),
     path("makerspace/<int:makerspace_id>/presence-sessions/check-out", StaffPresenceEndView.as_view(), name="admin-presence-end"),
     path("makerspace/<int:makerspace_id>/presence-sessions/privacy", PresencePrivacyView.as_view(), name="admin-presence-privacy"),
     path(

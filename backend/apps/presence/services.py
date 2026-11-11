@@ -105,8 +105,34 @@ def staff_check_in(actor, user, space, duration_minutes, **options):
     return _start(user, space, duration_minutes, actor=actor, staff=True, **options)
 
 
+def _guest_arrival(user, space, *, staff, actor, desk_waiver):
+    """Decision 223 (j): admit a non-member by live pass, and require their waiver on site.
+
+    Staff may only record a pass holder (the pass lifts `account_not_in_space`); the person
+    cannot check themselves in without it unless a live event registration carries the waiver.
+    Returns the pass (None for an account-only guest checking in with no pass, who still owes
+    the waiver: this is gap G2). The desk may stamp the waiver while checking the guest in.
+    """
+    from apps.makerspaces.guest_pass_lifecycle import stamp_waiver
+    from apps.makerspaces.guest_pass_queries import active_pass_for
+    from apps.presence.guard import WaiverAcceptanceRequired
+    from .guest_guard import require_guest_waiver
+    guest_pass = active_pass_for(user, space)
+    if staff and guest_pass is None:
+        raise PresenceError("account_not_in_space", "Use a member, walk-in or guest-pass holder from this makerspace.",
+                            status_code=403)
+    if staff and desk_waiver and guest_pass is not None:
+        guest_pass = stamp_waiver(actor, guest_pass, at_desk=True)
+    try:
+        require_guest_waiver(user, space, guest_pass)
+    except WaiverAcceptanceRequired:
+        raise PresenceError("waiver_acceptance_required", "Accept the current makerspace waiver first.",
+                            status_code=403) from None
+    return guest_pass
+
+
 def _start(user, space, duration, *, actor, staff, latitude=None, longitude=None,
-           accuracy=None, status=None, project_id=None, hide_on_display=None):
+           accuracy=None, status=None, project_id=None, hide_on_display=None, waiver_accepted_at_desk=False):
     require_member_account(user)
     with tenant_write(space.pk):
         claim = _claim(user, space)
@@ -115,13 +141,16 @@ def _start(user, space, duration, *, actor, staff, latitude=None, longitude=None
         if staff:
             require_staff(actor, space)
         membership = require_account(user, space)
-        if staff and membership is None:
-            # Staff record people on this roster (members, or this space's walk-ins);
-            # account-only guests check themselves in inside the geofence.
-            raise PresenceError("account_not_in_space", "Use a member or walk-in from this makerspace.", status_code=403)
+        if membership is None:
+            # Staff record people on this roster (members, this space's walk-ins, or a holder of a
+            # live guest pass); an account-only guest checks themselves in inside the geofence,
+            # and either way owes the waiver (decision 223 (j), gap G2).
+            _guest_arrival(user, space, staff=staff, actor=actor, desk_waiver=waiver_accepted_at_desk)
         if context and (membership is None or context.membership_id != membership.pk):
             raise PresenceError("claim_scope", "Claim session belongs to another makerspace.", status_code=403)
         validate_duration(space, duration)
+        from apps.makerspaces.minors_guard import require_minor_clearance  # decision 223 (k)
+        require_minor_clearance(user, space, "presence", staff_present=staff)
         if not staff:
             require_inside(space, latitude=latitude, longitude=longitude, accuracy=accuracy)
         if user.is_walk_in and not staff and claim is None:

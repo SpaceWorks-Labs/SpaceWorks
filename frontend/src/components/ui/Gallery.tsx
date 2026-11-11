@@ -66,7 +66,7 @@ function PhotoButton({ photo, index, count, onOpen, large = false }: {
         <span className="flex h-full w-full items-center justify-center text-muted"><Images aria-hidden="true" size={24} /></span>
       ) : (
         <img src={photo.url} alt={photo.caption ?? ""} loading="lazy" onError={() => setFailed(true)}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02] motion-reduce:transition-none" />
+          className="h-full w-full object-cover" />
       )}
     </button>
   );

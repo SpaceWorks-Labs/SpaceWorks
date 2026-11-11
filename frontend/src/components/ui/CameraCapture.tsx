@@ -218,10 +218,10 @@ function OpenCameraCapture({ onClose, onCapture, label }: Omit<CameraCaptureProp
 
   const title = label ?? "Take photo";
   return createPortal(
-    <div
+    <div data-replay-block
       ref={layerRef}
       inert={!amTop}
-      className="sw-camera-layer fixed inset-0 z-[100] flex items-end justify-center bg-ink/70 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4"
+      className="sw-camera-layer fixed inset-0 z-[100] flex items-end justify-center bg-scrim/70 pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:p-4"
       onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}
     >
       <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="sw-camera-panel sw-camera flex max-h-full w-full max-w-lg flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-overlay outline-none sm:max-h-[90dvh] sm:rounded-lg sm:pb-4">

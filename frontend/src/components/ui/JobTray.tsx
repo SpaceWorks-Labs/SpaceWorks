@@ -20,11 +20,17 @@ function useJobStatus(job: TrayJob, poll = true) {
   useEffect(() => { if (query.data?.status) updateJob(job.key, query.data.status, job.session); }, [job.key, job.session, query.data?.status]);
   return query;
 }
+function jobStatusLabel(status: string) {
+  return ({ pending: t`Pending`, queued: t`Queued`, running: t`Running`, building: t`Building`, promoting: t`Promoting`,
+    succeeded: t`Done`, completed: t`Done`, ready: t`Ready`, available: t`Ready`, failed: t`Failed`, cancelled: t`Cancelled`,
+    expired: t`Expired` } as Record<string, string>)[status]
+    ?? status.replace(/_/g, " ");
+}
 function JobPoller({ job }: { job: TrayJob }) { useJobStatus(job); return null; }
 function JobStatus({ job, poll = true }: { job: TrayJob; poll?: boolean }) {
   const query = useJobStatus(job, poll);
   return <li className="flex flex-wrap items-center gap-3 border-t border-line p-3">
-    <span>{job.label}</span><span className="text-sm text-muted">{job.status.replace(/_/g, " ")}</span>
+    <span>{job.label}</span><span className="text-sm text-muted">{jobStatusLabel(job.status)}</span>
     {query.error ? <><span className="text-sm text-danger">{t`Could not check progress.`}</span><button className="desk-button" onClick={() => void query.refetch()}>{t`Retry status`}</button></> : null}
     <button className="desk-button-ghost" aria-label={t`Dismiss ${job.label}`} onClick={() => dismissJob(job.key)}>{t`Dismiss`}</button>
   </li>;
@@ -40,13 +46,13 @@ export function JobTray({ makerspaceId, presentation = "details" }: { makerspace
     <button type="button" className="desk-button w-full rounded-full text-sm" aria-haspopup="dialog" onClick={() => setOpen(true)}>
       <LoaderCircle aria-hidden="true" size={24} />{t`Background jobs (${running} running)`}</button>
     {open ? createPortal(<Modal open title={t`Background jobs`} onClose={() => setOpen(false)}>
-      <p role="status" aria-live="polite" className="text-sm">{jobs.map(row => `${row.label}: ${row.status}`).join(". ")}</p>
+      <p role="status" aria-live="polite" className="text-sm">{jobs.map(row => t`${row.label}: ${jobStatusLabel(row.status)}`).join(". ")}</p>
       <ul>{jobs.map(job => <JobStatus key={job.key} job={job} poll={false} />)}</ul>
     </Modal>, document.body) : null}
   </>;
   return <details className="mx-5 my-3 rounded-xl border border-line bg-panel">
     <summary className="min-h-11 cursor-pointer p-3">{t`Background jobs (${running} running)`}</summary>
-    <p role="status" aria-live="polite" className="px-3 text-sm">{jobs.map(row => `${row.label}: ${row.status}`).join(". ")}</p>
+    <p role="status" aria-live="polite" className="px-3 text-sm">{jobs.map(row => t`${row.label}: ${jobStatusLabel(row.status)}`).join(". ")}</p>
     <ul>{jobs.map(job => <JobStatus key={job.key} job={job} />)}</ul>
   </details>;
 }

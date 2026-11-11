@@ -43,11 +43,12 @@ export function Modal({
   amTopRef.current = amTop;
   const maxWidthClass = size === "xl" ? "max-w-4xl" : "max-w-lg";
   const backdropClass =
-    backdrop === "blur" ? "bg-ink/35 backdrop-blur-sm" : "bg-ink/40";
+    backdrop === "blur" ? "bg-scrim/35 backdrop-blur-sm" : "bg-scrim/40";
   // Keep onClose in a ref so the focus effect depends only on `open`. Callers pass a
   // fresh inline onClose every render; if it were in the dep array, every keystroke
   // (which re-renders the parent) would re-run this effect and steal focus back to the
   // first field. The ref lets Escape always call the latest onClose without that churn.
+  const downOnBackdrop = useRef(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -64,7 +65,7 @@ export function Modal({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!amTopRef.current) return;
-      if (event.key === "Escape") onCloseRef.current();
+      if (event.key === "Escape" && !event.defaultPrevented) onCloseRef.current();
       if (panel) trapDialogFocus(event, panel);
     };
 
@@ -97,10 +98,11 @@ export function Modal({
       inert={!amTop}
       // Phones: a bottom sheet with a safe-area-aware footer. Tablet and up: a centred dialog.
       className={`sw-overlay-layer fixed inset-0 z-50 flex items-end justify-center ${backdropClass} pt-[max(0.5rem,env(safe-area-inset-top))] sm:items-center sm:pr-[max(1rem,env(safe-area-inset-right))] sm:pb-4 sm:pl-[max(1rem,env(safe-area-inset-left))]`}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
+      onMouseDown={(event) => { downOnBackdrop.current = event.target === event.currentTarget; }}
+      onClick={(event) => {
+        // A text-selection drag that starts in a field and ends on the backdrop must not close the dialog.
+        if (downOnBackdrop.current && event.target === event.currentTarget) onClose();
+        downOnBackdrop.current = false;
       }}
     >
       <div
@@ -121,7 +123,7 @@ export function Modal({
         {footer ? <div className="shrink-0 border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">{footer}</div> : null}
         {/* Phones get a visible close in the sheet's corner. Last in the DOM so the first field still takes initial focus. */}
         <button type="button" aria-label={t`Close dialog`} onClick={onClose}
-          className="desk-button-ghost absolute top-2.5 right-2.5 min-h-11 min-w-11 px-2 sm:hidden"><X aria-hidden="true" size={20} /></button>
+          className="desk-button-ghost absolute top-2.5 right-2.5 min-h-11 min-w-11 px-2"><X aria-hidden="true" size={20} /></button>
       </div>
     </div>
     </OverlayPortal>

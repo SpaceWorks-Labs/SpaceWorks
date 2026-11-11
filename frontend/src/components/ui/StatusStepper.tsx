@@ -1,5 +1,23 @@
 import { t } from "@lingui/core/macro";
-const STAGES = ["Requested", "Approved", "Collected", "Returned"] as const;
+const STAGE_COUNT = 4;
+const stageLabels = () => [t`Requested`, t`Approved`, t`Collected`, t`Returned`];
+
+/** Translated wording for a `HardwareRequest.Status` value (member and staff screens alike). */
+export function requestStatusLabel(status: string): string {
+  switch (status) {
+    case "draft": return t`Draft`;
+    case "pending_approval": return t`Pending approval`;
+    case "accepted": return t`Accepted`;
+    case "rejected": return t`Rejected`;
+    case "issued": return t`Issued`;
+    case "partially_returned": return t`Partially returned`;
+    case "returned": return t`Returned`;
+    case "closed_with_issue": return t`Closed with issue`;
+    case "cancelled": return t`Cancelled`;
+    case "expired": return t`Expired`;
+    default: return status.replace(/_/g, " ");
+  }
+}
 
 function statusStageIndex(status: string): number {
   switch (status) {
@@ -21,7 +39,8 @@ function statusStageIndex(status: string): number {
 
 export function statusStageLabel(status: string): string {
   if (status === "rejected") return t`Rejected`;
-  return STAGES[statusStageIndex(status)] ?? STAGES[0];
+  const stages = stageLabels();
+  return stages[statusStageIndex(status)] ?? stages[0];
 }
 
 function StepBox({
@@ -73,7 +92,7 @@ export function StatusStepper({ status }: { status: string }) {
       className="w-full"
     >
       <ol className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-start gap-2">
-        {STAGES.map((stage, index) => {
+        {stageLabels().slice(0, STAGE_COUNT).map((stage, index) => {
           const state =
             index < activeIndex
               ? "completed"

@@ -58,7 +58,7 @@ export async function undoToast(id: number) {
     toast(t`Action undone.`);
   } catch (error) {
     if (startedIn !== state().session) return;
-    state().rows = state().rows.map(value => value.id === id ? { id, tone: "error", message: t`Could not undo: ${error instanceof Error ? error.message : "Please refresh and try again."}` } : value);
+    state().rows = state().rows.map(value => value.id === id ? { id, tone: "error", message: error instanceof Error ? t`Could not undo: ${error.message}` : t`Could not undo. Please refresh and try again.` } : value);
     publish();
   }
 }

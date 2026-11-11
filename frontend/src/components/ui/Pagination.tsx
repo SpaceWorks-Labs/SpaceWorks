@@ -18,10 +18,9 @@ export function Pagination({ page, totalPages, onChange, count, pageSize, disabl
     return null;
   }
 
-  const rangeLabel =
-    count != null && pageSize != null
-      ? `${Math.min((page - 1) * pageSize + 1, count)}–${Math.min(page * pageSize, count)} of ${count}`
-      : null;
+  const first = count != null && pageSize != null ? Math.min((page - 1) * pageSize + 1, count) : 0;
+  const last = count != null && pageSize != null ? Math.min(page * pageSize, count) : 0;
+  const rangeLabel = count != null && pageSize != null ? t`${first}–${last} of ${count}` : null;
 
   return (
     <nav aria-label={t`Pagination`} className="flex flex-wrap items-center justify-end gap-2 text-sm text-muted">

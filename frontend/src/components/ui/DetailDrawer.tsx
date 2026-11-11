@@ -47,7 +47,7 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!amTopRef.current) return;
-      if (event.key === "Escape") onCloseRef.current();
+      if (event.key === "Escape" && !event.defaultPrevented) onCloseRef.current();
       if (panel) trapDialogFocus(event, panel);
     };
 
@@ -79,7 +79,7 @@ export function DetailDrawer({ open, title, onClose, children }: DetailDrawerPro
       <button
         type="button"
         aria-label={t`Close detail drawer`}
-        className="absolute inset-0 bg-ink/30"
+        className="absolute inset-0 bg-scrim/30"
         onClick={onClose}
       />
       <aside

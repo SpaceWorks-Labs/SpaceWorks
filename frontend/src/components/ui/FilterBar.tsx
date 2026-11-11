@@ -19,7 +19,7 @@ export function FilterBar({
   value,
   onChange,
   placeholder = t`Search`,
-  searchLabel = "Search table",
+  searchLabel = t`Search table`,
   children,
   actions,
   variant = "console",
@@ -35,7 +35,7 @@ export function FilterBar({
       </label>
       <input
         id={searchId}
-        className={`desk-input w-full min-w-0 bg-success pl-11 text-on-success placeholder:text-on-success ${hero
+        className={`desk-input w-full min-w-0 bg-success pl-11 text-on-success placeholder:text-on-success/70 ${hero
           ? "h-12 border-transparent hover:border-transparent xl:h-14"
           : "h-11 border-outline dark:border-success dark:bg-surface dark:text-ink dark:placeholder:text-muted"}`}
         type="search"

@@ -31,7 +31,7 @@ export function OverflowMenu({ actions, label = t`More actions`, className = "",
   }, [open]);
   const item = (action: Action, index: number, mobile: boolean) => {
     const disabled = action.disabled || action.pending;
-    const text = action.pending ? action.pendingLabel ?? "Working…" : `${action.label}${action.confirms && !action.label.endsWith("…") ? "…" : ""}`;
+    const text = action.pending ? action.pendingLabel ?? t`Working…` : `${action.label}${action.confirms && !action.label.endsWith("…") ? "…" : ""}`;
     const classes = `flex min-h-11 w-full items-center gap-2 rounded-control px-3 py-2 text-left text-sm hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${disabled ? "cursor-not-allowed bg-surface text-muted" : action.tone === "danger" ? "text-danger" : "text-ink"}`;
     const content = <>{action.icon ? <Icon name={action.icon} /> : null}{text}{action.disabledReason ? <span className="sr-only"> · {action.disabledReason}</span> : null}</>;
     const click = () => { if (!disabled) { close(true); if (action.confirm) setConfirming(action); else action.onClick?.(); } };

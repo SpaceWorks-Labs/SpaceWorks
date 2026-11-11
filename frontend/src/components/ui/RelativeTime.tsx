@@ -1,22 +1,22 @@
 import { formatLocale } from "../../lib/format";
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import { useEffect, useState } from "react";
 export type RelativeTimeProps = { date: string | number | Date; now?: string | number | Date;
   /** Also print the exact date and time: audit-grade records must not hide it behind a hover title, which touch screens never show. */
   exact?: boolean };
 export function formatRelativeTime(date: Date, now: Date): string {
   const delta = date.getTime() - now.getTime();
-  if (!Number.isFinite(delta)) return "Unknown time";
+  if (!Number.isFinite(delta)) return t`Unknown time`;
   const minutes = Math.round(Math.abs(delta) / 60000);
   const dayStart = (value: Date) => Date.UTC(value.getFullYear(), value.getMonth(), value.getDate());
   const days = Math.round((dayStart(date) - dayStart(now)) / 86400000);
-  if (days === -1) return "Yesterday";
-  if (days === 1) return "Tomorrow";
-  if (Math.abs(days) >= 2) return days > 0 ? `In ${days} days` : `${-days} days ago`;
-  if (minutes < 1) return "Just now";
-  const count = minutes < 60 ? minutes : Math.floor(minutes / 60);
-  const unit = minutes < 60 ? "min" : count === 1 ? "hour" : "hours";
-  return delta > 0 ? `In ${count} ${unit}` : `${count} ${unit} ago`;
+  if (days === -1) return t`Yesterday`;
+  if (days === 1) return t`Tomorrow`;
+  if (Math.abs(days) >= 2) return days > 0 ? t`In ${days} days` : t`${-days} days ago`;
+  if (minutes < 1) return t`Just now`;
+  if (minutes < 60) return delta > 0 ? t`In ${minutes} min` : t`${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  return delta > 0 ? plural(hours, { one: "In # hour", other: "In # hours" }) : plural(hours, { one: "# hour ago", other: "# hours ago" });
 }
 export function RelativeTime({ date, now, exact = false }: RelativeTimeProps) {
   const [clock, setClock] = useState(() => Date.now());

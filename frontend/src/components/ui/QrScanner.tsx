@@ -220,7 +220,7 @@ export default function QrScanner({ onScan, onClose, feedback }: QrScannerProps)
   };
 
   return createPortal(
-    <div ref={layerRef} inert={!amTop} className="sw-camera-layer fixed inset-0 z-[100] flex items-stretch justify-center bg-ink/70 sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
+    <div data-replay-block ref={layerRef} inert={!amTop} className="sw-camera-layer fixed inset-0 z-[100] flex items-stretch justify-center bg-scrim/70 sm:items-center sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}>
       <div ref={panelRef} role="dialog" aria-modal={amTop ? "true" : undefined} aria-labelledby={titleId} tabIndex={-1} className="sw-camera-panel flex h-dvh w-full flex-col gap-3 overflow-y-auto overscroll-contain bg-panel pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] shadow-overlay outline-none sm:h-auto sm:max-h-[90dvh] sm:max-w-lg sm:rounded-lg sm:border sm:border-line sm:p-4">
         <h2 id={titleId} className="sr-only">{t`QR scanner`}</h2>
         {error ? (

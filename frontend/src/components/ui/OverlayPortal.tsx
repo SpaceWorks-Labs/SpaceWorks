@@ -37,7 +37,7 @@ export function OverlayPortal({ children }: { children: ReactNode }) {
   if (nested || typeof document === "undefined") return <>{children}</>;
   return <>
     <span ref={anchor} hidden />
-    {createPortal(<div ref={host} style={{ display: "contents" }}>
+    {createPortal(<div data-replay-block ref={host} style={{ display: "contents" }}>
       <OverlayPortalContext.Provider value={true}>{children}</OverlayPortalContext.Provider>
     </div>, document.body)}
   </>;

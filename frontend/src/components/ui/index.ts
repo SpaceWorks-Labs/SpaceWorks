@@ -65,6 +65,7 @@ export { RelativeTime } from "./RelativeTime";
 export type { RelativeTimeProps } from "./RelativeTime";
 export { Pagination } from "./Pagination";
 export type { PaginationProps } from "./Pagination";
+export { PagePager } from "./PagePager";
 export { Icon } from "./icon";
 export type { IconProps } from "./icon";
 export { ActionControl } from "./ActionControl";

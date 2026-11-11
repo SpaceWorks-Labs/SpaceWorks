@@ -5,17 +5,29 @@
   "input:not([disabled])",
   "select:not([disabled])",
   "[tabindex]:not([tabindex='-1'])",
+  "[contenteditable]:not([contenteditable='false'])",
+  "summary",
 ].join(",");
 
+// Style-based rather than layout-based: unlike offsetParent it keeps fixed-position descendants, and unlike
+// getClientRects() it still works where nothing is laid out (jsdom).
+function isRendered(item: HTMLElement) {
+  if (getComputedStyle(item).visibility === "hidden") return false;
+  for (let node: HTMLElement | null = item; node; node = node.parentElement) {
+    if (node.hidden || getComputedStyle(node).display === "none") return false;
+  }
+  return true;
+}
+
 export function focusFirstDialogElement(panel: HTMLElement) {
-  const target = panel.querySelector<HTMLElement>(focusableSelector) ?? panel;
+  const target = Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector)).find(isRendered) ?? panel;
   target.focus();
 }
 
 export function trapDialogFocus(event: KeyboardEvent, panel: HTMLElement) {
   if (event.key !== "Tab") return;
   const items = Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector))
-    .filter((item) => !item.hasAttribute("disabled") && item.offsetParent !== null);
+    .filter((item) => !item.hasAttribute("disabled") && isRendered(item));
   if (!items.length) {
     event.preventDefault();
     panel.focus();

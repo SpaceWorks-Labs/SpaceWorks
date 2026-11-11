@@ -51,7 +51,7 @@ export function Tabs({ tabs, activeKey, label = t`Page sections`, onChange, chil
       role="tab" type="button" aria-label={accessibleLabel} aria-selected={selected}
       tabIndex={selected ? 0 : -1} className={classes} onClick={() => onChange(tab.key)}>{body}</button>
       : <RouteLink key={tab.key} href={tab.href} aria-label={accessibleLabel} aria-current={selected ? "page" : undefined}
-        tabIndex={selected ? 0 : -1} className={classes}>{body}</RouteLink>;
+        className={classes}>{body}</RouteLink>;
   });
   return onChange ? <>
     <div ref={bar} role="tablist" aria-label={label} className={barClass} data-fade={fade}

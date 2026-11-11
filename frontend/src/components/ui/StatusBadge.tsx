@@ -2,7 +2,7 @@ import { StatusPill } from "./StatusPill";
 
 export type StatusBadgeTone = "success" | "warn" | "info" | "accent" | "emphasis" | "danger" | "neutral";
 
-// Words stay backend-derived; colour communicates state without inventing new copy.
+// Colour comes from the server code; the words always come from the caller's translated `label`.
 export const statusToneMap: Record<string, StatusBadgeTone> = {
   draft: "neutral", pending_approval: "warn", accepted: "info", rejected: "danger",
   issued: "accent", partially_returned: "warn", returned: "success", closed_with_issue: "danger",
@@ -20,15 +20,14 @@ export const statusToneMap: Record<string, StatusBadgeTone> = {
 export type StatusBadgeProps = {
   status: string;
   domain?: "event" | "service";
-  label?: string;
+  /** Translated words for `status`; required so a raw server code never reaches the screen. */
+  label: string;
 };
 
 export function StatusBadge({ status, label, domain }: StatusBadgeProps) {
   const normalized = status.toLowerCase();
-  const display = label ?? normalized.replace(/_/g, " ");
-
   const tone = domain === "event" && normalized === "cancelled" ? "danger"
     : domain === "service" && normalized === "completed" ? "success"
     : statusToneMap[normalized] ?? "neutral";
-  return <StatusPill tone={tone} label={display} />;
+  return <StatusPill tone={tone} label={label} />;
 }

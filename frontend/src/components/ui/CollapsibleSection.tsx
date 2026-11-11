@@ -1,3 +1,4 @@
+import { plural } from "@lingui/core/macro";
 import { useId, type ReactNode } from "react";
 
 type CollapsibleSectionProps = {
@@ -58,7 +59,7 @@ export function CollapsibleSection({
                   announced as "3items". The visible glyph stays the bare number and
                   is aria-hidden, so the announced name comes from this node alone --
                   which is also the only place plurals can be got right. */}
-              <span className="sr-only">{`${count} ${count === 1 ? "item" : "items"}`}</span>
+              <span className="sr-only">{plural(count, { one: "# item", other: "# items" })}</span>
             </span>
           ) : null}
         </button>

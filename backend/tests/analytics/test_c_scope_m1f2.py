@@ -1,0 +1,129 @@
+import csv
+from io import BytesIO, StringIO
+
+import pytest
+from openpyxl import load_workbook
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+
+from apps.operations import reports
+from apps.operations.report_definitions_machines import MACHINE_REPORT_KEYS
+from apps.operations.report_exports import csv_bytes, xlsx_bytes
+from apps.operations.report_exports_provenance import build_provenance
+from apps.operations.report_registry import REPORT_REGISTRY, ReportNotFound
+from apps.machines.models_membership_scope import MembershipMachineTypeScope
+from tests.fixed_roles.helpers import assign_builtin_roles
+from tests.operations.report_assertions import assert_report_disclosure_safe
+from tests.return_helpers import authenticated_client
+from .c_helpers_m1f2 import c_lab, seed
+
+pytestmark = pytest.mark.django_db
+COUNTS_KEYS = sorted(MACHINE_REPORT_KEYS - {"machine-usage-members"})
+
+
+@pytest.mark.parametrize("key", COUNTS_KEYS)
+def test_machine_report_has_only_assigned_type_and_no_foreign_rows(c_lab, key):
+    result = reports.report_data(key, c_lab["space"].pk, actor=c_lab["manager"], date_range=c_lab["date_range"])
+    assert result["typed_rows"], key
+    for row in result["typed_rows"]:
+        if row.get("machine_id") is not None:
+            assert row["machine_id"] == c_lab["laser"].pk
+        if row.get("machine_type_id") is not None:
+            assert row["machine_type_id"] == c_lab["laser"].machine_type_id
+        assert row.get("machine_name") not in {c_lab["other"].name, c_lab["printer"].name}
+    assert_report_disclosure_safe(result)
+
+
+@pytest.mark.parametrize("key", sorted(MACHINE_REPORT_KEYS))
+def test_every_machine_report_refuses_inventory_action_alone(c_lab, key):
+    with pytest.raises(PermissionDenied):
+        reports.report_data(key, c_lab["space"].pk, actor=c_lab["inventory"])
+
+
+@pytest.mark.parametrize("key", COUNTS_KEYS)
+def test_no_type_links_means_no_machine_analytics(c_lab, key):
+    MembershipMachineTypeScope.objects.filter(membership__user=c_lab["manager"]).delete()
+    result = reports.report_data(key, c_lab["space"].pk, actor=c_lab["manager"], date_range=c_lab["date_range"])
+    assert result["typed_rows"] == []
+
+
+@pytest.mark.parametrize("key", sorted(MACHINE_REPORT_KEYS))
+def test_real_source_module_gates_are_enforced_even_for_direct_builders(c_lab, key):
+    definition = REPORT_REGISTRY[key]
+    space = c_lab["space"]
+    for module in definition.required_modules:
+        before = list(space.enabled_modules)
+        space.enabled_modules = [item for item in before if item != module]
+        space.save(update_fields=["enabled_modules"])
+        with pytest.raises(ValidationError):
+            definition.builder()(space.pk, actor=c_lab["owner"])
+        space.enabled_modules = before
+        space.save(update_fields=["enabled_modules"])
+
+
+def test_optional_sources_are_not_read_when_their_modules_are_off(c_lab):
+    space = c_lab["space"]
+    space.enabled_modules = [key for key in space.enabled_modules if key not in {"machine_service", "bookings"}]
+    space.save(update_fields=["enabled_modules"])
+    result = reports.report_data("machine-usage", space.pk, actor=c_lab["owner"], date_range=c_lab["date_range"])
+    assert {row["measure"] for row in result["typed_rows"]} == {"manual"}
+
+
+def test_member_ranking_requires_audit_and_keeps_machine_type_scope(c_lab):
+    with pytest.raises(PermissionDenied):
+        reports.report_data("machine-usage-members", c_lab["space"].pk, actor=c_lab["manager"])
+    assign_builtin_roles(c_lab["manager"], c_lab["space"], "machine_manager", "inventory_manager",
+                         machine_types=[c_lab["laser"].machine_type])
+    response = reports.report_data("machine-usage-members", c_lab["space"].pk, actor=c_lab["manager"], date_range=c_lab["date_range"])
+    assert {row["machine_type_id"] for row in response["typed_rows"]} == {c_lab["laser"].machine_type_id}
+    assert {row["member_id"] for row in response["typed_rows"]} == {None, c_lab["member"].pk}
+    assert_report_disclosure_safe(response)
+    with pytest.raises(ReportNotFound):
+        reports.report_data("machine-usage-members", None, actor=c_lab["owner"])
+
+
+def test_catalog_and_http_paths_use_machine_authority(c_lab):
+    client = authenticated_client(c_lab["manager"])
+    base = f"/api/v1/admin/makerspace/{c_lab['space'].pk}"
+    keys = {row["key"] for row in client.get(f"{base}/reports/catalog").data["results"]}
+    assert "machine-usage" in keys
+    assert "machine-usage-members" not in keys
+    assert client.get(f"{base}/analytics/machine-usage").status_code == 200
+    assert client.get(f"{base}/analytics/machine-usage-members").status_code == 403
+    assert client.get(f"{base}/reports/machine-usage-members/export").status_code == 403
+    other = f"/api/v1/admin/makerspace/{c_lab['foreign'].pk}/analytics/machine-usage"
+    assert client.get(other).status_code == 404
+
+
+@pytest.mark.parametrize("key", COUNTS_KEYS)
+def test_aggregate_source_queries_are_batched_as_tenant_count_grows(c_lab, key):
+    from apps.machines.models import Machine, MachineType
+    from tests.return_helpers import make_space
+    with CaptureQueriesContext(connection) as before:
+        reports.report_data(key, None, date_range=c_lab["date_range"])
+    extra = make_space(f"c-extra-{key}")
+    extra.timezone = "UTC"
+    extra.save(update_fields=["timezone"])
+    kind = MachineType.objects.create(makerspace=extra, slug="extra", name="Extra type")
+    machine = Machine.objects.create(makerspace=extra, machine_type=kind, name="Extra machine")
+    seed(machine, c_lab["member"])
+    with CaptureQueriesContext(connection) as after:
+        reports.report_data(key, None, date_range=c_lab["date_range"])
+    assert len(after) == len(before)
+
+
+@pytest.mark.parametrize("key", sorted(MACHINE_REPORT_KEYS))
+def test_csv_xlsx_use_only_declared_fields_and_pass_disclosure_guard(c_lab, key):
+    definition = REPORT_REGISTRY[key]
+    rows = reports.report_rows(key, c_lab["space"].pk, actor=c_lab["owner"], date_range=c_lab["date_range"])
+    assert set(rows[0]) <= set(definition.fields)
+    provenance = build_provenance(key, version=definition.version, makerspace_id=c_lab["space"].pk, generated_by="c-owner")
+    decoded_csv = list(csv.reader(StringIO(csv_bytes(rows, provenance=provenance).decode().split("\n", 1)[1])))
+    assert decoded_csv[0] == list(rows[0])
+    assert_report_disclosure_safe(decoded_csv)
+    workbook = load_workbook(BytesIO(xlsx_bytes(rows, provenance=provenance)), read_only=True)
+    decoded_xlsx = list(workbook["Report"].values)
+    assert list(decoded_xlsx[0]) == list(rows[0])
+    assert_report_disclosure_safe(decoded_xlsx)
+    workbook.close()

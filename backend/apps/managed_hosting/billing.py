@@ -37,6 +37,8 @@ def create_invoice(actor, data):
     require_plans_enabled()
     with transaction.atomic():
         space = Makerspace.objects.select_for_update().get(pk=data["makerspace_id"])
+        from .hosting_type import require_hosted
+        require_hosted(space)  # decision 236: hosting billing is for hosted spaces only
         from .enforcement import _assignment
         assignment = _assignment(space)
         row = HostingInvoice.objects.create(
@@ -127,7 +129,10 @@ def enforce_overdue(today=None):
     space_ids = set(HostingInvoice.objects.filter(makerspace__isnull=False, **overdue_q(today, settings_row.grace_days))
                     .values_list("makerspace_id", flat=True))
     changed = 0
+    from .hosting_type import is_hosted
     for space_id in sorted(space_ids):
+        if not is_hosted(space_id):
+            continue  # decision 236: an own space is never restricted for a hosting invoice
         try:
             if set_read_only(None, space_id, OVERDUE_REASON, source=SpaceControlState.ReadOnlySource.PAYMENT_OVERDUE):
                 changed += 1

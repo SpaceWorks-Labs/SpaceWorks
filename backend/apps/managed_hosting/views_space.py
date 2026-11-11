@@ -24,8 +24,9 @@ from .usage import plan_usage
 TAGS = ["Managed hosting"]
 
 
-def _space(request, makerspace_id):
-    require_plans_enabled()
+def _space(request, makerspace_id, *, plans_required=True):
+    if plans_required:
+        require_plans_enabled()
     space = get_object_or_404(servable_queryset(Makerspace.objects.all()), pk=makerspace_id)
     if not rbac.can(request.user, rbac.Action.MANAGE_MAKERSPACE, space.pk):
         raise PermissionDenied(gettext("Managing this makerspace is required."))
@@ -38,7 +39,7 @@ class SpacePlanUsageView(APIView):
     @extend_schema(tags=TAGS, summary="Read this space's hosting plan and usage against it",
                    responses={200: s.HostingPlanUsageSerializer, **errors(401, 403, 404)})
     def get(self, request, makerspace_id):
-        return Response(s.HostingPlanUsageSerializer(plan_usage(_space(request, makerspace_id))).data)
+        return Response(s.HostingPlanUsageSerializer(plan_usage(_space(request, makerspace_id, plans_required=False))).data)
 
 
 class SpaceInvoiceListView(APIView):

@@ -151,8 +151,20 @@ class HostingPlanUsageRowSerializer(serializers.Serializer):
     used = serializers.IntegerField(allow_null=True)
     limit = serializers.IntegerField(allow_null=True)
     unit = serializers.CharField(help_text="`bytes` or `count`.")
+    area = serializers.CharField(required=False, help_text="Console area of the key (people, inventory, ... storage).")
     percent = serializers.FloatField(allow_null=True)
     level = serializers.CharField(help_text="`ok`, `warning` (from 80 %) or `limit` (100 %).")
+
+
+class PlatformUsageRowSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    used = serializers.IntegerField(allow_null=True)
+    limit = serializers.IntegerField(allow_null=True, help_text="null = unlimited (the default).")
+    unit = serializers.CharField(help_text="`count`, `bytes` or `per_minute`; the `..._amount` key is in whole currency units per currency.")
+    percent = serializers.FloatField(allow_null=True)
+    level = serializers.CharField(help_text="`ok`, `warning` (from 80 %) or `limit` (100 %).")
+    area = serializers.CharField(required=False, help_text="Console group of the key (people, inventory, ..., storage).")
 
 
 class HostingPlanUsageSerializer(serializers.Serializer):
@@ -161,3 +173,17 @@ class HostingPlanUsageSerializer(serializers.Serializer):
     read_only_reason = serializers.CharField(allow_null=True)
     resources = HostingPlanUsageRowSerializer(many=True)
     warnings = serializers.ListField(child=serializers.CharField())
+    hosted = serializers.BooleanField(
+        required=False, help_text="Decision 236: false for an own space (no plan, no limits, unlimited).")
+    platform_resources = PlatformUsageRowSerializer(
+        many=True, required=False,
+        help_text="This month's use of the PLATFORM credentials against the superadmin's allowance (every space).")
+    space_quota_resources = PlatformUsageRowSerializer(
+        many=True, required=False,
+        help_text="Superadmin-set quotas on this space (events, bookings, payments and every other resource key); read-only here. "
+                  "null limit = none.")
+    platform_switches = serializers.DictField(
+        child=serializers.BooleanField(), required=False,
+        help_text="Per-space choice 'use the platform's credentials when this space has none' for email, sms, "
+                  "whatsapp, native_push and wallet (default true). Change with PATCH contract-channel "
+                  "(use_platform_sender) or the wallet-credentials route (use_platform_credentials).")

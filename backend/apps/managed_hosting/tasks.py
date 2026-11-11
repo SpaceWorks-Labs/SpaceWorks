@@ -25,3 +25,4 @@ def sweep():
 @shared_task(name="apps.managed_hosting.tasks.sweep_managed_hosting_task")
 def sweep_managed_hosting_task():
     return sweep()
+

@@ -12,3 +12,9 @@ class ManagedHostingConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.managed_hosting"
     verbose_name = "Managed hosting"
+
+    def ready(self):
+        # #234: every DRF throttle reads its rate through the superadmin override table.
+        from .throttle_rates import install
+
+        install()

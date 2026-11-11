@@ -48,3 +48,7 @@ class HostingInvoiceAdmin(_ReadOnly):
     list_filter = ("status",)
     search_fields = ("number", "makerspace_name")
     readonly_fields = [field.name for field in HostingInvoice._meta.concrete_fields]
+
+
+# Hosting type, request rates, billing keys and the per-space limits page (0.12.0).
+from apps.managed_hosting import admin_limits  # noqa: E402,F401

@@ -1,7 +1,8 @@
 """How a plan plugs INTO the existing fair-use limits (#187A); it never replaces them.
 
 * ``plan_limit`` is consulted by ``limits_core.resource_limit`` after the per-space
-  override and before ``MANAGED_RESOURCE_LIMITS``: override > plan > deployment default.
+  override: override > plan > unlimited (#236 addendum: no built-in defaults are enforced).
+  Every answer is "not set" for an OWN space (decision 236).
 * The monthly keys (emails, SMS, WhatsApp, events) are plan-only: enforced at the same
   seams the daily caps use (``check_quota``, ``reserve_notification_quota``, the email
   outbox), each a no-op with the switch off.
@@ -15,14 +16,21 @@ from datetime import UTC, datetime
 
 from rest_framework import serializers
 
+from apps.makerspaces.limits_core import (
+    EXTRA_QUOTA_LIMIT_KEYS, NUMERIC_LIMIT_KEYS, PLATFORM_CREDENTIAL_LIMIT_KEYS, SPACE_QUOTA_LIMIT_KEYS,
+)
+
 from .availability import plans_enabled
 
 NOT_SET = object()
 # Existing fair-use keys a plan may set, plus the plan-only monthly keys.
-SHARED_KEYS = frozenset({"members", "staff", "storage", "products", "assets", "machines", "bookings",
-                         "api_clients", "events"})
+# #234: every per-space fair-use key can be set by a plan; the superadmin console lists them all.
+SHARED_KEYS = NUMERIC_LIMIT_KEYS
 MONTHLY_KEYS = frozenset({"email_monthly", "sms_monthly", "whatsapp_monthly", "events_monthly"})
-PLAN_LIMIT_KEYS = SHARED_KEYS | MONTHLY_KEYS
+# Owner rule 261: a plan may carry ANY registry limit (the monthly quotas, platform-credential and extra
+# keys too); each family's resolver falls back to the plan when the space has no override of its own.
+PLAN_LIMIT_KEYS = (SHARED_KEYS | MONTHLY_KEYS | SPACE_QUOTA_LIMIT_KEYS | PLATFORM_CREDENTIAL_LIMIT_KEYS
+                   | EXTRA_QUOTA_LIMIT_KEYS)
 MONTHLY_LABELS = {"email_monthly": "emails this month", "sms_monthly": "SMS messages this month",
                   "whatsapp_monthly": "WhatsApp messages this month", "events_monthly": "new events this month"}
 
@@ -37,6 +45,10 @@ def plan_limit(makerspace, key):
     """The plan's limit for ``key`` (an int, or None = unlimited), or ``NOT_SET``."""
     if not plans_enabled() or key not in PLAN_LIMIT_KEYS:
         return NOT_SET
+    from .hosting_type import is_hosted
+
+    if not is_hosted(makerspace):
+        return NOT_SET  # decision 236: an own space has no plan limits
     row = _assignment(makerspace)
     if row is None or key not in (row.plan.limits or {}):
         return NOT_SET
@@ -99,7 +111,9 @@ def check_monthly(makerspace, key, *, adding=1):
 
 def disallowed_modules(makerspace, keys):
     """Module keys (outside core) the space's plan does not include; [] when off."""
-    if not plans_enabled():
+    from .hosting_type import is_hosted
+
+    if not plans_enabled() or not is_hosted(makerspace):
         return []
     row = _assignment(makerspace)
     allowed = set((row.plan.allowed_modules or []) if row else [])

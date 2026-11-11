@@ -142,6 +142,8 @@ class HostingInvoiceReceipt(models.Model):
 class PlatformHostingBillingSettings(models.Model):
     """Singleton (pk=1). Provider secrets are Fernet ciphertext, never returned."""
 
+    # #234: the one "host other makerspaces" switch (plans, limits, requests, platform fallbacks).
+    hosting_enabled = models.BooleanField(default=False)
     auto_enforce_enabled = models.BooleanField(default=False)
     grace_days = models.PositiveSmallIntegerField(default=14)
     provider = models.CharField(max_length=16, blank=True, choices=[("", "None"), ("stripe", "Stripe"),
@@ -175,3 +177,7 @@ class PlatformHostingBillingSettings(models.Model):
     def secret(self, field):
         stored = getattr(self, field)
         return decrypt_value(stored) if stored else ""
+
+
+from .models_throttle import PlatformThrottleRate  # noqa: E402,F401  (platform throttle overrides)
+from .models_hosting_type import SpaceHostingType  # noqa: E402,F401  (decision 236: own vs hosted)

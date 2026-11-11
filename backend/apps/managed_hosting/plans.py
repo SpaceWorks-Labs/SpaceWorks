@@ -69,6 +69,8 @@ def assign(actor, makerspace_id, plan_id, *, trial_days=None):
 
     with transaction.atomic():
         space = Makerspace.objects.select_for_update().get(pk=makerspace_id)
+        from .hosting_type import require_hosted
+        require_hosted(space)  # decision 236: plans and trials are for hosted spaces only
         plan = HostingPlan.objects.filter(pk=plan_id, is_active=True).first()
         if plan is None:
             raise ValidationError({"plan_id": gettext("Choose an active plan.")})

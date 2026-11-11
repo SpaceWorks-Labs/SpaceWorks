@@ -5,8 +5,8 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
-from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework import serializers, status
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -170,3 +170,47 @@ class BillingSettingsView(_Platform):
             audit.record(request.user, "managed_hosting.billing_settings_updated", makerspace=None, target=row,
                          meta={"fields": sorted(set(request.data) & set(s.HostingBillingSettingsSerializer.Meta.fields))})
         return Response(s.HostingBillingSettingsSerializer(row).data)
+
+
+class BulkPlanAssignSerializer(serializers.Serializer):
+    makerspace_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=False, max_length=50)
+    plan_id = serializers.IntegerField(min_value=1)
+    trial_days = serializers.IntegerField(min_value=0, max_value=365, required=False, allow_null=True, default=None)
+
+    def validate_makerspace_ids(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Ids must be unique.")
+        return value
+
+
+class BulkPlanAssignResultSerializer(serializers.Serializer):
+    assigned = serializers.IntegerField(help_text="How many spaces now hold the plan.")
+    makerspace_ids = serializers.ListField(child=serializers.IntegerField())
+
+
+class BulkPlanAssignView(_Platform):
+    """Decision 248: assign one hosting plan to up to 50 hosted spaces, all or nothing (superadmin only)."""
+
+    @extend_schema(tags=TAGS, summary="Assign one hosting plan to many hosted spaces (all or nothing)",
+                   description="Superadmin only, hosted spaces only (decision 236): an own space refuses the whole "
+                               "call. 409 `bulk_failed` carries `failed_id` = the makerspace id that was refused.",
+                   request=BulkPlanAssignSerializer,
+                   responses={200: BulkPlanAssignResultSerializer, **errors(400, 401, 403, 404, 409)})
+    def post(self, request):
+        from apps.admin_api.bulk_decisions import BulkFailed
+
+        body = BulkPlanAssignSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        ids, plan_id, days = body.validated_data["makerspace_ids"], body.validated_data["plan_id"], body.validated_data["trial_days"]
+        found = set(Makerspace.objects.filter(pk__in=ids).values_list("pk", flat=True))
+        missing = [pk for pk in ids if pk not in found]
+        if missing:
+            raise BulkFailed(missing[0], serializers.ValidationError({"makerspace_ids": "Unknown makerspace."}))
+        with transaction.atomic():
+            for pk in ids:
+                try:
+                    with transaction.atomic():
+                        plans.assign(request.user, pk, plan_id, trial_days=days)
+                except (APIException, DjangoValidationError) as exc:
+                    raise BulkFailed(pk, exc) from exc
+        return Response({"assigned": len(ids), "makerspace_ids": ids})

@@ -59,8 +59,12 @@ def expire(row, now):
 def sweep(now=None):
     now = now or timezone.now()
     counts = {"reminded": 0, "expired": 0}
+    from .hosting_type import hosted_q, hosting_active
+    if not hosting_active():
+        return counts  # decision 236: with hosting off every space is own
+    # Filter in the query (not after the slice), so own spaces never starve hosted ones (227c).
     rows = SpacePlanAssignment.objects.select_related("makerspace", "plan").filter(
-        trial_ends_at__isnull=False, trial_expired_at__isnull=True)
+        hosted_q(), trial_ends_at__isnull=False, trial_expired_at__isnull=True)
     for row in rows[:200]:
         if row.trial_ends_at <= now:
             counts["expired"] += int(expire(row, now))

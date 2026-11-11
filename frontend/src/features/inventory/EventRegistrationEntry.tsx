@@ -16,7 +16,7 @@ export function EventRegistrationEntry({ event, makerspaceSlug, organisation, or
     && ["members", "accounts"].includes(event.registration_audience ?? "members");
   const mode = useOptionalTenant()?.mode ?? "central";
   const paid = chargesOn && (Number(event.payment_amount) > 0 || Boolean(event.ticket_types?.some(ticket => Number(ticket.amount) > 0)));
-  const label = event.registration_requires_approval ? "Apply" : event.availability === "Full" ? "Join waitlist" : "Register";
+  const label = event.registration_requires_approval ? t`Apply` : event.availability === "Full" ? t`Join waitlist` : t`Register`;
   const form = <EventRegistrationForm makerspaceSlug={makerspaceSlug} publicToken={event.public_token}
     waitlist={event.availability === "Full"} approvalRequired={event.registration_requires_approval}
     customForm={event.custom_form} audience={event.registration_audience} tickets={event.ticket_types}

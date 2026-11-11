@@ -7,6 +7,7 @@ import { SegmentedControl } from "../../components/ui";
 import QrScanner from "../../components/ui/QrScanner";
 import type { PublicToolLoan } from "../../types/inventory";
 import { invalidatePublicInventory } from "../staff/queryInvalidation";
+import { eligibilityMessage } from "../../lib/eligibilityCopy";
 import { publicToolCheckout, publicToolReturn } from "./api";
 import { PublicEvidenceUpload } from "./PublicEvidenceUpload";
 import { ContactFields } from "./ContactFields";
@@ -16,6 +17,8 @@ type PublicToolScanPanelProps = {
   makerspaceSlug: string;
   // "contact" where the makerspace has no member accounts: no account, confirmed email (#91).
   requestAccess?: "contact";
+  /** Account-less checkout is switched off (`inventory.contact_self_checkout`); returns stay open. */
+  borrowOff?: boolean;
 };
 
 type Mode = "checkout" | "return";
@@ -23,8 +26,8 @@ type Mode = "checkout" | "return";
 function LoanResult({ loan }: { loan: PublicToolLoan }) {
   return (
     <div className="rounded-xl border border-success bg-success px-3 py-2 text-on-success dark:bg-success-soft dark:text-success-ink">
-      <h3 className="title-section break-words capitalize text-on-success dark:text-success-ink">
-        {loan.status.replace(/_/g, " ")}: {loan.items.map((item) => item.product_name).join(", ") || t`Tool loan`}
+      <h3 className="title-section break-words text-on-success dark:text-success-ink">
+        {loan.status === "returned" ? t`Returned` : t`Checked out`}: {loan.items.map((item) => item.product_name).join(", ") || t`Tool loan`}
       </h3>
       <p className="mt-1 break-all code-text text-xs">{loan.public_token}</p>
       <div className="mt-2 space-y-1">
@@ -52,10 +55,11 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToolScanPanelProps) {
+export function PublicToolScanPanel({ makerspaceSlug, requestAccess, borrowOff = false }: PublicToolScanPanelProps) {
   const queryClient = useQueryClient();
   const contact = useToolContact(makerspaceSlug, requestAccess === "contact");
-  const [mode, setMode] = useState<Mode>("checkout");
+  const [chosenMode, setMode] = useState<Mode>("checkout");
+  const mode: Mode = borrowOff ? "return" : chosenMode;
   const [scannedToken, setScannedToken] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [issueEvidenceId, setIssueEvidenceId] = useState<number | null>(null);
@@ -109,15 +113,15 @@ export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToo
     !returnRemark.trim() ||
     (reportProblem && !problemNote.trim()) ||
     !contact.ready;
-  const error = checkout.error?.message ?? returnTool.error?.message;
+  const error = checkout.error ? eligibilityMessage(checkout.error) ?? checkout.error.message : returnTool.error?.message;
   const result = checkout.data ?? returnTool.data;
   const returning = mode === "return";
   const pending = returning ? returnTool.isPending : checkout.isPending;
-  const missing = !effectivePayload ? "Scan the tool's QR label first."
-    : returning ? (returnEvidenceId === null ? "Add a return photo." : !returnRemark.trim() ? "Add return condition notes."
-      : reportProblem && !problemNote.trim() ? "Describe the problem for staff." : "")
-      : issueEvidenceId === null ? "Add a photo of the tool." : "";
-  const contactMissing = missing || contact.ready ? "" : "Give your name, phone and email, and type the emailed code.";
+  const missing = !effectivePayload ? t`Scan the tool's QR label first.`
+    : returning ? (returnEvidenceId === null ? t`Add a return photo.` : !returnRemark.trim() ? t`Add return condition notes.`
+      : reportProblem && !problemNote.trim() ? t`Describe the problem for staff.` : "")
+      : issueEvidenceId === null ? t`Add a photo of the tool.` : "";
+  const contactMissing = missing || contact.ready ? "" : t`Give your name, phone and email, and type the emailed code.`;
 
   // Check out and Return are one choice, not two side-by-side forms: side by side they wrapped one
   // word per line in the narrow request column. Both photo steps stay mounted (just hidden) so an
@@ -125,14 +129,15 @@ export function PublicToolScanPanel({ makerspaceSlug, requestAccess }: PublicToo
   return (
     <div className="grid min-w-0 gap-4">
       <div>
-        <h2 className="title-panel">{t`Check out or return a tool`}</h2>
+        <h2 className="title-panel">{borrowOff ? t`Return a tool` : t`Check out or return a tool`}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">
-          {t`Scan the tool's QR label, add a photo, then confirm.`}</p>
+          {borrowOff ? t`Borrowing without an account is switched off here, so ask at the front desk to borrow. You can still return a tool: scan its QR label, add a photo and notes, then confirm.`
+            : t`Scan the tool's QR label, add a photo, then confirm.`}</p>
       </div>
-      <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
+      {borrowOff ? null : <div className="[&>[role=radiogroup]]:flex [&>[role=radiogroup]]:w-full [&_[role=radio]]:flex-1">
         <SegmentedControl label={t`Scan action`} value={mode} options={[{ value: "checkout", label: t`Check out` }, { value: "return", label: t`Return` }]}
           onChange={(value) => setMode(value as Mode)} />
-      </div>
+      </div>}
 
       {contact.details ? (
         <Step n={1} title={t`Your details (no account needed)`}>

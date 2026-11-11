@@ -114,7 +114,7 @@ export function BorrowRequestCard({
             <p className="mt-1 text-sm">
               {contact
                 ? t`Staff will contact you by email or phone about the request.`
-                : t`Check this page with your email to follow the request.`}
+                : t`Staff review it next. Follow it under Borrowing history in your member area.`}
             </p>
           </div>
         ) : null}

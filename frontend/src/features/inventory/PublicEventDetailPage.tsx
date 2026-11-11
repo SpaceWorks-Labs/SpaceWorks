@@ -30,10 +30,13 @@ import { EventRegistrationEntry } from "./EventRegistrationEntry";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
 import { useEventVenueSection } from "../bookings/EventVenueBlock";
+import { EventVenueDetails, hasVenueDetails, type Venue as VenueFields } from "../events/EventVenueDetails";
 import { PageShare } from "../publicPages/PageShare";
 import { PublicSponsorCards } from "../publicPages/PublicSponsorCards";
 import { useEventSponsors } from "../donations/useEventSponsors";
 import { PublicPrizes, usePublicPrizes } from "../events/prizes";
+import { EventShopOfferList } from "../shop/EventShopOffers";
+import { eventOffersEnabled, useEventShopOffers } from "../shop/eventOffersApi";
 
 /** WP2 mounts this component on both central and tenant-domain event routes. */
 /** #178: the hackathon's stage deadlines (event detail only; hand-typed until the client is regenerated). */
@@ -66,11 +69,13 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
   const event = eventQuery.error ? undefined : eventQuery.data;
   // Hack-money G6: prizes appear only when the organiser shows prize amounts publicly (else 404, no section).
   const prizes = usePublicPrizes(makerspaceSlug, event?.public_token ?? "", Boolean(bootstrap?.features.includes("events.prize_payouts")));
+  // #135 Q-S18: shop items offered at this event, bought as ordinary shop orders with event pickup.
+  const offers = useEventShopOffers(makerspaceSlug, event?.public_token, eventOffersEnabled(bootstrap));
   const venueSection = useEventVenueSection(makerspaceSlug, event?.public_token, (token) => tenantPath(`bookings/${token}`));
   const error = eventQuery.error instanceof StructuredApiError ? eventQuery.error : null;
   const name = bootstrap?.branding.display_name || bootstrap?.makerspace.name || formatSlug(makerspaceSlug) || "Makerspace";
   const state = eventQuery.isLoading ? { status: "loading" as const } : eventQuery.error
-    ? publicErrorState(eventQuery.error, { noun: "Events" }, () => { void eventQuery.refetch(); }) : { status: "ready" as const };
+    ? publicErrorState(eventQuery.error, { surface: "events" }, () => { void eventQuery.refetch(); }) : { status: "ready" as const };
   const organizationAudience = event?.registration_audience === "participating_organizations";
   const showCount = event?.show_registration_count !== false && event?.registration_count != null;
   const cutoff = event?.effective_registration_cutoff_at ? `Closed ${new Date(event.effective_registration_cutoff_at).toLocaleString(formatLocale())}.` : "";
@@ -88,6 +93,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
         facts={event ? [{ identity: { kind: "date", date: event.starts_at }, primary: new Date(event.starts_at).toLocaleString(formatLocale()), secondary: `Until ${new Date(event.ends_at).toLocaleString(formatLocale())}` },
           ...(event.location ? [{ identity: { kind: "icon" as const, icon: "Info" as const, tone: "neutral" as const }, primary: event.location }] : [])] : []}
         sections={event ? [{ id: "about", label: t`About`, content: <p className="whitespace-pre-wrap leading-7">{event.description}</p> },
+          ...(hasVenueDetails(event as VenueFields) ? [{ id: "where", label: t`Where`, content: <EventVenueDetails venue={event as VenueFields} /> }] : []),
           ...(stagesOf(event).length ? [{ id: "submission-deadlines", label: t`Submission deadlines`, content: <PublicStageDeadlines stages={stagesOf(event)} timeZone={(event as { timezone_name?: string }).timezone_name ?? "UTC"} /> }] : []),
           ...(canonicalUrl ? [{ id: "share", label: t`Share`, content: <PageShare title={event.title} description={event.description} canonicalUrl={canonicalUrl} /> }] : []),
           ...(event.website ? [{ id: "website", label: t`Event details`, content: <PublicEventWebsite website={event.website}
@@ -98,6 +104,7 @@ export function PublicEventDetailPage({ resolvedSlug, resolvedToken, canonicalUr
           ...(bootstrap?.features.includes('events.volunteering') ? [{ id: 'volunteers', label: t`Volunteers needed`, content: <PublicVolunteerCards publicToken={event.public_token} onApply={id => window.location.assign(programmeHref(event.public_token, `roles/${id}`, makerspaceSlug))} /> }] : []),
           ...(prizes.data?.length ? [{ id: 'prizes', label: t`Prizes`, content: <PublicPrizes rows={prizes.data} /> }] : []),
           ...(sponsors.length ? [{ id: 'sponsors', label: t`Sponsors`, content: <PublicSponsorCards rows={sponsors} /> }] : []),
+          ...(offers.data?.products.length ? [{ id: 'merch', label: t`Merch`, content: <EventShopOfferList offers={offers.data} slug={makerspaceSlug} path={tenantPath} selling={chargesOn(bootstrap, "shop")} /> }] : []),
           ...(bootstrap?.features.includes('events.project_gallery') ? [{ id: 'projects', label: t`Projects and results`, content: <div className="grid gap-4"><div className="flex flex-wrap gap-3"><a className="desk-button" href={tenantPath(`events/${event.public_token}/gallery`)}>{t`Project gallery`}</a><a className="desk-button" href={tenantPath(`events/${event.public_token}/results`)}>{t`Results`}</a></div>
             {/* #181: the published People's choice award, beside (never instead of) the judged results. */}
             <PublishedPeoplesChoice slug={makerspaceSlug} token={event.public_token} enabled={Boolean(bootstrap?.features.includes('events.peoples_choice'))}

@@ -1,16 +1,12 @@
 import { t } from "@lingui/core/macro";
+import { requestStatusLabel } from "../../components/ui/StatusStepper";
 import type { PublicToolLoanResult } from "./selfCheckoutApi";
-
-function formatStatus(status: string) {
-  const normalized = status.replace(/_/g, " ");
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-}
 
 export function ResultCard({ result }: { result: PublicToolLoanResult }) {
   return (
     <div className="rounded-xl border border-success bg-success px-3 py-3 text-on-success dark:bg-success-soft dark:text-success-ink">
       <p className="eyebrow text-on-success dark:text-success-ink">
-        {formatStatus(result.status)}
+        {requestStatusLabel(result.status)}
       </p>
       <h2 className="title-panel mt-1 break-words text-on-success dark:text-success-ink">
         {result.items.map((item) => item.product_name).join(", ") || t`Tool loan`}

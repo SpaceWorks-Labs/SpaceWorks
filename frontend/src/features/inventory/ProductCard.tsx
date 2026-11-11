@@ -11,6 +11,8 @@ type ProductCardProps = {
   onIncrement: () => void;
   onOpenDetails: () => void;
   detailUrl?: string;
+  /** Decision 228a: with Events off an event-only item is simply not lendable. */
+  eventsOn?: boolean;
 };
 
 function isUnavailable(product: Product): boolean {
@@ -24,6 +26,7 @@ export function ProductCard({
   onIncrement,
   onOpenDetails,
   detailUrl,
+  eventsOn = true,
 }: ProductCardProps) {
   const disabled = isUnavailable(product);
   const idLabel = `ID: ${String(product.id).padStart(4, "0")}`;
@@ -51,7 +54,7 @@ export function ProductCard({
             </span>
           </div>
         )}
-        <span className="absolute right-2 top-2 max-w-[calc(100%-1rem)]"><AvailabilityBadge availability={product.availability} /></span>
+        <span className="absolute right-2 top-2 max-w-[calc(100%-1rem)]"><AvailabilityBadge availability={product.availability} eventsOn={eventsOn} /></span>
       </button>
 
       <div className="flex flex-1 flex-col p-4">
@@ -76,7 +79,7 @@ export function ProductCard({
         ) : null}
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4">
-          <div className="flex items-center rounded-lg border border-line bg-bg">
+          {product.event_only ? <p className="text-sm text-muted">{eventsOn ? t`Lent at events only` : t`Not available to borrow right now`}</p> : <div className="flex items-center rounded-lg border border-line bg-bg">
             <button
               aria-label={t`Remove ${product.name}`}
               className="h-11 w-11 tabular-nums text-lg font-semibold text-ink transition hover:bg-surface hover:text-ink disabled:cursor-not-allowed disabled:text-muted"
@@ -98,7 +101,7 @@ export function ProductCard({
             >
               +
             </button>
-          </div>
+          </div>}
           <button
             className="inline-flex min-h-11 min-w-0 items-center break-words px-1 text-sm font-semibold text-brand-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             type="button"

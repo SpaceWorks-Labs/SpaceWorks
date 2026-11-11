@@ -15,6 +15,7 @@ import { useTenant, useTenantPath } from "../../lib/tenant";
 import { formatSlug } from "./PublicInventoryParts";
 import { useTenantBootstrap } from "./usePublicInventory";
 import { MachineIntakeForm } from "./MachineIntakeForm";
+import { machineIntakeAvailable } from "./machineIntakeAvailability";
 import { QueueSummary } from "../machine-service/QueueSummary";
 import type { MachineQueueSummary } from "../machine-service/types";
 import { fetchJobTypes, jobKeys } from "../machine-jobs/api";
@@ -84,7 +85,8 @@ export function PublicMachinesPage() {
   }, [machines.data]);
 
   // Types taking job requests go through the one "Request a job" form (#140), not the per-machine dialog.
-  const jobsOn = Boolean(bootstrap?.features.includes("machines.job_requests"));
+  const intakeAvailable = machineIntakeAvailable(bootstrap, makerspaceSlug);
+  const jobsOn = intakeAvailable && Boolean(bootstrap?.features.includes("machines.job_requests"));
   const jobTypes = useQuery({ queryKey: jobKeys.types(makerspaceSlug), queryFn: () => fetchJobTypes(makerspaceSlug), enabled: jobsOn && Boolean(makerspaceSlug), retry: false });
   const jobTypeIds = new Set((jobsOn ? jobTypes.data ?? [] : []).map(type => type.machine_type_id));
 
@@ -104,8 +106,9 @@ export function PublicMachinesPage() {
       header={{ title: t`Machines`, subtitle: t`What you can use at ${displayName}`, ...(jobTypeIds.size
         ? { primary: { label: t`Request a job`, href: tenantPath("machine-jobs/new") }, secondary: { label: t`Member area`, href: tenantPath("member") } }
         : { primary: { label: t`Member area`, href: tenantPath("member") } }) }}
-      state={machines.isLoading ? { status: "loading" } : machines.error ? publicErrorState(machines.error, { noun: "Machines" }, () => { void machines.refetch(); }) : { status: "ready" }}
+      state={machines.isLoading ? { status: "loading" } : machines.error ? publicErrorState(machines.error, { surface: "machines" }, () => { void machines.refetch(); }) : { status: "ready" }}
       isEmpty={!groups.length} empty={{ message: t`No machines listed yet. Check back soon.` }}>
+      {!intakeAvailable && bootstrap ? <p role="status">{t`Online machine requests aren't available here. Ask space staff for help.`}</p> : null}
       <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label={t`Filter machines`}>
         <button className={!kind ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={!kind} onClick={() => setKind("")}>{t`All kinds`}</button>
         {groups.map(group => <button key={group.name} className={kind === group.name ? "desk-button-brand" : "desk-button"} type="button" aria-pressed={kind === group.name} onClick={() => setKind(group.name)}>{group.name}</button>)}
@@ -121,7 +124,7 @@ export function PublicMachinesPage() {
               {machine.queue ? <span className="mt-1 block"><QueueSummary summary={machine.queue} /></span> : null}</>}
             right={<StatusPill label={MACHINE_STATUS[machine.status] ?? machine.status} tone={machine.status === "idle" ? "success" : machine.status === "maintenance" || machine.status === "offline" ? "warn" : "info"} />} />
           {machine.machine_type.id && jobTypeIds.has(machine.machine_type.id) ? <Link className="desk-button mt-3" to={tenantPath(`machine-jobs/new?type=${machine.machine_type.id}`)}>{t`Request a job`}</Link>
-            : bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} dialog trackingPath={token => tenantPath(`machine-service/requests/${token}`)} /> : null}
+            : intakeAvailable && bootstrap?.features.includes("machines.structured_intake") && machine.id && machine.machine_type.id ? <MachineIntakeForm key={machine.id} slug={makerspaceSlug} machineId={machine.id} typeId={machine.machine_type.id} available={intakeAvailable} dialog trackingPath={token => tenantPath(`machine-service/requests/${token}`)} /> : null}
         </div>)}</div>
       </CollapsibleSection>)}</div>
       <Pagination page={page} onChange={setPage} totalPages={Math.max(1, Math.ceil((machines.data?.count ?? 0) / 24))} count={machines.data?.count} pageSize={24} disabled={machines.isFetching} />

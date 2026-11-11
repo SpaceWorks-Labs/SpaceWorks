@@ -1,4 +1,4 @@
-import { formatLocale } from "../../lib/format";
+import { formatDateTime } from "../../lib/format";
 import { t } from "@lingui/core/macro";
 import { StatusBadge, StatusPill } from "../../components/ui";
 import { DateChip } from "../../components/ui/DateChip";
@@ -6,6 +6,14 @@ import { RouteLink } from "../../components/ui/RouteLink";
 import { EventCountdown } from "../events/EventCountdown";
 import { EventPrice } from "../events/EventPrice";
 import type { PublicEventDetail } from "../events/eventTicketTypes";
+
+function eventStatusLabel(status: string) {
+  if (status === "published") return t`Published`;
+  if (status === "cancelled") return t`Cancelled`;
+  if (status === "completed") return t`Completed`;
+  if (status === "draft") return t`Draft`;
+  return t`Status unknown`;
+}
 
 /** Capacity 0 and null both mean "no cap" on the API. */
 export function eventCapacityLabel(capacity: number | null) {
@@ -18,7 +26,7 @@ export function eventActionLabel(event: PublicEventDetail) {
 }
 
 export function registrationClosedLabel(event: PublicEventDetail) {
-  return t`Registration closed${event.effective_registration_cutoff_at ? ` · ${new Date(event.effective_registration_cutoff_at).toLocaleString(formatLocale())}` : ""}`;
+  return t`Registration closed${event.effective_registration_cutoff_at ? ` · ${formatDateTime(event.effective_registration_cutoff_at)}` : ""}`;
 }
 
 // `showPrice` is false when event charges are off in this space (#184): no price line at all.
@@ -39,7 +47,7 @@ export function PublicEventCard({ event, href, time, calendarPending, calendarEr
           </div>
           <div className="flex flex-wrap gap-2">
             {event.audience_label ? <StatusPill label={event.audience_label} tone="info" /> : null}
-            <StatusBadge status={event.status} domain="event" />
+            <StatusBadge status={event.status} domain="event" label={eventStatusLabel(event.status)} />
             <StatusPill label={event.registration_open ? event.availability : registrationClosedLabel(event)}
               tone={event.registration_open ? event.availability === "Full" ? "warn" : "success" : "neutral"} />
           </div>

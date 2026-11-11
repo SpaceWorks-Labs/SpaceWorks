@@ -8,7 +8,7 @@ import { WaitlistJoin } from "./WaitlistJoin";
 
 type ProductQuickViewModalProps = { product: Product | null; open: boolean; onClose: () => void;
   /** Lane L12: the space's id and switches, for "Join the waitlist" on an item that is out. */
-  makerspaceId?: number; features?: readonly string[] };
+  makerspaceId?: number; features?: readonly string[]; eventsOn?: boolean };
 
 function trackingLabel(product: Product) {
   if (product.tracking_mode === "individual") return t`Serialized`;
@@ -16,10 +16,10 @@ function trackingLabel(product: Product) {
   return t`Catalog item`;
 }
 
-export function ProductQuickViewModal({ product, open, onClose, makerspaceId, features }: ProductQuickViewModalProps) {
+export function ProductQuickViewModal({ product, open, onClose, makerspaceId, features, eventsOn }: ProductQuickViewModalProps) {
   if (!product) return null;
   return <DetailLayout presentation="drawer" open={open} onClose={onClose} drawerWidth={720}
-    title={product.name} state={{ status: "ready" }} status={<AvailabilityBadge availability={product.availability} />}
+    title={product.name} state={{ status: "ready" }} status={<AvailabilityBadge availability={product.availability} eventsOn={eventsOn} />}
     meta={[`ID: ${String(product.id).padStart(4, "0")}`, trackingLabel(product)]}
     main={<div className="grid gap-6">
       {product.image_url ? <img src={product.image_url} alt={product.name} className="aspect-[16/10] w-full rounded-xl border border-line bg-surface object-contain" />

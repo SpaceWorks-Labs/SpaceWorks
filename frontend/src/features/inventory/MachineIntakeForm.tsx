@@ -1,9 +1,10 @@
 import { t } from "@lingui/core/macro";
 import { Modal } from "../../components/ui";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { tenantPublicRequest } from "../../lib/api";
+import { eligibilityMessage } from "../../lib/eligibilityCopy";
 import { PricePreview } from "../payments/PricePreview";
 
 type IntakeField = { key: string; label: string; type: "text" | "number" | "integer" | "choice" | "boolean"; required?: boolean; choices?: string[]; min?: number; max?: number };
@@ -37,27 +38,30 @@ export function IntakeFields({ intake, values, setValues }: {
   </label>)}</>;
 }
 
-export function MachineIntakeForm({ slug, machineId, typeId, dialog = false, trackingPath }: {
+export function MachineIntakeForm({ slug, machineId, typeId, dialog = false, trackingPath, available = false }: {
   slug: string; machineId: number; typeId: number; dialog?: boolean;
+  available?: boolean;
   /** Tenant-aware status page path for the returned tracking token. */
   trackingPath?: (publicToken: string) => string;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [values, setValues] = useState<IntakeValues>({});
+  const current = useRef({ available, slug }); current.current = { available, slug };
   const schema = useQuery({ queryKey: ["machine-intake", slug, typeId],
-    queryFn: () => tenantPublicRequest<TypeIntake>(slug, `/public/${encodeURIComponent(slug)}/machine-types/${typeId}/intake`) });
-  const submit = useMutation({ mutationFn: () => tenantPublicRequest<{ status: string; public_token: string }>(slug,
+    enabled: available, queryFn: () => tenantPublicRequest<TypeIntake>(slug, `/public/${encodeURIComponent(slug)}/machine-types/${typeId}/intake`) });
+  const submit = useMutation({ mutationFn: () => { if (!current.current.available || current.current.slug !== slug) throw new Error(t`Machine requests are not open right now. Check back later or contact the space.`); return tenantPublicRequest<{ status: string; public_token: string }>(slug,
     `/public/${encodeURIComponent(slug)}/machine-service-requests`, { method: "POST", body: JSON.stringify({
       machine_id: machineId, title, capability_payload: intakePayload(schema.data, values) ?? {},
-    }) }) });
+    }) }); } });
+  if (!available) return <p role="status">{t`Online machine requests aren't available here. Ask space staff for help.`}</p>;
   if (schema.data && !schema.data.intake_schema.version) return null;
   const form = <form className="mt-3 grid gap-2" onSubmit={event => { event.preventDefault(); submit.mutate(); }}>
     <label className="grid gap-1 text-sm">{t`Job title`}<input className="desk-input" required maxLength={200} value={title} onChange={event => setTitle(event.target.value)} /></label>
     <IntakeFields intake={schema.data} values={values} setValues={setValues} />
     <PricePreview makerspaceSlug={slug} request={{ domain: "machines", machine_id: machineId }} />
     {schema.isPending ? <p role="status">{t`Loading job requirements…`}</p> : null}
-    {schema.error || submit.error ? <p role="alert" className="text-sm text-danger">{(schema.error || submit.error)?.message}</p> : null}
+    {schema.error || submit.error ? <p role="alert" className="text-sm text-danger">{eligibilityMessage(schema.error || submit.error) ?? (schema.error || submit.error)?.message}</p> : null}
     {submit.isSuccess ? <div role="status" className="grid gap-2"><p>{t`Request submitted for review.`}</p>
       {submit.data?.public_token && trackingPath ? <Link className="desk-button" to={trackingPath(submit.data.public_token)}>{t`Track your job`}</Link> : null}
       <p className="text-xs text-muted">{t`Keep the tracking link private.`}</p></div> : <button className="desk-button-brand" disabled={submit.isPending || !schema.data}>{t`Request work`}</button>}

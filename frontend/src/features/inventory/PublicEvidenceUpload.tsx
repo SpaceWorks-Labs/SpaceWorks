@@ -29,7 +29,7 @@ export function PublicEvidenceUpload({
   const [cameraSupported] = useState(
     () => typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia,
   );
-  const label = evidenceType === "issue" ? "Issue photo" : "Return photo";
+  const label = evidenceType === "issue" ? t`Issue photo` : t`Return photo`;
   const needsEmail = contactEmail !== undefined && !contactEmail.includes("@");
   const busy = disabled || status === "uploading" || needsEmail;
 

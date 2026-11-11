@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "../../components/shell/LanguageSwitcher";
 import { MakerspaceMapLink } from "../../components/MakerspaceMapLink";
 import type { TenantBootstrap } from "../../lib/api";
 import { publicFamilies } from "../../lib/publicHome";
+import { machineIntakeAvailable } from "./machineIntakeAvailability";
 
 export const LICENSE_URL = "https://github.com/SpaceWorks-Labs/SpaceWorks/blob/main/LICENSE";
 
@@ -17,10 +18,12 @@ export function publicPageChrome(slug: string, name: string, path: (part?: strin
   if (modules.has("machines")) nav.push({ label: t`Machines`, href: path("machines") });
   if (modules.has("bookings")) nav.push({ label: t`Book a space`, href: path("bookings") });
   // One "Request a job" flow for every machine type (#140); the 3D-print link survives only where it is off.
-  if (modules.has("machine_service") && bootstrap?.features?.includes("machines.job_requests")) nav.push({ label: t`Request a job`, href: path("machine-jobs/new") });
-  else if (modules.has("printing")) nav.push({ label: t`Request a 3D print`, href: path("print") });
+  if (machineIntakeAvailable(bootstrap, slug)) nav.push({ label: t`Request a job`, href: path("machine-jobs/new") });
   if (modules.has("shop") && bootstrap?.features?.includes("shop.online")) nav.push({ label: t`Shop`, href: path("shop") });
   if (bootstrap?.makerspace.public_stats_enabled) nav.push({ label: t`Stats`, href: path("stats") });
+  // Decision 242(m): the bootstrap names a non-profit taking gifts; everyone else gets no Donate link.
+  const donate = Boolean((bootstrap?.makerspace as { donate_enabled?: boolean } | undefined)?.donate_enabled);
+  if (donate) nav.push({ label: t`Donate`, href: path("donate") });
   const support: { label: string; href: string; external?: boolean }[] = [];
   const email = bootstrap?.branding.support_email;
   if (email && /^[^\s@?&#:]+@[^\s@?&#:]+\.[^\s@?&#:]+$/.test(email)) support.push({ label: email, href: `mailto:${encodeURI(email)}` });
@@ -33,7 +36,10 @@ export function publicPageChrome(slug: string, name: string, path: (part?: strin
     headerAction: { label: t`Sign in`, href: path("member") },
     liveStatus: <><MakerspaceMapLink makerspace={bootstrap?.makerspace} /><LanguageSwitcher /><ThemeToggle variant="icon" /></>,
     footer: { credit: "Powered by Space Works", links: [
+      ...(donate ? [{ label: t`Support this space`, href: path("donate") }] : []),
       { label: t`About`, href: "/about" },
+      { label: t`Privacy`, href: path("privacy") },
+      { label: t`Terms`, href: path("terms") },
       { label: t`License`, href: LICENSE_URL, external: true },
       { label: t`Staff sign-in`, href: path("admin") },
       ...support,

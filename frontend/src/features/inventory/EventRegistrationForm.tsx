@@ -9,7 +9,9 @@ import { EventTicketPicker } from "../events/EventTicketPicker";
 import type { EventTicket } from "../events/eventTicketTypes";
 import { StructuredApiError, tenantMemberRequest } from "../../lib/api";
 import { useChargesOn } from "../../lib/charges";
+import { eligibilityMessage } from "../../lib/eligibilityCopy";
 import { CustomFormFields } from "../forms/CustomFormFields";
+import { PayNextStep } from "../payments/PayNextStep";
 import { PricePreview } from "../payments/PricePreview";
 import { isPriceChanged, PriceChangedNotice } from "../payments/PriceChangedNotice";
 import {
@@ -32,9 +34,8 @@ function registerPath(slug: string, token: string) {
 function failureMessage(error: StructuredApiError | null) {
   if (!error) return t`The registration could not be submitted.`;
   if (error.status === 401) return t`Sign in to register for this event.`;
-  if (error.status === 403 && error.code === "membership_required") return t`Join this makerspace before registering.`;
-  if (error.status === 403 && error.code === "waiver_acceptance_required") return t`Accept the current waiver before registering.`;
-  if (error.status === 403 && error.code === "presence_required") return t`Start a presence session before registering.`;
+  const eligibility = eligibilityMessage(error);
+  if (eligibility) return eligibility;
   if (error.status === 429) return t`Too many registration attempts. Please wait and try again.`;
   if (error.status === 409 && error.code === "registration_closed") return t`Registration for this event is closed.`;
   if (error.status === 409 && error.code === "registration_rejected") return t`Your application was not approved and cannot be resubmitted.`;
@@ -64,6 +65,8 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
   const [promoCode, setPromoCode] = useState("");
   const [ticketId, setTicketId] = useState<number | null>(null);
   const [quoteDigest, setQuoteDigest] = useState("");
+  // What the last quote said is owed; unknown (no quote) falls back to "the event is paid".
+  const [owes, setOwes] = useState<boolean | undefined>(undefined);
   const [website, setWebsite] = useState("");
   const [answers, setAnswers] = useState<CustomAnswers>({});
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
@@ -98,10 +101,10 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     const waitlisted = registration.data.status === "waitlisted";
     return <div ref={successRef} role="status" tabIndex={-1} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
       <TicketCard organisation={organisation} title={pending ? t`Application awaiting approval` : waitlisted ? t`You’re on the waitlist` : t`Registration received`}
-        fields={[{ label: t`Status`, value: pending ? "Pending review" : waitlisted ? "Waitlisted" : "Registered" }, { label: t`Next step`, value: pending ? "Wait for confirmation" : waitlisted ? "Wait for a place" : "See you there" }]}
+        fields={[{ label: t`Status`, value: pending ? t`Pending review` : waitlisted ? t`Waitlisted` : t`Registered` }, { label: t`Next step`, value: pending ? t`Wait for confirmation` : waitlisted ? t`Wait for a place` : t`See you there` }]}
         qr={<div className="grid h-full place-items-center rounded-xl bg-success-soft text-success-ink"><Icon name="CheckCircle" className="h-16 w-16" /></div>}
         caption={pending ? t`You will only be charged if a place is confirmed.` : waitlisted ? t`The makerspace has recorded your waitlist request.` : t`The makerspace has recorded your registration.`} />
-      {paymentsHref && showPrice && registration.data.status === "registered" ? <p className="mt-3 text-sm text-muted">{t`Any fee for this event is listed under `}<a className="font-semibold text-ink underline" href={paymentsHref}>{t`Payments`}</a> {t` in your member area. Pay online there when it is offered, or pay at the space.`}</p> : null}
+      {paymentsHref && showPrice && owes !== false && registration.data.status === "registered" ? <PayNextStep paymentsHref={paymentsHref} /> : null}
     </div>;
   }
 
@@ -130,7 +133,7 @@ export function EventRegistrationForm({ makerspaceSlug, publicToken, waitlist, a
     {promoEnabled ? <label className="grid gap-1 text-sm">{t`Promo code (optional)`}<input className="desk-input" maxLength={128} autoComplete="off" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} /></label> : null}
     {clientErrors.ticket || clientErrors.invite ? <p className="text-sm text-danger" role="alert">{clientErrors.ticket || clientErrors.invite}</p> : null}
     <CustomFormFields schema={customForm} answers={answers} onChange={setAnswers} errors={{ ...serverErrors, ...clientErrors }} />
-    {!tickets.length || ticketId !== null ? <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "events", event_token: publicToken, ticket_type_id: ticketId ?? undefined }} onDigest={setQuoteDigest} /> : null}
+    {!tickets.length || ticketId !== null ? <PricePreview makerspaceSlug={makerspaceSlug} request={{ domain: "events", event_token: publicToken, ticket_type_id: ticketId ?? undefined }} onDigest={setQuoteDigest} onOwes={setOwes} /> : null}
     {isPriceChanged(registration.error) ? <PriceChangedNotice makerspaceSlug={makerspaceSlug} error={registration.error} />
       : registration.error ? <p className="text-sm text-danger" role="alert">{failureMessage(apiError)}</p> : null}
     <button className="desk-button-brand" type="submit" disabled={registration.isPending}>

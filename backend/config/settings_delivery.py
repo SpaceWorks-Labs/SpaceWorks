@@ -13,6 +13,9 @@ WEB_PUSH_VAPID_PRIVATE_KEY = env("WEB_PUSH_VAPID_PRIVATE_KEY", default="")
 WEB_PUSH_VAPID_SUBJECT = env("WEB_PUSH_VAPID_SUBJECT", default="")
 # Release 2 L2 (X31): applicants may edit and resubmit after "changes requested" (platform switch).
 HOSTING_REQUEST_RESUBMIT_ENABLED = env.bool("HOSTING_REQUEST_RESUBMIT_ENABLED", default=True)
+# Decision 295: let visitors of a SELF-HOSTED install ask for a makerspace or organization
+# workspace (the operator reviews in /control/). Managed hosting always accepts requests.
+PUBLIC_SPACE_REQUESTS_ENABLED = env.bool("PUBLIC_SPACE_REQUESTS_ENABLED", default=False)
 
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 NOTIFICATION_SLACK_REDIRECT_URI = env("NOTIFICATION_SLACK_REDIRECT_URI", default="")

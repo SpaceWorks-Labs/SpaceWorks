@@ -112,7 +112,8 @@ CELERY_BEAT_SCHEDULE["managed-hosting-sweep"] = {
 # The managed-hosting limiter (#187A) is OFF by default: with MANAGED_PLANS_ENABLED false nothing
 # of it is visible or enforced and self-host behaves exactly as before. It also needs a managed
 # deployment (PLATFORM_DOMAIN_SUFFIX). Online hosting checkout is a second switch, also off.
-MANAGED_PLANS_ENABLED = env.bool("MANAGED_PLANS_ENABLED", default=False)
+# Unset = the superadmin's console switch decides (default off); set = it forces on/off (#234).
+MANAGED_PLANS_ENABLED = env.bool("MANAGED_PLANS_ENABLED") if env("MANAGED_PLANS_ENABLED", default="") != "" else None
 MANAGED_BILLING_ONLINE_ENABLED = env.bool("MANAGED_BILLING_ONLINE_ENABLED", default=False)
 # --- end lane r2-superadmin-controls
 

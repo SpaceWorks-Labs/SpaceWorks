@@ -2,10 +2,11 @@
 
 from config.control_parity import KEY_ROTATION, RAW_REPAIR, SERVER, host, web
 
-PS = "Platform settings"
+PS = "Platform → Platform settings"
 S = "Space console"
-MOVES = "Platform settings → Self-host moves"
-PROVIDERS = f"{PS} → Messaging & apps"
+DATA = "Platform → Data & recovery"  # /admin/platform-data?section=...
+MOVES = f"{DATA} → Self-host moves"
+PROVIDERS = f"{PS} → Messaging providers"
 SPACES = "Platform → Spaces"
 
 MORE_ENTRIES = (
@@ -20,7 +21,7 @@ MORE_ENTRIES = (
     ("machines.machine.mark_maintenance", web(f"{S} → Machines → Status", "admin-machine-detail")),
     ("machines.machine.mark_idle", web(f"{S} → Machines → Status", "admin-machine-detail")),
     ("machines.machinetype", web(f"{S} → Machines → Types", "admin-machine-types", "admin-machine-type-detail")),
-    # Inventory & lending
+    # Inventory
     ("inventory.inventoryproduct", web(f"{S} → Items", "admin-inventory-detail")),
     ("inventory.inventoryproduct.adjust_quantities", web(f"{S} → Items → Adjust quantity", "admin-inventory-adjust-quantity")),
     ("inventory.inventoryproduct.generate_qr_assets", web(f"{S} → Items → Generate units", "asset-generate")),
@@ -52,15 +53,15 @@ MORE_ENTRIES = (
     ("warranty.warranty", web(f"{S} → Warranty", "admin-asset-warranty", "admin-machine-warranty")),
     ("warranty.warrantydocument", web(f"{S} → Warranty → Documents", "admin-warranty-document-detail")),
     # Backups & recovery
-    ("backup.backupdestination", web(f"{S} → Backups → Off-site", "admin-backup-destinations", "admin-backup-destination")),
-    ("backup.backupdestination.retire_destinations", web(f"{S} → Backups → Off-site → Retire", "admin-backup-destination-retire")),
-    ("backup.backupdestination.test_destinations", web(f"{S} → Backups → Off-site → Test", "admin-backup-destination-probe")),
-    ("view:backup_platformbackupsettings_console", web(f"{S} → Backups (platform and space)", "admin-deployment-backups",
+    ("backup.backupdestination", web(f"{DATA} → Offsite copies", "admin-backup-destinations", "admin-backup-destination")),
+    ("backup.backupdestination.retire_destinations", web(f"{DATA} → Offsite copies → Retire", "admin-backup-destination-retire")),
+    ("backup.backupdestination.test_destinations", web(f"{DATA} → Offsite copies → Test", "admin-backup-destination-probe")),
+    ("view:backup_platformbackupsettings_console", web(f"{DATA} → Backup & restore (platform and space)", "admin-deployment-backups",
                                                        "admin-makerspace-backups", "admin-backup-schedule")),
     ("view:backup_backuparchive_notice", web(f"{S} → Backups → Download", "admin-backup-download-url")),
     ("view:makerspaces_makerspace_backup", web(f"{S} → Backups", "admin-makerspace-backups")),
     ("view:makerspaces_makerspace_space_restore", web(f"{S} → Backups → Restore", "admin-space-restore", "admin-makerspace-restores")),
-    ("view:backup_backupkeyfingerprint_keys", web(f"{PS} → Restore drills", "admin-platform-restore-drills")),
+    ("view:backup_backupkeyfingerprint_keys", web(f"{DATA} → Restore drills", "admin-platform-restore-drills")),
     ("keys:rotate_platform", KEY_ROTATION),
     ("keys:rotate_server", KEY_ROTATION),
     # One-space archives only: a whole-platform archive is encrypted to the platform key alone and can be
@@ -71,7 +72,7 @@ MORE_ENTRIES = (
     # Kept host-only [#165 auto]: the platform-wide re-encryption follows a platform/server key rotation run on the server.
     ("keys:reencrypt_all", KEY_ROTATION),
     ("keys:reencrypt_stop", KEY_ROTATION),
-    ("keys:settings", web(f"{PS} → Restore drills → Settings", "admin-platform-restore-drill-settings")),
+    ("keys:settings", web(f"{DATA} → Restore drills → Settings", "admin-platform-restore-drill-settings")),
     ("tenant_migration.selfhostmoverequest.approve_moves", web(MOVES, "admin-platform-selfhost-move-approve")),
     ("tenant_migration.selfhostmoverequest.reject_moves", web(MOVES, "admin-platform-selfhost-move-reject")),
     ("view:tenant_migration_selfhostmoverequest_run", web(MOVES, "admin-platform-selfhost-move-export",
@@ -94,17 +95,17 @@ MORE_ENTRIES = (
                                       "admin-chat-templates", "admin-chat-template")),
     ("integrations.emaillog.retry_selected", web(f"{S} → Delivery log → Retry", "admin-email-log-retry")),
     ("integrations.notificationdeliverylog.requeue_failed_deliveries", web(f"{S} → Delivery log → Retry", "delivery-log-retry")),
-    ("integrations.emailsuppression", web(f"{S} → Delivery log → Blocked addresses", "email-suppression-list",
+    ("integrations.emailsuppression", web(f"{S} → Delivery log → Suppressed addresses", "email-suppression-list",
                                           "email-suppression-delete")),
-    ("integrations.notificationdestination", web(f"{S} → Channels", "admin-notification-destinations",
+    ("integrations.notificationdestination", web(f"{S} → Settings → Notifications → Rooms", "admin-notification-destinations",
                                                  "admin-notification-destination-detail")),
-    ("integrations.notificationrecipient", web(f"{S} → Channels → Recipients", "admin-notification-recipients")),
+    ("integrations.notificationrecipient", web(f"{S} → Settings → Notifications → Who gets notified", "admin-notification-recipients")),
     ("integrations.dailyotpsmscounter", RAW_REPAIR),  # [#165 auto] a quota counter: plumbing, no workflow owns it
     ("notifications.notification", web(f"{S} → Inbox", "notifications:inbox-list", "notifications:inbox-archive")),
     ("apiclients.apiclient", web(f"{S} → API clients", "admin-api-clients", "admin-api-client")),
-    ("apiclients.apikeyrequest", web(f"{PS} → Requests → API keys", "admin-platform-api-key-requests")),
-    ("apiclients.apikeyrequest.approve_and_issue", web(f"{PS} → Requests → API keys", "admin-platform-api-key-request-approve")),
-    ("apiclients.apikeyrequest.reject_selected", web(f"{PS} → Requests → API keys", "admin-platform-api-key-request-reject")),
+    ("apiclients.apikeyrequest", web(f"{SPACES} → Requests → API keys", "admin-platform-api-key-requests")),
+    ("apiclients.apikeyrequest.approve_and_issue", web(f"{SPACES} → Requests → API keys", "admin-platform-api-key-request-approve")),
+    ("apiclients.apikeyrequest.reject_selected", web(f"{SPACES} → Requests → API keys", "admin-platform-api-key-request-reject")),
     ("apiclients.apiclientimportapproval", web("Platform → space moves → identity decisions", "tenant-migration-import-decisions")),
     ("oauth2_provider.application", web(f"{S} → API clients → Connected apps", "admin-oauth-apps", "admin-oauth-app")),
     ("oauth2_provider.accesstoken", web(f"{S} → API clients → Connected apps → Revoke", "admin-oauth-app")),
@@ -114,6 +115,8 @@ MORE_ENTRIES = (
     ("oauth2_provider.grant", RAW_REPAIR),
     ("oauth2_provider.idtoken", RAW_REPAIR),
     # System
-    ("view:control-storage", web("Platform → Overview (storage) and a space's Usage", "platform-overview", "admin-makerspace-usage")),
+    ("view:control-storage", web("Platform → Platform dashboard (storage) and a space's Usage & limits", "platform-overview", "admin-makerspace-usage")),
+    ("view:managed_hosting_spacehostingtype_limits", web(f"{SPACES} → Plans; {S} → Usage & limits",
+                                                          "admin-space-limits", "admin-platform-space-limits-bulk")),
     ("view:control-rls", host(f"Database role diagnostics; repair with manage.py rls_sync on the server ({SERVER})")),
 )

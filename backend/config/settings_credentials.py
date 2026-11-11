@@ -223,5 +223,8 @@ EVENT_ASSET_CLAMAV_HOST = env("EVENT_ASSET_CLAMAV_HOST", default="")
 EVENT_ASSET_CLAMAV_PORT = env.int("EVENT_ASSET_CLAMAV_PORT", default=3310)
 UI_DELIGHT_ENABLED = env.bool("UI_DELIGHT_ENABLED", default=True)
 UI_EASTER_EGGS_ENABLED = env.bool("UI_EASTER_EGGS_ENABLED", default=True)
+# Decision 300(b): on by default on every install. Off = the main host's front page is the space (or
+# the /spaces directory) instead of the product landing. Exposed through GET /api/v1/config.
+HUB_LANDING_ENABLED = env.bool("HUB_LANDING_ENABLED", default=True)
 # When True, requests to HMAC_PROTECTED_PATH_PREFIXES must carry a valid signed client.
 API_CLIENT_AUTH_REQUIRED = env.bool("API_CLIENT_AUTH_REQUIRED", default=False)

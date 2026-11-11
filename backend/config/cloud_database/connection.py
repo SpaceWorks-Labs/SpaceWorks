@@ -48,7 +48,11 @@ def validate_transport(parameters, mode, *, managed=False):
     if (host.endswith(".neon.tech") and "-pooler" in host.split(".")[0]) or (
         supabase and port == 6543
     ):
-        raise DatabaseConfigurationError("This endpoint uses transaction pooling; select direct/session.")
+        raise DatabaseConfigurationError(
+            "This endpoint uses transaction pooling, which backups, migrations and advisory locks cannot use. "
+            "Set DATABASE_URL (and SPACEWORKS_MAINTENANCE_DATABASE_URL) to the provider's direct or session "
+            "connection string (Supabase: direct host or session pooler on 5432; Neon: the host without -pooler)."
+        )
     if supabase and ".pooler." in host and (port != 5432 or mode != "session"):
         raise DatabaseConfigurationError("Supabase shared pooler requires declared session mode on 5432.")
     if managed and not _local(host):

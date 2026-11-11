@@ -36,7 +36,7 @@ def host(where):
 
 SERVER = "/control/ over the SSH tunnel (or on the server itself)"
 KEY_ROTATION = host("On the server: manage.py backup_keys (rotation with the private key), then /control/ → "
-                    "Backups & recovery → Backup keys, drills and notices")
+                    "Data & recovery → Backup keys, drills and notices")
 RAW_REPAIR = host(f"Raw record repair, no workflow owns these rows: {SERVER}")
 CONSOLE = "Web console"
 

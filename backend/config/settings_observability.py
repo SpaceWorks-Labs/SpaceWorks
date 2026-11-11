@@ -29,12 +29,18 @@ if SPACEWORKS_EDITION not in ("makerspace", "events", "bookings", "organization"
 # Static bearer token for GET /api/v1/metrics/ (Prometheus text). Unset => the route is 404.
 METRICS_TOKEN = env("METRICS_TOKEN", default="")
 
+# Decision 263: a SPACE's Grafana (test, render) must be on a public address unless the
+# operator allows private/local ones, e.g. Grafana beside SpaceWorks on one compose network.
+# The platform connection (superadmin) may always use a private address.
+GRAFANA_ALLOW_PRIVATE_HOSTS = env.bool("GRAFANA_ALLOW_PRIVATE_HOSTS", default=False)
+
 # Error tracking is opt-in and only imported when a DSN is configured, so the SDK is never
 # on the import path of a deployment that did not ask for it. PII stays off: scoped PII
 # fields are encrypted at rest and must not leave the box through an error report.
 SENTRY_DSN = env("SENTRY_DSN", default="")
 if SENTRY_DSN:
     import sentry_sdk
+    from config.sentry_privacy import before_send, before_send_transaction
     from sentry_sdk.integrations.celery import CeleryIntegration
     from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -42,6 +48,11 @@ if SENTRY_DSN:
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration(), CeleryIntegration()],
         send_default_pii=False,
+        max_request_body_size="never",
+        include_local_variables=False,
+        include_source_context=False,
+        before_send=before_send,
+        before_send_transaction=before_send_transaction,
         traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.0),
         environment=env("SENTRY_ENVIRONMENT", default="production" if not DEBUG else "development"),
     )
@@ -55,6 +66,8 @@ if not 1 <= MFA_MAX_ATTEMPTS <= 10:
 
 # Lane F infrastructure is always present, independent of separable domain apps.
 from config.web_analytics import analytics_settings
+# Explicit operator approval; this controls data destinations, not script loading or CSP.
+WEB_TELEMETRY_ALLOWED_ORIGINS = tuple(env.list("WEB_TELEMETRY_ALLOWED_ORIGINS", default=[]))
 WEB_ANALYTICS_SCRIPT_URL, WEB_ANALYTICS_COLLECT_URL, WEB_ANALYTICS_DOMAIN = analytics_settings(
     env, CONTENT_SECURITY_POLICY,
 )
@@ -64,6 +77,8 @@ MIDDLEWARE.insert(3, "apps.operations.route_metrics.RouteMetricsMiddleware")
 ORGANIZATION_SELF_CREATION_ENABLED = env.bool("ORGANIZATION_SELF_CREATION_ENABLED", default=False)
 ORGANIZATION_SELF_CREATION_MAX_OWNED = env.int("ORGANIZATION_SELF_CREATION_MAX_OWNED", default=3)
 ORGANIZATION_SELF_CREATION_MAX_PER_DAY = env.int("ORGANIZATION_SELF_CREATION_MAX_PER_DAY", default=1)
+ORGANIZATION_REVIEW_REQUIRED = env.bool("ORGANIZATION_REVIEW_REQUIRED", default=False)
+ORGANIZATION_PUBLIC_DIRECTORY_ENABLED = env.bool("ORGANIZATION_PUBLIC_DIRECTORY_ENABLED", default=False)
 if not all(1 <= limit <= 100 for limit in (
     ORGANIZATION_SELF_CREATION_MAX_OWNED, ORGANIZATION_SELF_CREATION_MAX_PER_DAY,
 )):

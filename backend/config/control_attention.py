@@ -8,6 +8,7 @@ Counts only: no names, addresses or other personal details.
 from datetime import timedelta
 
 from django.urls import NoReverseMatch, reverse
+from django.utils.translation import gettext_lazy as _
 
 STUCK_AFTER = timedelta(minutes=30)
 RECENT = timedelta(days=30)
@@ -52,33 +53,33 @@ def _rows(now):
         return SelfHostMoveRequest.objects.filter(status="requested").count()
 
     return (
-        ("Hosting requests waiting for review", HostingRequest.objects.filter(status="submitted").count(),
-         "admin:hosting_requests_hostingrequest_changelist", "?status__exact=submitted", "Platform → Spaces → Onboarding"),
-        ("Archive requests waiting", MakerspaceArchiveRequest.objects.filter(status="pending").count(),
-         "admin:makerspaces_makerspacearchiverequest_changelist", "?status__exact=pending", "Platform → Spaces → Health"),
-        ("Spaces scheduled to be archived or purged",
+        (_("Hosting requests waiting for review"), HostingRequest.objects.filter(status="submitted").count(),
+         "admin:hosting_requests_hostingrequest_changelist", "?status__exact=submitted", _("Platform → Spaces → Onboarding")),
+        (_("Archive requests waiting"), MakerspaceArchiveRequest.objects.filter(status="pending").count(),
+         "admin:makerspaces_makerspacearchiverequest_changelist", "?status__exact=pending", _("Platform → Spaces → Health")),
+        (_("Spaces scheduled to be archived or purged"),
          controls.filter(archive_on__isnull=False).count() + controls.filter(purge_due_at__isnull=False).count(),
-         "admin:space_controls_spacecontrolstate_changelist", "", "Platform → Spaces → Health"),
-        ("Paused spaces", controls.filter(suspended_at__isnull=False).count(),
-         "admin:space_controls_spacecontrolstate_changelist", "", "Platform → Spaces → Health"),
-        ("Read-only spaces", controls.filter(read_only_at__isnull=False).count(),
-         "admin:space_controls_spacecontrolstate_changelist", "", "Platform → Spaces → Health"),
-        ("Restore drills failed in the last 30 days",
+         "admin:space_controls_spacecontrolstate_changelist", "", _("Platform → Spaces → Health")),
+        (_("Paused spaces"), controls.filter(suspended_at__isnull=False).count(),
+         "admin:space_controls_spacecontrolstate_changelist", "", _("Platform → Spaces → Health")),
+        (_("Read-only spaces"), controls.filter(read_only_at__isnull=False).count(),
+         "admin:space_controls_spacecontrolstate_changelist", "", _("Platform → Spaces → Health")),
+        (_("Restore drills failed in the last 30 days"),
          RestoreDrillReport.objects.filter(outcome="failed", started_at__gte=now - RECENT).count(),
-         "admin:backup_restoredrillreport_changelist", "?outcome__exact=failed", "Platform settings → Restore drills"),
-        ("Backups failed in the last 30 days",
+         "admin:backup_restoredrillreport_changelist", "?outcome__exact=failed", _("Platform → Data & recovery → Restore drills")),
+        (_("Backups failed in the last 30 days"),
          BackupArchive.objects.filter(status="failed", created_at__gte=now - RECENT).count(),
-         "admin:backup_backuparchive_changelist", "", "a space's Backups page"),
-        ("Networks blocked now", IPAutoBlock.objects.filter(blocked_until__gt=now).count(),
-         "admin:accounts_ipautoblock_changelist", "", "Platform settings → IP access"),
-        ("Messages stuck for more than 30 minutes", _stuck_outbox(now),
-         "admin:integrations_emaillog_changelist", "?status__exact=pending", "Platform → Analytics (outbox health)"),
-        ("Self-host move requests waiting", _optional("tenant_migration", moves),
-         "admin:tenant_migration_selfhostmoverequest_changelist", "?status__exact=requested", "Platform settings → Self-host moves"),
-        ("API key requests waiting", ApiKeyRequest.objects.filter(status="pending").count(),
-         "admin:apiclients_apikeyrequest_changelist", "?status__exact=pending", "a space's API clients page"),
-        ("Web address requests waiting", SubdomainRequest.objects.filter(status="pending").count(),
-         "admin:makerspaces_subdomainrequest_changelist", "?status__exact=pending", "a space's Settings → Domain"),
+         "admin:backup_backuparchive_changelist", "", _("Platform → Data & recovery → Backups")),
+        (_("Networks blocked now"), IPAutoBlock.objects.filter(blocked_until__gt=now).count(),
+         "admin:accounts_ipautoblock_changelist", "", _("Platform → Platform security → IP access")),
+        (_("Messages stuck for more than 30 minutes"), _stuck_outbox(now),
+         "admin:integrations_emaillog_changelist", "?status__exact=pending", _("Platform → Platform analytics (outbox health)")),
+        (_("Self-host move requests waiting"), _optional("tenant_migration", moves),
+         "admin:tenant_migration_selfhostmoverequest_changelist", "?status__exact=requested", _("Platform → Data & recovery → Self-host moves")),
+        (_("API key requests waiting"), ApiKeyRequest.objects.filter(status="pending").count(),
+         "admin:apiclients_apikeyrequest_changelist", "?status__exact=pending", _("Platform → Spaces → Requests → API keys")),
+        (_("Web address requests waiting"), SubdomainRequest.objects.filter(status="pending").count(),
+         "admin:makerspaces_subdomainrequest_changelist", "?status__exact=pending", _("Platform → Spaces → Requests → Web addresses")),
     )
 
 

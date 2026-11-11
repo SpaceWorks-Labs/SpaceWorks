@@ -12,8 +12,12 @@ import logging
 from django.conf import settings
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from config.control_attention import attention_items
+from config.control_dashboard_panels import (
+    backup_status, console_links, group_map, internal_records, limits_near,
+)
 
 logger = logging.getLogger(__name__)
 OVERVIEW_BLOCKS = ("people", "lending", "machines", "events", "bookings", "membership")
@@ -35,17 +39,17 @@ def space_totals():
     spaces = Makerspace.objects.all()
     controls = SpaceControlState.objects.all()
     return [
-        {"label": "Spaces", "value": spaces.filter(archived_at__isnull=True).count(),
+        {"label": _("Spaces"), "value": spaces.filter(archived_at__isnull=True).count(),
          "link": _link("admin:makerspaces_makerspace_changelist")},
-        {"label": "Paused", "value": controls.filter(suspended_at__isnull=False).count(),
+        {"label": _("Paused"), "value": controls.filter(suspended_at__isnull=False).count(),
          "link": _link("admin:space_controls_spacecontrolstate_changelist")},
-        {"label": "Read-only", "value": controls.filter(read_only_at__isnull=False).count(),
+        {"label": _("Read-only"), "value": controls.filter(read_only_at__isnull=False).count(),
          "link": _link("admin:space_controls_spacecontrolstate_changelist")},
-        {"label": "Archived", "value": spaces.filter(archived_at__isnull=False).count(),
+        {"label": _("Archived"), "value": spaces.filter(archived_at__isnull=False).count(),
          "link": _link("admin:makerspaces_makerspace_changelist")},
-        {"label": "Accounts", "value": User.objects.filter(is_tenant_dump_stub=False, is_walk_in=False).count(),
+        {"label": _("Accounts"), "value": User.objects.filter(is_tenant_dump_stub=False, is_walk_in=False).count(),
          "link": _link("admin:accounts_user_changelist")},
-        {"label": "Organizations", "value": Organization.objects.count(),
+        {"label": _("Organizations"), "value": Organization.objects.count(),
          "link": _link("admin:organizations_organization_changelist")},
     ]
 
@@ -81,21 +85,18 @@ def overview_totals():
 
 def quick_links():
     rows = [
-        ("Makerspaces", "admin:makerspaces_makerspace_changelist"),
-        ("Accounts", "admin:accounts_user_changelist"),
-        ("Audit log", "admin:audit_auditlog_changelist"),
-        ("Backup console", "admin:backup_platformbackupsettings_console"),
-        ("Backup keys, drills and notices", "admin:backup_backupkeyfingerprint_keys"),
-        ("IP rules", "admin:accounts_ipaccessrule_changelist"),
-        ("Email log", "admin:integrations_emaillog_changelist"),
-        ("Scheduled task runs", "admin:operations_periodictaskrun_changelist"),
+        (_("Makerspaces"), "admin:makerspaces_makerspace_changelist"),
+        (_("Accounts"), "admin:accounts_user_changelist"),
+        (_("Payments ledger"), "admin:payments_payment_changelist"),
+        (_("Per-space limits"), "admin:managed_hosting_spacehostingtype_limits"),
+        (_("Audit log"), "admin:audit_auditlog_changelist"),
+        (_("Backup console"), "admin:backup_platformbackupsettings_console"),
+        (_("Backup keys, drills and notices"), "admin:backup_backupkeyfingerprint_keys"),
+        (_("IP rules"), "admin:accounts_ipaccessrule_changelist"),
+        (_("Delivery log: email"), "admin:integrations_emaillog_changelist"),
+        (_("Scheduled task runs"), "admin:operations_periodictaskrun_changelist"),
     ]
-    links = [{"label": label, "link": link} for label, route in rows if (link := _link(route))]
-    console = (getattr(settings, "PUBLIC_APP_BASE_URL", "") or "").rstrip("/")
-    if console:
-        links.append({"label": "Web superadmin console: platform overview", "link": f"{console}/admin/platform-dashboard",
-                      "external": True})
-    return links
+    return [{"label": label, "link": link} for label, route in rows if (link := _link(route))]
 
 
 def dashboard_callback(request, context):
@@ -105,6 +106,11 @@ def dashboard_callback(request, context):
         "control_overview": overview_totals(),
         "control_attention": attention_items(timezone.now()),
         "control_links": quick_links(),
+        "control_backups": backup_status(),
+        "control_limits": limits_near(),
+        "control_groups": group_map(),
+        "control_internal": internal_records(),
+        "control_console": console_links(getattr(settings, "PUBLIC_APP_BASE_URL", "")),
         "control_server_only": not getattr(settings, "CONTROL_PLANE_PROXY", False),
     })
     return context

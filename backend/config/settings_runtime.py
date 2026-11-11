@@ -121,6 +121,8 @@ MANAGED_RESOURCE_LIMITS = {
     # Tenant exports retain a long-lived database snapshot while running. This is an
     # active-job ceiling, independent of the byte quota charged when an archive lands.
     "data_exports": 1,
+    # 0.12 guest/day passes: a pass is never a membership, so the members cap cannot bound them.
+    "guest_passes": 100,
     # Platform-wide daily caps (not per space); the deployment may override them (#77).
     "otp_email": env.int("MANAGED_OTP_EMAIL_DAILY_LIMIT", default=200),
     "otp_sms": env.int("MANAGED_OTP_SMS_DAILY_LIMIT", default=100),

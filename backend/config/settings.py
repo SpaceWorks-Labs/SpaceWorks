@@ -117,6 +117,7 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
 
 # --- lane L15 (release 2): the price preview, per account or per IP when signed out.
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"].update({
+    "minor_person_lookup": env("THROTTLE_MINOR_PERSON_LOOKUP", default="60/min"),
     "pricing_quote": env("THROTTLE_PRICING_QUOTE", default="60/min"),
 })
 # Stable names for the pricing enums instead of hash-suffixed collision names.
@@ -234,3 +235,9 @@ CONTROL_PLANE_TUNNEL = env.str("CONTROL_PLANE_TUNNEL", default="off").strip().lo
 # config.control_catalog (config is not an app, so the library is registered by path).
 TEMPLATES[0]["OPTIONS"]["libraries"] = {"control_copy": "config.control_templatetags"}
 # --- end lane r2-control-restructure
+# Native clients generate types from the schema: stable names for the equipment-kit enums
+# instead of the hash-suffixed `Kind47fEnum` / `Kind5faEnum` collision names.
+SPECTACULAR_SETTINGS["ENUM_NAME_OVERRIDES"].update({
+    "ContextualRequestOutcomeEnum": [("request", "request"), ("consumable_plan", "consumable_plan")],
+    "KitLineKindEnum": [("returnable", "returnable"), ("consumable", "consumable")],
+})

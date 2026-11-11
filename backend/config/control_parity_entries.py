@@ -2,15 +2,17 @@
 
 from config.control_parity import RAW_REPAIR, SERVER, host, web
 
-PS = "Platform settings"  # /admin/platform?section=...
+PS = "Platform → Platform settings"  # /admin/platform?section=...
 SP = "Platform → Spaces"  # /admin/platform-spaces
+ACCESS = "Platform → People & access"  # /admin/platform-access?section=...
+SEC = "Platform → Platform security"  # /admin/platform-security?section=...
 S = "Space console"       # /m/<space>/admin/<tab>, reached by the superadmin in every space (#115)
 ARCH = ("admin-platform-archive-requests", "admin-platform-archive-request-approve")
 
 ENTRIES = (
     # Overview and makerspaces
     ("space_controls.platformannouncement.cancel_announcements", web(f"{SP} → Announcements", "admin-platform-announcement-cancel")),
-    ("makerspaces.makerspace", web(f"{SP}; {S} → Settings", "admin-makerspaces", "admin-makerspace")),
+    ("makerspaces.makerspace", web(f"{SP} → Create makerspace; {S} → Settings", "admin-makerspaces", "admin-makerspace")),
     ("makerspaces.makerspace.archive_makerspaces", web(f"{SP} → Manage → Archive", "admin-space-archive")),
     ("makerspaces.makerspace.unarchive_makerspaces", web(f"{SP} → Manage → Unarchive", "admin-space-unarchive")),
     ("makerspaces.makerspace.purge_makerspaces", web(f"{SP} → Manage → Purge", "admin-space-purge")),
@@ -19,20 +21,20 @@ ENTRIES = (
     ("makerspaces.makerspace.read_only_makerspaces", web(f"{SP} → Manage → Read-only", "admin-space-read-only")),
     ("makerspaces.makerspace.lift_read_only_makerspaces", web(f"{SP} → Manage → Lift read-only", "admin-space-read-only-lift")),
     ("makerspaces.makerspace.cancel_makerspace_schedules", web(f"{SP} → Manage → Cancel schedule", "admin-space-schedule-cancel")),
-    ("makerspaces.makerspace.approve_archive_requests", web(f"{PS} → Requests → Archive", *ARCH)),
-    ("makerspaces.makerspace.decline_archive_requests", web(f"{PS} → Requests → Archive", "admin-platform-archive-request-decline")),
-    ("makerspaces.makerspacearchiverequest", web(f"{PS} → Requests → Archive", *ARCH)),
-    ("makerspaces.makerspacearchiverequest.approve_selected", web(f"{PS} → Requests → Archive", *ARCH)),
-    ("makerspaces.makerspacearchiverequest.decline_selected", web(f"{PS} → Requests → Archive", "admin-platform-archive-request-decline")),
-    ("makerspaces.subdomainrequest", web(f"{PS} → Requests → Web addresses", "admin-platform-subdomain-requests")),
-    ("makerspaces.subdomainrequest.approve_and_provision", web(f"{PS} → Requests → Web addresses", "admin-platform-subdomain-request-approve")),
-    ("makerspaces.subdomainrequest.reject_selected", web(f"{PS} → Requests → Web addresses", "admin-platform-subdomain-request-reject")),
+    ("makerspaces.makerspace.approve_archive_requests", web(f"{SP} → Requests → Archive", *ARCH)),
+    ("makerspaces.makerspace.decline_archive_requests", web(f"{SP} → Requests → Archive", "admin-platform-archive-request-decline")),
+    ("makerspaces.makerspacearchiverequest", web(f"{SP} → Requests → Archive", *ARCH)),
+    ("makerspaces.makerspacearchiverequest.approve_selected", web(f"{SP} → Requests → Archive", *ARCH)),
+    ("makerspaces.makerspacearchiverequest.decline_selected", web(f"{SP} → Requests → Archive", "admin-platform-archive-request-decline")),
+    ("makerspaces.subdomainrequest", web(f"{SP} → Requests → Web addresses", "admin-platform-subdomain-requests")),
+    ("makerspaces.subdomainrequest.approve_and_provision", web(f"{SP} → Requests → Web addresses", "admin-platform-subdomain-request-approve")),
+    ("makerspaces.subdomainrequest.reject_selected", web(f"{SP} → Requests → Web addresses", "admin-platform-subdomain-request-reject")),
     ("hosting_requests.hostingrequest.accept_selected", web(f"{SP} → Onboarding", "admin-platform-hosting-request-approve")),
     ("hosting_requests.hostingrequest.reject_selected", web(f"{SP} → Onboarding", "admin-platform-hosting-request-reject")),
     ("hosting_requests.hostingrequest.request_changes_selected", web(f"{SP} → Onboarding", "admin-platform-hosting-request-changes")),
     ("view:hosting_requests_hostingrequest_create_makerspace", web(f"{SP} → Onboarding → Approve (creates the space)",
                                                                    "admin-platform-hosting-request-approve")),
-    ("view:makerspaces_makerspace_security", web(f"{S} → Security (locks)", "admin-makerspace-security-settings",
+    ("view:makerspaces_makerspace_security", web(f"{SEC} → Space security locks; {S} → Security (locks)", "admin-makerspace-security-settings",
                                                  "admin-makerspace-security-lock")),
     ("view:makerspaces_makerspace_create_staff_account", web(f"{S} → Staff & roles → Invite", "admin-staff-invitations")),
     ("view:makerspaces_makerspace_keys", web(f"{SP} → Manage → Keys", "admin-platform-space-keys",
@@ -42,14 +44,14 @@ ENTRIES = (
     # Organizations
     ("organizations.organization", web("Organizations", "admin-organization-list", "admin-organization-detail")),
     ("organizations.organizationmakerspace", web("Organizations → Spaces", "admin-organization-links", "admin-organization-link-delete")),
-    ("organizations.organizationmembership", web("Organizations → Members", "admin-organization-memberships",
+    ("organizations.organizationmembership", web("Organizations → People", "admin-organization-memberships",
                                                  "admin-organization-membership-detail")),
     # People & access
-    ("accounts.user", web(f"{PS} → Accounts; {S} → Staff & roles, Members", "admin-platform-accounts", "admin-staff-roles",
+    ("accounts.user", web(f"{ACCESS} → Accounts; {ACCESS} → Staff & Space Managers; {S} → Members", "admin-platform-accounts", "admin-staff-roles",
                           "admin-staff-invitations")),
-    ("accounts.user.disable_account", web(f"{PS} → Accounts → Disable", "admin-platform-account-disable")),
-    ("accounts.user.enable_account", web(f"{PS} → Accounts → Re-enable", "admin-platform-account-enable")),
-    ("accounts.user.reset_two_step", web(f"{PS} → Accounts → Reset two-step; {S} → Staff & roles",
+    ("accounts.user.disable_account", web(f"{ACCESS} → Accounts → Disable", "admin-platform-account-disable")),
+    ("accounts.user.enable_account", web(f"{ACCESS} → Accounts → Re-enable", "admin-platform-account-enable")),
+    ("accounts.user.reset_two_step", web(f"{ACCESS} → Accounts → Reset two-step; {S} → Staff & roles",
                                          "admin-platform-account-reset-two-step", "admin-staff-roles-mfa-reset")),
     ("accounts.user.reset_password_selected", web(f"{S} → Staff & roles → Reset password", "admin-user-reset-password")),
     ("accounts.user.restrict_access", web(f"{S} → Members → Restrict", "user-restrict")),
@@ -69,8 +71,8 @@ ENTRIES = (
     ("makerspaces.memberproject", host(f"Read-only even in /control/: members edit their own projects; anything else is raw record repair: {SERVER}")),
     ("presence.presencesession", web(f"{S} → Members → In the space → End", "admin-presence-end")),
     # Security
-    ("accounts.ipaccessrule", web(f"{PS} → IP access", "admin-platform-ip-rules", "admin-platform-ip-rule")),
-    ("accounts.ipautoblock.unblock_selected", web(f"{PS} → IP access → Lift now", "admin-platform-ip-block-unblock")),
+    ("accounts.ipaccessrule", web(f"{SEC} → IP access", "admin-platform-ip-rules", "admin-platform-ip-rule")),
+    ("accounts.ipautoblock.unblock_selected", web(f"{SEC} → IP access → Lift now", "admin-platform-ip-block-unblock")),
     ("accounts.oidcprovider", web(f"{PS} → Single sign-on", "admin-platform-oidc-providers", "admin-platform-oidc-provider")),
     ("accounts.nativeappregistration", web(f"{PS} → Mobile apps", "admin-platform-native-apps", "admin-platform-native-app")),
     ("accounts.platformloginmethods", web(f"{PS} → Sign-in providers → Sign-in methods", "admin-platform-login-methods")),

@@ -84,6 +84,7 @@ def _plans_item(title, icon, route, app_label=None):
 UNFOLD = {
     "SITE_TITLE": SITE_NAME,
     "SITE_HEADER": SITE_NAME,
+    "SITE_SUBHEADER": _("Control plane"),
     "SITE_ICON": {
         "light": lambda request: static("brand/symbol.svg"),
         "dark": lambda request: static("brand/symbol-reversed.svg"),
@@ -92,10 +93,36 @@ UNFOLD = {
         "light": lambda request: static("brand/lockup-horizontal.svg"),
         "dark": lambda request: static("brand/lockup-horizontal-reversed.svg"),
     },
+    # The app's favicon set (frontend/public/brand), so a /control/ tab reads as Space Works.
+    "SITE_FAVICONS": [
+        {"rel": "icon", "type": "image/svg+xml", "href": lambda request: static("brand/favicon.svg")},
+        {"rel": "icon", "sizes": "32x32", "type": "image/png", "href": lambda request: static("brand/icon-32.png")},
+        {"rel": "apple-touch-icon", "sizes": "180x180", "href": lambda request: static("brand/icon-180.png")},
+    ],
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
-    "THEME": "dark",
+    # No forced THEME: the operator's light/dark choice (or the system's) is kept, and both sets
+    # are on brand -- light on Warm Cream, dark on true black with teal-lit ink (decision 225).
+    "BORDER_RADIUS": "10px",
+    # Fonts (free Gilroy ExtraBold + Outfit), the true-black page, links, focus and badges.
+    "STYLES": [lambda request: static("control/control.css")],
     "COLORS": {
+        # Neutrals are brand mixes, light end to dark end: Warm Cream, the light surface/hover/
+        # line/outline/muted tokens, then the dark set's hairline, hover and surface, and black.
+        # Unfold reads 50-500 in light mode and 300-950 in dark mode.
+        "base": {
+            "50": "255 244 232",
+            "100": "246 236 224",
+            "200": "239 230 219",
+            "300": "213 208 198",
+            "400": "130 138 131",
+            "500": "91 104 99",
+            "600": "61 78 74",
+            "700": "66 136 126",
+            "800": "26 62 57",
+            "900": "13 30 27",
+            "950": "0 0 0",
+        },
         # Derived sRGB mixes: Teal toward Cream (50-400), Teal at 500/600,
         # then toward Deep Ink by 30/45/60/75 percent (700-950).
         "primary": {
@@ -110,14 +137,17 @@ UNFOLD = {
             "800": "9 80 73",
             "900": "12 70 65",
             "950": "15 60 56",
-        }
+        },
     },
-    # #188: the /control/ home is a dashboard (key totals, what needs attention, quick links).
+    # The /control/ home: platform counts, what needs attention, backups, limits near quota,
+    # the group map and links into the web platform console (config.control_dashboard).
     "DASHBOARD_CALLBACK": "config.control_dashboard.dashboard_callback",
     "SIDEBAR": {
         "show_search": True,
-        # Thirteen ordered sections built from the one catalogue (config.control_catalog);
-        # every registered admin model appears in exactly one of them.
+        # Every registered model, including the internal records kept out of the groups below.
+        "show_all_applications": True,
+        # Fourteen ordered groups built from the one catalogue (config.control_catalog);
+        # every registered admin model appears in exactly one of them or in its internal list.
         "navigation": build_navigation(_item, _managed_item, _plans_item),
     },
 }

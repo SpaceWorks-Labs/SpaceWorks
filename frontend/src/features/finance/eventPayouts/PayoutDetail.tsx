@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { payoutStateLabel } from "./labels";
 import { useState } from "react";
 import { DetailLayout } from "../../../components/layouts";
 import { usePayout } from "./api";
@@ -19,7 +20,7 @@ export function PayoutDetail({ scope, id, poolVersion }: { scope: FinanceScope; 
   const row = query.data;
   return <DetailLayout title={row?.event_title ?? t`Payout obligation`} state={{ status: query.isPending ? "loading" : query.error ? "error" : "ready",
     error: t`This obligation could not be loaded.`, onRetry: () => { void query.refetch(); } }}
-    status={row?.state} main={row ? <DetailContent key={`${scopeIdentity(scope.actorId, scope.makerspaceId)}:${id}:${row.version}:${row.allowed_actions?.join()}`}
+    status={row ? payoutStateLabel(row.state) : undefined} main={row ? <DetailContent key={`${scopeIdentity(scope.actorId, scope.makerspaceId)}:${id}:${row.version}:${row.allowed_actions?.join()}`}
       scope={scope} row={row} poolVersion={row.expected_pool_version ?? poolVersion} /> : null} />;
 }
 function DetailContent({ scope, row, poolVersion }: { scope: FinanceScope; row: Detail; poolVersion?: number }) {
@@ -27,7 +28,7 @@ function DetailContent({ scope, row, poolVersion }: { scope: FinanceScope; row: 
   const payee = collectedPayee(row.payee);
   return <div className="grid gap-6">
     <p>{t`${money(row.approved_minor, row.currency)} approved · ${money(row.effective_paid_minor, row.currency)} recorded paid · ${money(row.remaining_minor, row.currency)} remaining`}</p>
-    <p>{t`Payee: `}{payee?.masked_details ?? t`Details not collected`}</p>
+    <p>{payee ? t`Payee: ${payee.masked_details}` : t`Payee: Details not collected`}</p>
     <PayeeReveal scope={scope} obligationId={row.id} version={row.version} allowed={permits(row, "reveal_payee")} />
     <PayeeReview scope={scope} payout={row} />
     <PayoutHolds scope={scope} payout={row} />

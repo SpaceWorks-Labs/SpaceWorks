@@ -34,12 +34,13 @@ function newQuestion(): CustomFormQuestion {
   return { id: questionId(), label: "", type: "short_text", options: [], required: false };
 }
 
-type LegacyBuilderProps = Parameters<typeof LegacyCustomFormBuilder>[0];
+/** `memberCard` (parity O-B4): a v2 membership form offers "Can print on the member card"; legacy forms ignore it. */
+type LegacyBuilderProps = Parameters<typeof LegacyCustomFormBuilder>[0] & { memberCard?: boolean };
 type V2BuilderProps = Omit<LegacyBuilderProps, "value" | "onChange"> & { value: FormSchemaV2; onChange: (schema: FormSchemaV2) => void; context?: React.ComponentProps<typeof FormBuilderV2>["context"] };
 export function CustomFormBuilder(props: LegacyBuilderProps): React.JSX.Element;
 export function CustomFormBuilder(props: V2BuilderProps): React.JSX.Element;
 export function CustomFormBuilder(props: LegacyBuilderProps | V2BuilderProps) {
-  if (props.value && !Array.isArray(props.value)) return <fieldset disabled={props.disabled}><FormBuilderV2 value={props.value} context={(props as V2BuilderProps).context} onChange={props.onChange as (schema: FormSchemaV2) => void} /></fieldset>;
+  if (props.value && !Array.isArray(props.value)) return <fieldset disabled={props.disabled}><FormBuilderV2 value={props.value} context={(props as V2BuilderProps).context} memberCard={props.memberCard} onChange={props.onChange as (schema: FormSchemaV2) => void} /></fieldset>;
   return <LegacyCustomFormBuilder {...props as LegacyBuilderProps} />;
 }
 

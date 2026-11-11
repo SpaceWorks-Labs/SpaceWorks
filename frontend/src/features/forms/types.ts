@@ -22,9 +22,14 @@ export interface Question {
   options?: { id: string; label: string; other?: boolean }[];
   bounds?: { min?: number; max?: number; min_length?: number; max_length?: number; min_selections?: number; max_selections?: number; other_max_length?: number };
   disclosure?: { organizer: boolean; reviewer: boolean; judge: boolean };
+  /** Parity O-B4: a plain, non-sensitive membership answer the member card may print. */
+  printable?: boolean;
 }
+/** Parity O-B2: a heading with no answer, shown above the question `before` names. */
+export type FormSection = { id: string; before: string; heading: string; help?: string };
 export interface FormSchemaV2 {
   schema_version: 2; form_id: string; revision: number; questions: Question[];
+  sections?: FormSection[];
   event_context?: { event_id: number; event_date_revision: number; timezone_name: string; as_of_date: string };
 }
 export type Answers = Record<string, unknown>;

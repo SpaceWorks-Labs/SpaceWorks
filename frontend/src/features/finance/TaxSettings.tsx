@@ -7,6 +7,7 @@ import { Field, SettingsRow } from "../../components/ui";
 import { downloadStaffFile, staffRequest } from "../../lib/api";
 import { formatMoney } from "../staff/paymentsApi";
 import { financeError } from "./financeApi";
+import { GstinCheck } from "./GstinCheck";
 
 type Tax = {
   enabled: boolean; mode: "none" | "single" | "gst_india"; tax_name: string; rate_bps: number; prices_include_tax: boolean;
@@ -56,7 +57,8 @@ export function TaxSettings({ makerspaceId }: { makerspaceId: number }) {
           onChange={event => set({ prices_include_tax: event.target.checked })} />{t`Prices already include tax`}</label>
       </div> : null}
       {gst ? <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={t`GSTIN`}><input className="desk-input font-mono uppercase" maxLength={15} value={draft.gstin} onChange={event => set({ gstin: event.target.value.toUpperCase(), state_code: event.target.value.slice(0, 2) })} /></Field>
+        <Field label={t`GSTIN`}><input className="desk-input code-text uppercase" maxLength={15} value={draft.gstin} onChange={event => set({ gstin: event.target.value.toUpperCase(), state_code: event.target.value.slice(0, 2) })} /></Field>
+        <GstinCheck makerspaceId={makerspaceId} gstin={draft.gstin} />
         <Field label={t`SAC code`}><input className="desk-input" maxLength={8} value={draft.sac_code} onChange={event => set({ sac_code: event.target.value })} /></Field>
         <Field label={t`Scheme`}><select className="desk-input" value={draft.scheme} onChange={event => set({ scheme: event.target.value as Editable["scheme"] })}>
           <option value="regular">{t`Regular`}</option><option value="composition">{t`Composition`}</option></select></Field>

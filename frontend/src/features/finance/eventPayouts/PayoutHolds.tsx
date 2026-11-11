@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { holdKindLabel, payoutEligibilityLabel, reasonCodeText } from "./labels";
 import { useState } from "react";
 import { usePayoutCommand } from "./api";
 import { reasonIsValid, utcInstant } from "./format";
@@ -24,8 +25,8 @@ function HoldForm({ scope, payout, hold }: { scope: FinanceScope; payout: Payout
       mutation.mutate({ expected_version: payout.version, eligibility_revision: payout.eligibility_revision,
         kind, reason_code: reason, note, evidence_refs: references, hold_until: until ? utcInstant(until) : null,
         ...(hold ? { hold_id: hold.id } : {}) }); }}>
-    <h3 className="font-semibold">{hold ? t`Release ${hold.kind} hold` : t`Place finance hold`}</h3>
-    {hold ? <p>{t`Reason: ${hold.reason_code.replace(/_/g, " ")}${hold.note ? ` · ${hold.note}` : ""}`}</p>
+    <h3 className="font-semibold">{hold ? (hold.kind === "retention" ? t`Release retention hold` : t`Release eligibility hold`) : t`Place finance hold`}</h3>
+    {hold ? <p>{hold.note ? t`Reason: ${reasonCodeText(hold.reason_code)} · ${hold.note}` : t`Reason: ${reasonCodeText(hold.reason_code)}`}</p>
       : <label className="grid gap-1">{t`Hold kind`}<select className="desk-input" value={kind} onChange={event => setKind(event.target.value as Hold["kind"])}>
         <option value="eligibility">{t`Pause new payouts`}</option><option value="retention">{t`Retain finance evidence`}</option></select></label>}
     <p className="text-sm text-muted">{t`Eligibility holds pause new payouts. Retention holds preserve documents. Releasing a hold does not change the approved amount.`}</p>
@@ -33,7 +34,7 @@ function HoldForm({ scope, payout, hold }: { scope: FinanceScope; payout: Payout
     <label className="grid gap-1">{t`Finance explanation`}<textarea className="desk-input" maxLength={5000} value={note} onChange={event => setNote(event.target.value)} /></label>
     <label className="grid gap-1">{t`Evidence IDs (comma separated)`}<input className="desk-input" value={evidence} onChange={event => setEvidence(event.target.value)} /></label>
     {!hold ? <label className="grid gap-1">{t`Review at (UTC, optional)`}<input className="desk-input" type="datetime-local" value={until} onChange={event => setUntil(event.target.value)} /></label> : null}
-    <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />{t`I confirm this finance ${hold ? "release" : "hold"}.`}</label>
+    <label className="flex min-h-11 items-center gap-3"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />{hold ? t`I confirm this finance release.` : t`I confirm this finance hold.`}</label>
     <button className="desk-button min-h-11" disabled={!valid || mutation.isPending} type="submit">{hold ? t`Release hold` : t`Place hold`}</button>
     {mutation.error ? <p role="alert">{t`The hold change failed. Reload current eligibility and confirm recent authentication.`}</p> : null}
     {mutation.isSuccess ? <p role="status">{t`The hold change was recorded.`}</p> : null}
@@ -60,11 +61,11 @@ function Acknowledgement({ scope, payout }: { scope: FinanceScope; payout: Payou
 export function PayoutHolds({ scope, payout }: { scope: FinanceScope; payout: PayoutDetail }) {
   return <section aria-label={t`Eligibility and retention`} className="grid gap-4">
     <h2 className="font-semibold">{t`Eligibility and retention`}</h2>
-    <p>{t`Eligibility: ${payout.eligibility_status.replace(/_/g, " ")} · evidence revision ${payout.eligibility_revision}`}</p>
+    <p>{t`Eligibility: ${payoutEligibilityLabel(payout.eligibility_status)} · evidence revision ${payout.eligibility_revision}`}</p>
     {payout.eligibility_evidence ? <details className="rounded-2xl border border-line p-4"><summary className="min-h-11 cursor-pointer font-semibold">{t`Current eligibility evidence`}</summary>
       <EvidenceDetails value={payout.eligibility_evidence} /></details> : <p className="text-sm text-muted">{t`Current evidence is unavailable. Reload before acknowledging eligibility.`}</p>}
     {payout.holds?.map(hold => <div key={hold.id} className="grid gap-2">
-      <p>{t`${hold.kind} hold · ${hold.reason_code.replace(/_/g, " ")}`}{hold.hold_until ? t` · review ${hold.hold_until}` : ""}</p>
+      <p>{t`${holdKindLabel(hold.kind)} · ${reasonCodeText(hold.reason_code)}`}{hold.hold_until ? t` · review ${hold.hold_until}` : ""}</p>
       <HoldForm scope={scope} payout={payout} hold={hold} />
     </div>)}
     <Acknowledgement scope={scope} payout={payout} />

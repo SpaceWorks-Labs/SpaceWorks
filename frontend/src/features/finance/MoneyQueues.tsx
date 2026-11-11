@@ -41,7 +41,7 @@ export function MoneyQueues({ makerspaceId, claimsOn }: { makerspaceId: number; 
       {claims.data?.count === 0 ? <p className="text-sm text-muted">{t`No claims waiting.`}</p> : null}
       <ul className="grid gap-2">{(claims.data?.results ?? []).map(row => <li key={row.id} className="grid gap-2 rounded-lg border border-line bg-panel p-3">
         <p className="font-semibold">{row.subject_label || t`Charge ${row.payment_id}`} · {formatMoney(row.amount, row.currency)}</p>
-        <p className="text-sm text-muted">{words(row.method)} reference <span className="font-mono">{row.reference}</span>{t`, paid ${row.paid_on}`}
+        <p className="text-sm text-muted">{words(row.method)} reference <span className="code-text">{row.reference}</span>{t`, paid ${row.paid_on}`}
           {row.via_pay_link ? t` · through a pay link` : ""}</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="desk-button" disabled={decideClaim.isPending} onClick={() => decideClaim.mutate({ row, decision: "confirm" })}>{t`Confirm payment`}</button>

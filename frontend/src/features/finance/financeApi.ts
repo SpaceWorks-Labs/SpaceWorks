@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { API_V1_URL, StructuredApiError, staffRequest } from "../../lib/api";
+import { paymentMethodLabel } from "../../lib/money";
 
 /** Shapes of the lane L5 finance routes (kept local until the generated client catches up). */
 export type FinanceAccess = {
@@ -46,7 +47,7 @@ export type EventMoney = {
 };
 
 export const DOMAIN_LABELS: Record<string, string> = {
-  inventory: t`Inventory`, loans: t`Lending`, machines: t`Machines`, bookings: t`Bookings and rooms`, events: t`Events`,
+  inventory: t`Inventory`, loans: t`Inventory loans`, machines: t`Machines`, bookings: t`Bookings and rooms`, events: t`Events`,
   membership: t`Membership`, donations: t`Donations and sponsors`, shop: t`Shop`, general: t`General`,
 };
 export const EXPENSE_CATEGORIES = ["to_buy", "repair", "maintenance", "consumables", "reimbursement", "prize", "rent",
@@ -54,9 +55,17 @@ export const EXPENSE_CATEGORIES = ["to_buy", "repair", "maintenance", "consumabl
 export const RECEIPT_CATEGORIES = ["donation", "grant", "sponsorship", "interest", "venue_fee", "other_income"] as const;
 export const METHODS = ["cash", "upi", "bank_transfer", "card", "cheque", "online", "other"] as const;
 
+const CATEGORY_LABELS = (): Record<string, string> => ({
+  to_buy: t`To buy`, repair: t`Repair`, maintenance: t`Maintenance`, consumables: t`Consumables`,
+  reimbursement: t`Reimbursement`, prize: t`Prize`, rent: t`Rent`, utilities: t`Utilities`, equipment: t`Equipment`,
+  salaries: t`Salaries`, software: t`Software`, events: t`Events`, other_expense: t`Other expense`,
+  donation: t`Donation`, grant: t`Grant`, sponsorship: t`Sponsorship`, interest: t`Interest`, venue_fee: t`Venue fee`,
+  other_income: t`Other income`,
+});
+
+/** Translated wording for a ledger category or a payment method code. */
 export function words(value: string) {
-  const text = value.replace(/_/g, " ");
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  return CATEGORY_LABELS()[value] ?? paymentMethodLabel(value);
 }
 
 const space = (id: number) => `/admin/makerspace/${id}`;

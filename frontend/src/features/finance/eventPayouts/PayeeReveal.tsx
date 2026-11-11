@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { fieldLabel } from "./payeeTemplates";
 import { useEffect, useState } from "react";
 import { memberRequest, staffRequest } from "../../../lib/api";
 import { memberPayoutPath, payoutPath } from "./api";
@@ -35,7 +36,7 @@ export function PayeeReveal({ scope, actorId, obligationId, version, allowed = f
     }}>{t`Reveal for inspection`}</button>
     {request.failed ? <p role="alert">{t`Details could not be revealed. Reauthenticate or reload and try again.`}</p> : null}
     {request.data ? <><dl className="grid gap-2">{Object.entries(request.data.details).map(([key, value]) =>
-      <div key={key}><dt className="text-sm text-muted">{key.replace(/_/g, " ")}</dt><dd className="break-all">{value}</dd></div>)}</dl>
+      <div key={key}><dt className="text-sm text-muted">{fieldLabel(key)}</dt><dd className="break-all">{value}</dd></div>)}</dl>
       <button type="button" className="desk-button min-h-11" onClick={clear}>{t`Hide details`}</button></> : null}
   </section>;
 }

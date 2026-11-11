@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { formatNumber } from "../../../lib/format";
 import { useEffect, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 import { staffRequestBlob } from "../../../lib/api";
@@ -46,7 +47,7 @@ function ReceiptContent({ scope, receipt }: { scope: FinanceScope; receipt: Rece
   };
   return <article className="grid gap-3 rounded-2xl border border-line p-4">
     <h3 className="flex items-center gap-2 font-semibold"><FileText aria-hidden="true" size={18} />{t`Receipt ${receipt.id}`}</h3>
-    <p className="break-all text-sm text-muted">{t`${receipt.mime} · ${receipt.bytes} bytes · generation ${receipt.generation} · ${receipt.state}`}</p>
+    <p className="break-all text-sm text-muted">{t`${receipt.mime} · ${formatNumber(receipt.bytes)} bytes · generation ${receipt.generation} · ${receipt.state}`}</p>
     <p className="break-all text-xs text-muted">{t`SHA-256: ${receipt.sha256}`}</p>
     {allowed ? <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => { void open(); }}>{pending ? t`Opening receipt…` : t`Open finance receipt`}</button>
       : <p className="text-sm text-muted">{t`Receipt bytes are unavailable. Retained metadata remains part of the financial record.`}</p>}

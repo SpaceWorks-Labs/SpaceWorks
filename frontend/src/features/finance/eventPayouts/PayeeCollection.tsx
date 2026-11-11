@@ -1,9 +1,11 @@
 import { t } from "@lingui/core/macro";
+import { paymentMethodLabel } from "../../../lib/money";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { memberRequest } from "../../../lib/api";
 import { memberPayoutKey, memberPayoutPath, useCommandIdentity, usePayeeContext } from "./api";
 import { scopeIdentity } from "./format";
+import { reasonCodeText } from "./labels";
 import { fieldLabel, templateFields } from "./payeeTemplates";
 import { usePrivateRequest } from "./usePrivateRequest";
 import { collectedPayee, permits } from "./types";
@@ -71,12 +73,12 @@ function CollectionForm({ actorId, payout, context }: { actorId: number; payout:
   return <section className="grid gap-4 rounded-2xl border border-line bg-panel p-5" aria-label={t`Your payment routing`}>
     <h2 className="font-semibold">{t`Your payment routing`}</h2><p>{context.disclosure}</p>
     <p className="text-sm text-muted">{t`Routing values are visible only to you and authorized finance staff. Each edit creates a new revision for this reimbursement. Details clear when you leave this window.`}</p>
-    {payee ? <><p>{payee.masked_details} · {payee.method.replace(/_/g, " ")} · {payee.verified ? t`Verified` : t`Awaiting finance review`}</p>
-      {payee.correction ? <p role="status">{t`Finance requested a correction: ${payee.correction.reason_code.replace(/_/g, " ")} · ${payee.correction.note}`}</p> : null}</> : null}
+    {payee ? <><p>{payee.masked_details} · {paymentMethodLabel(payee.method)} · {payee.verified ? t`Verified` : t`Awaiting finance review`}</p>
+      {payee.correction ? <p role="status">{t`Finance requested a correction: ${reasonCodeText(payee.correction.reason_code)} · ${payee.correction.note}`}</p> : null}</> : null}
     {editable ? templates.length ? <form className="grid gap-3" autoComplete="off" onSubmit={event => { event.preventDefault(); void save(); }}>
       <label className="grid gap-1">{t`Country and payment method`}<select className="desk-input" value={selection} disabled={request.pending} onChange={event => {
         setSelection(event.target.value); setDetails({}); setConsent(false);
-      }}><option value="">{t`Choose an enabled method`}</option>{templates.map(choice => <option key={choice.join(":")} value={choice.join(":")}>{choice[0]} · {choice[1].replace(/_/g, " ")}</option>)}</select></label>
+      }}><option value="">{t`Choose an enabled method`}</option>{templates.map(choice => <option key={choice.join(":")} value={choice.join(":")}>{choice[0]} · {paymentMethodLabel(choice[1])}</option>)}</select></label>
       {fields.map(field => <label key={field} className="grid gap-1">{fieldLabel(field)}{field === "account_type"
         ? <select className="desk-input" required value={details[field] ?? ""} disabled={request.pending} onChange={event => { setDetails({ ...details, [field]: event.target.value }); setConsent(false); }}>
           <option value="">{t`Choose account type`}</option><option value="checking">{t`Checking`}</option><option value="savings">{t`Savings`}</option></select>

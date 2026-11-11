@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { decimalToMinor, minorToDecimal, paymentMethodLabel } from "../../../lib/money";
 import { useState } from "react";
 import { usePayoutCommand } from "./api";
 import { money, reasonIsValid, utcInstant } from "./format";
@@ -7,7 +8,7 @@ import type { FinanceScope, PayoutDetail, PayoutEntry } from "./types";
 
 export function PayoutRecording({ scope, payout, amends }: { scope: FinanceScope; payout: PayoutDetail; amends?: PayoutEntry }) {
   const payee = collectedPayee(payout.payee);
-  const [amount, setAmount] = useState(amends ? String(amends.amount_minor) : "");
+  const [amount, setAmount] = useState(amends ? minorToDecimal(amends.amount_minor, payout.currency) : "");
   const [method, setMethod] = useState(amends?.method ?? payee?.method ?? "cash");
   const [reference, setReference] = useState(amends?.reference ?? "");
   const [paidAt, setPaidAt] = useState(amends ? new Date(amends.paid_at).toISOString().replace(/Z$/, "") : "");
@@ -16,11 +17,11 @@ export function PayoutRecording({ scope, payout, amends }: { scope: FinanceScope
   const [isVoid, setIsVoid] = useState(amends?.is_void ?? false);
   const [confirmed, setConfirmed] = useState(false);
   const mutation = usePayoutCommand(scope, payout.id, amends ? `entries/${encodeURIComponent(amends.id)}/amend` : "record");
-  const minor = Number(amount);
+  const minor = decimalToMinor(amount, payout.currency) ?? Number.NaN;
   // A metadata-only correction preserves server timestamp precision, including microseconds.
   const instant = amends && !paidAtEdited ? amends.paid_at : utcInstant(paidAt);
   const maximum = payout.remaining_minor + (amends && !amends.is_void ? amends.amount_minor : 0);
-  const validAmount = Boolean(isVoid && amends) || /^\d+$/.test(amount) && Number.isSafeInteger(minor) && minor > 0 && minor <= maximum;
+  const validAmount = Boolean(isVoid && amends) || Number.isSafeInteger(minor) && minor > 0 && minor <= maximum;
   const authorized = amends ? permits(payout, "amend") && permits(amends, "amend") : permits(payout, "record");
   const valid = authorized && validAmount && reference.trim() && instant && Date.parse(instant) <= Date.now() && confirmed
     && (!(amends || method === "other") || reasonIsValid(reason));
@@ -36,8 +37,8 @@ export function PayoutRecording({ scope, payout, amends }: { scope: FinanceScope
     <h2 className="font-semibold">{amends ? t`Correct a recording error` : t`Record a completed payout`}</h2>
     <p className="text-sm text-muted">{t`Record the payment you already made. Space Works does not send money. Use a non-sensitive receipt reference, never bank details.`}</p>
     <p>{t`Maximum for this record: ${money(maximum, payout.currency)}`}</p>
-    <label className="grid gap-1">{t`Amount in ${payout.currency} minor units`}<input className="desk-input" inputMode="numeric" pattern="[0-9]+" disabled={isVoid} value={amount} onChange={event => { setAmount(event.target.value); setConfirmed(false); }} /></label>
-    <label className="grid gap-1">{t`Method`}<select className="desk-input" value={method} onChange={event => { setMethod(event.target.value); setConfirmed(false); }}>{["cash", "upi", "bank_transfer", "cheque", "other", "paypal", "wise"].map(value => <option key={value} value={value}>{value.replace(/_/g, " ")}</option>)}</select></label>
+    <label className="grid gap-1">{t`Amount (${payout.currency})`}<input className="desk-input" inputMode="decimal" placeholder={minorToDecimal(0, payout.currency)} disabled={isVoid} value={amount} onChange={event => { setAmount(event.target.value); setConfirmed(false); }} /></label>
+    <label className="grid gap-1">{t`Method`}<select className="desk-input" value={method} onChange={event => { setMethod(event.target.value); setConfirmed(false); }}>{["cash", "upi", "bank_transfer", "cheque", "other", "paypal", "wise"].map(value => <option key={value} value={value}>{paymentMethodLabel(value)}</option>)}</select></label>
     <label className="grid gap-1">{t`Payment reference`}<input className="desk-input" maxLength={64} value={reference} onChange={event => { setReference(event.target.value); setConfirmed(false); }} /></label>
     <label className="grid gap-1">{t`Paid at (UTC)`}<input className="desk-input" type="datetime-local" step="0.001" value={paidAt} onChange={event => { setPaidAt(event.target.value); setPaidAtEdited(true); setConfirmed(false); }} /></label>
     {method === "other" || amends ? <label className="grid gap-1">{amends ? t`Correction reason code` : t`Finance reason code`}<input className="desk-input" value={reason} onChange={event => setReason(event.target.value)} /></label> : null}

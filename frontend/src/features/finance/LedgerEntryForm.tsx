@@ -40,7 +40,7 @@ export function LedgerEntryForm({ makerspaceId, access, onClose }: {
       <Field label={t`Category`}><select className="desk-input" value={form.category} onChange={set("category")}>
         {categories.map(category => <option key={category} value={category}>{words(category)}</option>)}</select></Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={t`Amount`}><input className="desk-input" inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,2})?" value={form.amount} onChange={set("amount")} /></Field>
+        <Field label={t`Amount`}><input className="desk-input" inputMode="decimal" required pattern="[0-9]+(\.[0-9]{1,3})?" value={form.amount} onChange={set("amount")} /></Field>
         <Field label={t`Currency`}><input className="desk-input" required maxLength={3} value={form.currency} onChange={set("currency")} /></Field>
         <Field label={t`Method`}><select className="desk-input" value={form.method} onChange={set("method")}>
           {METHODS.map(method => <option key={method} value={method}>{words(method)}</option>)}</select></Field>

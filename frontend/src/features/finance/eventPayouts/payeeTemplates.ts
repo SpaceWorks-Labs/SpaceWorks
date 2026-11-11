@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import type { TemplateChoice } from "./types";
 
 /** Mirrors the closed v1 routing field catalogue; server configuration selects tuples. */
@@ -19,5 +20,5 @@ export function templateFields(choice: TemplateChoice): readonly string[] | null
       ? ibanCountries.includes(country) ? "iban_bank" : `${country.toLowerCase()}_bank` : null;
   return key === expected ? fields[key] ?? null : null;
 }
-export const fieldLabel = (key: string) => ({ holder_name: "Account holder name", ifsc: "IFSC", upi_id: "UPI ID", swift: "SWIFT / BIC",
-  iban: "IBAN", bsb: "BSB", payout_email: "Payout email" }[key] ?? key.replace(/_/g, " ").replace(/^./, value => value.toUpperCase()));
+export const fieldLabel = (key: string) => ({ holder_name: t`Account holder name`, ifsc: t`IFSC`, upi_id: t`UPI ID`, swift: t`SWIFT / BIC`,
+  iban: t`IBAN`, bsb: t`BSB`, payout_email: t`Payout email` } as Record<string, string>)[key] ?? key.replace(/_/g, " ").replace(/^./, value => value.toUpperCase());

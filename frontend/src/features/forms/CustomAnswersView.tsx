@@ -1,4 +1,5 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
+import { formatMinorMoney } from "../../lib/money";
 import type { CustomAnswerSnapshot, CustomAnswerSnapshotV2, CustomAnswerValue } from "./customFormTypes";
 import type { ReactNode } from "react";
 
@@ -15,7 +16,7 @@ function answerTone(id: string) {
 }
 
 function displayValue(value: CustomAnswerValue) {
-  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "boolean") return value ? t`Yes` : t`No`;
   if (Array.isArray(value)) return value.join(", ");
   return String(value);
 }
@@ -43,12 +44,12 @@ export function CustomAnswersView({ snapshot, viewer, renderFiles }: {
 
 function displayV2(answer: { type: string; value?: unknown }) {
   const value = answer.value;
-  if (answer.type === "age_at_event" && value === undefined) return "See the authorized age projection for the event date.";
-  if (answer.type === "asset_reference") return value ? "File attached" : "No file";
-  if (answer.type === "file") return Array.isArray(value) ? `${value.length} file${value.length === 1 ? "" : "s"} attached` : "No files";
+  if (answer.type === "age_at_event" && value === undefined) return t`See the authorized age projection for the event date.`;
+  if (answer.type === "asset_reference") return value ? t`File attached` : t`No file`;
+  if (answer.type === "file") return Array.isArray(value) ? plural(value.length, { one: "# file attached", other: "# files attached" }) : t`No files`;
   if (value !== null && typeof value === "object" && !Array.isArray(value)) {
     const object = value as Record<string, unknown>;
-    if (answer.type === "money") return Number.isSafeInteger(object.amount_minor) && typeof object.currency === "string" ? `${object.amount_minor} minor units (${object.currency})` : "Answer unavailable";
+    if (answer.type === "money") return Number.isSafeInteger(object.amount_minor) && typeof object.currency === "string" ? formatMinorMoney(object.amount_minor as number, object.currency) : t`Answer unavailable`;
     if (answer.type === "itinerary") return [object.mode, object.origin, object.destination, object.depart_at, object.arrive_at].filter(item => typeof item === "string").join(" · ");
     if (answer.type === "emergency_contact") return [object.name, object.relationship, object.phone].filter(item => typeof item === "string").join(" · ");
     if (object.option_id) return [object.option_id, object.text].filter(Boolean).join(": ");

@@ -7,17 +7,19 @@ import { Field, Modal } from "../../components/ui";
 import { financeApi, financeError } from "./financeApi";
 
 /** Create a pay link for an account-less charge staff raised; optionally email it once. */
-export function PayLinkDialog({ makerspaceId, paymentId, label, onClose }: {
+export function PayLinkDialog({ makerspaceId, paymentId, label, onClose, createLink }: {
   makerspaceId: number; paymentId: number; label: string; onClose: () => void;
+  /** Decision 242(b): an area's own queue creates the link through its owner-scoped route instead. */
+  createLink?: (email: string) => Promise<{ url: string; expires_at: string; emailed: boolean }>;
 }) {
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
-  const create = useMutation({ mutationFn: () => financeApi.payLink(makerspaceId, paymentId, email) });
+  const create = useMutation({ mutationFn: () => createLink ? createLink(email) : financeApi.payLink(makerspaceId, paymentId, email) });
   return <Modal open onClose={onClose} title={t`Pay link`}>
     {create.data ? <div className="grid gap-3">
       <p className="text-sm">{t`Anyone with this link can pay `}<strong>{label}</strong> until {create.data.expires_at.slice(0, 10)}.
         It shows the amount, never who owes it. A new link replaces this one.</p>
-      <p className="break-all rounded-md border border-line bg-panel p-2 font-mono text-sm">{create.data.url}</p>
+      <p className="break-all rounded-md border border-line bg-panel p-2 code-text text-sm">{create.data.url}</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="desk-button" onClick={() => { void navigator.clipboard?.writeText(create.data!.url); setCopied(true); }}>
           <Copy aria-hidden="true" size={16} />{copied ? t`Copied` : t`Copy link`}</button>

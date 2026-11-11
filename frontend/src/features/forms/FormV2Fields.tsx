@@ -5,7 +5,15 @@ import { QuestionInput } from "./QuestionInput";
 import { ageAtEvent } from "./ageAtEvent";
 import { FileInput, type UploadFormFiles } from "./FileInput";
 import { FILE_PURPOSES, type FormContext } from "./types";
+import { formItems } from "./sections";
+import { FormSectionHeading } from "./FormSectionHeading";
 import { SENSITIVE_KEYS, type FieldErrors, type FormSchemaV2, type FormState, type Question } from "./types";
+
+function sharedWithText(disclosure: Question["disclosure"]) {
+  const audiences = [disclosure?.organizer !== false && t`organizers`, disclosure?.reviewer && t`reviewers`, disclosure?.judge && t`judges`]
+    .filter(Boolean).join(", ");
+  return audiences ? t`Shared with: ${audiences}.` : t`Shared with: event processing only.`;
+}
 
 function errorText(error: FieldErrors[string] | undefined): string {
   if (!error) return "";
@@ -19,7 +27,9 @@ export function FormV2Fields({ schema, value, onChange, errors = {}, renderAsset
   renderAsset?: (question: Question, selected: unknown, onChange: (value: unknown) => void) => ReactNode;
   context?: FormContext; uploadFiles?: UploadFormFiles;
 }) {
-  return <div className="grid gap-6">{visibleQuestions(schema, value.answers).map(q => {
+  return <div className="grid gap-6">{formItems(schema, visibleQuestions(schema, value.answers)).map(item => {
+    if (item.kind === "section") return <FormSectionHeading key={item.section.id} section={item.section} />;
+    const q = item.question;
     const saveKey = allowSavedDetails ? q.type === "age_at_event" ? "date_of_birth" : q.profile_field_key : undefined;
     const defaultSave = Boolean(saveKey && !SENSITIVE_KEYS.has(saveKey) && !schema.questions.some(item => item.profile_field_key === saveKey && item.sensitive));
     const source = value.derivations[q.id]?.source;
@@ -34,7 +44,7 @@ export function FormV2Fields({ schema, value, onChange, errors = {}, renderAsset
     return <fieldset key={q.id} className="grid min-w-0 gap-2 rounded-2xl border border-line bg-panel p-4">
       <legend className="px-1 text-sm font-semibold text-ink">{q.label}{q.required ? " (required)" : ""}</legend>
       <div id={descriptionId} className="grid gap-1 text-sm text-muted">{q.help ? <p>{q.help}</p> : null}
-        {q.sensitive ? <p>{t`Only you and finance can see this answer.`}</p> : <p>{t`Shared with: `}{[q.disclosure?.organizer !== false && "organizers", q.disclosure?.reviewer && "reviewers", q.disclosure?.judge && "judges"].filter(Boolean).join(", ") || t`event processing only`}.</p>}</div>
+        {q.sensitive ? <p>{t`Only you and finance can see this answer.`}</p> : <p>{sharedWithText(q.disclosure)}</p>}</div>
       {q.type === "age_at_event" ? <div className="grid gap-2">
         <p className="text-sm text-muted">{t`Age is calculated at the event start${schema.event_context ? ` (${schema.event_context.as_of_date})` : ""}. Your birth date is private unless this form separately asks for it.`}</p>
         {source?.kind === "saved_detail" ? <p className="text-sm">{t`Using your saved birth date.`}</p> : <label className="grid gap-1 text-sm">{t`Date of birth`}<input className="desk-input" type="date" required={q.required} value={source?.kind === "inline_dob" ? source.date_of_birth : ""} onChange={e => {

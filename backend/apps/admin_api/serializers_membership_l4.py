@@ -63,7 +63,7 @@ class InviteLinkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MembershipInviteLink
-        fields = ("id", "label", "plan", "plan_name", "max_uses", "uses", "expires_at", "revoked_at", "live",
+        fields = ("id", "label", "plan", "plan_name", "unit", "max_uses", "uses", "expires_at", "revoked_at", "live",
                   "created_at")
         read_only_fields = fields
 
@@ -75,6 +75,7 @@ class InviteLinkSerializer(serializers.ModelSerializer):
 class InviteLinkCreateSerializer(serializers.Serializer):
     label = serializers.CharField(max_length=120, required=False, allow_blank=True)
     plan_id = serializers.IntegerField(required=False, allow_null=True)
+    unit_id = serializers.IntegerField(required=False, allow_null=True)  # parity O-B1
     max_uses = serializers.IntegerField(min_value=1, max_value=10000, required=False, default=1)
     expires_at = serializers.DateTimeField(required=False, allow_null=True)
 

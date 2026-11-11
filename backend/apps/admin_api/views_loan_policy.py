@@ -40,7 +40,7 @@ class ReturnPolicyView(APIView):
                    description=(
                        "Every changed field is authorized by the settings-authority layer (#101): "
                        "the Space Manager always; the Inventory Manager changes loan length and "
-                       "renewals without a grant (#128 C-11d) and the other lending limits with the "
+                       "renewals without a grant (#128 C-11d) and the other loan limits with the "
                        "inventory settings grant. 403 `setting_not_delegated` / `setting_locked`. "
                        "Audited as settings.changed per field."))
     def patch(self, request, makerspace_id):

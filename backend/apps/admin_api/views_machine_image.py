@@ -19,7 +19,7 @@ from apps.inventory import public_image_storage
 from apps.machines import access, services
 from apps.machines.serializers import MachineSerializer
 from apps.makerspaces.guards import require_module
-from apps.makerspaces.limits import add_storage
+from apps.makerspaces.limits import charge_upload
 
 
 class MachineImageView(APIView):
@@ -61,6 +61,8 @@ class MachineImageView(APIView):
             machine.makerspace_id,
             ext,
         )
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(machine.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = public_image_storage.presigned_upload(object_key, content_type)
         except StorageUnavailable:
@@ -123,7 +125,7 @@ class MachineImageView(APIView):
             raise ValidationError({"object_key": gettext("Uploaded file is not a valid image.")})
         old_key = machine.image_key
         if object_key != old_key:
-            add_storage(machine.makerspace, result.size)
+            charge_upload(machine.makerspace, result.size)
         machine = services.update_image(machine, request.user, object_key)
         return self._response(request, machine)
 

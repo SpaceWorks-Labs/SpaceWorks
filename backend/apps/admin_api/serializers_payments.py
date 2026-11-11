@@ -46,6 +46,7 @@ class MakerspacePaymentSettingsSerializer(serializers.ModelSerializer):
     stripe_webhook_url = serializers.SerializerMethodField()
     razorpay_webhook_url = serializers.SerializerMethodField()
     effective_mode = serializers.SerializerMethodField()
+    test_mode = serializers.SerializerMethodField()
 
     class Meta:
         model = MakerspacePaymentSettings
@@ -68,6 +69,7 @@ class MakerspacePaymentSettingsSerializer(serializers.ModelSerializer):
             "connect_payouts_enabled",
             "connect_status_updated_at",
             "effective_mode",
+            "test_mode",
             "loan_deposit_mode",
             "loan_deposit_amount",
             "loan_late_fee_per_day",
@@ -82,6 +84,7 @@ class MakerspacePaymentSettingsSerializer(serializers.ModelSerializer):
             "connect_payouts_enabled",
             "connect_status_updated_at",
             "effective_mode",
+            "test_mode",
         )
 
     def get_stripe_secret_key_set(self, obj) -> bool:
@@ -116,6 +119,11 @@ class MakerspacePaymentSettingsSerializer(serializers.ModelSerializer):
     def get_effective_mode(self, obj) -> str:
         source = resolve_payment_source(obj.makerspace)
         return source.provider if source else "unavailable"
+
+    def get_test_mode(self, obj) -> bool | None:
+        """Parity C20: true when the charging credentials are test keys (derived from the public key prefix)."""
+        from apps.payments.test_mode import space_test_mode
+        return space_test_mode(obj.makerspace)
 
     def validate_default_currency(self, value):
         normalized = value.strip().lower()

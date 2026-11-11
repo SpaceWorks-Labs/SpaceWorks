@@ -12,6 +12,8 @@ from apps.makerspaces.settings_authority_views import (
     EffectiveSettingsAuthorityView, SettingLocksView, SettingsGrantsView,
 )
 from apps.admin_api.views_space_packs import SpacePackView, SpacePackProfileListView
+from apps.admin_api.views_space_email_test import MakerspaceEmailTestView
+from apps.operations.views_legal import SpaceLegalPageView
 
 
 urlpatterns = [
@@ -19,6 +21,8 @@ urlpatterns = [
     path("space-pack-profiles", SpacePackProfileListView.as_view(), name="admin-space-pack-profiles"),
     path("makerspace/<int:makerspace_id>/setup-state", MakerspaceSetupStateView.as_view(), name="admin-makerspace-setup-state"),
     path("makerspace/<int:makerspace_id>/profile", MakerspaceProfileView.as_view(), name="admin-makerspace-profile"),
+    path("makerspace/<int:makerspace_id>/email/test", MakerspaceEmailTestView.as_view(), name="admin-makerspace-email-test"),
+    path("makerspace/<int:makerspace_id>/legal-pages/<slug:slug>", SpaceLegalPageView.as_view(), name="admin-makerspace-legal-page"),
     path(
         "makerspace/<int:makerspace_id>/domain-settings/<slug:domain>",
         MakerspaceDomainSettingsView.as_view(),

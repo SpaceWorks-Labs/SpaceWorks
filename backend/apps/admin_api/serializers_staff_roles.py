@@ -20,6 +20,8 @@ class StaffRoleCreateSerializer(serializers.Serializer):
                                    help_text="Send an invitation to this address instead.")
     roles = serializers.ListField(child=serializers.CharField(), allow_empty=False, max_length=8)
     machine_type_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), default=list)
+    machine_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), default=list,
+                                        help_text="Individual machines of this space, unioned with the types.")
     expires_in_days = serializers.IntegerField(min_value=1, max_value=30, default=7,
                                                help_text="Invitation lifetime (email invitations only).")
 
@@ -32,10 +34,12 @@ class StaffRoleCreateSerializer(serializers.Serializer):
 class StaffRoleChangeSerializer(serializers.Serializer):
     roles = serializers.ListField(child=serializers.CharField(), allow_empty=False, max_length=8, required=False)
     machine_type_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False)
+    machine_ids = serializers.ListField(child=serializers.IntegerField(min_value=1), required=False,
+                                        help_text="Replaces the individual machines; omit to keep them.")
 
     def validate(self, attrs):
         if not attrs:
-            raise serializers.ValidationError(gettext("Provide roles or machine_type_ids."))
+            raise serializers.ValidationError(gettext("Provide roles, machine_type_ids or machine_ids."))
         return attrs
 
 
@@ -59,13 +63,16 @@ class StaffRoleSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer
     email = serializers.CharField(source="user.email", read_only=True)
     roles = serializers.SerializerMethodField()
     machine_type_ids = serializers.SerializerMethodField()
+    machine_ids = serializers.SerializerMethodField()
+    machine_types = serializers.SerializerMethodField()
+    machines = serializers.SerializerMethodField()
     mfa_enabled = serializers.SerializerMethodField()
     granted_at = serializers.DateTimeField(source="created_at", read_only=True)
     can = serializers.SerializerMethodField()
 
     class Meta:
         model = MakerspaceMembership
-        fields = ["id", "user_id", "username", "display_name", "email", "roles", "machine_type_ids", "status",
+        fields = ["id", "user_id", "username", "display_name", "email", "roles", "machine_type_ids", "machine_ids", "machine_types", "machines", "status",
                   "mfa_enabled", "granted_at", "revoked_at", "revocation_reason", "can", "pii_masked"]
 
     def get_pii_makerspace_id(self, instance):
@@ -81,6 +88,20 @@ class StaffRoleSerializer(PiiMaskingSerializerMixin, serializers.ModelSerializer
     def get_machine_type_ids(self, obj) -> list[int]:
         from apps.machines.member_scope_services import current_scope
         return current_scope(obj)
+
+    def get_machine_ids(self, obj) -> list[int]:
+        from apps.machines.member_scope_services import current_machine_scope
+        return current_machine_scope(obj)
+
+    def get_machine_types(self, obj) -> list[dict]:
+        from apps.machines.member_scope_names import named_machine_types
+        from apps.machines.member_scope_services import current_scope
+        return named_machine_types(current_scope(obj))
+
+    def get_machines(self, obj) -> list[dict]:
+        from apps.machines.member_scope_names import named_machines
+        from apps.machines.member_scope_services import current_machine_scope
+        return named_machines(current_machine_scope(obj))
 
     def get_mfa_enabled(self, obj) -> bool:
         from apps.accounts import mfa_policy
@@ -117,11 +138,21 @@ class StaffMachineTypeChoiceSerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class StaffMachineChoiceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    machine_type_id = serializers.IntegerField()
+
+
 class StaffRolePolicySerializer(serializers.Serializer):
     grantable_roles = StaffRoleChoiceSerializer(many=True)
     can_manage_space_managers = serializers.BooleanField()
     email_invites_available = serializers.BooleanField()
     machine_types = StaffMachineTypeChoiceSerializer(many=True)
+    machines = StaffMachineChoiceSerializer(many=True)
+    scoped_role_slugs = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="Roles whose reach is narrowed by machine_type_ids / machine_ids (nothing listed = nothing).")
 
 
 class StaffRoleListSerializer(serializers.Serializer):

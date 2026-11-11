@@ -21,6 +21,8 @@ RULE_FIELDS = {
     "application_schema": None, "late_renewal": LateRenewal.BACKDATE,
 }
 PUBLIC_FIELDS = {"is_public": False, "slug": "", "description": ""}
+PHOTO_FIELDS = {"join_photo": "off"}  # parity O-B2, `membership.join_photo`
+CONTACT_FIELDS = {"join_phone": "hidden", "join_state": "hidden"}  # `membership.join_contact_fields`
 _SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
@@ -39,6 +41,8 @@ def _gate(makerspace, attrs, fields, key, instance):
 def validate_plan_rules(attrs, instance, makerspace):
     _gate(makerspace, attrs, RULE_FIELDS, "plan_rules", instance)
     _gate(makerspace, attrs, PUBLIC_FIELDS, "public_plans", instance)
+    _gate(makerspace, attrs, PHOTO_FIELDS, "join_photo", instance)
+    _gate(makerspace, attrs, CONTACT_FIELDS, "join_contact_fields", instance)
 
     def value(name):
         return attrs.get(name, getattr(instance, name, RULE_FIELDS.get(name)))

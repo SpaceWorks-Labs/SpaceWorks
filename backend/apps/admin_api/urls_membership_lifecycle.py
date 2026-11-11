@@ -15,6 +15,7 @@ from apps.admin_api.views_membership_records import (
     MembershipConsentLedgerView, MembershipRecordView, MembershipStaffHistoryView, MembershipTitleAssignmentsView,
     MembershipTitleUnassignView,
 )
+from apps.admin_api.views_member_register_bulk import JoinRequestChangesView, MemberRegisterBulkView
 from apps.admin_api.views_membership_refunds import RefundCaseMembershipSuggestionView
 from apps.admin_api.views_membership_register import MemberRegisterView
 from apps.admin_api.views_membership_summary import MembershipSummaryView
@@ -42,6 +43,9 @@ urlpatterns = [
     path("erasure-requests/<int:pk>/reject", ErasureDecisionView.as_view(decision="reject"),
          name="admin-membership-erasure-reject"),
     path(f"{_SPACE}/member-register", MemberRegisterView.as_view(), name="admin-member-register"),
+    path(f"{_SPACE}/member-register/bulk", MemberRegisterBulkView.as_view(), name="admin-member-register-bulk"),
+    path(f"{_SPACE}/join-requests/<int:pk>/request-changes", JoinRequestChangesView.as_view(),
+         name="admin-membership-request-changes"),
     path(f"{_SPACE}/membership-summary", MembershipSummaryView.as_view(), name="admin-membership-summary"),
     path(f"{_SPACE}/refund-cases/<int:case_id>/membership-suggestion", RefundCaseMembershipSuggestionView.as_view(),
          name="admin-refund-case-membership-suggestion"),

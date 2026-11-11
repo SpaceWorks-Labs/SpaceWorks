@@ -29,6 +29,7 @@ class ModuleGroupSerializer(serializers.Serializer):
 
 class DeploymentAppSerializer(serializers.Serializer):
     app_label = serializers.CharField()
+    label = serializers.CharField(help_text="Translated display name of the app.")
     shipped = serializers.BooleanField()
     note = serializers.CharField(allow_blank=True)
 

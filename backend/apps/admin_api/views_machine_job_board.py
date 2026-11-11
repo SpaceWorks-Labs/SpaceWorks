@@ -122,8 +122,14 @@ class JobSettingsView(APIView):
     permission_classes = [IsActiveStaff]
 
     def resolve(self, request, makerspace_id, type_id):
+        from django.http import Http404
+        from apps.machines.access import can_create_machine
         space = _visible_makerspace(request.user, makerspace_id, rbac.Action.MANAGE_MACHINES)
         machine_type = _machine_type(space, type_id)
+        # Per-type settings follow TYPE authority: a laser-scoped manager never reads or
+        # writes the printers' intake rules (machines audit 0.12.0).
+        if not can_create_machine(request.user, space.pk, machine_type):
+            raise Http404
         return space, machine_type, job_policy.policy_for(space, machine_type)
 
     @extend_schema(tags=["Admin machine service"], summary="Job settings for one machine type",

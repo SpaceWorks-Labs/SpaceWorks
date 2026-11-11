@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -21,12 +21,22 @@ def _actor_payload(actor):
     }
 
 
+def _page(params):
+    def number(key, default, high):
+        value = params.get(key, "")
+        return min(int(value), high) if str(value).isdigit() else default
+
+    return max(number("limit", 3, 50), 1), number("offset", 0, 100000)
+
+
 class InventoryLendingHistoryView(APIView):
     permission_classes = [IsActiveStaff]
 
     @extend_schema(
         tags=["Admin inventory"],
-        summary="Per-item lending history (last borrower + last 3 lends)",
+        summary="Per-item loan history (last borrower + paged loans)",
+        description="`limit` (default 3, max 50) and `offset` page the loans, newest first.",
+        parameters=[OpenApiParameter("limit", int, required=False), OpenApiParameter("offset", int, required=False)],
         responses={200: LendingHistoryResponseSerializer},
     )
     def get(self, request, pk):
@@ -39,7 +49,8 @@ class InventoryLendingHistoryView(APIView):
             InventoryProduct.objects.all(),
         )
         product = get_object_or_404(scoped, pk=pk)
-        items = (
+        limit, offset = _page(request.query_params)
+        all_items = (
             HardwareRequestItem.objects.filter(
                 product=product,
                 issued_quantity__gt=0,
@@ -52,11 +63,14 @@ class InventoryLendingHistoryView(APIView):
                 "request__issued_by",
                 "request__accepted_by",
             )
-            .order_by("-request__issued_at", "-request__id")[:3]
+            .order_by("-request__issued_at", "-request__id")
         )
+        items = all_items[offset:offset + limit]
         recent = [
             {
                 "id": item.id,
+                "request_id": item.request_id,
+                "requester_id": item.request.requester_id,
                 # Readable borrower label, never the internal checkin_<hash>.
                 "username": requester_label(item.request),
                 "issued_at": item.request.issued_at,
@@ -72,5 +86,6 @@ class InventoryLendingHistoryView(APIView):
                 "product_id": product.id,
                 "last_borrower": last_borrower,
                 "recent": recent,
+                "count": all_items.count(),
             }
         )

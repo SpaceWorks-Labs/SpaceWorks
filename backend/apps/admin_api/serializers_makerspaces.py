@@ -1,5 +1,6 @@
 from django.utils.translation import gettext
 from apps.integrations.email_provider_serializers import EmailProviderFields
+from apps.admin_api.serializers_space_email import SpaceEmailSenderFields
 from apps.admin_api.serializers_theme import ThemeConfigField
 from rest_framework import serializers
 
@@ -25,6 +26,7 @@ class MakerspaceSerializer(
     MakerspaceValidationMixin,
     MakerspaceMutationMixin,
     EmailProviderFields,
+    SpaceEmailSenderFields,
     serializers.ModelSerializer,
 ):
     def get_email_provider_configured(self, obj) -> bool:
@@ -123,7 +125,13 @@ class MakerspaceSerializer(
     )
     enabled_modules = serializers.SerializerMethodField()
     request_access = serializers.SerializerMethodField()
+    space_noun = serializers.SerializerMethodField(
+        help_text="Wording key for the UI: makerspace or organization (follows kind).")
     unavailable_apps = serializers.SerializerMethodField()
+
+    def get_space_noun(self, obj) -> str:
+        from apps.makerspaces.space_kind import space_noun
+        return space_noun(obj)
 
     def get_request_access(self, obj) -> str:
         from apps.makerspaces.request_access import effective_policy
@@ -132,7 +140,7 @@ class MakerspaceSerializer(
     class Meta:
         model = Makerspace
         fields = [
-            "organization_id", "organization_name",
+            "organization_id", "organization_name", "kind", "space_noun",
             "creation_setup", "creation_invitation",
             "install_profile_id",
             "id",
@@ -200,6 +208,10 @@ class MakerspaceSerializer(
             "smtp_use_tls",
             "smtp_use_ssl",
             "smtp_from_email",
+            "email_from_name",
+            "email_reply_to",
+            "smtp_verified",
+            "smtp_verified_at",
             "slack_webhook_url",
             "slack_webhook_url_set",
             "mattermost_webhook_url",
@@ -212,6 +224,7 @@ class MakerspaceSerializer(
             "updated_at",
         ]
         read_only_fields = [
+            "space_noun",
             "timezone", "country", "opening_hours",
             "id",
             "public_api_key",
@@ -234,6 +247,7 @@ class MakerspaceSerializer(
             "is_platform_subdomain",
             "telegram_bot_token_set",
             "smtp_password_set",
+            "smtp_verified_at",
             "slack_webhook_url_set",
             "mattermost_webhook_url_set",
             "discord_webhook_url_set",

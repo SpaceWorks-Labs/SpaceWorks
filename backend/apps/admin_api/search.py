@@ -29,7 +29,8 @@ class SearchInput(serializers.Serializer):
 
 
 class SearchHit(serializers.Serializer):
-    entity = serializers.ChoiceField(choices=["requests", "inventory", "members", "bookings", "events", "machines"])
+    entity = serializers.ChoiceField(choices=["requests", "inventory", "members", "bookings", "events", "machines",
+                                          "jobs", "shop", "payments", "incidents", "passes"])
     id = serializers.IntegerField()
     label = serializers.CharField()
     tab = serializers.CharField()
@@ -92,7 +93,8 @@ def search_hits(actor, space, term, limit):
     if module_enabled(space, "machines") and access.can_see_machines(actor, space.pk):
         rows = access.scope_machines_for_actor(actor, Machine.objects.filter(makerspace=space))
         add("machines", apply_q(rows, term), lambda row: row.name, query=lambda row: {"machine": str(row.pk)})
-    return hits
+    from apps.admin_api.search_sources_more import extra_hits  # decision 242: jobs, shop, payments, incidents, passes
+    return hits + extra_hits(actor, space, term, limit)
 
 
 class StaffSearchView(APIView):

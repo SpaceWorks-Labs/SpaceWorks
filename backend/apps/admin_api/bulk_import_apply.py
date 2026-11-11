@@ -1,18 +1,21 @@
 from django.db import IntegrityError, transaction
 from django.utils.text import slugify
 
+from apps.admin_api import bulk_import_qr
 from apps.admin_api.bulk_import_preview import preview_import
 from apps.admin_api.bulk_import_rows import QUANTITY_BUCKET_FIELDS
 from apps.audit import services as audit
-from apps.boxes.models import Box
+from apps.boxes.external_qr import assign_external_qr
+from apps.boxes.models import Box, QrCode
 from apps.inventory.models import Category, InventoryProduct
 from apps.makerspaces import limits
 from apps.operations.cloud_jobs import bounded
 
 
 def apply_import(actor, makerspace, rows, mapping, progress_callback=None, allow_partial=False):
-    preview = preview_import(makerspace, rows, mapping, progress_callback)
-    if not preview["valid"] and not allow_partial:
+    preview = preview_import(makerspace, rows, mapping, progress_callback, actor=actor)
+    # QR conflicts are never skipped: a label must not be half-imported or guessed.
+    if (not preview["valid"] and not allow_partial) or bulk_import_qr.has_blocking_errors(preview):
         return {**preview, "applied": False}
     created = 0
     updated = 0
@@ -67,6 +70,7 @@ def apply_import(actor, makerspace, rows, mapping, progress_callback=None, allow
 def _apply_import_row(actor, makerspace, item):
     data = dict(item["data"])
     box_id = data.pop("box_id", None)
+    qr_code = data.pop("qr_code", "")
     box = Box.objects.filter(makerspace=makerspace, pk=box_id).first() if box_id else None
     name = data.pop("name")
     category_name = data.pop("category_name", "")
@@ -86,6 +90,7 @@ def _apply_import_row(actor, makerspace, item):
         makerspace=makerspace, name=name, defaults=create_defaults
     )
     if was_created:
+        _link_qr(actor, makerspace, product, qr_code)
         return True
     update_defaults = {
         field: value for field, value in data.items() if field not in QUANTITY_BUCKET_FIELDS
@@ -94,7 +99,15 @@ def _apply_import_row(actor, makerspace, item):
     for field, value in update_defaults.items():
         setattr(product, field, value)
     product.save(update_fields=[*update_defaults.keys(), "updated_at"])
+    _link_qr(actor, makerspace, product, qr_code)
     return False
+
+
+def _link_qr(actor, makerspace, product, qr_code):
+    # An ExternalQrConflict here (a race since preview) is not an IntegrityError, so it
+    # escapes the row savepoint and rolls the WHOLE import back.
+    if qr_code:
+        assign_external_qr(actor, makerspace, qr_code, QrCode.TargetType.PRODUCT, product, source="bulk_import")
 
 
 def _record_row_integrity_error(preview, item, exc):

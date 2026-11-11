@@ -80,7 +80,7 @@ class InventoryExportView(APIView):
         },
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        require_module(makerspace_id, "staff_admin")
+        require_module(makerspace_id, "public_inventory")
         # EDIT_INVENTORY (not VIEW_INVENTORY): the bulk export carries storage_location
         # and box_code, so it stays a manager surface — handout-only guest admins, who
         # only hold VIEW_INVENTORY, must not be able to pull it.

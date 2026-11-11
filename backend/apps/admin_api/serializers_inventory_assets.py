@@ -2,6 +2,7 @@ from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.boxes.models import Box, QrCode
+from apps.boxes.qr_lookup import label_value
 from apps.inventory.models import InventoryAsset
 
 
@@ -85,7 +86,9 @@ class InventoryAssetAdminSerializer(serializers.ModelSerializer):
 
     def get_qr_payload(self, obj) -> str | None:
         qr = self._active_qr(obj)
-        return qr.payload if qr else None
+        # The value printed on the label: an external label's own value, never the
+        # internal payload (both still resolve when scanned).
+        return label_value(qr) if qr else None
 
 
 class NullableBoxPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):

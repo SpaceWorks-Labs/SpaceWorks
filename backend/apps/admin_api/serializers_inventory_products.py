@@ -60,7 +60,7 @@ class InventoryProductAdminSerializer(serializers.ModelSerializer):
             "category",
             "name",
             "manufacturer", "model", "sku", "barcode", "supplier",
-            "reorder_point", "reorder_quantity", "is_consumable", "public_show_expected_back", "kit_components",
+            "reorder_point", "reorder_quantity", "is_consumable", "public_show_expected_back", "event_only", "kit_components",
             "description",
             "unit_cost", "cost_currency", "cost_unit",
             "borrowing_terms",

@@ -117,5 +117,6 @@ def attach_staff_membership(
         audit.record(actor, "staff.roles_changed", makerspace=makerspace, target=user,
                      meta={"membership_id": membership.pk,
                      "before": changes["before"], "after": changes["after"],
-                     "removed_machine_type_ids": changes["removed_machine_type_ids"]})
+                     "removed_machine_type_ids": changes["removed_machine_type_ids"],
+                     "removed_machine_ids": changes["removed_machine_ids"]})
         return membership, created

@@ -23,7 +23,7 @@ class ReturnPolicySerializer(serializers.ModelSerializer):
         fields = [
             "id", "default_loan_days", "loan_renewal_mode", "loan_max_renewals",
             "loan_renewal_days", "loan_max_active", "loan_max_items",
-            "loan_reminder_offsets_hours", "loan_escalate_overdue_days",
+            "loan_reminder_offsets_hours", "loan_escalate_overdue_days", "account_self_renewal",
         ]
 
     def validate_loan_reminder_offsets_hours(self, value):

@@ -23,6 +23,7 @@ class NotificationDestinationSerializer(serializers.ModelSerializer):
     # same contract as the makerspace `*_set` booleans it replaces.
     credential_set = serializers.SerializerMethodField()
     signing_secret_set = serializers.SerializerMethodField()
+    signing_secret_grace_until = serializers.SerializerMethodField()
     scope = serializers.SerializerMethodField()
 
     class Meta:
@@ -36,6 +37,7 @@ class NotificationDestinationSerializer(serializers.ModelSerializer):
             "payload_version",
             "credential_set",
             "signing_secret_set",
+            "signing_secret_grace_until",
             "scope",
             "created_at",
             "updated_at",
@@ -47,6 +49,11 @@ class NotificationDestinationSerializer(serializers.ModelSerializer):
 
     def get_signing_secret_set(self, obj):
         return bool(obj.signing_secret)
+
+    def get_signing_secret_grace_until(self, obj):
+        """While a rotation's grace window is open, when the retiring secret stops verifying; else null."""
+        from apps.integrations.webhook_secrets import live_previous_secret
+        return obj.previous_secret_valid_until if live_previous_secret(obj) else None
 
     def get_scope(self, obj):
         return {
@@ -67,7 +74,8 @@ class NotificationDestinationWriteSerializer(serializers.Serializer):
     telegram_chat_id = serializers.CharField(
         required=False, allow_blank=True, max_length=64
     )
-    # `webhook` channel only. Write-only and optional on update, like the URL.
+    # `webhook` channel only. Write-only and optional. Leave it out on create and the server generates a secret and
+    # returns it once (parity E-B8); a value supplied here is stored as given and never echoed.
     signing_secret = serializers.CharField(
         required=False, allow_blank=True, write_only=True, min_length=16, max_length=512,
         trim_whitespace=False,
@@ -112,13 +120,7 @@ class NotificationDestinationWriteSerializer(serializers.Serializer):
                 except serializers.ValidationError as exc:
                     raise serializers.ValidationError({"webhook_url": exc.detail}) from exc
         secret = attrs.get("signing_secret") or ""
-        has_stored_secret = bool(existing.signing_secret) if existing else False
-        if channel == ChatNotificationChannel.WEBHOOK:
-            if not (secret or has_stored_secret):
-                raise serializers.ValidationError(
-                    {"signing_secret": gettext("A signed webhook needs a signing secret (16+ characters).")}
-                )
-        elif secret:
+        if channel != ChatNotificationChannel.WEBHOOK and secret:
             raise serializers.ValidationError(
                 {"signing_secret": gettext("Only signed-webhook destinations carry a signing secret.")}
             )

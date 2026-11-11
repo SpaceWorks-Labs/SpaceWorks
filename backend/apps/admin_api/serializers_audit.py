@@ -12,6 +12,7 @@ from datetime import timedelta
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.audit.areas import AREAS
 from apps.audit.presentation import project
 
 MAX_AUDIT_RANGE = timedelta(days=366)
@@ -86,6 +87,12 @@ class AuditLogFilterSerializer(serializers.Serializer):
                     {"end": gettext("The date range is limited to 366 days.")}
                 )
         return attrs
+
+
+class AuditLogListFilterSerializer(AuditLogFilterSerializer):
+    """The list's filters plus ``area`` (#219e). Not inherited by verification requests."""
+
+    area = serializers.ChoiceField(choices=AREAS, required=False)
 
 
 def apply_audit_filters(queryset, filters):

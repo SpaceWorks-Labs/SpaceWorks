@@ -1,3 +1,4 @@
+from apps.admin_api import bulk_import_qr
 from apps.admin_api.bulk_import_rows import (
     _default_mapping,
     _existing_names,
@@ -7,7 +8,7 @@ from apps.admin_api.bulk_import_rows import (
 from apps.operations.cloud_jobs import bounded
 
 
-def preview_import(makerspace, rows, mapping, progress_callback=None):
+def preview_import(makerspace, rows, mapping, progress_callback=None, actor=None):
     mapping = mapping or _default_mapping(rows)
     mapped = []
     errors = []
@@ -30,6 +31,7 @@ def preview_import(makerspace, rows, mapping, progress_callback=None):
             "data": normalized,
             "warnings": row_warnings,
         })
+    bulk_import_qr.check_rows(makerspace, mapped, errors, actor)
     return {
         "mapping": mapping,
         "valid": not errors,

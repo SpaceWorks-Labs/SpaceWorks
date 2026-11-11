@@ -38,6 +38,9 @@ class MakerspaceSwitcherSerializer(serializers.ModelSerializer):
             "enabled_modules",
             "enabled_features",
             "unavailable_apps",
+            # Public: the bootstrap already serves it. Area consoles gate their #205 public-stats
+            # editors on it, and area managers without VIEW_INVENTORY receive only this slim row.
+            "public_site_enabled",
         ]
         read_only_fields = fields
 

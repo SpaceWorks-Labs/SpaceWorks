@@ -7,6 +7,7 @@ class UsageResourceSerializer(serializers.Serializer):
     used = serializers.IntegerField(allow_null=True)
     limit = serializers.IntegerField(allow_null=True)
     unit = serializers.ChoiceField(choices=("bytes", "count"))
+    area = serializers.CharField(required=False, help_text="Console area of the key; resources are grouped by it.")
 
 
 class MakerspaceUsageSerializer(serializers.Serializer):
@@ -27,6 +28,7 @@ class PlatformBackupHealthSerializer(serializers.Serializer):
     automatic_enabled = serializers.BooleanField()
     last_success_at = serializers.DateTimeField(allow_null=True)
     status = serializers.CharField()
+    status_label = serializers.CharField(help_text="Translated display label for `status`.")
     started_at = serializers.DateTimeField(allow_null=True)
     finished_at = serializers.DateTimeField(allow_null=True)
     has_error = serializers.BooleanField()

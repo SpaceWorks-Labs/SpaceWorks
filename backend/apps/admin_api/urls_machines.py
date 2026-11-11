@@ -186,3 +186,21 @@ urlpatterns += [
     path('makerspaces/<int:makerspace_id>/machine-types/<int:type_id>/session-settings',
          MachineTypeSessionSettingsView.as_view(), name='admin-machine-type-session-settings'),
 ]
+
+# Release 0.12.0 (decision 223): induction events, behind `machines.induction_events`.
+from apps.admin_api.views_machine_induction import (  # noqa: E402
+    EventInductionGrantView, EventInductionUnlinkView, EventInductionView, GuestCertificationRevokeView,
+)
+from apps.admin_api.views_machine_induction_upcoming import UpcomingInductionsView  # noqa: E402
+
+urlpatterns += [
+    path('makerspaces/<int:makerspace_id>/induction-events', UpcomingInductionsView.as_view(),
+         name='admin-induction-events-upcoming'),
+    path('makerspaces/<int:makerspace_id>/events/<int:event_id>/induction', EventInductionView.as_view(),
+         name='admin-event-induction'),
+    path('makerspaces/<int:makerspace_id>/events/<int:event_id>/induction/grant', EventInductionGrantView.as_view(),
+         name='admin-event-induction-grant'),
+    path('induction-links/<int:pk>', EventInductionUnlinkView.as_view(), name='admin-event-induction-unlink'),
+    path('guest-certification-grants/<int:pk>/revoke', GuestCertificationRevokeView.as_view(),
+         name='admin-guest-certification-revoke'),
+]

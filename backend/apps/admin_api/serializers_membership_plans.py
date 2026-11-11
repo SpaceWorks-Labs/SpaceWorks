@@ -3,6 +3,7 @@ from django.utils.translation import gettext
 import re
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.admin_api.serializers_membership_plan_rules import validate_plan_rules
 from apps.forms_schema.serializers import CustomFormSchemaField
@@ -13,7 +14,7 @@ _CURRENCY = re.compile(r"^[A-Za-z]{3}$")
 
 class MembershipPlanSerializer(serializers.ModelSerializer):
     application_schema = CustomFormSchemaField(required=False, allow_null=True)
-    renewal_price = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    renewal_price = MoneyField(max_digits=13, decimal_places=3, read_only=True)
 
     class Meta:
         model = MembershipPlan
@@ -26,10 +27,30 @@ class MembershipPlanSerializer(serializers.ModelSerializer):
             "plan_type", "fixed_end_date", "renewal_amount", "renewal_price", "joining_fee",
             "rejoin_rule", "rejoin_after_days", "payment_timing", "join_mode", "application_schema",
             "late_renewal", "slug", "description", "sort_order", "is_public", "archived_at",
+            # Decision 221(d): hours each term includes before the hourly booking price.
+            "included_booking_hours", "included_machine_hours",
+            # Parity O-B3 (`billing.plan_sac`): the plan's own SAC code; blank = the space-wide one.
+            "sac_code",
+            # Parity O-B2: what the join form collects (`membership.join_photo`, `membership.join_contact_fields`).
+            "join_photo", "join_phone", "join_state",
         ]
         # `makerspace` comes from the URL, never the body: accepting it would let a
         # manager in one space price memberships in another.
         read_only_fields = ["id", "created_at", "updated_at", "archived_at"]
+
+    def validate_sac_code(self, value):
+        from apps.makerspaces.platform import feature_enabled
+        from apps.payments.tax.plan_sac import validate_plan_sac
+
+        try:
+            value = validate_plan_sac(value)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
+        space = self.context.get("makerspace")
+        # Clearing the code is always allowed; setting one needs the switch (and so the GST policy behind it).
+        if value and space is not None and not feature_enabled(space, "billing.plan_sac"):
+            raise serializers.ValidationError(gettext("Turn on the per-plan SAC code setting first."))
+        return value
 
     def validate_currency(self, value):
         if not _CURRENCY.match(value or ""):

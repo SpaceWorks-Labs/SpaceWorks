@@ -26,7 +26,7 @@ DETAIL_FIELDS = ("name", "phone", "state_code", "gstin")
 def _invite(actor, space, imported, role):
     from apps.makerspaces.notifications_p2_members import notify_invitation
     if MembershipRequest.objects.filter(makerspace=space, invite_email=imported.email,
-                                        state__in=("requested", "invited", "awaiting_vouches", "awaiting_payment")).exists():
+                                        state__in=("requested", "invited", "awaiting_vouches", "awaiting_payment", "changes_requested")).exists():
         return False
     request = MembershipRequest.objects.create(
         makerspace=space, user=None, invite_email=imported.email, kind=MembershipRequest.Kind.INVITE,
@@ -49,13 +49,15 @@ def _fill(imported, data, plans):
 
 
 def apply_members(actor, makerspace, raw_rows, mapping, *, record_only_rows=(), skip_rows=(),
-                  file_name="", file_kind="csv", source="file"):
+                  file_name="", file_kind="csv", source="file", unit_id=None, verify=False):
     from apps.makerspaces.membership_helpers import _member_role
     record_only_rows, skip_rows = set(record_only_rows), set(skip_rows)
     with transaction.atomic():
         from apps.tenant_migration.gate_runtime import assert_write_allowed
         assert_write_allowed(makerspace.pk)
         space = require_membership_feature_locked(makerspace.pk, "import")
+        from apps.admin_api.bulk_import_members_units import attach_unit, resolve_import_unit
+        unit = resolve_import_unit(actor, space, unit_id, verify)  # parity O-B1; None without a unit
         state = existing_state(space)
         planned = plan_rows(space, raw_rows, mapping, existing=state)
         role = _member_role(space)
@@ -69,7 +71,7 @@ def apply_members(actor, makerspace, raw_rows, mapping, *, record_only_rows=(), 
                 action, reason = "skip", "skipped_by_staff"
             status = ""
             if action == "create":
-                record_only = data["record_only"] or item["row"] in record_only_rows
+                record_only = data["record_only"] or item["row"] in record_only_rows or (unit is not None and verify)
                 imported = ImportedMember(makerspace=space, batch=batch, email=data["email"], created_by=actor,
                                           status=ImportedMember.Status.RECORD_ONLY if record_only
                                           else ImportedMember.Status.INVITED)
@@ -79,6 +81,8 @@ def apply_members(actor, makerspace, raw_rows, mapping, *, record_only_rows=(), 
                     imported.status = ImportedMember.Status.RECORD_ONLY
                     imported.save()
                     reason = "open_request_exists"
+                if unit is not None:
+                    attach_unit(imported, unit, verify)
                 status = imported.status
                 totals["created"] += 1
                 totals["record_only" if status == ImportedMember.Status.RECORD_ONLY else "invited"] += 1

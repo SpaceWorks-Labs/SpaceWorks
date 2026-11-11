@@ -9,6 +9,10 @@ from .urls_machines import urlpatterns as machine_urlpatterns
 from .urls_makerspaces import urlpatterns as makerspace_urlpatterns
 from .urls_membership_plans import urlpatterns as membership_plan_urlpatterns
 from .urls_membership_lifecycle import urlpatterns as membership_lifecycle_urlpatterns
+from .urls_guest_passes import urlpatterns as guest_pass_urlpatterns
+from .urls_member_units import urlpatterns as member_unit_urlpatterns
+from .urls_community import urlpatterns as community_urlpatterns
+from .urls_completeness import urlpatterns as completeness_urlpatterns  # decision 242
 from .urls_memberships import management_urlpatterns, roster_urlpatterns
 from .urls_notifications import urlpatterns as notification_urlpatterns
 from .urls_platform import settings_urlpatterns, urlpatterns as platform_urlpatterns
@@ -36,6 +40,10 @@ urlpatterns = [
     *certification_urlpatterns,
     *membership_plan_urlpatterns,
     *membership_lifecycle_urlpatterns,
+    *guest_pass_urlpatterns,
+    *member_unit_urlpatterns,
+    *community_urlpatterns,
+    *completeness_urlpatterns,
     *settings_urlpatterns,
     *makerspace_urlpatterns,
     *inventory_urlpatterns,

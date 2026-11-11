@@ -9,6 +9,8 @@ export, delete the file, one-use download link). Mounted at api/v1/admin/.
 """
 
 from django.urls import path
+from apps.integrations.views_firebase_web_settings import PlatformFirebaseWebSettingsView
+from apps.operations.views_legal import PlatformLegalPageView
 
 from apps.accounts.views_platform_accounts import (
     PlatformAccountDisableView, PlatformAccountEnableView, PlatformAccountLookupView, PlatformAccountTwoStepResetView,
@@ -52,6 +54,7 @@ def _moves():
 
 
 urlpatterns = [
+    path("platform/legal-pages/<slug:slug>", PlatformLegalPageView.as_view(), name="admin-platform-legal-page"),
     path("platform/ip-rules", IPAccessRuleListCreateView.as_view(), name="admin-platform-ip-rules"),
     path("platform/ip-rules/<int:pk>", IPAccessRuleDetailView.as_view(), name="admin-platform-ip-rule"),
     path("platform/ip-blocks", IPAutoBlockListView.as_view(), name="admin-platform-ip-blocks"),
@@ -86,6 +89,7 @@ urlpatterns = [
     path("platform/sms-settings", PlatformSmsSettingsView.as_view(), name="admin-platform-sms-settings"),
     path("platform/sms-settings/test", PlatformSmsTestView.as_view(), name="admin-platform-sms-settings-test"),
     path("platform/push-settings", PlatformPushSettingsView.as_view(), name="admin-platform-push-settings"),
+    path("platform/firebase-web-settings", PlatformFirebaseWebSettingsView.as_view(), name="admin-platform-firebase-web-settings"),
     path("platform/push-settings/test", PlatformPushTestView.as_view(), name="admin-platform-push-settings-test"),
     path("platform/whatsapp-settings", PlatformWhatsAppSettingsView.as_view(), name="admin-platform-whatsapp-settings"),
     path("platform/whatsapp-settings/test", PlatformWhatsAppTestView.as_view(),

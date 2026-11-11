@@ -41,6 +41,7 @@ ERRORS = {
 }
 FILTERS = [OpenApiParameter("status", str, enum=["live", "review", "closed"], required=False),
            OpenApiParameter("machine", int, required=False), OpenApiParameter("member", int, required=False),
+           OpenApiParameter("machine_type", int, required=False, description="Machine type id (A16)."),
            OpenApiParameter("source", str, enum=["member_qr", "staff", "device"], required=False),
            OpenApiParameter("since", str, required=False, description="ISO date (local), inclusive."),
            OpenApiParameter("until", str, required=False, description="ISO date (local), inclusive.")]
@@ -104,7 +105,7 @@ def _filter(rows, params, space):
     elif status_filter in ("review", "closed"):
         review = Q(ended_at__isnull=False) & (Q(flagged=True) | Q(member__isnull=True)) & ~Q(amendments__kind="confirm")
         rows = rows.filter(review) if status_filter == "review" else rows.filter(ended_at__isnull=False).exclude(review)
-    for key, field in (("machine", "machine_id"), ("member", "member_id")):
+    for key, field in (("machine", "machine_id"), ("machine_type", "machine_type_id"), ("member", "member_id")):
         if str(params.get(key, "")).isdigit():
             rows = rows.filter(**{field: int(params[key])})
     if params.get("source") in MachineSession.Source.values:

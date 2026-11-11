@@ -57,6 +57,12 @@ class MakerspaceMutationMixin:
         if setup is not None:
             from apps.makerspaces.creation_setup import configure_creation
             configure_creation(self.context["request"].user, instance, setup)
+        if setup is None or "modules" not in setup:
+            # Decision 295: an organization workspace starts with Events, Memberships and
+            # Bookings; an explicit module choice in the creation setup wins.
+            from apps.makerspaces.space_kind import apply_kind_defaults
+            apply_kind_defaults(self.context["request"].user, instance)
+            instance.refresh_from_db()
         from apps.organizations.services_owner import assign_owner_organization
         assign_owner_organization(
             self.context["request"].user, instance.pk,
@@ -65,6 +71,9 @@ class MakerspaceMutationMixin:
         return instance
 
     def update(self, instance, validated_data):
+        if "kind" in validated_data and validated_data["kind"] != instance.kind:
+            raise serializers.ValidationError({"kind": gettext("The kind of a space is chosen when it is created.")})
+        validated_data.pop("kind", None)
         owner_fields = {field: "Choose an owner organization only when creating a makerspace."
                         for field in ("organization_id", "organization_name") if field in validated_data}
         if owner_fields:
@@ -90,6 +99,9 @@ class MakerspaceMutationMixin:
             apply_provider_update(locked, validated_data)
             hidden_before = locked.hidden_from_central_directory
             hidden_decision = self._hidden_decision(actor, locked, validated_data)
+            if "resource_limit_overrides" in validated_data:
+                from apps.makerspaces.limits_storage_backfill import backfill_if_newly_limited
+                backfill_if_newly_limited(locked, locked.resource_limit_overrides, validated_data["resource_limit_overrides"])
             for field, value in validated_data.items():
                 setattr(locked, field, value)
             self._validate_event_default(locked, validated_data)

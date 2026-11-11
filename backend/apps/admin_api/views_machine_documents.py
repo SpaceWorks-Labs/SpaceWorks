@@ -66,6 +66,8 @@ class MachineDocumentPresignView(APIView):
         data = serializer.validated_data
         ext = storage.ext_for(data['content_type'], data['filename'])
         object_key = storage.machine_object_key(machine.makerspace_id, ext)
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(machine.makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = storage.presigned_upload(object_key, data['content_type'])
         except StorageUnavailable:

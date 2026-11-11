@@ -4,6 +4,7 @@ from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.audit.areas import READER_ACTIONS
 from apps.makerspaces.guards import require_module
 from apps.makerspaces.servability import servable_queryset
 
@@ -14,13 +15,26 @@ ENTITY_ACTIONS = {
     "payments": (rbac.Action.VIEW_FINANCE, rbac.Action.RECORD_PAYMENT),
     "bookings": (rbac.Action.MANAGE_BOOKINGS,),
     "events": (rbac.Action.MANAGE_EVENTS,),
-    "audit": (rbac.Action.VIEW_AUDIT,),
+    # #219(e-1): the audit list admits area readers without VIEW_AUDIT; it narrows the rows.
+    "audit": (rbac.Action.VIEW_AUDIT, *READER_ACTIONS),
+    # Decision 242 (MC10): the incident register's saved filters; the register itself narrows the rows.
+    "incidents": READER_ACTIONS,
+    # Open item A17: saved filters on the Machines lists. Each list re-checks machine scope, so a
+    # shared view restores filters only. Jobs admit the collect-only desk; repairs admit technicians.
+    "machines": (rbac.Action.MANAGE_MACHINES,),
+    "machine_jobs": (rbac.Action.MANAGE_MACHINES, rbac.Action.COLLECT_SERVICE_REQUEST),
+    "machine_sessions": (rbac.Action.MANAGE_MACHINES,),
+    "work_orders": (rbac.Action.MANAGE_MACHINES,),
+    "repairs": (rbac.Action.MANAGE_MACHINES, rbac.Action.EDIT_INVENTORY, rbac.Action.MANAGE_BOOKINGS,
+                rbac.Action.MANAGE_MAKERSPACE, rbac.Action.WORK_REPAIRS),
 }
 # Release 2 L21b (X40): the five staff event lists. A saved view restores filters only; each list
 # re-checks the reader's event permission, so sharing a view never grants access.
 EVENT_LIST_ENTITIES = ("event_guests", "event_teams", "event_submissions", "event_results", "event_progress")
 ENTITY_ACTIONS.update({entity: (rbac.Action.MANAGE_EVENTS,) for entity in EVENT_LIST_ENTITIES})
 ENTITY_MODULES = {"inventory": "staff_admin", "bookings": "bookings", "events": "events",
+                  "machine_jobs": "machine_service",
+                  **{entity: "machines" for entity in ("machines", "machine_sessions", "work_orders")},
                   **{entity: "events" for entity in EVENT_LIST_ENTITIES}}
 
 
@@ -44,6 +58,15 @@ def require_entity(actor, space, entity):
         require_module(space, "request_workflow")
     elif entity in ENTITY_MODULES:
         require_module(space, ENTITY_MODULES[entity])
+    if entity == "incidents":
+        from apps.makerspaces.guards import require_feature
+        require_feature(space, "safety.incidents")
+    if entity == "machine_sessions":
+        from apps.makerspaces.guards import require_feature
+        require_feature(space, "machines.sessions")
+    if entity == "work_orders":
+        from apps.makerspaces.guards import require_feature
+        require_feature(space, "machines.maintenance")
     if entity in EVENT_LIST_ENTITIES:
         from apps.makerspaces.guards import require_feature
         require_feature(space, "events.saved_views")

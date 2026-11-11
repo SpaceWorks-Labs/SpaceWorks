@@ -68,6 +68,7 @@ class BulkImportPreviewView(APIView):
                 makerspace,
                 rows,
                 serializer.validated_data.get("mapping") or {},
+                actor=request.user,
             )
         except IntegrityError:
             return Response(

@@ -129,7 +129,8 @@ class MembershipRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = MembershipRequest
         fields = ("id", "kind", "state", "invite_email", "user", "assigned_role", "decision_note", "created_at", "decided_at",
-                  "application_answers", "vouches", "admission_payment", "expires_at")
+                  "application_answers", "vouches", "admission_payment", "expires_at",
+                  "changes_note", "changes_requested_at", "changes_rounds")
 
     @extend_schema_field(AdmissionPaymentSerializer(allow_null=True))
     def get_admission_payment(self, obj):

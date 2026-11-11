@@ -43,7 +43,7 @@ class InventoryAssetListView(generics.ListAPIView):
             ),
             pk=self.kwargs["product_pk"],
         )
-        require_module(product.makerspace_id, "staff_admin")
+        require_module(product.makerspace_id, "public_inventory")
         return (
             InventoryAsset.objects.select_related("product", "box", "makerspace")
             .filter(product=product)
@@ -69,7 +69,7 @@ class InventoryAssetDetailView(APIView):
             ),
             pk=pk,
         )
-        require_module(asset.makerspace_id, "staff_admin")
+        require_module(asset.makerspace_id, "public_inventory")
         require_action(request.user, rbac.Action.EDIT_INVENTORY, asset.makerspace_id)
         if asset.product.tracking_mode != TrackingMode.INDIVIDUAL:
             raise ValidationError(gettext("Asset edits are only for individual-tracked products."))
@@ -130,7 +130,7 @@ class InventoryAssetStatusActionView(APIView):
             ),
             pk=pk,
         )
-        require_module(asset.makerspace_id, "staff_admin")
+        require_module(asset.makerspace_id, "public_inventory")
         require_action(request.user, rbac.Action.EDIT_INVENTORY, asset.makerspace_id)
         if asset.product.tracking_mode != TrackingMode.INDIVIDUAL:
             raise ValidationError(gettext("Asset fix actions are only for individual-tracked products."))

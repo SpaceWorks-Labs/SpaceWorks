@@ -19,7 +19,7 @@ from apps.audit import services as audit
 from apps.evidence.responses import storage_unavailable_response
 from apps.evidence.storage import StorageUnavailable
 from apps.inventory import public_image_storage
-from apps.makerspaces.limits import add_storage
+from apps.makerspaces.limits import charge_upload
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.servability import servable_queryset
 
@@ -74,6 +74,8 @@ class MakerspaceImageView(APIView):
         object_key = public_image_storage.build_object_key(
             "makerspace", makerspace.id, ext
         )
+        from apps.makerspaces.limits import check_upload_headroom
+        check_upload_headroom(makerspace)  # #234: refuse before the upload when storage is full
         try:
             upload = public_image_storage.presigned_upload(object_key, content_type)
         except StorageUnavailable:
@@ -149,7 +151,7 @@ class MakerspaceImageView(APIView):
             raise ValidationError({"object_key": gettext("This image is already in use.")})
         old_key = getattr(makerspace, self.image_field)
         if object_key != old_key:
-            add_storage(makerspace, result.size)
+            charge_upload(makerspace, result.size)
         if old_key and old_key != object_key:
             public_image_storage.release_public_image_on_commit(makerspace, old_key)
         setattr(makerspace, self.image_field, object_key)

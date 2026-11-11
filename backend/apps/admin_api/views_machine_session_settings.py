@@ -27,6 +27,10 @@ class MachineTypeSessionSettingsView(APIView):
         space = _space(request.user, makerspace_id)
         machine_type = get_object_or_404(
             MachineType.objects.filter(Q(makerspace__isnull=True) | Q(makerspace=space)), pk=type_id)
+        from django.http import Http404
+        from apps.machines.access import can_create_machine
+        if not can_create_machine(request.user, space.pk, machine_type):
+            raise Http404  # Per-type settings follow TYPE authority (machines audit 0.12.0).
         return space, machine_type, policy_for(space, machine_type)
 
     @extend_schema(tags=["Admin machine sessions"], summary="Session settings for one machine type",

@@ -3,12 +3,17 @@ from django.urls import path
 from apps.admin_api import views
 from apps.inventory.reorder_views import ReorderSuggestionsView, ReorderDraftView
 from apps.inventory.views_consumables import ConsumableListView, ConsumableUseView
+from apps.inventory.views_consumable_sources import ConsumableSourceListView
+from apps.operations.views_consumable_shortages import PlannedShortageListView
 
 
 urlpatterns = [
+    path("makerspace/<int:makerspace_id>/consumables/<int:pk>/equipment-sources", ConsumableSourceListView.as_view(), name="admin-consumable-equipment-sources"),
     path("makerspace/<int:makerspace_id>/inventory/reorder-suggestions", ReorderSuggestionsView.as_view(), name="admin-reorder-suggestions"),
     path("makerspace/<int:makerspace_id>/inventory/reorder-draft", ReorderDraftView.as_view(), name="admin-reorder-draft"),
     path("makerspace/<int:makerspace_id>/consumables", ConsumableListView.as_view(), name="admin-consumables"),
+    # Open item C25: upcoming events/bookings short of planned consumables.
+    path("makerspace/<int:makerspace_id>/consumables/planned-shortages", PlannedShortageListView.as_view(), name="admin-consumable-planned-shortages"),
     path("makerspace/<int:makerspace_id>/consumables/<int:pk>/use", ConsumableUseView.as_view(), name="admin-consumable-use"),
     path(
         "makerspace/<int:makerspace_id>/inventory",

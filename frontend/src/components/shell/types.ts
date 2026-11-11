@@ -12,5 +12,7 @@ export type AppShellProps = {
   search?: { label: string; shortcut: "mod+k"; onOpen: () => void };
   nav: ShellSection[]; activeKey: string; footerLinks?: Action[]; user: ShellUser;
   compactNav: "drawer" | "bottom-tabs"; status?: ReactNode; children: ReactNode;
+  /** Phone bottom bar destinations picked by the caller (always followed by "More"); default: the first nav items. */
+  bottomNav?: ShellItem[];
 };
 export const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";

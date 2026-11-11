@@ -17,7 +17,7 @@ export function Sidebar({ variant, workspace, search, nav, activeKey, footerLink
       <div className="flex items-center justify-center"><SpaceWorksLogo variant="stacked" size={180} /></div>
       <WorkspaceSwitcher workspace={workspace} />
       {search ? <button type="button" aria-haspopup="dialog" onClick={search.onOpen}
-        className={`flex min-h-11 w-full items-center gap-2 rounded-lg bg-sidebar px-2.5 text-sm hover:bg-sidebar-hover dark:bg-panel dark:hover:bg-hover ${focusRing}`}>
+        className={`flex min-h-11 w-full items-center gap-2 rounded-lg bg-sidebar px-2.5 text-sm hover:bg-sidebar-hover dark:bg-hover dark:hover:bg-sidebar-hover ${focusRing}`}>
         <Search aria-hidden="true" size={24} /><span className="flex-1 text-left">{search.label}</span>{" "}<kbd className="text-xs">{t`Ctrl/⌘ K`}</kbd>
       </button> : null}
     </div>

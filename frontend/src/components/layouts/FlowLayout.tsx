@@ -37,7 +37,7 @@ export function FlowLayout({ title, subject, steps, current, onStepSelect, work,
   const cancel = () => { if (!busy) { if (leaveGuard) setConfirmLeave(true); else onCancel(); } };
   const blocked = query.state.status !== "ready" || query.isEmpty;
   const next = { ...footer.next, disabled: footer.next.disabled || blocked,
-    disabledReason: blocked ? "Wait until this step is ready." : footer.next.disabledReason ?? (footer.next.disabled ? "Complete this step before continuing." : undefined) };
+    disabledReason: blocked ? t`Wait until this step is ready.` : footer.next.disabledReason ?? (footer.next.disabled ? t`Complete this step before continuing.` : undefined) };
   const content = <LayoutFrame standalone={presentation === "page" && standalone} width={width}
     className={presentation === "kiosk" ? "sw-kiosk-flow sw-overlay-content" : presentation === "dialog" ? "sw-overlay-content" : ""}>
     {presentation === "kiosk" ? <div className="mb-6"><h2 className={`title-panel${accentTitle ? " font-accent" : ""}`}>{title}</h2>

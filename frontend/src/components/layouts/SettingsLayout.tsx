@@ -13,6 +13,8 @@ export type SettingsLayoutProps = LayoutProps & {
   tabs?: Tab[];
   activeTab?: string;
   subnav?: "auto" | false;
+  /** A caller-owned nav (e.g. routed subpages) in the side column; replaces the anchor subnav. */
+  nav?: ReactNode;
   sections: SettingsLayoutSection[];
   actions?: SettingsSave;
   danger?: DangerZoneProps[];
@@ -30,19 +32,19 @@ function SaveActions({ save }: { save: SettingsSave }) {
     <SettingsActions {...save} />
   </div> : null;
 }
-export function SettingsLayout({ header, tabs, activeTab, subnav = "auto", sections, actions, danger = [],
+export function SettingsLayout({ header, tabs, activeTab, subnav = "auto", nav, sections, actions, danger = [],
   standalone, width, ...query }: SettingsLayoutProps) {
-  const showNav = subnav === "auto" && sections.length >= 5;
+  const showNav = !nav && subnav === "auto" && sections.length >= 5;
   return <LayoutFrame standalone={standalone} width={width}>
     <PageHeader {...header} />
     {tabs?.length ? <div className="mb-6"><Tabs tabs={tabs} activeKey={activeTab ?? tabs[0].key} /></div> : null}
     <QueryContent {...query}>
-      <div className={showNav ? "sw-settings-columns" : "min-w-0"}>
-        {showNav ? <SettingsNav sections={sections} /> : null}
+      <div className={showNav || nav ? "sw-settings-columns" : "min-w-0"}>
+        {nav ?? (showNav ? <SettingsNav sections={sections} /> : null)}
         <div className="grid min-w-0 content-start gap-8">
           {sections.map(section => <div key={section.id} id={section.id} tabIndex={-1}
             className="min-w-0 scroll-mt-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-            <SettingsSection title={section.title ?? section.id} description={section.description}><Rows rows={section.rows} /></SettingsSection>
+            <SettingsSection title={section.title ?? ""} description={section.description}><Rows rows={section.rows} /></SettingsSection>
             {section.save ? <SaveActions save={section.save} /> : null}
           </div>)}
           {actions ? <SaveActions save={actions} /> : null}

@@ -5,7 +5,7 @@ import { ErrorBlock } from "../ui";
 export type KioskPinProps = { title: string; helper: string; length?: number; pinLength?: number; onSubmit: (pin: string) => void;
   pending: boolean; error?: string; disabledReason?: string; submitLabel?: string; pendingLabel?: string };
 export function KioskPin({ title, helper, length, pinLength, onSubmit, pending, error, disabledReason,
-  submitLabel = t`Open station`, pendingLabel = "Unlocking…" }: KioskPinProps) {
+  submitLabel = t`Open station`, pendingLabel = t`Unlocking…` }: KioskPinProps) {
   const [pin, setPin] = useState("");
   const hintId = useId();
   const digits = length ?? pinLength ?? 8;

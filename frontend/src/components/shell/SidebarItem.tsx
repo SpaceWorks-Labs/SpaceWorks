@@ -6,6 +6,7 @@ export function SidebarItem({ item, activeKey, onNavigate }: { item: ShellItem; 
   const Glyph = item.icon;
   const current = activeKey === item.key;
   const badge = item.badge ?? 0;
+  const badgeText = item.badgeLabel ?? t`needs action`;
   return <li>
     <Link to={item.href} aria-current={current ? "page" : undefined}
       onFocus={event => event.currentTarget.scrollIntoView?.({ block: "nearest" })}
@@ -14,7 +15,7 @@ export function SidebarItem({ item, activeKey, onNavigate }: { item: ShellItem; 
       <Glyph aria-hidden="true" size={24} strokeWidth={2} className="shrink-0" />
       <span className="min-w-0 flex-1 break-words">{item.label}</span>
       {badge > 0 ? <>{" "}<span className={`rounded-full px-2 text-xs tabular-nums ${current ? "bg-panel text-ink" : "bg-accent-soft text-accent-ink"}`}>{badge > 99 ? "99+" : badge}</span>{" "}
-        <span className="sr-only">{badge > 99 ? `(${badge} ${item.badgeLabel ?? t`needs action`})` : item.badgeLabel ?? t`needs action`}</span></> : null}
+        <span className="sr-only">{badge > 99 ? t`(${badge} ${badgeText})` : badgeText}</span></> : null}
     </Link>
     {item.children?.length ? <ul className="ml-6 space-y-1 border-l border-line pl-2">
       {item.children.map(child => <SidebarItem key={child.key} item={child} activeKey={activeKey} onNavigate={onNavigate} />)}

@@ -15,7 +15,7 @@ export function SidebarDrawer({ open, onClose, children }: { open: boolean; onCl
     return () => backgrounds.forEach((node, index) => { node.inert = previous[index]; });
   }, [open]);
   if (!open) return null;
-  return createPortal(<div ref={root} className="[&_[role=dialog]]:left-0 [&_[role=dialog]]:right-auto [&_[role=dialog]]:w-[85vw] [&_[role=dialog]]:max-w-80 [&_[role=dialog]>div]:min-h-0 [&_[role=dialog]>div]:overflow-hidden [&_[role=dialog]>div]:p-0">
+  return createPortal(<div data-replay-block ref={root} className="[&_[role=dialog]]:left-0 [&_[role=dialog]]:right-auto [&_[role=dialog]]:w-[85vw] [&_[role=dialog]]:max-w-80 [&_[role=dialog]>div]:min-h-0 [&_[role=dialog]>div]:overflow-hidden [&_[role=dialog]>div]:p-0">
     {/* Already portalled: the drawer renders inline here, inside the layer its inert handling protects. */}
     <OverlayPortalContext.Provider value={true}><DetailDrawer open title={t`Navigation`} onClose={onClose}>{children}</DetailDrawer></OverlayPortalContext.Provider>
   </div>, document.body);

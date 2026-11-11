@@ -19,7 +19,7 @@ export function LayoutFrame({ standalone = false, width = "default", children, c
   const ownsTarget = standalone && !nested;
   const Root = ownsTarget ? "main" : "div";
   return <ContentTarget.Provider value={true}>
-    {standalone && !nested ? <a href="#main-content" className="skip-link">{t`Skip to content`}</a> : null}
+    {standalone && !nested ? <a href="#main-content" className="skip-link">{t`Skip to main content`}</a> : null}
     <Root id={ownsTarget ? "main-content" : undefined} tabIndex={ownsTarget ? -1 : undefined}
       className={`${nested ? `min-w-0 ${width === "narrow" ? "mx-auto w-full max-w-[792px]" : ""}` : `sw-layout sw-layout-${width}`} ${className}`}>
       {children}

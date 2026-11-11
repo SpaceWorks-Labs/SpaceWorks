@@ -15,14 +15,18 @@ export function AppShell(props: AppShellProps) {
   const location = useLocation();
   const route = `${location.pathname}${location.search}${location.hash}`;
   const previousRoute = useRef(route);
+  const previousPath = useRef(location.pathname);
   useEffect(() => {
     if (previousRoute.current === route) return;
     previousRoute.current = route;
     setDrawer(false);
+    // Search/hash changes must not steal focus from search boxes or routed tabs.
+    if (previousPath.current === location.pathname) return;
+    previousPath.current = location.pathname;
     // Run after the drawer's dialog cleanup restores its trigger.
     const frame = requestAnimationFrame(() => document.getElementById("main-content")?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [route]);
+  }, [route, location.pathname]);
   const openSearch = () => {
     if (drawer) {
       setDrawer(false);
@@ -57,6 +61,6 @@ export function AppShell(props: AppShellProps) {
       </main>
     </div>
     <SidebarDrawer open={drawer} onClose={() => setDrawer(false)}><Sidebar {...shellProps} onNavigate={() => setDrawer(false)} /></SidebarDrawer>
-    {compactNav === "bottom-tabs" ? <BottomTabs items={items} activeKey={activeKey} label={props.variant === "staff" ? t`Staff quick navigation` : t`Member quick navigation`} onMore={openNavigation} /> : null}
+    {compactNav === "bottom-tabs" ? <BottomTabs items={props.bottomNav ?? items} more={Boolean(props.bottomNav && props.bottomNav.length < items.length)} activeKey={activeKey} label={props.variant === "staff" ? t`Staff quick navigation` : t`Member quick navigation`} onMore={openNavigation} moreOpen={drawer} /> : null}
   </div>;
 }

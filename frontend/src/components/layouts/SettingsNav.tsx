@@ -24,7 +24,7 @@ export function SettingsNav({ sections }: { sections: { id: string; title?: stri
         target?.scrollIntoView?.({ block: "start" });
         target?.focus({ preventScroll: true });
       }}>
-        {sections.map(section => <option key={section.id} value={section.id}>{section.title ?? section.id}</option>)}
+        {sections.map(section => <option key={section.id} value={section.id}>{section.title ?? ""}</option>)}
       </select>
     </label>
   </nav>;
@@ -32,6 +32,6 @@ export function SettingsNav({ sections }: { sections: { id: string; title?: stri
     {sections.map(section => <a key={section.id} href={`#${section.id}`} onClick={() => setActive(section.id)}
       aria-current={active === section.id ? "location" : undefined}
       className={`flex min-h-11 shrink-0 items-center rounded-control px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${active === section.id ? "bg-hover text-ink" : "text-muted hover:bg-hover hover:text-ink"}`}>
-      {section.title ?? section.id}</a>)}
+      {section.title ?? ""}</a>)}
   </nav>;
 }

@@ -25,13 +25,12 @@ export function FilterPopover({ children, count = 0, onClear }: { children: Reac
     if (event.key === "Escape") { event.preventDefault(); close(); }
   }}>
     <button type="button" ref={trigger} className="desk-button h-11 gap-2" aria-haspopup="dialog"
-      aria-expanded={open} aria-controls={open ? id : undefined} aria-label={t`Filters`} onClick={() => {
+      aria-expanded={open} aria-controls={open ? id : undefined} aria-label={count > 0 ? t`Filters, ${count} active` : t`Filters`} onClick={() => {
         // Opens rightwards when the button sits near the left edge, so the panel never leaves the screen.
         if (!open) setAlignStart((trigger.current?.getBoundingClientRect().right ?? Infinity) < 336);
         setOpen(!open);
       }}>
       <SlidersHorizontal aria-hidden="true" className="size-4" />{t`Filters`}{count > 0 ? <span aria-hidden="true" className="rounded-full bg-emphasis px-2 py-0.5 text-xs font-semibold tabular-nums text-on-emphasis">{count}</span> : null}
-      {count > 0 ? <span className="sr-only">{t`${count} active filters`}</span> : null}
     </button>
     {open && desktop ? <div ref={panel} id={id} role="dialog" aria-label={t`Filters`}
       className={`absolute ${alignStart ? "left-0" : "right-0"} z-30 mt-2 max-h-[70dvh] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-2xl border border-line bg-panel p-4 shadow-overlay`}>

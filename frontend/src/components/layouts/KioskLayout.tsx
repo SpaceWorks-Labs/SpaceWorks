@@ -21,7 +21,9 @@ export type KioskLayoutProps = LayoutProps & {
 };
 export function KioskLayout({ context, connection, progress, headerActions, mode, lock, ready, work, idleCountdown,
   confirmLock, standalone = true, width = "default", ...query }: KioskLayoutProps) {
-  const connectionLabel = `${connection.online ? "Online" : "Offline"}${connection.queued ? ` · ${connection.queued} queued` : ""}`;
+  const connectionLabel = connection.queued
+    ? (connection.online ? t`Online · ${connection.queued} queued` : t`Offline · ${connection.queued} queued`)
+    : (connection.online ? t`Online` : t`Offline`);
   return <div className="sw-kiosk bg-bg text-ink">
     <LayoutFrame standalone={standalone} width={width}>
       <div className="mb-6 flex min-w-0 items-start gap-3">

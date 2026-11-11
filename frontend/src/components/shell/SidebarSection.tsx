@@ -24,7 +24,7 @@ export function SidebarSection({ section, activeKey, owner, onNavigate }: {
       <button type="button" aria-expanded={open} aria-controls={id}
         className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2.5 text-sm text-muted hover:bg-sidebar-hover ${focusRing}`}
         onClick={() => { setExpanded(!open); writeStorage(storageKey, open ? "closed" : "open"); }}>
-        <ChevronDown aria-hidden="true" size={24} className={open ? "rotate-180" : ""} />{t`More (${section.more.length})`}<span className="sr-only"> in {section.label}</span>
+        <ChevronDown aria-hidden="true" size={24} className={open ? "rotate-180" : ""} />{t`More (${section.more.length})`}<span className="sr-only">{" "}{t`in ${section.label ?? ""}`}</span>
       </button>
       {open ? <ul id={id} className="space-y-1">{section.more.map(item => <SidebarItem key={item.key} item={item} activeKey={activeKey} onNavigate={onNavigate} />)}</ul> : null}
     </> : null}

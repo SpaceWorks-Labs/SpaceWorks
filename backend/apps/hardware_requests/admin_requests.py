@@ -13,10 +13,12 @@ from apps.hardware_requests.handover_workflow import (
     set_return_due as workflow_set_return_due,
 )
 from apps.hardware_requests.admin_request_review import RequestReviewAdminMixin
+from apps.hardware_requests.due_policy import closed_notice
 from apps.hardware_requests.models import HardwareRequest, HardwareRequestItem
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.encryption.admin_search import ScopedPiiAdminSearchMixin
 from apps.accounts.admin_pii_masking import PiiMaskingAdminMixin
+from django.utils.translation import gettext_lazy
 
 
 class ReturnDueForm(forms.Form):
@@ -106,7 +108,7 @@ class HardwareRequestAdmin(
     pii_extra_fields = ("requester_identity",)
     pii_search_fields = ("requester_name", "requester_contact_email")
 
-    @admin.display(description="Requester")
+    @admin.display(description=gettext_lazy("Requester"))
     def requester_identity(self, obj):
         label = obj.requester_name or obj.requester_contact_email or "-"
         if obj.requester_contact_verified:
@@ -116,7 +118,7 @@ class HardwareRequestAdmin(
         # here is what stops the queue from reading like a list of known people.
         return f"{label} (unverified contact)"
 
-    @admin.display(description="Review")
+    @admin.display(description=gettext_lazy("Review"))
     def review_link(self, obj):
         if obj.status != HardwareRequest.Status.PENDING_APPROVAL:
             return "-"
@@ -134,7 +136,7 @@ class HardwareRequestAdmin(
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.action(description="Assign box to selected requests")
+    @admin.action(description=gettext_lazy("Assign box to selected requests"))
     def assign_box_selected(self, request, queryset):
         if "apply" not in request.POST:
             return self._intermediate_action_response(
@@ -167,7 +169,7 @@ class HardwareRequestAdmin(
             )
         return None
 
-    @admin.action(description="Set return due date for selected requests")
+    @admin.action(description=gettext_lazy("Set return due date for selected requests"))
     def set_return_due(self, request, queryset):
         if "apply" not in request.POST:
             return self._intermediate_action_response(
@@ -199,6 +201,10 @@ class HardwareRequestAdmin(
                 )
             else:
                 success_count += 1
+                notice = closed_notice(hardware_request.makerspace, form.cleaned_data["return_due_at"])
+                if notice:
+                    self.message_user(request, f"{hardware_request.pk}: the space is closed at this due time; "
+                                      f"next open {notice['next_open_at'] or 'unknown'}.", level=messages.WARNING)
 
         if success_count:
             self.message_user(

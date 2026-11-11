@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.evidence.models import EvidencePhoto
+from apps.hardware_requests import guest_lending
 from apps.hardware_requests import self_checkout_contact as contact_flow
 from apps.hardware_requests import self_checkout_workflow
 from apps.hardware_requests.self_checkout_serializers import (
@@ -24,13 +25,11 @@ from apps.makerspaces.editions import require_public_surface
 from apps.makerspaces.guards import require_feature
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.platform import module_enabled
-from apps.makerspaces.request_access import require_current_term
 from apps.openapi import (
     PUBLIC_API_AUTH_PARAMETERS,
     PUBLIC_TOOL_CHECKOUT_EXAMPLE,
     PUBLIC_TOOL_SCAN_EXAMPLE,
 )
-from apps.presence.guard import require_active_member_presence
 
 CONTACT_NOTE = (
     "Signed-in member account where the makerspace has member accounts. Without them "
@@ -72,13 +71,12 @@ class PublicToolEvidenceUploadUrlView(_PublicToolView):
                 makerspace, data, uploader=contact_flow.principal(makerspace), actor=None,
                 contact_email=data["contact_email"],
             )
-        presence = require_active_member_presence(request.user, makerspace)
+        # Issue evidence is the first step of taking a tool (lapsed-term rule, guest borrowing mode);
+        # return evidence never is. Decision 223: a live guest pass admits a non-member.
+        guest_lending.admit_self_checkout(makerspace, request.user, taking=taking)
         serializer = PublicToolEvidenceUrlRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        if data["evidence_type"] == EvidencePhoto.EvidenceType.ISSUE:
-            # Issue evidence is the first step of taking a tool; return evidence never is.
-            require_current_term(makerspace, presence.membership)
         return contact_flow.issue_upload(makerspace, data, uploader=request.user, actor=request.user)
 
 
@@ -102,9 +100,7 @@ class PublicToolCheckoutView(_PublicToolView):
         if not contact:
             # Checking out is borrowing, so the optional lapsed-term rule applies exactly
             # as it does to a reviewed request. Returning a tool is never gated by it.
-            require_current_term(
-                makerspace, require_active_member_presence(request.user, makerspace).membership
-            )
+            guest_lending.admit_self_checkout(makerspace, request.user, taking=True)
         serializer = (ContactToolCheckoutSerializer if contact else PublicToolCheckoutSerializer)(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -139,7 +135,7 @@ class PublicToolReturnView(_PublicToolView):
         require_feature(makerspace, "inventory.self_checkout")
         contact = contact_flow.contact_mode(request, makerspace)
         if not contact:
-            require_active_member_presence(request.user, makerspace)
+            guest_lending.admit_self_checkout(makerspace, request.user, taking=False)
         serializer = (ContactToolScanSerializer if contact else PublicToolScanSerializer)(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data

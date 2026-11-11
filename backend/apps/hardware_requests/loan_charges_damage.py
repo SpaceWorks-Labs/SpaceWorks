@@ -63,6 +63,15 @@ def _amount(value):
     return amount
 
 
+def _require_currency_precision(row, amount):
+    """Refuse decimals the space's currency cannot carry (12.50 JPY), rather than charging a rounded 13."""
+    from apps.payments.pricing.quotes import money
+    from apps.payments.pricing.resolver import rate_card
+
+    if money(amount, rate_card(row.makerspace, "loans").currency) != amount:
+        raise ValidationError({"amount": gettext("This currency does not use that many decimal places.")})
+
+
 def _quote(row, amount, suggested, evidence_id):
     from apps.payments.pricing.components import component
     from apps.payments.pricing.quotes import Quote, line
@@ -117,6 +126,7 @@ def charge_accountability(row, actor, *, amount, note=""):
     if existing is not None:
         raise ChargeExists(payment_id=existing.pk)
     amount = _amount(amount)
+    _require_currency_precision(row, amount)
     evidence_id = return_evidence_id(row)
     if amount > 0 and evidence_id is None:
         raise ReturnPhotoRequired()

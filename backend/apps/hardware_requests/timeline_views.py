@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts import rbac
+from apps.audit import areas
+from apps.audit.area_scope import makerspaces_for_area
 from apps.admin_api.permissions import IsActiveStaff
 from apps.hardware_requests.serializers_timeline import (
     InventoryChainOfCustodyResponseSerializer,
@@ -48,9 +50,8 @@ class RequestTimelineView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         _require_any_audit_scope(request.user)
-        scoped = rbac.scope_by_action(
+        scoped = _lending_audit_scope(
             request.user,
-            rbac.Action.VIEW_AUDIT,
             request_queryset().select_related(
                 "requester",
                 "accepted_by",
@@ -60,7 +61,7 @@ class RequestTimelineView(APIView):
             ),
         )
         hardware_request = get_object_or_404(scoped, pk=pk)
-        data = build_request_timeline(hardware_request, limit=_limit(request))
+        data = build_request_timeline(hardware_request, limit=_limit(request), actor=request.user)
         return Response(RequestTimelineResponseSerializer(data).data)
 
 
@@ -75,14 +76,16 @@ class InventoryChainOfCustodyView(APIView):
     )
     def get(self, request, pk, *args, **kwargs):
         _require_any_audit_scope(request.user)
-        scoped = rbac.scope_by_action(
-            request.user,
-            rbac.Action.VIEW_AUDIT,
-            InventoryProduct.objects.all(),
-        )
+        scoped = _lending_audit_scope(request.user, InventoryProduct.objects.all())
         product = get_object_or_404(scoped, pk=pk)
         data = build_inventory_chain_of_custody(product, limit=_limit(request))
         return Response(InventoryChainOfCustodyResponseSerializer(data).data)
+
+
+def _lending_audit_scope(user, queryset):
+    """VIEW_AUDIT spaces where the reader also holds the lending area (#219e)."""
+    spaces = makerspaces_for_area(user, areas.LENDING)
+    return queryset if spaces is rbac.ALL else queryset.filter(makerspace_id__in=spaces)
 
 
 def _require_any_audit_scope(user):

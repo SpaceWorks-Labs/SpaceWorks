@@ -25,12 +25,14 @@ from apps.hardware_requests.throttles import AnonymousRequestIpBurstThrottle, An
 from apps.hardware_requests.view_helpers import (
     PUBLIC_ERROR_RESPONSES,
 )
-from apps.inventory.models import InventoryProduct
+from apps.inventory.event_only import refuse_event_only_ids
+from apps.inventory.requestable_products import requestable_products
 from apps.makerspaces.lookup import get_public_makerspace
 from apps.makerspaces.guards import require_feature
 from apps.makerspaces.platform import module_enabled
 from apps.makerspaces.request_access import require_current_term, uses_contact_path
-from apps.presence.guard import require_active_account, require_active_member_presence
+from apps.hardware_requests.guest_lending import admit_borrower
+from apps.presence.guard import require_active_account, require_active_member_presence  # noqa: F401 (re-exported)
 from apps.openapi import (
     PUBLIC_API_AUTH_PARAMETERS,
     PUBLIC_REQUEST_CONTACT_SUBMIT_EXAMPLE,
@@ -92,7 +94,7 @@ class RequestSubmitView(APIView):
         _require_module(makerspace, "request_workflow")
         if not contact:
             if module_enabled(makerspace, "membership"):
-                require_current_term(makerspace, require_active_member_presence(request.user, makerspace).membership)
+                admit_borrower(makerspace, request.user)  # decision 223: a member, or a live guest pass that borrows
             else:
                 # Waiver acceptance lives on MakerspaceMembership and cannot be recorded
                 # with membership off; staff acceptance is the proposal-time control.
@@ -106,6 +108,7 @@ class RequestSubmitView(APIView):
         data.pop("website", None)
 
         product_ids = [item["product_id"] for item in data["items"]]
+        refuse_event_only_ids(makerspace, product_ids)  # decision 221b: clear code, not "unavailable"
         products = _requestable_products(product_ids, makerspace)
         if len(products) != len(product_ids):
             raise ValidationError(
@@ -173,13 +176,7 @@ def _honeypot_filled(payload):
 def _requestable_products(product_ids, makerspace):
     return {
         product.pk: product
-        for product in InventoryProduct.objects.filter(
-            pk__in=product_ids,
-            makerspace=makerspace,
-            is_public=True,
-            is_archived=False,
-            is_consumable=False,
-        )
+        for product in requestable_products(makerspace).filter(pk__in=product_ids)
     }
 
 

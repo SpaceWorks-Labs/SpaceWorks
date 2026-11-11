@@ -17,6 +17,7 @@ from apps.hardware_requests import notifications
 from apps.hardware_requests.loan_charges_common import (
     _get_or_create,
     _schedule_checkout,
+    fee_exempt,
     loans_enabled,
     logger,
 )
@@ -44,7 +45,8 @@ def require_deposit_settled(request, actor):
         if request.status != HardwareRequest.Status.ACCEPTED:
             return None
         settings_row = MakerspacePaymentSettings.for_makerspace(request.makerspace)
-        if not settings_row.loan_deposit_blocks_issue or not loans_enabled(request.makerspace):
+        if (not settings_row.loan_deposit_blocks_issue or not loans_enabled(request.makerspace)
+                or fee_exempt(request)):
             return None
         priced = deposit_quote(request)
         if priced.total <= 0:
@@ -69,7 +71,8 @@ def raise_deposit(request_id, actor):
     """Post-commit: raise (or find) the deposit for a loan that was just issued."""
     try:
         request = HardwareRequest.objects.select_related("makerspace").get(pk=request_id)
-        if request.status != HardwareRequest.Status.ISSUED or not loans_enabled(request.makerspace):
+        if (request.status != HardwareRequest.Status.ISSUED or not loans_enabled(request.makerspace)
+                or fee_exempt(request)):
             return None
         priced = deposit_quote(request)
         if priced.total <= 0:

@@ -21,6 +21,7 @@ from apps.hardware_requests.loan_charges_common import (
     _existing,
     _get_or_create,
     _schedule_checkout,
+    fee_exempt,
     loans_enabled,
 )
 from apps.payments.models import Payment
@@ -43,7 +44,7 @@ def raise_rental(request, actor, *, at, now=None):
     from apps.payments.pricing.charging import record_free
     from apps.payments.pricing.resolver import rate_card
 
-    if not loans_enabled(request.makerspace):
+    if not loans_enabled(request.makerspace) or fee_exempt(request):
         return None
     card = rate_card(request.makerspace, "loans")
     if not card.enabled or _existing(request, Payment.SubjectType.LOAN_RENTAL) is not None:

@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts import rbac
 from apps.boxes.access import inventory_qr_codes
 from apps.boxes.models import Box, QrCode
+from apps.boxes.qr_lookup import normalize_scanned, scanned_or_404
 from apps.hardware_requests.kit_checklists import expectations, unique_expectations
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 from apps.makerspaces.platform import feature_enabled
@@ -36,12 +37,12 @@ def preview_targets(actor, makerspace, *, items=(), qr_payloads=(), container_id
         product = get_object_or_404(products, pk=entry["product_id"])
         quantities[product] += entry["quantity"]
     seen = set()
-    for payload in qr_payloads:
+    for payload in map(normalize_scanned, qr_payloads):
         if payload in seen:
             raise ValidationError(gettext("The same QR was scanned more than once."))
         seen.add(payload)
-        qr = get_object_or_404(scoped(inventory_qr_codes(QrCode.objects.all())),
-                               payload=payload, status=QrCode.Status.ACTIVE)
+        qr = scanned_or_404(scoped(inventory_qr_codes(QrCode.objects.filter(status=QrCode.Status.ACTIVE))),
+                            payload)
         if qr.target_type == QrCode.TargetType.PRODUCT:
             quantities[get_object_or_404(products, pk=qr.target_id)] += 1
         elif qr.target_type == QrCode.TargetType.ASSET:

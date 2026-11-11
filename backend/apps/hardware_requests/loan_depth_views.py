@@ -17,6 +17,7 @@ from apps.hardware_requests.models_loans import LoanReservationPolicy, LoanWaitl
 from apps.inventory.models import InventoryProduct
 from apps.makerspaces.guards import require_feature, require_module
 from apps.makerspaces.models import Makerspace
+from apps.makerspaces.servability import servable_queryset
 
 ERRORS = {code: ErrorSerializer for code in (400, 401, 403, 404, 409)}
 
@@ -69,11 +70,19 @@ class ReservationPolicySerializer(serializers.ModelSerializer):
 
 
 def _member_space(request, makerspace_id):
-    space = get_object_or_404(rbac.scope_by_makerspace(request.user, Makerspace.objects.all(),
-                                                       makerspace_field="pk"), pk=makerspace_id)
+    # Borrower scope, not membership scope: with `membership` off any active account may
+    # request (`request_access.ACCOUNTS`), so its owner must also be able to withdraw that
+    # request and use the waitlist. Every row below goes through `_own`, which admits only
+    # a live, unrestricted owner; joining re-checks the request identity rule
+    # (`waitlist.require_waitlist_member`).
+    space = get_object_or_404(servable_queryset(Makerspace.objects.all()), pk=makerspace_id)
     require_module(space, "request_workflow")
     require_feature(space, "loans.enabled")
     return space
+
+
+def _own(request, queryset, space, owner_field="requester"):
+    return rbac.scope_by_borrower(request.user, queryset, makerspace=space, owner_field=owner_field)
 
 
 def _staff_space(request, makerspace_id, action=rbac.Action.ACCEPT_REQUEST):
@@ -93,7 +102,7 @@ class MemberRequestWithdrawView(APIView):
         require_feature(space, "loans.withdrawals")
         payload = CancelRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        row = get_object_or_404(HardwareRequest.objects.filter(makerspace=space, requester=request.user), pk=pk)
+        row = get_object_or_404(_own(request, HardwareRequest.objects.all(), space), pk=pk)
         row = workflow.cancel_request(request.user, row, by_owner=True, reason=payload.validated_data["reason"])
         return Response(ClosedRequestSerializer(row).data)
 
@@ -121,8 +130,8 @@ class MemberWaitlistView(APIView):
     def get(self, request, makerspace_id):
         space = _member_space(request, makerspace_id)
         require_feature(space, waitlist.FEATURE)
-        rows = LoanWaitlistEntry.objects.filter(makerspace=space, user=request.user,
-                                                status__in=LoanWaitlistEntry.ACTIVE).select_related("product")
+        rows = _own(request, LoanWaitlistEntry.objects.all(), space, "user").filter(
+            status__in=LoanWaitlistEntry.ACTIVE).select_related("product")
         return Response(WaitlistEntrySerializer(rows, many=True).data)
 
     @extend_schema(tags=["Loans"], summary="Join the waitlist for an item that is out",
@@ -146,7 +155,7 @@ class MemberWaitlistLeaveView(APIView):
                    request=None, responses={200: WaitlistEntrySerializer, **ERRORS})
     def post(self, request, makerspace_id, pk):
         space = _member_space(request, makerspace_id)
-        entry = get_object_or_404(LoanWaitlistEntry.objects.filter(makerspace=space, user=request.user), pk=pk)
+        entry = get_object_or_404(_own(request, LoanWaitlistEntry.objects.all(), space, "user"), pk=pk)
         return Response(WaitlistEntrySerializer(waitlist.leave(request.user, entry)).data)
 
 

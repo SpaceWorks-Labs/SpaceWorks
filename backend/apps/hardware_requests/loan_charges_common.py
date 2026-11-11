@@ -35,6 +35,20 @@ def loans_enabled(makerspace):
     return charge_tracking_enabled(makerspace, "loans")
 
 
+def fee_exempt(request):
+    """Decision 159(2): an account-less walk-in (or the anonymous requester) is never charged loan fees.
+
+    Deposit, rental and late fee are all skipped, so no debt is recorded for someone who holds no
+    account to pay it from; spaces that want to charge require accounts. Damage and loss go
+    through staff accountability decisions, which stay available. Converting the walk-in to a
+    full account (`is_walk_in` False) makes later loans chargeable as usual.
+    """
+    from apps.accounts.principal_guards import is_anonymous_requester
+
+    requester = request.requester
+    return bool(requester is not None and (requester.is_walk_in or is_anonymous_requester(requester)))
+
+
 def _existing(request, subject_type, subject_id=None):
     return Payment.objects.filter(
         makerspace=request.makerspace, subject_type=subject_type,
@@ -47,19 +61,29 @@ def _get_or_create(request, subject_type, priced, actor, label, *, subject_id=No
     existing = _existing(request, subject_type, subject_id)
     if existing is not None:
         return existing, False
+    from apps.hardware_requests.guest_liability import liable_member
+    # Decision 223 (f): a sponsored guest's charge goes to the sponsor when the space says so.
+    billed = liable_member(request)
     try:
         with transaction.atomic():
-            return create_payment(
+            payment = create_payment(
                 makerspace=request.makerspace,
                 subject_type=subject_type,
                 subject_id=request.pk if subject_id is None else subject_id,
-                member=request.requester,
+                member=billed,
                 amount=priced.total,
                 currency=priced.currency,
                 created_by=actor or request.requester,
                 subject_label=label,
                 pricing_snapshot=priced.to_snapshot(),
-            ), True
+            )
+            if getattr(billed, "pk", None) != request.requester_id:
+                from apps.audit import services as audit
+                audit.record(actor or request.requester, "membership.guest_pass_charge_redirected",
+                             makerspace=request.makerspace, target=request,
+                             meta={"request_id": request.pk, "payment_id": payment.pk, "guest_id": request.requester_id,
+                                   "sponsor_id": billed.pk, "subject": str(subject_type)})
+            return payment, True
     except IntegrityError:
         return _existing(request, subject_type, subject_id), False
 

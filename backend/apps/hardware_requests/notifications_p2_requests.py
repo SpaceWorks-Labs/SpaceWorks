@@ -1,4 +1,6 @@
 """Source-backed hardware lifecycle and financial notices."""
+from django.utils.translation import gettext, gettext_noop
+
 from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.integrations.email_templates import hardware_context, render
@@ -82,11 +84,11 @@ def notify_request(row, event, room_text=None):
 
 #: Loan charge event -> (subject type, label). Lane L15 adds rental, damage and lost.
 CHARGE_EVENTS = {
-    "deposit_raised": ("loan_deposit", "Loan deposit"),
-    "late_fee_raised": ("loan_late_fee", "Late return fee"),
-    "rental_raised": ("loan_rental", "Loan rental"),
-    "damage_charged": ("loan_damage", "Damage charge"),
-    "lost_charged": ("loan_lost", "Lost item charge"),
+    "deposit_raised": ("loan_deposit", gettext_noop("Loan deposit")),
+    "late_fee_raised": ("loan_late_fee", gettext_noop("Late return fee")),
+    "rental_raised": ("loan_rental", gettext_noop("Loan rental")),
+    "damage_charged": ("loan_damage", gettext_noop("Damage charge")),
+    "lost_charged": ("loan_lost", gettext_noop("Lost item charge")),
 }
 
 
@@ -120,13 +122,13 @@ def notify_charge(row, event, payment):
     payment ledger: `payments.services.create_payment` already raises
     `charge_raised` for every loan charge, so a second owner intent here would
     duplicate it."""
-    label = CHARGE_EVENTS[event][1]
+    label = gettext(CHARGE_EVENTS[event][1])
     version = revision(payment.created_at, payment.subject_type, payment.subject_id)
     return fanout(space=row.makerspace, feature="hardware_requests", stream="hardware",
         event=event, kind="hardware.charge", source=payment.pk, version=version, subject=payment,
         context={"request_id": row.pk, "payment_id": payment.pk},
         staff_context=hardware_context(row, staff=True),
-        staff={"subject": label, "text": f"Hardware request #{row.pk}: {label.lower()} raised."})
+        staff={"subject": label, "text": gettext("Hardware request #%(id)s: %(label)s raised.") % {"id": row.pk, "label": label}})
 
 
 def eligible_waiver(envelope):
@@ -146,7 +148,8 @@ def notify_waiver(row, waiver):
         version=revision(waiver.created_at, waiver.request_id), subject=waiver,
         context={"request_id": row.pk, "waiver_id": waiver.pk},
         staff_context=hardware_context(row, staff=True),
-        staff={"subject": "Loan fees waived", "text": f"Hardware request #{row.pk}: loan fees waived."})
+        staff={"subject": gettext("Loan fees waived"),
+               "text": gettext("Hardware request #%(id)s: loan fees waived.") % {"id": row.pk}})
 
 
 def register():

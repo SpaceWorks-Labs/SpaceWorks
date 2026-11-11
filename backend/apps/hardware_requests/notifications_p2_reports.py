@@ -1,4 +1,5 @@
 """Problem reports disclose only navigation summaries to hardware staff."""
+from django.utils.translation import gettext
 from apps.accounts import rbac
 from apps.integrations.email_templates_registry_helpers import bag
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -21,8 +22,9 @@ def notify_report(row):
     return fanout(space=row.makerspace, feature="hardware_requests", stream="hardware",
         event="problem_report.filed", kind=KIND, source=row.pk, subject=row,
         version=revision(row.created_at, row.request_id, row.requester_id),
-        staff={"subject": "Tool problem reported",
-               "text": f"Problem report #{row.pk} filed for loan #{row.loan_id}. Review in the staff console."},
+        staff=lambda: {"subject": gettext("Tool problem reported"),
+                       "text": gettext("Problem report #%(id)s filed for loan #%(loan)s. Review in the staff console.")
+                       % {"id": row.pk, "loan": row.loan_id}},
         context={"problem_report_id": row.pk},
         staff_context={"makerspace": bag(name=row.makerspace.name), "problem_report_id": row.pk})
 

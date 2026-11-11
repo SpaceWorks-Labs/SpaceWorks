@@ -15,7 +15,9 @@ from apps.boxes.models import QrScanEvent
 from apps.evidence.finalization import charge_storage_once
 from apps.evidence.consumption import mark_consumed
 from apps.evidence.models import EvidencePhoto
+from apps.hardware_requests import guest_lending
 from apps.hardware_requests.direct_loan_returns import validate_evidence_upload
+from apps.hardware_requests.due_policy import effective_due
 from apps.hardware_requests.models import PublicToolLoan
 from apps.hardware_requests.self_checkout_evidence import _lock_unused_evidence, _public_evidence
 from apps.hardware_requests.self_checkout_helpers import _checkout_target, _issued_request, _locked_qr
@@ -69,7 +71,8 @@ def checkout_tool(makerspace, requester, payload, *, evidence_id, remark="", kit
         availability.enforce_product_borrow_limits(
             makerspace, requester, product_quantities, contact_key=contact.key if contact else "",
         )
-        due_at = timezone.now() + timedelta(days=loan_days(makerspace, product_quantities))
+        due_at = effective_due(makerspace, timezone.now() + timedelta(days=loan_days(makerspace, product_quantities)))
+        due_at = guest_lending.cap_due(makerspace, requester, due_at)  # an on-site guest pass ends the loan
         hardware_request = _issued_request(
             makerspace,
             requester,

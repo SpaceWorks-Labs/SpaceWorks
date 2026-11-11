@@ -6,13 +6,15 @@
   availability math).
 * `loans.pickup_windows` -- an accepted request that is not collected by its deadline
   EXPIRES through the workflow and its reservation goes back to available. The deadline
-  is the end of the member's window, else accept + `pickup_window_hours` (0 = never).
+  is the end of the member's window, else accept + `pickup_window_hours` (0 = never),
+  rolled to the next opening when the space is closed then (`due_policy`).
 """
 
 from datetime import timedelta
 
 from django.utils import timezone
 
+from apps.hardware_requests.due_policy import effective_pickup_deadline
 from apps.hardware_requests.models_loans import LoanReservationPolicy
 from apps.hardware_requests.workflow_errors import RequestValidationError
 from apps.makerspaces.platform import feature_enabled
@@ -49,4 +51,5 @@ def deadline_at_accept(request, *, now=None):
     if not hours:
         return None
     now = now or timezone.now()
-    return max(now, request.pickup_from or now) + timedelta(hours=hours)
+    # Only the computed deadline follows opening hours; the member's own window end is kept.
+    return effective_pickup_deadline(request.makerspace, max(now, request.pickup_from or now) + timedelta(hours=hours))

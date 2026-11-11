@@ -1,8 +1,15 @@
 from django.utils.translation import gettext
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.hardware_requests.display import requester_label
+from apps.hardware_requests.due_policy import closed_notice
 from apps.inventory.models import TrackingMode
+
+
+class ReturnDueNoticeSerializer(serializers.Serializer):
+    code = serializers.ChoiceField(choices=["space_closed"])
+    next_open_at = serializers.DateTimeField(allow_null=True)
 
 
 class RequestItemInputSerializer(serializers.Serializer):
@@ -145,6 +152,8 @@ class AdminRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     makerspace_id = serializers.IntegerField(read_only=True)
     requester_username = serializers.CharField(read_only=True)
+    # Open item A26: the borrower's account id, so staff can open the borrower history drawer.
+    requester_id = serializers.IntegerField(read_only=True)
     requester_name = serializers.CharField(read_only=True)
     # Readable staff-facing label (Check-In email/phone), never the internal
     # checkin_<hash>. Additive - requester_username stays for the existing contract.
@@ -165,6 +174,8 @@ class AdminRequestSerializer(serializers.Serializer):
     accepted_at = serializers.DateTimeField(read_only=True)
     issued_at = serializers.DateTimeField(read_only=True)
     return_due_at = serializers.DateTimeField(read_only=True)
+    # Warning only: a staff-entered due is never moved; see hardware_requests/due_policy.py.
+    return_due_notice = serializers.SerializerMethodField()
     return_reminder_sent_at = serializers.DateTimeField(read_only=True)
     renewal_count = serializers.IntegerField(read_only=True)
     pickup_from = serializers.DateTimeField(read_only=True, allow_null=True)
@@ -185,6 +196,12 @@ class AdminRequestSerializer(serializers.Serializer):
 
     def get_requester_display(self, obj) -> str:
         return requester_label(obj)
+
+    @extend_schema_field(ReturnDueNoticeSerializer(allow_null=True))
+    def get_return_due_notice(self, obj):
+        if obj.status not in {"accepted", "issued", "partially_returned"}:
+            return None
+        return closed_notice(obj.makerspace, obj.return_due_at)
 
 
 from .serializers_handover import (

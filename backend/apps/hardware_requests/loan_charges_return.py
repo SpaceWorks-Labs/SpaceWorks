@@ -17,6 +17,7 @@ from apps.hardware_requests.loan_charges_common import (
     _existing,
     _get_or_create,
     _schedule_checkout,
+    fee_exempt,
     loans_enabled,
     logger,
 )
@@ -73,7 +74,7 @@ def raise_late_fee(request, actor, now):
     assert_write_allowed(request.makerspace_id)
     Makerspace.objects.select_for_update().get(pk=request.makerspace_id)
     owner = User.objects.select_for_update(no_key=True).filter(pk=request.requester_id).first()
-    if request.return_due_at is None or not loans_enabled(request.makerspace):
+    if request.return_due_at is None or not loans_enabled(request.makerspace) or fee_exempt(request):
         return None
     existing = _existing(request, Payment.SubjectType.LOAN_LATE_FEE)
     if existing is not None:

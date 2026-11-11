@@ -158,8 +158,19 @@ class DirectLoanSerializer(PublicToolLoanSerializer):
 
 
 class DirectLoanMemberSerializer(serializers.Serializer):
-    membership_id = serializers.IntegerField(source="id", read_only=True)
+    membership_id = serializers.IntegerField(source="id", read_only=True, allow_null=True,
+                                             help_text="Null for a guest-pass holder, who has no membership.")
     user_id = serializers.IntegerField(source="user.id", read_only=True)
     display_name = serializers.CharField(source="user.display_name", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     is_walk_in = serializers.BooleanField(source="user.is_walk_in", read_only=True)
+    is_guest_pass = serializers.SerializerMethodField()
+    pass_valid_until = serializers.SerializerMethodField()
+
+    def get_is_guest_pass(self, obj) -> bool:
+        return bool(getattr(obj, "is_guest_pass", False))
+
+    @extend_schema_field({"type": "string", "format": "date-time", "nullable": True})
+    def get_pass_valid_until(self, obj):
+        value = getattr(obj, "pass_valid_until", None)
+        return value.isoformat() if value else None

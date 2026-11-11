@@ -10,9 +10,12 @@ from apps.audit import services as audit
 from apps.accounts.account_obligations import lock_obligation_owner
 from apps.boxes.access import inventory_qr_codes
 from apps.boxes.models import Box, QrCode, QrScanEvent
+from apps.boxes.qr_lookup import by_scanned_key, normalize_scanned, scanned_in_q
 from apps.evidence.models import EvidencePhoto
 from apps.evidence.consumption import mark_consumed
 from apps.evidence.finalization import charge_storage_once, lock_evidence_for_attachment
+from apps.hardware_requests import guest_lending
+from apps.hardware_requests.due_policy import effective_due
 from apps.hardware_requests.models import HardwareRequest, PublicToolLoan
 from apps.makerspaces.loan_policy import loan_days
 from apps.hardware_requests.direct_loan_audit import record_item_logs
@@ -29,9 +32,8 @@ from apps.hardware_requests.workflow_errors import (
 )
 from apps.inventory.models import InventoryAsset, InventoryProduct, TrackingMode
 from apps.inventory import availability
+from apps.inventory.event_only import refuse_event_only
 from apps.makerspaces.models import Makerspace
-from apps.makerspaces.request_access import require_current_term
-from apps.presence.guard import require_active_member_presence
 from apps.hardware_requests import kit_checklists as kits
 
 
@@ -49,9 +51,9 @@ def issue_direct_loan(
 ):
     # The lapsed-term rule is about the BORROWER, not about who hands the tool over.
     require_member_account(borrower)
-    require_current_term(
-        makerspace, require_active_member_presence(borrower, makerspace).membership
-    )
+    # Decision 223: a member, or a non-member on a live guest pass whose borrowing mode allows it.
+    # The desk is where presence and the waiver are enforced (planning is not).
+    admitted = guest_lending.admit_borrower(makerspace, borrower)
     evidence = EvidencePhoto.objects.filter(
         pk=evidence_id,
         makerspace=makerspace,
@@ -156,7 +158,8 @@ def issue_direct_loan(
             labels.append(product.name)
 
         availability.enforce_product_borrow_limits(makerspace, requester, product_quantities)
-        due_at = timezone.now() + timedelta(days=loan_days(makerspace, product_quantities))
+        due_at = effective_due(makerspace, timezone.now() + timedelta(days=loan_days(makerspace, product_quantities)))
+        due_at = guest_lending.cap_due(makerspace, requester, due_at)  # an on-site guest pass ends the loan
         request = _issued_request(
             makerspace,
             requester,
@@ -169,6 +172,8 @@ def issue_direct_loan(
             requested_for="Admin direct handout",
             issued_by=actor,
         )
+        if admitted.guest_pass is not None:
+            guest_lending.require_deposit_possible(request, admitted.guest_pass)  # decision 223 (c)
         request.issue_evidence = evidence
         checklist = kits.record_issue(actor, request, loan_container, kit_checklist)
         request.issue_remark = kits.checklist_remark(str(remark or "").strip(), checklist)
@@ -221,19 +226,20 @@ def _locked_qrs_for_payloads(makerspace, payloads):
     if not payloads:
         return []
 
-    unique_payloads = set(payloads)
-    qrs_by_payload = {
-        qr.payload: qr
-        # Member-card QRs read as unknown payloads (`boxes.access.inventory_qr_codes`).
-        for qr in inventory_qr_codes(QrCode.objects.select_for_update())
+    payloads = [normalize_scanned(payload) for payload in payloads]
+    # Keyed by payload AND external label value, so a label printed outside SpaceWorks
+    # hands out like a SpaceWorks one. Member-card QRs read as unknown payloads
+    # (`boxes.access.inventory_qr_codes`).
+    qrs_by_payload = by_scanned_key(
+        inventory_qr_codes(QrCode.objects.select_for_update())
         .filter(
-            payload__in=unique_payloads,
+            scanned_in_q(payloads),
             makerspace=makerspace,
             status=QrCode.Status.ACTIVE,
         )
         .order_by("pk")
-    }
-    if len(qrs_by_payload) != len(unique_payloads):
+    )
+    if any(payload not in qrs_by_payload for payload in payloads):
         raise RequestValidationError("QR code is not active for this makerspace.")
     return [qrs_by_payload[payload] for payload in payloads]
 
@@ -273,4 +279,5 @@ def _manual_product(makerspace, product_id):
         )
     if product.is_consumable:
         raise RequestValidationError("Consumables are logged as used, not lent.")
+    refuse_event_only([product])  # decision 221b
     return product

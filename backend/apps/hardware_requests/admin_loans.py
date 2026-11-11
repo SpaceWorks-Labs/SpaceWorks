@@ -9,6 +9,7 @@ from apps.hardware_requests.self_checkout_models import (
 )
 from config.admin_access import SuperuserOnlyModelAdmin
 from apps.encryption.admin_search import ScopedPiiAdminSearchMixin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(PublicToolLoan)
@@ -213,7 +214,7 @@ class HardwareRequestItemAssetAdmin(ScopedPiiAdminSearchMixin, SuperuserOnlyMode
     )
     fields = readonly_fields
 
-    @admin.display(description="Makerspace", ordering="asset__makerspace")
+    @admin.display(description=gettext_lazy("Makerspace"), ordering="asset__makerspace")
     def asset_makerspace(self, obj):
         return obj.asset.makerspace if obj.asset_id else "-"
 

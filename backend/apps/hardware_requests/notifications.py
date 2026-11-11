@@ -1,6 +1,7 @@
 import logging
 
 from apps.hardware_requests.display import requester_label
+from apps.integrations.fanout_jobs import deferred_fanout
 from apps.integrations.email_templates import hardware_context, render
 from apps.integrations.notify import EmailDelivery
 from apps.integrations.staff_notifications import staff_emails_for_feature
@@ -8,6 +9,7 @@ from apps.integrations.staff_notifications import staff_emails_for_feature
 logger = logging.getLogger(__name__)
 
 
+@deferred_fanout(feature="hardware_requests", event="submitted")
 def notify_request_submitted(request):
     return _notify(
         request,
@@ -18,6 +20,7 @@ def notify_request_submitted(request):
     )
 
 
+@deferred_fanout(feature="hardware_requests", event="accepted")
 def notify_request_accepted(request):
     return _notify(
         request,
@@ -28,6 +31,7 @@ def notify_request_accepted(request):
     )
 
 
+@deferred_fanout(feature="hardware_requests", event="rejected")
 def notify_request_rejected(request):
     return _notify(
         request,
@@ -38,6 +42,7 @@ def notify_request_rejected(request):
     )
 
 
+@deferred_fanout(feature="hardware_requests", event="issued")
 def notify_request_issued(request):
     return _notify(
         request,
@@ -48,6 +53,7 @@ def notify_request_issued(request):
     )
 
 
+@deferred_fanout(feature="hardware_requests", event="returned")
 def notify_request_returned(request):
     event = (
         request.status

@@ -22,8 +22,15 @@ logger = logging.getLogger(__name__)
 def safe_adapter(function):
     """Fail safe INSIDE the domain transaction: a savepoint rolls back a failed
     query or insert before it is swallowed, so the workflow can still commit."""
+    from apps.integrations.fanout_jobs import maybe_defer, register
+    register(function)
+
     @wraps(function)
     def guarded(*args, **kwargs):
+        # Recipient resolution, rendering and delivery run in a Celery worker; the request only
+        # writes one id-only job row (integrations/fanout_jobs.py). Inline where no worker exists.
+        if maybe_defer(function, args, kwargs):
+            return NotificationResult(True)
         try:
             with transaction.atomic():
                 return function(*args, **kwargs)
@@ -43,10 +50,26 @@ def content(rendered, *, link=""):
             "html": rendered.get("html_body", ""), "link": link}
 
 
+def _annotated(body, event_ctx, annotate):
+    """A body is a dict or a builder; a builder is evaluated by emit() in the recipient's language."""
+    if callable(body):
+        return lambda: annotate(body(), event_ctx)
+    return annotate(body, event_ctx)
+
+
+def _plain(body, space):
+    """The shared room summary has no single recipient: the makerspace default language."""
+    if not callable(body):
+        return body
+    from config.locale_resolution import override_for
+    with override_for(makerspace=space):
+        return {key: (str(value) if value is not None else value) for key, value in body().items()}
+
+
 @transaction.atomic
 def fanout(*, space, feature, stream, event, kind, source, version, subject,
            staff=None, owner=None, own=None, scope=None, context=None, rooms=True, room_body=None,
-           intent_key=None, staff_context=None):
+           intent_key=None, staff_context=None, staff_extra_ids=()):
     """One durable intent per source revision, audience and account.
 
     No channel is chosen here: preferences, mandatory email, suppression and live
@@ -54,6 +77,11 @@ def fanout(*, space, feature, stream, event, kind, source, version, subject,
     """
     scope = scope or NotificationScope()
     context = context or {}
+    from .loan_event_notice import annotate, context_for, loan_event
+    event_ctx = loan_event(subject)  # decision 221b: "for <event>" on event-linked loans only
+    if event_ctx:
+        own, staff = _annotated(own, event_ctx, annotate), _annotated(staff, event_ctx, annotate)
+        context = {**context, **context_for(event_ctx)}
     base = intent_key or f"{kind}:{source}:{event}:{version}"
     envelopes = []
     from .notification_projection import addressed_context
@@ -69,7 +97,7 @@ def fanout(*, space, feature, stream, event, kind, source, version, subject,
         from .notifications_p2_contact import notify_owner
         notify_owner(envelopes[-1])
     if staff is not None:
-        ids = staff_user_ids_for_feature(space, feature, event, scope)
+        ids = list(dict.fromkeys([*staff_user_ids_for_feature(space, feature, event, scope), *staff_extra_ids]))
         for user in User.objects.filter(pk__in=ids).order_by("pk"):
             envelopes.append(emit(makerspace=space, recipient=user, feature=feature,
                 stream=stream, event=event, audience="staff",
@@ -81,7 +109,7 @@ def fanout(*, space, feature, stream, event, kind, source, version, subject,
             from .notifications_p2_rooms import queue_rooms
             queue_rooms(space=space, feature=feature, event=event, kind=kind,
                         source=source, version=version, subject=subject, scope=scope,
-                        context=context, body=room_body if room_body is not None else staff.get("text", ""),
+                        context=context, body=room_body if room_body is not None else _plain(staff, space).get("text", ""),
                         key=base, staff_context=staff_context)
     # Scheduling is not proof of delivery. The outbox owns retry and recovery.
     return NotificationResult(bool(envelopes))

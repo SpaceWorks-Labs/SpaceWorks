@@ -14,3 +14,4 @@ class HardwareRequestsConfig(AppConfig):
         register()
         register_reminders()
         register_reports()
+        from . import guest_signals  # noqa: F401  (decision 223 (f): sponsor notice + incident on a new loss/damage row)

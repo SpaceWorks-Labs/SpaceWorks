@@ -10,6 +10,7 @@ from apps.accounts import rbac
 from apps.admin_api.permissions import IsActiveStaff, require_action
 from apps.boxes.models import Box, QrCode
 from apps.boxes.access import inventory_qr_codes
+from apps.boxes.qr_lookup import scanned_or_404
 from apps.hardware_requests.direct_loan_serializers import DirectLoanItemSerializer
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.hardware_requests.kit_checklists import issue_expectations, return_expectations
@@ -24,7 +25,7 @@ from apps.hardware_requests.kit_contact_preview import ContactKitPreviewInputSer
 from apps.hardware_requests.self_checkout_contact import contact_mode
 from apps.hardware_requests.self_checkout_views import _public_tool_makerspace
 from apps.hardware_requests.throttles import AnonymousRequestIpBurstThrottle, AnonymousRequestIpHourThrottle
-from apps.presence.guard import require_active_member_presence
+from apps.presence.guest_guard import require_member_or_guest
 from apps.apiclients.throttling import MemberPrincipalRateThrottle
 from apps.openapi import PUBLIC_API_AUTH_PARAMETERS
 
@@ -126,15 +127,15 @@ class MemberKitPreviewView(APIView):
             serializer.is_valid(raise_exception=True)
             rows = contact_kit_rows(space, serializer.validated_data)
             return Response(KitPreviewSerializer({"components": rows}).data)
-        require_active_member_presence(request.user, space)
+        require_member_or_guest(request.user, space)  # decision 223: a live guest pass is admitted too
         serializer = MemberKitPreviewInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         if data["phase"] == "issue":
             rows = preview_targets(request.user, space, qr_payloads=[data["payload"]], public=True)
         else:
-            qr = get_object_or_404(rbac.scope_by_makerspace(request.user, inventory_qr_codes(QrCode.objects.all())),
-                                   payload=data["payload"], makerspace=space, status=QrCode.Status.ACTIVE)
+            qr = scanned_or_404(rbac.scope_by_makerspace(request.user, inventory_qr_codes(
+                QrCode.objects.filter(makerspace=space, status=QrCode.Status.ACTIVE))), data["payload"])
             loan = get_object_or_404(rbac.scope_by_makerspace(request.user, PublicToolLoan.objects.all()),
                                      qr_code=qr, makerspace=space, requester=request.user,
                                      source=PublicToolLoan.Source.PUBLIC_SELF_CHECKOUT, status=PublicToolLoan.Status.CHECKED_OUT)

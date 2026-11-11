@@ -234,6 +234,10 @@ _EXCEPTION_MAP = {
 
 def workflow_exception_handler(exc, context):
     response = exception_handler(exc, context)
+    if getattr(exc, "makerspace_id", None) and getattr(exc, "code", "").endswith("_quota_reached"):
+        # Decision 284: the refusing transaction has rolled back by now, so the managers' notice sticks.
+        from apps.managed_hosting.space_quotas import tell_managers
+        tell_managers(exc)
     if response is not None:
         return response
 

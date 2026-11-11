@@ -45,13 +45,13 @@ class MemberBorrowingHistoryView(generics.ListAPIView):
             rows = rows.exclude(status__in=closed)
         elif period == "history":
             rows = rows.filter(status__in=closed)
-        return rows.select_related("public_tool_loan").prefetch_related(
+        return rows.select_related("public_tool_loan", "makerspace", "requester").prefetch_related(
             Prefetch("items", queryset=HardwareRequestItem.objects.select_related("product").order_by("id")),
             Prefetch("returnevent_set", queryset=ReturnEvent.objects.filter(makerspace=space).only("id", "request_id", "created_at").order_by("created_at", "id")),
         ).order_by("-created_at", "-id")
 
     @extend_schema(tags=["Member borrowing"], summary="List my own borrowing requests, handovers and returns",
-                   description="Requires a live, unrestricted personal account. No membership or online-payment rail is required. Only the caller's own requests in this servable makerspace are returned, including their merged-account history. Disabled lending is unavailable; private evidence, QR, storage, contact and staff fields are never included.",
+                   description="Requires a live, unrestricted personal account. No membership or online-payment rail is required. Only the caller's own requests in this servable makerspace are returned, including their merged-account history. Unavailable while loans are switched off; private evidence, QR, storage, contact and staff fields are never included.",
                    parameters=[OpenApiParameter("period", str, enum=["all", "current", "history"], required=False)],
                    responses={200: OwnBorrowingHistorySerializer(many=True), 400: ERROR_400,
                               401: ERROR_401, 403: ERROR_403, 404: ERROR_404})

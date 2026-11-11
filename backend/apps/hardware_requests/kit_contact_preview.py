@@ -12,6 +12,7 @@ from rest_framework import serializers
 
 from apps.boxes.access import inventory_qr_codes
 from apps.boxes.models import QrCode
+from apps.boxes.qr_lookup import scanned_or_404
 from apps.hardware_requests.contact_verification import check_code, email_key
 from apps.hardware_requests.kit_checklists import return_expectations
 from apps.hardware_requests.kit_preview import preview_targets
@@ -30,8 +31,8 @@ def contact_kit_rows(space, data):
     check_code(space, data["contact_email"], data["email_code"])
     if data["phase"] == "issue":
         return preview_targets(None, space, qr_payloads=[data["payload"]], public=True)
-    qr = get_object_or_404(inventory_qr_codes(QrCode.objects.filter(makerspace=space)),
-                           payload=data["payload"], status=QrCode.Status.ACTIVE)
+    qr = scanned_or_404(inventory_qr_codes(QrCode.objects.filter(makerspace=space, status=QrCode.Status.ACTIVE)),
+                        data["payload"])
     loan = get_object_or_404(
         PublicToolLoan.objects.select_related("request"),
         qr_code=qr, makerspace=space, requester_id=space.anonymous_requester_id,

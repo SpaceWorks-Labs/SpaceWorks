@@ -1,3 +1,4 @@
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -11,8 +12,12 @@ class HostingRequestSubmitSerializer(serializers.Serializer):
     applicant_name = serializers.CharField(min_length=2, max_length=200)
     applicant_email = serializers.EmailField(max_length=254)
     applicant_phone = serializers.CharField(max_length=32, required=False, allow_blank=True, default="")
+    requested_kind = serializers.ChoiceField(
+        choices=HostingRequest.RequestedKind.choices, default=HostingRequest.RequestedKind.MAKERSPACE,
+        help_text="Decision 295: ask for a makerspace or an organization workspace.",
+    )
     space_name = serializers.CharField(min_length=2, max_length=200)
-    location = serializers.CharField(min_length=2, max_length=200)
+    location = serializers.CharField(min_length=2, max_length=200, required=False, allow_blank=True, default="")
     space_website_url = serializers.URLField(max_length=200, required=False, allow_blank=True, default="")
     description = serializers.CharField(min_length=20, max_length=2000)
     proposed_slug = serializers.SlugField(max_length=50, required=False, allow_blank=True, default="")
@@ -27,6 +32,12 @@ class HostingRequestSubmitSerializer(serializers.Serializer):
         required=False, allow_blank=True, write_only=True,
         help_text="Leave empty. Anti-spam field that real browsers never fill.",
     )
+
+    def validate(self, attrs):
+        # A makerspace has a place; an organization workspace may be purely online.
+        if attrs.get("requested_kind") != "organization" and len(str(attrs.get("location") or "").strip()) < 2:
+            raise serializers.ValidationError({"location": gettext("Tell us where the makerspace is.")})
+        return attrs
 
 
 class HostingInvitationSubmitSerializer(HostingRequestSubmitSerializer):
@@ -58,7 +69,7 @@ class HostingRequestStatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HostingRequest
-        fields = ("status", "space_name", "created_at", "verified_at", "decided_at", "rejection_reason",
+        fields = ("status", "requested_kind", "space_name", "created_at", "verified_at", "decided_at", "rejection_reason",
                   "changes_note", "revisions", "editable", "location", "space_website_url", "description",
                   "proposed_slug", "new_organization_name")
         read_only_fields = fields

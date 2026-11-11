@@ -34,7 +34,15 @@ class HostingRequest(models.Model):
         OWN = "own", gettext_noop("Create my own organization")
         JOIN = "join", gettext_noop("Join the inviting organization")
 
+    class RequestedKind(models.TextChoices):
+        MAKERSPACE = "makerspace", "Makerspace"
+        ORGANIZATION = "organization", gettext_noop("Organization workspace")
+
     status = models.CharField(max_length=24, choices=Status.choices, db_index=True)
+    # Decision 295: what the applicant asks to be set up; the approved space gets this kind.
+    requested_kind = models.CharField(
+        max_length=16, choices=RequestedKind.choices, default=RequestedKind.MAKERSPACE,
+    )
     source = models.CharField(max_length=16, choices=Source.choices)
     inviter_kind = models.CharField(max_length=16, choices=InviterKind.choices, blank=True)
     applicant_name = models.CharField(max_length=200, blank=True)

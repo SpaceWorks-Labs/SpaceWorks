@@ -22,6 +22,7 @@ from apps.hosting_requests import prefill, workflow
 from apps.hosting_requests.availability import admin_available
 from apps.hosting_requests.models import HostingRequest
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 TEMPLATE = "admin/hosting_requests/decision_confirmation.html"
 OWNER_NOTE = (
@@ -48,10 +49,10 @@ def _space_label(makerspace):
 
 @admin.register(HostingRequest)
 class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, ModelAdmin):
-    actions = ["accept_selected", "request_changes_selected", "reject_selected"]
-    list_display = ("space_name", "applicant_email", "source", "status", "inviter_summary",
+    actions = ["approve_and_create_selected", "accept_selected", "request_changes_selected", "reject_selected"]
+    list_display = ("space_name", "requested_kind", "applicant_email", "source", "status", "inviter_summary",
                     "created_at", "verified_at")
-    list_filter = ("status", "source")
+    list_filter = ("status", "source", "requested_kind")
     search_fields = ("space_name", "applicant_email", "applicant_name")
     # Makerspace links are shown through the summaries below.
     readonly_fields = (
@@ -75,7 +76,7 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.display(description="Inviter")
+    @admin.display(description=gettext_lazy("Inviter"))
     def inviter_summary(self, obj):
         who = f" by {obj.invited_by}" if obj.invited_by_id else ""
         if obj.inviter_kind == HostingRequest.InviterKind.MAKERSPACE:
@@ -84,11 +85,11 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
             return f"Invited via organization {obj.inviter_organization or '(deleted)'}{who}"
         return "Public form"
 
-    @admin.display(description="Owner organization")
+    @admin.display(description=gettext_lazy("Owner organization"))
     def owner_choice_summary(self, obj):
         return f"{prefill.owner_choice_summary(obj)} {OWNER_NOTE}"
 
-    @admin.display(description="Create makerspace")
+    @admin.display(description=gettext_lazy("Create makerspace"))
     def create_makerspace_link(self, obj):
         if obj.created_makerspace_id:
             return f"Created: {_space_label(obj.created_makerspace)}"
@@ -142,7 +143,17 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
         if count:
             self.message_user(request, f"{done} {count} hosting request(s).", messages.SUCCESS)
 
-    @admin.action(description="Accept selected hosting requests")
+    @admin.action(description=gettext_lazy("Approve and create the space for selected requests"))
+    def approve_and_create_selected(self, request, queryset):
+        from apps.hosting_requests import provision
+        rows = list(queryset)
+        if "confirm_decision" not in request.POST:
+            return self._confirm(request, rows, action_name="approve_and_create_selected", needs_reason=False,
+                                 title="Approve and create spaces", submit_label="Approve and create")
+        self._decide(request, rows, lambda row: provision.approve_and_create(request.user, row.pk),
+                     "Approved and created a space for")
+
+    @admin.action(description=gettext_lazy("Accept selected hosting requests"))
     def accept_selected(self, request, queryset):
         rows = list(queryset)
         if "confirm_decision" not in request.POST:
@@ -150,7 +161,7 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
                                  title="Accept hosting requests", submit_label="Accept requests")
         self._decide(request, rows, lambda row: workflow.accept(request.user, row.pk), "Accepted")
 
-    @admin.action(description="Reject selected hosting requests")
+    @admin.action(description=gettext_lazy("Reject selected hosting requests"))
     def reject_selected(self, request, queryset):
         rows = list(queryset)
         if "confirm_decision" not in request.POST:
@@ -159,7 +170,7 @@ class HostingRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAd
         reason = request.POST.get("rejection_reason", "")
         self._decide(request, rows, lambda row: workflow.reject(request.user, row.pk, reason), "Rejected")
 
-    @admin.action(description="Request changes on selected hosting requests")
+    @admin.action(description=gettext_lazy("Request changes on selected hosting requests"))
     def request_changes_selected(self, request, queryset):
         rows = list(queryset)
         if "confirm_decision" not in request.POST:

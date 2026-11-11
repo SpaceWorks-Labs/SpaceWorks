@@ -98,14 +98,35 @@ def _send_new(row_id):
 
 
 def schedule_accepted(row):
-    row_id, to_email, space = row.pk, row.applicant_email, row.space_name
-    body = (
-        f"Your request to host {space} on Space Works has been accepted.\n\n"
+    row_id, to_email, space, noun = row.pk, row.applicant_email, row.space_name, _noun(row)
+    body = gettext(
+        "Your request to host the {noun} {space} on Space Works has been accepted.\n\n"
         "The platform team will set up your space and contact you."
-    )
+    ).format(noun=noun, space=space)
     transaction.on_commit(lambda: _send(
         row_id, to_email=to_email, subject=gettext("Your hosting request was accepted"),
         text_body=body, event="hosting_request_accepted", audience="applicant",
+    ))
+
+
+def _noun(row):
+    # Decision 295: requested_kind picks the noun for the applicant-facing sentences.
+    return gettext("organization") if row.requested_kind == "organization" else gettext("makerspace")
+
+
+def schedule_created(row, space):
+    """Tell the requester their space exists; the two invitation emails carry the links."""
+    from apps.makerspaces.space_kind import noun_label
+    row_id, to_email, name, noun = row.pk, row.applicant_email, space.name, noun_label(space)
+    body = gettext(
+        "Your {noun} {name} is set up on Space Works.\n\n"
+        "Two invitation emails follow: one to govern the organization and one to manage the "
+        "space. Accept both while signed in to your own account (or create one with this "
+        "email address)."
+    ).format(noun=noun, name=name)
+    transaction.on_commit(lambda: _send(
+        row_id, to_email=to_email, subject=gettext("Your Space Works workspace is ready"),
+        text_body=body, event="hosting_request_created", audience="applicant",
     ))
 
 
@@ -113,10 +134,9 @@ def schedule_rejected(row):
     row_id, to_email, space, reason = (
         row.pk, row.applicant_email, row.space_name, row.rejection_reason,
     )
-    body = (
-        f"Your request to host {space} on Space Works was not accepted.\n\n"
-        f"Reason: {reason}"
-    )
+    body = gettext(
+        "Your request to host the {noun} {space} on Space Works was not accepted.\n\nReason: {reason}"
+    ).format(noun=_noun(row), space=space, reason=reason)
     transaction.on_commit(lambda: _send(
         row_id, to_email=to_email, subject=gettext("Your hosting request was not accepted"),
         text_body=body, event="hosting_request_rejected", audience="applicant",

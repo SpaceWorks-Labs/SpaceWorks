@@ -23,6 +23,9 @@ def apply_applicant_fields(row, data):
     for name in APPLICANT_FIELDS:
         setattr(row, name, str(data.get(name) or "").strip())
     row.applicant_email = normalize_email(data.get("applicant_email"))
+    kind = data.get("requested_kind")
+    if kind in HostingRequest.RequestedKind.values:
+        row.requested_kind = kind
     members = data.get("expected_members")
     row.expected_members = members if type(members) is int and members > 0 else None
 

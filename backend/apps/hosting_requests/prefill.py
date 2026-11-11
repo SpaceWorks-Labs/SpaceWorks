@@ -30,6 +30,7 @@ def add_url(row):
         "slug": row.proposed_slug or slugify(row.space_name)[:50],
         "location": row.location,
         "hosting_request": row.pk,
+        "kind": row.requested_kind,
     }
     organization = join_organization(row)
     if organization is not None:

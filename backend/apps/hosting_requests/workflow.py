@@ -200,14 +200,15 @@ def open_by_token(raw_access_token):
 
 
 @transaction.atomic
-def accept(actor, row_id):
+def accept(actor, row_id, notify=True):
     require_superadmin(actor)
     row = _locked(pk=row_id)
     _transition(row, S.ACCEPTED)
     row.decided_at, row.decided_by = timezone.now(), actor
     row.save(update_fields=["status", "decided_at", "decided_by", "updated_at"])
     audit.record(actor, "hosting_request.accepted", target=row, meta={})
-    notifications.schedule_accepted(row)
+    if notify:
+        notifications.schedule_accepted(row)
     return row
 
 
@@ -243,6 +244,9 @@ def link_created_makerspace(actor, request_id, makerspace):
         actor, "hosting_request.makerspace_linked", target=row,
         meta={"makerspace_id": makerspace.pk},
     )
+    # Decision 236: a space made from a host-your-makerspace request is a HOSTED space.
+    from apps.managed_hosting.hosting_type import HOSTED, set_type
+    set_type(actor, makerspace, HOSTED, reason="hosting_request")
     return row
 
 

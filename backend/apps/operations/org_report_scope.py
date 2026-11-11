@@ -50,7 +50,10 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     # Tenant-local hour-of-week cells are intentionally not organization totals.
     "booking-occupancy",
     "booking-resource-utilization", "booking-resource-utilization-pdf", "booking-reservations", "booking-answers",
-    "event-registrations", "event-feedback", "event-attendance-pdf",
+    "event-registrations", "event-feedback", "event-attendance-pdf", "event-orders",
+    "event-equipment", "booking-equipment", "event-loan-timeline", "booking-loan-timeline",
+    # One activity's consumable use is tenant-local stock and price context.
+    "event-consumables", "booking-consumables",
     # Financial detail and accounting custody stay tenant-local. Different local
     # calendars also make a combined revenue/cash period misleading.
     "payments-ledger", "accounting-journal", "revenue-over-time", "cash-book",
@@ -79,6 +82,8 @@ EXCLUDED_ORGANIZATION_REPORT_KEYS = frozenset({
     # Active accounts are distinct-person metrics that may refer to the same person
     # in several owned makerspaces and therefore cannot be summed safely.
     "community-engagement",
+    # Decision 223 (k): distinct people per space; one attendee at two owned spaces would double-count.
+    "join-funnel",
     # Certified-member counts are distinct-person metrics per makerspace; one member
     # trained in two owned spaces would be double-counted by a naive sum.
     "certification-coverage",
@@ -121,6 +126,14 @@ from apps.operations.report_definitions_finance_l5 import L5_FINANCE_REPORT_DEFI
 from apps.operations.report_definitions_shop import SHOP_REPORT_DEFINITIONS  # noqa: E402
 EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | {
     definition.key for definition in (*L5_FINANCE_REPORT_DEFINITIONS, *SHOP_REPORT_DEFINITIONS)}
+
+# Parity O-B3: cash in hand, revenue by plan, the renewal forecast and approval times are per-space.
+from apps.operations.report_definitions_org_parity import ORG_PARITY_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | ORG_PARITY_REPORT_KEYS
+
+# Decision 248: the area reports and people exports are per-space tables.
+from apps.operations.report_definitions_completeness import COMPLETENESS_REPORT_KEYS  # noqa: E402
+EXCLUDED_ORGANIZATION_REPORT_KEYS = EXCLUDED_ORGANIZATION_REPORT_KEYS | COMPLETENESS_REPORT_KEYS
 
 
 # Phase 1f F/G adds explicit local-period strategies and exposed denominators.

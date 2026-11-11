@@ -22,6 +22,7 @@ from config.admin_access import SuperuserOnlyModelAdmin
 # Imported for its `@admin.register` side effect (the split pattern from CLAUDE.md).
 from apps.operations import admin_report_schedules  # noqa: F401,E402
 from apps.operations import admin_scheduling  # noqa: F401,E402
+from django.utils.translation import gettext_lazy
 
 
 class StockTransferLineInline(TabularInline):
@@ -158,15 +159,15 @@ class StocktakeSessionAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
             ),
         ] + super().get_urls()
 
-    @admin.action(description="Complete selected stocktakes")
+    @admin.action(description=gettext_lazy("Complete selected stocktakes"))
     def complete_selected(self, request, queryset):
         self._run_stocktake_action(request, queryset, services.complete_stocktake, "Completed")
 
-    @admin.action(description="Approve selected stocktakes")
+    @admin.action(description=gettext_lazy("Approve selected stocktakes"))
     def approve_selected(self, request, queryset):
         self._run_stocktake_action(request, queryset, services.approve_stocktake, "Approved")
 
-    @admin.action(description="Apply selected stocktake adjustments")
+    @admin.action(description=gettext_lazy("Apply selected stocktake adjustments"))
     def apply_adjustments_selected(self, request, queryset):
         self._run_stocktake_action(request, queryset, services.apply_stocktake_adjustments, "Applied adjustments for")
 

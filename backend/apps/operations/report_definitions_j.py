@@ -6,6 +6,7 @@ from dataclasses import replace
 from apps.accounts import rbac
 from apps.operations.org_report_aggregate import register_combine
 from apps.operations.org_reports_j import combine_audit, combine_device_health, combine_organization_membership, combine_presence
+from apps.operations.report_definitions_audit import AUDIT_READER_ACTIONS
 from apps.operations.report_definitions_coverage import COVERAGE_REPORT_DEFINITIONS
 from apps.operations.report_types import ReportDefinition
 from apps.operations.report_fields_j import (
@@ -22,6 +23,8 @@ def _activity(key, fields, chart_spec, *, action=rbac.Action.VIEW_AUDIT, identit
     return ReportDefinition(
         key, f"{PATH}reports_j_activity.build_{key.replace('-', '_')}", fields,
         required_action=action, title=key.replace("-", " ").title(),
+        # #219(e-1): the audit activity reports also admit area readers, narrowed by area.
+        alternate_actions=AUDIT_READER_ACTIONS if key.startswith("audit-") else (),
         grains=() if identity or hours else GRAINS,
         chart_hint="heatmap" if hours else "bar" if identity else "line", chart_spec=chart_spec,
         identity_bearing=identity, deployment_aggregate=not (identity or hours),

@@ -40,7 +40,7 @@ def run_problem_checks():
                     "check_key": check.key, "error_type": type(exc).__name__,
                 })
                 results.append(result(check.key, "warn", "This check could not be completed.",
-                                      f"/m/{space.slug}/admin/settings" if space else "/admin/platform",
+                                      f"/m/{space.slug}/admin/settings/health" if space else "/admin/platform",
                                       space.pk if space else None))
     severity = "error" if any(r["status"] == "error" for r in results) else (
         "warn" if any(r["status"] == "warn" for r in results) else "ok"

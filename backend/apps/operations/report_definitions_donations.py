@@ -1,7 +1,7 @@
 """RP-3 donations reports: campaign progress, pledges and sponsor perks (release 2, after L18).
 
 Finance-only like every L18 staff surface: `view_finance` (the Space Manager and finance
-staff, #100). Each report sits behind its own L18 switch, runs per space only, and never
+staff, #100) or `manage_donations` (the Fundraising role, decision 242(m)). Each report sits behind its own L18 switch, runs per space only, and never
 carries a donor's name or contact, the 80G PAN or address, a link secret or a sponsor's
 private contact. The donations money itself is the ledger area `finance-donations`.
 """
@@ -24,7 +24,8 @@ PERK_CHART = table("perk_id")
 
 def _donations(key, builder, fields, title, feature, chart_spec, chart_hint):
     return ReportDefinition(key, _DONATIONS + builder, fields, required_action=rbac.Action.VIEW_FINANCE,
-                            title=title, deployment_aggregate=False, required_feature=feature,
+                            alternate_actions=(rbac.Action.MANAGE_DONATIONS,), title=title,
+                            deployment_aggregate=False, required_feature=feature,
                             chart_hint=chart_hint, chart_spec=chart_spec)
 
 

@@ -13,6 +13,7 @@ META_FIELDS = frozenset({
     "source", "grain", "rollup_through", "definition", "limitations", "history",
     "observed_at", "money_dates", "legacy_dates", "owed", "calendar", "tax",
     "basis", "row_cap", "arrival_counts_available",
+    "context_dimensions_available",
 })
 
 
@@ -38,7 +39,8 @@ def project_report_output(definition, result):
         _warn(definition, unknown)
         fields = tuple(field for field in result.field_order if field in allowed)
         meta = {key: value for key, value in result.meta.items()
-                if key in META_FIELDS and isinstance(value, (str, int, float, bool, date, datetime, Decimal, type(None)))}
+                if key in META_FIELDS and isinstance(value, (str, int, float, bool, date, datetime, Decimal, type(None)))
+                and (key != "context_dimensions_available" or type(value) is bool)}
         _warn(definition, set(result.meta) - meta.keys())
         return ReportResult(fields, [{field: row.get(field) for field in fields} for row in result.records],
                             meta)

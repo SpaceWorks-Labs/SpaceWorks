@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from .serializers_dashboard import DashboardSerializer
 from .dashboard_programmes import programme_counts
+from .dashboard_due_back import due_back_counts, stock_health_counts
 from apps.separability.registry import runtime_active
 from apps.accounts import rbac
 
@@ -18,12 +19,20 @@ from apps.inventory.models import InventoryProduct
 from apps.makerspaces.platform import module_enabled, feature_enabled
 from apps.makerspaces.local_time import to_local
 from apps.machines import role_scope
-from apps.machines.printer_capabilities import PRINTER_SLUG
 from apps.operations.models import StocktakeSession
 from apps.payments.models import Payment
 from apps.warranty.models import Warranty
 
 logger = logging.getLogger(__name__)
+
+
+def _failed(counts, area, makerspace, exc):
+    """Log a failed counter and name its area (U13) so the UI can say it could not load."""
+    logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "area": area,
+                                                        "error_type": type(exc).__name__})
+    if area not in counts["failed_areas"]:
+        counts["failed_areas"].append(area)
+
 
 def build_dashboard(
     makerspace,
@@ -65,6 +74,7 @@ def build_dashboard(
     restricted = machine_only
     if restricted:
         counts = {
+            "failed_areas": [],
             "scope_mode": "machine",
             "pending_prints": 0,
             "active_prints": 0,
@@ -76,13 +86,17 @@ def build_dashboard(
         counts = {
             key: 0
             for key in DashboardSerializer().fields
-            if key not in {"scope_mode", "widgets", "queue_tiles"}
+            if key not in {"scope_mode", "widgets", "queue_tiles", "failed_areas"}
         }
         counts["scope_mode"] = "full"
+        counts["failed_areas"] = []
         counts["outstanding_by_currency"] = {}
 
     if not restricted and include_hardware and feature_enabled(makerspace, "loans.enabled"):
         try:
+            # Decision 242(n): a direct or self-checkout loan carries a workflow request AND a
+            # tool-loan row; counting both doubled it. Same exclusion as `handover_home`.
+            direct = scope(PublicToolLoan.objects.filter(makerspace=makerspace))
             reviewed_overdue = scope(views_dashboard.HardwareRequest.objects.filter(
                 makerspace=makerspace,
                 status__in=[
@@ -90,81 +104,76 @@ def build_dashboard(
                     views_dashboard.HardwareRequest.Status.PARTIALLY_RETURNED,
                 ],
                 return_due_at__lt=now,
-            )).count()
-            direct_overdue = scope(PublicToolLoan.objects.filter(
-                makerspace=makerspace,
-                returned_at__isnull=True,
-                due_at__lt=now,
-            )).count()
+            )).exclude(pk__in=direct.values("request_id")).count()
+            direct_overdue = direct.filter(returned_at__isnull=True, due_at__lt=now).count()
             counts["overdue_loans"] = reviewed_overdue + direct_overdue
+            counts.update(due_back_counts(actor, makerspace, now))
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "inventory", makerspace, exc)
         try:
             counts["pending_requests"] = scope(views_dashboard.HardwareRequest.objects.filter(
                 makerspace=makerspace,
                 status=views_dashboard.HardwareRequest.Status.PENDING_APPROVAL,
             )).count()
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "inventory", makerspace, exc)
         try:
             counts["awaiting_issue"] = scope(views_dashboard.HardwareRequest.objects.filter(
                 makerspace=makerspace,
                 status=views_dashboard.HardwareRequest.Status.ACCEPTED,
             )).count()
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "inventory", makerspace, exc)
         try:
             counts["open_problem_reports"] = scope(PublicProblemReport.objects.filter(
                 makerspace=makerspace,
                 resolved_at__isnull=True,
             )).count()
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "inventory", makerspace, exc)
         try:
             counts["low_stock"] = scope(InventoryProduct.objects.filter(
                 makerspace=makerspace,
                 available_quantity=0,
             )).count()
+            counts.update(stock_health_counts(actor, makerspace))
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "inventory", makerspace, exc)
     # Print tiles are `printing` data: a space without the module shows zeros, exactly as
     # the maintenance tile below does without `maintenance`.
-    if include_machines and module_enabled(makerspace, "printing"):
+    jobs_on = module_enabled(makerspace, "printing") or (
+        module_enabled(makerspace, "machines") and module_enabled(makerspace, "machine_service")
+    )
+    if include_machines and jobs_on:
         try:
-            from apps.machines.models import MachineServiceRequest, MachineType
+            from apps.machines.models import MachineServiceRequest
 
-            printer_type_id = MachineType.objects.filter(
-                makerspace__isnull=True, slug=PRINTER_SLUG
-            ).values_list("id", flat=True).first()
-            if printer_type_id is not None:
-                printer_q = Q(pk__in=[])
-                for path in role_scope.SERVICE_REQUEST_TYPE_PATHS:
-                    printer_q |= Q(**{path: printer_type_id})
-                printers = scope(MachineServiceRequest.objects.filter(
-                    makerspace=makerspace
-                )).filter(printer_q)
-                prints = printers.filter(
-                    role_scope.scope_q_for(
-                        machine_scope,
-                        machine_id_paths=role_scope.SERVICE_REQUEST_MACHINE_PATHS,
-                        type_id_paths=role_scope.SERVICE_REQUEST_TYPE_PATHS,
-                    )
-                ).distinct()
-                counts["pending_prints"] = prints.filter(status=MachineServiceRequest.Status.PENDING).count()
-                counts["active_prints"] = prints.filter(status=MachineServiceRequest.Status.IN_PROGRESS).count()
-                # Awaiting collection follows COLLECTION authority, which is cumulative and
-                # wider than machine scope: a role holding scoped MANAGE_MACHINES plus a
-                # DIRECT collect grant can hand over any completed job, so counting only its
-                # own machines made the tile disagree with the Handover queue it links to --
-                # a job actionable there and invisible here. Built as a separate queryset
-                # rather than OR-ing the scope clause, because `scope_q_for` returns an empty
-                # `Q()` for an exempt actor and `Q() | X` collapses to `X`.
-                awaiting = (printers if direct_collect else prints).filter(
-                    status=MachineServiceRequest.Status.COMPLETED
+            # Decision 242(n): every machine type's jobs, not just the built-in 3D printer
+            # (a laser- or CNC-scoped Machine Manager saw zero). The tile keys keep their
+            # historic `*_prints` names so the client contract does not move.
+            printers = scope(MachineServiceRequest.objects.filter(makerspace=makerspace))
+            prints = printers.filter(
+                role_scope.scope_q_for(
+                    machine_scope,
+                    machine_id_paths=role_scope.SERVICE_REQUEST_MACHINE_PATHS,
+                    type_id_paths=role_scope.SERVICE_REQUEST_TYPE_PATHS,
                 )
-                counts["prints_awaiting_collection"] = awaiting.distinct().count()
+            ).distinct()
+            counts["pending_prints"] = prints.filter(status=MachineServiceRequest.Status.PENDING).count()
+            counts["active_prints"] = prints.filter(status=MachineServiceRequest.Status.IN_PROGRESS).count()
+            # Awaiting collection follows COLLECTION authority, which is cumulative and
+            # wider than machine scope: a role holding scoped MANAGE_MACHINES plus a
+            # DIRECT collect grant can hand over any completed job, so counting only its
+            # own machines made the tile disagree with the Handover queue it links to --
+            # a job actionable there and invisible here. Built as a separate queryset
+            # rather than OR-ing the scope clause, because `scope_q_for` returns an empty
+            # `Q()` for an exempt actor and `Q() | X` collapses to `X`.
+            awaiting = (printers if direct_collect else prints).filter(
+                status=MachineServiceRequest.Status.COMPLETED
+            )
+            counts["prints_awaiting_collection"] = awaiting.distinct().count()
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "machines", makerspace, exc)
     if not restricted and include_failed_emails and module_enabled(makerspace, "email"):
         try:
             counts["failed_emails"] = scope(EmailLog.objects.filter(
@@ -173,7 +182,7 @@ def build_dashboard(
                 created_at__gte=now - timedelta(days=7),
             )).count()
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "email", makerspace, exc)
     if not restricted and include_hardware and feature_enabled(makerspace, "loans.enabled") and module_enabled(makerspace, "stocktake"):
         try:
             counts["stocktakes_awaiting_approval"] = scope(StocktakeSession.objects.filter(
@@ -181,7 +190,7 @@ def build_dashboard(
                 status=StocktakeSession.Status.COMPLETED,
             )).count()
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "inventory", makerspace, exc)
     try:
         warranties = scope(Warranty.objects.filter(
             makerspace=makerspace,
@@ -215,7 +224,7 @@ def build_dashboard(
             )
         counts["warranty_expiring"] = warranties.count()
     except Exception as exc:
-        logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+        _failed(counts, "warranty", makerspace, exc)
     if include_machines and feature_enabled(makerspace, "machines.maintenance"):
         try:
             from apps.maintenance.models import MaintenanceSchedule
@@ -237,7 +246,7 @@ def build_dashboard(
                 )
             counts["maintenance_overdue"] = schedules.count()
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "machines", makerspace, exc)
 
     if include_pending_payments and not restricted:
         try:
@@ -255,15 +264,16 @@ def build_dashboard(
                 .order_by("currency")
             }
         except Exception as exc:
-            logger.error("Dashboard aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "payments", makerspace, exc)
     elif not restricted:
         counts.pop("pending_payments", None)
 
     if not restricted:
         try:
-            counts.update(programme_counts(makerspace, events=include_events, bookings=include_bookings, actor=actor))
+            counts.update(programme_counts(makerspace, events=include_events, bookings=include_bookings, actor=actor,
+                                           failed_areas=counts["failed_areas"]))
         except Exception as exc:
-            logger.error("Dashboard programme aggregation failed", extra={"makerspace_id": makerspace.pk, "error_type": type(exc).__name__})
+            _failed(counts, "events", makerspace, exc)
     counts["widgets"] = build_widgets(actor, makerspace) if actor is not None else []
     counts["queue_tiles"] = handover_home(actor, makerspace) if actor is not None else {}
     return counts

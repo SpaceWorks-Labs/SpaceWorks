@@ -12,6 +12,7 @@ from apps.operations import services
 from apps.operations.models import QrPrintBatch, QrPrintBatchItem
 from apps.operations.qr_zip import build_batch_zip
 from config.admin_access import SuperuserOnlyModelAdmin
+from django.utils.translation import gettext_lazy
 
 
 class QrPrintBatchItemInline(TabularInline):
@@ -63,7 +64,7 @@ class QrPrintBatchAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         audit.record(request.user, "qr_print_batch.items_saved", makerspace=form.instance.makerspace,
                      target=form.instance, meta={"item_count": form.instance.items.count()})
 
-    @admin.action(description="Mark selected QR print batches as printed")
+    @admin.action(description=gettext_lazy("Mark selected QR print batches as printed"))
     def mark_printed_selected(self, request, queryset):
         success_count = 0
         for batch in queryset:
@@ -77,7 +78,7 @@ class QrPrintBatchAdmin(SuperuserOnlyModelAdmin, ModelAdmin):
         if success_count:
             self.message_user(request, f"Marked {success_count} QR print batch(es) as printed.", level=messages.SUCCESS)
 
-    @admin.action(description="Download QR ZIP (select exactly one batch)")
+    @admin.action(description=gettext_lazy("Download QR ZIP (select exactly one batch)"))
     def download_zip_selected(self, request, queryset):
         if queryset.count() != 1:
             self.message_user(request, "Select exactly one batch to download.", level=messages.ERROR)

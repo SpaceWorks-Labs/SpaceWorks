@@ -1,7 +1,7 @@
 """Finalized consumption, with quantities and recorded costs partitioned explicitly."""
 
 from decimal import Decimal
-from itertools import islice
+from itertools import chain, islice
 
 from django.db.models import DateTimeField, Q
 from django.db.models.functions import Coalesce
@@ -13,6 +13,7 @@ from apps.machines.models_tracking import ConsumableCostRecord
 from apps.makerspaces.platform import module_enabled
 from apps.operations.reports_ab_common import bucket, calendar_range, percent, result, spaces
 from apps.operations.reports_common import apply_range
+from apps.operations.reports_shop_consumable_costs import shop_priced_sources
 
 
 USAGE_FIELDS = ("period", "source", "material", "measurement_unit", "currency", "consumed_quantity",
@@ -123,7 +124,10 @@ def build_consumable_usage(makerspace_id, *, limit=None, date_range=None, grain=
     for space in spaces(makerspace_id, "machines"):
         scope = machine_scope(actor, space.pk)
         groups = {}
-        for source, cost in priced_sources(space, scope, calendar_range(date_range, space)):
+        window = calendar_range(date_range, space)
+        # Shop sales of linked consumables are their own facts (never workshop usage), labelled
+        # `shop_sale`; `shop_return` rows carry negative quantity and cost so totals net.
+        for source, cost in chain(priced_sources(space, scope, window), shop_priced_sources(space, actor, window)):
             at, kind, source_id, material, unit, quantity, measure = source
             if at is None:
                 continue
@@ -140,7 +144,7 @@ def build_consumable_usage(makerspace_id, *, limit=None, date_range=None, grain=
         records.extend(groups.values())
     records.sort(key=lambda row: (row["period"], row["measurement_unit"], row["currency"], -row["consumed_quantity"]))
     return result(USAGE_FIELDS, records, makerspace_id, limit,
-        meta={"basis": "Final pooled service quantities, typed manual consume adjustments and non-pool consumption rows; recorded minor-unit costs per currency and measurement unit.",
+        meta={"basis": "Final pooled service quantities, typed manual consume adjustments, non-pool consumption rows and shop sales of linked consumables (shop returns net them); recorded minor-unit costs per currency and measurement unit.",
               "limitations": "Missing cost records remain unknown; unfinished reservations and adjustment deltas are separate measures."})
 
 

@@ -33,7 +33,7 @@ def seed_inventory(makerspace, manager, inventory_manager):
             "public_self_checkout_enabled": public and mode == data.EXACT,
             "reorder_point": point, "reorder_quantity": reorder,
             "storage_location": data.BOXES[box][1],
-            "description": f"{name} from the Tinkerspace lending library.",
+            "description": f"{name} from the Tinkerspace tool library.",
         })
         products[name] = availability.adjust_quantities(
             product, delta_available=quantity, delta_damaged=0, delta_lost=0,

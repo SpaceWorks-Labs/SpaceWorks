@@ -19,6 +19,10 @@ from apps.operations.reports_typed import typed_report_rows, typed_result_rows
 from apps.operations.report_output import project_report_output
 from apps.operations.report_definitions_finance_l5 import L5_ACTOR_REPORT_KEYS
 from apps.operations.report_definitions_repairs import REPAIRS_ACTOR_REPORT_KEYS
+from apps.operations.report_definitions_loan_context import LOAN_CONTEXT_REPORT_KEYS
+from apps.operations.report_definitions_audit import AUDIT_VIEWER_REPORT_KEYS
+from apps.operations.report_definitions_completeness import COMPLETENESS_ACTOR_REPORT_KEYS
+from apps.payments.money import money_text
 
 
 DEFAULT_REPORT_LIMIT = 100
@@ -39,14 +43,16 @@ def report_data(
     kwargs = dict(limit=_normalized_limit(limit), date_range=date_range, **(report_filters or {}))
     if report_key in {"presence-top-visitors", "audit-top-actors"}:
         kwargs["actor"] = actor
+    if report_key in AUDIT_VIEWER_REPORT_KEYS:
+        kwargs["viewer"] = actor
     if report_key == "booking-top-members":
         kwargs["actor"] = actor
     if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation", "refunds"}:
         kwargs["actor"] = actor
-    if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS:
+    if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS or report_key in LOAN_CONTEXT_REPORT_KEYS or report_key in COMPLETENESS_ACTOR_REPORT_KEYS:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
-    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors", "certification-coverage", "printer-service", "fablab-health", "machine-service"}:
         kwargs["actor"] = actor
     if definition.summary and makerspace_id is None:
         kwargs["limit"] = None  # Totals must include every eligible tenant.
@@ -60,8 +66,12 @@ def report_data(
     if subject is not None:
         from apps.audit.services import record
         # Previews are GETs, but their disclosure audit is a tenant write.
-        with tenant_write(subject.makerspace_id):
-            record(actor, "report.previewed", makerspace=subject.makerspace, target=subject,
+        from apps.makerspaces.models import Makerspace
+        # Subject adapters already enforce this route's tenant. Some subjects
+        # (Booking) derive tenancy through a space rather than a direct field.
+        space = Makerspace.objects.get(pk=makerspace_id)
+        with tenant_write(space.pk):
+            record(actor, "report.previewed", makerspace=space, target=subject,
                    meta={"report_key": definition.key})
     if definition.summary and isinstance(result, dict):
         return result
@@ -94,14 +104,18 @@ def report_rows(
     kwargs = dict(limit=limit, date_range=date_range, **(report_filters or {}))
     if report_key in {"presence-top-visitors", "audit-top-actors"}:
         kwargs["actor"] = actor
+    if report_key in AUDIT_VIEWER_REPORT_KEYS:
+        kwargs["viewer"] = actor
     if report_key == "booking-top-members":
         kwargs["actor"] = actor
+    if report_key == "event-attendance-pdf":
+        kwargs["actor"] = actor  # parity C19: the Money and Spending sections follow the viewer's finance view
     if report_key in {"member-retention", "membership-revenue", "membership-growth", "payments-ageing", "revenue-over-time", "cash-book", "payment-reconciliation", "refunds"}:
         kwargs["actor"] = actor
-    if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS:
+    if report_key in L5_ACTOR_REPORT_KEYS or report_key in REPAIRS_ACTOR_REPORT_KEYS or report_key in LOAN_CONTEXT_REPORT_KEYS or report_key in COMPLETENESS_ACTOR_REPORT_KEYS:
         kwargs["actor"] = actor
     from .report_definitions_machines import MACHINE_REPORT_KEYS
-    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors"}:
+    if report_key in MACHINE_REPORT_KEYS or report_key in {"consumable-usage", "consumable-pools", "procurement-performance", "overdue-loans", "longest-loans", "qr-scan-actors", "certification-coverage", "printer-service", "fablab-health", "machine-service"}:
         kwargs["actor"] = actor
     if definition.grains:
         kwargs["grain"] = grain
@@ -169,5 +183,5 @@ def _export_matrix(result, grain):
 
 def json_value(value):
     if isinstance(value, Decimal):
-        return format(value.quantize(Decimal("0.01")), ".2f")
+        return money_text(value)
     return value

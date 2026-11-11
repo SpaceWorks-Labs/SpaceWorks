@@ -1,4 +1,5 @@
 """Report notices disclose navigation only and recheck the report's own action."""
+from django.utils.translation import gettext
 from django.utils import timezone
 
 from apps.accounts import rbac
@@ -64,8 +65,9 @@ def eligible(envelope):
 
 def content(delivery):
     definition = REPORT_REGISTRY[delivery.schedule.report_key]
-    return body("Scheduled report ready", f"Scheduled report '{definition.title}' is ready. "
-                "Sign in to the staff console to view the report.", staff_link(delivery.schedule.makerspace, "reports"))
+    return body(gettext("Scheduled report ready"),
+                gettext("Scheduled report '%(title)s' is ready. Sign in to the staff console to view the report.")
+                % {"title": definition.title}, staff_link(delivery.schedule.makerspace, "reports"))
 
 
 def render(envelope):
@@ -82,7 +84,7 @@ def notify_report(delivery):
         # source above, not that category, grants report disclosure authority.
         fanout(row=delivery, space=delivery.schedule.makerspace, feature="api_access", stream="reports",
             event="scheduled_report", source_kind=SOURCE, revision=source_revision(delivery),
-            owner=user, owner_body=content(delivery), staff=False)
+            owner=user, owner_body=lambda: content(delivery), staff=False)
 
 
 def emailed_by_envelope(delivery, definition):

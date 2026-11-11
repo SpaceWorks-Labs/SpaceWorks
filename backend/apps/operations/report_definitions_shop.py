@@ -12,6 +12,7 @@ from apps.operations.report_definitions_finance_l5 import LEDGER_CHART
 from apps.operations.report_types import ReportDefinition
 from apps.operations.reports_de_common import chart
 from apps.operations.reports_shop import FIELDS as SALES_FIELDS
+from apps.operations.reports_shop_products import SALES_FIELDS as PRODUCT_FIELDS, STOCK_FIELDS
 from apps.payments.reports_finance_ledger import FIELDS as LEDGER_FIELDS
 
 SHOP_REPORT_DEFINITIONS = (
@@ -24,4 +25,12 @@ SHOP_REPORT_DEFINITIONS = (
                      deployment_aggregate=False, chart_hint="grouped_bar",
                      chart_spec=chart("month", (("sales", "currency_major"), ("refunds", "currency_major")),
                                       series=("channel",), currency=True)),
+    # Decision 242 / SH3: the product-by-month table and the stock value table (tables, no chart).
+    ReportDefinition("shop-product-sales", "apps.operations.reports_shop_products.build_shop_product_sales",
+                     PRODUCT_FIELDS, ("shop",), required_action=rbac.Action.MANAGE_SHOP,
+                     title=gettext_noop("Shop sales by product and month"), deployment_aggregate=False,
+                     schedulable=False),
+    ReportDefinition("shop-stock-value", "apps.operations.reports_shop_products.build_shop_stock_value",
+                     STOCK_FIELDS, ("shop",), required_action=rbac.Action.MANAGE_SHOP,
+                     title=gettext_noop("Shop stock value"), deployment_aggregate=False, schedulable=False),
 )

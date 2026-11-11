@@ -65,6 +65,10 @@ def _public_row(row, holder_map, unit_map):
         "makerspace_id": row["ledger_makerspace_id"],
         "reference_id": row["reference_id"],
         "status": row["ledger_status"],
+        # Drill-down keys (0.12.0 IN7): the loan request, the item and the holder's account.
+        "request_id": row["ledger_request_id"],
+        "product_id": row["ledger_product_id"],
+        "holder_id": row["holder_sort_id"],
     }
 
 

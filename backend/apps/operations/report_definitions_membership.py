@@ -10,10 +10,10 @@ from apps.operations.org_report_fg import combine_growth, combine_retention, com
 
 MEMBERSHIP_REPORT_DEFINITIONS = (
     ReportDefinition("membership-growth", "apps.operations.reports_membership_growth.build_membership_growth",
-                     GROWTH_FIELDS, ("membership",), title=gettext_noop("Membership growth"), chart_hint="line",
+                     GROWTH_FIELDS, ("membership",), required_action=rbac.Action.MANAGE_MEMBERS, title=gettext_noop("Membership growth"), chart_hint="line",
                      grains=("day", "week", "month"), chart_spec=GROWTH_CHART),
     ReportDefinition("member-retention", "apps.operations.reports_retention.build_member_retention",
-                     RETENTION_FIELDS, ("membership",), title=gettext_noop("Member retention and cohorts"),
+                     RETENTION_FIELDS, ("membership",), required_action=rbac.Action.MANAGE_MEMBERS, title=gettext_noop("Member retention and cohorts"),
                      version=2, chart_hint="heatmap", chart_spec=RETENTION_CHART),
     ReportDefinition("membership-revenue", "apps.operations.reports_membership_revenue.build_membership_revenue",
                      REVENUE_FIELDS, ("membership",), required_action=rbac.Action.VIEW_FINANCE,

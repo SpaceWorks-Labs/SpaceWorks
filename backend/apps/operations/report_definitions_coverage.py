@@ -9,18 +9,18 @@ COVERAGE_REPORT_DEFINITIONS = (
     ReportDefinition(
         "loan-throughput", "apps.operations.reports_workflow.build_loan_throughput",
         ("period", "source", "request_status", "request_count", "unique_borrowers", "anonymous_requests", "requested_units", "accepted_units", "issued_units", "returned_units", "damaged_units", "missing_units", "average_approval_hours", "average_loan_hours"),
-        title=gettext_noop("Loan throughput"), chart_hint="stacked_line", grains=("day", "month"), section_modules=("guest_handover",),
+        required_action=rbac.Action.VIEW_AUDIT, title=gettext_noop("Loan throughput"), chart_hint="stacked_line", grains=("day", "month"), section_modules=("guest_handover",),
     ),
     ReportDefinition(
         "inventory-control", "apps.operations.reports_inventory_control.build_inventory_control",
         ("module_key", "metric_key", "dimension", "count", "quantity", "rate_percent", "last_activity_at"),
-        title=gettext_noop("Inventory control"), chart_hint="grouped_bar",
+        required_action=rbac.Action.VIEW_AUDIT, title=gettext_noop("Inventory control"), chart_hint="grouped_bar",
         section_modules=("public_inventory", "qr_management", "containers", "stock_transfers", "stocktake", "qr_print_batches", "asset_units"),
     ),
     ReportDefinition(
         "evidence-compliance", "apps.evidence.reports.build_evidence_compliance",
         ("period", "evidence_type", "created_count", "attached_count", "unattached_count", "object_live_count", "object_expired_count", "metadata_retained_count", "bytes", "attachment_rate_percent"),
-        ("evidence_uploads",), title=gettext_noop("Evidence compliance"), chart_hint="line", grains=("day", "month"),
+        ("evidence_uploads",), required_action=rbac.Action.VIEW_AUDIT, title=gettext_noop("Evidence compliance"), chart_hint="line", grains=("day", "month"),
         chart_spec=EVIDENCE_CHART,
     ),
     ReportDefinition(
@@ -40,14 +40,20 @@ COVERAGE_REPORT_DEFINITIONS = (
     ReportDefinition(
         "community-engagement", "apps.makerspaces.reports_community.build_community_engagement",
         ("period", "module_key", "enabled", "activations", "revocations", "active_accounts", "approved_apps", "active_grants", "revoked_grants", "reuse_detected"),
-        title=gettext_noop("Community engagement"), chart_hint="line", grains=("day", "month"),
+        required_action=rbac.Action.MANAGE_MEMBERS, title=gettext_noop("Community engagement"), chart_hint="line", grains=("day", "month"),
         section_modules=("membership", "member_accounts", "mobile"),
         chart_spec=COMMUNITY_CHART,
     ),
     ReportDefinition(
+        "join-funnel", "apps.makerspaces.reports_join_funnel.build_join_funnel",
+        ("period", "attendees", "guests", "joined", "guest_rate_percent", "join_rate_percent"),
+        ("membership",), required_action=rbac.Action.MANAGE_MEMBERS, title=gettext_noop("Attendee join funnel"), chart_hint="grouped_bar", grains=("day", "month"),
+        section_modules=("membership", "events"), required_feature="membership.join_funnel",
+    ),
+    ReportDefinition(
         "certification-coverage", "apps.machines.reports_certifications.build_certification_coverage",
         ("machine_type", "certification_type", "gating_enabled", "required_for_service", "required_for_booking", "active_members", "certified_members", "expiring_30d", "revoked_grants", "coverage_percent"),
-        ("machines",), title=gettext_noop("Certification coverage"), chart_hint="grouped_bar", section_modules=("machines",),
+        ("machines",), required_action=rbac.Action.MANAGE_MACHINES, title=gettext_noop("Certification coverage"), chart_hint="grouped_bar", section_modules=("machines",),
         chart_spec=CERTIFICATION_CHART,
     ),
     ReportDefinition(

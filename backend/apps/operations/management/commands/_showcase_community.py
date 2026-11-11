@@ -25,7 +25,7 @@ from . import _showcase_data as data
 
 ABOUT = (
     "Tinkerspace is a community workshop run by its members. Borrow tools from the "
-    "lending library, send a print to the farm, book a bench, or drop in on a "
+    "tool library, send a print to the farm, book a bench, or drop in on a "
     "Thursday repair night.\n\nEverything here is showcase data for a demo space."
 )
 

@@ -12,7 +12,8 @@ STAFF_ROLES = (
     ("space_manager", "Space managers"), ("inventory_manager", "Inventory managers"),
     ("machine_manager", "Machine managers"), ("event_manager", "Event managers"),
     ("booking_manager", "Booking managers"), ("handover", "Handover staff"),
-    ("technician", "Technicians"), ("shop_manager", "Shop managers"), ("custom", "Custom-role staff"),
+    ("technician", "Technicians"), ("shop_manager", "Shop managers"), ("fundraising", "Fundraising staff"),
+    ("custom", "Custom-role staff"),
 )
 
 
@@ -86,7 +87,7 @@ def _lending(ids, window, now):
 
 
 LENDING = Block(
-    key="lending", label="Lending", switches=("loans.enabled",),
+    key="lending", label="Inventory", switches=("loans.enabled",),
     gate=lambda space: feature_enabled(space, "loans.enabled"),
     metrics=(
         Metric("items", "Catalogue items", timing="snapshot"),

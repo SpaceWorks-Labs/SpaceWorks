@@ -15,6 +15,9 @@ from apps.operations.report_definitions_machines import MACHINE_REPORT_DEFINITIO
 from apps.operations.report_definitions_de import DE_REPORT_DEFINITIONS
 from apps.operations.report_definitions_j import J_REPORT_DEFINITIONS
 from apps.operations.report_definitions_repairs import REPAIRS_REPORT_DEFINITIONS
+from apps.operations.report_definitions_loan_context import LOAN_CONTEXT_REPORT_DEFINITIONS
+from apps.operations.report_definitions_completeness import COMPLETENESS_REPORT_DEFINITIONS
+from apps.operations.report_definitions_org_parity import ORG_PARITY_REPORT_DEFINITIONS
 from apps.operations.report_types import (
     ReportDefinition,
     ReportNotExportable,
@@ -32,6 +35,9 @@ REPORT_DEFINITIONS = (
     *HI_REPORT_DEFINITIONS,
     *DE_REPORT_DEFINITIONS,
     *REPAIRS_REPORT_DEFINITIONS,
+    *LOAN_CONTEXT_REPORT_DEFINITIONS,
+    *COMPLETENESS_REPORT_DEFINITIONS,
+    *ORG_PARITY_REPORT_DEFINITIONS,
 )
 # Area A+B replaces the shipped definitions without retaining duplicate catalog keys.
 REPORT_DEFINITIONS = tuple(d for d in REPORT_DEFINITIONS if d.key not in AB_REPORT_KEYS) + AB_REPORT_DEFINITIONS

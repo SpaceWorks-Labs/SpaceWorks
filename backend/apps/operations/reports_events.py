@@ -2,7 +2,7 @@ from django.utils.translation import gettext
 from django.db.models import Count, Q
 
 from apps.events.models import Event, EventOrganizer, EventRegistration
-from apps.operations.report_registry import ReportResult
+from apps.operations.report_types import ReportResult
 from apps.operations.report_scope import scoped_ids
 
 

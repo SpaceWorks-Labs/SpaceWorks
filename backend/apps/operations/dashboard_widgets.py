@@ -71,7 +71,8 @@ def visible_widgets(actor, makerspace):
     for widget in WIDGETS:
         definitions = [REPORT_REGISTRY[key] for key in widget.report_keys]
         actions = {widget.required_action, *(d.required_action for d in definitions)}
-        if any(d.identity_bearing for d in definitions):
+        from .area_identity import named_rows_allowed
+        if any(d.identity_bearing and not named_rows_allowed(actor, d, makerspace.pk) for d in definitions):
             actions.add(rbac.Action.VIEW_AUDIT)
         if any(not rbac.can(actor, action, makerspace.pk) for action in actions):
             continue

@@ -19,6 +19,10 @@ class ReportSubject:
     #: Tenant action of the domain's built-in manager (Event/Booking Manager). Holders
     #: pass the tenant gate below without VIEW_AUDIT; everyone else still needs it.
     tenant_action: str = ""
+    #: Decision 248 / EB1: `(actor, space_id) -> bool`. A person who holds a per-resource grant (a co-organizer)
+    #: but no tenant action may reach this subject's reports in that space; the adapter's own `authorize` still
+    #: decides per resource, so this only opens the door a grantee is already entitled to knock on.
+    grantee_gate: Callable | None = None
 
 
 SUBJECTS = {}
@@ -58,7 +62,8 @@ def authorize(actor, space, definition, filters):
     if definition.key not in adapter.report_keys:
         raise ValidationError({"subject_kind": gettext("Unsupported subject for this report.")})
     require_module(space, "reports")
-    if not (adapter.tenant_action and rbac.can(actor, adapter.tenant_action, space.pk)):
+    if not (adapter.tenant_action and rbac.can(actor, adapter.tenant_action, space.pk)) and not (
+            adapter.grantee_gate and adapter.grantee_gate(actor, space.pk)):
         require_action(actor, rbac.Action.VIEW_AUDIT, space.pk)
     subject = adapter.resolve(space, values["subject_id"])
     adapter.authorize(actor, subject, definition)
@@ -87,6 +92,10 @@ def report_action_allowed(actor, definition, makerspace_id, filters=None):
     filters = filters or {}
     subject_request = bool(definition.subject_kind) or any(
         key in filters for key in ("subject_kind", "subject_id"))
+    if subject_request and filters.get("subject_kind") in SUBJECTS:
+        adapter = SUBJECTS[filters["subject_kind"]]
+        if definition.key in adapter.report_keys and adapter.grantee_gate and adapter.grantee_gate(actor, makerspace_id):
+            return True  # the adapter's `authorize` still checks this one resource
     return (subject_request and subject_capable(definition)
             and rbac.can(actor, rbac.Action.VIEW_AUDIT, makerspace_id))
 

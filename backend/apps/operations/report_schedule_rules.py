@@ -102,9 +102,13 @@ def validate_roles(actor, space, slugs, action):
 def recipient_emails(schedule, definition):
     """Selectors are role slugs / action enums, resolved with current RBAC each send.
 
+    The file carries the creator's reach, so a local recipient must also reach that far
+    (``report_schedule_reach.recipient_reaches``).
+
     Explicit addresses remain for external recipients of existing schedules. If one
     names a local account, it is also subject to current report authority and opt-out.
     """
+    from .report_schedule_reach import recipient_reaches
     candidates = rbac.scope_for_scheduled_work(
         MakerspaceMembership.staff_tracks.filter(makerspace=schedule.makerspace),
         makerspace_id=schedule.makerspace_id,
@@ -119,7 +123,8 @@ def recipient_emails(schedule, definition):
         if is_explicit:
             explicit.pop(normalized)
         if not (member.status == "active" and member.receives_notifications and active_user(user)
-                and rbac.can(user, definition.required_action, schedule.makerspace_id)):
+                and rbac.can(user, definition.required_action, schedule.makerspace_id)
+                and recipient_reaches(user, schedule, definition)):
             continue
         role = member.assigned_role
         from apps.accounts.rbac_roles import membership_roles

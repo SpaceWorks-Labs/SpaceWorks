@@ -8,6 +8,7 @@ import logging
 from functools import wraps
 
 from django.db import transaction
+from django.utils.translation import gettext
 
 from apps.accounts import rbac
 from apps.accounts.models import User
@@ -20,8 +21,15 @@ ROOM_CHANNELS = ("telegram", "slack", "mattermost", "discord", "webhook")
 
 
 def safe_notification(function):
+    from apps.integrations.fanout_jobs import maybe_defer, register
+    register(function)
+
     @wraps(function)
     def guarded(*args, **kwargs):
+        # Fan-out (recipients, rendering, delivery) runs in a Celery worker; the request only enqueues an
+        # id-only job (integrations/fanout_jobs.py). Inline where no worker exists (eager, free profile).
+        if maybe_defer(function, args, kwargs):
+            return NotificationResult(True)
         try:
             # A failed INSERT must roll back its savepoint before being swallowed,
             # otherwise Django would leave the domain transaction unusable.
@@ -49,6 +57,15 @@ def revision(*parts):
 
 def body(subject, text, link="", html=""):
     return {"subject": subject, "text": text, "html": html, "link": link}
+
+
+def in_locale(builder, *, space=None, user=None):
+    """A body, or a zero-argument builder run in the recipient's language (user, space default, system)."""
+    if not callable(builder):
+        return builder
+    from config.locale_resolution import override_for
+    with override_for(user=user, makerspace=space):
+        return {key: (str(value) if value is not None else value) for key, value in builder().items()}
 
 
 def staff_link(space, tab):
@@ -99,6 +116,9 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
     staff_values = {**addressed_context(space, staff_feature, event, "staff", staff_context), **context}
     key = identity(space.pk, source_kind, row.pk, revision, event)
     envelopes = []
+    # Bodies may be builders: each envelope renders in its own recipient's language (emit); the shared
+    # room summary has no single recipient, so it uses the makerspace default.
+    room_body = in_locale(staff_body, space=space)
     # The domain owner is explicit, and may have no membership at all.
     if owner is not None and owner_body is not None and (
         not recipients.has_selection(space, feature, event, scope)
@@ -116,10 +136,10 @@ def fanout(*, row, space, feature, stream, event, source_kind, revision,
             stream=staff_stream, event=event, audience="staff", source_kind=source_kind,
             source_id=row.pk, subject=row, revision=revision, scope=scope,
             dedup_key=f"p2:{key}:u:{account.pk}", context=staff_values,
-            rendered=staff_body or body("Space Works", "A staff update is available.")))
-    if staff and rooms and staff_body and space.staff_notifications_enabled:
+            rendered=staff_body or (lambda: body("Space Works", gettext("A staff update is available.")))))
+    if staff and rooms and room_body and space.staff_notifications_enabled:
         from apps.integrations.chat_templates import render_chat_text
-        room_text = render_chat_text(space, staff_feature, event, staff_body["text"], staff_context)
+        room_text = render_chat_text(space, staff_feature, event, room_body["text"], staff_context)
         for channel in ROOM_CHANNELS:
             if not is_notification_enabled(space, staff_feature, channel):
                 continue

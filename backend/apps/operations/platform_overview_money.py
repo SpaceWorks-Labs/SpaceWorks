@@ -15,6 +15,7 @@ from django.db.models import Sum
 
 from apps.makerspaces.platform import feature_enabled, module_enabled
 from apps.operations.platform_overview_blocks import Metric
+from apps.payments.money import trim_money
 
 #: The switches any of which puts money on in a space (#183A gate for this block).
 SWITCHES = ("charges.enabled", "payments", "shop", "finance.donations")
@@ -69,7 +70,8 @@ def _finance_rows(table, space_id, window):
 def _ledger_rows(table, ids, window):
     from apps.payments.models_ledger_entries import LedgerEntry
 
-    entries = LedgerEntry.objects.filter(makerspace_id__in=ids, voided_at__isnull=True)
+    entries = LedgerEntry.objects.filter(makerspace_id__in=ids, voided_at__isnull=True).exclude(
+        source_kind="cash_handover")  # a hand-over is a transfer, not spending (parity O-B3)
     if window.start is not None:
         entries = entries.filter(entry_date__gte=window.start.date())
     # The window end is exclusive; a ledger row carries a day, so take the last day inside it.
@@ -119,4 +121,4 @@ def money_section(spaces, window):
 
 def _figures(values):
     return {"charges": int(values.get("charges", 0)),
-            "amounts": {key: str(Decimal(values.get(key, 0)).quantize(Decimal("0.01"))) for key in AMOUNTS}}
+            "amounts": {key: str(trim_money(values.get(key, 0))) for key in AMOUNTS}}

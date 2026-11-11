@@ -17,7 +17,7 @@ ARRIVAL_FIELDS = ("arrived_reservations", "confirmed_without_recorded_arrival")
 RESOURCE_UTILIZATION_FIELDS = (*UTILIZATION_FIELDS, *ARRIVAL_FIELDS)
 RESERVATION_FIELDS = (
     "booking_id", "space_id", "space_name", "name", "email", "phone",
-    "starts_at", "ends_at", "status", "created_at",
+    "starts_at", "ends_at", "status", "created_at", "organization",
 )
 ANSWER_FIELDS = ("booking_id", "space_id", "starts_at", "ends_at", "status", "answers")
 
@@ -41,7 +41,7 @@ BOOKING_REPORT_DEFINITIONS = (
                 allowed_formats=("pdf",), pdf_renderer_path="apps.operations.reports_booking_pdf.render_pdf"),
     _definition("booking-reservations", "reports_booking_exports.build_reservations",
                 RESERVATION_FIELDS, "Resource reservation export", "exports",
-                chart_spec=RESERVATIONS_CHART),
+                chart_spec=RESERVATIONS_CHART, version=2),  # v2: organization column (decision 223 (k))
     _definition("booking-answers", "reports_booking_exports.build_answers",
                 ANSWER_FIELDS, "Resource reservation answers", "exports",
                 chart_spec=RESERVATIONS_CHART),

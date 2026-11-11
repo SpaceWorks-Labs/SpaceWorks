@@ -25,9 +25,11 @@ def _reservations(makerspace_id, subject_kind, subject_id, date_range, limit):
 
 
 def build_reservations(makerspace_id, *, subject_kind, subject_id, limit=None, date_range=None):
-    rows = _reservations(makerspace_id, subject_kind, subject_id, date_range, limit)
+    rows = list(_reservations(makerspace_id, subject_kind, subject_id, date_range, limit))
+    from apps.bookings.organization_booking import organization_names
+    organizations = organization_names(row.pk for row in rows)
     return ReportResult(RESERVATION_FIELDS, [{
-        "booking_id": row.pk, "space_id": row.space_id, "space_name": row.space.name,
+        "organization": organizations.get(row.pk, ""), "booking_id": row.pk, "space_id": row.space_id, "space_name": row.space.name,
         "name": row.name, "email": row.email, "phone": row.phone,
         "starts_at": row.starts_at, "ends_at": row.ends_at, "status": row.status, "created_at": row.created_at,
     } for row in rows])

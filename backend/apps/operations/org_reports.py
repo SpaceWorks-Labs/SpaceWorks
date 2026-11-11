@@ -9,8 +9,10 @@ from apps.operations.org_report_identity import (
 )
 from apps.operations.org_report_strategies import STRATEGIES, organization_strategy
 from apps.operations.report_registry import ReportDefinition, ReportResult
+from apps.operations.report_definitions_audit import AUDIT_VIEWER_REPORT_KEYS
 from apps.operations.report_scope import ReportScope, ReportScopeMode
 from apps.operations.report_output import project_report_output
+from apps.payments.money import money_text
 
 
 class OrganizationAggregationError(ValueError):
@@ -53,6 +55,7 @@ def organization_report_data(
             **({"grain": grain} if definition.grains else {}),
             **({"actor": actor} if definition.required_action == Action.MANAGE_MACHINES
                or definition.key == "procurement-performance" else {}),
+            **({"viewer": actor} if definition.key in AUDIT_VIEWER_REPORT_KEYS else {}),
             **(report_filters or {}),
         )
         rows = _result_rows(result)
@@ -147,7 +150,7 @@ def _project(row, fields):
 
 def _json_value(value):
     if isinstance(value, Decimal):
-        return format(value.quantize(Decimal("0.01")), ".2f")
+        return money_text(value)
     return value
 
 

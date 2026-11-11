@@ -2,11 +2,12 @@ from django.db.models import Q
 
 from apps.accounts import rbac
 from apps.hardware_requests.models import HardwareRequest
+from apps.operations.ledger_due_window import due_window
 from apps.operations.ledger_query_constants import SORT_FIELDS, SOURCE_DIRECT
 
 
 def _filter_item_rows(queryset, filters, makerspace_id=None):
-    queryset = _filter_common(queryset, filters)
+    queryset = _filter_common(queryset, filters, makerspace_id)
     search = (filters.get("search") or "").strip()
     if search:
         queryset = queryset.filter(
@@ -21,7 +22,7 @@ def _filter_container_rows(queryset, filters, makerspace_id=None):
     source = filters.get("source")
     if source and source != SOURCE_DIRECT:
         queryset = queryset.none()
-    queryset = _filter_common(queryset, {**filters, "source": None})
+    queryset = _filter_common(queryset, {**filters, "source": None}, makerspace_id)
     search = (filters.get("search") or "").strip()
     if search:
         queryset = queryset.filter(
@@ -30,13 +31,16 @@ def _filter_container_rows(queryset, filters, makerspace_id=None):
         )
     return queryset
 
-def _filter_common(queryset, filters):
+def _filter_common(queryset, filters, makerspace_id=None):
     source = filters.get("source")
     if source:
         queryset = queryset.filter(ledger_source=source)
     overdue = filters.get("overdue")
     if overdue is not None:
         queryset = queryset.filter(overdue=overdue)
+    window = due_window(makerspace_id, filters.get("due"))
+    if window:
+        queryset = queryset.filter(due_sort__gte=window[0], due_sort__lt=window[1])
     return queryset
 
 def _borrower_search_q(prefix, search, makerspace_id=None):

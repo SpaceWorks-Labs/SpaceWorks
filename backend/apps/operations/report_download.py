@@ -21,6 +21,8 @@ def _export_response(request, definition, makerspace_id, *, platform_context=Non
     local_space = None
     if makerspace_id is not None:
         local_space = _makerspace_for_report_view(request.user, makerspace_id, definition.key)
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(local_space, "report_exports_monthly")  # decision 284: typed 409 before the file is built
     # Membership/money builders resolve calendar labels in each source space; machine
     # builders still need makerspace-local ranges.
     local_dates = bool(request.query_params.get("subject_kind") or definition.subject_kind or definition.key in MACHINE_REPORT_KEYS)

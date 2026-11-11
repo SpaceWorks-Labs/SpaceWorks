@@ -89,7 +89,9 @@ TASK_SOURCES = {
     # Members, cards, profiles.
     A + "makerspaces.tasks.cleanup_public_page_assets_task": platform(_RETENTION),
     A + "makerspaces.tasks.refresh_github_contributions_task": gated("membership"),
-    A + "makerspaces.tasks_membership.run_membership_renewals_task": gated("membership"),
+    A + "makerspaces.tasks_membership.run_membership_renewals_task": gated(
+        "membership", "and its guest-pass sweep (membership.guest_passes) and the post-event join follow-up "
+        "(membership.join_funnel), decision 223"),
     A + "makerspaces.tasks_station.purge_expired_operator_leases_task": platform(_RETENTION),
     A + "operations.tasks_admissions.sweep_membership_admissions_task": gated("membership"),
     A + "card_designs.tasks.resume_card_jobs": per_row("job_runner cancels a job whose card scope is off"),

@@ -1,4 +1,5 @@
 """Operational alerts contain IDs and navigation, never mail bodies or destinations."""
+from django.utils.translation import gettext
 from apps.accounts import rbac
 from apps.integrations.models import EmailLog
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -32,7 +33,9 @@ def stocktake_eligible(envelope):
 
 
 def stocktake_body(row, event):
-    return body(f"Stocktake {event}", f"Stocktake #{row.pk} is {event}. Review it in the staff console.", staff_link(row.makerspace, "stocktake"))
+    return body(gettext("Stocktake %(event)s") % {"event": event},
+                gettext("Stocktake #%(id)s is %(event)s. Review it in the staff console.") % {"id": row.pk, "event": event},
+                staff_link(row.makerspace, "stocktake"))
 
 
 def render_stocktake(envelope):
@@ -43,7 +46,7 @@ def render_stocktake(envelope):
 def notify_stocktake(row, event):
     # Reuses the existing stock category, matching the legacy personal inbox.
     return fanout(row=row, space=row.makerspace, feature="stock", stream="stocktake", event=event,
-        source_kind=STOCKTAKE, revision=stocktake_revision(row, event), staff_body=stocktake_body(row, event))
+        source_kind=STOCKTAKE, revision=stocktake_revision(row, event), staff_body=lambda: stocktake_body(row, event))
 
 
 def failure_eligible(envelope):
@@ -59,7 +62,9 @@ def notify_email_failure(log):
         return
     return fanout(row=log, space=log.makerspace, feature="api_access", stream="integrations", event="email.failed",
         source_kind=MAIL_FAILURE, revision=revision(log.pk, "first_failure"), rooms=False,
-        staff_body=body("Email delivery failed", f"Email log #{log.pk} delivery failed.", staff_link(log.makerspace, "email-log")))
+        staff_body=lambda: body(gettext("Email delivery failed"),
+                                gettext("Email log #%(id)s delivery failed.") % {"id": log.pk},
+                                staff_link(log.makerspace, "email-log")))
 
 
 def on_email_saved(sender, instance, **kwargs):

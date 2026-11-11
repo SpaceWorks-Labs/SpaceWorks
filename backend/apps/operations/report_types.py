@@ -22,7 +22,8 @@ class ReportDefinition:
     required_modules: tuple[str, ...] = ()
     exportable: bool = True
     summary: bool = False
-    required_action: str = rbac.Action.VIEW_AUDIT
+    # Fail closed: a definition that forgets to name its action is Space-Manager-only, never audit-reader wide.
+    required_action: str = rbac.Action.MANAGE_MAKERSPACE
     title: str = ""
     chart_hint: str = "table"
     grains: tuple[str, ...] = ()

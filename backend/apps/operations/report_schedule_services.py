@@ -42,6 +42,7 @@ from apps.operations.report_schedule_rules import condition_matches, recipient_e
 from apps.operations.report_scope import eligible_makerspace_ids
 from apps.operations.views_report_helpers import date_range_from_dates
 from apps.tenant_migration.gate_runtime import fanout_tenant_write
+from config.locale_resolution import override_for
 
 logger = logging.getLogger(__name__)
 
@@ -244,15 +245,18 @@ def _send(schedule, definition, url, delivery=None):
     navigation = staff_link(makerspace, "reports")
     title = definition.title or definition.key
     hours = max(settings.REPORT_DELIVERY_URL_TTL_SECONDS // 3600, 1)
-    text = (
-        f"Scheduled report '{title}' for {makerspace.name} ({schedule.format.upper()}) is ready. "
-        f"Download (link valid about {hours}h): {url}"
-    )
+    # Addressed by mailbox or room, not by account: the makerspace default language.
+    with override_for(makerspace=makerspace):
+        text = gettext("Scheduled report '{title}' for {name} ({format}) is ready. "
+                       "Download (link valid about {hours}h): {url}").format(
+            title=title, name=makerspace.name, format=schedule.format.upper(), hours=hours, url=url)
+        room_text = gettext("Scheduled report is ready. Sign in to the staff console: {link}").format(link=navigation)
+        subject = gettext("[{name}] Scheduled report: {title}").format(name=makerspace.name, title=title)
     errors = []
     if schedule.destination_id:
         ok, error = deliver_text_to_destination(
             makerspace, schedule.destination,
-            text=f"Scheduled report is ready. Sign in to the staff console: {navigation}",
+            text=room_text,
             feature=NOTIFICATION_FEATURE,
             event=NOTIFICATION_EVENT, reference=f"report-schedule-{schedule.pk}",
             payload={"schedule_id": schedule.pk, "report_key": definition.key},
@@ -268,7 +272,7 @@ def _send(schedule, definition, url, delivery=None):
         try:
             log = dispatch_email(
                 makerspace=makerspace, to_email=email,
-                subject=gettext('[{name}] Scheduled report: {title}').format(name=makerspace.name, title=title), text_body=text,
+                subject=subject, text_body=text,
                 stream="reports", event=NOTIFICATION_EVENT, audience="staff", sync=True,
             )
         except Exception as exc:  # noqa: BLE001 - SMTP/fence failures are per-recipient facts

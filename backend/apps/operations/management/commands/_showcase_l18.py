@@ -31,7 +31,8 @@ def seed_donations(space, manager, members):
         "page_intro": "Every gift keeps the doors open and the tools sharp.", "suggested_amounts": ["500", "1000", "2500"],
         "tax_exempt_registration_number": "AAATT1234TE20251", "tax_exempt_valid_from": today - timedelta(days=200),
         "tax_exempt_valid_until": today + timedelta(days=900), "tax_exempt_registrant_pan": "AAATT1234T",
-        "updated_by": manager})
+        "is_nonprofit": True, "legal_name": f"{space.name} Trust", "signatory_name": "Treasurer",
+        "signatory_title": "Treasurer", "tax_exemptions": [], "updated_by": manager})
     currency = services.space_currency(space)
     campaign = DonationCampaign.objects.create(
         makerspace=space, name="A new laser cutter", slug="laser-cutter", currency=currency,

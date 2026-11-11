@@ -71,8 +71,10 @@ def platform_insights(actor, *, days=30, now=None):
     growth = [{"date": (first + timedelta(days=index)).isoformat(),
                "accounts": account_growth.get(first + timedelta(days=index), 0),
                "makerspaces": tenant_growth.get(first + timedelta(days=index), 0)} for index in range(days)]
+    from .platform_insights_wide import wide_insights
     return {"window": {"starts_at": start, "ends_at": now}, "growth": growth,
             "organizations": _organization_insights(spaces),
+            **wide_insights(spaces, accounts, start, now),
             "staff_mfa": {"active": active, "enabled": enabled, "without_mfa": active - enabled,
                           "adoption_percent": round(enabled * 100 / active, 2) if active else None},
             "outbox": [
@@ -117,10 +119,16 @@ class OrganizationInsightSerializer(serializers.Serializer):
     suppressed = serializers.BooleanField(help_text="True when a count is under 10 and is withheld.")
 
 
+from .serializers_insights_wide import InsightsActivitySerializer, InsightsSecuritySerializer, InsightsStorageSerializer  # noqa: E402
+
+
 class PlatformInsightsSerializer(serializers.Serializer):
     window = WindowSerializer()
     growth = GrowthSerializer(many=True)
     organizations = OrganizationInsightSerializer(many=True)
+    activity = InsightsActivitySerializer(allow_null=True, help_text="Null when the Events module is off.")
+    security = InsightsSecuritySerializer()
+    storage = InsightsStorageSerializer()
     staff_mfa = MfaSerializer()
     outbox = OutboxHealthSerializer(many=True)
 

@@ -42,7 +42,7 @@ REPORT_MODULE_COVERAGE = {
     "event_reimbursements": ModuleReportCoverage("health_row", ("module-operational-health",)),
     "bookings": ModuleReportCoverage("substantive", ("booking-utilization",)),
     "maintenance": ModuleReportCoverage("substantive", ("maintenance-activity",)),
-    "membership": ModuleReportCoverage("substantive", ("member-activity", "community-engagement")),
+    "membership": ModuleReportCoverage("substantive", ("member-activity", "community-engagement", "join-funnel")),
     "notifications": ModuleReportCoverage("composite", ("communications-health",)),
     "email": ModuleReportCoverage("composite", ("communications-health",)),
     "sms": ModuleReportCoverage("substantive", ("communications-health", "platform-services", "module-operational-health")),
@@ -97,7 +97,8 @@ REPORT_MODULE_COVERAGE.update({
 })
 REPORT_MODULE_COVERAGE["devices"] = ModuleReportCoverage("substantive", ("device-health", "module-operational-health"))
 # Release 2 L22: shop sales by month and channel, and the shop's own ledger money.
-REPORT_MODULE_COVERAGE["shop"] = ModuleReportCoverage("substantive", ("shop-sales", "finance-shop"))
+REPORT_MODULE_COVERAGE["shop"] = ModuleReportCoverage(
+    "substantive", ("shop-sales", "finance-shop", "shop-product-sales", "shop-stock-value"))
 # Lane L25 (#163B): analytics is reported as a health row; its audit actions count as activity.
 REPORT_MODULE_COVERAGE["analytics"] = ModuleReportCoverage("health_row", ("module-operational-health",))
 # RP-5: the repairs family documents the per-parent repair and maintenance switches (#128 C-9),
@@ -107,6 +108,19 @@ for _module in ("maintenance", "machines"):
     REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(
         REPORT_MODULE_COVERAGE[_module].kind,
         tuple(dict.fromkeys((*REPORT_MODULE_COVERAGE[_module].reports, *sorted(_REPAIRS_KEYS)))))
+
+
+# Decision 248: inventory valuation, category utilisation and the overdue table sit with the inventory modules; the
+# register and people exports with their own areas. Capability-gated reports ride on their parent module.
+for _module, _keys in (("public_inventory", ("inventory-valuation", "inventory-utilisation-by-category")),
+                       ("request_workflow", ("overdue-by-borrower",))):
+    REPORT_MODULE_COVERAGE[_module] = ModuleReportCoverage(
+        REPORT_MODULE_COVERAGE[_module].kind, (*REPORT_MODULE_COVERAGE[_module].reports, *_keys))
+REPORT_MODULE_COVERAGE["machines"] = ModuleReportCoverage(REPORT_MODULE_COVERAGE["machines"].kind, (
+    *REPORT_MODULE_COVERAGE["machines"].reports, "machine-jobs", "certification-holders"))
+REPORT_MODULE_COVERAGE["membership"] = ModuleReportCoverage("substantive", (
+    *REPORT_MODULE_COVERAGE["membership"].reports, "roster-export", "guest-passes-export", "volunteer-hours-export",
+    "minors-consent-export"))
 
 
 @checks.register(checks.Tags.models)

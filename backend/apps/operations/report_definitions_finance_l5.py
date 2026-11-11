@@ -46,7 +46,7 @@ def _tax(key, builder, fields, title, chart_spec):
 L5_FINANCE_REPORT_DEFINITIONS = (
     _ledger("income-spending", "build_income_spending", "Income and spending by month and area",
             rbac.Action.VIEW_FINANCE),
-    _ledger("finance-inventory", "build_finance_inventory", "Inventory and lending money",
+    _ledger("finance-inventory", "build_finance_inventory", "Inventory money",
             rbac.Action.EDIT_INVENTORY, schedulable=False),
     _ledger("finance-machines", "build_finance_machines", "Machine money", rbac.Action.MANAGE_MACHINES,
             schedulable=False),

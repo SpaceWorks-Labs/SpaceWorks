@@ -4,6 +4,7 @@ from apps.operations.cloud_jobs import bounded
 
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_noop
 
 from apps.operations.management.commands.run_scheduled_tasks import SCHEDULED_TASKS
 from apps.operations.models_scheduling import PeriodicTaskRun
@@ -29,7 +30,34 @@ def scheduler_snapshot(now=None):
     return results
 
 
+BACKUP_STATUS_LABELS = {
+    "never": gettext_noop("Never run"),
+    "pending": gettext_noop("Waiting to start"),
+    "running": gettext_noop("Running"),
+    "promoting": gettext_noop("Finishing"),
+    "available": gettext_noop("Succeeded"),
+    "complete": gettext_noop("Succeeded"),
+    "failed": gettext_noop("Failed"),
+    "expired": gettext_noop("Expired by retention"),
+    "deployment_backup_requires_host_supervisor": gettext_noop("Run by whoever runs your server"),
+}
+
+
+def backup_status_label(status):
+    """Translated display label for a backup status; an unknown value is sentence-cased."""
+    from config.locale_resolution import display
+
+    label = BACKUP_STATUS_LABELS.get(status)
+    return display(label) if label else str(status).replace("_", " ").capitalize()
+
+
 def backup_snapshot():
+    snapshot = _backup_snapshot()
+    snapshot["status_label"] = backup_status_label(snapshot["status"])
+    return snapshot
+
+
+def _backup_snapshot():
     from django.conf import settings
     if settings.SPACEWORKS_DEPLOYMENT_MODE == "managed":
         return {"automatic_enabled": False, "last_success_at": None,

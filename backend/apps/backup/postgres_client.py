@@ -64,7 +64,7 @@ def client_binary(tool, major=None):
     """
     major = server_major() if major is None else major
     if tool not in {"pg_dump", "pg_restore", "psql", "createdb", "dropdb"} or major not in {16, 17}:
-        raise PostgresClientUnavailable("Only PostgreSQL 16/17 application tools are supported.")
+        raise PostgresClientUnavailable("Only PostgreSQL 16 and 17 servers are supported: this database reports another major version. Use a PostgreSQL 16 or 17 server (an external provider must be set to 16 or 17).")
     for template in _VERSIONED_CLIENT_DIRS:
         candidate = Path(template.format(major=major)) / tool
         if candidate.is_file() and _binary_major(str(candidate)) == major:

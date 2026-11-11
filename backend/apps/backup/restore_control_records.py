@@ -1,12 +1,13 @@
 """Persist supervisor facts outside a database that is about to be replaced."""
 
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import logging
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -19,6 +20,23 @@ from apps.backup.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _control_fields(control):
+    """The decision and deadline a control record carries, validated before any write."""
+    decision = control.get("decision") if isinstance(control, dict) else None
+    if decision not in RestoreOperation.Decision.values:
+        raise CommandError(f"The control record has no valid restore decision (got {decision!r}).")
+    raw = control.get("decision_deadline_at")
+    if raw in (None, ""):
+        return decision, None
+    try:
+        deadline = datetime.fromisoformat(raw)
+    except (TypeError, ValueError):
+        raise CommandError("The control record decision_deadline_at is not an ISO-8601 timestamp.") from None
+    if timezone.is_naive(deadline):
+        raise CommandError("The control record decision_deadline_at must carry a UTC offset.")
+    return decision, deadline
 
 
 def export_control_record(restore_id, output, decision=None):
@@ -51,6 +69,7 @@ def rehydrate_control_record(restore_id, options):
     )
 
     control = json.loads(Path(options["control_record"]).read_text(encoding="utf-8"))
+    decision, deadline = _control_fields(control)
     manifest = json.loads(Path(options["manifest"]).read_text(encoding="utf-8"))
     completed_at = timezone.now()
     archive = BackupArchive.objects.select_for_update().get(
@@ -92,9 +111,9 @@ def rehydrate_control_record(restore_id, options):
             "requested_by": requested_by,
             "requested_by_username_snapshot": control.get("requested_by_username", ""),
             "stage": RestoreOperation.Stage.DB_RESTORING,
-            "decision": control["decision"],
+            "decision": decision,
             "restore_diff": control.get("restore_diff") or {},
-            "decision_deadline_at": control.get("decision_deadline_at"),
+            "decision_deadline_at": deadline,
             "fencing_token": control.get("fencing_token") or None,
         },
     )
@@ -102,6 +121,12 @@ def rehydrate_control_record(restore_id, options):
     state.mode = DeploymentRecoveryState.Mode.QUIESCED
     state.active_restore = restore
     state.save(update_fields=("mode", "active_restore", "updated_at"))
+    from apps.makerspaces.models import Makerspace
+    from apps.makerspaces.loan_context_generations import rotate
+    from apps.data_export.loan_context_integrity import validate_loan_context_import
+    for space in Makerspace.objects.select_for_update().order_by('pk').iterator():
+        validate_loan_context_import(space.pk)
+        rotate(space)
     count = invalidate_download_tokens_after_restore()
     archive_count = invalidate_archive_download_tokens_after_restore()
     tenant_dump_count = invalidate_tenant_dump_download_tokens_after_restore()

@@ -18,6 +18,7 @@ from apps.accounts.reauthentication import require_recent_reauth
 
 from .models import BackupArchive, BackupRunCoverage, MakerspaceRestoreOperation
 from . import space_restore_services as services
+from django.utils.translation import gettext_lazy
 
 
 def restore_timeline(space):
@@ -56,7 +57,7 @@ class MakerspaceBackupAdminMixin:
     def get_readonly_fields(self, request, obj=None):
         return (*super().get_readonly_fields(request, obj), "backup_summary")
 
-    @admin.display(description="Backups")
+    @admin.display(description=gettext_lazy("Backups"))
     def backup_summary(self, obj):
         if not obj or not obj.pk:
             return "Save this makerspace first."

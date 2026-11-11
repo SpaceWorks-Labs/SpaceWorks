@@ -109,6 +109,10 @@ def _apply_and_restore_objects(op):
                 money = rows_after_restore_point(locked, MONEY_LABELS, op.snapshot_at)
                 keys_before = referenced_keys(space.pk)
                 report = apply_space_restore(locked, archive)
+                from apps.data_export.loan_context_integrity import validate_loan_context_import
+                validate_loan_context_import(locked.pk)
+                from apps.makerspaces.loan_context_generations import rotate
+                rotate(locked)
                 from .station_revocation import revoke_station_credentials
                 report["station_credentials_revoked"] = revoke_station_credentials(
                     makerspace=locked, actor=op.confirmed_by)

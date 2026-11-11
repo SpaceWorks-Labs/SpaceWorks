@@ -6,6 +6,8 @@ access category, like a resolved subdomain request). Delivery failure never fail
 restore: the audit row is the durable record.
 """
 
+from config.locale_resolution import override_for
+from django.utils.translation import gettext
 from apps.accounts import rbac
 from apps.integrations.notification_sources import NotificationSource, register_source
 from apps.operations.notifications_p2 import body, fanout, revision, safe_notification, staff_link
@@ -36,13 +38,17 @@ def content(op):
     if op.stage == "completed":
         report = op.report or {}
         flagged = len(report.get("money_after_restore_point", []))
-        text = (f"{space.name} was restored to its backup from {op.snapshot_at:%Y-%m-%d %H:%M} UTC. "
-                f"A safety backup of the space as it was is kept as a restore point.")
+        text = (gettext("%(space)s was restored to its backup from %(when)s UTC. "
+                        "A safety backup of the space as it was is kept as a restore point.")
+                % {"space": space.name, "when": f"{op.snapshot_at:%Y-%m-%d %H:%M}"})
         if flagged:
-            text += f" {flagged} payment record(s) made after the restore point were kept; review them."
-        return body(f"{space.name} was restored from a backup", text, staff_link(space, "backup"))
-    return body(f"Restoring {space.name} failed",
-                f"The restore of {space.name} did not complete and nothing was changed. ({op.error_code})",
+            text += " " + gettext("%(count)s payment record(s) made after the restore point were kept; review them.") % {
+                "count": flagged}
+        return body(gettext("%(space)s was restored from a backup") % {"space": space.name}, text,
+                    staff_link(space, "backup"))
+    return body(gettext("Restoring %(space)s failed") % {"space": space.name},
+                gettext("The restore of %(space)s did not complete and nothing was changed. (%(code)s)")
+                % {"space": space.name, "code": op.error_code},
                 staff_link(space, "backup"))
 
 
@@ -54,12 +60,13 @@ def render(envelope):
 def _email(op):
     return fanout(row=op, space=op.makerspace, feature="api_access", stream="makerspace",
                   event=EVENTS[op.stage], source_kind=SOURCE, revision=source_revision(op),
-                  staff_body=content(op), rooms=False)
+                  staff_body=lambda: content(op), rooms=False)
 
 
 def notify_outcome(op):
     from apps.notifications.models import Notification
-    message = content(op)
+    with override_for(makerspace=op.makerspace):  # a makerspace-wide row has no recipient
+        message = content(op)
     Notification.objects.create(
         makerspace=op.makerspace, event=f"backup.{EVENTS[op.stage]}",
         level=Notification.Level.INFO if op.stage == "completed" else Notification.Level.CRITICAL,

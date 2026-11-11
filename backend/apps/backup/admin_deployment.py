@@ -15,6 +15,7 @@ from rest_framework.exceptions import APIException
 
 from .admin import ReadOnlyBackupAdmin
 from .models import BackupArchive, PlatformBackupSettings
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(PlatformBackupSettings)
@@ -25,12 +26,12 @@ class PlatformBackupSettingsAdmin(ReadOnlyBackupAdmin):
         return [path("console/", self.admin_site.admin_view(self.console_view),
                      name="backup_platformbackupsettings_console"), *super().get_urls()]
 
-    @admin.display(description="Deployment")
+    @admin.display(description=gettext_lazy("Deployment"))
     def deployment(self, obj):
         from apps.operations.deployment_projection import deployment_projection
         return format_html("<pre>{}</pre>", json.dumps(deployment_projection(), indent=2, default=str))
 
-    @admin.display(description="Backup and restore")
+    @admin.display(description=gettext_lazy("Backup and restore"))
     def console(self, obj):
         return format_html('<a href="{}">Open the backup console</a>',
                            reverse("admin:backup_platformbackupsettings_console"))

@@ -38,7 +38,7 @@ MAKERSPACE_KEEP_LIVE = frozenset({
     "id", "lifecycle_state", "archived_at", "archived_by", "storage_bytes_used",
     "frontend_domain", "frontend_domain_status", "domain_verification_token",
     "domain_verified_at", "frontend_domain_changed_at", "hidden_from_central_directory",
-    "anonymous_requester", "created_by", "created_at",
+    "anonymous_requester", "created_by", "created_at", "loan_context_generations",
 })
 
 

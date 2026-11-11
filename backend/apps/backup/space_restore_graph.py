@@ -20,6 +20,7 @@ from functools import lru_cache
 from django.apps import apps
 from django.db import connection, models
 
+from . import space_restore_exact_rows as exact_rows
 from .slice_rows import SLICE_ROW_SPECS
 from .space_restore_plan import KEPT_LIVE, live_queryset, restorable_labels
 
@@ -123,6 +124,8 @@ def foreign_pks(makerspace_id, model, pks):
 
 
 def raw_delete(model, pks):
+    if exact_rows.guarded(model):
+        return exact_rows.delete_rows(model, pks)
     quote = connection.ops.quote_name
     pk = model._meta.pk
     with connection.cursor() as cursor:
@@ -134,6 +137,8 @@ def raw_delete(model, pks):
 
 
 def _raw_update_null(model, fk, pk):
+    if exact_rows.null_reference(model, fk, pk):
+        return
     quote = connection.ops.quote_name
     with connection.cursor() as cursor:
         cursor.execute(

@@ -67,10 +67,11 @@ def create_stocktake(actor, makerspace, data):
 
 def resolve_scan_target(actor, stocktake, payload):
     from apps.accounts import rbac
-    from apps.boxes.access import qr_for_action
+    from apps.boxes.access import scanned_qr_for_action
     from apps.boxes.models import Box, QrCode
 
-    qr = qr_for_action(actor, rbac.Action.VIEW_INVENTORY, payload=payload, status=QrCode.Status.ACTIVE)
+    # Pinned to the stocktake's space: an external label value is unique only there.
+    qr = scanned_qr_for_action(actor, rbac.Action.VIEW_INVENTORY, payload, makerspace_id=stocktake.makerspace_id)
     if qr.makerspace_id != stocktake.makerspace_id:
         raise ValidationError(gettext("QR belongs to a different makerspace."))
     if qr.target_type == QrCode.TargetType.BOX:

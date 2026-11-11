@@ -36,6 +36,7 @@ LEDGER_PARAMETERS = [
         enum=["reviewed", "self_checkout", "direct"],
     ),
     OpenApiParameter("overdue", OpenApiTypes.BOOL, OpenApiParameter.QUERY),
+    OpenApiParameter("due", OpenApiTypes.STR, OpenApiParameter.QUERY, enum=["today", "soon"]),
     OpenApiParameter(
         "sort",
         OpenApiTypes.STR,
@@ -89,7 +90,7 @@ class LedgerView(APIView):
     def get(self, request, makerspace_id, *args, **kwargs):
         makerspace = _makerspace_for_inventory_view(request.user, makerspace_id)
         require_action(request.user, rbac.Action.VIEW_INVENTORY, makerspace.id)
-        require_module(makerspace, "staff_admin")
+        require_module(makerspace, "public_inventory")
         return Response(_ledger_payload(makerspace.id, request))
 
 
@@ -126,7 +127,7 @@ class LedgerExportView(APIView):
     def get(self, request, makerspace_id, *args, **kwargs):
         makerspace = _makerspace_for_inventory_view(request.user, makerspace_id)
         require_action(request.user, rbac.Action.VIEW_INVENTORY, makerspace.id)
-        require_module(makerspace, "staff_admin")
+        require_module(makerspace, "public_inventory")
         return _ledger_export_response(makerspace.id, request, f"ledger-{makerspace.slug}")
 
 
@@ -202,6 +203,7 @@ def _ledger_filters(request):
         "search": search,
         "source": source,
         "overdue": _bool_param(request, "overdue"),
+        "due": _due_param(request),
         "sort": sort,
     }
 
@@ -223,6 +225,13 @@ def _aggregate_ledger_makerspace_id(request):
     if not queryset.filter(pk=makerspace_id).exists():
         raise ValidationError({"makerspace": gettext("Makerspace is not available.")})
     return makerspace_id
+
+
+def _due_param(request):
+    raw = (request.query_params.get("due") or "").strip().lower()
+    if raw and raw not in {"today", "soon"}:
+        raise ValidationError({"due": gettext("Use today or soon.")})
+    return raw or None
 
 
 def _bool_param(request, name):

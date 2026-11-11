@@ -1,6 +1,7 @@
 """OpenAPI row contracts for booking/event analytics (no new routes)."""
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from .serializers_reports_base import ReportRowsFieldMixin, TypedReportBaseSerializer
 from .serializers_reports_fablab import BookingUtilizationRowSerializer
@@ -50,12 +51,12 @@ class EventSignupsRowSerializer(EventPeriodRowSerializer):
 class EventRevenueRowSerializer(EventPeriodRowSerializer):
     currency = serializers.CharField()
     charge_count = serializers.IntegerField()
-    charged_amount = serializers.DecimalField(max_digits=24, decimal_places=2)
-    promo_discount_amount = serializers.DecimalField(max_digits=24, decimal_places=2)
-    collected_amount = serializers.DecimalField(max_digits=24, decimal_places=2)
-    refunded_amount = serializers.DecimalField(max_digits=24, decimal_places=2)
-    outstanding_amount = serializers.DecimalField(max_digits=24, decimal_places=2)
-    net_amount = serializers.DecimalField(max_digits=24, decimal_places=2)
+    charged_amount = MoneyField(max_digits=25, decimal_places=3)
+    promo_discount_amount = MoneyField(max_digits=25, decimal_places=3)
+    collected_amount = MoneyField(max_digits=25, decimal_places=3)
+    refunded_amount = MoneyField(max_digits=25, decimal_places=3)
+    outstanding_amount = MoneyField(max_digits=25, decimal_places=3)
+    net_amount = MoneyField(max_digits=25, decimal_places=3)
 
 
 class EventFunnelRowSerializer(EventPeriodRowSerializer):

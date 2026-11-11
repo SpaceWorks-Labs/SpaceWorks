@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from .serializers_report_chart import ReportChartSpecSerializer
+from .serializers_attention import AttentionSerializer
 
 
 class DashboardWidgetSerializer(serializers.Serializer):
@@ -22,6 +23,9 @@ class DashboardQueueSerializer(serializers.Serializer):
     ready_to_issue = serializers.IntegerField(required=False)
     due_returns = serializers.IntegerField(required=False)
     pickups = serializers.IntegerField(required=False)
+    due_today = serializers.IntegerField(required=False)
+    overdue = serializers.IntegerField(required=False)
+    to_record = serializers.IntegerField(required=False)
 
 
 class NextUpEventSerializer(serializers.Serializer):
@@ -39,12 +43,26 @@ class DashboardSerializer(serializers.Serializer):
     pending_bookings = serializers.IntegerField(required=False, default=0)
     upcoming_bookings = serializers.IntegerField(required=False, default=0)
     open_booking_issues = serializers.IntegerField(required=False, default=0)
+    # EB12/BK3: today (the space's local day) and room outages over the next 7 days.
+    today_events = serializers.IntegerField(required=False, default=0)
+    today_check_ins = serializers.IntegerField(required=False, default=0)
+    today_bookings = serializers.IntegerField(required=False, default=0)
+    room_outages_week = serializers.IntegerField(required=False, default=0)
+    failed_areas = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list,
+        help_text="Areas whose counters could not be loaded (U13); their counts read 0.")
     scope_mode = serializers.ChoiceField(choices=["machine", "full", "handover"])
+    attention = AttentionSerializer(required=False, help_text="Per-area counters (decision 242).")
     widgets = DashboardWidgetSerializer(many=True, required=False)
     queue_tiles = DashboardQueueSerializer(required=False)
     overdue_loans = serializers.IntegerField(required=False, default=0)
     pending_requests = serializers.IntegerField(required=False, default=0)
+    due_today_loans = serializers.IntegerField(required=False, default=0)
+    due_soon_loans = serializers.IntegerField(required=False, default=0)
+    true_low_stock = serializers.IntegerField(required=False, default=0)
+    in_repair = serializers.IntegerField(required=False, default=0)
     awaiting_issue = serializers.IntegerField(required=False, default=0)
+    payments_to_record = serializers.IntegerField(required=False, default=0)
     open_problem_reports = serializers.IntegerField(required=False, default=0)
     low_stock = serializers.IntegerField(required=False, default=0)
     pending_prints = serializers.IntegerField(required=False, default=0)

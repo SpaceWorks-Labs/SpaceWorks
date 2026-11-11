@@ -15,6 +15,7 @@ from apps.machines.models import Machine, MachineServiceRequest
 from apps.makerspaces.guards import require_module
 from apps.operations.report_types import ReportResult
 from apps.operations.reports_common import limited, report_spaces
+from apps.payments.money import trim_money
 
 GRAINS = ("day", "week", "month")
 CENT = Decimal("0.01")
@@ -121,7 +122,7 @@ def result(fields, rows, makerspace_id, limit, **meta):
     for row in rows:
         for field, value in row.items():
             if isinstance(value, Decimal):
-                row[field] = value.quantize(CENT)
+                row[field] = trim_money(value)
     if makerspace_id is not None:
         rows = [{key: value for key, value in row.items() if key != "makerspace_id"} for row in rows]
     else:

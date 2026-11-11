@@ -47,6 +47,9 @@ def cost_rows(space, date_range, *, actor):
     sources = (Q(source_kind="pooled_service", source_id__in=services.values("pk"))
                | Q(source_kind="manual_adjustment", source_id__in=manual.values("pk"))
                | Q(source_kind="non_pool_consumption", source_id__in=non_pool.values("pk")))
-    return apply_range(ConsumableCostRecord.objects.filter(makerspace=space).filter(sources), "recorded_at", date_range).values(
+    yield from apply_range(ConsumableCostRecord.objects.filter(makerspace=space).filter(sources), "recorded_at", date_range).values(
         "recorded_at", "source_kind", "cost_total_minor", "currency",
     ).iterator()
+    # Shop sales of linked consumables are separate facts; their restocks net them (signed).
+    from apps.operations.reports_shop_consumable_costs import shop_cost_rows
+    yield from shop_cost_rows(space, actor, date_range)

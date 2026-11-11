@@ -10,6 +10,7 @@ from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
 
 from apps.accounts import rbac
+from apps.audit.area_scope import can_read_audit, scope_audit_rows
 from apps.audit.models import AuditLog
 from apps.operations.report_types import ReportNotFound
 from apps.operations.report_fields_j import PRESENCE_FIELDS, AUDIT_FIELDS, HOUR_FIELDS, PERSON_FIELDS
@@ -48,11 +49,17 @@ def build_presence_activity(makerspace_id, *, limit=None, date_range=None, grain
     return result(PRESENCE_FIELDS, records, makerspace_id, limit, definition="Declared presence duration; sessions grouped by start time, capped at observed time.")
 
 
-def build_audit_activity(makerspace_id, *, limit=None, date_range=None, grain="day"):
+def _audit_rows(viewer, **lookups):
+    """#219e: a reader passed in counts only the rows of their own areas."""
+    rows = AuditLog.objects.filter(**lookups)
+    return rows if viewer is None else scope_audit_rows(viewer, rows)
+
+
+def build_audit_activity(makerspace_id, *, limit=None, date_range=None, grain="day", viewer=None):
     from apps.operations.reports_common import period_expression
     records = []
     for space in area_spaces(makerspace_id):
-        qs = apply_range(AuditLog.objects.filter(makerspace=space), "created_at", calendar_range(date_range, space))
+        qs = apply_range(_audit_rows(viewer, makerspace=space), "created_at", calendar_range(date_range, space))
         rows = qs.order_by().annotate(period=period_expression("created_at", grain, makerspace=space)).values("period", "action").annotate(count=Count("pk"))
         groups = defaultdict(int)
         for row in rows:
@@ -96,15 +103,18 @@ def build_presence_top_visitors(makerspace_id, *, actor=None, limit=None, date_r
 
 
 def build_audit_top_actors(makerspace_id, *, actor=None, limit=None, date_range=None):
-    _ranking_authority(actor, makerspace_id, rbac.Action.VIEW_AUDIT)
+    # #219(e-1): any audit reader, counted over their own areas' rows only (below).
+    _tenant(makerspace_id)
+    if not can_read_audit(actor, makerspace_id):
+        raise PermissionDenied(gettext("Person rankings require domain authority and audit access."))
     spaces = area_spaces(makerspace_id)
     date_range = calendar_range(date_range, spaces[0]) if spaces else date_range
-    qs = apply_range(AuditLog.objects.filter(makerspace_id=makerspace_id, actor__isnull=False), "created_at", date_range)
+    qs = apply_range(_audit_rows(actor, makerspace_id=makerspace_id, actor__isnull=False), "created_at", date_range)
     rows = qs.order_by().values("actor_id").annotate(count=Count("pk")).order_by("-count", "actor_id")
     return result(PERSON_FIELDS, [{"person_id": r["actor_id"], "count": r["count"], "declared_presence_seconds": None} for r in rows], makerspace_id, limit)
 
 
-def _hours(makerspace_id, *, presence, limit, date_range):
+def _hours(makerspace_id, *, presence, limit, date_range, viewer=None):
     # Local hour-of-week has no single calendar across organizations.
     _tenant(makerspace_id)
     groups, now = defaultdict(lambda: {"count": 0, "declared_presence_seconds": 0}), timezone.now()
@@ -139,7 +149,7 @@ def _hours(makerspace_id, *, presence, limit, date_range):
                     cursor = boundary
         else:
             from django.db.models.functions import ExtractHour, ExtractIsoWeekDay
-            qs = apply_range(AuditLog.objects.filter(makerspace=space), "created_at", date_range)
+            qs = apply_range(_audit_rows(viewer, makerspace=space), "created_at", date_range)
             hours = qs.order_by().annotate(weekday=ExtractIsoWeekDay("created_at", tzinfo=zone), hour=ExtractHour("created_at", tzinfo=zone))
             for row in hours.values("weekday", "hour").annotate(count=Count("pk")):
                 groups[(row["weekday"] - 1, row["hour"])]["count"] += row["count"]
@@ -151,5 +161,5 @@ def build_presence_activity_hours(makerspace_id, *, limit=None, date_range=None)
     return _hours(makerspace_id, presence=True, limit=limit, date_range=date_range)
 
 
-def build_audit_activity_hours(makerspace_id, *, limit=None, date_range=None):
-    return _hours(makerspace_id, presence=False, limit=limit, date_range=date_range)
+def build_audit_activity_hours(makerspace_id, *, limit=None, date_range=None, viewer=None):
+    return _hours(makerspace_id, presence=False, limit=limit, date_range=date_range, viewer=viewer)

@@ -80,6 +80,11 @@ class QrPrintBatchDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return rbac.scope_by_action(self.request.user, rbac.Action.MANAGE_QR, QrPrintBatch.objects.prefetch_related("items__qr_code"))
 
+    def get_object(self):
+        batch = super().get_object()
+        require_module(batch.makerspace, "qr_print_batches")
+        return batch
+
 
 class QrPrintBatchItemView(APIView):
     permission_classes = [IsActiveStaff]

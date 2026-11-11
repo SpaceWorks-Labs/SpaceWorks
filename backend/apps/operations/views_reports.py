@@ -81,11 +81,14 @@ class AnalyticsView(APIView):
         # own action would turn "you may not run this report" into a 404 instead of a
         # 403, which is the contract pinned by
         # test_report_rbac_status_codes_match_inventory_first_resolution.
-        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key)
+        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key, request.query_params.get("subject_kind"))
         definition = reports.validate_report_key(report_key)
         if not definition.previewable:
             raise reports.ReportNotFound()
         from .report_subjects import require_report_action
+        from apps.payments.payout_session import is_payout_report, require_full_session
+        if is_payout_report(definition):
+            require_full_session(request)  # payee money is session-only (#224c)
         require_report_action(request.user, definition, makerspace.id, request.query_params)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)
@@ -124,9 +127,14 @@ class ReportCatalogView(APIView):
             if definition.subject_kind or definition.platform_only:
                 continue
             from .report_types import definition_actions
+            from apps.payments.payout_session import full_session, is_payout_report
+            if is_payout_report(definition) and not full_session(request):
+                continue
             if not any(rbac.can(request.user, action, makerspace.id) for action in definition_actions(definition)):
                 continue
-            if definition.key in {"machine-usage-members", "booking-top-members"} and not rbac.can(request.user, rbac.Action.VIEW_AUDIT, makerspace.id):
+            from .area_identity import named_rows_allowed  # decision 242(h)
+            if definition.key in {"machine-usage-members", "booking-top-members"} and not named_rows_allowed(
+                    request.user, definition, makerspace.id):
                 continue
             # A report whose source module or capability is off is hidden, not listed
             # as disabled (#183B): an off switch leaves no menu entry behind.
@@ -164,10 +172,8 @@ class AccountabilityReportView(APIView):
         request=None, responses={200: AccountabilityReportSerializer, **ERROR_RESPONSES},
     )
     def get(self, request, makerspace_id, *args, **kwargs):
-        makerspace = _makerspace_for_inventory_view(request.user, makerspace_id)
-        require_action(request.user, rbac.Action.VIEW_AUDIT, makerspace.id)
-        require_module(makerspace, "reports")
-        return Response(accountability.accountability_data(makerspace.id))
+        from .accountability_access import accountability_for
+        return Response(accountability_for(request.user, makerspace_id))
 
 
 class AggregateAnalyticsView(APIView):
@@ -225,9 +231,12 @@ class ReportExportView(APIView):
         # own action would turn "you may not run this report" into a 404 instead of a
         # 403, which is the contract pinned by
         # test_report_rbac_status_codes_match_inventory_first_resolution.
-        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key)
+        makerspace = _makerspace_for_report_view(request.user, makerspace_id, report_key, request.query_params.get("subject_kind"))
         definition = reports.validate_report_key(report_key, for_export=True)
         from .report_subjects import require_report_action
+        from apps.payments.payout_session import is_payout_report, require_full_session
+        if is_payout_report(definition):
+            require_full_session(request)  # payee money is session-only (#224c)
         require_report_action(request.user, definition, makerspace.id, request.query_params)
         require_module(makerspace, "reports")
         _require_source_modules(makerspace, definition.required_modules)

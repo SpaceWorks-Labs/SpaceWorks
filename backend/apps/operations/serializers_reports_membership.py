@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.operations.serializers_reports_base import ReportRowsFieldMixin, TypedReportBaseSerializer
 
@@ -26,9 +27,9 @@ class MembershipRevenueRowSerializer(TypedReportBaseSerializer):
     plan_id = serializers.IntegerField()
     plan_name = serializers.CharField()
     recurring_members = serializers.IntegerField()
-    mrr = serializers.DecimalField(max_digits=24, decimal_places=2)
-    arr = serializers.DecimalField(max_digits=24, decimal_places=2)
-    arpu = serializers.DecimalField(max_digits=24, decimal_places=2)
+    mrr = MoneyField(max_digits=25, decimal_places=3)
+    arr = MoneyField(max_digits=25, decimal_places=3)
+    arpu = MoneyField(max_digits=25, decimal_places=3)
     churned_members = serializers.IntegerField()
     reactivated_members = serializers.IntegerField()
 

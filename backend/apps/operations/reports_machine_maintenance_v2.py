@@ -18,11 +18,38 @@ FIELDS = (
 )
 
 
+def _technician_spaces(makerspace_id, actor):
+    """Decision 248 / MC14: a Technician holding run_maintenance (not manage_machines) reads this report for
+    the machine types their in-house coverage names, and nothing else."""
+    from apps.accounts import rbac
+    from apps.makerspaces.guards import require_module
+    from apps.operations.reports_common import report_spaces
+    if actor is None or makerspace_id is None or rbac.can(actor, rbac.Action.MANAGE_MACHINES, makerspace_id):
+        return None
+    if not rbac.can(actor, rbac.Action.RUN_MAINTENANCE, makerspace_id):
+        return None
+    found = []
+    for space in report_spaces(makerspace_id, "machines", "machines.maintenance"):
+        require_module(space, "machines")
+        found.append(space)
+    return found
+
+
 def build_maintenance_activity(makerspace_id, *, limit=None, date_range=None, grain="day", actor=None):
+    from apps.maintenance.repairs import authority
     rows = []
-    for space, scope in spaces(makerspace_id, ("machines", "machines.maintenance"), actor):
+    technician = _technician_spaces(makerspace_id, actor)
+    if technician is not None:
+        from apps.machines import role_scope
+        source = ((space, role_scope.EXEMPT) for space in technician)
+    else:
+        source = spaces(makerspace_id, ("machines", "machines.maintenance"), actor)
+    for space, scope in source:
         today = timezone.now().astimezone(ZoneInfo(space.timezone)).date()
         catalog = {m.pk: m for m in machines(space, scope).select_related("machine_type")}
+        if technician is not None:
+            catalog = {pk: m for pk, m in catalog.items() if authority.technician_covers(
+                actor, space.pk, "run_maintenance", "machine", m)}
         schedules = {s["machine_id"]: s for s in MaintenanceSchedule.objects.filter(
             machine_id__in=catalog, is_active=True,
         ).order_by().values("machine_id").annotate(

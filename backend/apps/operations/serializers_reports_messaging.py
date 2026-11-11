@@ -1,6 +1,7 @@
 """Typed OpenAPI rows for the extended communications and service reports."""
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from .report_fields_hi import COMMUNICATION_COUNTS
 from .serializers_report_catalog import GenericAnalyticsReportSerializer
@@ -47,7 +48,7 @@ class PlatformServicesRowSerializer(serializers.Serializer):
     bucket = serializers.CharField()
     count = serializers.IntegerField(min_value=0)
     currency = serializers.CharField(allow_null=True)
-    amount = serializers.DecimalField(max_digits=24, decimal_places=2, allow_null=True)
+    amount = MoneyField(max_digits=25, decimal_places=3, allow_null=True)
     purpose = serializers.ChoiceField(choices=["otp", "notifications"], allow_null=True,
                                     help_text="SMS OTP vs addressed notifications. Null for other services.")
 

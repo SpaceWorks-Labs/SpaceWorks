@@ -27,17 +27,22 @@ SECTION_FIELDS = {
 }
 
 
-def build_fablab_health(makerspace_id, *, limit=None, date_range=None):
+def build_fablab_health(makerspace_id, *, limit=None, date_range=None, actor=None):
     aggregate = makerspace_id is None
     now = timezone.now()
-    today = timezone.localdate()
+    from .reports_maintenance import _space_today
+    today = _space_today(makerspace_id)  # m13
     base = eligible_makerspaces() if aggregate else Makerspace.objects.filter(pk=makerspace_id)
     spaces = list(base.values("id", "enabled_modules", "enabled_features").order_by("id"))
     records = {row["id"]: _empty_record(row) for row in spaces}
     _run_section(spaces, records, "events", lambda ids: _event_rows(ids, date_range))
     _run_section(spaces, records, "bookings", lambda ids: _booking_rows(ids, date_range, now))
-    _run_section(spaces, records, "machines", lambda ids: _machine_rows(ids, date_range))
-    _run_section(spaces, records, "maintenance", lambda ids: _maintenance_rows(ids, date_range, today))
+    # A type-scoped Machine Manager reads machine and maintenance figures for their types only (224a).
+    from apps.machines.report_actor_scope import actor_machine_scope
+    scope = actor_machine_scope(actor, makerspace_id)
+    type_ids = None if scope is None else (set(scope[0]), set(scope[1]))
+    _run_section(spaces, records, "machines", lambda ids: _machine_rows(ids, date_range, type_ids))
+    _run_section(spaces, records, "maintenance", lambda ids: _maintenance_rows(ids, date_range, today, type_ids))
     ordered = [records[row["id"]] for row in spaces]
     if limit is not None:
         ordered = ordered[:limit]
@@ -166,24 +171,27 @@ def _booking_rows(ids, date_range, now):
     return result
 
 
-def _machine_rows(ids, date_range):
+def _machine_rows(ids, date_range, type_ids=None):
     period = _period_q("machines__usage_entries__created_at", date_range)
+    kind = Q() if type_ids is None else Q(machines__machine_type_id__in=type_ids[0]) | Q(machines__id__in=type_ids[1])
+    period &= kind
     rows = list(Makerspace.objects.filter(id__in=ids).values("id").annotate(
-        active=Count("machines", filter=Q(machines__is_active=True), distinct=True),
+        active=Count("machines", filter=Q(machines__is_active=True) & kind, distinct=True),
         hours=Coalesce(Sum("machines__usage_entries__hours", filter=period), Value(Decimal("0.00")), output_field=DecimalField(max_digits=20, decimal_places=2)),
     ))
     return [{"makerspace_id": row["id"], "machines_active": row["active"], "machines_usage_hours": row["hours"]} for row in rows]
 
 
-def _maintenance_rows(ids, date_range, today):
+def _maintenance_rows(ids, date_range, today, type_ids=None):
     from apps.maintenance.models import MaintenanceLog, MaintenanceSchedule
 
     period = _period_q("performed_at", date_range)
-    logs = MaintenanceLog.objects.filter(machine__makerspace_id=OuterRef("pk")).filter(period).values("machine__makerspace_id").annotate(count=Count("id"), total=Sum("cost"))
-    schedules = MaintenanceSchedule.objects.filter(machine__makerspace_id=OuterRef("pk"), is_active=True, next_due__lt=today).values("machine__makerspace_id").annotate(count=Count("id"))
+    kind = Q() if type_ids is None else Q(machine__machine_type_id__in=type_ids[0]) | Q(machine_id__in=type_ids[1])
+    logs = MaintenanceLog.objects.filter(machine__makerspace_id=OuterRef("pk")).filter(period).filter(kind).values("machine__makerspace_id").annotate(count=Count("id"), total=Sum("cost"))
+    schedules = MaintenanceSchedule.objects.filter(machine__makerspace_id=OuterRef("pk"), is_active=True, next_due__lt=today).filter(kind).values("machine__makerspace_id").annotate(count=Count("id"))
     rows = list(Makerspace.objects.filter(id__in=ids).values("id").annotate(
         logs=Coalesce(Subquery(logs.values("count")[:1]), Value(0)),
-        cost=Coalesce(Subquery(logs.values("total")[:1], output_field=DecimalField(max_digits=20, decimal_places=2)), Value(Decimal("0.00"))),
+        cost=Coalesce(Subquery(logs.values("total")[:1], output_field=DecimalField(max_digits=21, decimal_places=3)), Value(Decimal("0.00"))),
         overdue=Coalesce(Subquery(schedules.values("count")[:1]), Value(0)),
     ))
     return [{"makerspace_id": row["id"], "maintenance_logs": row["logs"], "maintenance_total_cost": row["cost"], "maintenance_overdue_schedules": row["overdue"]} for row in rows]

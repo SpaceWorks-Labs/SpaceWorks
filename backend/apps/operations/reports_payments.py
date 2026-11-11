@@ -64,7 +64,7 @@ def build_payment_reconciliation(
     # from" for both rails. Currencies are never combined -- `currency` stays a grouping
     # key, so a space taking both INR and USD gets one row per currency, never a total
     # that silently adds them.
-    money = DecimalField(max_digits=20, decimal_places=2)
+    money = DecimalField(max_digits=21, decimal_places=3)
     queryset = queryset.annotate(
         refund_total=Coalesce(
             Subquery(Refund.objects.filter(payment_id=OuterRef("pk"), status=Refund.Status.SUCCEEDED, amended_by__isnull=True)

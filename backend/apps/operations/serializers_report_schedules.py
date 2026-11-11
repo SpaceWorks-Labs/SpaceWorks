@@ -18,6 +18,7 @@ from apps.operations.report_delivery_storage import signed_download_url
 from apps.operations.report_registry import REPORT_KEYS, REPORT_REGISTRY
 from apps.operations.serializers_report_views_filters import allowed_report_filters
 from apps.payments.models import Payment
+from apps.payments.payout_session import full_session, is_payout_report
 
 
 class ReportScheduleFiltersSerializer(serializers.Serializer):
@@ -70,6 +71,10 @@ class ReportDeliverySerializer(serializers.ModelSerializer):
     def get_download_url(self, delivery):
         if not delivery.object_key or (delivery.expires_at and delivery.expires_at <= timezone.now()):
             return None
+        request = self.context.get("request")
+        definition = REPORT_REGISTRY.get(delivery.schedule.report_key)
+        if request is not None and definition is not None and is_payout_report(definition) and not full_session(request):
+            return None  # 224(c): no presigned payout file for a token or OAuth client
         try:
             return signed_download_url(delivery.object_key)
         except StorageUnavailable:
@@ -114,7 +119,7 @@ class ReportScheduleSerializer(serializers.ModelSerializer):
     @extend_schema_field(ReportDeliverySerializer(allow_null=True))
     def get_last_delivery(self, schedule):
         delivery = schedule.deliveries.order_by("-created_at", "-id").first()
-        return ReportDeliverySerializer(delivery).data if delivery else None
+        return ReportDeliverySerializer(delivery, context=self.context).data if delivery else None
 
     def validate_filters(self, value):
         nested = ReportScheduleFiltersSerializer(data=value if value is not None else {})

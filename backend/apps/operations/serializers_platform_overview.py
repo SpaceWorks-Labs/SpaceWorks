@@ -1,6 +1,7 @@
 """OpenAPI shapes of the superadmin platform overview (#183A). Counts and money only."""
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.operations.platform_overview_window import PRESETS
 
@@ -54,7 +55,7 @@ class OverviewHiddenBlockSerializer(serializers.Serializer):
 
 class OverviewMoneyFiguresSerializer(serializers.Serializer):
     charges = serializers.IntegerField(min_value=0)
-    amounts = serializers.DictField(child=serializers.DecimalField(max_digits=16, decimal_places=2, coerce_to_string=True))
+    amounts = serializers.DictField(child=MoneyField(max_digits=17, decimal_places=3, coerce_to_string=True))
 
 
 class OverviewMoneyRowSerializer(OverviewMoneyFiguresSerializer):

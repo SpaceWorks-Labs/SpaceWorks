@@ -58,14 +58,32 @@ def _date_param(request, name):
     return parsed
 
 
+def refuse_handout_only(user, makerspace):
+    """Decision 224(d): a counter-only (handout-only) role gets no inventory-wide report or export.
+
+    The desk role holds view_inventory for item lookup and availability, which are served by
+    the hardware routes, not here; reports and exports are a manager's surface.
+    """
+    if rbac.is_handout_only(user, makerspace.id):
+        raise PermissionDenied()
+    return makerspace
+
+
 def _makerspace_for_inventory_view(user, makerspace_id):
     queryset = rbac.scope_by_action(
         user, rbac.Action.VIEW_INVENTORY, Makerspace.objects.all(), field="id"
     )
-    return get_object_or_404(queryset, pk=makerspace_id)
+    return refuse_handout_only(user, get_object_or_404(queryset, pk=makerspace_id))
 
 
-def _makerspace_for_report_view(user, makerspace_id, report_key):
+def makerspace_for_members_view(user, makerspace_id):
+    """m23: resolve through manage_members (not view_inventory), so a custom manage_members-only role
+    gets the page the console shows it instead of a 404; handout-only roles stay refused."""
+    queryset = rbac.scope_by_action(user, rbac.Action.MANAGE_MEMBERS, Makerspace.objects.all(), field="id")
+    return refuse_handout_only(user, get_object_or_404(queryset, pk=makerspace_id))
+
+
+def _makerspace_for_report_view(user, makerspace_id, report_key, subject_kind=None):
     """Inventory scope UNION the requested report's own action scope.
 
     Resolving through inventory alone locked out a VIEW_AUDIT-only reader (custom role or
@@ -94,7 +112,12 @@ def _makerspace_for_report_view(user, makerspace_id, report_key):
             queryset = queryset | rbac.scope_by_action(
                 user, rbac.Action.VIEW_AUDIT, spaces, field="id"
             )
-    return get_object_or_404(queryset.distinct(), pk=makerspace_id)
+    if definition is not None and subject_kind:
+        from .report_subjects import SUBJECTS
+        adapter = SUBJECTS.get(subject_kind)
+        if adapter and adapter.grantee_gate and report_key in adapter.report_keys and adapter.grantee_gate(user, makerspace_id):
+            queryset = queryset | spaces.filter(pk=makerspace_id)  # decision 248 / EB1: a per-resource grantee
+    return refuse_handout_only(user, get_object_or_404(queryset.distinct(), pk=makerspace_id))
 
 
 def _makerspace_for_catalog(user, makerspace_id):
@@ -106,7 +129,7 @@ def _makerspace_for_catalog(user, makerspace_id):
         queryset = queryset | rbac.scope_by_action(
             user, action, Makerspace.objects.all(), field="id"
         )
-    return get_object_or_404(queryset.distinct(), pk=makerspace_id)
+    return refuse_handout_only(user, get_object_or_404(queryset.distinct(), pk=makerspace_id))
 
 
 def _require_superadmin(user):

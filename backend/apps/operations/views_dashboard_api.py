@@ -52,6 +52,9 @@ class DashboardView(APIView):
             or rbac.can(request.user, rbac.Action.MANAGE_MEMBERS, makerspace.id)
             or rbac.can(request.user, rbac.Action.MANAGE_MACHINES, makerspace.id)
             or rbac.can(request.user, rbac.Action.VIEW_FINANCE, makerspace.id)
+            # Decision 242(i): the Shop Manager and the Technician get a dashboard with their area's tiles.
+            or rbac.can(request.user, rbac.Action.MANAGE_SHOP, makerspace.id)
+            or rbac.can(request.user, rbac.Action.WORK_REPAIRS, makerspace.id)
         ):
             raise PermissionDenied()
         manages_machines = rbac.can(
@@ -72,7 +75,7 @@ class DashboardView(APIView):
         machine_only = role_scope.is_machine_only(request.user, makerspace.id) and not (
             manages_events or manages_bookings or can_view_finance
         )
-        return Response(
+        counts = (
             build_dashboard(
                 makerspace,
                 actor=request.user,
@@ -98,6 +101,15 @@ class DashboardView(APIView):
                 ) or can_view_finance,
             )
         )
+        if rbac.can(request.user, rbac.Action.RECORD_PAYMENT, makerspace.id):
+            from apps.payments.models import Payment
+
+            counts["payments_to_record"] = rbac.scope_by_makerspace(
+                request.user, Payment.objects.filter(makerspace=makerspace, status=Payment.Status.PENDING),
+            ).count()
+        from .dashboard_attention import build_attention
+        counts["attention"] = build_attention(request.user, makerspace)
+        return Response(counts)
 
 
 def _is_guest_only(user, makerspace_id):

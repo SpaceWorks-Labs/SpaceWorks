@@ -83,6 +83,9 @@ class LedgerRowSerializer(serializers.Serializer):
     makerspace_id = serializers.IntegerField()
     reference_id = serializers.IntegerField()
     status = serializers.CharField()
+    request_id = serializers.IntegerField(allow_null=True, required=False)
+    product_id = serializers.IntegerField(allow_null=True, required=False)
+    holder_id = serializers.IntegerField(allow_null=True, required=False)
 
 
 class LedgerResponseSerializer(serializers.Serializer):

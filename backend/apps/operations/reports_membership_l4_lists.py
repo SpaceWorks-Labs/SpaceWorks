@@ -123,19 +123,26 @@ def build_membership_win_back(makerspace_id, *, limit=None, date_range=None, now
 REGISTER_FIELDS = ("member_number", "name", "email", "plan", "standing", "term_ends_at", "source", "joined_at")
 
 
-def build_member_register(makerspace_id, *, limit=None, date_range=None, now=None, actor=None, standing=None):
+def build_member_register(makerspace_id, *, limit=None, date_range=None, now=None, actor=None, standing=None,
+                          member_ids=None):
     now, space = now or timezone.now(), _space(makerspace_id)
     latest = _latest_terms(space)
     from apps.makerspaces.membership_number import formatted, pattern_for
     pattern = pattern_for(space)
     rows = []
-    for member in (MakerspaceMembership.objects.filter(makerspace=space, status="active", user__account_kind="member")
-                   .select_related("user").order_by("member_number", "pk")):
+    members = MakerspaceMembership.objects.filter(makerspace=space, status="active", user__account_kind="member")
+    if member_ids is not None:  # parity O-B1: a unit-scoped actor's own members only
+        members = members.filter(pk__in=member_ids)
+    elif actor is not None:  # the report export path passes the actor; unit scope narrows it like the screen
+        from apps.makerspaces.member_unit_scope import narrow_memberships
+        members = narrow_memberships(members, actor, space.pk, "manage_members")
+    for member in members.select_related("user").order_by("member_number", "pk"):
         term = latest.get(member.pk)
         value = _standing(term, now)
         if standing and value != standing:
             continue
-        rows.append({"member_number": formatted(member.member_number, pattern, member.created_at.year),
+        rows.append({"membership_id": member.pk,  # O-B2: the register screen's bulk actions need it (not a CSV column)
+                     "member_number": formatted(member.member_number, pattern, member.created_at.year),
                      "name": member.user.display_name, "email": member.user.email,
                      "plan": term.plan.name if term else "", "standing": value,
                      "term_ends_at": None if term is None or term.is_lifetime else term.ends_at,

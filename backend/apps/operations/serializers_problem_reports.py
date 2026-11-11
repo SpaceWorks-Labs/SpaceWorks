@@ -55,3 +55,9 @@ class AccountabilityReportSerializer(serializers.Serializer):
     restrictions = serializers.ListField(child=serializers.DictField())
     problem_reports = serializers.ListField(child=serializers.DictField())
     truncated = AccountabilityTruncationSerializer()
+
+
+class ProblemReportQueueSerializer(serializers.Serializer):
+    """Open problem reports for the inventory area (decision 224(a): not the people page)."""
+    results = serializers.ListField(child=serializers.DictField())
+    truncated = serializers.BooleanField()

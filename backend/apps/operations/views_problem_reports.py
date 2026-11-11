@@ -9,14 +9,39 @@ from apps.admin_api.permissions import IsActiveStaff, require_action
 from apps.audit import services as audit
 from apps.hardware_requests.models import PublicProblemReport
 from apps.hardware_requests.problem_report_workflow import triage_problem_report
+from apps.operations.accountability import open_problem_reports
 from apps.makerspaces.guards import require_module
 from apps.openapi_errors import errors
 from apps.operations.serializers_problem_reports import (
+    ProblemReportQueueSerializer,
     ProblemReportResolvedSerializer,
     ProblemReportTriageResponseSerializer,
     ProblemReportTriageSerializer,
 )
 from apps.operations.views_reports import _makerspace_for_inventory_view
+
+
+class ProblemReportListView(APIView):
+    """Open problem reports, readable by whoever may triage them (EDIT_INVENTORY).
+
+    Decision 224(a) moved the accountability page to the people area (MANAGE_MEMBERS), which
+    left the Inventory Manager able to triage a report but with nowhere to list them.
+    """
+
+    permission_classes = [IsActiveStaff]
+
+    @extend_schema(
+        tags=["Analytics"],
+        summary="List open public problem reports",
+        request=None,
+        responses={200: ProblemReportQueueSerializer, **errors(401, 403, 404)},
+    )
+    def get(self, request, makerspace_id, *args, **kwargs):
+        makerspace = _makerspace_for_inventory_view(request.user, makerspace_id)
+        require_action(request.user, rbac.Action.EDIT_INVENTORY, makerspace.id)
+        require_module(makerspace, "reports")
+        rows, truncated = open_problem_reports(makerspace.id)
+        return Response({"results": rows, "truncated": truncated})
 
 
 class ProblemReportResolveView(APIView):

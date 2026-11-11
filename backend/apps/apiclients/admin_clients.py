@@ -19,6 +19,7 @@ from config.admin_access import SuperuserOnlyModelAdmin
 
 
 from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(ApiClient)
@@ -138,11 +139,11 @@ class ApiClientAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdmin, 
             ]
         )
 
-    @admin.display(description="Makerspace code")
+    @admin.display(description=gettext_lazy("Makerspace code"))
     def makerspace_public_code(self, obj):
         return obj.makerspace.public_code if obj.makerspace_id else "-"
 
-    @admin.display(description="Legacy public API key")
+    @admin.display(description=gettext_lazy("Legacy public API key"))
     def makerspace_public_api_key(self, obj):
         return obj.makerspace.public_api_key if obj.makerspace_id else "-"
 

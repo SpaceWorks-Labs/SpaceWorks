@@ -10,6 +10,7 @@ from config.admin_access import SuperuserOnlyModelAdmin
 
 
 from apps.accounts.reauthentication_control import RecentReauthenticationAdminMixin
+from django.utils.translation import gettext_lazy
 
 
 @admin.register(ApiKeyRequest)
@@ -26,7 +27,7 @@ class ApiKeyRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdm
     )
     search_fields = ("label",)
 
-    @admin.action(description="Approve selected API key requests and issue clients")
+    @admin.action(description=gettext_lazy("Approve selected API key requests and issue clients"))
     def approve_and_issue(self, request, queryset):
         approved_count = skipped_count = 0
         for api_key_request in queryset.select_related("makerspace", "requester"):
@@ -51,7 +52,7 @@ class ApiKeyRequestAdmin(RecentReauthenticationAdminMixin, SuperuserOnlyModelAdm
             self.message_user(request, f"Skipped {skipped_count} non-pending API key request(s).",
                               level=messages.WARNING)
 
-    @admin.action(description="Reject selected API key requests")
+    @admin.action(description=gettext_lazy("Reject selected API key requests"))
     def reject_selected(self, request, queryset):
         rejected_count = skipped_count = 0
         for api_key_request in queryset.select_related("makerspace", "requester"):

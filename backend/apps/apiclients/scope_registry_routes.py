@@ -40,6 +40,9 @@ _WRITE = ("POST",)
 # target mode, tenant-app admission, legacy-v1 admission). Legacy admission is explicit
 # so adding a route cannot silently widen the frozen cutover capability.
 _ROUTE_DEFINITIONS = (
+    ("hardware_requests:contextual-request-self", _WRITE, frozenset(), TARGET_TENANT_SLUG, False, False),
+    ("hardware_requests:equipment-kit-public-list", _READ, frozenset(), TARGET_TENANT_SLUG, False, False),
+    ("hardware_requests:equipment-kit-public-detail", _READ, frozenset(), TARGET_TENANT_SLUG, False, False),
     ("public-page-handle", _READ, PUBLIC_READ_SCOPES, TARGET_PUBLIC_HANDLE, True, False),
     ("public-event-code", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False),
     ("public-event-short-code", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_TOKEN, False, False),
@@ -98,6 +101,7 @@ _ROUTE_DEFINITIONS = (
     ("public-event-share-image", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-event-list", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-organization-detail", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
+    ("public-organization-directory", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, False),
     ("public-organization-events", _READ, PUBLIC_READ_SCOPES, TARGET_GLOBAL, True, True),
     ("public-event-calendar", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-event-calendar-feed", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, True),
@@ -112,9 +116,11 @@ _ROUTE_DEFINITIONS = (
     ("presence-end", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-membership-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     ("public-membership-admission", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
+    ("public-member-units", _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),  # parity O-B1
     # Release 2 L4: public plan cards/pages and the invite-link check (reads only).
     *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
         "public-membership-plans", "public-membership-plan-detail", "public-membership-invite",
+        "public-day-passes",  # decision 223: day passes on sale (name and price only)
     )),
     ("public-invitation-request", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, True),
     *tuple((name, _WRITE, PUBLIC_WRITE_SCOPES, TARGET_GLOBAL, False, False) for name in (
@@ -208,7 +214,8 @@ _ROUTE_DEFINITIONS += (
     # Lane L22: the public shop. Reads show only the public catalogue; a quote writes nothing;
     # an order, the guest email code and a guest's status link are the buyer's own acts.
     *tuple((name, _READ, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False) for name in (
-        "public-shop", "public-shop-products", "public-shop-product", "public-shop-order-status")),
+        "public-shop", "public-shop-products", "public-shop-product", "public-shop-order-status",
+        "public-shop-event-offers")),
     ("public-shop-quote", _WRITE, PUBLIC_READ_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-shop-email-code", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),
     ("public-shop-orders", _WRITE, PUBLIC_WRITE_SCOPES, TARGET_TENANT_SLUG, False, False),

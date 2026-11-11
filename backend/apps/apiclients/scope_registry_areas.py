@@ -65,7 +65,7 @@ _NAMES = {
     "pages": (
         "public-page-handle", "public-makerspace-page", "public-makerspace-page-asset",
         "public-organization-page", "public-organization-page-asset", "public-organization-makerspaces",
-        "public-organization-detail", "public-profile", "public-profile-activity", "public-profile-events",
+        "public-organization-detail", "public-organization-directory", "public-profile", "public-profile-activity", "public-profile-events",
         "public-profile-projects", "public-profile-github",
     ),
     "requests": (
@@ -83,6 +83,7 @@ _NAMES = {
     "memberships": (
         "public-membership-request", "public-membership-admission", "public-membership-plans",
         "public-membership-plan-detail", "public-membership-invite", "public-invitation-request",
+        "public-day-passes", "public-member-units",
     ),
     "presence": (
         "presence-start", "presence-current", "presence-end", "public-presence-now", "presence-renew",
@@ -90,7 +91,7 @@ _NAMES = {
     ),
     "shop": (
         "public-shop", "public-shop-products", "public-shop-product", "public-shop-order-status",
-        "public-shop-quote", "public-shop-email-code", "public-shop-orders",
+        "public-shop-quote", "public-shop-email-code", "public-shop-orders", "public-shop-event-offers",
     ),
     "donations": ("public-donation-page", "public-sponsor-wall", "public-event-sponsors"),
     "pricing": ("pricing-quote",),

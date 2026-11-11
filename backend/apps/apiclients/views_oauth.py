@@ -12,6 +12,7 @@ from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from oauth2_provider.models import get_access_token_model, get_application_model, get_grant_model, \
     get_refresh_token_model
+from oauth2_provider.exceptions import OAuthToolkitError
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 from oauthlib.oauth2 import OAuth2Error
 from rest_framework import serializers, status
@@ -69,7 +70,7 @@ def _validated(request):
     try:
         scopes, info = get_oauthlib_core().validate_authorization_request(request._request)
     except OAuth2Error as exc:
-        raise ValidationError({"detail": exc.description or exc.error}) from exc
+        raise ValidationError({"detail": getattr(error, "description", None) or getattr(error, "error", "invalid_request")}) from exc
     except Exception as exc:  # DOT wraps invalid client/redirect as its own fatal error type
         raise ValidationError({"detail": gettext("This app request is not valid.")}) from exc
     # oauthlib also accepts the "plain" method (and assumes it when none is named), where the
@@ -122,10 +123,12 @@ class ConsentView(RecentReauthenticationMixin, APIView):
             try:
                 uri, _headers, _body, _status = get_oauthlib_core().create_authorization_response(
                     request._request, scopes, credentials, allow)
-            except OAuth2Error as exc:
-                uri = exc.in_uri(credentials["redirect_uri"]) if not allow else None
+            except (OAuth2Error, OAuthToolkitError) as exc:
+                # django-oauth-toolkit wraps a refusal (a denied consent) in OAuthToolkitError.
+                error = getattr(exc, "oauthlib_error", None) or exc
+                uri = error.in_uri(credentials["redirect_uri"]) if not allow else None
                 if uri is None:
-                    raise ValidationError({"detail": exc.description or exc.error}) from exc
+                    raise ValidationError({"detail": getattr(error, "description", None) or getattr(error, "error", "invalid_request")}) from exc
         return Response({"redirect_to": uri})
 
 

@@ -1,4 +1,6 @@
 """API request outcomes contain navigation, never client secrets."""
+from django.utils.translation import gettext
+
 from apps.integrations.notification_links import local_link
 from apps.accounts import rbac
 from apps.integrations.notification_sources import NotificationSource, register_source
@@ -29,12 +31,15 @@ def eligible(envelope):
 
 def content(row, audience):
     if audience == "staff":
-        return body("API access request resolved", f"API access request #{row.pk} was {row.status}.", staff_link(row.makerspace, "api-access"))
-    text = f"Your API access request '{row.label}' for {row.makerspace.name} was {row.status}."
+        return body(gettext("API access request resolved"),
+                    gettext("API access request #%(id)s was %(status)s.") % {"id": row.pk, "status": row.status},
+                    staff_link(row.makerspace, "api-access"))
+    text = gettext("Your API access request '%(label)s' for %(space)s was %(status)s.") % {
+        "label": row.label, "space": row.makerspace.name, "status": row.status}
     if row.resolution_note:
-        text += f"\n\nNote: {row.resolution_note}"
-    return body(f"{row.makerspace.name} API access request {row.status}",
-                text + "\n\nNo API secret is included in this notification.", local_link(row.makerspace, "member"))
+        text += "\n\n" + gettext("Note: %(note)s") % {"note": row.resolution_note}
+    return body(gettext("%(space)s API access request %(status)s") % {"space": row.makerspace.name, "status": row.status},
+                text + "\n\n" + gettext("No API secret is included in this notification."), local_link(row.makerspace, "member"))
 
 
 def render(envelope):
@@ -45,7 +50,7 @@ def render(envelope):
 def notify_api_key_request_resolved(row, *, sync=False):
     return fanout(row=row, space=row.makerspace, feature="api_access", stream="api",
         event="api_key_request_resolved", source_kind=SOURCE, revision=source_revision(row),
-        owner=row.requester, owner_body=content(row, "requester"), staff_body=content(row, "staff"))
+        owner=row.requester, owner_body=lambda: content(row, "requester"), staff_body=lambda: content(row, "staff"))
 
 
 def register():

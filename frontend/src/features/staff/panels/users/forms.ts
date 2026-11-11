@@ -44,6 +44,8 @@ export function makerspacePayload(form: MakerspaceForm) {
       ...(form.modules ? { modules: form.modules } : {}),
     },
     ...(form.install_profile_id ? { install_profile_id: form.install_profile_id } : {}),
+    // Sent only for an organization workspace, so a makerspace creation body is unchanged.
+    ...(form.kind === "organization" ? { kind: "organization" as const } : {}),
     name: form.name.trim(),
     public_code: form.public_code.trim(),
     slug: form.slug.trim(),

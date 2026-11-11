@@ -62,6 +62,27 @@ export function useCreateCardOverride(makerspaceId: number) {
   return useMutation({
     mutationFn: (target: { plan_id?: number; title_id?: number }) => staffRequest<CardDesign>(
       `${space(makerspaceId)}/card-designs`, { method: "POST", body: JSON.stringify({ domain: "member_cards", ...target }) }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["member-card-designs", makerspaceId] }),
+    onSuccess: () => Promise.all([client.invalidateQueries({ queryKey: ["member-card-designs", makerspaceId] }),
+      client.invalidateQueries({ queryKey: ["title-cards", makerspaceId] })]),
+  });
+}
+
+/** Archived plan and title overrides (decision 219(h)): kept with their history, restorable. */
+export function useArchivedCardDesigns(makerspaceId: number) {
+  return useQuery({
+    queryKey: ["member-card-designs", makerspaceId, "archived"],
+    queryFn: () => staffRequest<CardDesign[]>(`${space(makerspaceId)}/card-designs?archived=true`),
+  });
+}
+
+/** Remove an override: a never-published one is deleted; a published one is archived. */
+export function useRemoveCardOverride(makerspaceId: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ design, action }: { design: CardDesign; action: "archive" | "unarchive" | "delete" }): Promise<CardDesign | undefined> =>
+      action === "delete" ? staffRequest<undefined>(`/admin/card-designs/${design.id}`, { method: "DELETE" })
+        : staffRequest<CardDesign>(`/admin/card-designs/${design.id}/${action}`, { method: "POST" }),
+    onSuccess: () => Promise.all([client.invalidateQueries({ queryKey: ["member-card-designs", makerspaceId] }),
+      client.invalidateQueries({ queryKey: ["title-cards", makerspaceId] })]),
   });
 }

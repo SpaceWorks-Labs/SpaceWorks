@@ -1,7 +1,8 @@
 import { t } from "@lingui/core/macro";
 import { ShieldCheck } from "lucide-react";
 import { ErrorText, ListRow, Modal, StatusPill } from "../../../../components/ui";
-import { roleNames, type StaffRoleRow, type StaffRolesPolicy } from "./staffRolesApi";
+import { MachineScopeChips } from "./MachineScopePicker";
+import { needsMachineScope, roleNames, type StaffRoleRow, type StaffRolesPolicy } from "./staffRolesApi";
 
 export function StaffRoleRows({ rows, policy, pending, onEdit, onRevoke, onRestore, onResetMfa }: {
   rows: StaffRoleRow[]; policy?: StaffRolesPolicy; pending: boolean;
@@ -14,6 +15,9 @@ export function StaffRoleRows({ rows, policy, pending, onEdit, onRevoke, onResto
       meta={<span className="grid gap-1">
         <span>{row.username}{row.email ? ` · ${row.email}` : ""}</span>
         <span>{roleNames(policy, row.roles) || t`No roles`}</span>
+        {needsMachineScope(policy, row.roles) ? (row.machine_types?.length || row.machines?.length
+          ? <MachineScopeChips types={row.machine_types} machines={row.machines} />
+          : <span className="text-danger">{t`No machines assigned`}</span>) : null}
         <span>{row.mfa_enabled ? t`Two-step sign-in on` : t`Two-step sign-in off`}</span>
         {row.status === "revoked" && row.revocation_reason ? <span>{t`Revoked: ${row.revocation_reason}`}</span> : null}
       </span>}

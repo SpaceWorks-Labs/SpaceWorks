@@ -12,7 +12,7 @@ export function PresenceCheckIn({ makerspaceId, payload }: { makerspaceId: numbe
     mutationFn: () => staffRequest<{ session_id: number }>(`/admin/makerspaces/${makerspaceId}/member-cards/presence-check-in`,
       { method: "POST", body: JSON.stringify({ payload, duration_minutes: minutes }) }),
   });
-  if (checkIn.isSuccess) return <p role="status" className="text-sm text-success">{t`Checked in for ${minutes / 60} hours.`}</p>;
+  if (checkIn.isSuccess) return <p role="status" className="text-sm text-success-ink">{t`Checked in for ${minutes / 60} hours.`}</p>;
   const error = checkIn.error instanceof StructuredApiError && checkIn.error.status === 404
     ? "Presence is off for this space, or this card can't be checked in." : checkIn.error instanceof Error ? checkIn.error.message : null;
   return <div className="flex flex-wrap items-end gap-2">

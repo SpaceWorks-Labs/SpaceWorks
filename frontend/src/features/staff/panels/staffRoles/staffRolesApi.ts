@@ -2,11 +2,14 @@ import { t } from "@lingui/core/macro";
 import { staffRequest } from "../../../../lib/api";
 import { StructuredApiError } from "../../../../lib/api/errors";
 import type { StaffRole } from "../rolesApi";
+import type { ScopeMachine } from "./MachineScopePicker";
 
 /** A staff row is a role set on a person's own account, never a separate account. */
 export type StaffRoleRow = {
   id: number; user_id: number; username: string; display_name: string; email: string;
   roles: string[]; machine_type_ids: number[]; status: "active" | "revoked"; mfa_enabled: boolean;
+  /** Decision 282: single machines alongside whole types, and both with names for the scope chips. */
+  machine_ids?: number[]; machine_types?: { id: number; name: string }[]; machines?: ScopeMachine[];
   granted_at: string; revoked_at: string | null; revocation_reason: string;
   can: { change_roles: boolean; revoke: boolean; restore: boolean; reset_mfa: boolean };
   pii_masked?: boolean;
@@ -15,12 +18,15 @@ export type GrantableRole = { slug: string; name: string; combinable: boolean };
 export type StaffRolesPolicy = {
   grantable_roles: GrantableRole[]; can_manage_space_managers: boolean;
   email_invites_available: boolean; machine_types: { id: number; name: string }[];
+  /** Every machine of this space, and the roles a machine scope applies to (machine_manager, technician). */
+  machines?: ScopeMachine[]; scoped_role_slugs?: string[];
 };
 export type StaffRolesPage = { count: number; next: string | null; previous: string | null; results: StaffRoleRow[]; policy: StaffRolesPolicy };
-export type GrantBody = { roles: string[]; machine_type_ids: number[] } & ({ user_id: number } | { email: string; expires_in_days?: number });
+export type GrantBody = { roles: string[]; machine_type_ids: number[]; machine_ids: number[] } & ({ user_id: number } | { email: string; expires_in_days?: number });
 export type GrantResult = { kind: "granted" | "invited"; staff_role: StaffRoleRow | null; invitation_id: number | null; delivery_status: string | null };
 export type StaffInvitation = {
-  id: number; email: string; role_name: string; roles: string[]; machine_type_ids: number[];
+  id: number; email: string; role_name: string; roles: string[]; machine_type_ids: number[]; machine_ids?: number[];
+  machine_types?: { id: number; name: string }[]; machines?: ScopeMachine[];
   expires_at: string; accepted_at: string | null; revoked_at: string | null; created_at: string; pii_masked?: boolean;
 };
 export type InvitationsPage = { count: number; next: string | null; previous: string | null; results: StaffInvitation[] };
@@ -36,7 +42,7 @@ const post = <T>(path: string, body: object = {}) => staffRequest<T>(path, { met
 export const listStaffRoles = (space: number, page: number, includeRevoked: boolean) =>
   staffRequest<StaffRolesPage>(`${base(space)}?page=${page}&include_revoked=${includeRevoked ? 1 : 0}`);
 export const grantStaffRole = (space: number, body: GrantBody) => post<GrantResult>(base(space), body);
-export const changeStaffRole = (space: number, id: number, body: { roles?: string[]; machine_type_ids?: number[] }) =>
+export const changeStaffRole = (space: number, id: number, body: { roles?: string[]; machine_type_ids?: number[]; machine_ids?: number[] }) =>
   staffRequest<StaffRoleRow>(`${base(space)}${id}/`, { method: "PATCH", body: JSON.stringify(body) });
 export const revokeStaffRole = (space: number, id: number, reason: string) => post<StaffRoleRow>(`${base(space)}${id}/revoke/`, { reason });
 export const restoreStaffRole = (space: number, id: number) => post<StaffRoleRow>(`${base(space)}${id}/restore/`);
@@ -66,7 +72,14 @@ export function staffRoleErrorText(error: unknown) {
 }
 
 export const deliveryText = (status: string | null | undefined) => status === "sent"
-  ? t`Invitation email sent.` : t`The email could not be sent; ask them to check the address and resend.`;
+  ? t`Invitation email sent.`
+  : status === "pending" || status === "sending"
+    ? t`Invitation email queued. It is being sent now.`
+    : t`The email could not be sent; ask them to check the address and resend.`;
+
+/** Roles whose reach a machine scope narrows; the policy names them, these two are the fallback. */
+export const scopedRoles = (policy: StaffRolesPolicy | undefined) => policy?.scoped_role_slugs ?? ["machine_manager", "technician"];
+export const needsMachineScope = (policy: StaffRolesPolicy | undefined, roles: string[]) => roles.some(role => scopedRoles(policy).includes(role));
 
 const humanize = (slug: string) => slug.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 export const roleNames = (policy: StaffRolesPolicy | undefined, slugs: string[]) =>

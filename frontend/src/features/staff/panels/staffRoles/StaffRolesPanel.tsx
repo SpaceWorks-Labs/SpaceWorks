@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ListLayout } from "../../../../components/layouts";
-import { ErrorText, type QueryState } from "../../../../components/ui";
+import { ErrorText, type QueryState, PagePager } from "../../../../components/ui";
 import { isSurfaceOff } from "../../../../lib/api/errors";
 import { refreshMembershipAuthority } from "../roleSets";
 import { RolesReference } from "../RolesReference";
@@ -10,7 +10,9 @@ import { StaffMfaResetDialog } from "./StaffMfaResetDialog";
 import { StaffRoleEditor } from "./StaffRoleEditor";
 import { StaffRoleGrantDialog } from "./StaffRoleGrantDialog";
 import { StaffRoleInvitations } from "./StaffRoleInvitations";
+import { StaffBulkInviteDialog } from "./StaffBulkInviteDialog";
 import { StaffRevokeDialog, StaffRoleRows } from "./StaffRoleRows";
+import { filterStaffRows, groupStaffRows, StaffRoleFilterBar, type StaffRoleFilter } from "./staffRoleFilters";
 import {
   deliveryText, invitationsKey, listSpaceRoles, listStaffInvitations, listStaffRoles, restoreStaffRole, revokeStaffRole,
   spaceRolesKey, staffRoleErrorText, staffRolesKey, type StaffRoleRow,
@@ -27,16 +29,18 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
   const [invitePage, setInvitePage] = useState(1);
   const [includeRevoked, setIncludeRevoked] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [bulkInviting, setBulkInviting] = useState(false);
   const [editing, setEditing] = useState<StaffRoleRow>();
   const [revoking, setRevoking] = useState<StaffRoleRow>();
   const [resetting, setResetting] = useState<StaffRoleRow>();
   const [reason, setReason] = useState("");
   const [notice, setNotice] = useState("");
+  const [filter, setFilter] = useState<StaffRoleFilter>({ role: "", grouped: false });
   const list = useQuery({ queryKey: [...staffRolesKey(space), page, includeRevoked], queryFn: () => listStaffRoles(space, page, includeRevoked), enabled: space > 0 });
   const policy = list.data?.policy;
   const tabs = [{ key: "staff", label: t`Staff` },
     ...(policy?.email_invites_available ? [{ key: "invitations", label: t`Invitations` }] : []),
-    ...(canManageRoles ? [{ key: "roles", label: t`Roles` }] : [])];
+    ...(canManageRoles ? [{ key: "roles", label: t`Role definitions` }] : [])];
   // Authority can change after a refresh or a makerspace switch; always render a valid tab.
   const activeTab = tabs.some(item => item.key === tab) ? tab : "staff";
   const invites = useQuery({ queryKey: [...invitationsKey(space), invitePage], queryFn: () => listStaffInvitations(space, invitePage), enabled: activeTab === "invitations" });
@@ -64,31 +68,38 @@ export function StaffRolesPanel({ space, toolbar, onAuthRefresh, secondary, canM
   const isEmpty = activeTab === "staff" ? list.data?.count === 0
     : activeTab === "invitations" ? invitesOff || invites.data?.count === 0 : roles.data?.length === 0;
   const actionError = activeTab === "staff" ? restore.error : null;
+  const shownStaff = filterStaffRows(list.data?.results ?? [], filter.role);
   return <ListLayout tabs={tabs} activeTab={activeTab} onTabChange={key => { setTab(key); setNotice(""); }}
     header={{ title: t`Staff & roles`, secondary,
       subtitle: t`Staff roles belong to people's own accounts. Grant one to a member of this space, or invite someone by email.`,
-      primary: policy?.grantable_roles.length ? { label: t`Add staff`, icon: "Plus", onClick: () => setAdding(true) } : undefined }}
+      primary: policy?.grantable_roles.length ? { label: t`Add staff`, icon: "Plus", onClick: () => setAdding(true) } : undefined,
+      // Decision 248: up to 50 email invitations in one all-or-nothing batch.
+      overflow: policy?.email_invites_available && policy.grantable_roles.length ? [{ label: t`Invite several by email`, onClick: () => setBulkInviting(true) }] : undefined }}
     state={state} isEmpty={isEmpty} empty={empty}
     filters={{ toolbar: <div className="grid gap-3">{toolbar}
       {activeTab === "staff" ? <label className="flex min-h-11 items-center gap-3 text-sm">
         <input type="checkbox" className="h-5 w-5 accent-accent" checked={includeRevoked} onChange={e => { setIncludeRevoked(e.target.checked); setPage(1); }} />{t`Show revoked`}</label> : null}
+      {activeTab === "staff" ? <StaffRoleFilterBar policy={policy} rows={list.data?.results ?? []} value={filter} onChange={setFilter}
+        partial={Boolean(list.data?.next || list.data?.previous)} /> : null}
       {notice ? <p className="text-sm text-ink" role="status">{notice}</p> : null}
       {actionError ? <ErrorText message={staffRoleErrorText(actionError)} /> : null}
     </div> }}
-    body={{ kind: "rows", rows: activeTab === "roles" ? <RolesReference roles={roles.data ?? []} />
+    body={{ kind: "rows", rows: activeTab === "roles" ? <RolesReference roles={roles.data ?? []} onShowHolders={slug => { setFilter({ role: slug, grouped: false }); setTab("staff"); }} />
       : activeTab === "invitations" ? invites.data ? <StaffRoleInvitations space={space} data={invites.data} page={invitePage}
         onPage={setInvitePage} onChanged={refresh} onNotice={setNotice} /> : null
         : <>
-          <StaffRoleRows rows={list.data?.results ?? []} policy={policy} pending={revoke.isPending || restore.isPending}
-            onEdit={setEditing} onRestore={row => restore.mutate(row)} onResetMfa={setResetting}
-            onRevoke={row => { revoke.reset(); setReason(""); setRevoking(row); }} />
-          {list.data?.previous || list.data?.next ? <div className="flex items-center gap-3">
-            <button type="button" className="desk-button min-h-11" disabled={!list.data?.previous} onClick={() => setPage(value => value - 1)}>{t`Previous`}</button>
-            <span className="text-sm text-muted">{t`Page ${page}`}</span>
-            <button type="button" className="desk-button min-h-11" disabled={!list.data?.next} onClick={() => setPage(value => value + 1)}>{t`Next`}</button>
-          </div> : null}
+          {(filter.grouped ? groupStaffRows(shownStaff) : [{ area: "all", label: "", rows: shownStaff }]).map(group => <section key={group.area} className="grid gap-2" aria-label={group.label || undefined}>
+            {group.label ? <h3 className="title-section">{group.label} <span className="tabular-nums text-muted">({group.rows.length})</span></h3> : null}
+            <StaffRoleRows rows={group.rows} policy={policy} pending={revoke.isPending || restore.isPending}
+              onEdit={setEditing} onRestore={row => restore.mutate(row)} onResetMfa={setResetting}
+              onRevoke={row => { revoke.reset(); setReason(""); setRevoking(row); }} />
+          </section>)}
+          {filter.role && !shownStaff.length ? <p className="text-sm text-muted">{t`Nobody here holds that role.`}</p> : null}
+          <PagePager page={page} setPage={setPage} next={list.data?.next} />
         </> }}
     detail={<>
+      {bulkInviting && policy ? <StaffBulkInviteDialog space={space} policy={policy} onClose={() => setBulkInviting(false)}
+        onDone={text => { setBulkInviting(false); done(text); }} /> : null}
       {adding && policy ? <StaffRoleGrantDialog space={space} policy={policy} onClose={() => setAdding(false)}
         onDone={(result, who) => { setAdding(false); done(result.kind === "invited" ? deliveryText(result.delivery_status) : `Staff roles granted to ${who}.`); }} /> : null}
       {editing && policy ? <StaffRoleEditor key={editing.id} space={space} policy={policy} row={editing} onClose={() => setEditing(undefined)}

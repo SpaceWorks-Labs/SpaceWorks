@@ -22,7 +22,7 @@ export function SettingsTab({ makerspaceId }: { makerspaceId: number }) {
   const settings = useMemberCardSettings(makerspaceId);
   const save = useSaveMemberCardSettings(makerspaceId);
   if (settings.isLoading) return <Skeleton className="h-48 w-full" />;
-  if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource="card settings" onRetry={() => void settings.refetch()} />;
+  if (settings.isError || !settings.data) return <ErrorBlock error={settings.error} resource={t`card settings`} onRetry={() => void settings.refetch()} />;
   const values: MemberCardSettings = settings.data;
   return <div className="grid max-w-2xl gap-3">
     {save.error ? <ErrorBlock error={save.error} /> : null}

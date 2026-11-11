@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import { StructuredApiError } from "../../../../lib/api";
 import { useOrganizations } from "../../organizationsApi";
 import type { MakerspaceForm } from "./types";
+import { spaceNoun } from "../../../../lib/spaceNoun";
 
 export function organizationFieldErrors(error: unknown) {
   const body: Record<string, unknown> = error instanceof StructuredApiError ? error.body : {};
@@ -17,10 +18,12 @@ export function OrganizationPicker({ form, error, onChange }: {
   const id = useId();
   const [search, setSearch] = useState("");
   const errors = organizationFieldErrors(error);
+  const noun = spaceNoun(form.kind ?? "makerspace");
   const describedBy = [errors.organization_id ? `${id}-existing-error` : "", errors.organization_name ? `${id}-name-error` : ""].filter(Boolean).join(" ") || undefined;
   return <fieldset className="grid gap-3 rounded-xl border border-line bg-surface p-4" aria-describedby={describedBy}>
     <legend className="text-sm font-semibold text-ink">{t`Organization (required)`}</legend>
-    <p className="text-xs text-muted">{t`Choose an active organization to own this makerspace, or create a new one.`}</p>
+    <p className="text-xs text-muted">{t`Choose an active organization to own this ${noun}, or create a new one.`}</p>
+    {form.kind === "organization" ? <p className="text-xs text-muted">{t`The workspace becomes this organization's home: its public page at /o/ shows the workspace's events, rooms and plans.`}</p> : null}
     <label htmlFor={`${id}-search`} className="grid gap-1">
       <span className="text-sm font-semibold text-ink">{t`Search organizations`}</span>
       <input id={`${id}-search`} type="search" className="desk-input w-full" value={search} onChange={event => setSearch(event.target.value)} aria-describedby={errors.organization_id ? `${id}-existing-error` : undefined} />

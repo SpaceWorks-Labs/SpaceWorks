@@ -36,7 +36,7 @@ export function useApprovalLevels(makerspaceId: number) {
 export function ApprovalLevels({ makerspaceId }: { makerspaceId: number }) {
   const { query, save } = useApprovalLevels(makerspaceId);
   if (query.isLoading) return <Skeleton className="h-32 w-full" />;
-  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource="approval levels" onRetry={() => void query.refetch()} />;
+  if (query.isError || !query.data) return <ErrorBlock error={query.error} resource={t`approval levels`} onRetry={() => void query.refetch()} />;
   const groups = query.data.groups.filter((row) => row.available);
   const spaceValue = (group: Group) => {
     const row = groups.find((item) => item.group === group)!;

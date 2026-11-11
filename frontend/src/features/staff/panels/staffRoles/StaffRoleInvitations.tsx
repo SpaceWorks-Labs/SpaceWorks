@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useMutation } from "@tanstack/react-query";
-import { ErrorText, ListRow, OverflowMenu, RelativeTime, StatusPill } from "../../../../components/ui";
+import { ErrorText, ListRow, OverflowMenu, RelativeTime, StatusPill, PagePager } from "../../../../components/ui";
 import {
   deliveryText, resendStaffInvitation, revokeStaffInvitation, staffRoleErrorText,
   type InvitationsPage, type StaffInvitation,
@@ -28,17 +28,13 @@ export function StaffRoleInvitations({ space, data, page, onPage, onChanged, onN
           {open ? <>
             <button type="button" className="desk-button min-h-11" disabled={pending} onClick={() => resend.mutate(row)}>{t`Resend`}</button>
             <OverflowMenu label={t`Actions for ${row.email}`} actions={[{ label: t`Revoke`, tone: "danger", disabled: pending,
-              disabledReason: pending ? "Wait for the current invitation update." : undefined,
+              disabledReason: pending ? t`Wait for the current invitation update.` : undefined,
               confirm: { title: t`Revoke invitation?`, message: t`The invitation sent to ${row.email} stops working. Send a new one if they still need access.`, confirmLabel: t`Revoke` },
               onClick: () => revoke.mutate(row) }]} />
           </> : null}
         </div>} />;
     })}
-    {data.previous || data.next ? <div className="flex items-center gap-3">
-      <button type="button" className="desk-button min-h-11" disabled={!data.previous} onClick={() => onPage(page - 1)}>{t`Previous`}</button>
-      <span className="text-sm text-muted">{t`Page ${page}`}</span>
-      <button type="button" className="desk-button min-h-11" disabled={!data.next} onClick={() => onPage(page + 1)}>{t`Next`}</button>
-    </div> : null}
+    <PagePager page={page} setPage={onPage} next={data.next} />
   </div>;
 }
 
@@ -46,5 +42,5 @@ function isExpired(row: StaffInvitation) {
   return !row.accepted_at && !row.revoked_at && new Date(row.expires_at).getTime() < Date.now();
 }
 function invitationState(row: StaffInvitation) {
-  return row.accepted_at ? "Accepted" : row.revoked_at ? "Revoked" : isExpired(row) ? "Expired" : "Waiting";
+  return row.accepted_at ? t`Accepted` : row.revoked_at ? t`Revoked` : isExpired(row) ? t`Expired` : t`Waiting`;
 }

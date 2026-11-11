@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { staffRequest, type StaffAuthUser } from "../../../lib/api";
+import { StructuredApiError, isSurfaceOff } from "../../../lib/api/errors";
 import { type Makerspace, type Product, useStaffGet } from "./shared";
 import { invalidateInventoryViews, invalidateQrViews } from "../queryInvalidation";
 import { rows, type BoxContents, type ListResponse, type Rebound, type Resolved } from "./ScannerPanelTypes";
@@ -30,6 +31,8 @@ export function useStaffScanner({ makerspace, isSuperadmin, makerspaces }: {
   const [newName, setNewName] = useState("");
   const [moveTag, setMoveTag] = useState("");
   const [successNote, setSuccessNote] = useState<string | null>(null);
+  // A scanned value nothing resolves to: offered to QR managers as a label to register.
+  const [unknownValue, setUnknownValue] = useState<string | null>(null);
   const resolvedQrMakerspaceId = resolved?.qr.makerspace_id ?? resolved?.qr.makerspace;
   const rebindMakerspaceId = resolvedQrMakerspaceId ?? makerspace.id;
   const rebindMakerspace = makerspaces.find((space) => space.id === rebindMakerspaceId) ?? (
@@ -55,9 +58,11 @@ export function useStaffScanner({ makerspace, isSuperadmin, makerspaces }: {
 
   const resolve = useMutation({
     mutationFn: (value: string) =>
-      staffRequest<Resolved>("/admin/qr/resolve", { method: "POST", body: JSON.stringify({ payload: value.trim() }) }),
+      // makerspace_id: labels printed outside SpaceWorks are unique only per makerspace.
+      staffRequest<Resolved>("/admin/qr/resolve", { method: "POST", body: JSON.stringify({ payload: value.trim(), makerspace_id: makerspace.id }) }),
     onSuccess: (data) => {
       setResolved(data);
+      setUnknownValue(null);
       setRecent(current => [{ key: String(Date.now()), label: data.target.type === "box" ? data.target.label : data.target.type === "product" ? data.target.name : data.target.asset_tag, meta: data.target.type }, ...current].slice(0, 8));
       setContents(null);
       setScanNote("");
@@ -151,20 +156,39 @@ export function useStaffScanner({ makerspace, isSuperadmin, makerspaces }: {
     }
   }, [productRows, selectedProductId]);
 
+  const resolveScanned = (value: string) => {
+    setUnknownValue(null);
+    setResolved(null);
+    resolve.mutate(value, {
+      onError: (error) => {
+        if (error instanceof StructuredApiError && error.status === 404 && !isSurfaceOff(error)) setUnknownValue(value.trim());
+      },
+    });
+  };
   const doResolve = (value: string) => {
     setScanNote("");
-    if (value.trim()) resolve.mutate(value);
+    if (value.trim()) resolveScanned(value);
   };
   // Camera scans resolve the opaque token WITHOUT echoing it into the visible
   // input (the payload is a physical-possession token, not something to display).
   const resolveFromScan = (value: string) => {
     if (!value.trim()) return;
     setScanNote("Scanned - resolving...");
-    resolve.mutate(value);
+    resolveScanned(value);
+  };
+  const spaceActions = currentUser.data?.makerspaces.find((item) => item.id === makerspace.id)?.actions ?? [];
+  const canLinkExternal = isSuperadmin || spaceActions.includes("manage_qr");
+  const canCreateExternal = canLinkExternal && (isSuperadmin || spaceActions.includes("edit_inventory"));
+  const onExternalLinked = (data: Rebound) => {
+    invalidateInventoryViews(queryClient, makerspace.id);
+    invalidateQrViews(queryClient, data.qr.makerspace_id ?? data.qr.makerspace, data.qr.id);
+    const value = unknownValue;
+    setUnknownValue(null);
+    if (value) resolve.mutate(value, { onSuccess: () => setSuccessNote(t`Code linked.`) });
   };
   const target = resolved?.target;
   const actions = resolved?.allowed_actions ?? [];
-  const resolveError = resolve.error instanceof Error ? resolve.error.message : undefined;
+  const resolveError = unknownValue && canLinkExternal ? undefined : resolve.error instanceof Error ? resolve.error.message : undefined;
   const revokeError = revoke.error instanceof Error ? revoke.error.message : undefined;
   const rebindError = rebind.error instanceof Error ? rebind.error.message : undefined;
   const moveError = moveAsset.error instanceof Error ? moveAsset.error.message : undefined;
@@ -190,5 +214,6 @@ export function useStaffScanner({ makerspace, isSuperadmin, makerspaces }: {
     productError, rebindError, destinationMakerspaces, destMakerspaceId, setDestMakerspaceId, destProductId,
     setDestProductId, destinationProductRows, destinationProducts, moveTag, setMoveTag, moveAsset,
     destinationProductError, moveError, contents,
+    unknownValue, setUnknownValue, canLinkExternal, canCreateExternal, onExternalLinked,
 };
 }

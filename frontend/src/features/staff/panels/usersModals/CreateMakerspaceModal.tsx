@@ -1,17 +1,24 @@
 import { t } from "@lingui/core/macro";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { FlowLayout } from "../../../../components/layouts/FlowLayout";
 import { hoursDraft, validateHours } from "../../makerspaceProfileForm";
 import { CreationWizardSteps } from "./CreationWizardSteps";
 import { OrganizationPicker, organizationFieldErrors } from "./OrganizationPicker";
 import type { MakerspaceForm } from "./types";
+import { SpaceKindChooser } from "./SpaceKindChooser";
+import { spaceNounTitle } from "../../../../lib/spaceNoun";
 
 const steps = ["Identity", "Profile and hours", "Modules and pack", "First staff", "Review"];
-export function CreateMakerspaceModal({ open, form, pending, error, onChange, onClose, onSubmit }: {
+export function CreateMakerspaceModal({ open, form, pending, error, onChange, onClose, onSubmit, identityExtra }: {
   open: boolean; form: MakerspaceForm; pending: boolean; error: unknown;
   onChange: (form: MakerspaceForm) => void; onClose: () => void; onSubmit: () => void;
+  /** Extra fields on the Identity step (the platform console adds the hosting type, decision 236). */
+  identityExtra?: ReactNode;
 }) {
   const [step, setStep] = useState(0);
+  const organization = form.kind === "organization";
+  const nounTitle = spaceNounTitle(form.kind ?? "makerspace");
+  const title = organization ? t`Create organization workspace` : t`Create makerspace`;
   const [invalid, setInvalid] = useState<string | null>(null);
   const organizationChosen = Boolean(form.organization && (form.organization !== "new" || (form.organization_name ?? form.name).trim()));
   useEffect(() => { if (open) { setStep(0); setInvalid(null); } }, [open]);
@@ -32,11 +39,11 @@ export function CreateMakerspaceModal({ open, form, pending, error, onChange, on
     }
     return null;
   };
-  return <FlowLayout presentation="dialog" open={open} title={t`Create makerspace`} state={{ status: "ready" }}
+  return <FlowLayout presentation="dialog" open={open} title={title} state={{ status: "ready" }}
     steps={steps.map((label, index) => ({ key: String(index), label, state: index < step ? "done" : index === step ? "current" : "todo" }))} current={String(step)}
     onCancel={() => { if (!pending) onClose(); }}
-    footer={{ back: step > 0 ? { label: t`Back`, disabled: pending, disabledReason: "Wait while your space is created.", onClick: () => { setStep(step - 1); setInvalid(null); } } : undefined,
-      next: { label: step === 4 ? t`Create makerspace` : t`Next`, pending, disabled: !organizationChosen, disabledReason: "Choose an organization or enter a new organization name.", pendingLabel: "Creating…", onClick: () => (document.getElementById("makerspace-creation-wizard") as HTMLFormElement)?.requestSubmit() } }}
+    footer={{ back: step > 0 ? { label: t`Back`, disabled: pending, disabledReason: t`Wait while your space is created.`, onClick: () => { setStep(step - 1); setInvalid(null); } } : undefined,
+      next: { label: step === 4 ? title : t`Next`, pending, disabled: !organizationChosen, disabledReason: t`Choose an organization or enter a new organization name.`, pendingLabel: t`Creating…`, onClick: () => (document.getElementById("makerspace-creation-wizard") as HTMLFormElement)?.requestSubmit() } }}
     work={<>
     <p role="status" className="mb-3 text-sm">{t`Step ${step + 1} of ${steps.length}: ${steps[step]}`}</p>
     <form id="makerspace-creation-wizard" className="grid gap-3" onSubmit={event => {
@@ -44,9 +51,10 @@ export function CreateMakerspaceModal({ open, form, pending, error, onChange, on
       const message = validate(); setInvalid(message); if (message) return;
       if (step < 4) setStep(step + 1); else onSubmit();
     }}>
-      <fieldset className="grid gap-3" disabled={pending}><legend className="sr-only">{steps[step]}</legend><CreationWizardSteps step={step} form={form} onChange={onChange} pending={pending} /></fieldset>
+      <fieldset className="grid gap-3" disabled={pending}><legend className="sr-only">{steps[step]}</legend>{step === 0 ? <SpaceKindChooser value={form.kind ?? "makerspace"} onChange={kind => onChange({ ...form, kind })} /> : null}<CreationWizardSteps step={step} form={form} onChange={onChange} pending={pending} /></fieldset>
       {step === 0 && open ? <fieldset className="grid gap-3" disabled={pending}><OrganizationPicker form={form} error={error} onChange={onChange} /></fieldset> : null}
-      <aside aria-label={t`Makerspace preview`} className="rounded-xl border border-dashed border-line bg-surface p-4"><p className="eyebrow">{t`Makerspace preview`}</p><h2 className="title-panel mt-2">{form.name || t`Your makerspace`}</h2><p className="mt-2 text-sm text-muted">/m/{form.slug || "your-space"} · {form.public_code || t`Public code`}</p><p className="mt-3 text-sm text-muted">{t`Your catalogue will appear here.`}</p></aside>
+      {step === 0 && open && identityExtra ? <fieldset className="grid gap-3" disabled={pending}>{identityExtra}</fieldset> : null}
+      <aside aria-label={t`${nounTitle} preview`} className="rounded-xl border border-dashed border-line bg-surface p-4"><p className="text-sm font-semibold text-muted">{t`${nounTitle} preview`}</p><h2 className="title-panel mt-2">{form.name || (organization ? t`Your organization` : t`Your makerspace`)}</h2><p className="mt-2 text-sm text-muted">/m/{form.slug || "your-space"} · {form.public_code || t`Public code`}</p><p className="mt-3 text-sm text-muted">{organization ? t`Your events, rooms and membership plans will appear here, on the organization page.` : t`Your catalogue will appear here.`}</p></aside>
       {invalid || error ? <p role="alert" className="text-sm text-danger">{invalid ?? (error instanceof Error ? error.message : t`Creation failed. Check the fields and retry.`)}</p> : null}
     </form>
   </>} />;

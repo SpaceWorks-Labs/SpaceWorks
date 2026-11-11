@@ -3,9 +3,11 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ErrorText, Modal } from "../../../../components/ui";
 import { RoleSetPicker } from "../RoleSetPicker";
-import { changeStaffRole, staffRoleErrorText, type StaffRoleRow, type StaffRolesPolicy } from "./staffRolesApi";
+import { MachineScopePicker } from "./MachineScopePicker";
+import { StaffUnitScopeField } from "../../units/StaffUnitScopeField";
+import { changeStaffRole, needsMachineScope, staffRoleErrorText, type StaffRoleRow, type StaffRolesPolicy } from "./staffRolesApi";
 
-export type RoleDraft = { roles: string[]; machine_type_ids: number[] };
+export type RoleDraft = { roles: string[]; machine_type_ids: number[]; machine_ids: number[] };
 
 /** A role set is valid when it is non-empty and an exclusive role (Space Manager) is held alone. */
 export function validRoleSet(policy: StaffRolesPolicy, roles: string[]) {
@@ -13,7 +15,7 @@ export function validRoleSet(policy: StaffRolesPolicy, roles: string[]) {
   return roles.length > 0 && (!exclusive || roles.length === 1);
 }
 
-/** Role checkboxes plus the machine types a Machine Manager is limited to. */
+/** Role checkboxes (Space Manager alone, the rest combine) plus, for a Machine Manager or Technician, which machines. */
 export function StaffRoleFields({ policy, draft, onChange }: {
   policy: StaffRolesPolicy; draft: RoleDraft; onChange: (draft: RoleDraft) => void;
 }) {
@@ -22,24 +24,18 @@ export function StaffRoleFields({ policy, draft, onChange }: {
     <RoleSetPicker roles={choices} value={choices.filter(role => draft.roles.includes(role.slug)).map(role => role.id)}
       onChange={ids => {
         const roles = choices.filter(role => ids.includes(role.id)).map(role => role.slug);
-        onChange({ roles, machine_type_ids: roles.includes("machine_manager") ? draft.machine_type_ids : [] });
+        // A scope only means something for the scoped roles; dropping the last of them clears it.
+        onChange(needsMachineScope(policy, roles) ? { ...draft, roles } : { roles, machine_type_ids: [], machine_ids: [] });
       }} />
-    {draft.roles.includes("machine_manager") ? <fieldset className="grid gap-2">
-      <legend className="text-sm font-semibold text-ink">{t`Assigned machine types`}</legend>
-      <p className="text-sm text-muted">{t`No selected types means no machines. A type includes machines added to it later.`}</p>
-      {policy.machine_types.length ? policy.machine_types.map(type => <label key={type.id} className="flex min-h-11 items-center gap-3 text-sm">
-        <input type="checkbox" className="h-5 w-5 accent-accent" checked={draft.machine_type_ids.includes(type.id)} onChange={e => onChange({ ...draft,
-          machine_type_ids: e.target.checked ? [...draft.machine_type_ids, type.id] : draft.machine_type_ids.filter(id => id !== type.id),
-        })} />{type.name}
-      </label>) : <p className="text-sm text-muted">{t`This makerspace has no machine types yet.`}</p>}
-    </fieldset> : null}
+    {needsMachineScope(policy, draft.roles) ? <MachineScopePicker types={policy.machine_types} machines={policy.machines ?? []}
+      value={draft} onChange={scope => onChange({ ...draft, ...scope })} /> : null}
   </>;
 }
 
 export function StaffRoleEditor({ space, policy, row, onClose, onSaved }: {
   space: number; policy: StaffRolesPolicy; row: StaffRoleRow; onClose: () => void; onSaved: (row: StaffRoleRow) => void;
 }) {
-  const [draft, setDraft] = useState<RoleDraft>({ roles: row.roles, machine_type_ids: row.machine_type_ids });
+  const [draft, setDraft] = useState<RoleDraft>({ roles: row.roles, machine_type_ids: row.machine_type_ids, machine_ids: row.machine_ids ?? [] });
   const save = useMutation({
     mutationFn: () => changeStaffRole(space, row.id, draft),
     onSuccess: onSaved,
@@ -58,5 +54,7 @@ export function StaffRoleEditor({ space, policy, row, onClose, onSaved }: {
         <button className="desk-button-primary" disabled={save.isPending || !valid}>{save.isPending ? t`Saving…` : t`Save roles`}</button>
       </div>
     </form>
+    {/* Parity O-F1: a unit limit is saved on its own and shows only while `membership.unit_scoped_staff` is on. */}
+    <StaffUnitScopeField makerspaceId={space} membershipId={row.id} name={name} />
   </Modal>;
 }

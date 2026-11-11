@@ -6,6 +6,10 @@ import { staffRequest } from "../../../lib/api";
 export type Makerspace = {
   id: number;
   name: string;
+  /** Decision 295: `organization` for an organization workspace; absent on older payloads = makerspace. */
+  kind?: "makerspace" | "organization";
+  /** Read-only wording key that follows `kind`; see lib/spaceNoun. */
+  space_noun?: "makerspace" | "organization";
   default_loan_days?: number;
   /** Phase 8 i18n: the space's default language code (registry: generated/locales.ts). */
   default_locale?: string;
@@ -15,6 +19,7 @@ export type Makerspace = {
   public_code: string;
   slug: string;
   location?: string;
+  timezone?: string;
   geofence_latitude?: string | number | null;
   geofence_longitude?: string | number | null;
   geofence_radius_m?: number;

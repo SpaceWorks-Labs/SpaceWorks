@@ -6,6 +6,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ErrorBlock } from "../../../../components/ui";
 import { toast } from "../../../../components/ui/toastStore";
+import { DeskPrintDialog, type DeskPrintTarget } from "../../../cards/deskPrint/DeskPrintDialog";
+import { useDeskPrintQueue } from "../../../cards/deskPrint/useDeskPrintQueue";
 import { StaffPhotoDialog } from "../../../cards/StaffPhotoDialog";
 import { useReissueCard, useRevokeCard } from "./api";
 import { useDownloadCard, useEmailCard, useRequestPhoto } from "./apiCards";
@@ -14,7 +16,7 @@ import type { MemberCard, ReissueReason } from "./types";
 
 const message = (error: unknown) => (error instanceof Error ? error.message : undefined);
 
-export function useCardRowActions(makerspaceId: number, emailAvailable: boolean) {
+export function useCardRowActions(makerspaceId: number, emailAvailable: boolean, deskPrint = false) {
   const [reissueTarget, setReissueTarget] = useState<MemberCard | null>(null);
   const [reissueReason, setReissueReason] = useState<ReissueReason>("lost");
   const [revokeTarget, setRevokeTarget] = useState<MemberCard | null>(null);
@@ -22,6 +24,8 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
   const [photoTarget, setPhotoTarget] = useState<MemberCard | null>(null);
   const [photoReason, setPhotoReason] = useState("");
   const [uploadTarget, setUploadTarget] = useState<MemberCard | null>(null);
+  const [printing, setPrinting] = useState<DeskPrintTarget | null>(null);
+  const queue = useDeskPrintQueue();
   const client = useQueryClient();
   const reissue = useReissueCard(makerspaceId);
   const revoke = useRevokeCard(makerspaceId);
@@ -30,6 +34,8 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
   const photo = useRequestPhoto(makerspaceId);
 
   const rowActions = (card: MemberCard) => [
+    ...(deskPrint ? [{ label: t`Print at desk`, onClick: () => setPrinting({ id: `member:${card.id}`,
+      label: `${card.printed_name} ${card.number_display || card.card_number}`, facePath: `/admin/member-cards/${card.id}/print-face` }) }] : []),
     { label: t`Download PDF`, onClick: () => download.mutate({ card, format: "pdf" }) },
     { label: t`Download PNG`, onClick: () => download.mutate({ card, format: "png" }) },
     ...(emailAvailable ? [{ label: t`Email card`, onClick: () => email.mutate(card, {
@@ -41,6 +47,8 @@ export function useCardRowActions(makerspaceId: number, emailAvailable: boolean)
   ];
 
   const dialogs = <>
+    <DeskPrintDialog target={printing} queue={queue} onClose={() => setPrinting(null)}
+      onPrinted={() => void client.invalidateQueries({ queryKey: ["member-cards", makerspaceId] })} />
     {download.error ? <ErrorBlock error={download.error} /> : null}
     <ReissueCardDialog card={reissueTarget} reason={reissueReason} pending={reissue.isPending} error={message(reissue.error)}
       onReasonChange={setReissueReason} onClose={() => setReissueTarget(null)}

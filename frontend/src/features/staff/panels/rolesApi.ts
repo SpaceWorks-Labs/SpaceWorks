@@ -34,15 +34,18 @@ export type MemberMachineScope = {
   scoping_applies: boolean;
   machine_type_ids: number[];
   available_machine_types: { id: number; name: string; slug: string; is_global: boolean }[];
+  /** Decision 282: single machines alongside whole types (union); absent on an older server. */
+  machine_ids?: number[];
+  available_machines?: { id: number; name: string; machine_type_id: number }[];
 };
 
 export function getMemberMachineScope(msId: number, membershipId: number) {
   return staffRequest<MemberMachineScope>(`/admin/makerspaces/${msId}/memberships/${membershipId}/machine-scope`);
 }
 
-export function setMemberMachineScope(msId: number, membershipId: number, machineTypeIds: number[]) {
+export function setMemberMachineScope(msId: number, membershipId: number, machineTypeIds: number[], machineIds?: number[]) {
   return staffRequest<MemberMachineScope>(`/admin/makerspaces/${msId}/memberships/${membershipId}/machine-scope`, {
-    method: "PUT", body: JSON.stringify({ machine_type_ids: machineTypeIds }),
+    method: "PUT", body: JSON.stringify({ machine_type_ids: machineTypeIds, ...(machineIds ? { machine_ids: machineIds } : {}) }),
   });
 }
 

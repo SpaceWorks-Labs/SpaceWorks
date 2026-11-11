@@ -18,7 +18,7 @@ export function StaffRoleGrantDialog({ space, policy, onClose, onDone }: {
   const [query, setQuery] = useState("");
   const [person, setPerson] = useState<Person | null>(null);
   const [email, setEmail] = useState("");
-  const [draft, setDraft] = useState<RoleDraft>({ roles: [], machine_type_ids: [] });
+  const [draft, setDraft] = useState<RoleDraft>({ roles: [], machine_type_ids: [], machine_ids: [] });
   const search = useDebouncedValue(query.trim());
   const members = useQuery({
     queryKey: ["staff", "member-search", space, search],

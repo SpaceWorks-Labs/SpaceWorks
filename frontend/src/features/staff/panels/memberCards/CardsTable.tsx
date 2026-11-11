@@ -31,19 +31,19 @@ export function CardsTable({
   const columns: DataTableColumn<MemberCard>[] = [
     {
       key: "card_number",
-      header: "Card number",
+      header: t`Card number`,
       sortable: true,
       render: (card) => <span className="tabular-nums text-xs">{card.number_display || card.card_number}</span>,
     },
-    { key: "printed_name", header: "Name", sortable: true },
+    { key: "printed_name", header: t`Name`, sortable: true },
     {
       key: "valid_until",
-      header: "Valid until",
+      header: t`Valid until`,
       render: (card) => <span className="text-xs text-muted">{card.valid_until || "—"}</span>,
     },
     {
       key: "is_active",
-      header: "Status",
+      header: t`Status`,
       render: (card) =>
         card.is_active ? (
           <Badge tone="success">{t`Active`}</Badge>
@@ -58,7 +58,7 @@ export function CardsTable({
     },
     {
       key: "print_count",
-      header: "Prints",
+      header: t`Prints`,
       sortable: true,
       render: (card) => (
         <span className="text-xs text-muted">
@@ -69,14 +69,14 @@ export function CardsTable({
     },
     {
       key: "photo_set",
-      header: "Photo",
+      header: t`Photo`,
       render: (card) =>
         card.photo_request_open ? <Badge tone="warn">{t`update asked`}</Badge>
           : card.photo_set ? <Badge tone="neutral">{t`on file`}</Badge> : <span className="text-xs text-muted">none</span>,
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t`Actions`,
       render: (card) => (
         <div className="desk-actions flex flex-wrap gap-2">
           <button

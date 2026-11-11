@@ -35,5 +35,6 @@ export const ROLE_DESCRIPTIONS: Record<string, string> = {
   handover: t`Issues accepted requests and direct handouts, processes returns and hands over completed machine jobs.`,
   technician: t`Works the repair jobs assigned to them, runs scheduled maintenance and marks machines, items and rooms in or out of service within their coverage. No inventory, money or settings.`,
   shop_manager: t`Runs the shop: products, stock, prices, orders, the front desk, cash-ups, returns, shop reports and the shop's own settings. No other inventory, money or settings.`,
+  fundraising: t`Runs donations: campaigns, gifts, regular givers, sponsors, donor list and receipts. No other money, and the non-profit profile stays the Space Manager's.`,
   member: t`Uses member services without staff management access.`,
 };

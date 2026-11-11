@@ -73,6 +73,8 @@ def _link_owner(actor, space, *, organization_id, new_name):
     organization = Organization.objects.select_for_update().filter(pk=organization_id).first()
     if organization is None or not organization.is_active:
         raise serializers.ValidationError({"organization_id": gettext("Choose an existing active organization.")})
+    from apps.managed_hosting.extra_quotas import check_extra_quota
+    check_extra_quota(space, "organizations_linked")  # decision 284: typed 409
     try:
         with transaction.atomic():
             row = OrganizationMakerspace.objects.create(

@@ -82,6 +82,8 @@ def create_invitation(
     membership = lock_governance_membership(
         actor, locked_org, governance.MANAGE_ORGANIZATION_MEMBERS
     )
+    from apps.organizations.services_review import require_not_inert
+    require_not_inert(locked_org)  # a pending, declined or suspended organization is inert
     held_governance, held_grants = _authority_actions(actor, membership)
     if not set(proposed_governance).issubset(held_governance):
         raise PermissionDenied(gettext("You cannot grant organization authority you do not hold."))

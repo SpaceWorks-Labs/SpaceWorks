@@ -6,7 +6,8 @@ from apps.separability.registry import runtime_active
 
 
 def linked_spaces_for(organization):
-    if not organization.is_active or not organization.public_profile_enabled:
+    if (not organization.is_active or not organization.public_profile_enabled
+            or organization.review_status != "approved"):
         return directory_spaces().none()
     from apps.makerspaces.module_registry import module_available
     from apps.makerspaces.editions import public_surface_available
@@ -30,7 +31,7 @@ def public_events_for(organization, *, period="upcoming", now=None):
     from apps.makerspaces.editions import public_surface_available
     from apps.makerspaces.module_registry import module_available
     if (not organization.is_active or not organization.public_profile_enabled
-            or not module_available("events") or not public_surface_available("events")):
+            or organization.review_status != "approved" or not module_available("events") or not public_surface_available("events")):
         return Event.objects.none()
     now = now or timezone.now()
     organized = EventOrganizer.objects.filter(event_id=OuterRef("pk"), organization=organization)

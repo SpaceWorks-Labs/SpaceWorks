@@ -3,6 +3,7 @@ from django.urls import path
 from apps.organizations.views_public import (
     PublicOrganizationDetailView,
 )
+from apps.organizations.views_public_directory import PublicOrganizationDirectoryView
 from apps.separability.registry import runtime_active
 
 
@@ -27,6 +28,7 @@ def _events_routes():
 
 
 urlpatterns = [
+    path("", PublicOrganizationDirectoryView.as_view(), name="public-organization-directory"),
     path("<slug:slug>/", PublicOrganizationDetailView.as_view(), name="public-organization-detail"),
     *_events_routes(),
 ]

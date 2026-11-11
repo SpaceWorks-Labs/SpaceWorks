@@ -22,7 +22,7 @@ COLLECTION_ERRORS = {
 
 def _public_organization(slug):
     owner = get_object_or_404(
-        Organization.objects.filter(is_active=True, public_profile_enabled=True),
+        Organization.objects.filter(is_active=True, public_profile_enabled=True, review_status="approved"),
         slug=slug,
     )
     from rest_framework.exceptions import NotFound

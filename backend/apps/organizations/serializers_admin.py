@@ -24,7 +24,7 @@ class OrganizationSummarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ("id", "slug", "name", "is_active", "governance_actions", "granted_actions")
+        fields = ("id", "slug", "name", "is_active", "review_status", "governance_actions", "granted_actions")
         read_only_fields = fields
 
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))

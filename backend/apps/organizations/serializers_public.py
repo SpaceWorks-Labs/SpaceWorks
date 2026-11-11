@@ -10,6 +10,9 @@ class PublicOrganizationSerializer(serializers.ModelSerializer):
     catalogue_links = serializers.SerializerMethodField()
     collections = serializers.SerializerMethodField()
     canonical_url = serializers.SerializerMethodField()
+    plans = serializers.SerializerMethodField()
+    home_space = serializers.SerializerMethodField()
+    workspace = serializers.SerializerMethodField()
 
     class Meta:
         model = Organization
@@ -22,12 +25,36 @@ class PublicOrganizationSerializer(serializers.ModelSerializer):
             "catalogue_links",
             "collections",
             "canonical_url",
+            "plans",
+            "home_space",
+            "workspace",
         )
         read_only_fields = fields
 
     @extend_schema_field(serializers.URLField(allow_null=True))
     def get_logo_url(self, obj):
         return public_image_storage.public_url(obj.logo_key) or None
+
+    @extend_schema_field(serializers.JSONField(allow_null=True))
+    def get_plans(self, obj):
+        # The home space's listed membership plans; null while its plans switch is off.
+        from apps.organizations.public_plans import home_space_plans
+        return home_space_plans(obj)
+
+    @extend_schema_field(serializers.JSONField(allow_null=True))
+    def get_home_space(self, obj):
+        # Member cards are issued by the home space; the org has no card of its own.
+        from apps.organizations.public_plans import home_space
+        from apps.organizations.public_catalog import space_card
+        space = home_space(obj)
+        return space_card(space) if space else None
+
+    @extend_schema_field(serializers.JSONField(allow_null=True))
+    def get_workspace(self, obj):
+        # Decision 295: the organization workspace's public events, rooms and plans; null
+        # when the home space is an ordinary makerspace.
+        from apps.organizations.workspace_payload import workspace_payload
+        return workspace_payload(obj)
 
     @extend_schema_field(serializers.URLField())
     def get_canonical_url(self, obj):

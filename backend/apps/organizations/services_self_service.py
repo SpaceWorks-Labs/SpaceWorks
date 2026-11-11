@@ -30,8 +30,8 @@ def creation_policy(actor):
         "max_owned": getattr(settings, "ORGANIZATION_SELF_CREATION_MAX_OWNED", 3),
         "max_per_day": getattr(settings, "ORGANIZATION_SELF_CREATION_MAX_PER_DAY", 1),
         "reason": (
-            "Organization self-creation is disabled by the operator." if not enabled
-            else "A verified member browser account is required."
+            gettext("Organization self-creation is disabled by the operator.") if not enabled
+            else gettext("A verified member browser account is required.")
             if not eligible else ""
         ),
     }
@@ -59,6 +59,8 @@ def create_self_service(actor, *, name, slug, description="", website=""):
     name, slug = name.strip(), slug.strip()
     if not name or not slug:
         raise ValidationError(gettext("A name and slug are required."))
+    from apps.organizations import services_review
+    services_review.assert_slug_available(slug)
     try:
         with transaction.atomic():
             row = Organization(
@@ -78,6 +80,8 @@ def create_self_service(actor, *, name, slug, description="", website=""):
     except IntegrityError as exc:
         raise OrganizationConflict("An organization with this slug already exists.") from exc
     audit.record(locked_actor, "organization.self_created", target=row)
+    if services_review.review_required():
+        services_review.submit_new(row, locked_actor)
     audit.record(locked_actor, "organization.membership_created", target=membership)
     row.actor_memberships = [membership]
     return row

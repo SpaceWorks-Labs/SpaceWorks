@@ -62,9 +62,14 @@ def change_link(actor, organization_id, makerspace_id, *, relationship=None):
         return None
     if not organization.is_active:
         raise OrganizationConflict("Reactivate the organization before linking a makerspace.")
+    if organization.review_status != "approved":
+        raise OrganizationConflict("This organization is not approved yet.")
     if relationship not in OrganizationMakerspace.Relationship.values:
         from rest_framework.exceptions import ValidationError
         raise ValidationError({"relationship": gettext("Unknown relationship.")})
+    if not links.exists():  # a NEW link only; changing the relationship of an existing one adds nothing
+        from apps.managed_hosting.extra_quotas import check_extra_quota
+        check_extra_quota(space, "organizations_linked")  # decision 284: typed 409
     try:
         with transaction.atomic():
             row, created = links.get_or_create(

@@ -21,7 +21,8 @@ def active_accounts(queryset=None):
 
 def eligible_accounts(organization_ids, queryset=None):
     """Batch SQL predicate, independent of action grants and profile publication."""
-    organizations = Organization.objects.filter(pk__in=organization_ids, is_active=True)
+    organizations = Organization.objects.filter(
+        pk__in=organization_ids, is_active=True, review_status="approved")
     direct = OrganizationMembership.objects.filter(
         organization_id__in=organizations.values("pk"), user_id=OuterRef("pk"), status="active",
     )

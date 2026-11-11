@@ -33,7 +33,11 @@ class IssueListView(APIView):
     @extend_schema(tags=TAGS, summary="Issues and repair jobs in my scope (24 per page)",
                    parameters=[OpenApiParameter("state", str, required=False),
                                OpenApiParameter("area", str, required=False),
-                               OpenApiParameter("assigned", str, required=False, enum=["me"])],
+                               OpenApiParameter("assigned", str, required=False, enum=["me"]),
+                               # Decision 242: subject filters (item drawer, machine drawer).
+                               OpenApiParameter("machine", int, required=False),
+                               OpenApiParameter("product", int, required=False),
+                               OpenApiParameter("asset", int, required=False)],
                    responses={200: IssueReportListSerializer(many=True), **ERRORS})
     def get(self, request, makerspace_id):
         space = space_for(request.user, makerspace_id)
@@ -43,6 +47,9 @@ class IssueListView(APIView):
             rows = rows.filter(state__in=value.split(","))
         if (value := request.query_params.get("area")) in areas.AREAS:
             rows = rows.filter(area=value)
+        for name in ("machine", "product", "asset"):
+            if str(request.query_params.get(name, "")).isdigit():
+                rows = rows.filter(**{f"{name}_id": int(request.query_params[name])})
         if request.query_params.get("assigned") == "me":
             rows = rows.filter(authority.assigned_q(request.user))
         rows = issue_rows().filter(pk__in=rows.values("pk")).order_by("-created_at", "-id")

@@ -10,6 +10,7 @@ from django.utils.translation import gettext_noop
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class AppendOnlyError(RuntimeError):
@@ -58,7 +59,7 @@ class IssueEvent(AppendOnly):
                                 related_name="+")
     note = models.TextField(blank=True)
     occurred_on = models.DateField(null=True, blank=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     currency = models.CharField(max_length=3, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 

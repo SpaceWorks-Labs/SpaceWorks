@@ -80,3 +80,8 @@ urlpatterns = [
 from .repairs.urls_staff import urlpatterns as _repairs_urlpatterns  # noqa: E402
 
 urlpatterns += _repairs_urlpatterns
+
+# Release 0.12.0 (decision 223): the incident register's staff routes.
+from .incidents.urls import staff_urlpatterns as _incident_urlpatterns  # noqa: E402
+
+urlpatterns += _incident_urlpatterns

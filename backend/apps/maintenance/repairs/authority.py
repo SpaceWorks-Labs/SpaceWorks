@@ -41,8 +41,28 @@ def covers(contact, subject_type, subject):
     return any(row.kind == "room" and row.room_id == subject.pk for row in rows)
 
 
+def membership_reach(actor, space_id):
+    """(type ids, machine ids) a Technician's staff row links (the role editor's picker).
+
+    Unioned with the in-house contact's coverage; nothing linked means nothing. Only a
+    holder of a Technician action gets any reach here (fail closed for everyone else).
+    """
+    held = (Action.WORK_REPAIRS, Action.RUN_MAINTENANCE, Action.SET_SERVICE_STATE)
+    if not any(rbac.can(actor, action, space_id) for action in held):
+        return frozenset(), frozenset()
+    from apps.machines.role_scope import link_scope_for
+    return link_scope_for(actor, space_id)
+
+
 def technician_covers(actor, space_id, action, subject_type, subject):
-    return rbac.can(actor, action, space_id) and covers(contact_for(actor, space_id), subject_type, subject)
+    if not rbac.can(actor, action, space_id):
+        return False
+    if covers(contact_for(actor, space_id), subject_type, subject):
+        return True
+    if subject_type != "machine" or subject is None:
+        return False
+    type_ids, machine_ids = membership_reach(actor, space_id)
+    return subject.machine_type_id in type_ids or subject.pk in machine_ids
 
 
 def may_act_on_subject(actor, space_id, action, subject_type, subject):

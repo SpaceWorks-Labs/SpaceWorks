@@ -73,8 +73,40 @@ class ServiceStateResultSerializer(serializers.Serializer):
     affected_bookings = AffectedBookingSerializer(many=True)
 
 
+class ServiceSubjectSerializer(serializers.Serializer):
+    subject_type = serializers.CharField()
+    subject_id = serializers.IntegerField()
+    name = serializers.CharField()
+    machine_type = serializers.CharField(allow_blank=True)
+    status = serializers.CharField()
+    in_service = serializers.BooleanField()
+
+
 class ServiceStateView(APIView):
     permission_classes = [IsActiveStaff]
+
+    @extend_schema(tags=TAGS, summary="Machines this person may take in or out of service (outside any issue)",
+                   description="Decision 248 / MC6. The machines the manager manages, or a Technician's covered "
+                               "machine types (`set_service_state`); at most 200, name order. POST the same route "
+                               "with no `issue_id` to change one.",
+                   responses={200: ServiceSubjectSerializer(many=True), **ERRORS})
+    def get(self, request, makerspace_id):
+        from apps.machines.models import Machine
+        space = space_for(request.user, makerspace_id)
+        if not (rbac.can(request.user, rbac.Action.SET_SERVICE_STATE, space.pk)
+                or areas.manager_may(request.user, space.pk, "machine")):
+            raise PermissionDenied()
+        if not (areas.on(space, areas.REPAIRS[areas.MACHINES]) or areas.on(space, areas.MAINTENANCE[areas.MACHINES])):
+            areas.refuse(areas.REPAIRS[areas.MACHINES])
+        rows = []
+        for machine in Machine.objects.filter(makerspace=space, is_active=True).select_related("machine_type").order_by("name", "pk"):
+            if len(rows) >= 200:
+                break
+            if authority.may_act_on_subject(request.user, space.pk, rbac.Action.SET_SERVICE_STATE, "machine", machine):
+                rows.append({"subject_type": "machine", "subject_id": machine.pk, "name": machine.name,
+                             "machine_type": machine.machine_type.name, "status": machine.status,
+                             "in_service": machine.status not in ("maintenance", "offline")})
+        return Response(ServiceSubjectSerializer(rows, many=True).data)
 
     @extend_schema(tags=TAGS, summary="Take a machine, item, unit or room in or out of service",
                    request=ServiceStateChangeSerializer, responses={200: ServiceStateResultSerializer, **ERRORS})
@@ -87,7 +119,14 @@ class ServiceStateView(APIView):
                                     pk=data.pop("subject_id"))
         issue = None
         if issue_id := data.pop("issue_id"):
-            issue = get_object_or_404(issue_rows().filter(makerspace=space), pk=issue_id)
+            # Machines audit 0.12.0: only an issue this actor may read, about THIS subject; never
+            # a history step injected into another team's (or another type's) issue.
+            from .views_common import issue_for
+            issue = issue_for(request.user, issue_id)
+            if issue.makerspace_id != space.pk or getattr(
+                    issue, f"{areas.SUBJECT_FIELD[data['subject_type']]}_id", None) != subject.pk:
+                from django.http import Http404
+                raise Http404
         result = service_state.set_state(request.user, space, subject=subject, issue=issue, **data)
         # Affected bookings are listed only to staff who decide on them (booking authority).
         bookings = result["bookings"] if rbac.can(request.user, rbac.Action.MANAGE_BOOKINGS, space.pk) else []

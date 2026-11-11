@@ -3,6 +3,7 @@ from decimal import Decimal
 from collections.abc import Mapping
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 from rest_framework.settings import api_settings
 
 from apps.maintenance.serializers_cost import MaintenanceCostFields
@@ -91,8 +92,8 @@ class MaintenanceLogSerializer(serializers.ModelSerializer):
 class MaintenanceLogWriteSerializer(MaintenanceCostFields, StrictFieldsSerializer):
     summary = serializers.CharField()
     performed_at = serializers.DateTimeField(required=False)
-    cost = serializers.DecimalField(
-        max_digits=12, decimal_places=2, min_value=0,
+    cost = MoneyField(
+        max_digits=13, decimal_places=3, min_value=0,
         allow_null=True, required=False,
     )
     parts_note = serializers.CharField(allow_blank=True, default="", required=False)

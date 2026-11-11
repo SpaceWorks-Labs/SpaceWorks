@@ -32,7 +32,7 @@ def finalize_log_document(log, *, actor, object_key):
     try:
         storage.finalize_upload(object_key)
         result = storage.validate_log_document_object(object_key)
-        limits.add_storage(machine.makerspace, result.size)
+        limits.charge_upload(machine.makerspace, result.size)
         document = MaintenanceLogDocument.objects.create(
             log=log,
             object_key=object_key,

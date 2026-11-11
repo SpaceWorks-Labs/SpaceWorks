@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
+from apps.payments.money_fields import MoneyField
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -59,7 +60,7 @@ class WorkOrderCreateSerializer(serializers.Serializer):
 class WorkOrderMoveSerializer(MaintenanceCostFields):
     status = serializers.ChoiceField(choices=[S for S in WorkOrder.Status.values if S != "open"])
     resolution = serializers.CharField(required=False, allow_blank=True, default="")
-    cost = serializers.DecimalField(required=False, allow_null=True, max_digits=12, decimal_places=2, min_value=0,
+    cost = MoneyField(required=False, allow_null=True, max_digits=13, decimal_places=3, min_value=0,
                                     default=None)
     parts_note = serializers.CharField(required=False, allow_blank=True, default="")
 
@@ -88,7 +89,9 @@ def visible(actor, space):
         allowed |= Q(subject_type__in=("inventory_product", "inventory_asset"))
     if feature_enabled(space, "bookings.room_maintenance") and rbac.can(actor, rbac.Action.MANAGE_BOOKINGS, space.pk):
         allowed |= Q(subject_type="bookable_space")
-    return service.scope_enabled_repairs(rows.filter(allowed), space)
+    from .work_order_technician import technician_q
+    allowed |= technician_q(actor, space)  # decision 242(n): assigned and covered work orders
+    return service.scope_enabled_repairs(rows.filter(allowed).distinct(), space)
 
 
 def _space(actor, makerspace_id):

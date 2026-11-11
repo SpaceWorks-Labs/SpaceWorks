@@ -81,20 +81,43 @@ def _email(space, to, subject, body, *, event, feature, recipient_id=None):
 
 def reporter_fixed(issue):
     """The reporter's own notice (#103). Returns whether a mail was queued."""
-    address = (issue.reporter.email if issue.reporter_id and issue.reporter else "") or issue.reporter_email
-    if not address:
-        return False
-    body = (f"Thanks for reporting a problem with {subject_label(issue)} at {issue.makerspace.name}.\n\n"
-            f"It has been fixed. Issue #{issue.pk}: {issue.title}.")
-    return bool(_email(issue.makerspace, address, f"Fixed: {issue.title}"[:200], body,
-                       event="repair_fixed", feature="maintenance"))
+    from .repair_closed_notices import notify_reporter
+    # Decision 221(f): through the pipeline (preferences, quiet hours); the direct email is kept
+    # unless the reporter's own channel already emails the same message.
+    result = notify_reporter(issue)
+    return bool(result is not None and (result.scheduled or issue.reporter_email or
+                                        (issue.reporter_id and issue.reporter and issue.reporter.email)))
+
+
+def loan_borrower_repair(issue, outcome):
+    """Tell the borrower the repair of what they returned damaged is done (`fixed`) or was
+    closed without one (`rejected`). Only for a loan handoff; never staff notes or costs.
+
+    Decision 221(f): through the pipeline (preferences, quiet hours); an account-less
+    borrower keeps one direct email. Returns whether the borrower was told.
+    """
+    from .loan_borrower_notices import notify_borrower
+    result = notify_borrower(issue, outcome)
+    return result is not None
 
 
 def bookers_outage(outage, bookings):
-    """Each affected booker hears the room is out of service; staff decide on each booking."""
+    """Each affected booker hears the room is out of service; staff decide on each booking.
+
+    Account bookers get a `bookings.room_outage` envelope (their own channels); account-less
+    guests keep the direct email to the booking's address. Booking staff get one summary.
+    """
+    from apps.bookings.event_link_notices import room_out_of_service
+    from .room_outage_notices import booker_notice, staff_notice
     room = outage.room
     sent = 0
+    if bookings:
+        staff_notice(outage, bookings)
     for booking in bookings:
+        room_out_of_service(booking, outage)  # an event it holds: its organizers (once per outage)
+        if booking.member_id:
+            sent += 1 if booker_notice(outage, booking) else 0
+            continue
         if not booking.email:
             continue
         back = f" It is expected back {outage.expected_back_at:%Y-%m-%d %H:%M}." if outage.expected_back_at else ""
@@ -121,3 +144,9 @@ def bookers_machine_repair(machine, bookings, expected_back_at=None):
 
 def register():
     register_source(KIND, NotificationSource(eligible))
+    from .room_outage_notices import register as register_outage_notices
+    register_outage_notices()
+    from .repair_closed_notices import register as register_repair_closed
+    register_repair_closed()
+    from .loan_borrower_notices import register as register_loan_borrower
+    register_loan_borrower()

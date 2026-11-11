@@ -65,7 +65,7 @@ def attach(issue, validated, stage, uploader):
     from apps.makerspaces import limits
     rows = []
     for key, size, content_type in validated:
-        limits.add_storage(issue.makerspace, size)
+        limits.charge_upload(issue.makerspace, size)
         rows.append(IssuePhoto.objects.create(issue=issue, stage=stage, object_key=key, size_bytes=size,
                                               content_type=content_type, uploaded_by=uploader))
     return rows

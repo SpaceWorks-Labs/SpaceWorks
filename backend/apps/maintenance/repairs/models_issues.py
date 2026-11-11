@@ -1,7 +1,7 @@
 """Issue reports (#103) and who works them (#98, #102).
 
 An issue names one subject (a machine, an inventory item or unit, or a room) and, when
-a member filed it, the loan, booking or machine job it came from. It moves
+a member filed it, the loan, booking, machine job or machine session it came from. It moves
 
     reported -> triaged -> assigned -> in_progress -> fixed -> closed   (or -> rejected)
 
@@ -19,6 +19,7 @@ from django.db.models import Q
 from apps.encryption.mappers import ScopedPiiModelMixin
 
 from .models_contacts import AREA_CHOICES
+from apps.payments.money_model import MoneyDecimalField
 
 SUBJECT_CHOICES = [("machine", "Machine"), ("inventory_product", "Inventory item"),
                    ("inventory_asset", "Inventory unit"), ("bookable_space", "Bookable space")]
@@ -39,6 +40,7 @@ class IssueReport(ScopedPiiModelMixin, models.Model):
         LOAN = "loan", "Loan"
         BOOKING = "booking", "Booking"
         MACHINE_JOB = "machine_job", gettext_noop("Machine job")
+        SESSION = "session", gettext_noop("Machine session")
         STAFF = "staff", "Staff"
 
     class QuoteState(models.TextChoices):
@@ -68,6 +70,13 @@ class IssueReport(ScopedPiiModelMixin, models.Model):
                                 related_name="issue_reports")
     machine_job = models.ForeignKey("machines.MachineServiceRequest", null=True, blank=True,
                                     on_delete=models.SET_NULL, related_name="issue_reports")
+    # Decision 220(d)2: the member's own machine session the report came from.
+    machine_session = models.ForeignKey("machines.MachineSession", null=True, blank=True,
+                                        on_delete=models.SET_NULL, related_name="issue_reports")
+    # The damaged return line staff handed off to repairs (one repair per line). The line keeps
+    # its return evidence; the issue only points at it and never copies the photo.
+    return_line = models.OneToOneField("hardware_requests.RequesterAccountability", null=True, blank=True,
+                                       on_delete=models.SET_NULL, related_name="repair_issue")
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                  related_name="+")
     reporter_name = models.TextField(blank=True)
@@ -80,7 +89,7 @@ class IssueReport(ScopedPiiModelMixin, models.Model):
                                       related_name="issue")
     resolution = models.TextField(blank=True)
     quote_state = models.CharField(max_length=10, choices=QuoteState.choices, default=QuoteState.NONE)
-    quote_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    quote_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     quote_currency = models.CharField(max_length=3, blank=True, default="")
     quote_note = models.TextField(blank=True)
     quote_contact = models.ForeignKey("maintenance.TechnicianContact", null=True, blank=True,

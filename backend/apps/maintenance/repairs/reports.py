@@ -11,6 +11,7 @@ from statistics import median
 
 from django.utils import timezone
 
+from apps.makerspaces.local_time import to_local
 from apps.operations.report_types import ReportResult
 
 from . import report_scope
@@ -50,7 +51,8 @@ def build_work_orders(makerspace_id, *, limit=None, date_range=None, actor=None)
     from apps.maintenance.models import WorkOrder
     if actor is None:
         return ReportResult(WORK_ORDER_FIELDS, [])
-    today, now = timezone.localdate(), timezone.now()
+    now = timezone.now()
+    today = to_local(_space(makerspace_id), now).date()
     orders = (report_scope.visible_work_orders(actor, _space(makerspace_id))
               .filter(status__in=WorkOrder.OPEN_STATUSES)
               .select_related("machine__machine_type", "product", "asset", "space", "issue"))
@@ -85,7 +87,7 @@ def build_technician_workload(makerspace_id, *, limit=None, date_range=None, act
     from apps.maintenance.models import IssueAssignment, IssueReport
     if actor is None:
         return ReportResult(WORKLOAD_FIELDS, [])
-    today = timezone.localdate()
+    today = to_local(_space(makerspace_id), timezone.now()).date()
     issues = report_scope.visible_issues(actor, _space(makerspace_id)).values("pk")
     rows = {}
     assignments = (IssueAssignment.objects.filter(issue_id__in=issues)

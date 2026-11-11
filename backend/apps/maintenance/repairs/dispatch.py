@@ -14,6 +14,8 @@ from rest_framework.exceptions import ValidationError
 
 from apps.audit import services as audit
 
+from apps.integrations.fanout_jobs import defer_enabled, maybe_defer, register
+
 from . import areas, channels, errors, history
 from .notify import subject_label
 from .services_issues import _expect, _require_manager
@@ -46,7 +48,9 @@ def message(issue, note=""):
     return "\n".join(lines)
 
 
-def dispatch(actor, issue, *, contact_ids, channel_names=None, note=""):
+def send_planned(actor, issue, *, contact_ids, channel_names=None, note=""):
+    """Validate, send over every planned channel, record the append-only rows. Runs in the Celery worker
+    (or inline where none exists): provider calls never block the staff request."""
     from apps.maintenance.models import IssueAssignment, TechnicianContact, TechnicianDispatch
     if not isinstance(contact_ids, list) or not contact_ids or len(contact_ids) > MAX_CONTACTS:
         raise ValidationError({"contact_ids": gettext('Pick one to {MAX_CONTACTS} technicians.').format(MAX_CONTACTS=MAX_CONTACTS)})
@@ -82,6 +86,32 @@ def dispatch(actor, issue, *, contact_ids, channel_names=None, note=""):
             issue.state = "assigned"
             issue.save(update_fields=["state", "updated_at"])
         audit.record(actor, "issue.dispatched", makerspace=issue.makerspace, target=issue, meta={
-            "issue_id": issue.pk, "contacts": len(plan), "sends": len(rows),
+            "issue_id": issue.pk, "machine_id": issue.machine_id, "contacts": len(plan), "sends": len(rows),
             "failed": sum(1 for row in rows if row.status == "failed")})
     return rows
+
+
+register(send_planned)
+
+
+def dispatch(actor, issue, *, contact_ids, channel_names=None, note=""):
+    """Request entry: refuse a bad send immediately, then hand the sending to a worker job (ids only)."""
+    if not defer_enabled():
+        return send_planned(actor, issue, contact_ids=contact_ids, channel_names=channel_names, note=note)
+    from apps.maintenance.models import TechnicianContact
+    if not isinstance(contact_ids, list) or not contact_ids or len(contact_ids) > MAX_CONTACTS:
+        raise ValidationError({"contact_ids": gettext('Pick one to {MAX_CONTACTS} technicians.').format(MAX_CONTACTS=MAX_CONTACTS)})
+    with transaction.atomic():  # permission, area, state and consent errors surface here, not in the worker
+        locked = history.lock(issue)
+        _require_manager(actor, locked)
+        areas.require(locked.makerspace, areas.REPAIRS[locked.area])
+        _expect(locked, "triaged", "assigned", "in_progress")
+        contacts = list(TechnicianContact.objects.select_related("person").filter(
+            makerspace_id=locked.makerspace_id, pk__in=contact_ids, is_archived=False))
+        if len(contacts) != len(set(contact_ids)):
+            raise ValidationError({"contact_ids": gettext("Choose technicians of this makerspace.")})
+        _plan(contacts, channel_names)
+        if maybe_defer(send_planned, (actor, locked), {"contact_ids": contact_ids, "channel_names": channel_names,
+                                                       "note": note}, feature="maintenance", event="repair_dispatch"):
+            return []
+    return send_planned(actor, issue, contact_ids=contact_ids, channel_names=channel_names, note=note)

@@ -10,7 +10,8 @@ def step(issue, kind, actor, action, *, contact=None, note="", occurred_on=None,
                                       note=str(note or "")[:4000], occurred_on=occurred_on, amount=amount,
                                       currency=(currency or "").lower()[:3])
     audit.record(actor, action, makerspace=issue.makerspace, target=issue, meta={
-        "issue_id": issue.pk, "area": issue.area, "state": issue.state, **(meta or {})})
+        "issue_id": issue.pk, "area": issue.area, "state": issue.state, "machine_id": issue.machine_id,
+        **(meta or {})})
     return event
 
 

@@ -17,3 +17,7 @@ class MaintenanceConfig(AppConfig):
         from .reminders_subjects import register as register_subject_reminders
 
         register_subject_reminders()
+        # Decision 223: the incident register's staff notice (recovery re-checks live authority).
+        from .incidents.notify import register as register_incidents
+
+        register_incidents()

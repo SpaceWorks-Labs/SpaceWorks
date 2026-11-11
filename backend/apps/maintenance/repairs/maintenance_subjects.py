@@ -19,6 +19,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts import rbac
 from apps.audit import services as audit
+from apps.makerspaces.local_time import to_local
 
 from . import areas, authority
 
@@ -113,7 +114,7 @@ def run(actor, schedule, *, summary, parts_note="", performed_at=None, cost=None
         cost=cost, **{FIELDS[schedule.subject_type]: subject})
     from apps.maintenance.ledger import post_subject_log
     post_subject_log(actor, log, _name(subject), method=cost_method, currency=cost_currency)
-    schedule.next_due = timezone.localdate(performed_at) + timedelta(days=schedule.interval_days)
+    schedule.next_due = to_local(schedule.makerspace, performed_at).date() + timedelta(days=schedule.interval_days)
     schedule.save(update_fields=["next_due", "updated_at"])
     audit.record(actor, "maintenance.subject_logged", makerspace=schedule.makerspace, target=log,
                  meta={"log_id": log.pk, "schedule_id": schedule.pk, "subject_type": schedule.subject_type})

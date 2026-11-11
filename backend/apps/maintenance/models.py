@@ -6,6 +6,7 @@ from django.utils import timezone
 
 
 from .models_feed import MaintenanceCalendarFeed  # noqa: F401
+from apps.payments.money_model import MoneyDecimalField
 
 
 class MaintenanceLogImmutableError(RuntimeError):
@@ -77,8 +78,8 @@ class MaintenanceLog(models.Model):
     )
     performed_at = models.DateTimeField(default=timezone.now)
     summary = models.TextField()
-    cost = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True,
+    cost = MoneyDecimalField(
+        max_digits=13, decimal_places=3, null=True, blank=True,
     )
     parts_note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -139,3 +140,5 @@ from .repairs.models_records import IssueEvent, IssuePhoto, RepairPart, Technici
 from .repairs.models_service import (  # noqa: E402,F401
     RoomOutage, SubjectMaintenanceLog, SubjectMaintenanceSchedule,
 )
+# Release 0.12.0 (decision 223): the safety incident register.
+from .incidents.models import Incident, IncidentAction  # noqa: E402,F401

@@ -51,6 +51,10 @@ def _subject_fields(subject_type, subject):
     return fields
 
 
+# A source names the origin FK it fills; only a session's differs from its source name.
+ORIGIN_FIELDS = {"session": "machine_session"}
+
+
 def file_report(space, *, reporter, source, origin, subject_type, subject, title, description, validated,
                 reporter_name="", reporter_email=""):
     """A member's or an account-less borrower's report (eligibility already proven)."""
@@ -66,7 +70,7 @@ def file_report(space, *, reporter, source, origin, subject_type, subject, title
             makerspace=space, area=area, subject_type=subject_type, source=source, reporter=reporter,
             reporter_name=str(reporter_name or "")[:200], reporter_email=str(reporter_email or "")[:254],
             title=str(title).strip()[:200], description=str(description).strip()[:4000],
-            **{source: origin}, **_subject_fields(subject_type, subject))
+            **{ORIGIN_FIELDS.get(source, source): origin}, **_subject_fields(subject_type, subject))
         photos.attach(issue, validated, "reported", reporter)
         history.step(issue, "reported", reporter, "issue.reported",
                      meta={"source": source, "subject_type": subject_type, "photos": len(validated)})
@@ -144,6 +148,7 @@ def reject(actor, issue, *, reason):
     issue.state, issue.resolution, issue.closed_at = S.REJECTED, reason[:4000], timezone.now()
     issue.save(update_fields=["state", "resolution", "closed_at", "updated_at"])
     history.step(issue, "rejected", actor, "issue.rejected", note=reason)
+    notify.loan_borrower_repair(issue, "rejected")  # a loan handoff's borrower; no-op otherwise
     return issue
 
 
@@ -225,7 +230,9 @@ def fix(actor, issue, *, resolution, photo_tokens=(), owner=None):
         _move_order(actor, issue, "done", resolution)
         photos.attach(issue, validated, "fixed", actor)
         issue.state, issue.resolution, issue.fixed_at = S.FIXED, resolution[:4000], timezone.now()
-        if issue.source != "staff" and notify.reporter_fixed(issue):
+        told_reporter = issue.source != "staff" and notify.reporter_fixed(issue)
+        told_borrower = notify.loan_borrower_repair(issue, "fixed")  # a different person from the reporter
+        if told_reporter or told_borrower:
             issue.reporter_notified_at = timezone.now()
         issue.save(update_fields=["state", "resolution", "fixed_at", "reporter_notified_at", "updated_at"])
         history.step(issue, "fixed", actor, "repair.fixed", note=resolution,

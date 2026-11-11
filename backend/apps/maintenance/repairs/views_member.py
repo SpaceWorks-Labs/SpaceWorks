@@ -1,6 +1,6 @@
 """Members report a problem with what they used, and see their own reports (#103).
 
-A member reports from their own loan, booking or machine job; anything else answers
+A member reports from their own loan, booking, machine job or machine session; anything else answers
 `reporter_not_eligible`. Claim sessions (kiosk walk-in claims) never report. Members
 never see staff notes, technicians, quotes or who works the job -- only the state.
 """
@@ -56,6 +56,9 @@ def report_subject(space, data, *, member=None, email_key=None, email=None):
         origin, subject_type, subject = reporting.booking_subject(
             space, data.get("booking_id"), token=data.get("booking_token"), member=member, email=email)
         return "booking", origin, subject_type, subject
+    if data.get("machine_session_id"):
+        origin, subject_type, subject = reporting.session_subject(space, data["machine_session_id"], member=member)
+        return "session", origin, subject_type, subject
     origin, subject_type, subject = reporting.job_subject(space, data["machine_job_id"], member=member)
     return "machine_job", origin, subject_type, subject
 
@@ -76,7 +79,7 @@ class MemberIssueListView(APIView):
             rows = rows.filter(makerspace_id=int(space))
         return Response(MemberIssueReportSerializer(rows.order_by("-created_at")[:100], many=True).data)
 
-    @extend_schema(tags=TAGS, summary="Report a problem with my loan, booking or machine job",
+    @extend_schema(tags=TAGS, summary="Report a problem with my loan, booking, machine job or machine session",
                    request=IssueReportCreateSerializer, responses={201: IssueReportCreatedSerializer, **ERRORS})
     def post(self, request):
         user = _require_owner_session(request)

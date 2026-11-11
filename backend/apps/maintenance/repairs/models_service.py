@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .models_records import AppendOnly
+from apps.payments.money_model import MoneyDecimalField
 
 ITEM_SUBJECTS = [("inventory_product", "Inventory item"), ("inventory_asset", "Inventory unit"),
                  ("bookable_space", "Bookable space")]
@@ -93,7 +94,7 @@ class SubjectMaintenanceLog(AppendOnly):
     summary = models.TextField()
     parts_note = models.TextField(blank=True)
     # #102: what the run cost; above zero it is also a `maintenance` ledger expense.
-    cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    cost = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

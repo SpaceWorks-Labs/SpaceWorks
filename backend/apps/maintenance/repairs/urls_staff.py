@@ -3,6 +3,8 @@
 from django.urls import path
 
 from . import views_contacts as contacts, views_issues as issues, views_maintenance as upkeep, views_staff as staff
+from .views_loan_handoff import LoanRepairsView
+from .views_outage_impact import RoomOutageImpactView
 
 M = "makerspaces/<int:makerspace_id>/"
 
@@ -17,6 +19,8 @@ urlpatterns = [
     path(f"{M}subject-maintenance", upkeep.SubjectScheduleListView.as_view(), name="admin-subject-maintenance"),
     path(f"{M}my-maintenance", upkeep.MyMaintenanceView.as_view(), name="admin-my-maintenance"),
     path(f"{M}room-outages", upkeep.RoomOutageListView.as_view(), name="admin-room-outages"),
+    path(f"{M}room-outages/impact", RoomOutageImpactView.as_view(), name="admin-room-outage-impact"),
+    path(f"{M}requests/<int:request_id>/repairs", LoanRepairsView.as_view(), name="admin-loan-repairs"),
     path("issues/<int:pk>", issues.IssueDetailView.as_view(), name="admin-issue-detail"),
     path("issues/<int:pk>/triage", issues.IssueTriageView.as_view(), name="admin-issue-triage"),
     path("issues/<int:pk>/reject", issues.IssueRejectView.as_view(), name="admin-issue-reject"),

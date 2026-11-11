@@ -6,6 +6,7 @@ import secrets
 from datetime import timedelta
 
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -23,8 +24,35 @@ from .models_feed import MaintenanceCalendarFeed
 
 
 def scope(actor, space):
+    """The machines whose maintenance `actor` may follow: their machine scope, plus (decision
+    220(d)3) the machine types a covering Technician's in-house contact names. Coverage only
+    widens to machine types, never to the whole space; no coverage adds nothing."""
     rows = rbac.scope_by_makerspace(actor, Machine.objects.all()).filter(makerspace=space, is_active=True)
-    return access.scope_machines_for_actor(actor, rows)
+    scoped = access.scope_machines_for_actor(actor, rows)
+    covered = _covered_types(actor, space)
+    link_machines = _linked_machines(actor, space)
+    if not covered and not link_machines:
+        return scoped
+    return rows.filter(Q(pk__in=scoped.values("pk")) | Q(machine_type_id__in=covered) | Q(pk__in=link_machines))
+
+
+def _covered_types(actor, space):
+    from .repairs import areas, authority
+    if not (areas.on(space, areas.MAINTENANCE[areas.MACHINES])
+            and rbac.can(actor, rbac.Action.RUN_MAINTENANCE, space.pk)):
+        return []
+    contact = authority.contact_for(actor, space.pk)
+    covered = [row.machine_type_id for row in contact.coverage.all() if row.kind == "machine_type"] if contact else []
+    return [*covered, *authority.membership_reach(actor, space.pk)[0]]
+
+
+def _linked_machines(actor, space):
+    """Individual machines a Technician's staff row links (the per-machine scope picker)."""
+    from .repairs import areas, authority
+    if not (areas.on(space, areas.MAINTENANCE[areas.MACHINES])
+            and rbac.can(actor, rbac.Action.RUN_MAINTENANCE, space.pk)):
+        return []
+    return list(authority.membership_reach(actor, space.pk)[1])
 
 
 def feed_space(actor, pk):
@@ -75,11 +103,20 @@ def resolve(pk, token):
 
 
 def render(actor, space):
-    from icalendar import Calendar, Event
+    from icalendar import Calendar
     calendar = Calendar()
     calendar.add("prodid", "-//SpaceWorks//Maintenance//EN")
     calendar.add("version", "2.0")
     calendar.add("x-wr-calname", f"{space.name} maintenance")
+    for event in schedule_components(actor, space):
+        calendar.add_component(event)
+    return calendar.to_ical()
+
+
+def schedule_components(actor, space):
+    """Dated schedules on the machines `actor` may see here; the combined feed reuses this (P3-1)."""
+    from icalendar import Event
+    components = []
     rows = rbac.scope_by_makerspace(actor, MaintenanceSchedule.objects.select_related("machine"),
                                     makerspace_field="machine__makerspace_id").filter(
         machine__in=scope(actor, space), is_active=True, trigger__in=("days", "both"),
@@ -93,6 +130,6 @@ def render(actor, space):
         event.add("dtend", row.next_due+timedelta(days=1))
         event.add("summary", f"{row.machine.name}: maintenance")
         event.add("description", row.description)
-        calendar.add_component(event)
+        components.append(event)
     # Usage-only thresholds have no calendar date; do not invent an ETA.
-    return calendar.to_ical()
+    return components

@@ -67,6 +67,10 @@ def visible_work_orders(actor, space):
         contact = authority.contact_for(actor, space.pk)
         if contact is not None:
             allowed |= Q(schedule__isnull=False) & _coverage_q(contact)
+        link_types, link_machines = authority.membership_reach(actor, space.pk)
+        if link_types or link_machines:
+            allowed |= Q(schedule__isnull=False, subject_type="machine") & (
+                Q(machine__machine_type_id__in=link_types) | Q(machine_id__in=link_machines))
     rows = WorkOrder.objects.filter(makerspace=space).filter(allowed & _area_q(live))
     return scope_enabled_repairs(rows, space).distinct()
 

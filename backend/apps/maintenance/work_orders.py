@@ -42,13 +42,13 @@ def may_manage(actor, order):
     return allowed or technician_may_work_order(actor, order)
 
 
-def _check(actor, order):
+def _check(actor, order, *, authorized=False):
     require_capability(order.makerspace_id, FEATURES[order.subject_type])
     issue = getattr(order, "issue", None) if order.pk else None
     if issue is not None:
         from .repairs import areas
         require_capability(order.makerspace_id, areas.REPAIRS[issue.area])
-    if not may_manage(actor, order):
+    if not authorized and not may_manage(actor, order):
         raise PermissionDenied()
 
 
@@ -78,7 +78,10 @@ def _audit_move(actor, order, status):
 
 @transaction.atomic
 def create_work_order(actor, makerspace, *, subject_type, subject, title, description="", priority="normal",
-                      due_on=None, assignee=None, takes_machine_down=False, schedule=None):
+                      due_on=None, assignee=None, takes_machine_down=False, schedule=None,
+                      authorized=False):
+    """`authorized=True` is for a caller that already proved a narrower authority (the loan
+    handoff by an `accept_request` reviewer); the capability checks still apply."""
     order = WorkOrder(makerspace=makerspace, subject_type=subject_type, title=str(title).strip()[:200],
                       description=str(description or ""), priority=priority, due_on=due_on, assignee=assignee,
                       takes_machine_down=bool(takes_machine_down) and subject_type == WorkOrder.Subject.MACHINE,
@@ -90,7 +93,7 @@ def create_work_order(actor, makerspace, *, subject_type, subject, title, descri
     setattr(order, field, subject)
     if not order.title:
         raise ValidationError({"title": gettext("Give the work order a title.")})
-    _check(actor, order)
+    _check(actor, order, authorized=authorized)
     order.full_clean()
     order.save()
     record(actor, "work_order.created", makerspace=order.makerspace, target=order,

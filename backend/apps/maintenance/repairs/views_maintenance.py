@@ -1,8 +1,10 @@
 """Item and room maintenance schedules, runs, a Technician's due list, and room outages."""
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
+from apps.payments.money_fields import MoneyField
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -47,7 +49,7 @@ class SubjectScheduleWriteSerializer(serializers.Serializer):
 class MaintenanceRunSerializer(MaintenanceCostFields):
     summary = serializers.CharField(max_length=4000)
     parts_note = serializers.CharField(max_length=2000, required=False, allow_blank=True, default="")
-    cost = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0, allow_null=True, required=False,
+    cost = MoneyField(max_digits=13, decimal_places=3, min_value=0, allow_null=True, required=False,
                                     default=None, help_text="What the run cost; above zero it reaches the ledger.")
 
 
@@ -138,6 +140,15 @@ class SubjectScheduleRunView(APIView):
         return Response(SubjectLogSerializer(log).data, status=status.HTTP_201_CREATED)
 
 
+def _require_schedule_authority(actor, machine):
+    """Decision 230 (d): a schedule outside the actor's machine types does not exist for them (404, not 403)."""
+    from apps.machines import access
+    technician_on_machine = authority.technician_on_machine
+    if not (access.can_manage_machine(actor, machine) or access.can_operate_machine(actor, machine)
+            or technician_on_machine(actor, machine)):
+        raise Http404
+
+
 class MachineScheduleRunView(APIView):
     permission_classes = [IsActiveStaff]
 
@@ -150,6 +161,7 @@ class MachineScheduleRunView(APIView):
         schedule = get_object_or_404(rbac.scope_by_makerspace(
             request.user, MaintenanceSchedule.objects.select_related("machine"),
             makerspace_field="machine__makerspace_id"), pk=pk)
+        _require_schedule_authority(request.user, schedule.machine)
         log = svc.run_machine_schedule(request.user, schedule, **body.validated_data)
         return Response({"id": log.pk, "schedule_id": schedule.pk, "subject_type": "machine",
                          "performed_at": log.performed_at, "summary": log.summary, "parts_note": log.parts_note,
@@ -167,12 +179,15 @@ class MyMaintenanceView(APIView):
         space = space_for(request.user, makerspace_id)
         require_any(space, areas.MAINTENANCE)
         contact = authority.contact_for(request.user, space.pk)
+        technician = contact is not None and rbac.can(request.user, rbac.Action.RUN_MAINTENANCE, space.pk)
         machine_rows = []
-        if areas.on(space, areas.MAINTENANCE[areas.MACHINES]) and contact is not None and rbac.can(
-                request.user, rbac.Action.RUN_MAINTENANCE, space.pk):
+        if areas.on(space, areas.MAINTENANCE[areas.MACHINES]):
             for row in MaintenanceSchedule.objects.filter(machine__makerspace=space, is_active=True).select_related(
                     "machine").order_by("next_due", "id")[:500]:
-                if authority.covers(contact, "machine", row.machine):
+                # A scoped Machine Manager sees their own types' schedules (open item A14); a covering
+                # Technician still needs RUN_MAINTENANCE plus a coverage row.
+                if areas.manager_may(request.user, space.pk, "machine", row.machine) or (
+                        technician and authority.covers(contact, "machine", row.machine)):
                     machine_rows.append({"id": row.pk, "machine_id": row.machine_id, "machine_name": row.machine.name,
                                          "description": row.description, "next_due": row.next_due})
         return Response({"machine_schedules": machine_rows, "schedules": SubjectScheduleSerializer(

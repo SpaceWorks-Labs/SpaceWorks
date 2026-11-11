@@ -203,9 +203,12 @@ def complete_due(
     return log
 
 
-def overdue_schedules(queryset=None, *, today=None):
+def overdue_schedules(queryset=None, *, today=None, makerspace=None):
     queryset = queryset if queryset is not None else MaintenanceSchedule.objects.all()
-    today = timezone.localdate() if today is None else today
+    if today is None:
+        # The space's own calendar day, not the server's (decision 220(d)).
+        from apps.makerspaces.local_time import to_local
+        today = to_local(makerspace, timezone.now()).date() if makerspace is not None else timezone.localdate()
     from .meters import due_queryset
     return due_queryset(queryset.filter(is_active=True), today).order_by(
         "next_due", "id",

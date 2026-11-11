@@ -14,3 +14,8 @@ urlpatterns = [
     path("public/technician-opt-in/<str:token>", public.TechnicianOptInView.as_view(),
          name="public-technician-opt-in"),
 ]
+
+# Release 0.12.0 (decision 223): members report incidents and near misses.
+from apps.maintenance.incidents.urls import member_urlpatterns as _incident_member_urlpatterns  # noqa: E402
+
+urlpatterns += _incident_member_urlpatterns

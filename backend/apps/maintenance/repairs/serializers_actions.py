@@ -2,6 +2,7 @@
 
 from django.utils.translation import gettext
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.models_ledger_entries import LedgerEntry
 
@@ -28,6 +29,8 @@ class IssueReportCreateSerializer(serializers.Serializer):
     booking_id = serializers.IntegerField(min_value=1, required=False)
     booking_token = serializers.UUIDField(required=False)
     machine_job_id = serializers.IntegerField(min_value=1, required=False)
+    machine_session_id = serializers.IntegerField(
+        min_value=1, required=False, help_text="One of my machine sessions (needs machines.sessions on).")
     product_id = serializers.IntegerField(min_value=1, required=False)
     asset_id = serializers.IntegerField(min_value=1, required=False)
     title = serializers.CharField(max_length=200)
@@ -35,9 +38,10 @@ class IssueReportCreateSerializer(serializers.Serializer):
     photos = PHOTOS
 
     def validate(self, attrs):
-        sources = [name for name in ("loan_id", "booking_id", "booking_token", "machine_job_id") if attrs.get(name)]
+        sources = [name for name in ("loan_id", "booking_id", "booking_token", "machine_job_id", "machine_session_id")
+                   if attrs.get(name)]
         if len(sources) != 1:
-            raise serializers.ValidationError({"source": gettext("Report from one loan, booking or machine job.")})
+            raise serializers.ValidationError({"source": gettext("Report from one loan, booking, machine job or machine session.")})
         return attrs
 
 
@@ -46,6 +50,7 @@ class PublicIssueReportCreateSerializer(IssueReportCreateSerializer):
     contact_email = serializers.EmailField(max_length=254)
     email_code = serializers.CharField(max_length=12)
     machine_job_id = None
+    machine_session_id = None
 
     def validate(self, attrs):
         if len([name for name in ("loan_id", "booking_id", "booking_token") if attrs.get(name)]) != 1:
@@ -106,7 +111,7 @@ class RepairPartWriteSerializer(serializers.Serializer):
 
 
 class RepairQuoteSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0)
     currency = serializers.CharField(min_length=3, max_length=3)
     contact_id = serializers.IntegerField(min_value=1, required=False, allow_null=True, default=None)
     note = serializers.CharField(required=False, allow_blank=True, max_length=2000, default="")
@@ -118,7 +123,7 @@ class RepairQuoteDecisionSerializer(serializers.Serializer):
 
 
 class RepairPayoutSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=0)
     currency = serializers.CharField(required=False, allow_blank=True, max_length=3, default="")
     method = serializers.ChoiceField(choices=[LedgerEntry.Method.CASH, LedgerEntry.Method.UPI,
                                               LedgerEntry.Method.BANK_TRANSFER, LedgerEntry.Method.CHEQUE,

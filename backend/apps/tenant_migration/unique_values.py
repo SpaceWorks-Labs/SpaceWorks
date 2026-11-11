@@ -68,15 +68,30 @@ from .unique_values_l16 import RULES as L16_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(L16_UNIQUE_RULES)
 from .unique_values_l3 import RULES as L3_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(L3_UNIQUE_RULES)
+from .unique_values_l3a import RULES as L3A_UNIQUE_RULES  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(L3A_UNIQUE_RULES)
 from .unique_values_r2_l6 import RULES as R2_L6_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(R2_L6_UNIQUE_RULES)
 from .unique_values_r2_l18 import RULES as R2_L18_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(R2_L18_UNIQUE_RULES)
 from .unique_values_r2_l21a import RULES as R2_L21A_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(R2_L21A_UNIQUE_RULES)
+from .unique_values_r3_events_badges import RULES as E_B2_UNIQUE_RULES  # noqa: E402  (parity E-B2)
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(E_B2_UNIQUE_RULES)
 from .unique_values_r2_l22 import RULES as R2_L22_UNIQUE_RULES  # noqa: E402
 DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(R2_L22_UNIQUE_RULES)
+from .catalog_guest_passes import unique_rules as _guest_pass_unique_rules  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_guest_pass_unique_rules(REMAP, _policy))
+from .catalog_r3_org_units import unique_rules as _r3_org_units_unique_rules  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_r3_org_units_unique_rules(REMAP, _policy))
+from .catalog_r3_org_b4 import unique_rules as _r3_org_b4_unique_rules  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_r3_org_b4_unique_rules(REMAP, _policy))
+from .catalog_l3b import unique_rules as _l3b_unique_rules  # noqa: E402
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(_l3b_unique_rules(REMAP, _policy))
 
+
+from .unique_values_booking_decision import RULES as BOOKING_DECISION_UNIQUE_RULES
+DEPLOYMENT_GLOBAL_UNIQUE_RULES.update(BOOKING_DECISION_UNIQUE_RULES)
 
 def collision_policy(model_label, field_name):
     policy = DEPLOYMENT_GLOBAL_UNIQUE_RULES.get((model_label, f"field:{field_name}"))

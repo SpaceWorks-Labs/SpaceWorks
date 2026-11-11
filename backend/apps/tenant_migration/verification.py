@@ -147,6 +147,9 @@ def _verify_reference_remaps(archive, models, pk_map, references):
             except PrimaryKeyMapUnavailable:
                 continue
             names = [field.attname for field in user_fields] + semantic_fields
+            equipment_receipt = label in {"inventory.EquipmentProposalReceipt", "inventory.EquipmentConsumableUseReceipt"}
+            if equipment_receipt:
+                names.append("imported_nonreplayable")
             actual = model._base_manager.values(*names).get(pk=target_pk)
             for field in user_fields:
                 if field.attname not in source:
@@ -158,6 +161,17 @@ def _verify_reference_remaps(archive, models, pk_map, references):
                         )
                 source_id = source.get(field.attname)
                 expected = None
+                if equipment_receipt and field.name == "creator":
+                    if source_id:
+                        try:
+                            mapped = pk_map.lookup(User, source_id)
+                        except PrimaryKeyMapUnavailable:
+                            mapped = None
+                        if mapped is not None and references.equipment_identity_resolved(source_id, mapped):
+                            expected = mapped
+                    if actual[field.attname] != expected or (expected is None and not actual["imported_nonreplayable"]):
+                        raise ImportVerificationError("Equipment creator resolution was not retained safely.")
+                    continue
                 if source_id and label not in {
                     "audit.AuditLog",
                     "makerspaces.Makerspace",

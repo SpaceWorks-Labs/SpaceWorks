@@ -9,7 +9,7 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 from rest_framework.response import Response
 
 from .gate_errors import SourceMigrationGateError
-from .insertion_errors import TenantInsertionError
+from .insertion_errors import TenantInsertionError, VenueFeeDebtProvenanceUnavailable
 from .preflight import SourcePreflightError
 from .protocol_errors import TenantMigrationProtocolError, UploadOffsetMismatchError
 from .serializers import FieldValidationErrorSerializer, TypedErrorSerializer
@@ -51,6 +51,8 @@ def protocol_error(exc):
         return Response(
             data, status=status.HTTP_409_CONFLICT
         )
+    if isinstance(exc, VenueFeeDebtProvenanceUnavailable):
+        return Response({"detail": str(exc), "code": exc.code}, status=status.HTTP_409_CONFLICT)
     if isinstance(exc, TenantInsertionError):
         return Response(
             {"detail": str(exc), "code": "invalid_archive"},

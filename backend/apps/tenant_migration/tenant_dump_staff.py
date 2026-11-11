@@ -10,7 +10,7 @@ from .tenant_dump_raw import SanitizedRow
 
 
 STAFF_CHILD_LABELS = (
-    'makerspaces.MembershipAdditionalRole', 'machines.MembershipMachineTypeScope',
+    'makerspaces.MembershipAdditionalRole', 'machines.MembershipMachineTypeScope', 'machines.MembershipMachineScope',
 )
 
 

@@ -99,7 +99,9 @@ class TenantDumpCatalogError(AssertionError):
 # lane/r2-l9: accounts/0057 User.preferred_locale, makerspaces/0132 Makerspace.default_locale (phase 8 i18n); re-pinned.
 # Public-stat visibility: makerspaces/0133 adds public_stats_config JSON; class-metadata pin derived read-only.
 # Orchestrator verifies this against actual post-migration schema before release.
-CATALOG_SCHEMA_SHA256 = "cfee5d44737f36eb21e49421c79e18a1b5e6e226960e435c9060b9d8d1e7d576"
+# 0.12.0 pins (216 events/bookings/maintenance, P2-1 workshop machines, 220(d)2, 221(b), then the
+# 221-223 release lanes): each lane's migration additions are folded in; re-pinned at consolidation.
+CATALOG_SCHEMA_SHA256 = "8bb6c31fc9d9a59aedc33353be10bd02734ff42ed82db6bbcc2f8cd036fb63a3"
 
 
 def catalog_models(apps_registry=apps):

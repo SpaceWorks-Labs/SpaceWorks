@@ -29,7 +29,7 @@ RULES = {
     ("card_designs.CardApprovalSetting", "uniq_card_approval_programme"): _policy(REMAP, _FOLLOW),
     ("card_designs.CardApprovalSetting", "uniq_card_approval_event"): _policy(REMAP, _FOLLOW),
     **{("card_designs.CardPhotoRequest", f"uniq_open_photo_request_{field}"): _policy(REMAP, _FOLLOW)
-       for field in ("member_card", "programme_card", "event_card")},
+       for field in ("member_card", "programme_card", "event_card", "staff_card")},
     ("id_programmes.IdProgramme", "uniq_id_programme_slug"): _policy(
         REMAP, "A programme slug is unique within its organisation; follows the remapped organisation."),
     **{("id_programmes.IdProgrammeCard", name): _policy(REMAP, _FOLLOW) for name in (

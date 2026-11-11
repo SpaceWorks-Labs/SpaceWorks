@@ -27,6 +27,7 @@ def _build(entries):
 
 
 AUTHORITY_FIELD_OVERRIDES = _build((
+    (("inventory.EquipmentKitTemplate", "published_for_contexts"), authority(D.RESET, "Target staff explicitly republish imported kits.")),
     *((edge, authority(D.RESET, policy.reason)) for edge, policy in PROGRAMME_TARGET_FIELDS.items()),
     *((edge, authority(D.RESET, policy.reason)) for edge, policy in REIMBURSEMENT_TARGET_FIELDS.items()),
     *AUTHORITY_ENTRIES,

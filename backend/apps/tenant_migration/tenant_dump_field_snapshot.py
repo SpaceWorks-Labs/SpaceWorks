@@ -59,6 +59,8 @@ for _label, _names in L23_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
 from .catalog_l16 import FIELD_NAMES as L16_FIELDS  # noqa: E402
 FIRST_PARTY_FIELD_NAMES.update(L16_FIELDS)
+from .catalog_l3a import FIELD_NAMES as L3A_FIELDS  # noqa: E402
+FIRST_PARTY_FIELD_NAMES.update(L3A_FIELDS)
 
 AUTO_CREATED_FIELD_NAMES = {
     'auth.Group_permissions': frozenset('group id permission'.split()),
@@ -231,3 +233,34 @@ for _label, _names in R2_SUPERADMIN_EXTRA.items():
 from .catalog_r2_l9 import EXTRA_FIELDS as R2_L9_EXTRA  # noqa: E402
 for _label, _names in R2_L9_EXTRA.items():
     FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_o_b6 import EXTRA_FIELDS as O_B6_EXTRA  # noqa: E402
+for _label, _names in O_B6_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_o_b2 import EXTRA_FIELDS as O_B2_EXTRA  # noqa: E402
+for _label, _names in O_B2_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names
+from .catalog_e_b8 import EXTRA_FIELDS as E_B8_EXTRA, FIELD_NAMES as E_B8_FIELDS  # noqa: E402  (parity E-B8)
+for _label, _names in E_B8_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names
+FIRST_PARTY_FIELD_NAMES.update(E_B8_FIELDS)
+from .catalog_r3_events_badges import EXTRA_FIELDS as E_B2_EXTRA, FIELD_NAMES as E_B2_FIELDS  # noqa: E402  (parity E-B2)
+FIRST_PARTY_FIELD_NAMES.update(E_B2_FIELDS)
+for _label, _names in E_B2_EXTRA.items():
+    FIRST_PARTY_FIELD_NAMES[_label] |= _names
+
+from .catalog_loan_context import FIELD_NAMES as LOAN_CONTEXT_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(LOAN_CONTEXT_FIELD_NAMES)
+from .catalog_equipment_proposals import FIELD_NAMES as EQUIPMENT_PROPOSAL_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(EQUIPMENT_PROPOSAL_FIELD_NAMES)
+from .catalog_guest_passes import FIELD_NAMES as GUEST_PASS_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(GUEST_PASS_FIELD_NAMES)
+from .catalog_r3_org_units import FIELD_NAMES as R3_ORG_UNIT_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(R3_ORG_UNIT_FIELD_NAMES)
+from .catalog_r3_org_b4 import FIELD_NAMES as R3_ORG_B4_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(R3_ORG_B4_FIELD_NAMES)
+from .catalog_l3b import FIELD_NAMES as L3B_FIELD_NAMES
+FIRST_PARTY_FIELD_NAMES.update(L3B_FIELD_NAMES)
+FIRST_PARTY_FIELD_NAMES["makerspaces.Makerspace"] |= {"loan_context_generations"}
+
+from .catalog_booking_decision import FIELD_NAMES as BOOKING_DECISION_FIELDS
+FIRST_PARTY_FIELD_NAMES.update(BOOKING_DECISION_FIELDS)

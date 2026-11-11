@@ -11,6 +11,7 @@ _FOLLOW = "Unique per remapped parent row; follows the imported parent."
 
 RULES = {
     ("shop.ShopKitComponent", "shop_kit_component_unique"): _policy(REMAP, _FOLLOW),
+    ("shop.ShopEventOffer", "shop_event_offer_unique"): _policy(REMAP, _FOLLOW),
     ("shop.ShopCheckoutHold", "shop_hold_one_per_variant"): _policy(REMAP, _FOLLOW),
     ("shop.ShopOrder", "field:status_secret"): _policy(FRESH, "A guest status-link secret is bearer material; "
                                                               "the target mints a fresh one."),

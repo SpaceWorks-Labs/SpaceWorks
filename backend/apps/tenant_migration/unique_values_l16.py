@@ -23,4 +23,6 @@ RULES = {
         generator=_photo_key),
     ("maintenance.RoomOutage", "room_outage_one_open"): _policy(REMAP, _FOLLOWS),
     ("maintenance.IssueReport", "field:work_order"): _policy(REMAP, "One issue per work order; follows the import."),
+    ("maintenance.IssueReport", "field:return_line"): _policy(
+        REMAP, "One repair per damaged return line; follows the import."),
 }

@@ -27,7 +27,7 @@ THIRD_PARTY_INSTALLED_APP_LABELS = frozenset(
 # Lane-D-specific review.
 PROJECTED_MODEL_LABELS = frozenset(
     """operations.SavedView accounts.User apiclients.ApiKeyRequest audit.AuditLog
-    makerspaces.MembershipAdditionalRole machines.MembershipMachineTypeScope
+    makerspaces.MembershipAdditionalRole machines.MembershipMachineTypeScope machines.MembershipMachineScope
     notifications.MemberNotificationPreference notifications.NotificationPreference
     bookings.BookableSpace bookings.Booking boxes.Box
     boxes.BoxScan boxes.QrCode boxes.QrScanEvent devices.Device devices.DeviceEvent
@@ -110,6 +110,8 @@ from .catalog_l23 import PROJECTED_LABELS as L23_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= L23_PROJECTED
 from .catalog_l16 import PROJECTED_LABELS as L16_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= L16_PROJECTED
+from .catalog_l3a import PROJECTED_LABELS as L3A_PROJECTED  # noqa: E402
+PROJECTED_MODEL_LABELS |= L3A_PROJECTED
 from .catalog_l3 import PROJECTED_LABELS as L3_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= L3_PROJECTED
 from .catalog_r2_l6 import PROJECTED_LABELS as R2_L6_PROJECTED  # noqa: E402
@@ -118,6 +120,8 @@ from .catalog_r2_l18 import PROJECTED_LABELS as R2_L18_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= R2_L18_PROJECTED
 from .catalog_r2_l21a import PROJECTED_LABELS as R2_L21A_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= R2_L21A_PROJECTED
+from .catalog_r3_events_badges import PROJECTED_LABELS as E_B2_PROJECTED  # noqa: E402  (parity E-B2)
+PROJECTED_MODEL_LABELS |= E_B2_PROJECTED
 from .catalog_r2_l22 import PROJECTED_LABELS as R2_L22_PROJECTED  # noqa: E402
 PROJECTED_MODEL_LABELS |= R2_L22_PROJECTED
 from .catalog_hackmoney_payments import PROJECTED_LABELS as HACKMONEY_PROJECTED  # noqa: E402
@@ -129,6 +133,19 @@ from .catalog_public_pages import EXPORTED_FIELDS as PAGE_EXPORTED_FIELDS
 PROJECTED_MODEL_LABELS |= PAGE_EXPORTED_FIELDS.keys()
 
 PROJECTED_MODEL_LABELS |= frozenset({"inventory.InventoryStockSnapshot", "machines.MachineStatusEvent", "machines.ConsumableCostRecord"})
+
+from .catalog_loan_context import PROJECTED_LABELS as LOAN_CONTEXT_PROJECTED
+PROJECTED_MODEL_LABELS |= LOAN_CONTEXT_PROJECTED
+from .catalog_equipment_proposals import PROJECTED_LABELS as EQUIPMENT_PROPOSAL_PROJECTED
+PROJECTED_MODEL_LABELS |= EQUIPMENT_PROPOSAL_PROJECTED
+from .catalog_guest_passes import PROJECTED_LABELS as GUEST_PASS_PROJECTED
+PROJECTED_MODEL_LABELS |= GUEST_PASS_PROJECTED
+from .catalog_r3_org_units import PROJECTED_LABELS as R3_ORG_UNIT_PROJECTED
+PROJECTED_MODEL_LABELS |= R3_ORG_UNIT_PROJECTED
+from .catalog_r3_org_b4 import PROJECTED_LABELS as R3_ORG_B4_PROJECTED
+PROJECTED_MODEL_LABELS |= R3_ORG_B4_PROJECTED
+from .catalog_l3b import PROJECTED_LABELS as L3B_PROJECTED
+PROJECTED_MODEL_LABELS |= L3B_PROJECTED
 
 PRESERVE_LIVE_MODEL_LABELS = frozenset({"machines.MachineOperator"})
 
@@ -188,6 +205,8 @@ from .catalog_events_programme import EXPORTED_FIELDS as PROGRAMME_PROJECTED_FIE
 PROJECTED_MODEL_LABELS |= PROGRAMME_PROJECTED_FIELDS.keys()
 from .catalog_reimbursements import EXPORTED_FIELDS as REIMBURSEMENT_PROJECTED_FIELDS
 PROJECTED_MODEL_LABELS |= REIMBURSEMENT_PROJECTED_FIELDS.keys()
+from .catalog_booking_decision import PROJECTED_LABELS as BOOKING_DECISION_PROJECTED
+PROJECTED_MODEL_LABELS |= BOOKING_DECISION_PROJECTED
 FIRST_PARTY_MODEL_RULES = _model_rules()
 
 AUTO_CREATED_TABLE_RULES = {

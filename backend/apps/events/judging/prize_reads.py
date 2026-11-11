@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from django.db.models import Sum
 from django.http import Http404
+from django.utils import timezone
 
 from .models_payouts import HackathonPrizePayout
 from .models_prize_money import HackathonPrizeClaim, HackathonPrizeOutcome, HackathonPrizeShare
@@ -48,19 +49,23 @@ def my_prizes(actor, makerspace_id):
             continue
         if not current_awards(event).filter(pk=award.pk).exists():
             continue  # only the published result counts
-        share = HackathonPrizeShare.objects.filter(award=award, member=actor).first()
-        payout = HackathonPrizePayout.objects.filter(award=award, recipient=actor, kind="payout",
-                                                     reversal__isnull=True).first()
+        from .payout_split import lineage_shares
+        from .prize_lineage import standing_payouts
+        share = lineage_shares(award).filter(member=actor).first()
+        payout = standing_payouts(award).filter(recipient=actor).first()
         claim = HackathonPrizeClaim.objects.filter(share=share).first() if share else None
         is_leader = leader_of(runtime().snapshot(award.submission_snapshot_id)) == actor.pk
         actions = []
         if payout is None and award.prize.kind == "cash" and award.prize.funding == "space":
-            if share is None and is_leader and not HackathonPrizeShare.objects.filter(award=award).exists():
+            if share is None and is_leader and not lineage_shares(award).exists():
                 actions += ["propose_split", "claim"]
             if share is not None and share.state == "proposed":
                 actions += ["confirm_share", "decline_share"]
             if share is not None and share.state == "confirmed":
                 actions += ["claim"] + (["remove_claim"] if claim and claim.submitted_at and not claim.cleared_at else [])
+            deadline = claim_deadline(event)
+            if deadline is not None and timezone.now() > deadline:
+                actions = [a for a in actions if a not in ("claim", "propose_split")]  # the window has closed
         rows.append({"award_id": award.pk, "event_id": event.pk, "event_title": event.title,
                      "prize_name": award.prize_name, "rank": award.rank, "kind": award.prize.kind,
                      "value_text": award.prize.value_text, "status": award_status(award),
@@ -123,10 +128,10 @@ def prize_pool(event):
     standing = HackathonPrizePayout.objects.filter(event=event, kind="payout", reversal__isnull=True)
     totals = standing.aggregate(gross=Sum("amount"), tds=Sum("tds_amount"))
     owed = ZERO
-    from .payout_split import award_status
+    from .payout_split import owed_amount
     for award in current_awards(event):
-        if award.prize.kind == "cash" and award.prize.funding == "space" and award_status(award) == "owed":
-            owed += award.prize.amount_per_winner or ZERO
+        if award.prize.kind == "cash" and award.prize.funding == "space":
+            owed += owed_amount(award)  # part-paid prizes still owe their unpaid shares
     from .peoples_choice_money import owed as peoples_choice_owed
     owed += peoples_choice_owed(event)  # #181: a People's choice cash prize is owed like a judged one.
     recovered = HackathonPrizeOutcome.objects.filter(event=event, kind="recovery_repaid").aggregate(

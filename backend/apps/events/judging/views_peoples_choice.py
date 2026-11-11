@@ -5,6 +5,7 @@ from drf_spectacular.utils import extend_schema_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from apps.payments.payout_session import require_full_session
 from apps.events.submissions.gallery_projection import public_event
 from . import peoples_choice as config
 from . import peoples_choice_ballots as ballots
@@ -79,6 +80,7 @@ class PeoplesChoiceVoteVoid(PrivateView):
                                             "Event Manager); one L5 ledger expense. Reverse it on the L21b route."))
 class PeoplesChoicePayouts(PrivateView):
     def get(self, request, pk):
+        require_full_session(request)  # 224(c): prize payouts are payee money, session-only
         return Response({"winners": pc_payouts.payable(pk, actor=request.user)})
 
     def post(self, request, pk):

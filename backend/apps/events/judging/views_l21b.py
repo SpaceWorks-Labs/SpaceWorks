@@ -6,6 +6,7 @@ Every write delegates to its workflow, which holds the event lock, the command r
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework.response import Response
 
+from apps.payments.payout_session import require_full_session
 from . import finalists, options, payouts, progress
 from .api_common import ERRORS, PrivateView, admin_event, paginated, schema
 from .models_finalists import FinalistAdvance
@@ -105,6 +106,7 @@ class ResultsSendEmail(PrivateView):
                                             "writes one L5 ledger expense. Never moves money."))
 class PrizePayouts(PrivateView):
     def get(self, request, pk):
+        require_full_session(request)  # 224(c): prize payouts are payee money, session-only
         rows, awards = payouts.listing(pk, actor=request.user)
         return paginated(request, rows, PayoutRead, awards=PrizePayableAwardRead(awards, many=True).data)
 

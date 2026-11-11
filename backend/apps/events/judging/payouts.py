@@ -64,10 +64,15 @@ def record_payout(event_id, *, actor, data):
                 raise ValidationError({"recipient_id": gettext("Pay a member of the winning team.")})
             if values["expected_version"] != 0:
                 raise ProgrammeError("stale_version", "A new payout uses expected_version 0.", current_version=0)
+            from .payout_checks import require_verified_claim
             from .payout_split import payout_amount
+            from .prize_precision import require_precision
+            require_verified_claim(event, award, recipient, actor)  # verified details, and a second person (C-38 unchanged)
             amount = payout_amount(award, recipient, values.get("amount"))
+            require_precision("amount", amount, event.makerspace)
             from .prize_tax import proposed_tds
             tds = values["tds_amount"] if values.get("tds_amount") is not None else proposed_tds(event.makerspace, amount)
+            require_precision("tds_amount", tds, event.makerspace)
             if tds >= amount:
                 raise ValidationError({"tds_amount": gettext("Tax deducted must be less than the gross prize.")})
             from apps.payments.ledger_api import record_expense
@@ -105,7 +110,8 @@ def _require_payable(award):
     if award.prize.kind != "cash":
         raise ProgrammeError("non_cash_prize", "Record a non-cash prize as handed over or shipped.")
     from .models_prize_money import HackathonPrizeOutcome
-    if HackathonPrizeOutcome.objects.filter(award=award, share__isnull=True,
+    from .prize_lineage import lineage_ids
+    if HackathonPrizeOutcome.objects.filter(award_id__in=lineage_ids(award), share__isnull=True,
                                             kind__in=("fulfilled", "sponsor_paid", "forfeited")).exists():
         raise ProgrammeError("already_settled", "This prize is already settled.")
 
@@ -141,6 +147,10 @@ def reverse_payout(event_id, payout_id, *, actor, data):
                 raise ProgrammeError("stale_version", "Reversals use expected_version 0.", current_version=0)
             if HackathonPrizePayout.objects.filter(reverses=payout).exists():
                 raise ProgrammeError("already_reversed", "This payout is already reversed.")
+            from .models_prize_money import HackathonPrizeOutcome
+            if HackathonPrizeOutcome.objects.filter(payout=payout, kind="recovery_opened",
+                                                    resolution__isnull=True).exists():
+                raise ProgrammeError("recovery_open", "Close the open recovery for this payout before reversing it.")
             from apps.payments.ledger_api import void
             void(payout.ledger_entry, actor, values["reason"])
             row = HackathonPrizePayout.objects.create(
@@ -175,18 +185,21 @@ def payable_awards(event):
     state = ResultPublicationState.objects.filter(event=event).select_related("current_announcement").first()
     if state is None or state.current_announcement_id is None:
         return []
-    paid = set(HackathonPrizePayout.objects.filter(event=event, kind="payout", reversal__isnull=True)
-               .values_list("award_id", flat=True))
     from .payout_split import award_extras
+    from .prize_lineage import standing_payouts
     return [{"id": award.pk, "prize_name": award.prize_name, "rank": award.rank,
              "title": runtime().snapshot(award.submission_snapshot_id).title,
-             "amount_per_winner": award.prize.amount_per_winner, "paid": award.pk in paid, **award_extras(award)}
+             "amount_per_winner": award.prize.amount_per_winner, "paid": standing_payouts(award).exists(),
+             **award_extras(award)}
             for award in EventAward.objects.select_related("prize").filter(
                 result_id=state.current_announcement.result_id).order_by("prize_id", "rank")]
 
 
 def projection(row, *, recorder=True):
-    reversible = recorder and row.kind == "payout" and not HackathonPrizePayout.objects.filter(reverses=row).exists()
+    from .models_prize_money import HackathonPrizeOutcome
+    reversible = (recorder and row.kind == "payout" and not HackathonPrizePayout.objects.filter(reverses=row).exists()
+                  and not HackathonPrizeOutcome.objects.filter(payout=row, kind="recovery_opened",
+                                                               resolution__isnull=True).exists())
     # A People's choice payout (#181) names its winning standing instead of a judged award.
     name = row.award.prize_name if row.award_id else row.peoples_choice_standing.result.prize_name
     return {"id": row.pk, "event_id": row.event_id, "award_id": row.award_id, "prize_id": row.prize_id,

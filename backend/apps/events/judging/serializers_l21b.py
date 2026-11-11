@@ -4,6 +4,7 @@ from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from .serializers import ClosedSerializer, CommandInput, IdList, ResultEnvelope
 
@@ -113,12 +114,12 @@ class PayoutInput(CommandInput):
     award_id = serializers.IntegerField(min_value=1)
     recipient_id = serializers.IntegerField(min_value=1, required=False,
                                             help_text="A member of the winning team; defaults to the team leader.")
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"), required=False)
+    amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"), required=False)
     method = serializers.ChoiceField(choices=("cash", "upi", "bank_transfer", "card", "cheque", "online", "other"))
-    reference = serializers.CharField(max_length=64, allow_blank=True, default="")
+    reference = serializers.CharField(max_length=64, help_text="The transfer, UPI or cheque reference; required.")
     paid_on = serializers.DateField()
     receipt_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
-    tds_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False,
+    tds_amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0"), required=False,
                                           allow_null=True, help_text="Prize tax deducted (#181, record only). Omit "
                                           "to use the space's proposal; 0 records none.")
 
@@ -138,9 +139,9 @@ class PayoutRead(ClosedSerializer):
     recipient_id = serializers.IntegerField(allow_null=True)
     kind = serializers.CharField()
     reverses_id = serializers.IntegerField(allow_null=True)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, help_text="Gross: the ledger expense.")
-    tds_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    net_amount = serializers.DecimalField(max_digits=12, decimal_places=2, help_text="What reached the winner.")
+    amount = MoneyField(max_digits=13, decimal_places=3, help_text="Gross: the ledger expense.")
+    tds_amount = MoneyField(max_digits=13, decimal_places=3)
+    net_amount = MoneyField(max_digits=13, decimal_places=3, help_text="What reached the winner.")
     currency = serializers.CharField()
     method = serializers.CharField()
     reference = serializers.CharField(allow_blank=True)
@@ -153,13 +154,13 @@ class PayoutRead(ClosedSerializer):
 class PrizeTaxProposal(ClosedSerializer):
     enabled = serializers.BooleanField()
     rate = serializers.DecimalField(max_digits=5, decimal_places=2)
-    threshold = serializers.DecimalField(max_digits=12, decimal_places=2)
+    threshold = MoneyField(max_digits=13, decimal_places=3)
 
 
 class PrizeShareRow(ClosedSerializer):
     id = serializers.IntegerField()
     member_id = serializers.IntegerField(allow_null=True)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     state = serializers.CharField()
     paid = serializers.BooleanField()
 
@@ -169,7 +170,7 @@ class PrizePayableAwardRead(ClosedSerializer):
     prize_name = serializers.CharField()
     rank = serializers.IntegerField()
     title = serializers.CharField()
-    amount_per_winner = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    amount_per_winner = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     paid = serializers.BooleanField()
     kind = serializers.CharField()
     funding = serializers.CharField()
@@ -195,9 +196,9 @@ class OptionsInput(CommandInput):
     refund_on_disqualification = serializers.BooleanField(required=False)
     refund_on_withdrawal = serializers.BooleanField(required=False)
     refund_if_not_shortlisted = serializers.BooleanField(required=False)
-    entry_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+    entry_fee = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"),
                                          allow_null=True, required=False)
-    team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+    team_fee = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"),
                                         allow_null=True, required=False)
     stage_reminder_email = serializers.BooleanField(required=False)  # #178: stage deadline reminders.
     shortlist_email = serializers.BooleanField(required=False)  # #179: shortlisted and not-shortlisted teams.
@@ -206,7 +207,7 @@ class OptionsInput(CommandInput):
     show_prize_amounts = serializers.BooleanField(required=False, help_text="G6: prizes on the public page.")
     prize_claim_days = serializers.IntegerField(min_value=1, max_value=365, allow_null=True, required=False,
                                                 help_text="G4: days after results in which winners claim.")
-    deposit_amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+    deposit_amount = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"),
                                               allow_null=True, required=False,
                                               help_text="G10: refundable deposit (events.deposits).")
     deposit_requires_submission = serializers.BooleanField(required=False)
@@ -222,11 +223,11 @@ class OptionsRead(ResultEnvelope):
     refund_on_disqualification = serializers.BooleanField()
     refund_on_withdrawal = serializers.BooleanField()
     refund_if_not_shortlisted = serializers.BooleanField()
-    entry_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
-    team_fee = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    entry_fee = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
+    team_fee = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     show_prize_amounts = serializers.BooleanField()
     prize_claim_days = serializers.IntegerField(allow_null=True)
-    deposit_amount = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    deposit_amount = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     deposit_requires_submission = serializers.BooleanField()
     deposits_settled_at = serializers.DateTimeField(allow_null=True)
     currency = serializers.CharField()

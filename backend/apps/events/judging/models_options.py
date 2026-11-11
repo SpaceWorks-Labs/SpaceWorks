@@ -8,6 +8,7 @@ from django.db import models
 from django.db.models import Q
 
 from .models_base import EventOwned
+from apps.payments.money_model import MoneyDecimalField
 
 
 class HackathonProgrammeOptions(EventOwned):
@@ -27,11 +28,11 @@ class HackathonProgrammeOptions(EventOwned):
     # Hack-money G10 (`events.deposits`): an optional refundable commitment deposit, raised when a place
     # is confirmed. After the event staff approve ONE settlement batch: attendees (who also submitted,
     # when required) get a refund DUE case, no-shows keep the charge. Money moves only on staff approval.
-    deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    deposit_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     deposit_requires_submission = models.BooleanField(default=False)
     deposits_settled_at = models.DateTimeField(null=True, blank=True)
-    entry_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    team_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    entry_fee = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
+    team_fee = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     # #178/#179 emails start OFF like every hackathon email (C-37): stage deadline reminders and shortlist results.
     stage_reminder_email = models.BooleanField(default=False)
     shortlist_email = models.BooleanField(default=False)

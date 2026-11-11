@@ -6,12 +6,15 @@ per-event switch); charges for entry fees and team registration use the payments
 (not reversed), belong to the recipient and sit in a servable space with events on.
 """
 
+from django.utils.translation import gettext
 from apps.integrations.notification_links import local_link
 from apps.integrations.notification_outbox import emit
+from apps.integrations.fanout_jobs import deferred_fanout
 
 PAYOUT_SOURCE = "events.prize_payout"
 
 
+@deferred_fanout()
 def payout_recorded_notice(payout):
     from django.db import transaction
     from apps.accounts.models import User
@@ -25,11 +28,20 @@ def payout_recorded_notice(payout):
              stream="events", event="prize_payout_recorded", audience="requester",
              dedup_key=f"ev:{PAYOUT_SOURCE}:{payout.pk}:prize_payout_recorded:1", source_kind=PAYOUT_SOURCE,
              source_id=str(payout.pk), revision="1", subject=payout, context={"event_id": event.pk, "payout_id": payout.pk},
-             rendered={"subject": f"Your prize for {event.title} was paid",
-                       "text": f"The organisers of {event.title} recorded your prize payment: {payout.amount} "
-                               f"{payout.currency.upper()} ({payout.prize.name}).",
-                       "html": "", "link": local_link(event.makerspace, "member", "events/history")})
+             rendered=lambda: {
+                 "subject": gettext("Your prize for %(title)s was paid") % {"title": event.title},
+                 "text": gettext("The organisers of %(title)s recorded your prize payment: %(amount)s "
+                                 "(%(prize)s).") % {"title": event.title, "amount": _paid_text(payout),
+                                                    "prize": payout.prize.name},
+                 "html": "", "link": local_link(event.makerspace, "member", "events/history")})
     transaction.on_commit(send)
+
+
+def _paid_text(payout):
+    """What reached the winner (net of any tax deducted), always with its currency: "INR 4500.00"."""
+    from apps.payments.money import money_text
+    net = payout.net_amount if payout.net_amount is not None else payout.amount - payout.tds_amount
+    return f"{payout.currency.upper()} {money_text(net)}"
 
 
 def payout_eligible(envelope):

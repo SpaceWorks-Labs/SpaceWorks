@@ -6,7 +6,7 @@ exists; `accounts/programme_route_catalog` records that decision per route.
 import json
 
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -17,8 +17,8 @@ from apps.events.hackathons.api_base import ProgrammeCommandThrottle, ProgrammeV
 from apps.events.hackathons.api_schema import ERRORS
 from apps.events.models import Event
 from apps.events.serializers_participation import (
-    CateringSerializer, CrewAddInput, CrewDecisionInput, CrewOwnSerializer, CrewRowSerializer, CrewSignupInput,
-    CrewSignupStateSerializer, PublicCrewSerializer,
+    CateringSerializer, CrewAddInput, CrewDecisionInput, CrewOwnSerializer, CrewReorderInput, CrewRowSerializer,
+    CrewSignupInput, CrewSignupStateSerializer, CrewUpdateInput, PublicCrewSerializer,
 )
 
 from . import crew_reads, crew_workflow
@@ -46,10 +46,13 @@ class CrewStaffView(ProgrammeView):
 
 
 class CrewRosterView(CrewStaffView):
-    @extend_schema(tags=TAGS, request=None, responses={200: CrewRowSerializer(many=True), **ERRORS})
+    @extend_schema(tags=TAGS, request=None, responses={200: CrewRowSerializer(many=True), **ERRORS},
+                   parameters=[OpenApiParameter("kind", str, enum=["organiser", "volunteer", "mentor", "judge"],
+                                                description="Filter by crew kind; ignored while `events.crew_kinds` is off.")])
     def get(self, request, pk):
         event = self.target(request, pk)
-        return Response([masked(request, event, crew_reads.project_staff(row)) for row in crew_reads.roster(event)])
+        rows = crew_reads.roster(event, kind=request.query_params.get("kind"))
+        return Response([masked(request, event, crew_reads.project_staff(row)) for row in rows])
 
     @extend_schema(tags=TAGS, request=CrewAddInput, responses={201: CrewRowSerializer, **ERRORS},
                    summary="Add someone to the crew; they get a free crew place")
@@ -58,7 +61,8 @@ class CrewRosterView(CrewStaffView):
         data = CrewAddInput(data=request.data)
         data.is_valid(raise_exception=True)
         member = get_object_or_404(User, pk=data.validated_data["member_id"], is_active=True)
-        crew = crew_workflow.add(event, actor=request.user, member=member, crew_role=data.validated_data["crew_role"])
+        crew = crew_workflow.add(event, actor=request.user, member=member, crew_role=data.validated_data["crew_role"],
+                                 kind=data.validated_data["kind"])
         return Response(masked(request, event, crew_reads.project_staff(crew)), status=201)
 
 
@@ -70,6 +74,30 @@ class CrewDecisionView(CrewStaffView):
         data.is_valid(raise_exception=True)
         crew = crew_workflow.decide(event, actor=request.user, crew_id=crew_id, **data.validated_data)
         return Response(masked(request, event, crew_reads.project_staff(crew)))
+
+
+class CrewDetailView(CrewStaffView):
+    http_method_names = ["patch", "options"]
+
+    @extend_schema(tags=TAGS, request=CrewUpdateInput, responses={200: CrewRowSerializer, **ERRORS},
+                   summary="Staff edit a crew member's label, kind or public visibility")
+    def patch(self, request, pk, crew_id):
+        event = self.target(request, pk)
+        data = CrewUpdateInput(data=request.data)
+        data.is_valid(raise_exception=True)
+        crew = crew_workflow.update(event, actor=request.user, crew_id=crew_id, **data.validated_data)
+        return Response(masked(request, event, crew_reads.project_staff(crew)))
+
+
+class CrewReorderView(CrewStaffView):
+    @extend_schema(tags=TAGS, request=CrewReorderInput, responses={200: CrewRowSerializer(many=True), **ERRORS},
+                   summary="Set the staff order of the crew")
+    def post(self, request, pk):
+        event = self.target(request, pk)
+        data = CrewReorderInput(data=request.data)
+        data.is_valid(raise_exception=True)
+        crew_workflow.reorder(event, actor=request.user, ids=data.validated_data["ids"])
+        return Response([masked(request, event, crew_reads.project_staff(row)) for row in crew_reads.roster(event)])
 
 
 class CrewRemoveView(CrewStaffView):

@@ -35,6 +35,8 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
                     raise Http404
             if model is JudgingRound and "pairwise" in (getattr(row, "mode", None), payload.get("mode")):
                 require_pairwise(event, hide=False)
+            if model is HackathonPrize:
+                _guard_prize_money(event, row, payload)
             for key, value in payload.items():
                 setattr(row, key, value)
             if model is JudgingRound:
@@ -57,6 +59,21 @@ def save_definition(event_id, *, actor, kind, data, object_id=None):
                     JudgingCriterion.objects.create(round=row, priority=priority, **criterion)
             return envelope(row)
         return command(event, actor, values, path=f"{kind}/{object_id or ''}", run=run)
+
+
+def _guard_prize_money(event, row, payload):
+    """The amount fits the currency; once any payout exists the amount and kind are fixed (409 prize_locked)."""
+    from .errors import ProgrammeError
+    from .prize_precision import require_precision
+    if payload.get("amount_per_winner") is not None:
+        require_precision("amount_per_winner", payload["amount_per_winner"], event.makerspace)
+    if not row.pk:
+        return
+    changing = any(key in payload and payload[key] != getattr(row, key) for key in ("amount_per_winner", "kind"))
+    if changing:
+        from .models_payouts import HackathonPrizePayout
+        if HackathonPrizePayout.objects.filter(prize=row).exists():
+            raise ProgrammeError("prize_locked", "A payout exists for this prize, so its amount and kind are fixed.")
 
 
 def _validate_round(row, criteria, options):

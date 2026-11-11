@@ -146,12 +146,19 @@ def publish(event_id, *, actor, data):
                 prior = row
             state, created = ResultPublicationState.objects.get_or_create(event=event)
             if state.current_announcement_id != prior.pk:
+                withdrawn = not created and state.current_announcement_id is None
                 state.current_announcement = prior
                 state.version += int(not created)
                 state.save()
+                if withdrawn:  # E-B4 (D8): published again after an unpublish; nobody is emailed twice.
+                    from .results_unpublish import republish_emails
+                    republish_emails(event, result, state.version)
                 audit(event, actor, "result_public_pointer_updated", state, version=state.version, result_id=result.pk)
+                # A paid team the corrected result no longer awards: open a recovery, never re-open the amount.
+                from .prize_lineage import recoveries_for_correction_locked
+                recoveries_for_correction_locked(event=event, actor=actor, new_awards=list(result.awards.select_related("prize")))
             return {"id": result.pk, "event_id": event_id, "version": result.version,
-                    "state": "published", "allowed_actions": ["correct"]}
+                    "state": "published", "allowed_actions": ["correct", "unpublish"]}
         return command(event, actor, values, path="results/publish", run=run)
 
 

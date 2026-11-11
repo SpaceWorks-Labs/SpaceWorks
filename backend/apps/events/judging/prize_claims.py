@@ -51,11 +51,12 @@ def claim_deadline(event):
 
 
 def _share_for(event, award, actor):
-    share = HackathonPrizeShare.objects.select_for_update().filter(award=award, member=actor).first()
+    from .payout_split import lineage_shares
+    share = lineage_shares(award).select_for_update().filter(member=actor).first()
     if share is not None:
         return share
     snapshot = runtime().snapshot(award.submission_snapshot_id)
-    if HackathonPrizeShare.objects.filter(award=award).exists() or leader_of(snapshot) != actor.pk:
+    if lineage_shares(award).exists() or leader_of(snapshot) != actor.pk:
         raise Http404  # a split exists without this member, or only the leader is the default payee
     if has_standing_payout(award):
         raise ProgrammeError("payout_exists", "This prize was already paid.")
@@ -115,8 +116,11 @@ def remove(event_id, award_id, *, actor, data):
         require_claims(event)
 
         def run():
+            from .payouts import _published_award
+            from .prize_lineage import lineage_ids
             claim = HackathonPrizeClaim.objects.select_for_update().filter(
-                event=event, share__award_id=award_id, share__member=actor).select_related("share__award").first()
+                event=event, share__award_id__in=lineage_ids(_published_award(event, award_id)),
+                share__member=actor).select_related("share__award").first()
             if claim is None:
                 raise Http404
             if has_standing_payout(claim.share.award):
@@ -140,7 +144,8 @@ def verify(event_id, share_id, *, actor, data):
         require_claims(event)
 
         def run():
-            claim = HackathonPrizeClaim.objects.select_for_update().filter(event=event, share_id=share_id).first()
+            claim = HackathonPrizeClaim.objects.select_for_update().select_related("share").filter(
+                event=event, share_id=share_id).first()
             if claim is None or not claim.submitted_at or claim.cleared_at:
                 raise Http404
             if claim.version != values["expected_version"]:
@@ -150,6 +155,8 @@ def verify(event_id, share_id, *, actor, data):
             claim.save()
             record(actor, "event.prize.claim_verified", makerspace=event.makerspace, target=claim,
                    meta={"event_id": event.pk, "share_id": share_id})
+            from .prize_notices import prize_step_notice
+            prize_step_notice(event, claim.share.member_id, "prize_claim_verified", claim.pk)
             return claim_projection(claim)
         return command(event, actor, values, path=f"prize-shares/{share_id}/verify", run=run)
 

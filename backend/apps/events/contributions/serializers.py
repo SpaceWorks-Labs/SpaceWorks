@@ -127,6 +127,7 @@ class SignupSerializer(AggregateSerializer):
     verified_minutes = serializers.IntegerField(allow_null=True)
     member_id = serializers.IntegerField(required=False)
     assignment_id = serializers.IntegerField(required=False)
+    member_name = serializers.CharField(required=False, help_text="Staff scope only: the volunteer's display name.")
 
 
 class AdminShiftSerializer(ShiftSerializer):

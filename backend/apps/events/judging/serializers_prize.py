@@ -4,18 +4,19 @@ from django.utils.translation import gettext
 from decimal import Decimal
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.payments.event_payouts.serializers_responses import PayeeTemplate
 
 from .serializers import ClosedSerializer, CommandInput
 
-MONEY = dict(max_digits=12, decimal_places=2)
+from apps.payments.money import MONEY  # noqa: E402
 METHODS = ("cash", "upi", "bank_transfer", "card", "cheque", "online", "other")
 
 
 class ShareRow(ClosedSerializer):
     member_id = serializers.IntegerField(min_value=1)
-    amount = serializers.DecimalField(**MONEY, min_value=Decimal("0.01"))
+    amount = MoneyField(**MONEY, min_value=Decimal("0.001"))  # exponent checked per currency
 
 
 class SplitInput(CommandInput):
@@ -80,7 +81,7 @@ class ShareRead(ClosedSerializer):
     id = serializers.IntegerField()
     award_id = serializers.IntegerField()
     member_id = serializers.IntegerField(allow_null=True)
-    amount = serializers.DecimalField(**MONEY)
+    amount = MoneyField(**MONEY)
     state = serializers.CharField()
     version = serializers.IntegerField()
     confirmed_at = serializers.DateTimeField(allow_null=True)
@@ -89,7 +90,7 @@ class ShareRead(ClosedSerializer):
 class AwardSplitRead(ClosedSerializer):
     award_id = serializers.IntegerField()
     prize_name = serializers.CharField()
-    total = serializers.DecimalField(**MONEY, allow_null=True)
+    total = MoneyField(**MONEY, allow_null=True)
     shares = ShareRead(many=True)
     split_open = serializers.BooleanField()
 
@@ -115,7 +116,7 @@ class OutcomeRead(ClosedSerializer):
     kind = serializers.CharField()
     method = serializers.CharField(allow_blank=True)
     reference = serializers.CharField(allow_blank=True)
-    amount = serializers.DecimalField(**MONEY, allow_null=True)
+    amount = MoneyField(**MONEY, allow_null=True)
     currency = serializers.CharField(allow_blank=True)
     happened_on = serializers.DateField()
     note = serializers.CharField(allow_blank=True)
@@ -127,7 +128,7 @@ class OutcomeRead(ClosedSerializer):
 class StaffClaimRow(ClaimRead):
     award_id = serializers.IntegerField()
     member_id = serializers.IntegerField(allow_null=True)
-    amount = serializers.DecimalField(**MONEY)
+    amount = MoneyField(**MONEY)
     share_state = serializers.CharField()
 
 
@@ -156,17 +157,17 @@ class PublicPrizeRead(ClosedSerializer):
     sponsor = serializers.CharField(allow_blank=True)
     kind = serializers.CharField()
     value_text = serializers.CharField(allow_blank=True)
-    amount_per_winner = serializers.DecimalField(**MONEY, allow_null=True)
+    amount_per_winner = MoneyField(**MONEY, allow_null=True)
     award_count = serializers.IntegerField()
     currency = serializers.CharField()
 
 
 class PrizePoolRead(ClosedSerializer):
     currency = serializers.CharField()
-    announced_total = serializers.DecimalField(**MONEY, help_text="Cash prizes the space pays, times their winners.")
-    sponsor_funded = serializers.DecimalField(**MONEY, help_text="Paid sponsorship earmarked to this prize pool.")
-    paid_gross = serializers.DecimalField(**MONEY)
-    tds_recorded = serializers.DecimalField(**MONEY)
-    owed = serializers.DecimalField(**MONEY, help_text="Announced awards with no standing payout or outcome.")
-    recovered = serializers.DecimalField(**MONEY)
+    announced_total = MoneyField(**MONEY, help_text="Cash prizes the space pays, times their winners.")
+    sponsor_funded = MoneyField(**MONEY, help_text="Paid sponsorship earmarked to this prize pool.")
+    paid_gross = MoneyField(**MONEY)
+    tds_recorded = MoneyField(**MONEY)
+    owed = MoneyField(**MONEY, help_text="Announced awards with no standing payout or outcome.")
+    recovered = MoneyField(**MONEY)
     sponsor_direct_awards = serializers.IntegerField()

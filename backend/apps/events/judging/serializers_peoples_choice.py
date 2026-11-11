@@ -5,6 +5,7 @@ standings preview is the only pre-publication tally and needs manage_hackathon.
 """
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.accounts.pii_presentation import is_platform_superadmin, mask_data, pii_visible
 from .serializers import ClosedSerializer, CommandInput
@@ -137,7 +138,7 @@ class PeoplesChoicePayableWinnerRead(ClosedSerializer):
     id = serializers.IntegerField()
     prize_name = serializers.CharField()
     title = serializers.CharField()
-    amount_per_winner = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    amount_per_winner = MoneyField(max_digits=13, decimal_places=3, allow_null=True)
     paid = serializers.BooleanField()
     tax_proposal = PrizeTaxProposal(help_text="The space's prize-tax proposal (#181 G7, record only).")
 

@@ -41,6 +41,9 @@ class EventBroadcast(BroadcastCampaign):
             models.CheckConstraint(condition=(~models.Q(status="scheduled") | models.Q(
                 render_schema_version=2, available_at__isnull=False, confirmed_preview__isnull=False)),
                 name="event_broadcast_scheduled_proof"),
+            # One private composer draft per author and event (parity E-B7).
+            models.UniqueConstraint(fields=["event", "created_by"], name="uniq_event_broadcast_open_draft",
+                                    condition=models.Q(status="draft", render_schema_version=2)),
         ]
 
 

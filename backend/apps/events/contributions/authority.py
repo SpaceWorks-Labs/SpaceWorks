@@ -168,6 +168,31 @@ def permissions_for(*, grant_ids, at=None, track_id=None):
     return sorted({p for values in rows.values_list("permissions", flat=True) for p in values})
 
 
+def inherited_window(*, actor, target, permissions, track_ids=()):
+    """The time window a limited co-organizer's helper must stay inside (decision 221i).
+
+    A programme role carries no window of its own, so a helper appointed by a co-organizer
+    whose covering source is time-boxed inherits that window (the intersection when several
+    sources are needed). Full organizers and Event Managers delegate unwindowed: (None, None).
+    """
+    if event_authority.can_manage_grants(actor, target):
+        return None, None
+    sources = active_entitlements(event_id=target.pk).filter(
+        Q(event=target) | Q(series_id=target.series_id, series__isnull=False), grant__user=actor)
+    start = end = None
+    for permission in permissions:
+        covering = [source for source in sources.filter(permissions__contains=[permission]).order_by("pk")
+                    if not source.track_ids or (track_ids and set(track_ids) <= set(source.track_ids))]
+        if not covering:
+            continue  # `can_delegate_helpers` refuses this permission
+        source = next((row for row in covering if not row.valid_from and not row.valid_until), covering[0])
+        if source.valid_from:
+            start = max(start, source.valid_from) if start else source.valid_from
+        if source.valid_until:
+            end = min(end, source.valid_until) if end else source.valid_until
+    return start, end
+
+
 def can_delegate_helpers(*, actor, target, permissions, scope: DelegationScope):
     if scope.event_id != target.pk or scope.helper_role not in HELPER_PERMISSIONS:
         return False
@@ -183,8 +208,9 @@ def can_delegate_helpers(*, actor, target, permissions, scope: DelegationScope):
         return False
     sources = active_entitlements(event_id=target.pk).filter(Q(event=target) | Q(series_id=target.series_id,
         series__isnull=False), grant__user=actor)
-    # One coherent source must cover each requested permission for the entire scope.
-    for permission in permissions:
+    # One coherent source must cover each requested permission for the entire scope, and the
+    # inviter's own manage_team grant must cover it too (221i: its track/window is the limit).
+    for permission in (*permissions, "manage_team"):
         covered = False
         for source in sources.filter(permissions__contains=[permission]):
             if source.track_ids and (not scope.track_ids or not set(scope.track_ids) <= set(source.track_ids)):
@@ -222,6 +248,10 @@ def subset_validator(*, actor, target, permissions, operation, row):
         return False
     if not desired:
         return event_authority.can(actor, target, "manage_team")
+    from apps.events import staff_grant_limits
+    limit = staff_grant_limits.current_limit(row)
+    if limit is not None:  # decision 221(i): an invitation carries its own track/window
+        return staff_grant_limits.can_delegate(actor, target, tuple(sorted(desired)), limit)
     return ports().delegation_scope(actor_id=actor.pk, target_id=target.pk,
         permissions=tuple(sorted(desired)), operation=operation,
         row_id=row.pk if row is not None else None) is True

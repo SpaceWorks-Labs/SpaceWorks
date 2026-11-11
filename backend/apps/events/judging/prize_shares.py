@@ -19,7 +19,6 @@ from rest_framework.exceptions import ValidationError
 from apps.audit.services import record
 from .boundary import command, mutation
 from .errors import ProgrammeError
-from .models_payouts import HackathonPrizePayout
 from .models_prize_money import HackathonPrizeShare
 from .ports import runtime
 from .serializers import validated
@@ -46,11 +45,15 @@ def leader_of(snapshot):
 
 
 def has_standing_payout(award):
-    return HackathonPrizePayout.objects.filter(award=award, kind="payout", reversal__isnull=True).exists()
+    from .prize_lineage import standing_payouts
+    return standing_payouts(award).exists()
 
 
 def _validate_rows(award, snapshot, rows):
     total = award_total(award)
+    from .prize_precision import require_precision
+    for row in rows:
+        require_precision("shares", row["amount"], award.prize.event.makerspace)
     members = [row["member_id"] for row in rows]
     if len(set(members)) != len(members) or not set(members) <= set(snapshot.member_ids):
         raise ValidationError({"shares": gettext("Split the prize between members of the winning team, once each.")})
@@ -59,12 +62,14 @@ def _validate_rows(award, snapshot, rows):
     if has_standing_payout(award):
         raise ProgrammeError("payout_exists", "A payout is already recorded for this prize; reverse it first.")
     from .models_prize_money import HackathonPrizeOutcome
-    if HackathonPrizeOutcome.objects.filter(award=award).exists():
+    from .prize_lineage import lineage_ids
+    if HackathonPrizeOutcome.objects.filter(award_id__in=lineage_ids(award)).exists():
         raise ProgrammeError("already_settled", "This prize has a recorded outcome; its split is fixed.")
 
 
 def _replace(event, award, rows, *, actor, confirmed_for):
-    HackathonPrizeShare.objects.filter(award=award).delete()  # never paid: no payout stands (checked)
+    from .payout_split import lineage_shares
+    lineage_shares(award).delete()  # never paid: no payout stands (checked)
     now = timezone.now()
     made = []
     for row in rows:
@@ -93,6 +98,10 @@ def propose(event_id, award_id, *, actor, data):
             shares = _replace(event, award, values["shares"], actor=actor, confirmed_for={actor.pk})
             record(actor, "event.prize.split_proposed", makerspace=event.makerspace, target=award,
                    meta={"event_id": event.pk, "award_id": award.pk, "shares": len(shares)})
+            from .prize_notices import prize_step_notice
+            for share in shares:  # each other member is asked to confirm their share
+                if share.state == "proposed":
+                    prize_step_notice(event, share.member_id, "prize_split_proposed", share.pk)
             return award_projection(award)
         return command(event, actor, values, path=f"prize-awards/{award_id}/split", run=run)
 
@@ -152,7 +161,8 @@ def share_projection(share):
 
 
 def award_projection(award):
-    shares = HackathonPrizeShare.objects.filter(award=award).order_by("pk")
+    from .payout_split import lineage_shares
+    shares = lineage_shares(award).order_by("pk")
     return {"award_id": award.pk, "prize_name": award.prize_name, "total": award.prize.amount_per_winner,
             "shares": [share_projection(row) for row in shares],
             "split_open": not has_standing_payout(award)}

@@ -30,12 +30,24 @@ class EventCrewMember(ScopedPiiModelMixin, models.Model):
         SIGNUP = "signup", gettext_noop("Sign-up link")
         STAFF = "staff", gettext_noop("Added by staff")
 
+    class Kind(models.TextChoices):
+        ORGANISER = "organiser", gettext_noop("Organiser")
+        VOLUNTEER = "volunteer", gettext_noop("Volunteer")
+        MENTOR = "mentor", gettext_noop("Mentor")
+        JUDGE = "judge", gettext_noop("Judge")
+
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="crew")
     member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="event_crew_roles")
     origin = models.CharField(max_length=8, choices=Origin.choices, default=Origin.SIGNUP)
     #: A free label ("Door", "AV", "Catering"); `mentor` marks a mentor crew ticket.
     crew_role = models.CharField(max_length=60, blank=True, default="")
+    #: The role class behind the badge and filters (E-B3); the free `crew_role` label stays beside it.
+    kind = models.CharField(max_length=12, choices=Kind.choices, null=True, blank=True)
+    #: Staff order on the public crew section and the roster.
+    position = models.PositiveIntegerField(default=0)
+    #: Staff hide a crew member from the public section without ending the role.
+    staff_hidden = models.BooleanField(default=False)
     state = models.CharField(max_length=10, choices=State.choices, default=State.APPLIED)
     answers = models.TextField(default="{}")
     dietary = models.TextField(blank=True, default="")
@@ -49,6 +61,6 @@ class EventCrewMember(ScopedPiiModelMixin, models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["event_id", "pk"]
+        ordering = ["event_id", "position", "pk"]
         constraints = [models.UniqueConstraint(fields=["event", "member"], condition=Q(state__in=LIVE),
                                                name="event_crew_one_live")]

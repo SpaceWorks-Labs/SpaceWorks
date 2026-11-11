@@ -19,8 +19,18 @@ def manual_changed(*, grant, permissions, actor, operation):
     existing = EventGrantEntitlement.objects.select_for_update().filter(
         grant=grant, source_kind="manual", revoked_at__isnull=True).first()
     desired = [] if operation == "revoke_grant" else sorted(permissions)
+    from apps.events import staff_grant_limits as limits
+    limit = limits.current_limit() if operation == "redeem_invite" else None
+    tracks, starts, ends = (limit if limit and limits.is_limited(limit) else ([], None, None))
+    carried = (existing.track_ids, existing.valid_from, existing.valid_until) if existing else ([], None, None)
     if operation == "redeem_invite" and existing:
+        if limits.is_limited(limit) and carried != (tracks, starts, ends):
+            # Merging a limited invite into a differently limited source would widen one of them.
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"detail": "This person already holds a differently limited grant here."})
         desired = sorted(set(desired) | set(existing.permissions))
+    elif operation != "redeem_invite" and existing:
+        tracks, starts, ends = carried  # an edit never silently widens a limited source
     if existing and (existing.permissions != desired or not desired):
         existing.revoked_at, existing.revoked_by = timezone.now(), actor
         existing.save(update_fields=["revoked_at", "revoked_by"])
@@ -30,7 +40,7 @@ def manual_changed(*, grant, permissions, actor, operation):
     if desired and existing is None:
         source = EventGrantEntitlement.objects.create(grant=grant, event_id=grant.event_id,
             series_id=grant.series_id, makerspace_id=grant.makerspace_id, source_kind="manual",
-            permissions=desired, created_by=actor)
+            permissions=desired, track_ids=tracks, valid_from=starts, valid_until=ends, created_by=actor)
         record(actor, "event.entitlement.created", makerspace=grant.makerspace, target=source,
             meta={"source_kind": "manual", "permissions": desired})
     write_union(grant)

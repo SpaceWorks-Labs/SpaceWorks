@@ -16,12 +16,23 @@ from apps.events.services_write_boundary import event_write
 from .models_crew import LIVE, EventCrewMember
 
 FEATURE = "events.crew"
+KINDS_FEATURE = "events.crew_kinds"
 LIVE_REGISTRATION = ("registered", "attended", "pending_approval", "waitlisted")
 
 
 def require_feature(event):
     if not feature_enabled(event.makerspace, FEATURE):
         fail("not_found", "Not found.", status=404)
+
+
+def kinds_enabled(event):
+    return feature_enabled(event.makerspace, KINDS_FEATURE)
+
+
+def check_kind(event, kind):
+    """A kind may only be set while `events.crew_kinds` is on (off = the field is not accepted)."""
+    if kind and not kinds_enabled(event):
+        fail("crew_kinds_disabled", "Crew kinds are not turned on for this space.", status=400)
 
 
 def _open(event):
@@ -98,13 +109,14 @@ def _approve_locked(event, crew, actor, *, reason):
 
 
 @event_write(permission="manage_volunteers")
-def add(event, *, actor, member, crew_role=""):
+def add(event, *, actor, member, crew_role="", kind=None):
     require_feature(event)
+    check_kind(event, kind)
     _open(event)
     if EventCrewMember.objects.filter(event=event, member=member, state__in=LIVE).exists():
         fail("crew_exists", "This person is already on the crew.")
     crew = EventCrewMember.objects.create(makerspace=event.makerspace, event=event, member=member,
-                                          origin=EventCrewMember.Origin.STAFF, crew_role=crew_role)
+                                          origin=EventCrewMember.Origin.STAFF, crew_role=crew_role, kind=kind or None)
     _approve_locked(event, crew, actor, reason="added_by_staff")
     from apps.events.notices_r2_l21a import crew_notice
     crew_notice(crew, "crew_invited")
@@ -157,3 +169,39 @@ def end(event, *, actor, crew_id, own):
         audit.record(actor, "event.crew.removed", makerspace=event.makerspace, target=crew,
                      meta={"event_id": event.pk, "crew_id": crew.pk, "state": crew.state})
     return crew
+
+
+@event_write(permission="manage_volunteers")
+def update(event, *, actor, crew_id, expected_version, **changes):
+    """Staff edit a crew row: its label, its kind, and whether the public section shows it."""
+    require_feature(event)
+    crew = get_object_or_404(EventCrewMember.objects.select_for_update(), pk=crew_id, event=event)
+    if crew.version != expected_version:
+        fail("stale_version", "This crew row changed. Refresh it.", version=crew.version)
+    if crew.state not in LIVE:
+        fail("invalid_transition", "This crew role has already ended.")
+    if "kind" in changes:
+        check_kind(event, changes["kind"])
+    for key in ("crew_role", "kind", "staff_hidden"):
+        if key in changes:
+            setattr(crew, key, (changes[key] or None) if key == "kind" else changes[key])
+    crew.version += 1
+    crew.save()
+    audit.record(actor, "event.crew.updated", makerspace=event.makerspace, target=crew,
+                 meta={"event_id": event.pk, "crew_id": crew.pk, "fields": sorted(changes)})
+    return crew
+
+
+@event_write(permission="manage_volunteers")
+def reorder(event, *, actor, ids):
+    """Set the staff order of the crew: `ids` lists each crew member of this event once."""
+    require_feature(event)
+    rows = {row.pk: row for row in EventCrewMember.objects.select_for_update().filter(event=event, pk__in=ids)}
+    if len(set(ids)) != len(ids) or len(rows) != len(ids):
+        fail("invalid_order", "List each crew member of this event once.", status=400)
+    for position, crew_id in enumerate(ids, start=1):
+        if rows[crew_id].position != position:
+            rows[crew_id].position = position
+            rows[crew_id].save(update_fields=["position"])
+    audit.record(actor, "event.crew.reordered", makerspace=event.makerspace, target=event,
+                 meta={"event_id": event.pk, "count": len(ids)})

@@ -738,7 +738,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('version', models.PositiveIntegerField(default=1)),
                 ('key', models.SlugField(max_length=64)),
-                ('mode', models.CharField(max_length=16, choices=(('weighted_1_5', 'Weighted 1â€“5'), ('top3', 'Top three')))),
+                ('mode', models.CharField(max_length=16, choices=(('weighted_1_5', 'Weighted 1–5'), ('top3', 'Top three')))),
                 ('state', models.CharField(max_length=16, default='draft', choices=[(v, v) for v in ('draft', 'open', 'closed', 'finalized')])),
                 ('min_reviews', models.PositiveSmallIntegerField(default=3)),
                 ('criteria_revision', models.PositiveIntegerField(default=1)),

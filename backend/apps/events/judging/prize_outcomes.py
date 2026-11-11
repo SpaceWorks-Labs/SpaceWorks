@@ -39,9 +39,9 @@ def _row(event, award, kind, actor, **values):
 
 def _settled(award):
     """An award is settled once paid (a standing payout), fulfilled, sponsor-paid or forfeited."""
-    paid = HackathonPrizePayout.objects.filter(award=award, kind="payout", reversal__isnull=True).exists()
-    return paid or HackathonPrizeOutcome.objects.filter(award=award, kind__in=("fulfilled", "sponsor_paid",
-                                                                               "forfeited")).exists()
+    from .prize_lineage import lineage_ids, standing_payouts
+    return standing_payouts(award).exists() or HackathonPrizeOutcome.objects.filter(
+        award_id__in=lineage_ids(award), kind__in=("fulfilled", "sponsor_paid", "forfeited")).exists()
 
 
 def fulfil(event_id, award_id, *, actor, data):
@@ -91,8 +91,8 @@ def forfeit(event_id, award_id, *, actor, data):
                 share = HackathonPrizeShare.objects.select_for_update().filter(award=award, pk=values["share_id"]).first()
                 if share is None:
                     raise Http404
-                if HackathonPrizePayout.objects.filter(award=award, recipient_id=share.member_id, kind="payout",
-                                                       reversal__isnull=True).exists():
+                from .prize_lineage import standing_payouts
+                if standing_payouts(award).filter(recipient_id=share.member_id).exists():
                     raise ProgrammeError("already_settled", "This share was paid.")
                 share.state, share.version = "forfeited", share.version + 1
                 share.save()
@@ -106,6 +106,11 @@ def forfeit(event_id, award_id, *, actor, data):
             record(actor, "event.prize.forfeited", makerspace=event.makerspace, target=row,
                    meta={"event_id": event.pk, "award_id": award.pk, "outcome_id": row.pk,
                          "share_id": share.pk if share else None})
+            from .payouts import _leader
+            from .ports import runtime
+            from .prize_notices import prize_step_notice
+            prize_step_notice(event, share.member_id if share else _leader(runtime().snapshot(award.submission_snapshot_id)),
+                              "prize_forfeited", row.pk)
             return projection(row)
         return command(event, actor, values, path=f"prize-awards/{award_id}/forfeit", run=run)
 
@@ -126,12 +131,21 @@ def open_recoveries_locked(*, event, project, actor):
     for payout in payouts.order_by("pk"):
         if HackathonPrizeOutcome.objects.filter(payout=payout, kind="recovery_opened").exists():
             continue
-        row = _row(event, payout.award, "recovery_opened", actor, payout=payout, amount=payout.amount,
-                   currency=payout.currency, note="Disqualified after payout")
-        record(actor, "event.prize.recovery_opened", makerspace=event.makerspace, target=row,
-               meta={"event_id": event.pk, "award_id": payout.award_id, "payout_id": payout.pk, "outcome_id": row.pk})
-        opened.append(row)
+        opened.append(open_recovery_row(event=event, payout=payout, actor=actor, note="Disqualified after payout",
+                                        reason="disqualified"))
     return opened
+
+
+def open_recovery_row(*, event, payout, actor, note, reason):
+    """One `recovery_opened` row for a standing payout, audited, and its recipient told."""
+    row = _row(event, payout.award, "recovery_opened", actor, payout=payout, amount=payout.amount,
+               currency=payout.currency, note=note)
+    record(actor, "event.prize.recovery_opened", makerspace=event.makerspace, target=row,
+           meta={"event_id": event.pk, "award_id": payout.award_id, "payout_id": payout.pk, "outcome_id": row.pk,
+                 "reason": reason})
+    from .prize_notices import prize_step_notice
+    prize_step_notice(event, payout.recipient_id, "prize_recovery_opened", row.pk)
+    return row
 
 
 def resolve_recovery(event_id, outcome_id, *, actor, data):

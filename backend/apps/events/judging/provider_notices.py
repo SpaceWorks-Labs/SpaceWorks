@@ -1,5 +1,6 @@
 """Source-backed judging notices recheck assignments and released results."""
 
+from django.utils.translation import gettext
 from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
 from apps.integrations.notification_outbox import emit
@@ -74,19 +75,19 @@ def eligible(envelope):
 def render(envelope):
     from apps.integrations.notification_links import local_link
     if envelope.event in ("judge_assigned", "assignment_invalidated"):
-        return {"subject": "Your judging work has changed", "text": "Open the event to review your current judging assignments.",
+        return {"subject": gettext("Your judging work has changed"), "text": gettext("Open the event to review your current judging assignments."),
                 "link": local_link(envelope.makerspace, "member")}
     if envelope.event in STAGE_KINDS:
         from apps.events.submissions.stage_notices import render as stage_render
         return stage_render(envelope)
     if envelope.event == "finalists_announced":
-        return {"subject": "Your project is a finalist", "text": "Open the event to see the published finalists.",
+        return {"subject": gettext("Your project is a finalist"), "text": gettext("Open the event to see the published finalists."),
                 "link": local_link(envelope.makerspace, "member")}
     if envelope.event == "peoples_choice_open":
-        return {"subject": "People's choice voting is on", "text": "Open the event's project gallery to vote for "
-                "your favourite project. You have one vote, and you can change it until voting closes.",
+        return {"subject": gettext("People's choice voting is on"), "text": gettext("Open the event's project gallery to vote for "
+                "your favourite project. You have one vote, and you can change it until voting closes."),
                 "link": local_link(envelope.makerspace, "member")}
-    return {"subject": "Event results are available", "text": "Open the event to review the published results.",
+    return {"subject": gettext("Event results are available"), "text": gettext("Open the event to review the published results."),
             "link": local_link(envelope.makerspace, "member")}
 
 

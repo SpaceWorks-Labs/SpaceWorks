@@ -12,6 +12,8 @@ SAVED_VIEWS = "events.saved_views"
 GALLERY_SEARCH = "events.gallery_search"
 # r2-peoples-choice (#181 S3): the optional People's choice award on the public gallery.
 PEOPLES_CHOICE = "events.peoples_choice"
+# Parity E-B4: the judging scores CSV.
+SCORES_EXPORT = "events.scores_export"
 
 
 def enabled(makerspace, key):

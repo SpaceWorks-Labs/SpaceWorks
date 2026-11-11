@@ -9,6 +9,7 @@ from django.utils.translation import gettext_noop
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
+from apps.payments.money_model import MoneyDecimalField
 
 
 class EventAddon(models.Model):
@@ -24,7 +25,7 @@ class EventAddon(models.Model):
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=300, blank=True, default="")
     kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.OTHER)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0, validators=[MinValueValidator(0)])
     #: 0 = unlimited. Ignored when the add-on has variants: each variant keeps its own stock.
     stock = models.PositiveIntegerField(default=0)
     per_order_limit = models.PositiveSmallIntegerField(default=0)

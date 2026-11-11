@@ -57,6 +57,11 @@ def record_payout(event_id, *, actor, data):
             prize = standing.result.prize
             if prize is None:
                 raise ProgrammeError("no_prize", "This People's choice award carries no prize to pay.")
+            # As payouts._require_payable: only space-funded cash is a space expense (decision 296 review).
+            if prize.funding == "sponsor_direct":
+                raise ProgrammeError("sponsor_direct", "The sponsor pays this prize directly; record it as fulfilled.")
+            if prize.kind != "cash":
+                raise ProgrammeError("non_cash_prize", "Record a non-cash prize as handed over or shipped.")
             snapshot = runtime().snapshot(standing.submission_snapshot_id)
             recipient = values.get("recipient_id") or payouts._leader(snapshot)
             if recipient not in snapshot.member_ids:
@@ -70,6 +75,9 @@ def record_payout(event_id, *, actor, data):
                 raise ValidationError({"amount": gettext("This prize has no amount; enter what was paid.")})
             from .prize_tax import proposed_tds
             tds = values["tds_amount"] if values.get("tds_amount") is not None else proposed_tds(event.makerspace, amount)
+            from .prize_precision import require_precision
+            require_precision("amount", amount, event.makerspace)
+            require_precision("tds_amount", tds, event.makerspace)
             if tds >= amount:
                 raise ValidationError({"tds_amount": gettext("Tax deducted must be less than the gross prize.")})
             from apps.payments.ledger_api import record_expense

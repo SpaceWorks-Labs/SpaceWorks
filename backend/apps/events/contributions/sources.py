@@ -6,7 +6,7 @@ from apps.accounts.models import User
 from apps.audit.services import record
 from apps.events import event_authority
 from apps.events.contracts.services import DelegationScope
-from .authority import can_delegate_helpers
+from .authority import can_delegate_helpers, inherited_window
 from .errors import ProgrammeError
 from .models_roles import EventRoleAssignment, EventGrantEntitlement, EventSponsorTrack
 from .models_shifts import EventShiftSignup
@@ -61,21 +61,28 @@ def sync_role_locked(*, assignment_id, actor_id, locks):
         actor_id = row.approved_by_id
     desired = tuple(row.delegated_permissions or ROLE_PERMISSIONS.get(row.role, ())) if (
         row.state == "approved" and not row.imported_inert) else ()
+    starts = ends = None
     if desired:
         actor = get_object_or_404(User, pk=actor_id)
         if row.role == "co_organizer":
             event_authority.require(actor, row.event, None)
             if not all(event_authority.can(actor, row.event, p) for p in desired):
                 raise ProgrammeError("permission_subset", "Role permissions exceed current authority.", status=403)
-        elif not can_delegate_helpers(actor=actor, target=row.event, permissions=desired,
-            scope=DelegationScope(event_id=row.event_id, helper_role=row.role, track_ids=tuple(row.track_ids))):
-            raise ProgrammeError("permission_subset", "Role permissions exceed current helper authority.", status=403)
+        else:
+            # A co-organizer limited to a track/window appoints helpers inside that track and window only.
+            starts, ends = inherited_window(actor=actor, target=row.event, permissions=desired, track_ids=row.track_ids)
+            if starts and ends and ends <= starts or not can_delegate_helpers(
+                    actor=actor, target=row.event, permissions=desired,
+                    scope=DelegationScope(event_id=row.event_id, helper_role=row.role,
+                                          track_ids=tuple(row.track_ids), valid_from=starts, valid_until=ends)):
+                raise ProgrammeError("permission_subset", "Role permissions exceed current helper authority.", status=403)
         if row.role == "sponsor_rep":
             allowed = set(EventSponsorTrack.objects.filter(event_id=row.event_id,
                 sponsor_id=row.sponsor_id, track__event_id=row.event_id).values_list("track_id", flat=True))
             if not row.track_ids or not set(row.track_ids) <= allowed:
                 raise ProgrammeError("invalid_tracks", "Select only this sponsor's event tracks.", status=400)
-    _sync(row=row, kind="role", desired=desired, tracks=row.track_ids, actor_id=actor_id, locks=locks)
+    _sync(row=row, kind="role", desired=desired, tracks=row.track_ids, actor_id=actor_id, locks=locks,
+          starts=starts, ends=ends)
 
 
 def sync_shift_locked(*, signup_id, actor_id, locks):

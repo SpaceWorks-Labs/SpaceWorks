@@ -21,6 +21,7 @@ from django.db.models import Q
 from apps.encryption.mappers import ScopedPiiModelMixin
 
 from .models_base import AppendOnly, EventOwned
+from apps.payments.money_model import MoneyDecimalField
 
 SHARE_STATES = ("proposed", "confirmed", "declined", "forfeited")
 OUTCOME_KINDS = ("fulfilled", "sponsor_paid", "forfeited", "recovery_opened", "recovery_repaid", "recovery_waived")
@@ -30,7 +31,7 @@ class HackathonPrizeShare(EventOwned):
     makerspace = models.ForeignKey("makerspaces.Makerspace", on_delete=models.CASCADE, related_name="+")
     award = models.ForeignKey("events.EventAward", on_delete=models.PROTECT, related_name="+")
     member = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)
     state = models.CharField(max_length=12, default="proposed", choices=[(v, v) for v in SHARE_STATES])
     proposed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
     confirmed_at = models.DateTimeField(null=True, blank=True)
@@ -70,7 +71,7 @@ class HackathonPrizeOutcome(AppendOnly):
     kind = models.CharField(max_length=16, choices=[(v, v) for v in OUTCOME_KINDS])
     method = models.CharField(max_length=16, blank=True)
     reference = models.CharField(max_length=64, blank=True)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     currency = models.CharField(max_length=3, blank=True)
     happened_on = models.DateField()
     note = models.CharField(max_length=300, blank=True)

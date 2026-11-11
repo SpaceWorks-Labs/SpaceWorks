@@ -2,10 +2,13 @@
 
 from django.http import Http404
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema_view
+from collections import Counter
+
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from .api_common import PrivateView, admin_event, paginated, schema
+from .api_common import ERRORS, PAGE, PrivateView, admin_event, paginated, schema
 from .boundary import envelope
 from .conflicts import require_assignment
 from .models_scoring import JudgeAssignment, JudgeScore
@@ -46,10 +49,20 @@ def _actions(mode, can_score, can_recuse):
     return (["score" if mode == "weighted_1_5" else "rank"] if can_score else []) + (["recuse", "skip"] if can_recuse else [])
 
 
+STATES = ("assigned", "scored", "skipped", "recused", "invalidated")
+LIST_PARAMS = [*PAGE, OpenApiParameter("state", str, OpenApiParameter.QUERY, enum=list(STATES)),
+               OpenApiParameter("q", str, OpenApiParameter.QUERY, description="Matches the project title.")]
+
+
 class AssignmentList(PrivateView):
-    @schema(response=AssignmentRead(many=True), page=True)
+    @extend_schema(tags=["Event programme judging"], parameters=LIST_PARAMS, responses={200: AssignmentRead(many=True), **ERRORS},
+                   description="The judge's own assignments, 24 per page. `state` and `q` filter the list; "
+                               "`state_counts` counts the `q` matches per state so every tab shows its number.")
     def get(self, request, pk):
         event = admin_event(request, pk, "judge")
+        state, text = request.query_params.get("state"), (request.query_params.get("q") or "").strip().casefold()
+        if state not in (None, "") and state not in STATES:
+            raise ValidationError({"state": "Use one of " + ", ".join(STATES) + "."})
         roles = [j.role_assignment_id for j in runtime().judges(pk) if j.member_id == request.user.pk and j.active]
         rows = JudgeAssignment.objects.filter(event=event, judge_role_assignment_id__in=roles).select_related("round").order_by("pk")
         result = []
@@ -58,7 +71,10 @@ class AssignmentList(PrivateView):
                 result.append(assignment_projection(request.user, row, event))
             except Http404:
                 continue
-        return paginated(request, result, AssignmentRead)
+        matches = [item for item in result if not text or text in item["title"].casefold()]
+        counts = Counter(item["state"] for item in matches)
+        shown = [item for item in matches if not state or item["state"] == state]
+        return paginated(request, shown, AssignmentRead, state_counts={name: counts.get(name, 0) for name in STATES})
 
 
 class AssignmentDetail(PrivateView):

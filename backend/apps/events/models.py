@@ -120,6 +120,7 @@ __all__ += ["MentorAlertRoute", "SubmissionIntegrityCheck", "SubmissionStorageCl
 
 # Release 2 L3: event ID cards (one live card per confirmed registration).
 from .models_id_cards import EventCardSettings, EventIdCard  # noqa: E402
+from .models_badge_prints import EventBadgePrint  # noqa: E402
 __all__ += ["EventCardSettings", "EventIdCard"]
 
 # Release 2 L6: paid ticketing v2 (orders, seats, holds, add-ons, passes, transfers) and venue fees.
@@ -146,3 +147,13 @@ __all__ += ["PersonalCalendarFeed"]
 __all__ += ["AdmissionStage", "AdmissionStageAssignment", "AdmissionStageEntry", "AdmissionStageReview",
             "AdmissionStageReviewer", "EventAttendanceReply", "EventAttendanceRound", "EventParticipationSettings",
             "EventCrewMember", "EventCheckInList", "EventCheckInListScan"]
+
+from .models_loan_context import EventLoanContext  # noqa: E402
+__all__ += ["EventLoanContext"]
+from .models_consumable_plan_context import EventConsumablePlanContext  # noqa: E402
+__all__ += ["EventConsumablePlanContext"]
+
+from .models_booking_decision import EventBookingDecision  # noqa: E402
+__all__ += ["EventBookingDecision"]
+from .models_machine_booking_link import EventMachineBookingLink  # noqa: E402
+__all__ += ["EventMachineBookingLink"]

@@ -65,7 +65,9 @@ def signup(row, *, owner=True):
         "attendance": attendance.state if attendance else None,
         "verified_minutes": hours.minutes if hours else None}
     if not owner:
-        data.update(member_id=row.member_id, assignment_id=row.assignment_id)
+        # EV-30: staff see who the volunteer is, never just the id (the staff scope is the only caller).
+        data.update(member_id=row.member_id, assignment_id=row.assignment_id,
+                    member_name=row.member.display_name or row.member.username)
     return data
 
 
@@ -80,7 +82,7 @@ def shift(row, *, actor=None):
 
 def admin_shift(row, actor):
     items = []
-    for item in row.signups.order_by("queue_at", "pk"):
+    for item in row.signups.select_related("member").order_by("queue_at", "pk"):
         data = signup(item, owner=False)
         if item.state in ("applied", "waitlisted"):
             data["allowed_actions"].extend(["approve", "withdraw"])

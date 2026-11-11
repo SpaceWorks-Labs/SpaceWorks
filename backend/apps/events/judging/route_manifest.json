@@ -12,7 +12,7 @@
         "HEAD",
         "POST"
       ],
-      "authority": "manage_hackathon",
+      "authority": "manage_hackathon; GET falls back to read-only for a limited manage_team grant (own tracks)",
       "source_target": "pk -> Event.makerspace_id",
       "api_client": "staff scope with current staff/delegated context and exact resource target",
       "no_store": true,
@@ -38,7 +38,7 @@
         "HEAD",
         "PATCH"
       ],
-      "authority": "manage_hackathon",
+      "authority": "manage_hackathon; GET falls back to read-only for a limited manage_team grant (own tracks)",
       "source_target": "pk -> Event.makerspace_id",
       "api_client": "staff scope with current staff/delegated context and exact resource target",
       "no_store": true,

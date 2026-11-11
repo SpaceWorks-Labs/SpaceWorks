@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import F, Q
 
 from .models_base import EventOwned
+from apps.payments.money_model import MoneyDecimalField
 
 
 class HackathonTrack(EventOwned):
@@ -38,12 +39,12 @@ class HackathonPrize(EventOwned):
     winner_selection_mode = models.CharField(max_length=20, default="manager",
                                            choices=(("manager", "Manager"), ("sponsor_proposal", "Sponsor proposal")))
     # L21b (C-38): prize money per winner. Paid out only by hand, through the append-only payout ledger.
-    amount_per_winner = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    amount_per_winner = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     # Hack-money G5/G8: what the prize is (cash, or hardware/credits/perks with a free-text value and an
     # optional estimate) and who pays it (the space, or the sponsor straight to the winner: no expense).
     kind = models.CharField(max_length=8, default="cash", choices=[(v, v) for v in ("cash", "item", "credit", "perk")])
     value_text = models.CharField(max_length=300, blank=True)
-    estimated_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    estimated_value = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     funding = models.CharField(max_length=16, default="space", choices=[(v, v) for v in ("space", "sponsor_direct")])
 
     class Meta:

@@ -18,11 +18,18 @@ from .models_prize_money import HackathonPrizeOutcome, HackathonPrizeShare
 
 
 def _standing(award):
-    return HackathonPrizePayout.objects.filter(award=award, kind="payout", reversal__isnull=True)
+    """Standing payouts of this award's lineage: a results correction never re-opens a paid amount."""
+    from .prize_lineage import standing_payouts
+    return standing_payouts(award)
+
+
+def lineage_shares(award):
+    from .prize_lineage import lineage_ids
+    return HackathonPrizeShare.objects.filter(award_id__in=lineage_ids(award))
 
 
 def payout_amount(award, recipient, entered):
-    shares = HackathonPrizeShare.objects.filter(award=award)
+    shares = lineage_shares(award)
     if not shares.exists():
         if _standing(award).exists():
             raise ProgrammeError("payout_exists", "This award already has a recorded payout. Reverse it first.")
@@ -45,9 +52,10 @@ def payout_amount(award, recipient, entered):
 
 def award_status(award):
     """owed | paid | part_paid | fulfilled | sponsor_paid | forfeited, plus an open recovery flag."""
-    outcomes = set(HackathonPrizeOutcome.objects.filter(award=award).values_list("kind", flat=True))
+    from .prize_lineage import lineage_ids
+    outcomes = set(HackathonPrizeOutcome.objects.filter(award_id__in=lineage_ids(award)).values_list("kind", flat=True))
     standing = _standing(award)
-    shares = HackathonPrizeShare.objects.filter(award=award).exclude(state__in=("declined", "forfeited"))
+    shares = lineage_shares(award).exclude(state__in=("declined", "forfeited"))
     for kind in ("fulfilled", "sponsor_paid"):
         if kind in outcomes:
             return kind
@@ -57,12 +65,26 @@ def award_status(award):
     return "forfeited" if "forfeited" in outcomes else "owed"
 
 
+def owed_amount(award):
+    """What the space still owes on a cash award: all of it when unpaid, the unpaid live shares when part paid."""
+    status = award_status(award)
+    if status == "owed":
+        return award.prize.amount_per_winner or Decimal("0")
+    if status != "part_paid":
+        return Decimal("0")
+    unpaid = lineage_shares(award).exclude(state__in=("declined", "forfeited")).exclude(
+        member_id__in=_standing(award).values("recipient_id"))
+    return unpaid.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+
 def award_extras(award):
     from .prize_tax import tax_settings
     prize = award.prize
-    shares = HackathonPrizeShare.objects.filter(award=award).order_by("pk")
+    shares = lineage_shares(award).order_by("pk")
     paid_to = set(_standing(award).values_list("recipient_id", flat=True))
-    recoveries = HackathonPrizeOutcome.objects.filter(award=award, kind="recovery_opened", resolution__isnull=True)
+    from .prize_lineage import lineage_ids
+    recoveries = HackathonPrizeOutcome.objects.filter(award_id__in=lineage_ids(award), kind="recovery_opened",
+                                                      resolution__isnull=True)
     tax = tax_settings(award.prize.event.makerspace)
     return {"kind": prize.kind, "funding": prize.funding, "value_text": prize.value_text,
             "status": award_status(award), "open_recoveries": recoveries.count(),

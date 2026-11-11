@@ -1,10 +1,16 @@
 """Definition/round HTTP adapters; all writes delegate to the owning workflow."""
 
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema_view
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from apps.events import event_authority
+from apps.events.models import Event
+from apps.makerspaces.guards import require_module
 from .api_common import PrivateView, admin_event, paginated, schema
+from .ports import runtime
 from .definitions_workflow import save_definition
 from .models_definitions import HackathonPrize, HackathonTrack, JudgingRound
 from .projections import progress
@@ -50,12 +56,37 @@ class DefinitionDetail(DefinitionList):
 @extend_schema_view(get=schema(response=TrackRead(many=True), page=True),
                     post=schema(request=TrackInput, response=ResultEnvelope, status=201))
 class TrackList(DefinitionList):
-    pass
+    def get(self, request, pk):
+        try:
+            return super().get(request, pk)
+        except PermissionDenied:
+            from .track_visibility import readable_track_ids
+            event = get_object_or_404(event_authority.visible_events(
+                request.user, Event.objects.select_related("makerspace", "series")), pk=pk)  # 404 when hidden
+            require_module(event.makerspace, "events")
+            runtime().require_programme(event)
+            ids = readable_track_ids(request.user, event)
+            rows = HackathonTrack.objects.filter(event=event).order_by("pk")
+            return paginated(request, rows if ids is None else rows.filter(pk__in=ids), TrackRead)
 
 
 @extend_schema_view(get=schema(response=TrackRead), patch=schema(request=TrackInput, response=ResultEnvelope))
 class TrackDetail(DefinitionDetail):
-    pass
+    def get(self, request, pk, **kwargs):
+        try:
+            return super().get(request, pk, **kwargs)
+        except PermissionDenied:
+            # Same read-only fallback as the list: a limited `manage_team` co-organizer reads their own tracks.
+            from .track_visibility import readable_track_ids
+            event = get_object_or_404(event_authority.visible_events(
+                request.user, Event.objects.select_related("makerspace", "series")), pk=pk)
+            require_module(event.makerspace, "events")
+            runtime().require_programme(event)
+            ids = readable_track_ids(request.user, event)
+            row = HackathonTrack.objects.filter(event=event, pk=kwargs[self.id_kwarg]).first()
+            if row is None or (ids is not None and row.pk not in ids):
+                raise Http404
+            return Response(TrackRead(row).data)
 
 
 @extend_schema_view(get=schema(response=PrizeRead(many=True), page=True),
@@ -104,6 +135,8 @@ class RoundFinalize(RoundAction):
 
 class RoundAssign(PrivateView):
     @schema(request=AssignInput, response=AssignmentPlanRead,
-            description="Balanced deterministic plan; dry_run returns pairs, deficits and loads without assignment writes.")
+            description="Balanced deterministic plan; dry_run returns pairs, deficits, before/after loads and a plan_fingerprint "
+                        "without writes; send the fingerprint back to apply exactly that plan (409 plan_changed otherwise). "
+                        "existing=replace re-plans unscored assignments.")
     def post(self, request, pk, round_id):
         return Response(assign(pk, round_id, actor=request.user, data=request.data))

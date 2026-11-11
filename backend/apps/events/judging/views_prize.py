@@ -3,6 +3,9 @@ payouts stay hand-recorded, recoveries never charge anyone, claims are masked on
 
 from rest_framework.response import Response
 
+from apps.accounts.reauthentication import require_recent_reauth
+from apps.payments.payout_session import require_full_session
+
 from . import prize_claims, prize_outcomes, prize_reads, prize_shares
 from .api_common import MemberView, PrivateView, paginated, schema
 from .prize_access import finance_event, read_key
@@ -53,8 +56,10 @@ class PrizeRecoveryResolve(PrivateView):
 
 class PrizeClaims(PrivateView):
     @schema(response=StaffClaimRow(many=True), page=True,
-            description="Every share with its claim: payee details and PAN are masked, never shown in full.")
+            description="Every share with its claim: payee details and PAN are masked, never shown in full. "
+                        "403 full_session_required outside an interactive browser session.")
     def get(self, request, pk):
+        require_full_session(request)  # 224(c): payee details are payee money, session-only (decision 296 review)
         event = finance_event(request.user, pk)
         with read_key(event.makerspace_id):
             return paginated(request, prize_reads.staff_claims(event), StaffClaimRow)
@@ -69,8 +74,12 @@ class PrizeClaimVerify(PrivateView):
 class PrizeClaimReveal(PrivateView):
     @schema(request=RevealInput, response=RevealRead,
             description="Finance reads one winner's full payee details and PAN to pay them. Audited on every "
-                        "release with its reason (never the values). 404 once the details are cleared.")
+                        "release with its reason (never the values). 404 once the details are cleared. "
+                        "403 full_session_required outside an interactive browser session; 403 "
+                        "recent_reauth_required until the account was re-verified in the last ten minutes.")
     def post(self, request, pk, share_id):
+        require_full_session(request)  # 224(c): full payee details and PAN never reach a native/API session
+        require_recent_reauth(request)  # 403 recent_reauth_required: the API client prompts and retries once
         return Response(prize_claims.reveal(pk, share_id, actor=request.user, data=request.data))
 
 

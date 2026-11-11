@@ -28,10 +28,11 @@ class ResultState(PrivateView):
     def get(self, request, pk):
         event = admin_event(request, pk, None)
         result = EventResultRevision.objects.filter(event=event).order_by("-version").first()
+        published = bool(result) and ResultPublicationState.objects.filter(
+            event=event, current_announcement__result=result).exists()
         return Response({"id": result.pk if result else 0, "event_id": pk, "version": result.version if result else 0,
-            "state": "published" if result and ResultPublicationState.objects.filter(event=event,
-                current_announcement__result=result).exists() else "finalized" if result else "draft",
-            "allowed_actions": ["correct", "publish"] if result else ["finalize"],
+            "state": "published" if published else "finalized" if result else "draft",
+            "allowed_actions": (["correct", "publish"] if not published else ["correct", "unpublish"]) if result else ["finalize"],
             "aggregates": result.aggregates if result else {},
             "sponsor_proposals": list(SponsorWinnerProposal.objects.filter(event=event).order_by("pk")
                                        .values("id", "prize_id", "submission_snapshot_id", "created_at"))})

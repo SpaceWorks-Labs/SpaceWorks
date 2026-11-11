@@ -3,6 +3,7 @@
 from django.utils import timezone
 
 from .assignment_planner import plan_assignments
+from .assignment_preview import loads_before, plan_fingerprint, replaceable_pairs, require_fresh, split_plan
 from .boundary import audit, changed, command, envelope, mutation, notice, owned
 from .conflicts import eligible
 from .errors import ProgrammeError, invalid
@@ -135,24 +136,39 @@ def assign(event_id, round_id, *, actor, data):
             live_prior = {r.judge_role_assignment_id for r in previous if r.state in ("assigned", "scored") and r.pk not in stale_ids}
             if live_prior - valid_judges:
                 invalid("Include the existing judge pool when rebalancing this round.")
+            before = loads_before(existing, valid_judges)
+            replaceable = replaceable_pairs(previous, existing, stale_ids) if values["existing"] == "replace" else set()
+            existing -= replaceable  # E-B4: "replace" re-plans unscored assignments; scored work is never touched.
             planner = random_plan if values["strategy"] == "random" else plan_assignments
             try:
                 plan = planner(ids, valid_judges, target_views=round.min_reviews, blocked=blocked,
                                existing=existing, max_load=values["max_load"], seed=values["seed"])
             except ValueError as exc:
                 raise ProgrammeError("assignment_limits_exceeded", "The assignment request exceeds the supported limits.", status=413) from exc
-            result = {"pairs": [{"snapshot_id": p, "judge_role_assignment_id": j} for p, j in plan.pairs],
+            added, dropped = split_plan(plan.pairs, replaceable)
+            fingerprint = plan_fingerprint(round, values, valid_judges, added, dropped)
+            result = {"pairs": [{"snapshot_id": p, "judge_role_assignment_id": j} for p, j in added],
+                      "dropped": [{"snapshot_id": p, "judge_role_assignment_id": j} for p, j in dropped],
                       "deficits": {str(k): v for k, v in plan.deficits.items()},
                       "loads": {str(k): v for k, v in plan.loads.items()}, "coverage_complete": not plan.deficits,
+                      "before_loads": before, "after_loads": {str(k): v for k, v in sorted(plan.loads.items())},
+                      "existing": values["existing"], "plan_fingerprint": fingerprint,
                       "strategy": values["strategy"], "seed": values["seed"]}
             if not values["dry_run"]:
+                require_fresh(values, fingerprint)
                 if plan.deficits:
                     raise ProgrammeError("insufficient_judges", "Add nonconflicted judges or increase their workload limit.")
+                by_pair = {(row.submission_snapshot_id, row.judge_role_assignment_id): row for row in previous}
+                for pair in dropped:
+                    row = by_pair[pair]
+                    row.state = "invalidated"
+                    changed(event, actor, "assignment_replaced", row)
+                    notice(event, "assignment_invalidated", row.pk, row.version)
                 for row in stale:
                     row.state = "invalidated"
                     changed(event, actor, "assignment_invalidated", row)
                     notice(event, "assignment_invalidated", row.pk, row.version)
-                for snapshot, judge in plan.pairs:
+                for snapshot, judge in added:
                     project = snapshot_map[snapshot]
                     person = next(j for j in judges if j.role_assignment_id == judge)
                     possible_tracks = set(project.track_ids) & set(person.track_ids) if person.track_ids else set(project.track_ids)
@@ -161,7 +177,9 @@ def assign(event_id, round_id, *, actor, data):
                                                    track_id=min(possible_tracks) if possible_tracks else None,
                                                    batch=f"v{round.version + 1}", room=project.room)
                     notice(event, "judge_assigned", assignment.pk, assignment.version)
-                changed(event, actor, "judges_assigned", round, count=len(plan.pairs), strategy=values["strategy"],
+                changed(event, actor, "judges_assigned", round, count=len(added), strategy=values["strategy"],
                         seed=values["seed"])
+                audit(event, actor, "assignment_applied", round, fingerprint=fingerprint, strategy=values["strategy"],
+                      existing=values["existing"], added=len(added), dropped=len(dropped))
             return {**envelope(round), **result}
         return command(event, actor, values, path=f"judging-rounds/{round_id}/assign", run=run)

@@ -1,13 +1,18 @@
 """Safe personal envelopes with live source checks on every delivery retry."""
+from django.utils.translation import gettext
 from django.utils import timezone
 from apps.accounts.staff_identity import person_q
 from apps.accounts.models import User
+from apps.integrations.notification_catalog_events_programme import (
+    MENTOR_HELP_PERSONAL_EVENT, MENTOR_HELP_SOURCE, MENTOR_WHATSAPP_MARKER, MENTOR_WHATSAPP_VERSION,
+)
 from apps.integrations.notification_outbox import emit
+from apps.integrations.notification_projection import addressed_context
 from apps.integrations.notification_sources import NotificationSource, register_source
 from .models_notices import EventContributorNotice
 
 CONTRIBUTION_SOURCE = "events.contributor"
-HELP_SOURCE = "events.mentor_help"
+HELP_SOURCE = MENTOR_HELP_SOURCE
 
 
 def contribution_recipients(row):
@@ -45,7 +50,7 @@ def contribution_eligible(envelope):
 
 
 def help_eligible(envelope):
-    if envelope.event != "mentor_help_update":
+    if envelope.event != MENTOR_HELP_PERSONAL_EVENT:
         return False
     from apps.events.mentoring.models_rounds import MentorNotificationIntent
     from apps.events.mentoring.notifications import recipients
@@ -59,6 +64,10 @@ def help_eligible(envelope):
             or row.event.status != "published"
             or not is_servable(row.event.makerspace) or not module_enabled(row.event.makerspace, "events")
             or not feature_enabled(row.event.makerspace, "events.mentoring")):
+        return False
+    if MENTOR_WHATSAPP_MARKER in envelope.context and (
+        envelope.context[MENTOR_WHATSAPP_MARKER] != MENTOR_WHATSAPP_VERSION or row.kind != "created"
+    ):
         return False
     if row.kind in ("created", "attention") and (row.request.state != "open"
             or deadline(row.request, row.event) <= timezone.now()):
@@ -77,18 +86,24 @@ def deliver_contribution(*, notice_id, idempotency_key):
             event="contribution_update", audience="member", source_kind=CONTRIBUTION_SOURCE,
             source_id=str(row.pk), revision=str(row.generation), subject=row,
             dedup_key=f"{idempotency_key}:{member.pk}", context={"event_id": row.event_id},
-            rendered={"subject": "Your event contribution", "text": "Open the event to review your duty or office-hour booking."})
+            rendered=lambda: {"subject": gettext("Your event contribution"),
+                              "text": gettext("Open the event to review your duty or office-hour booking.")})
 
 
 def deliver_help(*, intent_id, recipient_ids, payload, idempotency_key):
     from apps.events.mentoring.models_rounds import MentorNotificationIntent
     row = MentorNotificationIntent.objects.select_related("event__makerspace").get(pk=intent_id)
+    context = {"event_id": row.event_id}
+    if row.kind == "created":
+        context.update(addressed_context(row.event.makerspace, "events", MENTOR_HELP_PERSONAL_EVENT, "member"))
+        context[MENTOR_WHATSAPP_MARKER] = MENTOR_WHATSAPP_VERSION
     for member in User.objects.filter(person_q(), pk__in=recipient_ids, is_active=True, access_status="active", is_tenant_dump_stub=False):
         emit(makerspace=row.event.makerspace, recipient=member, feature="events", stream="events",
-            event="mentor_help_update", audience="member", source_kind=HELP_SOURCE,
+            event=MENTOR_HELP_PERSONAL_EVENT, audience="member", source_kind=HELP_SOURCE,
             source_id=str(row.pk), revision=str(row.generation), subject=row,
-            dedup_key=f"{idempotency_key}:{member.pk}", context={"event_id": row.event_id},
-            rendered={"subject": "Mentor Desk update", "text": "Open Mentor Desk to review the current help queue."})
+            dedup_key=f"{idempotency_key}:{member.pk}", context=context,
+            rendered=lambda: {"subject": gettext("Mentor Desk update"),
+                              "text": gettext("Open Mentor Desk to review the current help queue.")})
 
 
 def enqueue(*, kind, notice_id):

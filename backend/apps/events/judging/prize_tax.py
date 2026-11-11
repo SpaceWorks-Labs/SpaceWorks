@@ -29,7 +29,11 @@ def proposed_tds(makerspace, gross):
     gross = Decimal(gross)
     if not settings.prize_tds_enabled or gross <= settings.prize_tds_threshold:
         return Decimal("0.00")
-    return (gross * settings.prize_tds_rate / Decimal(100)).quantize(CENT, rounding=ROUND_HALF_UP)
+    # Decision 268: round at the space currency's real precision (JPY 0, INR 2, KWD 3), never a fixed cent.
+    from apps.payments.currencies import supported_minor_unit_exponent
+    from .options import currency
+    step = Decimal(1).scaleb(-supported_minor_unit_exponent(currency(makerspace)))
+    return (gross * settings.prize_tds_rate / Decimal(100)).quantize(step, rounding=ROUND_HALF_UP)
 
 
 def clean_pan(value):

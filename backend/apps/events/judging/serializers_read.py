@@ -136,6 +136,12 @@ class AssignmentPlanRead(ResultEnvelope):
     coverage_complete = serializers.BooleanField()
     strategy = serializers.CharField(required=False)
     seed = serializers.CharField(required=False)
+    # E-B4 (D10): what the plan does to each judge's workload, and what it drops under "replace".
+    dropped = serializers.ListField(child=serializers.DictField(child=serializers.IntegerField()), required=False)
+    before_loads = serializers.DictField(child=serializers.IntegerField(), required=False)
+    after_loads = serializers.DictField(child=serializers.IntegerField(), required=False)
+    existing = serializers.ChoiceField(choices=("keep", "replace"), required=False)
+    plan_fingerprint = serializers.CharField(required=False)
 
 
 class ConsentCommandRead(ResultEnvelope):

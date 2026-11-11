@@ -9,6 +9,7 @@ from django.db import models
 from django.db.models import Q
 
 from .models_base import AppendOnly
+from apps.payments.money_model import MoneyDecimalField
 
 
 class HackathonPrizePayout(AppendOnly):
@@ -22,10 +23,10 @@ class HackathonPrizePayout(AppendOnly):
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
     kind = models.CharField(max_length=8, default="payout", choices=(("payout", "Payout"), ("reversal", "Reversal")))
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversal")
-    amount = models.DecimalField(max_digits=12, decimal_places=2)  # gross: the ledger expense
+    amount = MoneyDecimalField(max_digits=13, decimal_places=3)  # gross: the ledger expense
     # Hack-money G7 (#181, record only): tax deducted at source and what reached the winner.
-    tds_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    net_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    tds_amount = MoneyDecimalField(max_digits=13, decimal_places=3, default=0)
+    net_amount = MoneyDecimalField(max_digits=13, decimal_places=3, null=True, blank=True)
     currency = models.CharField(max_length=3)
     method = models.CharField(max_length=16)
     reference = models.CharField(max_length=64, blank=True)

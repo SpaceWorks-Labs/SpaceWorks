@@ -6,7 +6,19 @@ public profile in the event's space (#25); it shows their handle and display nam
 """
 from collections import Counter
 
+from django.utils.translation import gettext
+
 from .models_crew import EventCrewMember
+
+
+def _kinds_on(event):
+    from apps.makerspaces.platform import feature_enabled
+    return feature_enabled(event.makerspace, "events.crew_kinds")
+
+
+def kind_label(kind):
+    """The translated name of a crew kind, or "" for none/unknown."""
+    return gettext(EventCrewMember.Kind(kind).label) if kind in EventCrewMember.Kind.values else ""
 
 
 def project_staff(crew):
@@ -14,6 +26,7 @@ def project_staff(crew):
     return {"id": crew.pk, "version": crew.version, "member_id": crew.member_id,
             "name": crew.member.display_name or crew.member.username, "crew_role": crew.crew_role,
             "state": crew.state, "origin": crew.origin, "show_publicly": crew.show_publicly,
+            "kind": crew.kind, "position": crew.position, "staff_hidden": crew.staff_hidden,
             "registration_id": registration.pk if registration else None,
             "has_place": bool(registration and registration.is_crew and registration.status in ("registered", "attended")),
             "created_at": crew.created_at, "decided_at": crew.decided_at}
@@ -24,8 +37,12 @@ def project_own(crew):
             "show_publicly": crew.show_publicly, "registration_id": crew.registration_id}
 
 
-def roster(event):
-    return EventCrewMember.objects.filter(event=event).select_related("member", "registration").order_by("state", "pk")
+def roster(event, kind=None):
+    """The staff roster in staff order; `kind` filters only while `events.crew_kinds` is on."""
+    rows = EventCrewMember.objects.filter(event=event).select_related("member", "registration")
+    if kind and _kinds_on(event):
+        rows = rows.filter(kind=kind)
+    return rows.order_by("state", "position", "pk")
 
 
 def catering(event):
@@ -47,16 +64,17 @@ def public_crew(event, *, require_switch=True):
     # The per-event block reads the event's switch; a Pages section is its own opt-in (#165 auto).
     if require_switch and not EventParticipationSettings.for_event(event).crew_public_section:
         return []
-    rows = EventCrewMember.objects.filter(event=event, state="approved", show_publicly=True).order_by("pk")
+    rows = EventCrewMember.objects.filter(event=event, state="approved", show_publicly=True,
+                                          staff_hidden=False).order_by("position", "pk")
     handles = {claim.user_id: claim for claim in PublicHandle.objects.filter(
         user_id__in=rows.values("member_id"), profile__membership__makerspace_id=event.makerspace_id,
     ).select_related("profile__membership__user", "profile__membership__makerspace")}
-    result = []
+    result, kinds = [], _kinds_on(event)
     for crew in rows:
         claim = handles.get(crew.member_id)
         if claim is not None and profile_is_public(claim.profile):
             result.append({"handle": claim.handle, "display_name": display_name_for(claim.profile.membership),
-                           "crew_role": crew.crew_role})
+                           "crew_role": crew.crew_role, "kind": crew.kind if kinds else None})
     return result
 
 
@@ -66,9 +84,12 @@ def crew_flags(registration_ids):
     return {row.registration_id: row.crew_role or "Crew" for row in rows}
 
 
-def crew_label(crew_role):
-    """The chip text: "Mentor" for a mentor crew ticket, else the crew's own label, else "Crew"."""
+def crew_label(crew_role, kind=None):
+    """The chip text: "Kind - role" with a kind, "Mentor" for a mentor crew ticket, else the label, else "Crew"."""
     role = (crew_role or "").strip()
+    name = kind_label(kind)
+    if name:
+        return name if not role or role.casefold() in (name.casefold(), kind) else f"{name} \u00b7 {role[:60]}"
     if role.casefold() == "mentor":
         return "Mentor"
     return role[:60] or "Crew"
@@ -80,4 +101,20 @@ def crew_labels(event, registration_ids):
     if not registration_ids or not feature_enabled(event.makerspace, "events.crew"):
         return {}
     rows = EventCrewMember.objects.filter(event=event, state="approved", registration_id__in=list(registration_ids))
-    return {row.registration_id: crew_label(row.crew_role) for row in rows}
+    kinds = _kinds_on(event)
+    return {row.registration_id: crew_label(row.crew_role, row.kind if kinds else None) for row in rows}
+
+
+def crew_kinds(event, registration_ids):
+    """Registration id -> crew kind, for approved crew that have one; empty while the crew or kinds switch is off."""
+    from apps.makerspaces.platform import feature_enabled
+    if not registration_ids or not feature_enabled(event.makerspace, "events.crew") or not _kinds_on(event):
+        return {}
+    rows = EventCrewMember.objects.filter(event=event, state="approved", registration_id__in=list(registration_ids),
+                                          kind__isnull=False)
+    return {row.registration_id: row.kind for row in rows}
+
+
+def crew_kind_for(event, registration_id):
+    """The crew kind of one registration ("" when none); the badge role resolver reads it (E-B2)."""
+    return crew_kinds(event, [registration_id]).get(registration_id, "")

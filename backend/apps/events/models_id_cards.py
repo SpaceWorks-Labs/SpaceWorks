@@ -20,6 +20,7 @@ class EventIdCard(ScopedPiiModelMixin, models.Model):
         JUDGE = "judge", "Judge"
         VOLUNTEER = "volunteer", "Volunteer"
         CREW = "crew", "Crew"
+        ORGANISER = "organiser", "Organiser"
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -31,6 +32,8 @@ class EventIdCard(ScopedPiiModelMixin, models.Model):
     person = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                related_name="event_id_cards")
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.ATTENDEE)
+    # E-B2: a role chosen by hand sticks; reconciling re-detects the role only while this is False.
+    role_locked = models.BooleanField(default=False)
     printed_name = models.TextField(blank=True, default="")
     photo_object_key = models.CharField(max_length=300, blank=True, default="")
     photo_content_type = models.CharField(max_length=64, blank=True, default="")

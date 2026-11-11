@@ -11,6 +11,8 @@ from django.db.models import F, Q
 from django.utils import timezone
 from apps.forms_schema.validation import validate_form_schema
 from .programme.accent_presets import ACCENT_CHOICES
+from .venue import validate_map_url
+from apps.payments.money_model import MoneyDecimalField
 
 
 class Event(models.Model):
@@ -84,6 +86,8 @@ class Event(models.Model):
     starts_at = models.DateTimeField()
     ends_at = models.DateTimeField()
     location = models.CharField(max_length=255, blank=True)
+    venue_address = models.CharField(max_length=500, blank=True, default="")
+    venue_map_url = models.CharField(max_length=500, blank=True, default="", validators=[validate_map_url])
     location_kind = models.CharField(
         max_length=8,
         choices=LocationKind.choices,
@@ -96,9 +100,9 @@ class Event(models.Model):
         validators=[validate_form_schema],
     )
     capacity = models.PositiveIntegerField(default=0)
-    payment_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+    payment_amount = MoneyDecimalField(
+        max_digits=13,
+        decimal_places=3,
         default=0,
         validators=[MinValueValidator(0)],
     )
@@ -123,6 +127,10 @@ class Event(models.Model):
     # dedicated image endpoints (never by the generic update path), so it is
     # deliberately absent from services.EVENT_FIELDS.
     image_key = models.CharField(max_length=300, blank=True, default="")
+    # Decision 221b: event-linked loans fall due this many hours after the event ends
+    # (null = at the end). Owned by the equipment-settings route, not services.EVENT_FIELDS.
+    equipment_return_hours = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(720)])
     status = models.CharField(
         max_length=16,
         choices=Status.choices,

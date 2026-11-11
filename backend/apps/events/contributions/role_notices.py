@@ -1,21 +1,23 @@
 """Role decisions are private owner notices backed by the live assignment."""
+from django.utils.translation import gettext, gettext_noop
 from apps.accounts.staff_identity import is_person
 from apps.integrations.notification_outbox import emit
 from apps.integrations.notification_sources import NotificationSource, register_source
 from .models_roles import EventRoleAssignment
+from apps.integrations.fanout_jobs import deferred_fanout
 
 SOURCE = "events.role_assignment"
 MESSAGES = {
-    "role.submit": "Your contributor application was submitted.",
-    "role.approve": "Your contributor application was approved.",
-    "role.reject": "The event team completed its review of your contributor application.",
-    "role.decline": "The contributor invitation was declined.",
-    "role.withdraw": "Your contributor application was withdrawn.",
-    "role.revoke": "Your contributor assignment was revoked.",
-    "role.complete": "Your event contribution was marked completed.",
-    "role.reopen_answers": "The event team reopened your contributor answers for review.",
-    "role.reconfirm": "Review your imported contributor application before it can be approved.",
-    "role.event_cancelled": "The event was cancelled and your contributor duties were closed.",
+    "role.submit": gettext_noop("Your contributor application was submitted."),
+    "role.approve": gettext_noop("Your contributor application was approved."),
+    "role.reject": gettext_noop("The event team completed its review of your contributor application."),
+    "role.decline": gettext_noop("The contributor invitation was declined."),
+    "role.withdraw": gettext_noop("Your contributor application was withdrawn."),
+    "role.revoke": gettext_noop("Your contributor assignment was revoked."),
+    "role.complete": gettext_noop("Your event contribution was marked completed."),
+    "role.reopen_answers": gettext_noop("The event team reopened your contributor answers for review."),
+    "role.reconfirm": gettext_noop("Review your imported contributor application before it can be approved."),
+    "role.event_cancelled": gettext_noop("The event was cancelled and your contributor duties were closed."),
 }
 
 
@@ -36,13 +38,14 @@ def eligible(envelope):
         and not row.member.is_tenant_dump_stub)
 
 
+@deferred_fanout()
 def emit_role_locked(*, row, action):
     if action not in MESSAGES:
         return
     emit(makerspace=row.event.makerspace, recipient=row.member, feature="events", stream="events",
         event=action, audience="member", source_kind=SOURCE, source_id=str(row.pk), revision=str(row.version),
         subject=row, dedup_key=f"event-role:{row.pk}:{row.version}:{action}", context={"event_id": row.event_id},
-        rendered={"subject": "Your event contribution", "text": MESSAGES[action]})
+        rendered=lambda: {"subject": gettext("Your event contribution"), "text": gettext(MESSAGES[action])})
 
 
 def register():

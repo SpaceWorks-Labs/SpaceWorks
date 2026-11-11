@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from decimal import Decimal
 
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 
 class ClosedSerializer(serializers.Serializer):
@@ -69,7 +70,7 @@ class TrackInput(CommandInput):
 
 class PrizeInput(TrackInput):
     capacity = None
-    amount_per_winner = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+    amount_per_winner = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"),
                                                  allow_null=True, required=False)
     track_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
     sponsor_id = serializers.IntegerField(min_value=1, allow_null=True, required=False)
@@ -79,7 +80,7 @@ class PrizeInput(TrackInput):
     kind = serializers.ChoiceField(choices=("cash", "item", "credit", "perk"), required=False)
     value_text = serializers.CharField(max_length=300, allow_blank=True, required=False,
                                        help_text="What a non-cash prize is, e.g. 'Raspberry Pi 5 kit per member'.")
-    estimated_value = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"),
+    estimated_value = MoneyField(max_digits=13, decimal_places=3, min_value=Decimal("0.001"),
                                                allow_null=True, required=False)
     funding = serializers.ChoiceField(choices=("space", "sponsor_direct"), required=False,
                                       help_text="sponsor_direct: the sponsor pays the winner; the space records "
@@ -133,6 +134,11 @@ class AssignInput(CommandInput):
     max_load = serializers.IntegerField(min_value=1, max_value=2000, default=100)
     seed = serializers.CharField(max_length=64, default="0")
     dry_run = serializers.BooleanField(default=False)
+    existing = serializers.ChoiceField(choices=("keep", "replace"), default="keep", help_text=(
+        "keep: current unscored assignments stay and count towards the target; replace: they are re-planned "
+        "(scored work is never touched)."))
+    plan_fingerprint = serializers.CharField(max_length=64, required=False, help_text=(
+        "The fingerprint a dry_run returned; an apply with a different plan answers 409 plan_changed."))
 
 
 class FinalizeRoundInput(CommandInput):

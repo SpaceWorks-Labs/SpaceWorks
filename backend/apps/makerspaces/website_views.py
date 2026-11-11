@@ -29,6 +29,9 @@ class DiscoveryFilters(serializers.Serializer):
     q = serializers.CharField(max_length=200, allow_blank=True, required=False)
     date_from = serializers.DateField(required=False)
     date_to = serializers.DateField(required=False)
+    # Event discovery only (events.discovery_filters); other kinds ignore them.
+    tag = serializers.CharField(max_length=50, allow_blank=True, required=False)
+    organization = serializers.SlugField(max_length=50, allow_blank=True, required=False)
 
     def validate(self, data):
         if data.get("date_from") and data.get("date_to") and data["date_from"] > data["date_to"]:

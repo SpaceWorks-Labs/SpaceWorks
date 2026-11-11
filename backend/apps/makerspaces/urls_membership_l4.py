@@ -5,6 +5,7 @@ from apps.makerspaces.views_membership_member_l4 import (
     MemberConsentView, MemberErasureRequestView, MemberErasureWithdrawView, MemberHistoryView,
     MemberRefundSuggestionView,
 )
+from apps.makerspaces.views_admission_changes import MemberJoinPhotoView, MemberRequestResubmitView
 from apps.makerspaces.views_public_plans import PublicInviteLinkView, PublicPlanDetailView, PublicPlanListView
 
 _MEMBER = "member/makerspaces/<int:makerspace_id>"
@@ -17,6 +18,9 @@ urlpatterns = [
     path(f"{_MEMBER}/membership-history", MemberHistoryView.as_view(), name="member-membership-history"),
     path(f"{_MEMBER}/payments/<int:payment_id>/refund-suggestion", MemberRefundSuggestionView.as_view(),
          name="member-refund-suggestion"),
+    # Parity O-B2: the applicant's single resubmission and the join-form photo upload.
+    path("memberships/requests/<int:pk>", MemberRequestResubmitView.as_view(), name="membership-request-resubmit"),
+    path(f"{_MEMBER}/admission/photo", MemberJoinPhotoView.as_view(), name="member-admission-photo"),
     path("public/<slug:makerspace_slug>/membership-plans", PublicPlanListView.as_view(), name="public-membership-plans"),
     path("public/<slug:makerspace_slug>/membership-plans/<slug:plan_slug>", PublicPlanDetailView.as_view(),
          name="public-membership-plan-detail"),

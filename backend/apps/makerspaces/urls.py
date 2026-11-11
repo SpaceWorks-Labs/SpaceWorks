@@ -18,6 +18,7 @@ from apps.makerspaces.views_invitation_requests import PublicInvitationRequestVi
 from apps.makerspaces.views_member_referrals import MemberReferralView
 from apps.makerspaces.member_verification_views import MemberVerificationView
 from apps.makerspaces.member_activity_views import MemberActivityView
+from apps.makerspaces.member_allowances_views import MemberAllowancesView
 from apps.makerspaces.member_usage_views import MemberUsageView
 from apps.makerspaces.member_card_views import (
     MemberCardOwnView,
@@ -32,6 +33,9 @@ from apps.makerspaces.profile_views import (
 )
 from .profile_contract_urls import urlpatterns as profile_contract_patterns
 from .urls_membership_l4 import urlpatterns as membership_l4_patterns
+from .urls_guest_passes import urlpatterns as guest_pass_patterns
+from .urls_community import urlpatterns as community_patterns
+from apps.makerspaces.views_member_units_public import PublicMemberUnitsView
 
 urlpatterns = [
     *profile_contract_patterns,
@@ -50,6 +54,7 @@ urlpatterns = [
     path("bootstrap", BootstrapView.as_view(), name="tenant-bootstrap"),
     path("config", PublicConfigView.as_view(), name="public-config"),
     path("public/<slug:makerspace_slug>/membership-requests", PublicMembershipRequestView.as_view(), name="public-membership-request"),
+    path("public/<slug:makerspace_slug>/member-units", PublicMemberUnitsView.as_view(), name="public-member-units"),
     path("public/<slug:makerspace_slug>/invitation-requests", PublicInvitationRequestView.as_view(), name="public-invitation-request"),
     path("memberships/me", MyMembershipsView.as_view(), name="my-memberships"),
     path("memberships/invitations", InvitationDiscoveryView.as_view(), name="membership-invitations"),
@@ -59,6 +64,7 @@ urlpatterns = [
     path("member/makerspaces/<int:makerspace_id>/waiver/accept", MemberWaiverAcceptView.as_view(), name="member-waiver-accept"),
     path("member/makerspaces/<int:makerspace_id>/activity", MemberActivityView.as_view(), name="member-activity"),
     path("member/makerspaces/<int:makerspace_id>/my-usage", MemberUsageView.as_view(), name="member-my-usage"),
+    path("member/makerspaces/<int:makerspace_id>/allowances", MemberAllowancesView.as_view(), name="member-allowances"),
     # The member check-in QR route is deliberately NOT here: it is an events surface and
     # must be withdrawn by an events tombstone, so it lives in `apps/events/urls_member.py`
     # and is spliced in by `config.urls.separable`. Declared here it would keep resolving,
@@ -78,3 +84,5 @@ urlpatterns = [
     ),
 ]
 urlpatterns += membership_l4_patterns
+urlpatterns += guest_pass_patterns
+urlpatterns += community_patterns

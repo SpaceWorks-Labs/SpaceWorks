@@ -14,6 +14,8 @@ from apps.accounts.schemas_auth import SupportedLocaleSerializer
 from apps.makerspaces.models import Makerspace
 from apps.makerspaces.platform import bootstrap_payload, paused_frontend, resolve_frontend
 from apps.makerspaces.opening_hours_schema import OpeningHoursField
+from apps.makerspaces.telemetry_schema import TelemetryConfigSerializer
+from apps.makerspaces.telemetry_public import effective_telemetry, legacy_allowed
 
 TenantBootstrapSerializer = inline_serializer(
     name="TenantBootstrap",
@@ -30,6 +32,8 @@ TenantBootstrapSerializer = inline_serializer(
                 "opening_hours": OpeningHoursField(),
                 "map_url": serializers.URLField(allow_blank=True),
                 "geofence_enabled": serializers.BooleanField(required=False),
+                # Decision 242(m): present (true) only for a non-profit taking gifts.
+                "donate_enabled": serializers.BooleanField(required=False),
                 "logo_url": serializers.CharField(allow_blank=True, allow_null=True),
                 "cover_image_url": serializers.CharField(
                     allow_blank=True, allow_null=True
@@ -50,6 +54,13 @@ TenantBootstrapSerializer = inline_serializer(
                 "closed_notice": inline_serializer(name="TenantBootstrapClosedNotice", required=False, fields={
                     "text": serializers.CharField(),
                     "reopens_on": serializers.DateField(allow_null=True),
+                }),
+                # Present only when the space records opening hours (P3-4).
+                "open_status": inline_serializer(name="TenantBootstrapOpenStatus", required=False, fields={
+                    "open_now": serializers.BooleanField(),
+                    "closes_at": serializers.DateTimeField(allow_null=True, help_text="End of the current opening."),
+                    "next_opens_at": serializers.DateTimeField(allow_null=True, help_text=(
+                        "Next opening while closed; null when open, or when the hours never reopen.")),
                 }),
             },
         ),
@@ -75,6 +86,8 @@ TenantBootstrapSerializer = inline_serializer(
         "workflows": serializers.ListField(child=serializers.CharField()),
         "theme": serializers.JSONField(),
         "branding": serializers.JSONField(),
+        "telemetry": TelemetryConfigSerializer(),
+        "telemetry_legacy_allowed": serializers.BooleanField(),
         "email_enabled": serializers.BooleanField(),
         "default_locale": serializers.CharField(help_text="The space's default language code."),
         "supported_locales": SupportedLocaleSerializer(many=True),
@@ -124,4 +137,9 @@ class BootstrapView(APIView):
         from config.locale_resolution import activate_resolved_makerspace_locale
 
         activate_resolved_makerspace_locale(request, makerspace)
-        return Response(bootstrap_payload(makerspace))
+        payload = bootstrap_payload(makerspace)
+        payload["telemetry"] = effective_telemetry(makerspace)
+        payload["telemetry_legacy_allowed"] = legacy_allowed(makerspace)
+        response = Response(payload)
+        response["Cache-Control"] = "no-store"
+        return response

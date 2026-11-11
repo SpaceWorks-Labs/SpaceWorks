@@ -94,7 +94,8 @@ def set_membership_roles(*, makerspace, actor, membership, roles):
         audit.record(actor, "staff.roles_changed", makerspace=makerspace,
                      target=membership.user, meta={"membership_id": membership.pk,
                      "before": changes["before"], "after": changes["after"],
-                     "removed_machine_type_ids": changes["removed_machine_type_ids"]})
+                     "removed_machine_type_ids": changes["removed_machine_type_ids"],
+                     "removed_machine_ids": changes["removed_machine_ids"]})
         return membership
 
 

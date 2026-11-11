@@ -2,6 +2,7 @@
 
 from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field, extend_schema_serializer
 from rest_framework import serializers as s
+from apps.payments.money_fields import MoneyField
 from .public_page_sections import About, Links, Testimonials, Titled
 from .public_page_contract import PALETTES
 
@@ -132,8 +133,8 @@ class PublicPlanCard(s.Serializer):
     interval = s.CharField()
     custom_days = s.IntegerField(allow_null=True)
     fixed_end_date = s.DateField(allow_null=True)
-    amount = s.DecimalField(max_digits=12, decimal_places=2)
-    renewal_price = s.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField()
+    renewal_price = MoneyField()
     currency = s.CharField()
     joining_fee = s.CharField(allow_null=True)
     join_mode = s.CharField()
@@ -165,7 +166,7 @@ class PublicShopCard(s.Serializer):
     slug = s.CharField()
     name = s.CharField()
     image_url = s.CharField(allow_blank=True)
-    price_from = s.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    price_from = MoneyField(allow_null=True)
     sold_out = s.BooleanField()
 
 

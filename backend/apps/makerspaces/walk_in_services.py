@@ -39,6 +39,8 @@ def create_walk_in_member(actor, makerspace, *, display_name, email="", phone=""
         # concurrent role edit and walk-in creation otherwise take the two rows in
         # opposite orders and deadlock.
         makerspace = Makerspace.objects.select_for_update().get(pk=makerspace.pk)
+        if walk_in_creates_guest_pass(makerspace):
+            return _create_walk_in_guest(actor, makerspace, display_name, email, phone)
         from apps.makerspaces.membership_admission_settings import ensure_join_allowed
         from apps.makerspaces.platform import module_enabled
         policy = ensure_join_allowed(makerspace)
@@ -68,6 +70,23 @@ def create_walk_in_member(actor, makerspace, *, display_name, email="", phone=""
             meta={"has_email": bool(email), "has_phone": bool(phone)},
         )
         return membership
+
+
+def walk_in_creates_guest_pass(makerspace):
+    """Decision 223 (i): with guest passes on and the space's setting `guest_pass` (the default), a
+    walk-in gets a pass for today instead of a membership. `membership` keeps the legacy behaviour."""
+    from apps.makerspaces.guest_pass_policy import guest_passes_on, policy_for
+    return guest_passes_on(makerspace) and policy_for(makerspace).walk_in_registration_creates == "guest_pass"
+
+
+def _create_walk_in_guest(actor, makerspace, display_name, email, phone):
+    """Name the person and issue today's staff guest pass. Never creates a membership (gap G1)."""
+    from apps.makerspaces.guest_pass_issue import issue_staff_pass
+    user = _new_user(display_name, email, phone)
+    guest_pass, _created = issue_staff_pass(actor, makerspace, user)
+    audit.record(actor, "member.walk_in_guest_pass_created", makerspace=makerspace, target=guest_pass,
+                 meta={"has_email": bool(email), "has_phone": bool(phone)})
+    return guest_pass
 
 
 def _new_user(display_name, email, phone):

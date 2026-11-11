@@ -16,7 +16,7 @@ SECTIONS = {
     "events": "Events",
     "machines": "Machines",
     "printing": "Printing",
-    "lending": "Lending & inventory",
+    "lending": "Inventory",
     "community": "Community",
 }
 DEFAULT_SECTIONS = ("machines", "printing", "lending")

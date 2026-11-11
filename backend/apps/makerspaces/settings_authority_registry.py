@@ -35,7 +35,7 @@ RENTAL_TIMING_KEYS = frozenset({
 # The lending policy fields `loan_policy_settings.update_loan_policy` writes.
 LOAN_POLICY_KEYS = (
     "default_loan_days", "loan_renewal_mode", "loan_max_renewals", "loan_renewal_days",
-    "loan_max_active", "loan_max_items", "loan_reminder_offsets_hours", "loan_escalate_overdue_days",
+    "loan_max_active", "loan_max_items", "loan_reminder_offsets_hours", "loan_escalate_overdue_days", "account_self_renewal",
 )
 
 
@@ -102,6 +102,7 @@ EXTRA_SETTING_KEYS = (
     ("membership", "member_cards.email_on_issue"),
     ("membership", "member_cards.public_verify"),
     ("membership", "member_cards.verify_show_plan"),
+    ("membership", "member_cards.verify_show_name"),
     ("membership", "card_designs.approval"),
     ("events", "card_designs.approval"),
     # L22: the shop's own settings (the `shop.*` switches come from `domain_settings`).

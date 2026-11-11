@@ -13,6 +13,7 @@ from apps.admin_api.permissions import active_user
 from apps.audit import services as audit
 from apps.hardware_requests.exceptions import ErrorSerializer
 from apps.makerspaces.guards import require_module
+from apps.makerspaces import membership_join_fields
 from apps.makerspaces.membership_admission_settings import application_schema_for, settings_for
 from apps.makerspaces.membership_plan_policy import public_schema
 from apps.makerspaces.models import Makerspace, MakerspaceMembership, MembershipRequest
@@ -32,7 +33,7 @@ def own_admission_space(user, makerspace_id):
     space = get_object_or_404(servable_queryset(), pk=makerspace_id)
     require_module(space, "membership")
     if MakerspaceMembership.objects.filter(makerspace=space, user=user, status="revoked").exists() and not MembershipRequest.objects.filter(
-        makerspace=space, user=user, admission_managed=True, state__in=("requested", "awaiting_vouches", "awaiting_payment"),
+        makerspace=space, user=user, admission_managed=True, state__in=("requested", "awaiting_vouches", "awaiting_payment", "changes_requested"),
     ).exists():
         raise PermissionDenied()
     return space
@@ -50,6 +51,7 @@ def public_admission_payload(space):
         "default_plan": {"id": plan.pk, "name": plan.name, "amount": str(plan.amount), "currency": plan.currency} if plan else None,
         "joining_fee": policy.joining_fee, "joining_fee_currency": policy.joining_fee_currency,
         "payment_timing": policy.payment_timing,
+        "join_fields": membership_join_fields.modes(space, plan),  # parity O-B2
     }
 
 

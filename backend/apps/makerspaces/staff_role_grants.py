@@ -20,7 +20,7 @@ from apps.makerspaces.role_membership_writes import replace_membership_roles, va
 
 
 @transaction.atomic
-def grant_staff_role(*, makerspace, user, roles, actor, machine_type_ids=()):
+def grant_staff_role(*, makerspace, user, roles, actor, machine_type_ids=(), machine_ids=()):
     """Create ``user``'s staff-track row in ``makerspace``; return it. Audited."""
     makerspace = Makerspace.objects.select_for_update(no_key=True).get(pk=makerspace.pk)
     actor = User.objects.filter(pk=getattr(actor, "pk", None)).first()
@@ -46,12 +46,13 @@ def grant_staff_role(*, makerspace, user, roles, actor, machine_type_ids=()):
     membership.save()
     replace_membership_roles(membership=membership, roles=roles, actor=actor,
                              reason="staff_role.granted", fresh_lifecycle=True)
-    if "machine_manager" in {role.slug for role in roles}:
+    if {"machine_manager", "technician"} & {role.slug for role in roles}:
         from apps.machines.member_scope_services import set_member_machine_scope
 
         set_member_machine_scope(makerspace=makerspace, membership=membership, actor=actor,
-                                 machine_type_ids=list(machine_type_ids))
+                                 machine_type_ids=list(machine_type_ids), machine_ids=list(machine_ids))
     audit.record(actor, "staff_role.granted", makerspace=makerspace, target=user,
                  meta={"membership_id": membership.pk, "roles": [role.slug for role in roles],
-                       "machine_type_ids": sorted(machine_type_ids)})
+                       "machine_type_ids": sorted(machine_type_ids),
+                       "machine_ids": sorted(machine_ids)})
     return membership

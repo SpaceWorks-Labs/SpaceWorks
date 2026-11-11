@@ -46,6 +46,10 @@ ROLE_CATALOG = (
     RoleDefinition("shop_manager", "Shop Manager", "shop_manager", frozenset({
         "manage_shop", "sell_shop", "view_shop",
     }), True),
+    # Decision 242(m): the Space Manager's delegate for donations -- campaigns, gifts, pledges,
+    # sponsors, donor list and receipts. No other money, no settings (the non-profit profile
+    # stays the Space Manager's), and never an area manager's Finance view.
+    RoleDefinition("fundraising", "Fundraising", "fundraising", frozenset({"manage_donations"}), True),
     RoleDefinition("member", "Member", None, frozenset()),
 )
 ROLE_BY_SLUG = {role.slug: role for role in ROLE_CATALOG}

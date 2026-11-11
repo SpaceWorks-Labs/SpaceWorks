@@ -86,8 +86,9 @@ def machine_scope_covers_all(actor, makerspace):
     scope = manage_scope_for(actor, makerspace.pk)
     if scope is EXEMPT:
         return True
-    type_ids, _machine_ids = scope
-    return not Machine.objects.filter(makerspace=makerspace).exclude(machine_type_id__in=type_ids).exists()
+    type_ids, machine_ids = scope
+    return not Machine.objects.filter(makerspace=makerspace).exclude(
+        machine_type_id__in=type_ids).exclude(pk__in=machine_ids).exists()
 
 
 def _refuse(code, detail, *, locked=False):

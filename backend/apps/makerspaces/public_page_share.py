@@ -91,6 +91,7 @@ def sitemap_page_urls(request, *, spaces):
         return
     for claim in PublicHandle.objects.filter(
             organization__is_active=True, organization__public_profile_enabled=True,
+            organization__review_status="approved",
             organization__public_page__published_revision__isnull=False,
     ).select_related("organization").order_by("pk"):
         yield canonical_url("organization", claim.organization, claim.handle)

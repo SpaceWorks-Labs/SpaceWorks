@@ -84,14 +84,21 @@ def replace_membership_roles(*, membership, roles, actor, reason, fresh_lifecycl
         for role in additional
     ], ignore_conflicts=True)
     removed = []
-    if fresh_lifecycle or "machine_manager" not in {role.slug for role in roles}:
-        from apps.machines.models_membership_scope import MembershipMachineTypeScope
+    removed_machines = []
+    if fresh_lifecycle or not {"machine_manager", "technician"} & {role.slug for role in roles}:
+        from apps.machines.models_membership_scope import MembershipMachineScope, MembershipMachineTypeScope
 
         scopes = MembershipMachineTypeScope.objects.filter(membership=membership)
         removed = sorted(scopes.values_list("machine_type_id", flat=True))
         scopes.delete()
+        machine_scopes = MembershipMachineScope.objects.filter(membership=membership)
+        removed_machines = sorted(machine_scopes.values_list("machine_id", flat=True))
+        machine_scopes.delete()
     cache = getattr(membership, "_prefetched_objects_cache", {})
     cache.pop("additional_roles", None)
     cache.pop("machine_type_scopes", None)
+    cache.pop("machine_scopes", None)
+    from apps.card_designs.staff_card_hooks import after_roles_changed  # O-B4: reissue / auto-issue, never blocks
+    after_roles_changed(actor, membership)
     return {"before": before, "after": [role.slug for role in roles],
-            "removed_machine_type_ids": removed}
+            "removed_machine_type_ids": removed, "removed_machine_ids": removed_machines}

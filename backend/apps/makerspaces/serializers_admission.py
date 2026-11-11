@@ -1,6 +1,7 @@
 """Admission boundary and read schemas shared by staff and applicant routes."""
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from apps.payments.money_fields import MoneyField
 
 from apps.forms_schema.serializers import CustomFormSchemaField
 from apps.makerspaces.membership_admission_forms import answers_for
@@ -53,9 +54,10 @@ class PublicAdmissionSerializer(serializers.Serializer):
     vouches_required = serializers.IntegerField()
     application_schema = serializers.JSONField(allow_null=True)
     default_plan = serializers.DictField(allow_null=True)
-    joining_fee = serializers.DecimalField(max_digits=12, decimal_places=2)
+    joining_fee = MoneyField(max_digits=13, decimal_places=3)
     joining_fee_currency = serializers.CharField()
     payment_timing = serializers.CharField()
+    join_fields = serializers.DictField(child=serializers.CharField(), required=False)
 
 
 class VouchSerializer(serializers.ModelSerializer):
@@ -70,7 +72,7 @@ class VouchSerializer(serializers.ModelSerializer):
 class AdmissionPaymentSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     status = serializers.CharField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    amount = MoneyField(max_digits=13, decimal_places=3)
     currency = serializers.CharField()
 
 
@@ -81,11 +83,32 @@ class AdmissionRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MembershipRequest
-        fields = ("id", "state", "application_answers", "vouches", "admission_payment", "expires_at")
+        fields = ("id", "state", "application_answers", "vouches", "admission_payment", "expires_at",
+                  "changes_note", "changes_requested_at", "changes_rounds", "edit_schema", "join_fields")
+
+    # Parity O-F2: what the applicant edits while a request is sent back for changes -- the form the
+    # application was made with (staff-only questions removed, as on the join page) and the plan's
+    # join-form extras. Null in every other state, so nothing new is exposed outside the edit window.
+    edit_schema = serializers.SerializerMethodField()
+    join_fields = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.JSONField(allow_null=True))
     def get_application_answers(self, obj):
         return answers_for(obj)
+
+    @extend_schema_field(serializers.JSONField(allow_null=True))
+    def get_edit_schema(self, obj):
+        if obj.state != MembershipRequest.State.CHANGES_REQUESTED:
+            return None
+        from apps.makerspaces.membership_plan_policy import public_schema
+        return public_schema(obj.application_schema)
+
+    @extend_schema_field(serializers.DictField(child=serializers.CharField(), allow_null=True))
+    def get_join_fields(self, obj):
+        if obj.state != MembershipRequest.State.CHANGES_REQUESTED:
+            return None
+        from apps.makerspaces.membership_join_fields import modes
+        return modes(obj.makerspace, obj.selected_plan)
 
 
 class AdmissionExportSerializer(serializers.Serializer):

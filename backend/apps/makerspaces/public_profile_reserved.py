@@ -37,6 +37,7 @@ RESERVED_SEGMENTS = frozenset({
     'mfa',
     'now',
     'o',
+    'organizations',
     'organization-invitations',
     'print',
     'redoc',
@@ -64,5 +65,10 @@ RESERVED_SEGMENTS = frozenset({
     'pay',
     'security',
     'shop',
+    # 0.12.0: the public spaces directory (/spaces).
+    'spaces',
     'technician-opt-in',
+    # 0.12.0 parity A13: the privacy and terms pages.
+    'privacy',
+    'terms',
 })
